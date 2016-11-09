@@ -1,0 +1,5 @@
+fabric3
+pip-tools
+readme_renderer
+bpython
+pytest
