@@ -1,0 +1,6 @@
+flake8
+flake8-tuple
+pytest
+pytest-catchlog
+coverage
+hypothesis
