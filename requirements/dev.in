@@ -1,4 +1,5 @@
 fabric3
 pip-tools
-bpython
+ptpython
 tox
+-e git+https://github.com/ulope/captainhook.git#egg=captainhook

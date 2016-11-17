@@ -4,22 +4,28 @@
 #
 #    pip-compile --no-index --output-file requirements/dev.txt requirements/dev.in
 #
-blessings==1.6            # via curtsies
-bpython==0.16
+-e git+https://github.com/ulope/captainhook.git#egg=captainhook
+bash==0.6
 click==6.6                # via pip-tools
-curtsies==0.2.11          # via bpython
+docopt==0.6.1             # via ptpython
 ecdsa==0.13               # via paramiko
 fabric3==1.12.post1
 first==2.0.1              # via pip-tools
-greenlet==0.4.10          # via bpython
+flake8==3.2.0
+isort==4.2.5
+jedi==0.9.0               # via ptpython
+mccabe==0.5.2             # via flake8
 paramiko==1.17.2          # via fabric3
 pip-tools==1.7.0
 pluggy==0.4.0             # via tox
+prompt-toolkit==1.0.9     # via ptpython
+ptpython==0.36
 py==1.4.31                # via tox
+pycodestyle==2.2.0        # via flake8
 pycrypto==2.6.1           # via paramiko
-Pygments==2.1.3           # via bpython
-requests==2.11.1          # via bpython
-six==1.10.0               # via bpython, fabric3, pip-tools
-tox==2.4.1
-virtualenv==15.0.3        # via tox
-wcwidth==0.1.7            # via curtsies
+pyflakes==1.3.0           # via flake8
+pygments==2.1.3           # via ptpython
+six==1.10.0               # via fabric3, pip-tools, prompt-toolkit
+tox==2.5.0
+virtualenv==15.1.0        # via tox
+wcwidth==0.1.7            # via prompt-toolkit
