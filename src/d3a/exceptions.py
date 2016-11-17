@@ -10,9 +10,9 @@ class MarketReadOnlyException(MarketException):
     pass
 
 
-class BidNotFoundException(MarketException):
+class OfferNotFoundException(MarketException):
     pass
 
 
-class InvalidBid(MarketException):
+class InvalidOffer(MarketException):
     pass

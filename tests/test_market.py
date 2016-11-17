@@ -7,7 +7,7 @@ from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule, precondition
 
-from d3a.exceptions import MarketReadOnlyException, BidNotFoundException, InvalidBid
+from d3a.exceptions import MarketReadOnlyException, OfferNotFoundException, InvalidOffer
 from d3a.models.market import Market
 
 
@@ -16,133 +16,133 @@ def market():
     return Market()
 
 
-def test_market_bid(market: Market):
-    bid = market.bid(20, 10, 'someone')
+def test_market_offer(market: Market):
+    offer = market.offer(20, 10, 'someone')
 
-    assert market.bids[bid.id] == bid
-    assert bid.energy == 20
-    assert bid.price == 10
-    assert bid.seller == 'someone'
-    assert len(bid.id) == 36
-
-
-def test_market_bid_invalid(market: Market):
-    with pytest.raises(InvalidBid):
-        market.bid(-1, 10, 'someone')
+    assert market.offers[offer.id] == offer
+    assert offer.energy == 20
+    assert offer.price == 10
+    assert offer.seller == 'someone'
+    assert len(offer.id) == 36
 
 
-def test_market_bid_readonly(market: Market):
+def test_market_offer_invalid(market: Market):
+    with pytest.raises(InvalidOffer):
+        market.offer(-1, 10, 'someone')
+
+
+def test_market_offer_readonly(market: Market):
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
-        market.bid(10, 10, 'A')
+        market.offer(10, 10, 'A')
 
 
-def test_market_bid_delete(market: Market):
-    bid = market.bid(20, 10, 'someone')
-    market.delete_bid(bid)
+def test_market_offer_delete(market: Market):
+    offer = market.offer(20, 10, 'someone')
+    market.delete_offer(offer)
 
-    assert bid.id not in market.bids
-
-
-def test_market_bid_delete_id(market: Market):
-    bid = market.bid(20, 10, 'someone')
-    market.delete_bid(bid.id)
-
-    assert bid.id not in market.bids
+    assert offer.id not in market.offers
 
 
-def test_market_bid_delete_missing(market: Market):
-    with pytest.raises(BidNotFoundException):
-        market.delete_bid("no such bid")
+def test_market_offer_delete_id(market: Market):
+    offer = market.offer(20, 10, 'someone')
+    market.delete_offer(offer.id)
+
+    assert offer.id not in market.offers
 
 
-def test_market_bid_delete_readonly(market: Market):
+def test_market_offer_delete_missing(market: Market):
+    with pytest.raises(OfferNotFoundException):
+        market.delete_offer("no such offer")
+
+
+def test_market_offer_delete_readonly(market: Market):
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
-        market.delete_bid("no such bid")
+        market.delete_offer("no such offer")
 
 
 def test_market_trade(market: Market):
-    bid = market.bid(20, 10, 'A')
+    offer = market.offer(20, 10, 'A')
 
-    trade = market.accept_bid(bid, 'B')
+    trade = market.accept_offer(offer, 'B')
     assert trade
     assert trade == market.trades[0]
-    assert trade.bid is bid
+    assert trade.offer is offer
     assert trade.seller == 'A'
     assert trade.buyer == 'B'
 
 
 def test_market_trade_by_id(market: Market):
-    bid = market.bid(20, 10, 'A')
+    offer = market.offer(20, 10, 'A')
 
-    trade = market.accept_bid(bid.id, 'B')
+    trade = market.accept_offer(offer.id, 'B')
     assert trade
 
 
 def test_market_trade_readonly(market: Market):
-    bid = market.bid(20, 10, 'A')
+    offer = market.offer(20, 10, 'A')
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
-        market.accept_bid(bid, 'B')
+        market.accept_offer(offer, 'B')
 
 
 def test_market_trade_not_found(market: Market):
-    bid = market.bid(20, 10, 'A')
+    offer = market.offer(20, 10, 'A')
 
-    assert market.accept_bid(bid, 'B')
-    with pytest.raises(BidNotFoundException):
-        market.accept_bid(bid, 'B')
+    assert market.accept_offer(offer, 'B')
+    with pytest.raises(OfferNotFoundException):
+        market.accept_offer(offer, 'B')
 
 
 def test_market_acct_simple(market: Market):
-    bid = market.bid(20, 10, 'A')
-    market.accept_bid(bid, 'B')
+    offer = market.offer(20, 10, 'A')
+    market.accept_offer(offer, 'B')
 
-    assert market.accounting['A'] == -bid.energy
-    assert market.accounting['B'] == bid.energy
+    assert market.accounting['A'] == -offer.energy
+    assert market.accounting['B'] == offer.energy
 
 
 def test_market_acct_multiple(market: Market):
-    bid1 = market.bid(20, 10, 'A')
-    bid2 = market.bid(10, 10, 'A')
-    market.accept_bid(bid1, 'B')
-    market.accept_bid(bid2, 'C')
+    offer1 = market.offer(20, 10, 'A')
+    offer2 = market.offer(10, 10, 'A')
+    market.accept_offer(offer1, 'B')
+    market.accept_offer(offer2, 'C')
 
-    assert market.accounting['A'] == -bid1.energy + -bid2.energy == -30
-    assert market.accounting['B'] == bid1.energy == 20
-    assert market.accounting['C'] == bid2.energy == 10
+    assert market.accounting['A'] == -offer1.energy + -offer2.energy == -30
+    assert market.accounting['B'] == offer1.energy == 20
+    assert market.accounting['C'] == offer2.energy == 10
 
 
 @pytest.mark.parametrize(
-    ('last_bid_size', 'accounting'),
+    ('last_offer_size', 'accounting'),
     (
         (20, -10),
         (30, 0),
         (40, 10)
     )
 )
-def test_market_issuance_acct_reverse(market: Market, last_bid_size, accounting):
-    bid1 = market.bid(20, 10, 'A')
-    bid2 = market.bid(10, 10, 'A')
-    bid3 = market.bid(last_bid_size, 10, 'D')
+def test_market_issuance_acct_reverse(market: Market, last_offer_size, accounting):
+    offer1 = market.offer(20, 10, 'A')
+    offer2 = market.offer(10, 10, 'A')
+    offer3 = market.offer(last_offer_size, 10, 'D')
 
-    market.accept_bid(bid1, 'B')
-    market.accept_bid(bid2, 'C')
-    market.accept_bid(bid3, 'A')
+    market.accept_offer(offer1, 'B')
+    market.accept_offer(offer2, 'C')
+    market.accept_offer(offer3, 'A')
 
     assert market.accounting['A'] == accounting
 
 
 def test_market_iou(market: Market):
-    bid = market.bid(20, 10, 'A')
-    market.accept_bid(bid, 'B')
+    offer = market.offer(20, 10, 'A')
+    market.accept_offer(offer, 'B')
 
     assert market.ious['B']['A'] == 10
 
 
 class MarketStateMachine(RuleBasedStateMachine):
-    bids = Bundle('Bids')
+    offers = Bundle('Offers')
     actors = Bundle('Actors')
 
     def __init__(self):
@@ -153,22 +153,22 @@ class MarketStateMachine(RuleBasedStateMachine):
     def new_actor(self, actor):
         return actor
 
-    @rule(target=bids, seller=actors, energy=st.integers(min_value=1), price=st.integers())
-    def bid(self, seller, energy, price):
-        return self.market.bid(energy, price, seller)
+    @rule(target=offers, seller=actors, energy=st.integers(min_value=1), price=st.integers())
+    def offer(self, seller, energy, price):
+        return self.market.offer(energy, price, seller)
 
-    @rule(bid=bids, buyer=actors)
-    def trade(self, bid, buyer):
-        assume(bid.id in self.market.bids)
-        self.market.accept_bid(bid, buyer)
+    @rule(offer=offers, buyer=actors)
+    def trade(self, offer, buyer):
+        assume(offer.id in self.market.offers)
+        self.market.accept_offer(offer, buyer)
 
     @precondition(lambda self: self.market.accounting)
     @rule()
     def check_acct(self):
         actor_sums = defaultdict(int)
         for t in self.market.trades:
-            actor_sums[t.seller] -= t.bid.energy
-            actor_sums[t.buyer] += t.bid.energy
+            actor_sums[t.seller] -= t.offer.energy
+            actor_sums[t.buyer] += t.offer.energy
         for actor, sum_ in actor_sums.items():
             assert self.market.accounting[actor] == sum_
         assert sum(self.market.accounting.values()) == 0
@@ -179,9 +179,9 @@ class MarketStateMachine(RuleBasedStateMachine):
         seller_ious = defaultdict(int)
         buyer_ious = defaultdict(int)
         for t in self.market.trades:
-            seller_ious[t.seller] += t.bid.price
-            buyer_ious[t.buyer] += t.bid.price
-        trade_sum = sum(t.bid.price for t in self.market.trades)
+            seller_ious[t.seller] += t.offer.price
+            buyer_ious[t.buyer] += t.offer.price
+        trade_sum = sum(t.offer.price for t in self.market.trades)
 
         for seller, iou in seller_ious.items():
             assert iou == sum(ious[seller] for ious in self.market.ious.values())
