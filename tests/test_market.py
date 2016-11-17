@@ -1,11 +1,10 @@
-import random
 import string
 from collections import defaultdict
 
 import pytest
 from hypothesis import strategies as st
 from hypothesis.control import assume
-from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule, precondition
+from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 
 from d3a.exceptions import MarketReadOnlyException, OfferNotFoundException, InvalidOffer
 from d3a.models.market import Market
@@ -149,7 +148,8 @@ class MarketStateMachine(RuleBasedStateMachine):
         super().__init__()
         self.market = Market()
 
-    @rule(target=actors, actor=st.text(min_size=1, max_size=3, alphabet=string.ascii_letters + string.digits))
+    @rule(target=actors, actor=st.text(min_size=1, max_size=3,
+                                       alphabet=string.ascii_letters + string.digits))
     def new_actor(self, actor):
         return actor
 
@@ -190,5 +190,6 @@ class MarketStateMachine(RuleBasedStateMachine):
             assert iou == sum(self.market.ious[buyer].values())
 
         assert trade_sum == sum(sum(i.values()) for i in self.market.ious.values())
+
 
 TestMarketIOU = MarketStateMachine.TestCase

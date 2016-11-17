@@ -1,5 +1,6 @@
 from setuptools import setup, find_packages
 
+
 try:
     with open('requirements/base.txt') as req:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]
