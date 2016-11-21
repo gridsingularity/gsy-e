@@ -10,6 +10,7 @@ from terminaltables.other_tables import SingleTable
 from d3a.exceptions import MarketReadOnlyException, OfferNotFoundException, InvalidOffer
 
 log = getLogger(__name__)
+from d3a.models.events import MarketEvent
 
 
 class MarketEvent(Enum):
