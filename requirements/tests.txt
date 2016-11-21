@@ -5,12 +5,9 @@
 #    pip-compile --no-index --output-file requirements/tests.txt requirements/tests.in
 #
 coverage==4.2
-flake8-isort==2.0.1
-flake8-polyfill==1.0.1    # via flake8-isort
 flake8-tuple==0.2.12
 flake8==3.2.0
 hypothesis==3.6.0
-isort==4.2.5              # via flake8-isort
 mccabe==0.5.2             # via flake8
 py==1.4.31                # via pytest, pytest-catchlog
 pycodestyle==2.2.0        # via flake8
@@ -18,4 +15,3 @@ pyflakes==1.3.0           # via flake8
 pytest-catchlog==1.2.2
 pytest==3.0.4
 six==1.10.0               # via flake8-tuple
-testfixtures==4.13.1      # via flake8-isort

@@ -3,3 +3,5 @@ click
 simpy
 terminaltables
 pendulum
+cached_property
+flask

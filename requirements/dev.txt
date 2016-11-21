@@ -4,15 +4,15 @@
 #
 #    pip-compile --no-index --output-file requirements/dev.txt requirements/dev.in
 #
--e git+https://github.com/ulope/captainhook.git#egg=captainhook
-bash==0.6
+bash==0.6                 # via captainhook
+captainhook==0.8.7
 click==6.6                # via pip-tools
-docopt==0.6.1             # via ptpython
+docopt==0.6.1             # via captainhook, ptpython
 ecdsa==0.13               # via paramiko
 fabric3==1.12.post1
 first==2.0.1              # via pip-tools
-flake8==3.2.0
-isort==4.2.5
+flake8==3.2.0             # via captainhook
+isort==4.2.5              # via captainhook
 jedi==0.9.0               # via ptpython
 mccabe==0.5.2             # via flake8
 paramiko==1.17.2          # via fabric3
