@@ -53,6 +53,14 @@ class Area:
             markets=[t.strftime("%H:%M") for t in self.markets.keys()]
         )
 
+    @property
+    def _offer_count(self):
+        return sum(len(m.offers) for m in self.markets.values())
+
+    @property
+    def _trade_count(self):
+        return sum(len(m.trades) for m in self.markets.values())
+
     def _cycle_markets(self):
         """
         Remove markets for old time slots, add markets for new slots.

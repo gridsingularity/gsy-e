@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-y3tfxAZXuh4HwSYylfB+J125MxIs6mR5FOHamPBG064zB+AFeWH94NdvaCBm8qnd" crossorigin="anonymous">
+    <style>
+        .area {
+            display: inline-block;
+            vertical-align: top;
+            border: 1px solid blue;
+        }
+        .area > .area {
+            border: 1px solid green;
+        }
+        .area > .area > .area {
+            border: 1px solid orange;
+        }
+        .offers {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    {% for area in [root_area] recursive %}
+        <section class="area">
+
+        <h2>{{ area.name }}</h2>
+        <h5><a class="btn btn-sm btn-primary" data-toggle="collapse" href="#a{{ id(area) }}-offers">{{ area._offer_count }} Offers</a></h5>
+        <div id="a{{ id(area) }}-offers" class="collapse">
+            {% for time, market in area.markets.items() %}
+                <div class="offers">
+                    <h5>{{ time.strftime('%H:%M') }}</h5>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>S</th>
+                            <th>kWh</th>
+                            <th>P</th>
+                        </tr>
+                        {% for offer in market.offers.values() %}
+                            <tr>
+                                <td>{{ offer.seller }}</td>
+                                <td>{{ offer.energy }}</td>
+                                <td>{{ offer.price }} €</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            {% endfor %}
+        </div>
+        <h5><a class="btn btn-sm btn-primary" data-toggle="collapse" href="#a{{ id(area) }}-trades">{{ area._trade_count }} Trades</a></h5>
+        <div id="a{{ id(area) }}-trades" class="collapse">
+            {% for time, market in area.markets.items() %}
+                <div class="offers">
+                    <h5>{{ time.strftime('%H:%M') }}</h5>
+                    <table class="table table-striped">
+                        <tr>
+                            <th>S</th>
+                            <th>B</th>
+                            <th>kWh</th>
+                            <th>P</th>
+                        </tr>
+                        {% for trade in market.trades %}
+                            <tr>
+                                <td>{{ trade.seller }}</td>
+                                <td>{{ trade.buyer }}</td>
+                                <td>{{ trade.offer.energy }}</td>
+                                <td>{{ trade.offer.price }} €</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            {% endfor %}
+        </div>
+        {% if area.children %}
+            {{ loop(area.children) }}
+        {% endif %}
+        </section>
+    {% endfor %}
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/js/bootstrap.min.js" integrity="sha384-vZ2WRJMwsjRMW/8U7i6PWi6AlO1L79snBrmgiDpgIWJ82z8eA5lenwvxbMV1PAh7" crossorigin="anonymous"></script>
+</body>
+</html>

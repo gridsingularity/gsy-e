@@ -94,36 +94,38 @@ class Market:
         )
 
     def display(self):  # pragma: no cover
+        out = []
         if self.offers:
-            print("Offers:")
+            out.append("Offers:")
             offer_table = [['From', 'kWh', 'Value']] + [
                 [o.seller, o.energy, o.price]
                 for o in self.offers.values()
             ]
             try:
-                print(SingleTable(offer_table).table)
+                out.append(SingleTable(offer_table).table)
             except:
                 # Could blow up with certain unicode characters
                 pass
         if self.trades:
-            print("Trades:")
+            out.append("Trades:")
             trade_table = [['From', 'To', 'kWh', 'Value']] + [
                 [trade.seller, trade.buyer, trade.offer.energy, trade.offer.price]
                 for trade in self.trades
             ]
             try:
-                print(SingleTable(trade_table).table)
+                out.append(SingleTable(trade_table).table)
             except:
                 # Could blow up with certain unicode characters
                 pass
         if self.accounting:
-            print("Energy accounting:")
+            out.append("Energy accounting:")
             acct_table = [['Actor', 'Sum (kWh)']] + [
                 [actor, energy]
                 for actor, energy in self.accounting.items()
             ]
             try:
-                print(SingleTable(acct_table).table)
+                out.append(SingleTable(acct_table).table)
             except:
                 # Could blow up with certain unicode characters
                 pass
+        return "\n".join(out)
