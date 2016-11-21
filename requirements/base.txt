@@ -4,7 +4,6 @@
 #
 #    pip-compile --no-index --output-file requirements/base.txt requirements/base.in
 #
--e .
 bitcoin==1.1.42           # via ethereum
 cffi==1.8.3               # via secp256k1
 click==6.6
@@ -20,3 +19,4 @@ rlp==0.4.6                # via ethereum
 scrypt==0.8.0             # via ethereum
 secp256k1==0.13.2         # via ethereum
 simpy==3.0.10
+terminaltables==3.1.0

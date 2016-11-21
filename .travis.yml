@@ -1,0 +1,14 @@
+language: python
+
+matrix:
+  include:
+    - python: 3.5
+      env: TOXENV=flake8
+    - python: 3.5
+      env: TOXENV=check_readme
+    - python: 3.5
+      env: TOXENV=py35,coverage
+
+install: pip install -U tox
+
+script: tox -- --verbose

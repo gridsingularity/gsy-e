@@ -1,0 +1,16 @@
+[run]
+branch = True
+source = d3a
+parallel = True
+
+[paths]
+source =
+    src/d3a
+    */site-packages/d3a
+    */site-packages/*.egg/d3a
+    */dist-packages/d3a
+    */dist-packages/*.egg/d3a
+
+[report]
+show_missing = true
+fail_under = 80
