@@ -1,8 +1,6 @@
 import os
-from functools import wraps
 from pathlib import Path
 
-import sys
 from fabric.colors import blue, green, yellow
 from fabric.context_managers import hide
 from fabric.decorators import task
@@ -13,8 +11,6 @@ from fabric.utils import abort, puts
 
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
-
-_ENV_CHECKED = False
 
 
 def _pre_check():
@@ -36,36 +32,13 @@ def _post_check():
     if not captainhook_installed:
         puts(yellow("Configuring 'captainhook' git pre-commit hooks"))
         with hide('running', 'stdout'):
-            local("captainhook install")
-        # Patch virtualenv path
-        # See https://github.com/alexcouper/captainhook/pull/109
-        with hook.open('r+') as hook_file:
-            content = hook_file.readlines()
-            content[0] = "#!{}\n".format(sys.executable)
-            hook_file.seek(0)
-            hook_file.write("".join(content))
-            hook_file.truncate()
-
-
-def ensure_env(func):
-    @wraps(func)
-    def check(*args, **kwargs):
-        global _ENV_CHECKED
-        if not _ENV_CHECKED:
-            _pre_check()
-        ret = func(*args, **kwargs)
-        if not _ENV_CHECKED:
-            _post_check()
-        _ENV_CHECKED = True
-        return ret
-
-    return check
+            local("captainhook install --use-virtualenv-python")
 
 
 @task
-@ensure_env
 def compile():
     """Update list of requirements"""
+    _pre_check()
     with hide('running', 'stdout'):
         puts(green("Updating requirements"), show_prefix=True)
         for file in REQ_DIR.glob('*.in'):
@@ -74,9 +47,9 @@ def compile():
 
 
 @task(default=True)
-@ensure_env
 def sync():
     """Ensure installed packages match requirements"""
+    _pre_check()
     with hide('running'):
         puts(green("Syncing requirements to local packages"), show_prefix=True)
         local(
@@ -88,6 +61,7 @@ def sync():
             )
         )
         local('pip install --no-deps -e .')
+    _post_check()
 
 
 @task
