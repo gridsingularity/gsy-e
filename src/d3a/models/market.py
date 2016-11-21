@@ -1,22 +1,16 @@
 import uuid
 from collections import defaultdict, namedtuple
-from enum import Enum
 from logging import getLogger
 from threading import Lock
 from typing import Dict, List, Union  # noqa
 
 from terminaltables.other_tables import SingleTable
 
-from d3a.exceptions import MarketReadOnlyException, OfferNotFoundException, InvalidOffer
-
-log = getLogger(__name__)
+from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException
 from d3a.models.events import MarketEvent
 
 
-class MarketEvent(Enum):
-    OFFER = 1
-    OFFER_DELETED = 2
-    TRADE = 3
+log = getLogger(__name__)
 
 
 class Offer(namedtuple('Offer', ('id', 'price', 'energy', 'seller'))):
@@ -32,19 +26,20 @@ class Trade(namedtuple('Trade', ('offer', 'seller', 'buyer'))):
 class Market:
     def __init__(self, notification_listener=None, readonly=False):
         self.readonly = readonly
+        # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
         self.notification_listeners = []
-        if notification_listener:
-            self.notification_listeners.append(notification_listener)
         self.trades = []  # type: List[Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
         self.accounting = defaultdict(int)
         self.offer_lock = Lock()
         self.trade_lock = Lock()
+        if notification_listener:
+            self.notification_listeners.append(notification_listener)
 
-    def _notify_listeners(self, *args):
+    def _notify_listeners(self, event, **kwargs):
         for listener in self.notification_listeners:
-            listener(*args)
+            listener(event, **kwargs)
 
     def offer(self, energy: int, price: int, seller: str) -> Offer:
         if self.readonly:
@@ -55,7 +50,7 @@ class Market:
         with self.offer_lock:
             self.offers[offer.id] = offer
             log.info("[OFFER][NEW] %s", offer)
-        self._notify_listeners(MarketEvent.OFFER, self, offer)
+        self._notify_listeners(MarketEvent.OFFER, market=self, offer=offer)
         return offer
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
@@ -68,7 +63,7 @@ class Market:
             if not offer:
                 raise OfferNotFoundException()
             log.info("[OFFER][DEL] %s", offer)
-        self._notify_listeners(MarketEvent.OFFER_DELETED, self, offer)
+        self._notify_listeners(MarketEvent.OFFER_DELETED, market=self, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str) -> Trade:
         if self.readonly:
@@ -85,21 +80,34 @@ class Market:
             self.accounting[offer.seller] -= offer.energy
             self.accounting[buyer] += offer.energy
             self.ious[buyer][offer.seller] += offer.price
-        self._notify_listeners(MarketEvent.TRADE, self, trade)
+        self._notify_listeners(MarketEvent.TRADE, market=self, trade=trade)
         return trade
 
     def __repr__(self):  # pragma: no cover
-        return "<Market offers: {}, trades: {}, energy: {}, price: {}>".format(
+        return "<Market offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
             len(self.offers),
+            sum(o.energy for o in self.offers.values()),
+            sum(o.price for o in self.offers.values()),
             len(self.trades),
             sum(t.offer.energy for t in self.trades),
             sum(t.offer.price for t in self.trades)
         )
 
     def display(self):  # pragma: no cover
+        if self.offers:
+            print("Offers:")
+            offer_table = [['From', 'kWh', 'Value']] + [
+                [o.seller, o.energy, o.price]
+                for o in self.offers.values()
+            ]
+            try:
+                print(SingleTable(offer_table).table)
+            except:
+                # Could blow up with certain unicode characters
+                pass
         if self.trades:
             print("Trades:")
-            trade_table = [['From', 'To', 'kWh', 'Price']] + [
+            trade_table = [['From', 'To', 'kWh', 'Value']] + [
                 [trade.seller, trade.buyer, trade.offer.energy, trade.offer.price]
                 for trade in self.trades
             ]
@@ -117,4 +125,5 @@ class Market:
             try:
                 print(SingleTable(acct_table).table)
             except:
+                # Could blow up with certain unicode characters
                 pass
