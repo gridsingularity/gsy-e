@@ -4,9 +4,9 @@ import "StandardToken.sol";
 contract IOUToken is StandardToken{
 
 
-  string public name;
-  uint8 public decimals;
-  string public symbol;
+    string public name;
+    uint8 public decimals;
+    string public symbol;
 
 
     function () {
@@ -25,6 +25,6 @@ contract IOUToken is StandardToken{
       name = _tokenName;                                   // Set the name for display purposes
       decimals = _decimalUnits;                            // Amount of decimals for display purposes
       symbol = _tokenSymbol;                               // Set the symbol for display purposes
-  }
+    }
 
 }
