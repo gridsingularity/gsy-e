@@ -15,7 +15,7 @@ contract IOUToken is StandardToken{
     }
 
     function IOUToken(
-      uint256 _initialAmount,
+      uint128 _initialAmount,
       string _tokenName,
       uint8 _decimalUnits,
       string _tokenSymbol
