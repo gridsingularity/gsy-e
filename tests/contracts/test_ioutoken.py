@@ -38,12 +38,27 @@ def test_balanceOf(base_state_contract):
 
 def test_transfer(base_state_contract):
     state, contract, logs = base_state_contract
-    assert contract.transfer(B, 10000, sender = A_key)
+    contract.transfer(B, 10000, sender = A_key)
     assert contract.balanceOf(B) == 10000
     assert contract.balanceOf(A) == 90000
+
+
+def test_transfer_negative_balance(base_state_contract):
+    state, contract, logs = base_state_contract
+    assert contract.transfer(B, 10000, sender = A_key)
+    assert contract.balanceOf(B) == 10000
     contract.transfer(C, 11000, sender = B_key)
     assert contract.balanceOf(B) == -1000
     assert contract.balanceOf(C) == 11000
+
+def test_overflows(base_state_contract):
+    state, contract, logs = base_state_contract
+    print("Balance of C initial==", contract.balanceOf(C))
+    contract.transfer(B, 2**255-1, sender = C_key)
+    print("Balance of B after transfer==", contract.balanceOf(B))
+    print("Balance of C after transfer==", contract.balanceOf(C))
+    contract.transfer(A, 2, sender = C_key)
+    print("Balance of C after transfer ==", contract.balanceOf(C))
 
 def test_approve_allowance(base_state_contract):
     state, contract, logs = base_state_contract

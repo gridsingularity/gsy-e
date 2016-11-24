@@ -10,7 +10,8 @@ Implements ERC 20 Token standard: https://github.com/ethereum/EIPs/issues/20
 pragma solidity ^0.4.4;
 import "Token.sol";
 
-contract StandardToken is Token{
+contract StandardToken is Token {
+
 
     function transfer(address _to, uint256 _value) returns (bool success) {
         //Default assumes totalSupply can't be over max (2^256 - 1).
