@@ -6,17 +6,17 @@ contract MoneyIOU is IOUToken{
     mapping (address => uint256) allowedMarkets;
 
     function MoneyIOU(
-        uint128 _initialAmount,
-        string _tokenName,
-        uint8 _decimalUnits,
-        string _tokenSymbol
-        ){
-        address approver = msg.sender;
-        balances[msg.sender] = int(_initialAmount);
-        totalSupply = _initialAmount;
-        name = _tokenName;
-        decimals = _decimalUnits;
-        symbol = _tokenSymbol;
+      uint128 _initialAmount,
+      string _tokenName,
+      uint8 _decimalUnits,
+      string _tokenSymbol
+      ) IOUToken (
+          _initialAmount,
+          _tokenName,
+          _decimalUnits,
+          _tokenSymbol
+      ){
+        approver = msg.sender;
     }
 
     function marketTransfer(address _from, address _to, uint256 _value) returns (bool success) {
@@ -40,6 +40,10 @@ contract MoneyIOU is IOUToken{
         else {
             success = false;
         }
+    }
+
+    function isGloballyApproved(address _market) returns (bool) {
+        return allowedMarkets[_market] > 0;
     }
 
     function getApprover() constant returns (address) {

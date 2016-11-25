@@ -19,34 +19,45 @@ contract Market is IOUToken{
 
     MoneyIOU moneyIOU;
 
-    function Market(address moneyIOUAddress) {
+    function Market (
+      address moneyIOUAddress,
+      uint128 _initialAmount,
+      string _tokenName,
+      uint8 _decimalUnits,
+      string _tokenSymbol
+      ) IOUToken (
+          _initialAmount,
+          _tokenName,
+          _decimalUnits,
+          _tokenSymbol
+      ) {
         moneyIOU = MoneyIOU(moneyIOUAddress);
     }
 
 
     function offer(uint energyUnits, uint price) returns (bytes32 offerId) {
 
-      if (energyUnits > 0 && price > 0) {
-          offerId = sha3(energyUnits, price, msg.sender, block.number);
-          Offer offer = offers[offerId];
-          offer.energyUnits = energyUnits;
-          offer.price = price;
-          offer.seller = msg.sender;
-          offerIdSet.insert(offerId);
-      }
-      else {
-          offerId = "";
-      }
+        if (energyUnits > 0 && price > 0) {
+            offerId = sha3(energyUnits, price, msg.sender, block.number);
+            Offer offer = offers[offerId];
+            offer.energyUnits = energyUnits;
+            offer.price = price;
+            offer.seller = msg.sender;
+            offerIdSet.insert(offerId);
+        }
+        else {
+            offerId = "";
+        }
     }
 
     function cancel(bytes32 offerId) returns (bool success) {
         Offer offer = offers[offerId];
         if (offer.seller == msg.sender) {
-          offer.energyUnits = 0;
-          offer.price = 0;
-          offer.seller = 0;
-          offerIdSet.remove(offerId);
-          success = true;
+            offer.energyUnits = 0;
+            offer.price = 0;
+            offer.seller = 0;
+            offerIdSet.remove(offerId);
+            success = true;
         }
         else {
           success = false;
@@ -57,7 +68,7 @@ contract Market is IOUToken{
         Offer offer = offers[offerId];
         address buyer = msg.sender;
         if ( offer.energyUnits > 0 && offer.price > 0 && offer.seller != address(0)) {
-            balances[msg.sender] += int(offer.energyUnits);
+            balances[buyer] += int(offer.energyUnits);
             balances[offer.seller] -= int(offer.energyUnits);
             uint cost = offer.energyUnits * offer.price;
             success = moneyIOU.marketTransfer(buyer, offer.seller, cost);
@@ -81,7 +92,7 @@ contract Market is IOUToken{
     }
 
     function getAllOffers() constant returns (bytes32[]) {
-      return offerIdSet.list;
+        return offerIdSet.list;
     }
 
 }
