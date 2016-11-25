@@ -26,12 +26,17 @@ contract Market is IOUToken{
 
     function offer(uint energyUnits, uint price) returns (bytes32 offerId) {
 
-        offerId = sha3(energyUnits, price, msg.sender, block.number);
-        Offer offer = offers[offerId];
-        offer.energyUnits = energyUnits;
-        offer.price = price;
-        offer.seller = msg.sender;
-        offerIdSet.insert(offerId);
+      if (energyUnits > 0 && price > 0) {
+          offerId = sha3(energyUnits, price, msg.sender, block.number);
+          Offer offer = offers[offerId];
+          offer.energyUnits = energyUnits;
+          offer.price = price;
+          offer.seller = msg.sender;
+          offerIdSet.insert(offerId);
+      }
+      else {
+          offerId = "";
+      }
     }
 
     function cancel(bytes32 offerId) returns (bool success) {
@@ -70,9 +75,9 @@ contract Market is IOUToken{
         success = moneyIOU.globallyApprove(_value);
     }
 
-    function getOffer(bytes32 offerId) constant returns (uint, uint, address, address) {
+    function getOffer(bytes32 offerId) constant returns (uint, uint, address) {
         Offer offer = offers[offerId];
-        return (offer.energyUnits, offer.price, offer.seller, offer.buyer);
+        return (offer.energyUnits, offer.price, offer.seller);
     }
 
     function getAllOffers() constant returns (bytes32[]) {
