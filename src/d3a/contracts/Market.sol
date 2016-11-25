@@ -13,7 +13,6 @@ contract Market is IOUToken{
         uint energyUnits;
         uint price;
         address seller;
-        address buyer;
     }
 
     ItSet.ByteSet offerIdSet;
@@ -27,7 +26,7 @@ contract Market is IOUToken{
 
     function offer(uint energyUnits, uint price) returns (bytes32 offerId) {
 
-        offerId = sha3(energyUnits, price, msg.sender);
+        offerId = sha3(energyUnits, price, msg.sender, block.number);
         Offer offer = offers[offerId];
         offer.energyUnits = energyUnits;
         offer.price = price;
@@ -56,9 +55,9 @@ contract Market is IOUToken{
             balances[msg.sender] += int(offer.energyUnits);
             balances[offer.seller] -= int(offer.energyUnits);
             uint cost = offer.energyUnits * offer.price;
-            success = moneyIOU.transferFrom(buyer, offer.seller, cost);
+            success = moneyIOU.marketTransfer(buyer, offer.seller, cost);
             if (success) {
-                offer.buyer = buyer;
+                success = true;
             } else {
                 throw;
             }
@@ -71,12 +70,12 @@ contract Market is IOUToken{
         success = moneyIOU.globallyApprove(_value);
     }
 
-    function getOffer(bytes32 offerId) constant returns(uint, uint, address, address) {
+    function getOffer(bytes32 offerId) constant returns (uint, uint, address, address) {
         Offer offer = offers[offerId];
         return (offer.energyUnits, offer.price, offer.seller, offer.buyer);
     }
 
-    function getAllOffers() constant returns(bytes32[]) {
+    function getAllOffers() constant returns (bytes32[]) {
       return offerIdSet.list;
     }
 

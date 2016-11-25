@@ -33,7 +33,7 @@ contract MoneyIOU is IOUToken{
     }
 
     function globallyApprove(uint _value) returns (bool success) {
-        if (tx.origin == approver && _value > 0){
+        if (tx.origin == approver && _value > 0) {
             allowedMarkets[msg.sender] = _value;
             success = true;
         }
