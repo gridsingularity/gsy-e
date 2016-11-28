@@ -67,7 +67,11 @@ contract Market is IOUToken{
     function trade(bytes32 offerId) returns (bool success) {
         Offer offer = offers[offerId];
         address buyer = msg.sender;
-        if ( offer.energyUnits > 0 && offer.price > 0 && offer.seller != address(0)) {
+
+        if (offer.energyUnits > 0
+            && offer.price > 0
+            && offer.seller != address(0)
+            && msg.sender != offer.seller) {
             balances[buyer] += int(offer.energyUnits);
             balances[offer.seller] -= int(offer.energyUnits);
             uint cost = offer.energyUnits * offer.price;

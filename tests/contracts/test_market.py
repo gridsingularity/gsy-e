@@ -85,6 +85,14 @@ def test_trade(base_state_contract):
     assert money_contract.balanceOf(C) == -6692
     assert money_contract.balanceOf(B) == 6692
 
+
+def test_seller_trade(base_state_contract):
+    """Checks if msg.sender == offer.seller then trade should fail"""
+    money_contract, market_contract = base_state_contract
+    assert market_contract.registerMarket(10000, sender = A_key) == True
+    offer_id = market_contract.offer(7, 956, sender = B_key)
+    assert market_contract.trade(offer_id, sender = B_key) == False
+
 def test_multiple_markets(base_state_contract):
     money_contract, market_contract_a = base_state_contract
     market_contract_b = make_market_contract(tester.k0, [encode_hex(money_contract.address),
