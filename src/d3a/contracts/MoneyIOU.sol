@@ -8,16 +8,16 @@ contract MoneyIOU is IOUToken{
     address[] markets;
 
     function MoneyIOU(
-      uint128 _initialAmount,
-      string _tokenName,
-      uint8 _decimalUnits,
-      string _tokenSymbol
-      ) IOUToken (
-          _initialAmount,
-          _tokenName,
-          _decimalUnits,
-          _tokenSymbol
-      ){
+        uint128 _initialAmount,
+        string _tokenName,
+        uint8 _decimalUnits,
+        string _tokenSymbol
+    ) IOUToken(
+        _initialAmount,
+        _tokenName,
+        _decimalUnits,
+        _tokenSymbol) {
+
         approver = msg.sender;
     }
 

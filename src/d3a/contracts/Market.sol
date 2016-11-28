@@ -19,18 +19,18 @@ contract Market is IOUToken{
 
     MoneyIOU moneyIOU;
 
-    function Market (
-      address moneyIOUAddress,
-      uint128 _initialAmount,
-      string _tokenName,
-      uint8 _decimalUnits,
-      string _tokenSymbol
-      ) IOUToken (
-          _initialAmount,
-          _tokenName,
-          _decimalUnits,
-          _tokenSymbol
-      ) {
+    function Market(
+        address moneyIOUAddress,
+        uint128 _initialAmount,
+        string _tokenName,
+        uint8 _decimalUnits,
+        string _tokenSymbol
+    ) IOUToken(
+        _initialAmount,
+        _tokenName,
+        _decimalUnits,
+        _tokenSymbol) {
+
         moneyIOU = MoneyIOU(moneyIOUAddress);
     }
 
