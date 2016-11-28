@@ -21,10 +21,10 @@ contract MoneyIOU is IOUToken{
         approver = msg.sender;
     }
 
-    function marketTransfer(address _from, address _to, uint256 _value) returns (bool success) {
+    function marketTransfer(address _from, address _to, int256 _value) returns (bool success) {
         // 1st condition checks whether market is registered and
         // second condition checks whether _value is below the allowed value for transfers
-        if (allowedMarkets[msg.sender] > 0 && _value < allowedMarkets[msg.sender] && _value > 0) {
+        if (allowedMarkets[msg.sender] > 0 && _value < int(allowedMarkets[msg.sender])) {
             balances[_to] += int(_value);
             balances[_from] -= int(_value);
             success = true;

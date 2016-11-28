@@ -11,7 +11,7 @@ contract Market is IOUToken{
     struct Offer {
 
         uint energyUnits;
-        uint price;
+        int price;
         address seller;
     }
 
@@ -35,9 +35,9 @@ contract Market is IOUToken{
     }
 
 
-    function offer(uint energyUnits, uint price) returns (bytes32 offerId) {
+    function offer(uint energyUnits, int price) returns (bytes32 offerId) {
 
-        if (energyUnits > 0 && price > 0) {
+        if (energyUnits > 0) {
             offerId = sha3(energyUnits, price, msg.sender, block.number);
             Offer offer = offers[offerId];
             offer.energyUnits = energyUnits;
@@ -69,12 +69,11 @@ contract Market is IOUToken{
         address buyer = msg.sender;
 
         if (offer.energyUnits > 0
-            && offer.price > 0
             && offer.seller != address(0)
             && msg.sender != offer.seller) {
             balances[buyer] += int(offer.energyUnits);
             balances[offer.seller] -= int(offer.energyUnits);
-            uint cost = offer.energyUnits * offer.price;
+            int cost = int(offer.energyUnits) * offer.price;
             success = moneyIOU.marketTransfer(buyer, offer.seller, cost);
             if (success) {
                 success = true;
@@ -90,7 +89,7 @@ contract Market is IOUToken{
         success = moneyIOU.globallyApprove(_value);
     }
 
-    function getOffer(bytes32 offerId) constant returns (uint, uint, address) {
+    function getOffer(bytes32 offerId) constant returns (uint, int, address) {
         Offer offer = offers[offerId];
         return (offer.energyUnits, offer.price, offer.seller);
     }

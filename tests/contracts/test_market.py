@@ -85,13 +85,25 @@ def test_trade(base_state_contract):
     assert money_contract.balanceOf(C) == -6692
     assert money_contract.balanceOf(B) == 6692
 
-
-def test_seller_trade(base_state_contract):
+def test_seller_trade_fail(base_state_contract):
     """Checks if msg.sender == offer.seller then trade should fail"""
     money_contract, market_contract = base_state_contract
     assert market_contract.registerMarket(10000, sender = A_key) == True
     offer_id = market_contract.offer(7, 956, sender = B_key)
     assert market_contract.trade(offer_id, sender = B_key) == False
+
+def test_offer_price_negative(base_state_contract):
+    """
+    Scenario where you need to get rid of your energy and you pay the
+    buyer to take your excess energy. Difference is offer price is negative.
+    """
+    money_contract, market_contract = base_state_contract
+    assert market_contract.registerMarket(10000, sender = A_key) == True
+    buyer, buyer_key, seller, seller_key = B, B_key, C, C_key
+    offer_id = market_contract.offer(7, -10, sender = seller_key)
+    assert market_contract.trade(offer_id, sender = buyer_key) == True
+    assert money_contract.balanceOf(buyer) == 70
+    assert money_contract.balanceOf(seller) == -70
 
 def test_multiple_markets(base_state_contract):
     money_contract, market_contract_a = base_state_contract
