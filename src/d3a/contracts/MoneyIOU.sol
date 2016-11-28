@@ -5,6 +5,8 @@ contract MoneyIOU is IOUToken{
 
     mapping (address => uint256) allowedMarkets;
 
+    address[] markets;
+
     function MoneyIOU(
       uint128 _initialAmount,
       string _tokenName,
@@ -35,6 +37,7 @@ contract MoneyIOU is IOUToken{
     function globallyApprove(uint _value) returns (bool success) {
         if (tx.origin == approver && _value > 0) {
             allowedMarkets[msg.sender] = _value;
+            markets.push(msg.sender);
             success = true;
         }
         else {
@@ -42,12 +45,16 @@ contract MoneyIOU is IOUToken{
         }
     }
 
-    function isGloballyApproved(address _market) returns (bool) {
+    function isGloballyApproved(address _market) constant returns (bool) {
         return allowedMarkets[_market] > 0;
     }
 
     function getApprover() constant returns (address) {
         return approver;
+    }
+
+    function getApprovedMarkets() constant returns (address[]) {
+        return markets;
     }
 
 }

@@ -47,7 +47,7 @@ def base_state_contract():
                                               sender=tester.k0,
                                               constructor_parameters=[10**5, "MoneyIOU", 5, "$$"])
 
-
+    print("Set Adress", encode_hex(set_address))
     market_contract = state.abi_contract(None, path=market_contract_path,
                                                language='solidity',
                                                sender=tester.k0,
@@ -85,3 +85,17 @@ def test_trade(base_state_contract):
     offer_id = market_contract.offer(7, 956, sender = B_key)
     assert market_contract.trade(offer_id, sender = C_key) == True
     assert money_contract.balanceOf(C) == -6692
+
+def test_multiple_markets(base_state_contract):
+    state, money_contract, market_contract_one = base_state_contract
+    market_contract_two = make_market_contract(tester.k0, [encode_hex(money_contract.address),
+                                                10**5, "Market2", 0, "KWh"])
+    print("Market one ==", encode_hex(market_contract_one.address))
+    print("Market two==",encode_hex(market_contract_two.address))
+    print(market_contract_one.registerMarket(10000, sender = tester.k0))
+    print("Approver==", money_contract.getApprover())
+    assert encode_hex(money_contract.address) == market_contract_two.getMoneyIOUAddress()
+    # MoneyIOU gets the same address as market two
+    print("MoneyIOU ==",market_contract_two.getMoneyIOUAddress())
+    # market_contract_two.registerMarket(20000, sender = tester.k0)
+    print(money_contract.getApprovedMarkets())

@@ -95,4 +95,7 @@ contract Market is IOUToken{
         return offerIdSet.list;
     }
 
+    function getMoneyIOUAddress() constant returns (address) {
+        return address(moneyIOU);
+    }
 }
