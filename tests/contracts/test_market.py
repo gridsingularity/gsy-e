@@ -50,7 +50,7 @@ def base_state_contract():
                                                language='solidity',
                                                sender=tester.k0,
                                                constructor_parameters=[
-                                               encode_hex(money_contract.address), 10**5, "Market", 5, "KWh"],
+                                               encode_hex(money_contract.address), 10**5, "Market", 5, "KWh", 3*60],
                                                libraries={'ItSet':encode_hex(set_address)})
     return (money_contract, market_contract)
 
@@ -108,7 +108,7 @@ def test_offer_price_negative(base_state_contract):
 def test_multiple_markets(base_state_contract):
     money_contract, market_contract_a = base_state_contract
     market_contract_b = make_market_contract(tester.k0, [encode_hex(money_contract.address),
-                                                10**5, "Market2", 5, "KWh"])
+                                                10**5, "Market2", 5, "KWh", 4*60])
     assert encode_hex(market_contract_a.address) != encode_hex(market_contract_b.address)
     assert market_contract_a.registerMarket(10000, sender = tester.k0) == True
     assert market_contract_b.registerMarket(20000, sender = tester.k0) == True
@@ -133,4 +133,20 @@ def test_getOffersIdsBelow(base_state_contract):
     offerid_d = market_contract.offer(11, 1024, sender = E_key)
     assert market_contract.getOffer(offerid_d) == [11, 1024, encode_hex(E)]
     assert market_contract.getOffersIdsBelow(1000) == [offerid_a, offerid_b, offerid_c]
-    
+
+def test_trade_fail_afterinterval(base_state_contract):
+    money_contract, market_contract = base_state_contract
+    market_contract.registerMarket(10000, sender = A_key)
+    offerid_a = market_contract.offer(7, 956, sender = B_key)
+    assert market_contract.getOffer(offerid_a) == [7, 956, encode_hex(B)]
+    offerid_b = market_contract.offer(8, 799, sender = C_key)
+    assert market_contract.getOffer(offerid_b) == [8, 799, encode_hex(C)]
+    state.block.timestamp += 2*60
+    assert market_contract.trade(offerid_a, sender = D_key) == True
+    assert money_contract.balanceOf(D) == -6692
+    assert money_contract.balanceOf(B) == 6692
+    # making block.timestamp more than the interval of the market_contract
+    state.block.timestamp += 4*60
+    assert market_contract.trade(offerid_b, sender = E_key) == False
+    assert money_contract.balanceOf(C) == 0
+    assert money_contract.balanceOf(E) == 0

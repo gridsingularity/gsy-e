@@ -19,12 +19,17 @@ contract Market is IOUToken{
 
     MoneyIOU moneyIOU;
 
+    uint marketStartTime;
+
+    uint interval;
+
     function Market(
         address moneyIOUAddress,
         uint128 _initialAmount,
         string _tokenName,
         uint8 _decimalUnits,
-        string _tokenSymbol
+        string _tokenSymbol,
+        uint _interval
     ) IOUToken(
         _initialAmount,
         _tokenName,
@@ -32,6 +37,8 @@ contract Market is IOUToken{
         _tokenSymbol) {
 
         moneyIOU = MoneyIOU(moneyIOUAddress);
+        interval = _interval;
+        marketStartTime = now;
     }
 
     bytes32[] tempOffersIds;
@@ -71,7 +78,8 @@ contract Market is IOUToken{
 
         if (offer.energyUnits > 0
             && offer.seller != address(0)
-            && msg.sender != offer.seller) {
+            && msg.sender != offer.seller
+            && now-marketStartTime < interval) {
             balances[buyer] += int(offer.energyUnits);
             balances[offer.seller] -= int(offer.energyUnits);
             int cost = int(offer.energyUnits) * offer.price;
