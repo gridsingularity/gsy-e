@@ -34,6 +34,7 @@ contract Market is IOUToken{
         moneyIOU = MoneyIOU(moneyIOUAddress);
     }
 
+    bytes32[] tempOffersIds;
 
     function offer(uint energyUnits, int price) returns (bytes32 offerId) {
 
@@ -100,5 +101,21 @@ contract Market is IOUToken{
 
     function getMoneyIOUAddress() constant returns (address) {
         return address(moneyIOU);
+    }
+
+    function getOffersIdsBelow(int _value) constant returns (bytes32[]) {
+        delete tempOffersIds;
+        uint j = 0;
+        for (uint i = 0; i < offerIdSet.size(); i++) {
+            Offer offer = offers[offerIdSet.list[i]];
+            if (offer.energyUnits > 0
+                && offer.price < _value
+                && offer.seller != address(0)) {
+
+                tempOffersIds.push(offerIdSet.list[i]);
+                j += 1;
+            }
+        }
+        return tempOffersIds;
     }
 }

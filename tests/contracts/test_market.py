@@ -120,3 +120,17 @@ def test_multiple_markets(base_state_contract):
     assert money_contract.balanceOf(B) == 6320
     assert money_contract.balanceOf(E) == -8091
     assert money_contract.balanceOf(C) == 8091
+
+def test_getOffersIdsBelow(base_state_contract):
+    money_contract, market_contract = base_state_contract
+    assert market_contract.registerMarket(10000, sender = A_key) == True
+    offerid_a = market_contract.offer(7, 956, sender = B_key)
+    assert market_contract.getOffer(offerid_a) == [7, 956, encode_hex(B)]
+    offerid_b = market_contract.offer(8, 799, sender = C_key)
+    assert market_contract.getOffer(offerid_b) == [8, 799, encode_hex(C)]
+    offerid_c = market_contract.offer(9, 655, sender = D_key)
+    assert market_contract.getOffer(offerid_c) == [9, 655, encode_hex(D)]
+    offerid_d = market_contract.offer(11, 1024, sender = E_key)
+    assert market_contract.getOffer(offerid_d) == [11, 1024, encode_hex(E)]
+    assert market_contract.getOffersIdsBelow(1000) == [offerid_a, offerid_b, offerid_c]
+    
