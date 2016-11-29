@@ -53,12 +53,17 @@ def test_transfer_negative_balance(base_state_contract):
 
 def test_overflows(base_state_contract):
     state, contract, logs = base_state_contract
-    print("Balance of C initial==", contract.balanceOf(C))
-    contract.transfer(B, 2**255-1, sender = C_key)
-    print("Balance of B after transfer==", contract.balanceOf(B))
-    print("Balance of C after transfer==", contract.balanceOf(C))
-    contract.transfer(A, 2, sender = C_key)
-    print("Balance of C after transfer ==", contract.balanceOf(C))
+    assert contract.balanceOf(B) == 0
+    assert contract.balanceOf(C) == 0
+    higher_range = 2**255-1
+    lower_range = -2**255
+    contract.transfer(B, higher_range, sender = C_key)
+    assert contract.balanceOf(B) == higher_range # positive value
+    contract.transfer(B, 1, sender = D_key) # units fold at this point
+    assert contract.balanceOf(B) == lower_range # negative value
+    assert contract.balanceOf(C) == lower_range + 1 # negative value
+    contract.transfer(A, 2, sender = C_key) # units fold at this point
+    assert contract.balanceOf(C) == higher_range # positive value
 
 def test_approve_allowance(base_state_contract):
     state, contract, logs = base_state_contract
