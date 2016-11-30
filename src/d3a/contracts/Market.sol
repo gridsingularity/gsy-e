@@ -46,6 +46,11 @@ contract Market is IOUToken{
     // Temp storage for OfferIds
     bytes32[] tempOffersIds;
 
+    // Events
+    event OfferEvent(uint energyUnits, int price, address indexed seller, uint blocknumber);
+    event CancelOffer(uint energyUnits, int price, address indexed seller);
+    event Trade(address indexed buyer, address indexed seller, uint energyUnits, int price);
+
     /*
      * @notice The msg.sender is able to put new offers.
      * @param energyUnits the units of energy offered generally in KWh.
@@ -53,13 +58,14 @@ contract Market is IOUToken{
      */
     function offer(uint energyUnits, int price) returns (bytes32 offerId) {
 
-        if (energyUnits > 0) {
+        if (energyUnits > 0 && price != 0) {
             offerId = sha3(energyUnits, price, msg.sender, block.number);
             Offer offer = offers[offerId];
             offer.energyUnits = energyUnits;
             offer.price = price;
             offer.seller = msg.sender;
             offerIdSet.insert(offerId);
+            OfferEvent(offer.energyUnits, offer.price, offer.seller, block.number);
         }
         else {
             offerId = "";
@@ -77,6 +83,7 @@ contract Market is IOUToken{
             offer.seller = 0;
             offerIdSet.remove(offerId);
             success = true;
+            CancelOffer(offer.energyUnits, offer.price, offer.seller);
         }
         else {
           success = false;
@@ -104,7 +111,13 @@ contract Market is IOUToken{
             int cost = int(offer.energyUnits) * offer.price;
             success = moneyIOU.marketTransfer(buyer, offer.seller, cost);
             if (success) {
+                Trade(buyer, offer.seller, offer.energyUnits, offer.price);
+                offer.energyUnits = 0;
+                offer.price = 0;
+                offer.seller = 0;
+                offerIdSet.remove(offerId);
                 success = true;
+
             } else {
                 throw;
             }

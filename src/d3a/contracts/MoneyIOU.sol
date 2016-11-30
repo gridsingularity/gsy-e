@@ -23,6 +23,9 @@ contract MoneyIOU is IOUToken{
 
         approver = msg.sender;
     }
+
+    // event
+    event ApproveMarket(address indexed market, address indexed approver);
     /*
      * @notice transfers _value tokens from the _from to _to address.
      * @notice the market needs to be registered for the transfer.
@@ -49,6 +52,7 @@ contract MoneyIOU is IOUToken{
             allowedMarkets[msg.sender] = _value;
             markets.push(msg.sender);
             success = true;
+            ApproveMarket(msg.sender, approver);
         }
         else {
             success = false;
