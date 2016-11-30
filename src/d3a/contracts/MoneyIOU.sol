@@ -1,6 +1,9 @@
 pragma solidity ^0.4.4;
 import "IOUToken.sol";
 contract MoneyIOU is IOUToken{
+
+    // Approves the Market to be registered with this contract
+    // Initialized while making the contract
     address approver;
 
     mapping (address => uint256) allowedMarkets;
@@ -20,7 +23,10 @@ contract MoneyIOU is IOUToken{
 
         approver = msg.sender;
     }
-
+    /*
+     * @notice transfers _value tokens from the _from to _to address.
+     * @notice the market needs to be registered for the transfer.
+     */
     function marketTransfer(address _from, address _to, int256 _value) returns (bool success) {
         // 1st condition checks whether market is registered and
         // second condition checks whether _value is below the allowed value for transfers
@@ -34,6 +40,10 @@ contract MoneyIOU is IOUToken{
         }
     }
 
+    /*
+     * @notice Approves a market to make the token transfers between participants
+     * @param _value Maximum amount allowed to be transferred between the participants
+     */
     function globallyApprove(uint _value) returns (bool success) {
         if (tx.origin == approver && _value > 0) {
             allowedMarkets[msg.sender] = _value;
@@ -45,6 +55,9 @@ contract MoneyIOU is IOUToken{
         }
     }
 
+    /*
+     * @notice Tells whethe Market is registered
+     */
     function isGloballyApproved(address _market) constant returns (bool) {
         return allowedMarkets[_market] > 0;
     }
@@ -53,6 +66,9 @@ contract MoneyIOU is IOUToken{
         return approver;
     }
 
+    /*
+     * Gets all approved markets in the contracts
+     */
     function getApprovedMarkets() constant returns (address[]) {
         return markets;
     }

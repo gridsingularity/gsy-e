@@ -5,7 +5,7 @@ import "byte_set_lib.sol";
 contract Market is IOUToken{
 
     using ItSet for ItSet.ByteSet;
-
+    // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
 
     struct Offer {
@@ -14,13 +14,15 @@ contract Market is IOUToken{
         int price;
         address seller;
     }
-
+    // Holds set of all the offerIds
     ItSet.ByteSet offerIdSet;
-
+    // Holds the reference to MoneyIOU contract used for token transfers
     MoneyIOU moneyIOU;
 
+    // Initialized when the market contract is created on the blockchain
     uint marketStartTime;
 
+    // The interval of time for which market can be used for trading
     uint interval;
 
     function Market(
@@ -41,8 +43,14 @@ contract Market is IOUToken{
         marketStartTime = now;
     }
 
+    // Temp storage for OfferIds
     bytes32[] tempOffersIds;
 
+    /*
+     * @notice The msg.sender is able to put new offers.
+     * @param energyUnits the units of energy offered generally in KWh.
+     * @param price the price of each unit.
+     */
     function offer(uint energyUnits, int price) returns (bytes32 offerId) {
 
         if (energyUnits > 0) {
@@ -57,7 +65,10 @@ contract Market is IOUToken{
             offerId = "";
         }
     }
-
+    /*
+     * @notice Only the offer seller is able to cancel the offer
+     * @param offerId Id of the offer
+     */
     function cancel(bytes32 offerId) returns (bool success) {
         Offer offer = offers[offerId];
         if (offer.seller == msg.sender) {
@@ -72,6 +83,14 @@ contract Market is IOUToken{
         }
     }
 
+    /*
+     * @notice matches the existing offer with the Id
+     * @notice adds the energyUnits to balance[buyer] and subtracts from balance[offer.seller]
+     * @notice calls the MoneyIOU contract to transfer tokens from buyer to offer.seller
+     * @notice market needs to be registered with MoneyIOU to transfer tokens
+     * @notice market only runs for the "interval" amount of time from the
+     *         from the "marketStartTime"
+     */
     function trade(bytes32 offerId) returns (bool success) {
         Offer offer = offers[offerId];
         address buyer = msg.sender;
@@ -94,23 +113,42 @@ contract Market is IOUToken{
         }
     }
 
+    /*
+     * @notice registers the market with the MoneyIOU contract for token transfers.
+     * @notice For security the same user which makes the MoneyIOU contract calls
+               this function to register the market.
+     * @param _value the maximum amount that the market is allowed to transfer
+     *        between the participants
+     */
     function registerMarket(uint256 _value) returns (bool success) {
         success = moneyIOU.globallyApprove(_value);
     }
 
+    /*
+     * @notice Gets the Offer tuple if given a valid offerid
+     */
     function getOffer(bytes32 offerId) constant returns (uint, int, address) {
         Offer offer = offers[offerId];
         return (offer.energyUnits, offer.price, offer.seller);
     }
 
+    /*
+     * Gets all OfferIds in the market
+     */
     function getAllOffers() constant returns (bytes32[]) {
         return offerIdSet.list;
     }
 
+    /*
+     * Gets the address of the MoneyIOU contract that the market is registered with
+     */
     function getMoneyIOUAddress() constant returns (address) {
         return address(moneyIOU);
     }
 
+    /*
+     * Gets all the offerids whose offer price is below _value
+     */
     function getOffersIdsBelow(int _value) constant returns (bytes32[]) {
         delete tempOffersIds;
         uint j = 0;
