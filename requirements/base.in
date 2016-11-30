@@ -1,4 +1,5 @@
 ethereum
+rlp==0.4.6
 click
 simpy
 terminaltables

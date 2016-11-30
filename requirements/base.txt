@@ -23,7 +23,7 @@ python-dateutil==2.6.0    # via pendulum
 pytz==2016.7              # via pendulum, tzlocal
 PyYAML==3.12              # via ethereum
 repoze.lru==0.6           # via ethereum
-rlp==0.4.7                # via ethereum
+rlp==0.4.6
 scrypt==0.8.0             # via ethereum
 secp256k1==0.13.2         # via ethereum
 simpy==3.0.10
