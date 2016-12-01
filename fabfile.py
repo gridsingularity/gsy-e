@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 from fabric.colors import blue, green, yellow
-from fabric.context_managers import hide
+from fabric.context_managers import hide, settings
 from fabric.decorators import task
 from fabric.operations import local
 from fabric.tasks import execute
@@ -12,6 +12,34 @@ from fabric.utils import abort, puts
 
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
+
+
+def _ensure_solium():
+    with settings(hide('everything'), warn_only=True):
+        r = local('solium --version', capture=True)
+        if r.return_code == 0:
+            return
+        r = local('npm --version', capture=True)
+        if r.return_code != 0:
+            abort("The 'npm' package manager is missing, please install it.\n"
+                  "See: https://docs.npmjs.com/getting-started/installing-node")
+        r = local('npm root --global', capture=True)
+    solium_path = Path(r.stdout.strip()).joinpath('solium')
+    if not solium_path.exists():
+        puts(yellow("Installing 'solium' solidity linter"))
+        with hide('running', 'stdout'):
+            local("npm install --global solium@0.2.0")
+
+        # Grr, patch https://github.com/duaraghav8/Solium/issues/53
+        with solium_path.joinpath('lib', 'rules', 'operator-whitespace.js').open('r+') as f:
+            content = f.readlines()
+            for i, line in enumerate(content):
+                if "var strBetweenLeftAndRight" in line:
+                    content.insert(i, "if (node.left.type == 'BinaryExpression') { return; }\n")
+                    break
+            f.seek(0)
+            f.write("".join(content))
+            f.truncate()
 
 
 def _ensure_captainhook():
@@ -38,6 +66,7 @@ def _pre_check():
 
 
 def _post_check():
+    _ensure_solium()
     _ensure_captainhook()
 
 
