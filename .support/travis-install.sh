@@ -8,7 +8,7 @@ if [ "$TOXENV" == "solium" ]; then
 
 	# Patch https://github.com/duaraghav8/Solium/issues/53
 	sed -i '/var strBetweenLeftAndRight/i \
-	if (node.left.type == "BinaryExpression") { return; }' $()
+	if (node.left.type == "BinaryExpression") { return; }' $(npm root --global)/solium/lib/rules/operator-whitespace.js
 fi
 
 pip install -U tox

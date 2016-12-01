@@ -15,4 +15,4 @@ matrix:
 
 install: .support/travis-install.sh
 
-script: tox -- --verbose
+script: .support/travis-run.sh
