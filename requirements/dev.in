@@ -3,3 +3,4 @@ pip-tools
 ptpython
 tox
 captainhook
+readme-renderer
