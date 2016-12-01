@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 
 from fabric.colors import blue, green, yellow
@@ -13,6 +14,18 @@ HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
 
 
+def _ensure_captainhook():
+    hook = Path(".git/hooks/pre-commit")
+    captainhook_installed = False
+    if hook.exists():
+        captainhook_installed = ("CAPTAINHOOK IDENTIFIER" in hook.read_text())
+    if not captainhook_installed:
+        puts(yellow("Configuring 'captainhook' git pre-commit hooks"))
+        with hide('running', 'stdout'):
+            local("captainhook install --use-virtualenv-python")
+    shutil.copy('.support/solium_checker.py', '.git/hooks/checkers/')
+
+
 def _pre_check():
     if 'VIRTUAL_ENV' not in os.environ:
         abort('No active virtualenv found. Please create / activate one before continuing.')
@@ -25,14 +38,7 @@ def _pre_check():
 
 
 def _post_check():
-    hook = Path(".git/hooks/pre-commit")
-    captainhook_installed = False
-    if hook.exists():
-        captainhook_installed = ("CAPTAINHOOK IDENTIFIER" in hook.read_text())
-    if not captainhook_installed:
-        puts(yellow("Configuring 'captainhook' git pre-commit hooks"))
-        with hide('running', 'stdout'):
-            local("captainhook install --use-virtualenv-python")
+    _ensure_captainhook()
 
 
 @task
