@@ -6,3 +6,4 @@ terminaltables
 pendulum
 cached_property
 flask
+colorlog

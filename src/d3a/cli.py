@@ -4,6 +4,7 @@ from threading import Thread
 from time import sleep
 
 import click
+from colorlog.colorlog import ColoredFormatter
 from d3a.models.area import Area
 from d3a.models.strategy import BuyStrategy, OfferStrategy
 from flask.app import Flask
@@ -29,10 +30,17 @@ def runweb(area):
 
 @click.command(name='d3a')
 def main():
-    logging.basicConfig(level=logging.DEBUG,
-                        format="%(asctime)s.%(msecs)03d %(levelname)-7s %(name)-25s: %(message)s",
-                        datefmt="%H:%M:%S")
-    logging.getLogger().setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        ColoredFormatter(
+            "%(log_color)s%(asctime)s.%(msecs)03d %(levelname)-7s (%(lineno)4d) %(name)-25s: "
+            "%(message)s%(reset)s",
+            datefmt="%H:%M:%S"
+        )
+    )
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.addHandler(handler)
 
     a = Area(
         'Grid',
