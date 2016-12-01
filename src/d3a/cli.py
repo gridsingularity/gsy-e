@@ -5,10 +5,11 @@ from time import sleep
 
 import click
 from colorlog.colorlog import ColoredFormatter
-from d3a.models.area import Area
-from d3a.models.strategy import BuyStrategy, OfferStrategy
 from flask.app import Flask
 from flask.templating import render_template
+
+from d3a.models.area import Area
+from d3a.models.strategy import BuyStrategy, OfferStrategy
 
 
 log = getLogger(__name__)
