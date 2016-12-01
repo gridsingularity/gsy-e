@@ -2,12 +2,11 @@ from logging import getLogger
 from random import random
 from typing import Dict, List, Union  # noqa
 
-from pendulum.pendulum import Pendulum
-
 from d3a.models.events import AreaEvent, MarketEvent
 from d3a.models.market import Market
 from d3a.models.strategy import BaseStrategy
 from d3a.util import TaggedLogWrapper
+from pendulum.pendulum import Pendulum
 
 
 log = getLogger(__name__)

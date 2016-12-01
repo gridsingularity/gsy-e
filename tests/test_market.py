@@ -6,7 +6,7 @@ from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 
-from d3a.exceptions import MarketReadOnlyException, OfferNotFoundException, InvalidOffer
+from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException
 from d3a.models.market import Market
 
 
