@@ -1,12 +1,10 @@
 from contextlib import contextmanager
+
+import pytest
 from ethereum import tester
 from ethereum.utils import encode_hex
-import pytest
-import os
 
-MARKET_FN = '../../src/d3a/contracts/Market.sol'
-LIB_FN = '../../src/d3a/contracts/byte_set_lib.sol'
-MONEY_FN = '../../src/d3a/contracts/MoneyIOU.sol'
+from d3a import get_contract_path
 
 # setup accounts
 accounts = tester.accounts
@@ -14,16 +12,16 @@ keys = tester.keys
 A, B, C, D, E, F, G, H = accounts[:8]
 A_key, B_key, C_key, D_key, E_key, F_key, G_key, H_key = keys[:8]
 
+
 # contract paths
-file_dir = os.path.dirname(os.path.realpath('__file__'))
-market_contract_path = os.path.abspath(os.path.realpath(os.path.join(file_dir, MARKET_FN)))
-money_contract_path = os.path.abspath(os.path.realpath(os.path.join(file_dir, MONEY_FN)))
+byte_set_lib_path = get_contract_path('byte_set_lib.sol')
+market_contract_path = get_contract_path('Market.sol')
+money_contract_path = get_contract_path('MoneyIOU.sol')
 state = tester.state()
 
 
 def make_market_contract(approver, constructor_params):
-    market_contract_path = os.path.abspath(os.path.realpath(os.path.join(file_dir, MARKET_FN)))
-    libcode = open(LIB_FN).read()
+    libcode = open(byte_set_lib_path).read()
     set_address = state.contract(libcode, language='solidity', sender=tester.k0)
     return state.abi_contract(None, path=market_contract_path,
                               language='solidity',
@@ -43,7 +41,7 @@ def print_gas_used(state, string):
 @pytest.fixture
 def base_state_contract():
 
-    libcode = open(LIB_FN).read()
+    libcode = open(byte_set_lib_path).read()
     set_address = state.contract(libcode, language='solidity', sender=tester.k0)
     money_contract = state.abi_contract(None, path=money_contract_path,
                                         language='solidity',

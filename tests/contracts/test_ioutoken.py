@@ -1,10 +1,9 @@
 from contextlib import contextmanager
-from ethereum import tester
+
 import pytest
-import os
+from ethereum import tester
 
-CONTRACT_FN = '../../src/d3a/contracts/IOUToken.sol'
-
+from d3a import get_contract_path
 
 # setup accounts
 accounts = tester.accounts
@@ -24,11 +23,9 @@ def print_gas_used(state, string):
 @pytest.fixture
 def base_state_contract():
     state = tester.state()
-    file_dir = os.path.dirname(os.path.realpath('__file__'))
-    filename = os.path.join(file_dir, CONTRACT_FN)
-    filename = os.path.abspath(os.path.realpath(filename))
+    iou_token_path = get_contract_path("IOUToken.sol")
     logs = []
-    contract = state.abi_contract(None, path=filename, language='solidity', sender=tester.k0,
+    contract = state.abi_contract(None, path=iou_token_path, language='solidity', sender=tester.k0,
                                   constructor_parameters=[10**5, "Testcoin", 5, "$$"])
     return (state, contract, logs)
 

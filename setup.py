@@ -24,6 +24,7 @@ setup(
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
+    package_data={'d3a': ['contracts/*.sol']},
     install_requires=REQUIREMENTS,
     entry_points={
         'console_scripts': [
