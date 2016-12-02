@@ -1,6 +1,8 @@
 pragma solidity ^0.4.4;
 import "IOUToken.sol";
-contract MoneyIOU is IOUToken{
+
+
+contract MoneyIOU is IOUToken {
 
     // Approves the Market to be registered with this contract
     // Initialized while making the contract
@@ -19,13 +21,14 @@ contract MoneyIOU is IOUToken{
         _initialAmount,
         _tokenName,
         _decimalUnits,
-        _tokenSymbol) {
-
+        _tokenSymbol
+    ) {
         approver = msg.sender;
     }
 
     // event
     event ApproveMarket(address indexed market, address indexed approver);
+
     /*
      * @notice transfers _value tokens from the _from to _to address.
      * @notice the market needs to be registered for the transfer.
@@ -37,8 +40,7 @@ contract MoneyIOU is IOUToken{
             balances[_to] += int(_value);
             balances[_from] -= int(_value);
             success = true;
-        }
-        else {
+        } else {
             success = false;
         }
     }
@@ -53,8 +55,7 @@ contract MoneyIOU is IOUToken{
             markets.push(msg.sender);
             success = true;
             ApproveMarket(msg.sender, approver);
-        }
-        else {
+        } else {
             success = false;
         }
     }
@@ -71,7 +72,7 @@ contract MoneyIOU is IOUToken{
     }
 
     /*
-     * Gets all approved markets in the contracts
+     * @notice Gets all approved markets in the contracts
      */
     function getApprovedMarkets() constant returns (address[]) {
         return markets;

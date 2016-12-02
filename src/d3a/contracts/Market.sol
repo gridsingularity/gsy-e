@@ -2,7 +2,8 @@ pragma solidity ^0.4.4;
 import "IOUToken.sol";
 import "MoneyIOU.sol";
 import "byte_set_lib.sol";
-contract Market is IOUToken{
+
+contract Market is IOUToken {
 
     using ItSet for ItSet.ByteSet;
     // holds the offerId -> Offer() mapping
@@ -78,12 +79,12 @@ contract Market is IOUToken{
     function cancel(bytes32 offerId) returns (bool success) {
         Offer offer = offers[offerId];
         if (offer.seller == msg.sender) {
+            CancelOffer(offer.energyUnits, offer.price, offer.seller);
             offer.energyUnits = 0;
             offer.price = 0;
             offer.seller = 0;
             offerIdSet.remove(offerId);
             success = true;
-            CancelOffer(offer.energyUnits, offer.price, offer.seller);
         }
         else {
           success = false;
