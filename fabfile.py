@@ -28,7 +28,7 @@ def _ensure_solium():
     if not solium_path.exists():
         puts(yellow("Installing 'solium' solidity linter"))
         with hide('running', 'stdout'):
-            local("npm install --global solium@0.2.0")
+            local("npm install --global solium@0.2.1")
 
         # Grr, patch https://github.com/duaraghav8/Solium/issues/53
         with solium_path.joinpath('lib', 'rules', 'operator-whitespace.js').open('r+') as f:
