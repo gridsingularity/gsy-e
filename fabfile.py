@@ -10,6 +10,7 @@ from fabric.tasks import execute
 from fabric.utils import abort, puts
 
 
+SOLIUM_VERSION = '0.2.1'
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
 
@@ -17,7 +18,8 @@ REQ_DIR = HERE / 'requirements'
 def _ensure_solium():
     with settings(hide('everything'), warn_only=True):
         r = local('solium --version', capture=True)
-        if r.return_code == 0:
+        installed_version = r.stdout.strip()
+        if r.return_code == 0 and installed_version == SOLIUM_VERSION:
             return
         r = local('npm --version', capture=True)
         if r.return_code != 0:
@@ -25,10 +27,10 @@ def _ensure_solium():
                   "See: https://docs.npmjs.com/getting-started/installing-node")
         r = local('npm root --global', capture=True)
     solium_path = Path(r.stdout.strip()).joinpath('solium')
-    if not solium_path.exists():
+    if not solium_path.exists() or installed_version != SOLIUM_VERSION:
         puts(yellow("Installing 'solium' solidity linter"))
         with hide('running', 'stdout'):
-            local("npm install --global solium@0.2.1")
+            local("npm install --global solium@{}".format(SOLIUM_VERSION))
 
         # Grr, patch https://github.com/duaraghav8/Solium/issues/53
         with solium_path.joinpath('lib', 'rules', 'operator-whitespace.js').open('r+') as f:
