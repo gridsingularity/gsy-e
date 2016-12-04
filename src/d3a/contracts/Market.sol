@@ -3,9 +3,11 @@ import "IOUToken.sol";
 import "MoneyIOU.sol";
 import "byte_set_lib.sol";
 
+
 contract Market is IOUToken {
 
     using ItSet for ItSet.ByteSet;
+
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
 
@@ -15,8 +17,10 @@ contract Market is IOUToken {
         int price;
         address seller;
     }
+
     // Holds set of all the offerIds
     ItSet.ByteSet offerIdSet;
+
     // Holds the reference to MoneyIOU contract used for token transfers
     MoneyIOU moneyIOU;
 
@@ -37,7 +41,7 @@ contract Market is IOUToken {
         _initialAmount,
         _tokenName,
         _decimalUnits,
-        _tokenSymbol) {
+        _tokenSymbol ) {
 
         moneyIOU = MoneyIOU(moneyIOUAddress);
         interval = _interval;
@@ -67,11 +71,11 @@ contract Market is IOUToken {
             offer.seller = msg.sender;
             offerIdSet.insert(offerId);
             OfferEvent(offer.energyUnits, offer.price, offer.seller, block.number);
-        }
-        else {
+        } else {
             offerId = "";
         }
     }
+
     /*
      * @notice Only the offer seller is able to cancel the offer
      * @param offerId Id of the offer
@@ -85,8 +89,7 @@ contract Market is IOUToken {
             offer.seller = 0;
             offerIdSet.remove(offerId);
             success = true;
-        }
-        else {
+        } else {
           success = false;
         }
     }
@@ -118,7 +121,6 @@ contract Market is IOUToken {
                 offer.seller = 0;
                 offerIdSet.remove(offerId);
                 success = true;
-
             } else {
                 throw;
             }
@@ -171,7 +173,6 @@ contract Market is IOUToken {
             if (offer.energyUnits > 0
                 && offer.price < _value
                 && offer.seller != address(0)) {
-
                 tempOffersIds.push(offerIdSet.list[i]);
                 j += 1;
             }

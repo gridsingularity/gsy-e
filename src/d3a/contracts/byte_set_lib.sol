@@ -1,4 +1,6 @@
 pragma solidity ^0.4.4;
+
+
 library ItSet {
     struct SetEntry {
         uint idx;
@@ -11,7 +13,7 @@ library ItSet {
 
     function insert(ByteSet storage self, bytes32 k) internal {
         var entry = self.entries[k];
-        if(entry.idx == 0) {
+        if (entry.idx == 0) {
             entry.idx = self.list.length + 1;
             self.list.push(k);
         }
@@ -23,7 +25,7 @@ library ItSet {
 
     function remove(ByteSet storage self, bytes32 k) internal {
         var entry = self.entries[k];
-        if(entry.idx > 0) {
+        if (entry.idx > 0) {
             var otherkey = self.list[self.list.length - 1];
             self.list[entry.idx - 1] = otherkey;
             self.list.length -= 1;

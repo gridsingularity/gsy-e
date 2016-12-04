@@ -10,6 +10,7 @@ Implements ERC 20 Token standard: https://github.com/ethereum/EIPs/issues/20
 pragma solidity ^0.4.4;
 import "Token.sol";
 
+
 contract StandardToken is Token {
 
 
@@ -23,7 +24,9 @@ contract StandardToken is Token {
             balances[_to] += int(_value);
             Transfer(msg.sender, _to, _value);
             return true;
-        } else { return false; }
+        } else {
+            return false;
+        }
     }
 
     function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
@@ -35,7 +38,9 @@ contract StandardToken is Token {
             allowed[_from][msg.sender] -= _value;
             Transfer(_from, _to, _value);
             return true;
-        } else { return false; }
+        } else {
+            return false;
+        }
     }
 
     function balanceOf(address _owner) constant returns (int256 balance) {
