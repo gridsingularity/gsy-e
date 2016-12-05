@@ -76,6 +76,16 @@ def test_offer(base_state_contract):
     assert market_contract.getOffer(offer_id) == [7, 956, encode_hex(B)]
 
 
+def test_offer_fail(base_state_contract):
+    money_contract, market_contract = base_state_contract
+    zero_address = b'0' * 40
+    market_contract.registerMarket(10000, sender=A_key)
+    offer_id = market_contract.offer(0, 956, sender=B_key)
+    assert market_contract.getOffer(offer_id) == [0, 0, zero_address]
+    offer_id = market_contract.offer(7, 0, sender=B_key)
+    assert market_contract.getOffer(offer_id) == [0, 0, zero_address]
+
+
 def test_cancel(base_state_contract):
     money_contract, market_contract = base_state_contract
     zero_address = b'0' * 40
@@ -166,3 +176,19 @@ def test_trade_fail_afterinterval(base_state_contract):
     assert not market_contract.trade(offerid_b, sender=E_key)
     assert money_contract.balanceOf(C) == 0
     assert money_contract.balanceOf(E) == 0
+
+
+def test_trade_fail_on_marketTransfer_fail(base_state_contract):
+    """
+    Raises an exception because energy should not be transferred
+    if money transaction fails in the trade function
+    """
+    money_contract, market_contract = base_state_contract
+    market_contract.registerMarket(1000, sender=A_key)
+    offer_id = market_contract.offer(7, 956, sender=B_key)
+    with pytest.raises(tester.TransactionFailed):
+        market_contract.trade(offer_id, sender=C_key)
+    assert money_contract.balanceOf(B) == 0
+    assert money_contract.balanceOf(C) == 0
+    assert market_contract.balanceOf(B) == 0
+    assert market_contract.balanceOf(C) == 0
