@@ -131,6 +131,17 @@ class Market:
             sum(t.offer.price for t in self.trades)
         )
 
+    @property
+    def avg_offer_price(self):
+        with self.offer_lock:
+            price = sum(o.price for o in self.offers.values())
+            energy = sum(o.energy for o in self.offers.values())
+        return (price / energy) if energy else 0
+
+    @property
+    def sorted_offers(self):
+        return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+
     def display(self):  # pragma: no cover
         out = []
         if self.offers:
