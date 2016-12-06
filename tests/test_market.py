@@ -2,6 +2,7 @@ import string
 from collections import defaultdict
 
 import pytest
+from d3a.models.events import MarketEvent
 from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
@@ -113,6 +114,60 @@ def test_market_acct_multiple(market: Market):
     assert market.accounting['C'] == offer2.energy == 10
 
 
+def test_market_avg_offer_price(market: Market):
+    market.offer(1, 1, 'A')
+    market.offer(1, 3, 'A')
+
+    assert market.avg_offer_price == 2
+
+
+def test_market_avg_offer_price_empty(market: Market):
+    assert market.avg_offer_price == 0
+
+
+def test_market_sorted_offers(market: Market):
+    market.offer(1, 5, 'A')
+    market.offer(1, 3, 'A')
+    market.offer(1, 1, 'A')
+    market.offer(1, 2, 'A')
+    market.offer(1, 4, 'A')
+
+    assert [o.price for o in market.sorted_offers] == [1, 2, 3, 4, 5]
+
+
+def test_market_listners_init(called):
+    market = Market(notification_listener=called)
+    market.offer(10, 20, 'A')
+
+    assert len(called.calls) == 1
+
+
+def test_market_listners_add(market, called):
+    market.add_listener(called)
+    market.offer(10, 20, 'A')
+
+    assert len(called.calls) == 1
+
+
+def test_market_listners_offer(market, called):
+    market.add_listener(called)
+    offer = market.offer(10, 20, 'A')
+
+    assert len(called.calls) == 1
+    assert called.calls[0][0] == (repr(MarketEvent.OFFER), )
+    assert called.calls[0][1] == {'offer': repr(offer), 'market': repr(market)}
+
+
+def test_market_listners_offer_deleted(market, called):
+    market.add_listener(called)
+    offer = market.offer(10, 20, 'A')
+    market.delete_offer(offer)
+
+    assert len(called.calls) == 2
+    assert called.calls[1][0] == (repr(MarketEvent.OFFER_DELETED), )
+    assert called.calls[1][1] == {'offer': repr(offer), 'market': repr(market)}
+
+
 @pytest.mark.parametrize(
     ('last_offer_size', 'accounting'),
     (
@@ -161,6 +216,13 @@ class MarketStateMachine(RuleBasedStateMachine):
     def trade(self, offer, buyer):
         assume(offer.id in self.market.offers)
         self.market.accept_offer(offer, buyer)
+
+    @precondition(lambda self: self.market.offers)
+    @rule()
+    def check_avg_offer_price(self):
+        price = sum(o.price for o in self.market.offers.values())
+        energy = sum(o.energy for o in self.market.offers.values())
+        assert self.market.avg_offer_price == price / energy
 
     @precondition(lambda self: self.market.accounting)
     @rule()
