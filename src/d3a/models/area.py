@@ -2,11 +2,12 @@ from logging import getLogger
 from random import random
 from typing import Dict, List, Union  # noqa
 
+from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy.inter_area import InterAreaAgent
 from pendulum.pendulum import Pendulum
 
 from d3a.models.events import AreaEvent, MarketEvent
 from d3a.models.market import Market
-from d3a.models.strategy import BaseStrategy, InterAreaAgent
 from d3a.util import TaggedLogWrapper
 
 
