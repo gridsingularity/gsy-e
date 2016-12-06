@@ -11,4 +11,10 @@ if [ "$TOXENV" == "solium" ]; then
 	if (node.left.type == "BinaryExpression") { return; }' $(npm root --global)/solium/lib/rules/operator-whitespace.js
 fi
 
+if [ "$TOXENV" == "py35,coverage" ] || [ "$TOXENV" == "py35" ]; then
+	add-apt-repository -y ppa:ethereum/ethereum
+	apt-get update
+	apt-get install -y solc
+fi
+
 pip install -U tox
