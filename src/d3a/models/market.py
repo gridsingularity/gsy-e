@@ -70,9 +70,13 @@ class Market:
         if notification_listener:
             self.notification_listeners.append(notification_listener)
 
+    def add_listener(self, listener):
+        self.notification_listeners.append(listener)
+
     def _notify_listeners(self, event, **kwargs):
-        for listener in self.notification_listeners:
-            listener(event, **kwargs)
+        # Deliver notifications in random order to ensure fairness
+        for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
+            listener(event, market=self, **kwargs)
 
     def offer(self, energy: int, price: int, seller: str) -> Offer:
         if self.readonly:
@@ -83,7 +87,7 @@ class Market:
         with self.offer_lock:
             self.offers[offer.id] = offer
             log.info("[OFFER][NEW] %s", offer)
-        self._notify_listeners(MarketEvent.OFFER, market=self, offer=offer)
+        self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
@@ -96,7 +100,7 @@ class Market:
             if not offer:
                 raise OfferNotFoundException()
             log.info("[OFFER][DEL] %s", offer)
-        self._notify_listeners(MarketEvent.OFFER_DELETED, market=self, offer=offer)
+        self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str) -> Trade:
         if self.readonly:
@@ -113,7 +117,7 @@ class Market:
             self.accounting[offer.seller] -= offer.energy
             self.accounting[buyer] += offer.energy
             self.ious[buyer][offer.seller] += offer.price
-        self._notify_listeners(MarketEvent.TRADE, market=self, trade=trade)
+        self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
 
     def __repr__(self):  # pragma: no cover
