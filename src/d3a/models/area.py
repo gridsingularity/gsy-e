@@ -6,7 +6,7 @@ from pendulum.pendulum import Pendulum
 
 from d3a.models.events import AreaEvent, MarketEvent
 from d3a.models.market import Market
-from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy import BaseStrategy, InterAreaAgent
 from d3a.util import TaggedLogWrapper
 
 
@@ -108,10 +108,13 @@ class Area:
                 # Create markets for missing slots
                 market = Market(notification_listener=self._broadcast_notification)
                 if market not in self.inter_area_agents:
-                    if self.parent and timeframe in self.parent.markets:
+                    if self.parent and timeframe in self.parent.markets and not self.strategy:
+                        # Only connect an InterAreaAgent if we have a parent, a corresponding
+                        # timeframe market exists in the parent and we have no strategy
                         self.inter_area_agents[market] = InterAreaAgent(
-                            self.parent.markets[timeframe],
-                            market
+                            area=self,
+                            higher_market=self.parent.markets[timeframe],
+                            lower_market=market
                         )
                 self.markets[timeframe] = market
                 changed = True
@@ -145,15 +148,6 @@ class Area:
             self.activate()
         if self.strategy:
             self.strategy.event_listener(event_type, **kwargs)
-
-
-class InterAreaAgent:
-    def __init__(self, source_market, target_market):
-        self.source_market = source_market
-        self.target_market = target_market
-
-    def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-        pass
 
 
 class GridArea(Area):
