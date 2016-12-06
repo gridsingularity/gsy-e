@@ -117,6 +117,7 @@ class Market:
             self.accounting[offer.seller] -= offer.energy
             self.accounting[buyer] += offer.energy
             self.ious[buyer][offer.seller] += offer.price
+        offer._traded(trade, self)
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
 
