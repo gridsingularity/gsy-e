@@ -49,17 +49,20 @@ def main():
             Area(
                 'House 1',
                 [
-                    Area('H1 PV', strategy=OfferStrategy(offer_chance=.2)),
+                    Area('H1 PV', strategy=OfferStrategy(offer_chance=.2,
+                                                         price_fraction_choice=[2])),
                     Area('H1 Fridge', strategy=BuyStrategy(buy_chance=.3))
                 ]
             ),
             Area(
                 'House 2',
                 [
-                    Area('H2 PV', strategy=OfferStrategy(offer_chance=.25)),
+                    Area('H2 PV', strategy=OfferStrategy(offer_chance=.25,
+                                                         price_fraction_choice=[2])),
                     Area('H2 Fridge', strategy=BuyStrategy(buy_chance=.4))
                 ]
-            )
+            ),
+            Area('Hydro', strategy=OfferStrategy(offer_chance=.1, price_fraction_choice=(3, 4)))
         ]
     )
     a.activate()
