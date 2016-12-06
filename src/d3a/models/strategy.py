@@ -20,7 +20,8 @@ class BaseStrategy:
     @property
     def log(self):
         if not self.area:
-            log.warning("Logging without area, using default logger")
+            log.warning("Logging without area in %s, using default logger",
+                        self.__class__.__name__, stack_info=True)
             return log
         return self._log
 
@@ -28,7 +29,7 @@ class BaseStrategy:
     def _log(self):
         return TaggedLogWrapper(log, "{s.area.name}:{s.__class__.__name__}".format(s=self))
 
-    def event_listener(self, event_type, **kwargs):
+    def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         self.log.debug("Dispatching event %s", event_type.name)
         getattr(self, "event_{}".format(event_type.name.lower()))(**kwargs)
 
@@ -56,24 +57,34 @@ class BuyStrategy(BaseStrategy):
         super().__init__()
         self.buy_chance = buy_chance
 
-    def event_offer(self, *, market, offer):
+    def event_tick(self, *, area):
         if random.random() <= self.buy_chance:
-            market.accept_offer(offer, self.area.name)
-            self.log.info("Buying %s", offer)
+            time, market = random.choice(list(area.markets.items()))
+            for offer in market.sorted_offers:
+                try:
+                    market.accept_offer(offer, self.area.name)
+                    self.log.info("Buying %s", offer)
+                    break
+                except MarketException:
+                    # Offer already gone etc., use next one.
+                    continue
+        # Report consumption
 
 
 class OfferStrategy(BaseStrategy):
-    def __init__(self, *, offer_chance=0.01):
+    def __init__(self, *, offer_chance=0.01, energy_range=(2, 10), price_fraction_choice=(3, 4)):
         super().__init__()
         self.offer_chance = offer_chance
+        self.energy_range = energy_range
+        self.price_fraction = price_fraction_choice
 
     def event_tick(self, *, area):
         if random.random() <= self.offer_chance:
-            energy = random.randint(2, 10)
+            energy = random.randint(*self.energy_range)
             time, market = random.choice(list(area.markets.items()))
             offer = market.offer(
                 energy,
-                energy // 3,
+                energy / random.choice(self.price_fraction),
                 self.area.name
             )
             self.log.info("Offering %s @ %s", offer, time.strftime('%H:%M'))
