@@ -43,8 +43,8 @@
                         {% for offer in market.offers.values() %}
                             <tr>
                                 <td>{{ offer.seller }}</td>
-                                <td>{{ offer.energy }}</td>
-                                <td>{{ offer.price }} €</td>
+                                <td>{{ "{:4.2f}".format(offer.energy) }}</td>
+                                <td>{{ "{:4.2f}".format(offer.price) }} €</td>
                             </tr>
                         {% endfor %}
                     </table>
@@ -67,8 +67,8 @@
                             <tr>
                                 <td>{{ trade.seller }}</td>
                                 <td>{{ trade.buyer }}</td>
-                                <td>{{ trade.offer.energy }}</td>
-                                <td>{{ trade.offer.price }} €</td>
+                                <td>{{ "{:4.2f}".format(trade.offer.energy) }}</td>
+                                <td>{{ "{:4.2f}".format(trade.offer.price) }} €</td>
                             </tr>
                         {% endfor %}
                     </table>
