@@ -1,21 +1,54 @@
+import random
 import uuid
 from collections import defaultdict, namedtuple
 from logging import getLogger
 from threading import Lock
-from typing import Dict, List, Union  # noqa
+from typing import Dict, List, Set, Union  # noqa
 
 from terminaltables.other_tables import SingleTable
 
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException
-from d3a.models.events import MarketEvent
+from d3a.models.events import MarketEvent, OfferEvent
 
 
 log = getLogger(__name__)
 
 
-class Offer(namedtuple('Offer', ('id', 'price', 'energy', 'seller'))):
+class Offer:
+    def __init__(self, id, price, energy, seller):
+        self.id = str(id)
+        self.price = price
+        self.energy = energy
+        self.seller = seller
+        self._listeners = defaultdict(set)  # type: Dict[OfferEvent, Set[callable]]
+
+    def __repr__(self):
+        return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller}'>".format(s=self)
+
     def __str__(self):
-        return "{{{s.id:.6s}}} [{s.seller}]: {s.energy} kWh @ {s.price}".format(s=self)
+        return "{{{s.id!s:.6s}}} [{s.seller}]: {s.energy} kWh @ {s.price}".format(s=self)
+
+    def add_listener(self, event: Union[OfferEvent, List[OfferEvent]], listener):
+        if isinstance(event, (tuple, list)):
+            for ev in event:
+                self.add_listener(ev, listener)
+        else:
+            self._listeners[event].add(listener)
+
+    def _call_listeners(self, event: OfferEvent, **kwargs):
+        # Call listeners in random order to ensure fairness
+        for listener in sorted(self._listeners[event], key=lambda l: random.random()):
+            listener(**kwargs, offer=self)
+
+    # XXX: This might be unreliable - decide after testing
+    def __del__(self):
+        self._call_listeners(OfferEvent.DELETED)
+
+    def _traded(self, trade: 'Trade', market: 'Market'):
+        """
+        Called by `Market` to inform listeners about the trade
+        """
+        self._call_listeners(OfferEvent.ACCEPTED, market=market, trade=trade)
 
 
 class Trade(namedtuple('Trade', ('offer', 'seller', 'buyer'))):

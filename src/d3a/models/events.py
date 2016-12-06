@@ -1,6 +1,11 @@
 from enum import Enum
 
 
+class OfferEvent(Enum):
+    DELETED = 1
+    ACCEPTED = 2
+
+
 class MarketEvent(Enum):
     OFFER = 1
     OFFER_DELETED = 2
