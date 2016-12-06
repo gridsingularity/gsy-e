@@ -8,7 +8,6 @@ from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from pendulum.pendulum import Pendulum
 from ptpython.repl import embed
-
 from d3a.exceptions import D3AException
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
@@ -36,6 +35,7 @@ def main(log_level):
     )
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
+
     root_logger.addHandler(handler)
 
 
@@ -69,31 +69,15 @@ def run(interface, port, slowdown, repl, **config_params):
             Area(
                 'House 1',
                 [
-                    Area(
-                        'H1 PV',
-                        strategy=OfferStrategy(offer_chance=.2, price_fraction_choice=[2]),
-                        appliance=SimpleAppliance()
-                    ),
-                    Area(
-                        'H1 Fridge',
-                        strategy=BuyStrategy(max_energy=5),
-                        appliance=SimpleAppliance()
-                    )
+                    Area('H1 PV', strategy=PVStrategy(), appliance=SimpleAppliance()),
+                    Area('H1 Fridge', strategy=BuyStrategy(buy_chance=.3), appliance=SimpleAppliance())
                 ]
             ),
             Area(
                 'House 2',
                 [
-                    Area(
-                        'H2 PV',
-                        strategy=OfferStrategy(offer_chance=.25, price_fraction_choice=[2]),
-                        appliance=SimpleAppliance()
-                    ),
-                    Area(
-                        'H2 Fridge',
-                        strategy=BuyStrategy(max_energy=5),
-                        appliance=SimpleAppliance()
-                    )
+                    Area('H2 PV', strategy=PVStrategy()),
+                    Area('H2 Fridge', strategy=BuyStrategy(buy_chance=.4), appliance=SimpleAppliance())
                 ]
             ),
             Area('Hydro', strategy=OfferStrategy(offer_chance=.1, price_fraction_choice=(3, 4)))
