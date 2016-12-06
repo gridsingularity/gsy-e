@@ -62,6 +62,22 @@ class Area:
     def _trade_count(self):
         return sum(len(m.trades) for m in self.markets.values())
 
+    @property
+    def historical_avg_price(self):
+        price = sum(
+            t.offer.price
+            for market_container in (self.markets.values(), self.past_markets.values())
+            for market in market_container
+            for t in market.trades
+        )
+        energy = sum(
+            t.offer.energy
+            for market_container in (self.markets.values(), self.past_markets.values())
+            for market in market_container
+            for t in market.trades
+        )
+        return price / energy if energy else 0
+
     def _cycle_markets(self):
         """
         Remove markets for old time slots, add markets for new slots.

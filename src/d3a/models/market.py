@@ -139,6 +139,13 @@ class Market:
         return (price / energy) if energy else 0
 
     @property
+    def avg_trade_price(self):
+        with self.trade_lock:
+            price = sum(t.offer.price for t in self.trades)
+            energy = sum(t.offer.energy for t in self.trades)
+        return (price / energy) if energy else 0
+
+    @property
     def sorted_offers(self):
         return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
 

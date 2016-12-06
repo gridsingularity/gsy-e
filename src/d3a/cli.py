@@ -74,6 +74,7 @@ def main():
         print()
         print(time)
         print(m.display())
+    print(a.historical_avg_price)
     log.info("Run finished. Ctrl-C to quit.")
     try:
         while True:
