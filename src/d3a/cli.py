@@ -12,10 +12,10 @@ from d3a.exceptions import D3AException
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
+from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.simple import BuyStrategy, OfferStrategy
 from d3a.util import IntervalType
 from d3a.web import start_web
-
 
 log = getLogger(__name__)
 
@@ -76,7 +76,7 @@ def run(interface, port, slowdown, repl, **config_params):
                 'House 2',
                 [
                     Area('H2 PV', strategy=PVStrategy()),
-                    Area('H2 Fridge', strategy=BuyStrategy(buy_chance=.4), appliance=SimpleAppliance())
+                    Area('H2 Fridge', strategy=BuyStrategy(buy_chance=.4), appliance=SimpleAppliance())y
                 ]
             ),
             Area('Hydro', strategy=OfferStrategy(offer_chance=.1, price_fraction_choice=(3, 4)))
