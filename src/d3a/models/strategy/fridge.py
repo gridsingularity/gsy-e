@@ -8,7 +8,7 @@ from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_TEMPERATURE, MAX_FRID
 class FridgeStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
-        self.risk = risk()
+        self.risk = risk
         self.offers_posted = {}  # type: Dict[str, Market]
         self.fridge_temp = FRIDGE_TEMPERATURE
         self.threshold_price = 0.0
