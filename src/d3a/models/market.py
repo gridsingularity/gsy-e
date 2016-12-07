@@ -5,6 +5,7 @@ from logging import getLogger
 from threading import Lock
 from typing import Dict, List, Set, Union  # noqa
 
+import sys
 from terminaltables.other_tables import SingleTable
 
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException
@@ -65,6 +66,8 @@ class Market:
         self.trades = []  # type: List[Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
         self.accounting = defaultdict(int)
+        self.min_trade_price = sys.maxsize
+        self.max_trade_price = 0
         self.offer_lock = Lock()
         self.trade_lock = Lock()
         if notification_listener:
@@ -117,6 +120,9 @@ class Market:
             self.accounting[offer.seller] -= offer.energy
             self.accounting[buyer] += offer.energy
             self.ious[buyer][offer.seller] += offer.price
+            price = offer.price / offer.energy
+            self.max_trade_price = max(self.max_trade_price, price)
+            self.min_trade_price = min(self.min_trade_price, price)
         offer._traded(trade, self)
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade

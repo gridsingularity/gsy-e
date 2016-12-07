@@ -78,6 +78,18 @@ class Area:
         )
         return price / energy if energy else 0
 
+    @property
+    def historical_min_max_price(self):
+        min_max_prices = [
+            (m.min_trade_price, m.max_trade_price)
+            for markets in (self.past_markets, self.markets)
+            for m in markets.values()
+        ]
+        return (
+            min(p[0] for p in min_max_prices),
+            max(p[1] for p in min_max_prices)
+        )
+
     def _cycle_markets(self):
         """
         Remove markets for old time slots, add markets for new slots.
