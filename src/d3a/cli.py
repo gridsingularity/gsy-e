@@ -35,7 +35,6 @@ def main(log_level):
     )
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
-
     root_logger.addHandler(handler)
 
 
