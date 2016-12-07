@@ -63,3 +63,9 @@ class PVStrategy(BaseStrategy):
                     ((past_markets + i) / MARKET_SLOT_COUNT
                      ) * 2 * math.pi + phase_shift)) + sinus_offset, 2)
         return energy_production_forecast
+
+    def event_market_cycle(self):
+        pass
+
+    def event_trade(self, *, market, trade):
+        pass
