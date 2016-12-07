@@ -21,8 +21,7 @@ class FridgeStrategy(BaseStrategy):
         max_risk = MAX_RISK
         average_risk = max_risk / 2
         # TODO: need to get those values from the area
-        max_historical_price = 20
-        min_historical_price = 10
+        min_historical_price, max_historical_price = self.area.historical_min_max_price
         average_market_price = self.area.historical_avg_price
         fridge_temp_domain = MAX_FRIDGE_TEMP - MIN_FRIDGE_TEMP
         # Should have a value between 1 and -1 while T=8 should result in 1
