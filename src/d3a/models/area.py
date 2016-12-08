@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from logging import getLogger
 from random import random
 from typing import Dict, List, Union  # noqa
@@ -35,9 +36,9 @@ class Area:
         else:
             self.log.warning("Strategy missing")
         # Children trade in `markets`
-        self.markets = {}  # type: Dict[Pendulum, Market]
+        self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
-        self.past_markets = {}  # type: Dict[Pendulum, Market]
+        self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
 
     def activate(self):
         if self.parent is None:
