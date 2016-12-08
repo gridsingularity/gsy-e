@@ -12,7 +12,7 @@
                 <tr>
                     <td>{{ offer.seller }}</td>
                     <td>{{ "{:4.2f}".format(offer.energy) }}</td>
-                    <td>{{ "{:4.2f}".format(offer.price) }} €</td>
+                    <td>{{ "{:4.2f}".format(offer.price / offer.energy) }} ct</td>
                 </tr>
             {% endfor %}
         </table>
@@ -35,7 +35,7 @@
                     <td>{{ trade.seller }}</td>
                     <td>{{ trade.buyer }}</td>
                     <td>{{ "{:4.2f}".format(trade.offer.energy) }}</td>
-                    <td>{{ "{:4.2f}".format(trade.offer.price) }} €</td>
+                    <td>{{ "{:4.2f}".format(trade.offer.price / trade.offer.energy) }} €</td>
                 </tr>
             {% endfor %}
         </table>
