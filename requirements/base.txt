@@ -22,6 +22,7 @@ pycryptodome==3.4.3       # via ethereum
 pyethash==0.1.27          # via ethereum
 pysha3==0.3               # via ethereum
 python-dateutil==2.6.0    # via pendulum
+python-rex==0.4
 pytz==2016.7              # via tzlocal
 pytzdata==2016.10         # via pendulum
 PyYAML==3.12              # via ethereum
@@ -30,7 +31,7 @@ rlp==0.4.6
 scrypt==0.8.0             # via ethereum
 secp256k1==0.13.2         # via ethereum
 simpy==3.0.10
-six==1.10.0               # via python-dateutil
+six==1.10.0               # via python-dateutil, python-rex
 terminaltables==3.1.0
 tzlocal==1.3              # via pendulum
 Werkzeug==0.11.11         # via flask

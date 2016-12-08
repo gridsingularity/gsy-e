@@ -1,10 +1,11 @@
-ethereum
-rlp==0.4.6
+cached_property
 click
 click-default-group
+colorlog
+ethereum
+flask
+pendulum
+python-rex
+rlp==0.4.6
 simpy
 terminaltables
-pendulum
-cached_property
-flask
-colorlog

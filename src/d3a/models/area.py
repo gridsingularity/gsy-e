@@ -4,6 +4,7 @@ from random import random
 from typing import Dict, List, Union  # noqa
 
 from d3a.exceptions import AreaException
+from d3a.models.config import SimulationConfig
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from pendulum.interval import Interval
@@ -17,15 +18,17 @@ from d3a.util import TaggedLogWrapper
 log = getLogger(__name__)
 
 
-MARKET_SLOT_COUNT = 4
-MARKET_SLOT_LENGTH = Interval(minutes=15)
-AREA_TICK_DUARATION = Interval(seconds=1)
-AREA_TICKS_PER_SLOT = MARKET_SLOT_LENGTH / AREA_TICK_DUARATION
+DEFAULT_CONFIG = SimulationConfig(
+    duration=Interval(hours=24),
+    market_count=4,
+    slot_length=Interval(minutes=15),
+    tick_length=Interval(seconds=1)
+)
 
 
 class Area:
     def __init__(self, name: str = None, children: List["Area"] = None,
-                 strategy: BaseStrategy = None):
+                 strategy: BaseStrategy = None, config: SimulationConfig = None):
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
@@ -36,6 +39,7 @@ class Area:
             child.parent = self
         self.inter_area_agents = {}  # type: Dict[Market, InterAreaAgent]
         self.strategy = strategy
+        self._config = config
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
@@ -65,6 +69,14 @@ class Area:
             s=self,
             markets=[t.strftime("%H:%M") for t in self.markets.keys()]
         )
+
+    @property
+    def config(self):
+        if self._config:
+            return self._config
+        if self.parent:
+            return self.parent.config
+        return DEFAULT_CONFIG
 
     @property
     def _offer_count(self):
@@ -128,7 +140,7 @@ class Area:
         now = self.get_now()
         time_in_hour = Interval(minutes=now.minute, seconds=now.second)
         now = now.with_time(now.hour, minute=0, second=0).add_timedelta(
-            (time_in_hour // MARKET_SLOT_LENGTH) * MARKET_SLOT_LENGTH
+            (time_in_hour // self.config.slot_length) * self.config.slot_length
         )
 
         self.log.info("Cycling markets")
@@ -147,7 +159,7 @@ class Area:
                 self.log.info("Moving {t:%H:%M} market to past".format(t=timeframe))
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in (MARKET_SLOT_LENGTH * i for i in range(1, MARKET_SLOT_COUNT)):
+        for offset in (self.config.slot_length * i for i in range(1, self.config.market_count)):
             timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots
@@ -165,7 +177,7 @@ class Area:
                 changed = True
                 self.log.info("Adding {t:{format}} market".format(
                     t=timeframe,
-                    format="%H:%M" if MARKET_SLOT_LENGTH.total_seconds() > 60 else "%H:%M:%S"
+                    format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
                 ))
         if changed and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
@@ -179,13 +191,13 @@ class Area:
         have passed.
         """
         return Pendulum.now().start_of('day').add_timedelta(
-            AREA_TICK_DUARATION * self.current_tick
+            self.config.tick_length * self.current_tick
         )
 
     def tick(self):
         self._broadcast_notification(AreaEvent.TICK, area=self)
         self.current_tick += 1
-        if self.current_tick % AREA_TICKS_PER_SLOT == 0:
+        if self.current_tick % self.config.ticks_per_slot == 0:
             self._cycle_markets()
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
@@ -206,21 +218,6 @@ class Area:
             self.strategy.event_listener(event_type, **kwargs)
 
 
-class GridArea(Area):
-    ...
-
-
-class PowerStationArea(Area):
-    ...
-
-
-class HouseArea(Area):
-    ...
-
-
-class PVArea(Area):
-    ...
-
-
-class FridgeArea(Area):
-    ...
+class RealtimeAreaMixin:
+    def get_now(self):
+        return Pendulum.now()
