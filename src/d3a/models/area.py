@@ -5,6 +5,7 @@ from typing import Dict, List, Union  # noqa
 
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
+from pendulum.interval import Interval
 from pendulum.pendulum import Pendulum
 
 from d3a.models.events import AreaEvent, MarketEvent
@@ -15,8 +16,10 @@ from d3a.util import TaggedLogWrapper
 log = getLogger(__name__)
 
 
-MARKET_SLOT_LENGTH = 15  # minutes
 MARKET_SLOT_COUNT = 4
+MARKET_SLOT_LENGTH = Interval(minutes=15)
+AREA_TICK_DUARATION = Interval(seconds=1)
+AREA_TICKS_PER_SLOT = MARKET_SLOT_LENGTH / AREA_TICK_DUARATION
 
 
 class Area:
@@ -24,6 +27,7 @@ class Area:
                  strategy: BaseStrategy = None):
         self.active = False
         self.log = TaggedLogWrapper(log, name)
+        self.current_tick = 0
         self.name = name
         self.parent = None
         self.children = children if children is not None else []
@@ -100,23 +104,13 @@ class Area:
         in order for the `InterAreaAgent`s to be connected correctly
         """
         now = self.get_now()
-        now = now.with_time(
-            now.hour,
-            (now.minute // MARKET_SLOT_LENGTH) * MARKET_SLOT_LENGTH,
-            second=0
+        time_in_hour = Interval(minutes=now.minute, seconds=now.second)
+        now = now.with_time(now.hour, minute=0, second=0).add_timedelta(
+            (time_in_hour // MARKET_SLOT_LENGTH) * MARKET_SLOT_LENGTH
         )
-        past_limit = now.subtract(minutes=MARKET_SLOT_LENGTH)
 
         self.log.info("Cycling markets")
         changed = False
-
-        # Remove timed out markets
-        # We use `list()` here to get a copy since we modify the market list in-place
-        for timeframe in list(self.past_markets.keys()):
-            if timeframe < past_limit:
-                market = self.markets.pop(timeframe)
-                changed = True
-                self.log.info("Removing {t:%H:%M} market".format(t=timeframe))
 
         # Move old and current markets to `past_markets`
         # We use `list()` here to get a copy since we modify the market list in-place
@@ -131,9 +125,8 @@ class Area:
                 self.log.info("Moving {t:%H:%M} market to past".format(t=timeframe))
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in range(MARKET_SLOT_LENGTH, MARKET_SLOT_LENGTH * MARKET_SLOT_COUNT,
-                            MARKET_SLOT_LENGTH):
-            timeframe = now.add(minutes=offset)
+        for offset in (MARKET_SLOT_LENGTH * i for i in range(1, MARKET_SLOT_COUNT)):
+            timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots
                 market = Market(notification_listener=self._broadcast_notification)
@@ -152,15 +145,23 @@ class Area:
         if changed:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
-    def get_now(self):
+    def get_now(self) -> Pendulum:
         """
         Return the 'current time' as a `Pendulum` object.
         Can be overridden in subclasses to change the meaning of 'now'.
+
+        In this default implementation 'current time' is defined by the number of ticks that
+        have passed.
         """
-        return Pendulum.now()
+        return Pendulum.now().start_of('day').add_timedelta(
+            AREA_TICK_DUARATION * self.current_tick
+        )
 
     def tick(self):
         self._broadcast_notification(AreaEvent.TICK, area=self)
+        self.current_tick += 1
+        if self.current_tick % AREA_TICKS_PER_SLOT == 0:
+            self._cycle_markets()
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         # Broadcast to children in random order to ensure fairness
