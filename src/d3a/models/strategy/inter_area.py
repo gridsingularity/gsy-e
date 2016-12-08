@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Dict  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.events import OfferEvent
@@ -6,7 +7,7 @@ from d3a.models.strategy.base import BaseStrategy, log
 
 
 class InterAreaAgent(BaseStrategy):
-    def __init__(self, *, area, higher_market, lower_market, min_offer_age=1, tick_ratio=4):
+    def __init__(self, *, owner, higher_market, lower_market, min_offer_age=1, tick_ratio=4):
         """
         Equalize markets
 
@@ -18,8 +19,8 @@ class InterAreaAgent(BaseStrategy):
         :type tick_ratio: int
         """
         super().__init__()
-        self.area = area
-        self.name = "IAA {}".format(area.name)
+        self.owner = owner
+        self.name = "IAA {}".format(owner.name)
         self.markets = {
             'lower': lower_market,
             'higher': higher_market,
@@ -30,7 +31,6 @@ class InterAreaAgent(BaseStrategy):
             'lower': deque(maxlen=5),
             'higher': deque(maxlen=5)
         }
-        self.tick_counter = 0
         self.offer_age = {}  # type: Dict[str, int]
         # Offer.id lower market -> Offer.id higher market
         self.offered_offers = {}  # type: Dict[str, str]
@@ -40,19 +40,21 @@ class InterAreaAgent(BaseStrategy):
         return {v: k for k, v in self.offered_offers.items()}
 
     def event_tick(self, *, area):
-        self.tick_counter += 1
-        if self.tick_counter % self.tick_ratio != 0:
+        if area.current_tick % self.tick_ratio != 0:
             return
 
         for offer in self.markets['higher'].sorted_offers:
             if offer.id not in self.offer_age:
-                self.offer_age[offer.id] = self.tick_counter
+                self.offer_age[offer.id] = area.current_tick
                 offer.add_listener(OfferEvent.DELETED, self.event_offer_deleted)
                 offer.add_listener(OfferEvent.ACCEPTED, self.event_trade)
 
         # Find the first offer older than self.min_offer_age and offer it in the lower market
+        offered_offers_reverse = self.offered_offers_reverse
         for offer_id, age in list(self.offer_age.items()):
-            if self.tick_counter - age < self.min_offer_age:
+            if offer_id in offered_offers_reverse:
+                continue
+            if area.current_tick - age < self.min_offer_age:
                 continue
             offer = self.markets['higher'].offers.get(offer_id)
             if not offer:
@@ -61,7 +63,6 @@ class InterAreaAgent(BaseStrategy):
             lower_offer = self.markets['lower'].offer(offer.energy, offer.price, self.name)
             lower_offer.add_listener(OfferEvent.ACCEPTED, self.event_trade)
             self.offered_offers[lower_offer.id] = offer_id
-            del self.offer_age[offer_id]
             self.log.info("Offering %s", lower_offer)
 
     def event_trade(self, *, market, trade, offer=None):

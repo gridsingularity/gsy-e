@@ -14,7 +14,7 @@ class BuyStrategy(BaseStrategy):
             time, market = random.choice(list(area.markets.items()))
             for offer in market.sorted_offers:
                 try:
-                    market.accept_offer(offer, self.area.name)
+                    market.accept_offer(offer, self.owner.name)
                     self.log.info("Buying %s", offer)
                     break
                 except MarketException:
@@ -37,6 +37,6 @@ class OfferStrategy(BaseStrategy):
             offer = market.offer(
                 energy,
                 energy / random.choice(self.price_fraction),
-                self.area.name
+                self.owner.name
             )
             self.log.info("Offering %s @ %s", offer, time.strftime('%H:%M'))

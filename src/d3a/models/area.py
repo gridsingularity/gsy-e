@@ -3,6 +3,7 @@ from logging import getLogger
 from random import random
 from typing import Dict, List, Union  # noqa
 
+from d3a.exceptions import AreaException
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from pendulum.interval import Interval
@@ -49,6 +50,16 @@ class Area:
             # On the top level we use `activate` to also trigger
             # the initial market creation (which will trickle down it's own event chain).
             self._cycle_markets()
+        if self.strategy:
+            if self.parent:
+                self.strategy.area = self.parent
+                self.strategy.owner = self
+            else:
+                raise AreaException(
+                    "Strategy {s.strategy.__class__.__name__} on area {s} without parent!".format(
+                        s=self))
+        if not self.strategy and self.parent is not None:
+            self.log.warning("No strategy. Using inter area agent.")
         self.log.info('Activating area')
         self.active = True
         self._broadcast_notification(AreaEvent.ACTIVATE)
@@ -103,6 +114,10 @@ class Area:
         It's important for this to happen from top to bottom of the `Area` tree
         in order for the `InterAreaAgent`s to be connected correctly
         """
+        if not self.children:
+            # Since children trade in markets we only need to populate them if there are any
+            return
+
         now = self.get_now()
         time_in_hour = Interval(minutes=now.minute, seconds=now.second)
         now = now.with_time(now.hour, minute=0, second=0).add_timedelta(
@@ -135,7 +150,7 @@ class Area:
                         # Only connect an InterAreaAgent if we have a parent, a corresponding
                         # timeframe market exists in the parent and we have no strategy
                         self.inter_area_agents[market] = InterAreaAgent(
-                            area=self,
+                            owner=self,
                             higher_market=self.parent.markets[timeframe],
                             lower_market=market
                         )

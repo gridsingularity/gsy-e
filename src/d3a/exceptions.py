@@ -16,3 +16,7 @@ class OfferNotFoundException(MarketException):
 
 class InvalidOffer(MarketException):
     pass
+
+
+class AreaException(D3AException):
+    pass
