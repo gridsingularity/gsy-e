@@ -15,13 +15,14 @@ itsdangerous==0.24        # via flask
 Jinja2==2.8               # via flask
 MarkupSafe==0.23          # via jinja2
 pbkdf2==1.3               # via ethereum
-pendulum==0.6.5
+pendulum==0.7.0
 pycparser==2.17           # via cffi
 pycryptodome==3.4.3       # via ethereum
 pyethash==0.1.27          # via ethereum
 pysha3==0.3               # via ethereum
 python-dateutil==2.6.0    # via pendulum
-pytz==2016.7              # via pendulum, tzlocal
+pytz==2016.7              # via tzlocal
+pytzdata==2016.10         # via pendulum
 PyYAML==3.12              # via ethereum
 repoze.lru==0.6           # via ethereum
 rlp==0.4.6
