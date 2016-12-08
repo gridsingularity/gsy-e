@@ -116,7 +116,7 @@ class Market:
                 raise OfferNotFoundException()
             trade = Trade(offer, offer.seller, buyer)
             self.trades.append(trade)
-            log.info("[TRADE] %s", trade)
+            log.warning("[TRADE] %s", trade)
             self.accounting[offer.seller] -= offer.energy
             self.accounting[buyer] += offer.energy
             self.ious[buyer][offer.seller] += offer.price
