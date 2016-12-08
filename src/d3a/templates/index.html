@@ -1,3 +1,47 @@
+{% macro offers(markets) %}
+{% for time, market in markets.items() %}
+    <div class="offers">
+        <h5>{{ time.strftime('%H:%M') }}</h5>
+        <table class="table table-striped">
+            <tr>
+                <th>S</th>
+                <th>kWh</th>
+                <th>P</th>
+            </tr>
+            {% for offer in market.offers.values() %}
+                <tr>
+                    <td>{{ offer.seller }}</td>
+                    <td>{{ "{:4.2f}".format(offer.energy) }}</td>
+                    <td>{{ "{:4.2f}".format(offer.price) }} €</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endfor %}
+{% endmacro %}
+{% macro trades(markets) %}
+{% for time, market in markets.items() %}
+    <div class="trades">
+        <h5>{{ time.strftime('%H:%M') }}</h5>
+        <table class="table table-striped">
+            <tr>
+                <th>S</th>
+                <th>B</th>
+                <th>kWh</th>
+                <th>P</th>
+            </tr>
+            {% for trade in market.trades %}
+                <tr>
+                    <td>{{ trade.seller }}</td>
+                    <td>{{ trade.buyer }}</td>
+                    <td>{{ "{:4.2f}".format(trade.offer.energy) }}</td>
+                    <td>{{ "{:4.2f}".format(trade.offer.price) }} €</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endfor %}
+{% endmacro %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -19,7 +63,7 @@
         .area > .area > .area {
             border: 1px solid orange;
         }
-        .offers {
+        .offers, .trades {
             display: inline-block;
         }
     </style>
@@ -31,49 +75,13 @@
         <h2>{{ area.name }}</h2>
         <h5><a class="btn btn-sm btn-primary" data-toggle="collapse" href="#a{{ id(area) }}-offers">{{ area._offer_count }} Offers</a></h5>
         <div id="a{{ id(area) }}-offers" class="collapse">
-            {% for time, market in area.markets.items() %}
-                <div class="offers">
-                    <h5>{{ time.strftime('%H:%M') }}</h5>
-                    <table class="table table-striped">
-                        <tr>
-                            <th>S</th>
-                            <th>kWh</th>
-                            <th>P</th>
-                        </tr>
-                        {% for offer in market.offers.values() %}
-                            <tr>
-                                <td>{{ offer.seller }}</td>
-                                <td>{{ "{:4.2f}".format(offer.energy) }}</td>
-                                <td>{{ "{:4.2f}".format(offer.price) }} €</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-            {% endfor %}
+            {{ offers(area.past_markets) }}
+            {{ offers(area.markets) }}
         </div>
         <h5><a class="btn btn-sm btn-primary" data-toggle="collapse" href="#a{{ id(area) }}-trades">{{ area._trade_count }} Trades</a></h5>
         <div id="a{{ id(area) }}-trades" class="collapse">
-            {% for time, market in area.markets.items() %}
-                <div class="offers">
-                    <h5>{{ time.strftime('%H:%M') }}</h5>
-                    <table class="table table-striped">
-                        <tr>
-                            <th>S</th>
-                            <th>B</th>
-                            <th>kWh</th>
-                            <th>P</th>
-                        </tr>
-                        {% for trade in market.trades %}
-                            <tr>
-                                <td>{{ trade.seller }}</td>
-                                <td>{{ trade.buyer }}</td>
-                                <td>{{ "{:4.2f}".format(trade.offer.energy) }}</td>
-                                <td>{{ "{:4.2f}".format(trade.offer.price) }} €</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-            {% endfor %}
+            {{ trades(area.past_markets) }}
+            {{ trades(area.markets) }}
         </div>
         {% if area.children %}
             {{ loop(area.children) }}
