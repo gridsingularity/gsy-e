@@ -68,11 +68,19 @@ class Area:
 
     @property
     def _offer_count(self):
-        return sum(len(m.offers) for m in self.markets.values())
+        return sum(
+            len(m.offers)
+            for markets in (self.past_markets, self.markets)
+            for m in markets.values()
+        )
 
     @property
     def _trade_count(self):
-        return sum(len(m.trades) for m in self.markets.values())
+        return sum(
+            len(m.trades)
+            for markets in (self.past_markets, self.markets)
+            for m in markets.values()
+        )
 
     @property
     def historical_avg_price(self):
