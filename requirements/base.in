@@ -1,6 +1,7 @@
 ethereum
 rlp==0.4.6
 click
+click-default-group
 simpy
 terminaltables
 pendulum

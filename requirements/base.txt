@@ -7,6 +7,7 @@
 bitcoin==1.1.42           # via ethereum
 cached-property==1.3.0
 cffi==1.9.1               # via secp256k1
+click-default-group==1.2
 click==6.6
 colorlog==2.9.0
 ethereum==1.6.0
