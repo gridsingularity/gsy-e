@@ -36,20 +36,12 @@ class Area:
             child.parent = self
         self.inter_area_agents = {}  # type: Dict[Market, InterAreaAgent]
         self.strategy = strategy
-        if self.strategy:
-            self.strategy.area = self
-        else:
-            self.log.warning("Strategy missing")
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
 
     def activate(self):
-        if self.parent is None:
-            # On the top level we use `activate` to also trigger
-            # the initial market creation (which will trickle down it's own event chain).
-            self._cycle_markets()
         if self.strategy:
             if self.parent:
                 self.strategy.area = self.parent
@@ -58,6 +50,10 @@ class Area:
                 raise AreaException(
                     "Strategy {s.strategy.__class__.__name__} on area {s} without parent!".format(
                         s=self))
+
+        # Cycle markets without triggering it's own event chain.
+        self._cycle_markets(_trigger_event=False)
+
         if not self.strategy and self.parent is not None:
             self.log.warning("No strategy. Using inter area agent.")
         self.log.info('Activating area')
@@ -106,13 +102,16 @@ class Area:
             max(p[1] for p in min_max_prices)
         )
 
-    def _cycle_markets(self):
+    def _cycle_markets(self, _trigger_event=True):
         """
         Remove markets for old time slots, add markets for new slots.
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
 
         It's important for this to happen from top to bottom of the `Area` tree
         in order for the `InterAreaAgent`s to be connected correctly
+
+        `_trigger_event` is used internally to avoid multiple event chains during
+        initial area activation.
         """
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
@@ -156,8 +155,11 @@ class Area:
                         )
                 self.markets[timeframe] = market
                 changed = True
-                self.log.info("Adding {t:%H:%M} market".format(t=timeframe))
-        if changed:
+                self.log.info("Adding {t:{format}} market".format(
+                    t=timeframe,
+                    format="%H:%M" if MARKET_SLOT_LENGTH.total_seconds() > 60 else "%H:%M:%S"
+                ))
+        if changed and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
     def get_now(self) -> Pendulum:
