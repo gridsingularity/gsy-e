@@ -12,6 +12,10 @@ matrix:
       env: TOXENV=solium
     - python: 3.5
       env: TOXENV=py35,coverage
+  allow_failures:
+    - python: 3.5
+      env: TOXENV=solium
+# allow solium failure until issues #55 and #65 are fixed
 
 install: .support/travis-install.sh
 
