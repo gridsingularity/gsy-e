@@ -41,7 +41,9 @@ contract Market is IOUToken {
         _initialAmount,
         _tokenName,
         _decimalUnits,
-        _tokenSymbol ) {
+        _tokenSymbol
+    )
+    {
 
         moneyIOU = MoneyIOU(moneyIOUAddress);
         interval = _interval;
@@ -62,7 +64,6 @@ contract Market is IOUToken {
      * @param price the price of each unit.
      */
     function offer(uint energyUnits, int price) returns (bytes32 offerId) {
-
         if (energyUnits > 0 && price != 0) {
             offerId = sha3(energyUnits, price, msg.sender, block.number);
             Offer offer = offers[offerId];
@@ -90,7 +91,7 @@ contract Market is IOUToken {
             offerIdSet.remove(offerId);
             success = true;
         } else {
-          success = false;
+            success = false;
         }
     }
 

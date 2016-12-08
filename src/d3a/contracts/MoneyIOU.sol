@@ -22,7 +22,8 @@ contract MoneyIOU is IOUToken {
         _tokenName,
         _decimalUnits,
         _tokenSymbol
-    ) {
+    )
+    {
 
         approver = msg.sender;
     }
