@@ -10,7 +10,7 @@ from fabric.tasks import execute
 from fabric.utils import abort, puts
 
 
-SOLIUM_VERSION = '0.2.1'
+SOLIUM_VERSION = '0.2.2'
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
 
@@ -31,17 +31,6 @@ def _ensure_solium():
         puts(yellow("Installing 'solium' solidity linter"))
         with hide('running', 'stdout'):
             local("npm install --global solium@{}".format(SOLIUM_VERSION))
-
-        # Grr, patch https://github.com/duaraghav8/Solium/issues/53
-        with solium_path.joinpath('lib', 'rules', 'operator-whitespace.js').open('r+') as f:
-            content = f.readlines()
-            for i, line in enumerate(content):
-                if "var strBetweenLeftAndRight" in line:
-                    content.insert(i, "if (node.left.type == 'BinaryExpression') { return; }\n")
-                    break
-            f.seek(0)
-            f.write("".join(content))
-            f.truncate()
 
 
 def _ensure_captainhook():
