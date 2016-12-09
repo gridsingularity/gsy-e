@@ -15,49 +15,6 @@ class MeasurementParamType(Enum):
     CURRENT = 4
 
 
-class ApplianceProperties:
-    def __init__(self, builder: ApplianceProfileBuilder = None):
-        """
-        Class to contain properties associated with an appliance.
-        :param builder: builder containing profile related information.
-        """
-        if builder is None:
-            builder = ApplianceProfileBuilder(None, None)
-
-        self.name = builder.name
-        self.location = builder.location
-        self.applianceType = builder.applianceType
-        self.manufacturer = builder.manufacturer
-        self.modelInfoURL = builder.modelInfoURL
-        self.iconURL = builder.iconURL
-        self.contactURL = builder.contactURL
-        self.uuid = builder.uuid
-
-    def get_appliance_name(self):
-        return self.name
-
-    def get_location(self):
-        return self.location
-
-    def get_appliance_type(self):
-        return self.applianceType
-
-    def get_manufacturer(self):
-        return self.manufacturer
-
-    def get_model_info_url(self):
-        return self.modelInfoURL
-
-    def get_icon_url(self):
-        return self.iconURL
-
-    def get_contact_url(self):
-        return self.contactURL
-
-    def get_uuid(self):
-        return self.uuid
-
-
 class ApplianceProfileBuilder():
     def __init__(self, name: str, location: str, appliancetype: ApplianceType=ApplianceType.UNCONTROLLED):
         """
@@ -126,18 +83,62 @@ class ApplianceProfileBuilder():
         return profile
 
 
+class ApplianceProperties:
+    def __init__(self, builder: ApplianceProfileBuilder = None):
+        """
+        Class to contain properties associated with an appliance.
+        :param builder: builder containing profile related information.
+        """
+        if builder is None:
+            builder = ApplianceProfileBuilder(None, None)
+
+        self.name = builder.name
+        self.location = builder.location
+        self.applianceType = builder.applianceType
+        self.manufacturer = builder.manufacturer
+        self.modelInfoURL = builder.modelInfoURL
+        self.iconURL = builder.iconURL
+        self.contactURL = builder.contactURL
+        self.uuid = builder.uuid
+
+    def get_appliance_name(self):
+        return self.name
+
+    def get_location(self):
+        return self.location
+
+    def get_appliance_type(self):
+        return self.applianceType
+
+    def get_manufacturer(self):
+        return self.manufacturer
+
+    def get_model_info_url(self):
+        return self.modelInfoURL
+
+    def get_icon_url(self):
+        return self.iconURL
+
+    def get_contact_url(self):
+        return self.contactURL
+
+    def get_uuid(self):
+        return self.uuid
+
+
 class ElectricalProperties:
-    def __init__(self, min_operational_voltage: float = 0.0,
-                 max_operational_voltage: float = 0.0, freq: int = 50, country: str = "US"):
+    def __init__(self, voltagerange: tuple, variance: tuple, freq: int = 50, country: str = "US"):
         """
         Class to set electrical properties of an appliance
-        :param min_operational_voltage: Minimum operating voltage of the appliance
-        :param max_operational_voltage: Maximum operating volate of the appliance
+        :param voltagerange: Tuple containing min and max voltage range
+        :param variance: Tuple containing range to add variation in reported params
         :param freq: Grid frequency
         :param country: Country
         """
-        self.minVoltage = min_operational_voltage
-        self.maxVoltage = max_operational_voltage
+        self.minVoltage = voltagerange[0]
+        self.maxVoltage = voltagerange[1]
+        self.minVariance = variance[0]
+        self.maxVariance = variance[1]
         self.frequency = freq
         self.country = country
 
@@ -152,4 +153,10 @@ class ElectricalProperties:
 
     def get_country(self):
         return self.country
+
+    def get_min_variance(self) -> float:
+        return self.minVariance
+
+    def get_max_variance(self) -> float:
+        return self.maxVariance
 
