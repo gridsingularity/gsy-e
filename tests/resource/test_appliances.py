@@ -61,3 +61,13 @@ def test_pv_get_usage_reading():
     reading = pv.get_usage_reading()
     assert reading[0] == MeasurementParamType.POWER
 
+
+def test_historic_data_saved():
+    pv = get_pv_object()
+    iterations = 1000
+    for i in range(0, iterations):
+        pv.tick()
+
+    assert len(pv.get_historic_usage_curve()) == iterations
+
+

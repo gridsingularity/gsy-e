@@ -136,6 +136,7 @@ class Appliance(Area):
         super().tick()
         usage = self.get_usage_reading()
         self.log.debug("Appliance {} usage: {}".format(usage[0], usage[1]))
+        self.historicUsageCurve[self.get_now()] = usage
 
     def get_historic_usage_curve(self):
         return self.historicUsageCurve
