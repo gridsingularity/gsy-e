@@ -8,9 +8,37 @@ log = getLogger(__name__)
 round_off = 10
 
 
+class ReversePriorityQueue(q.PriorityQueue):
+    """
+    A wrapper class to obtain reverse priority queue functionality
+    """
+
+    def __init__(self):
+        super().__init__(0)
+
+    def put(self, item, block=True, timeout=None):
+        super().put((item[0] * -1, item[1]))
+
+    def get(self, block=True, timeout=None):
+        item = super().get()
+        item = ((item[0] * -1), item[1])
+        return item
+
+
 class Scheduler:
+    """
+    Base class to handle scheduling related optimization.
+    """
     def __init__(self, bids: List, cycle: List, ticks_per_bid: int, cycles_to_run: int = 1,
-                 skip: int = 0):
+                 skip: int = 0, maximize: bool = False):
+        """
+        :param bids: List containing prices in contract spread across a certain time period.
+        :param cycle: List containing power consumption curve sampled for each tick.
+        :param ticks_per_bid: number of ticks in a single contract period
+        :param cycles_to_run: number of appliance cycles that need to be run.
+        :param skip: number of appliance cycles that can be skip
+        :param maximize: run algorith for maximizing run cost
+        """
         self.log = TaggedLogWrapper(log, RunSchedule.__name__)
         self.bids = bids
         self.normalized_bids = []
@@ -21,6 +49,7 @@ class Scheduler:
         self.run_schedule = []
         self.limit = 0.0
         self.limit_set = False
+        self.maximize = maximize
 
         # Effective number of cycles to run
         self.e_n_r = cycles_to_run
@@ -33,6 +62,10 @@ class Scheduler:
                 self.normalized_bids.append(bid)
 
     def initialize(self):
+        """
+        This method initializes member variables with values derived from provided parameters.
+        This method also runs the algorithm and keeps the result ready for quick retrieval.
+        """
         t_b = len(self.normalized_bids)                         # Bid time
         self.run_window = len(self.cycle)  # Time required to run a cycle.
         t_r = self.run_window                                   # time needed to run a cycle
@@ -50,7 +83,12 @@ class Scheduler:
         self.place_run_cycles()
 
     def gen_cost_of_running(self):
-        costq = q.PriorityQueue()
+        """
+        This method calculates cost of running appliance, in a sliding window manner.
+        saves the result in a cost list, in either ascending or descending order based on maximize flag
+        a tuple with cost or running and index (tick count) is put into min heap.
+        """
+        costq = ReversePriorityQueue() if self.maximize else q.PriorityQueue()
         for index in range(0, len(self.normalized_bids) - self.run_window):
             price = round(self.get_running_cost(index), round_off)
             costq.put((price, index))
@@ -58,13 +96,11 @@ class Scheduler:
         while not costq.empty():
             self.cost.append(costq.get())
 
-    def get_min_cost(self):
-        min_cost = self.cost[0][0]
-        self.log.debug("Min cost of running cannot exceed: " + str(min_cost))
-
-        return min_cost
-
     def get_running_cost(self, index: int):
+        """
+        Method to calculate running cost of appliance starting at a given tick time in bids array
+        :param index: tick time in bids array
+        """
         cost = 0
         for i in range(0, self.run_window):
             cost += float(self.normalized_bids[i + index]) * float(self.cycle[i])
@@ -77,6 +113,11 @@ class Scheduler:
                 yield data
 
     def can_be_run(self, start_tick: int):
+        """
+        Helper method to find if an appliance can run at a given tick time.
+        Appliance cannot run, if the appliance is already scheduled to be running at this tick
+        :param start_tick: Tick at which the appliance needs to run at.
+        """
         can_be = True
         total_cost = 0
         for schedule in self.run_schedule:
@@ -92,6 +133,9 @@ class Scheduler:
         return can_be
 
     def place_run_cycles(self):
+        """
+        Method places all the start ticks and price of running appliance, in a simple list as tuples.
+        """
         count = 0
         current = 0
         end = len(self.cost)
@@ -107,24 +151,34 @@ class Scheduler:
             current += 1
 
     def get_run_schedule(self):
+        """
+        Method returns a list containing tuples with start tick and cost of running appliance.
+        """
         for schedule in self.run_schedule:
             self.log.info("Cost: {} start at tick: {}".format(schedule[0], schedule[1]))
         return self.run_schedule
 
 
 class RunSchedule (Scheduler):
-
+    """
+    The concrete class inherits from Schedule class and can be used to generate optimal schedules to run appliances
+    in order to minimize running cost during over a/multiple bid contracts.
+    if maximize is set to True, the object optimizes for max running cost.
+    """
     def __init__(self, bids: List, cycle: List, ticks_per_bid: int, cycles_to_run: int = 1,
-                 skip: int = 0):
-        super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip)
+                 skip: int = 0, maximize: bool = False):
+        super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip, maximize)
         self.initialize()
 
 
 class RunScheduleLimit (Scheduler):
-
+    """
+    This concrete class inherits from Schedule class and can be used to generate optimal schedules limited by
+    an upper cost limit provided by the user. Depending on maximize flag, class can optimize for max cost.
+    """
     def __init__(self, bids: List, cycle: List, ticks_per_bid: int, limit: float, cycles_to_run: int = 1,
-                 skip: int = 0):
-        super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip)
+                 skip: int = 0, maximize: bool = False):
+        super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip, maximize)
         self.limit = limit
         self.limit_set = True
         self.initialize()
