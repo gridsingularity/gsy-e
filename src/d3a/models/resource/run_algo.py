@@ -46,10 +46,11 @@ class Scheduler:
         self.cycles_to_run = cycles_to_run
         self.skip = skip
         self.cost = []
-        self.run_schedule = []
+        self.optimal_schedule = []
         self.limit = 0.0
         self.limit_set = False
         self.maximize = maximize
+        self.run_schedule = []
 
         # Effective number of cycles to run
         self.e_n_r = cycles_to_run
@@ -79,10 +80,12 @@ class Scheduler:
             self.log.warning("Cycles may be skipped")
             self.e_n_r = self.cycles_to_run - self.skip
 
-        self.gen_cost_of_running()
+        self.run_schedule = [0] * len(self.normalized_bids)
+
+        self.calculate_running_cost()
         self.place_run_cycles()
 
-    def gen_cost_of_running(self):
+    def calculate_running_cost(self):
         """
         This method calculates cost of running appliance, in a sliding window manner.
         saves the result in a cost list, in either ascending or descending order based on maximize flag
@@ -99,7 +102,7 @@ class Scheduler:
     def get_running_cost(self, index: int):
         """
         Method to calculate running cost of appliance starting at a given tick time in bids array
-        :param index: tick time in bids array
+        :param index: tick index in bids array
         """
         cost = 0
         for i in range(0, self.run_window):
@@ -120,7 +123,7 @@ class Scheduler:
         """
         can_be = True
         total_cost = 0
-        for schedule in self.run_schedule:
+        for schedule in self.optimal_schedule:
             start = schedule[1]
             end = start + self.run_window
             total_cost += schedule[0]
@@ -139,25 +142,48 @@ class Scheduler:
         count = 0
         current = 0
         end = len(self.cost)
+        # self.run_schedule = []
+        self.log.error("E_N_R: {}, window: {}, cycle_len: {}".format(self.e_n_r, self.run_window, len(self.cycle)))
         while count < self.e_n_r:
             if current >= end:
                 break
             else:
                 start = self.cost[current]
                 if self.can_be_run(start[1]):
-                    self.run_schedule.append((start[0], start[1]))
+                    self.optimal_schedule.append((start[0], start[1]))
                     count += 1
-
+                    # self.run_schedule += self.cycle
+                    current += self.run_window - 1
+                # else:
+                #     self.run_schedule.append(0)
             current += 1
 
-    def get_run_schedule(self):
+        # self.log.error("current: {}, end: {}, schedule_len: {}".format(current, end, len(self.run_schedule)))
+        # if current < end:
+        #     for i in range(current, end):
+        #         self.run_schedule.append(0)
+
+    def gen_run_schedule(self):
+        self.run_schedule = []
+        for val in self.optimal_schedule:
+            index = val[1]
+            for i in range(0, self.run_window):
+                self.run_schedule[index + i] = self.cycle[i]
+
+    def get_optimal_schedule(self):
         """
         Method returns a list containing tuples with start tick and cost of running appliance.
         """
-        for schedule in self.run_schedule:
+        for schedule in self.optimal_schedule:
             self.log.info("Cost: {} start at tick: {}".format(schedule[0], schedule[1]))
-        return self.run_schedule
+        return self.optimal_schedule
 
+    def get_run_schedule(self):
+        """
+        This method returns the final run schedule with run curves placed at optimal tick times.
+        :return: List containing the entire run schedule
+        """
+        return self.run_schedule
 
 class RunSchedule (Scheduler):
     """
