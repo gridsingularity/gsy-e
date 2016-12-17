@@ -89,14 +89,21 @@ def test_get_min_cost():
     assert gen_min_cost == round(calc_min_cost, 10)
 
 
-def test_get_run_schedule():
+def test_get_optimal_schedule():
     """
     Test to verify that the algo returns asked set if points to run appliances.
     """
     cycle_to_run = 2
     min_cost_obj = gen_schedule_obj(ticks_per_bid, cycle_to_run, 0)
 
-    assert len(min_cost_obj.get_run_schedule()) == cycle_to_run
+    assert len(min_cost_obj.get_optimal_schedule()) == cycle_to_run
+
+
+def test_get_run_schedule():
+    cycle_to_run = 2
+    min_cost_obj = gen_schedule_obj(ticks_per_bid, cycle_to_run, 0)
+
+    assert len(min_cost_obj.get_run_schedule()) == (len(bids) * ticks_per_bid)
 
 
 def test_set_cost_limit():
@@ -108,7 +115,7 @@ def test_set_cost_limit():
     limit = 4.00
     min_cost_obj = gen_schedule_limit(ticks_per_bid, cycle_to_run, limit, skip_cycles)
 
-    assert len(min_cost_obj.get_run_schedule()) == (cycle_to_run - skip_cycles)
+    assert len(min_cost_obj.get_optimal_schedule()) == (cycle_to_run - skip_cycles)
 
 
 def test_reverse_priority_queue():
