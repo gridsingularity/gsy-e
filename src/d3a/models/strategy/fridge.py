@@ -20,7 +20,6 @@ class FridgeStrategy(BaseStrategy):
         # If risk is at average the accepted price should be less or equal the average pr
         max_risk = MAX_RISK
         average_risk = max_risk / 2
-        # TODO: need to get those values from the area
         min_historical_price, max_historical_price = self.area.historical_min_max_price
         average_market_price = self.area.historical_avg_price
         fridge_temp_domain = MAX_FRIDGE_TEMP - MIN_FRIDGE_TEMP
