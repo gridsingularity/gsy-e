@@ -1,6 +1,5 @@
 import math
 
-from d3a.models.area import MARKET_SLOT_COUNT
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 
@@ -57,10 +56,12 @@ class PVStrategy(BaseStrategy):
         sin_amplitude = 50
         # Sinus_offset to prevent that we get negative energy estimations
         sinus_offset = sin_amplitude
+        # enumerate counts the markets through - from 0 to n
+        #
         for i, (time, market) in enumerate(self.area.markets.items()):
             energy_production_forecast[time] = round(
                 (sin_amplitude * math.sin(
-                    ((past_markets + i) / MARKET_SLOT_COUNT
+                    ((past_markets + i) / self.area.config.slot_length.total_minutes()
                      ) * 2 * math.pi + phase_shift)) + sinus_offset, 2)
         return energy_production_forecast
 
