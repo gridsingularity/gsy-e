@@ -1,5 +1,4 @@
 from d3a.exceptions import MarketException
-from d3a.models.area import MARKET_SLOT_LENGTH
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, \
     MIN_FRIDGE_TEMP, FRIDGE_MIN_NEEDED_ENERGY, MAX_RISK
@@ -77,7 +76,7 @@ class FridgeStrategy(BaseStrategy):
                 and offer.energy >= FRIDGE_MIN_NEEDED_ENERGY
             ):
                 try:
-                    next_market.accept_offer(offer, self.area.name)
+                    next_market.accept_offer(offer, self.owner.name)
                     self.log.debug("Buying %s", offer)
                     # TODO: Set realistic temperature change
                     # Factor 2 compensates that we not only cool but avoid defrost as well
@@ -89,4 +88,4 @@ class FridgeStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
-        self.fridge_temp += MARKET_SLOT_LENGTH * 0.02
+        self.fridge_temp += self.area.config.slot_length.total_minutes() * 0.02
