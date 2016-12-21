@@ -14,6 +14,18 @@ To install the dependencies run the following command::
 
 
 
+Running the simulation
+----------------------
+
+After installation the simulation can be run with the following command::
+
+    ~# d3a run
+
+Help is available via::
+
+    ~# d3a run --help
+
+
 Updating requirements
 ---------------------
 
