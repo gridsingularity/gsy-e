@@ -1,6 +1,6 @@
 {% macro offers(markets) %}
 {% for time, market in markets.items() %}
-    <div class="offers">
+    <div class="offers{% if market.readonly %} readonly{% if loop.last %} current{% endif %}{% endif %}">
         <h5>{{ time.strftime('%H:%M') }}</h5>
         <table class="table table-striped">
             <tr>
@@ -21,7 +21,7 @@
 {% endmacro %}
 {% macro trades(markets) %}
 {% for time, market in markets.items() %}
-    <div class="trades">
+    <div class="trades {% if market.readonly %} readonly{% if loop.last %} current{% endif %}{% endif %}">
         <h5>{{ time.strftime('%H:%M') }}</h5>
         <table class="table table-striped">
             <tr>
@@ -35,7 +35,7 @@
                     <td>{{ trade.seller }}</td>
                     <td>{{ trade.buyer }}</td>
                     <td>{{ "{:4.2f}".format(trade.offer.energy) }}</td>
-                    <td>{{ "{:4.2f}".format(trade.offer.price / trade.offer.energy) }} €</td>
+                    <td>{{ "{:4.2f}".format(trade.offer.price / trade.offer.energy) }} ct</td>
                 </tr>
             {% endfor %}
         </table>
@@ -65,6 +65,12 @@
         }
         .offers, .trades {
             display: inline-block;
+        }
+        .readonly h5 {
+            color: orange;
+        }
+        .readonly.current h5 {
+            color: green;
         }
     </style>
 </head>
