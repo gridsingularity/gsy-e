@@ -5,22 +5,27 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class BuyStrategy(BaseStrategy):
-    def __init__(self, *, buy_chance=0.1):
+    def __init__(self, *, buy_chance=0.1, max_energy=None):
         super().__init__()
         self.buy_chance = buy_chance
+        self.max_energy = max_energy
 
     def event_tick(self, *, area):
         if random.random() <= self.buy_chance:
             time, market = random.choice(list(area.markets.items()))
+            if (
+                self.max_energy
+                and self.energy_balance(market, allow_open_market=True) <= -self.max_energy
+            ):
+                return
             for offer in market.sorted_offers:
                 try:
-                    market.accept_offer(offer, self.owner.name)
+                    self.accept_offer(market, offer)
                     self.log.info("Buying %s", offer)
                     break
                 except MarketException:
                     # Offer already gone etc., use next one.
                     continue
-        # Report consumption
 
 
 class OfferStrategy(BaseStrategy):
