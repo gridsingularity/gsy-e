@@ -1,52 +1,39 @@
+from collections import defaultdict
 from logging import getLogger
-from typing import Union
+from typing import Dict, List
 
-from cached_property import cached_property
-
-from d3a.models.events import AreaEvent, MarketEvent
-from d3a.util import TaggedLogWrapper
+from d3a.models.base import AreaBehaviorBase
+from d3a.models.events import EventMixin
+from d3a.models.market import Market, Trade
 
 
 log = getLogger(__name__)
 
 
-class BaseStrategy:
+class BaseStrategy(EventMixin, AreaBehaviorBase):
     def __init__(self):
-        # `area` is the area we trade in
-        self.area = None
-        # `owner` is the area of which we are the strategy, usually a child of `area`
-        self.owner = None
+        super().__init__()
+        self.trades = defaultdict(list)  # type: Dict[Market, List[Trade]]
 
-    @property
-    def log(self):
-        if not self.owner:
-            log.warning("Logging without area in %s, using default logger",
-                        self.__class__.__name__, stack_info=True)
-            return log
-        return self._log
+    def energy_balance(self, market, *, allow_open_market=False):
+        """
+        Return own energy balance for a particular market.
 
-    @cached_property
-    def _log(self):
-        return TaggedLogWrapper(log, "{s.owner.name}:{s.__class__.__name__}".format(s=self))
+        Negative values indicate bought energy, postive ones sold energy.
+        """
+        if not allow_open_market and not market.readonly:
+            raise ValueError(
+                'Energy balance for open market requested and `allow_open_market` no passed')
+        return sum(
+            t.offer.energy * -1
+            if t.buyer == self.owner.name
+            else t.offer.energy
+            for t in self.trades[market]
+        )
 
-    def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
-        self.log.debug("Dispatching event %s", event_type.name)
-        getattr(self, "event_{}".format(event_type.name.lower()))(**kwargs)
-
-    def event_tick(self, *, area):
-        pass
-
-    def event_market_cycle(self):
-        pass
-
-    def event_activate(self):
-        pass
-
-    def event_offer(self, *, market, offer):
-        pass
-
-    def event_offer_deleted(self, *, market, offer):
-        pass
-
-    def event_trade(self, *, market, trade):
-        pass
+    def accept_offer(self, market: Market, offer, buyer=None):
+        if buyer is None:
+            buyer = self.owner.name
+        trade = market.accept_offer(offer, buyer)
+        self.trades[market].append(trade)
+        return trade
