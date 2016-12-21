@@ -1,10 +1,10 @@
 from collections import defaultdict
 from logging import getLogger
-from typing import Dict, List
+from typing import Dict, List  # noqa
 
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.events import EventMixin
-from d3a.models.market import Market, Trade
+from d3a.models.market import Market, Trade  # noqa
 
 
 log = getLogger(__name__)
