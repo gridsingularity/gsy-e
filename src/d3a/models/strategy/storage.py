@@ -36,7 +36,7 @@ class StorageStrategy(BaseStrategy):
                     except MarketException:
                         # Offer already gone etc., try next one.
                         continue
-                        # TODO check if posted offers are still the cheapes
+                        # TODO check if posted offers are still the cheapest
 
     def event_market_cycle(self):
         # Update the energy balances

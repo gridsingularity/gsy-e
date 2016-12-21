@@ -15,6 +15,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.simple import OfferStrategy
+from d3a.models.strategy.storage import StorageStrategy
 from d3a.util import IntervalType
 from d3a.web import start_web
 
