@@ -11,3 +11,8 @@ python-rex
 rlp==0.4.6
 simpy
 terminaltables
+pvlib
+netCDF4
+requests
+siphon
+scipy
