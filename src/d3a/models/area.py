@@ -1,18 +1,19 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from logging import getLogger
 from random import random
-from typing import Dict, List, Union  # noqa
+from typing import Any, Dict, List, Optional, Union  # noqa
 
-from d3a.exceptions import AreaException
-from d3a.models.config import SimulationConfig
-from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.inter_area import InterAreaAgent
 from pendulum.interval import Interval
 from pendulum.pendulum import Pendulum
 from slugify import slugify
 
+from d3a.exceptions import AreaException
+from d3a.models.config import SimulationConfig
 from d3a.models.events import AreaEvent, MarketEvent
 from d3a.models.market import Market
+from d3a.models.appliance.base import BaseAppliance
+from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.util import TaggedLogWrapper
 
 
@@ -29,7 +30,9 @@ DEFAULT_CONFIG = SimulationConfig(
 
 class Area:
     def __init__(self, name: str = None, children: List["Area"] = None,
-                 strategy: BaseStrategy = None, config: SimulationConfig = None):
+                 strategy: BaseStrategy = None,
+                 appliance: BaseAppliance = None,
+                 config: SimulationConfig = None):
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
@@ -41,21 +44,31 @@ class Area:
             child.parent = self
         self.inter_area_agents = {}  # type: Dict[Market, InterAreaAgent]
         self.strategy = strategy
+        self.appliance = appliance
         self._config = config
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
+        # Accounting of used energy per market and time
+        self.accounting = defaultdict(
+            lambda: defaultdict(list))  # type: Dict[Market, Dict[Pendulum, List[Any]]]
 
     def activate(self):
-        if self.strategy:
-            if self.parent:
-                self.strategy.area = self.parent
-                self.strategy.owner = self
-            else:
-                raise AreaException(
-                    "Strategy {s.strategy.__class__.__name__} on area {s} without parent!".format(
-                        s=self))
+        for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
+            if attr:
+                if self.parent:
+                    attr.area = self.parent
+                    attr.owner = self
+                else:
+                    raise AreaException(
+                        "{kind} {attr.__class__.__name__} "
+                        "on area {s} without parent!".format(
+                            kind=kind,
+                            attr=attr,
+                            s=self
+                        )
+                    )
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)
@@ -71,6 +84,14 @@ class Area:
             s=self,
             markets=[t.strftime("%H:%M") for t in self.markets.keys()]
         )
+
+    @property
+    def current_market(self) -> Optional[Market]:
+        """Returns the 'current' market (i.e. the one currently 'running')"""
+        try:
+            return list(self.past_markets.values())[-1]
+        except IndexError:
+            return None
 
     @property
     def config(self):
@@ -202,6 +223,11 @@ class Area:
         if self.current_tick % self.config.ticks_per_slot == 0:
             self._cycle_markets()
 
+    def report_accounting(self, market, reporter, value, time=None):
+        if time is None:
+            time = self.get_now()
+        self.accounting[market][time] = (reporter, value)
+
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.children, key=lambda _: random()):
@@ -218,8 +244,5 @@ class Area:
             self.activate()
         if self.strategy:
             self.strategy.event_listener(event_type, **kwargs)
-
-
-class RealtimeAreaMixin:
-    def get_now(self):
-        return Pendulum.now()
+        if self.appliance:
+            self.appliance.event_listener(event_type, **kwargs)
