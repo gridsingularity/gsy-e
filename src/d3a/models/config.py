@@ -1,5 +1,6 @@
-from d3a.exceptions import D3AException
 from pendulum.interval import Interval
+
+from d3a.exceptions import D3AException
 
 
 class SimulationConfig:
@@ -19,6 +20,7 @@ class SimulationConfig:
             raise D3AException("Too few ticks per slot ({}). Adjust simulation parameters".format(
                 self.ticks_per_slot
             ))
+        self.total_ticks = self.duration // self.slot_length * self.ticks_per_slot
 
     def __repr__(self):
         return (
@@ -30,3 +32,12 @@ class SimulationConfig:
             "ticks_per_slot='{s.ticks_per_slot}'"
             ")>"
         ).format(s=self)
+
+    def as_dict(self):
+        fields = {'duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
+                  'total_ticks'}
+        return {
+            k: str(v.as_timedelta()) if isinstance(v, Interval) else v
+            for k, v in self.__dict__.items()
+            if k in fields
+        }

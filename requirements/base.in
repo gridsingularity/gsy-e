@@ -1,9 +1,11 @@
+awesome-slugify
 cached_property
 click
 click-default-group
 colorlog
 ethereum
 flask
+flask-api
 pendulum
 python-rex
 rlp==0.4.6

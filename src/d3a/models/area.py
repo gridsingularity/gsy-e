@@ -9,6 +9,7 @@ from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from pendulum.interval import Interval
 from pendulum.pendulum import Pendulum
+from slugify import slugify
 
 from d3a.models.events import AreaEvent, MarketEvent
 from d3a.models.market import Market
@@ -33,6 +34,7 @@ class Area:
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
+        self.slug = slugify(name, to_lower=True)
         self.parent = None
         self.children = children if children is not None else []
         for child in self.children:
