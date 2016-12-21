@@ -3,7 +3,7 @@ from typing import Dict  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.events import OfferEvent
-from d3a.models.strategy.base import BaseStrategy, log
+from d3a.models.strategy.base import BaseStrategy
 
 
 class InterAreaAgent(BaseStrategy):
@@ -58,7 +58,7 @@ class InterAreaAgent(BaseStrategy):
                 continue
             offer = self.markets['higher'].offers.get(offer_id)
             if not offer:
-                log.error("Missing offer %s", offer_id)
+                self.log.error("Missing offer %s", offer_id)
                 continue
             lower_offer = self.markets['lower'].offer(offer.energy, offer.price, self.name)
             lower_offer.add_listener(OfferEvent.ACCEPTED, self.event_trade)
