@@ -10,9 +10,21 @@ flake8==3.2.1
 hypothesis==3.6.1
 isort==4.2.5
 mccabe==0.5.3             # via flake8
+<<<<<<< c087dabefecfe87e9a03764ba4524e6d532fa0d2
+=======
+numpy==1.11.3             # via pandas, pvlib
+pandas==0.19.1            # via pvlib
+pvlib==0.4.2
+>>>>>>> Added cloud cover implementation for PV
 py==1.4.32                # via pytest, pytest-catchlog
 pycodestyle==2.2.0        # via flake8
 pyflakes==1.3.0           # via flake8
 pytest-catchlog==1.2.2
 pytest==3.0.5
+<<<<<<< c087dabefecfe87e9a03764ba4524e6d532fa0d2
 six==1.10.0               # via flake8-tuple
+=======
+python-dateutil==2.6.0    # via pandas
+pytz==2016.10             # via pandas, pvlib
+six==1.10.0               # via flake8-tuple, pvlib, python-dateutil
+>>>>>>> Added cloud cover implementation for PV
