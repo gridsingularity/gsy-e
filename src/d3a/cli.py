@@ -21,7 +21,8 @@ from d3a.web import start_web
 log = getLogger(__name__)
 
 
-@click.group(name='d3a', cls=DefaultGroup, default='run', default_if_no_args=True)
+@click.group(name='d3a', cls=DefaultGroup, default='run', default_if_no_args=True,
+             context_settings={'max_content_width': 120})
 @click.option('-l', '--log-level', type=Choice(list(logging._nameToLevel.keys())), default='DEBUG',
               show_default=True, help="Log level")
 def main(log_level):
