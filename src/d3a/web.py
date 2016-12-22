@@ -1,7 +1,8 @@
 from itertools import chain, repeat
 from threading import Thread
 
-from flask import Flask, render_template
+import pendulum
+from flask import Flask, render_template, abort
 from flask_api import FlaskAPI
 
 from flask.helpers import url_for
@@ -49,6 +50,34 @@ def _api_app(root_area: Area):
             areas.remove(a)
             areas.extend(a.children)
 
+    def _get_area(area_slug):
+        try:
+            return area_slug_map[area_slug]
+        except KeyError:
+            abort(404)
+
+    def _get_market(area, market_time):
+        if market_time == 'current':
+            market = list(area.past_markets.values())[-1]
+            type_ = 'current'
+        elif market_time.isdigit():
+            market = list(area.markets.values())[int(market_time)]
+            type_ = 'open'
+        else:
+            time = pendulum.parse(market_time)
+            try:
+                market = area.markets[time]
+                type_ = 'open'
+            except KeyError:
+                try:
+                    market = area.past_markets[time]
+                except KeyError:
+                    return abort(404)
+                type_ = 'closed'
+                if market.time_slot == list(area.past_markets.keys())[-1]:
+                    type_ = 'current'
+        return market, type_
+
     @app.route("/")
     def index():
         return {
@@ -57,27 +86,24 @@ def _api_app(root_area: Area):
                 'finished': root_area.current_tick == root_area.config.total_ticks,
                 'current_tick': root_area.current_tick
             },
-            'root_area': {
-                'name': root_area.name,
-                'children': [],
-                'url': url_for('area', area_slug=root_area.slug)
-            }
+            'root_area': area_tree(root_area)
         }
 
     @app.route("/<area_slug>")
     def area(area_slug):
-        area = area_slug_map[area_slug]
+        area = _get_area(area_slug)
         return {
             'name': area.name,
             'slug': area.slug,
             'active': area.active,
             'strategy': area.strategy.__class__.__name__ if area.strategy else None,
+            'appliance': area.appliance.__class__.__name__ if area.appliance else None,
             'markets': [
                 {
                     'type': type_,
-                    'time': time.format("%H:%M"),
+                    'time_slot': time.format("%H:%M"),
                     'url': url_for('market', area_slug=area_slug,
-                                   market_time=time.format("%H:%M")),
+                                   market_time=time),
                     'trade_count': len(market.trades),
                     'offer_count': len(market.offers)
                 }
@@ -100,6 +126,45 @@ def _api_app(root_area: Area):
 
     @app.route("/<area_slug>/market/<market_time>")
     def market(area_slug, market_time):
-        return {}
+        area = _get_area(area_slug)
+        market, type_ = _get_market(area, market_time)
+        return {
+            'type': type_,
+            'time_slot': market.time_slot.format("%H:%M"),
+            'url': url_for('market', area_slug=area_slug, market_time=market.time_slot),
+            'trades': {
+                'count': len(market.trades),
+                'url': url_for('trades', area_slug=area_slug, market_time=market.time_slot),
+            },
+            'offer': {
+                'count': len(market.offers),
+                'url': ''  # url_for('offers', area_slug=area_slug, market_time=market_time),
+            },
+        }
+
+    @app.route("/<area_slug>/market/<market_time>/trades")
+    def trades(area_slug, market_time):
+        area = _get_area(area_slug)
+        market, type_ = _get_market(area, market_time)
+        return [
+            {
+                'id': t.id,
+                'time': t.time,
+                'seller': t.seller,
+                'buyer': t.buyer,
+                'energy': t.offer.energy,
+                'price': t.offer.price
+            }
+            for t in market.trades
+        ]
 
     return app
+
+
+def area_tree(area):
+    return {
+        'name': area.name,
+        'slug': area.slug,
+        'children': [area_tree(child) for child in area.children],
+        'url': url_for('area', area_slug=area.slug)
+    }
