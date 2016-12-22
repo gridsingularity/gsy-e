@@ -1,14 +1,13 @@
 from d3a.models.area import Area
-from d3a.models.strategy.base import BaseStrategy
-from typing import List, Union
+from typing import List
 from enum import Enum
 from d3a.models.resource.properties import ApplianceProperties, ElectricalProperties, MeasurementParamType
 from logging import getLogger
-from d3a.util import TaggedLogWrapper
 import random
-from d3a.models.events import AreaEvent, MarketEvent
 from d3a.models.resource.run_algo import RunSchedule
 import math
+from d3a.models.appliance.base import BaseAppliance
+from d3a.models.area import DEFAULT_CONFIG
 
 
 log = getLogger(__name__)
@@ -38,7 +37,6 @@ class UsageGenerator:
         self.curve = curve
         self.minVariance = minvariance
         self.maxVariance = maxvariance
-        self.log = TaggedLogWrapper(log, UsageGenerator.__name__)
 
     def iterator(self):
         while True:
@@ -52,8 +50,8 @@ class UsageGenerator:
 
         return randomized
 
-    def change_curve(self, curve: List):
-        self.curve = self.randomize_usage_pattern(curve)
+    def change_curve(self, curve: List, randomize: bool = False):
+        self.curve = self.randomize_usage_pattern(curve) if randomize else curve
         return self.iterator()
 
     def get_reading_at(self, index: int):
@@ -64,34 +62,33 @@ class UsageGenerator:
         return val
 
 
-class Appliance():
+class Appliance(BaseAppliance):
 
-    def __init__(self, name: str = None, children: List["Area"] = None,
-                 strategy: BaseStrategy = None):
-        super().__init__(name, children, strategy)
-
+    def __init__(self, name: str):
+        super().__init__()
+        self.name = name
         self.applianceProfile = None
         self.electricalProperties = None
         self.energyCurve = None
-        self.mode = ApplianceMode.ON if self.active is True else ApplianceMode.OFF
+        self.mode = ApplianceMode.OFF
         self.usageGenerator = None
         self.iterator = None
         self.measuring = MeasurementParamType.POWER
-        self.historicUsageCurve = dict()
-
+        # self.historicUsageCurve = dict()
+        self.bids = []
         self.tick_count = 0              # count to keep track of ticks since past
 
-        self.log.debug("Appliance instantiated, current state {}, mode {}".format(self.active, self.mode))
+        log.debug("Appliance instantiated, current mode of operation is {}".format(self.mode))
 
     def start_appliance(self):
-        self.log.info("Starting appliance {}".format(self.name))
+        log.info("Starting appliance {}".format(self.name))
 
         if self.electricalProperties is not None:
-            self.usageGenerator = UsageGenerator(None,
+            self.usageGenerator = UsageGenerator([],
                                                  self.electricalProperties.get_min_variance(),
                                                  self.electricalProperties.get_max_variance())
         else:
-            self.log.error("Appliance electrical properties not set")
+            log.error("Appliance electrical properties not set")
             return
 
         if self.energyCurve is not None:
@@ -99,9 +96,9 @@ class Appliance():
                 self.change_mode_of_operation(ApplianceMode.ON)
             else:
                 self.mode = ApplianceMode.OFF
-                self.log.error("Power ON energy curve is not defined for appliance")
+                log.error("Power ON energy curve is not defined for appliance")
         else:
-            self.log.error("Energy curves not defined for operation modes")
+            log.error("Energy curves not defined for operation modes")
             return
 
     def set_appliance_energy_curve(self, curve: EnergyCurve):
@@ -117,7 +114,7 @@ class Appliance():
         :param properties: Object containing appliance properties
         """
         self.applianceProfile = properties
-        self.log.debug("Updated appliance properties")
+        log.debug("Updated appliance properties")
 
     def set_electrical_properties(self, electrical: ElectricalProperties):
         """
@@ -125,46 +122,49 @@ class Appliance():
         :param electrical:
         """
         self.electricalProperties = electrical
-        self.log.debug("Updated electrical properties")
+        log.debug("Updated electrical properties")
 
     def change_mode_of_operation(self, newmode: ApplianceMode):
         if self.usageGenerator is not None:
             if newmode is not None:
                 if newmode != self.mode:
-                    self.iterator = self.usageGenerator.change_curve(self.energyCurve.get_mode_curve(newmode))
+                    self.iterator = self.usageGenerator.change_curve(self.energyCurve.get_mode_curve(newmode), True)
                     self.mode = newmode
-                    self.log.info("Appliance mode changed to: {}".format(newmode))
+                    log.info("Appliance mode changed to: {}".format(newmode))
                 else:
-                    self.log.warning("NOOP, Appliance already in mode: {}".format(newmode))
+                    log.warning("NOOP, Appliance already in mode: {}".format(newmode))
             else:
-                self.log.error("New mode not recognized")
+                log.error("New mode not recognized")
         else:
-            self.log.error("Usage generator uninitialized")
-
-    def _cycle_markets(self):
-        self.log.info("Handling market cycle")
+            log.error("Usage generator uninitialized")
 
     def tick(self):
         """
         Handle pendulum ticks
         """
-        super().tick()
         usage = self.get_usage_reading()
-        self.log.debug("Appliance {} usage: {}".format(usage[0], usage[1]))
-        self.historicUsageCurve[self.get_now()] = usage
+        log.debug("Appliance {} usage: {}".format(usage[0], usage[1]))
+        # self.historicUsageCurve[self.get_now()] = usage
 
-    def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-        if event_type is AreaEvent.TICK:
-            self.tick()
-        elif event_type is AreaEvent.MARKET_CYCLE:
-            self._cycle_markets()
-        elif event_type is AreaEvent.ACTIVATE:
-            self.activate()
-        if self.strategy:
-            self.strategy.event_listener(event_type, **kwargs)
+    def event_tick(self, *, area: Area):
+        if not self.owner:
+            # Should not happen
+            return
+        market = area.current_market
+        if not market:
+            # No current market yet
+            return
+        # Fetch traded energy for `market`
+        energy = self.owner.strategy.energy_balance(market)
+        if energy:
+            area.report_accounting(market, self.owner.name, energy / area.config.ticks_per_slot)
+
+    def event_market_cycle(self):
+        pass
 
     def get_historic_usage_curve(self):
-        return self.historicUsageCurve
+        # return self.historicUsageCurve
+        return None
 
     def get_measurement_param(self) -> MeasurementParamType:
         return self.measuring
@@ -172,12 +172,30 @@ class Appliance():
     def get_usage_reading(self) -> tuple:
         return self.measuring, self.iterator.__next__()
 
+    def update_iterator(self, curve, randomize: bool = False):
+        """
+        Method to update the curve used by iterator
+        :param curve: new curve to be used
+        :param randomize: Randomize the curve before updating
+        """
+        self.iterator = self.usageGenerator.change_curve(curve, randomize)
+
+    def is_appliance_consuming_energy(self):
+        """
+        Check if appliance is consuming energy
+        :return: True if power is being consumed, else false
+        """
+        running = False
+        if self.usageGenerator.get_reading_at(self.tick_count) > 0:
+            running = True
+
+        return running
+
 
 class PVAppliance(Appliance):
 
-    def __init__(self, name: str = "PV", children: List["Area"] = None,
-                 strategy: BaseStrategy = None):
-        super().__init__(name, children, strategy)
+    def __init__(self, name: str = "PV"):
+        super().__init__(name)
         self.cloud_duration = 0
         self.multiplier = 1.0
 
@@ -188,7 +206,7 @@ class PVAppliance(Appliance):
         :param duration: duration of cloud cover in ticks.
         """
         self.cloud_duration = duration
-        # 2% residual power gene even under 100% cloud cover
+        # 2% residual power generated even under 100% cloud cover
         self.multiplier = (1 - percent / 100) if percent < 98 else 0.02
         if self.cloud_duration > 0:
             self.change_mode_of_operation(ApplianceMode.OFF)
@@ -208,86 +226,102 @@ class PVAppliance(Appliance):
         else:
             self.multiplier = 1.0
 
-        power = self.usageGenerator.get_reading_at(self.tick_count)
+        power = self.iterator.__next__()
         if power is None:
-            self.tick_count = 0
-            power = self.usageGenerator.get_reading_at(self.tick_count)
+            # power = self.usageGenerator.get_reading_at(self.tick_count)
+            power = 0
 
         power *= self.multiplier
 
         # report power generated by PV
-        self.log.info("Power generated by PV is : {}".format(power))
+        log.info("Power generated by PV is : {}".format(power))
+        self.tick_count += 1
 
 
 class FridgeAppliance(Appliance):
 
-    def __init__(self, name: str = "Fridge", children: List["Area"] = None,
-                 strategy: BaseStrategy = None):
-        super().__init__(name, children, strategy)
+    def __init__(self, name: str = "Fridge"):
+        super().__init__(name)
         self.max_temp = 15.0
         self.min_temp = 5.0
         self.current_temp = 10.0
         self.heating_per_tick = 0.005
         self.cooling_per_tick = -.01
         self.temp_change_on_door_open = 5.0
-        self.optimize_duration = 2                              # Optimize for these many markets/contracts in future
+        self.optimize_duration = 1                              # Optimize for these many markets/contracts in future
+        self.duration = 0
+        self.force_cool_ticks = 0
 
-    def handle_door_open(self):
+    def handle_door_open(self, duration: int):
         """
+        :param duration: number of ticks door will be open for
         Do the following when fridge door is open
         1. Increase fridge temp
         2. If temp increases more than max allowed temp,
             2.a start cooling immediately
             2.b continue cooling until temp drops below max temp
-            2.c stop cooling until next market cycle
+            2.c Optimize running for remaining time in current market cycle.
         3. Else continue to run optimized schedule
         """
-        self.log.warning("Fridge door was opened")
+        log.warning("Fridge door was opened")
+        self.duration = duration
         self.current_temp += self.temp_change_on_door_open
-        if self.current_temp > self.max_temp:
-            self.change_mode_of_operation(ApplianceMode.ON)
 
     def tick(self):
-        current_mode = self.mode
-        temp_change = self.cooling_per_tick if current_mode == ApplianceMode.ON else self.heating_per_tick
+        if self.duration > 0:
+            log.warning("Fridge door is still open")
+            self.duration -= 1
+            self.current_temp += self.temp_change_on_door_open
 
-        self.current_temp += temp_change
+        if self.current_temp > self.max_temp:                       # Fridge is hot, start cooling immediately
+            self.update_force_cool_ticks()
+            if self.mode == ApplianceMode.OFF:
+                self.change_mode_of_operation(ApplianceMode.ON)
+            else:
+                self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+        elif self.current_temp < self.min_temp:                     # Fridge is too cold
+            if self.mode == ApplianceMode.ON:
+                self.change_mode_of_operation(ApplianceMode.OFF)
+        else:                                                       # Fridge is in acceptable temp range
+            if self.mode == ApplianceMode.OFF:
+                self.change_mode_of_operation(ApplianceMode.ON)
+                self.update_iterator(self.gen_run_schedule())
 
-        if current_mode == ApplianceMode.ON:
-            if self.tick_count <= 0:                                    # Optimized cycles are exhausted
-                if self.min_temp <= self.current_temp <= self.max_temp:
-                    self.change_mode_of_operation(ApplianceMode.OFF)    # temp is in range, stop cooling
+            if self.is_appliance_consuming_energy():
+                self.current_temp += self.cooling_per_tick
+            else:
+                self.current_temp += self.heating_per_tick
 
-                elif self.current_temp > self.max_temp:                 # Fridge is hot, continue cooling immaterial
-                    self.usageGenerator.change_curve(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+        # Fridge is being force cooled
+        if self.force_cool_ticks > 0:
+            self.force_cool_ticks -= 1
+            if self.force_cool_ticks <= 0:
+                # This is last force cool tick, optimize remaining ticks
+                self.update_iterator(self.gen_run_schedule())
 
-                elif self.current_temp < self.min_temp:                 # Fridge is too cold, shut it down
-                    self.change_mode_of_operation(ApplianceMode.OFF)
+        self.tick_count += 1
 
-            else:                                       # continue running optimal cycles, fridge will eventually cool
-                if self.current_temp < self.min_temp:                   # shutdown fridge if it is too cold
-                    self.change_mode_of_operation(ApplianceMode.OFF)
-        else:
-            """
-            If appliance is off, do the following
-            1. If temp is high, fridge has to be powered on
-                1.a If ticks are remaining, use the remaining optimal cycles
-            2. If temp is in range, do nothing
-            3. If temp is low, fridge is off anyways, temp will go down
-            """
-            if self.current_temp > self.max_temp:
-                self.change_mode_of_operation(ApplianceMode.ON)  # Fridge is hot, cool it down
-                if self.tick_count > 0:
-                    # Load remaining optimal cycles into iterator.
-                    self.log.debug("Load remaining optimal cycles into iterator.")
+    def update_force_cool_ticks(self):
+        """
+        Temp of fridge is high, update the number of ticks it will take to bring down the temp of fridge just below
+        allowed max temp.
+        :param self:
+        :return:
+        """
+        diff = self.current_temp - self.max_temp
+        ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+        temp_drop_per_cycle = self.cooling_per_tick * ticks_per_cycle
+        cycles_to_run = math.ceil(diff/temp_drop_per_cycle)
+        self.force_cool_ticks = cycles_to_run * ticks_per_cycle
+        log.warning("It will take fridge {} ticks to cool.".format(self.force_cool_ticks))
 
-    def get_run_skip_cycle_counts(self, ticks_remaining : int):
+    def get_run_skip_cycle_counts(self, ticks_remaining: int):
         """
         Method to generate required and skip-able cycle counts within given remaining ticks.
         :param ticks_remaining: Number of ticks remaining before market cycles
         :return: tuple containing count of required cycles and skip-able cycles
         """
-        mid = min((self.max_temp + self.min_temp)/2)
+        mid = math.floor((self.max_temp + self.min_temp)/2)
         diff = self.current_temp - mid
         cycles_required = 0
         cycles_skipped = 0
@@ -319,9 +353,9 @@ class FridgeAppliance(Appliance):
         cycles needed to cool from mid to min are cycles that can be skipped.
         total cycles = required cycles + cycles that can be skipped
         """
-
         t_h_max = math.floor((self.max_temp - mid)/self.heating_per_tick)       # ticks to heat to max temp
-        t_c_mid = math.ceil((self.max_temp - mid)/(self.cooling_per_tick * -1)) # ticks required to cool from max to mid
+        # ticks required to cool from max to mid
+        t_c_mid = math.ceil((self.max_temp - mid)/(self.cooling_per_tick * -1))
         t_range = t_h_max + t_c_mid     # ticks need to rise to max and cool back to mid
         quo = ticks_remaining // t_range    # num of times fridge can swing between mid and max
         rem = ticks_remaining % t_range     # remainder ticks to account for, shouldn't be more than 1
@@ -340,23 +374,30 @@ class FridgeAppliance(Appliance):
 
         return cycles_required, cycles_skipped
 
-    def _cycle_markets(self):
-        super()._cycle_markets()
-        bids = []
-        count = self.optimize_duration
-        for key in self.markets:
-            bids.append(self.markets[key].avg_offer_price)
-            count -= 1
-            if count < 0:
-                break
-
-        ticks_per_bid = 15
-        cycles = self.get_run_skip_cycle_counts(ticks_per_bid*self.optimize_duration)
+    def gen_run_schedule(self):
+        ticks_remaining = DEFAULT_CONFIG.ticks_per_slot * self.optimize_duration - self.tick_count
+        cycles = self.get_run_skip_cycle_counts(ticks_remaining)
         cycles_to_run = cycles[0]
         skip_cycles = cycles[1]
+        schedule = None
 
-        schedule = RunSchedule(bids, self.energyCurve.get_mode_curve(ApplianceMode.ON),
-                               ticks_per_bid, cycles_to_run, skip_cycles)
+        if self.bids:
+            run_schedule = RunSchedule(self.bids, self.energyCurve.get_mode_curve(ApplianceMode.ON),
+                                       DEFAULT_CONFIG.ticks_per_slot, cycles_to_run, skip_cycles, self.tick_count)
+            schedule = run_schedule.get_run_schedule()
 
-        schedule.calculate_running_cost()
+        return schedule
 
+    def event_market_cycle(self):
+        super().event_market_cycle()
+        self.bids = []
+        # count = self.optimize_duration
+        # for key in self.markets:
+        #     self.bids.append(self.markets[key].avg_offer_price)
+        #     count -= 1
+        #     if count < 0:
+        #         break
+
+        self.tick_count = 0
+        self.change_mode_of_operation(ApplianceMode.ON)
+        self.update_iterator(self.gen_run_schedule())
