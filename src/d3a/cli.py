@@ -52,9 +52,13 @@ def main(log_level):
               help="REST-API server listening interface")
 @click.option('-p', '--port', type=int, default=5000, show_default=True,
               help="REST-API server listening port")
-@click.option('--realtime', is_flag=True, default=False,
-              help="Run simulation in realtime instead of as fast as possible")
-def run(interface, port, realtime, **config_params):
+@click.option('--slowdown', type=int, default=0,
+              help="Slowdown factor [0 - 100]. "
+                   "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
+                   "and 100: ticks are simulated in realtime")
+@click.option('--repl/--no-repl', default=True, show_default=True,
+              help="Start REPL after simulation run.")
+def run(interface, port, slowdown, repl, **config_params):
     try:
         config = SimulationConfig(**config_params)
     except D3AException as ex:
@@ -119,8 +123,12 @@ def run(interface, port, realtime, **config_params):
             )
             area.tick()
             tick_length = time.monotonic() - tick_start
-            if realtime and tick_length < tick_lengths_s:
-                time.sleep(tick_lengths_s - tick_length)
+            if slowdown and tick_length < tick_lengths_s:
+                # Simulation runs faster than real time but a slowdown was requested.
+                tick_diff = tick_lengths_s - tick_length
+                diff_slowdown = tick_diff / 100 * slowdown
+                log.debug("Slowdown: %.4f", diff_slowdown)
+                time.sleep(diff_slowdown)
 
     for time_stamp, m in area.markets.items():
         print()
@@ -130,6 +138,15 @@ def run(interface, port, realtime, **config_params):
     log.info("Run finished in %s / %.2fx real time.", run_length,
              config.duration / run_length.as_interval())
     log.info("REST-API still running at http://%s:%d/api", interface, port)
-    log.info("An interactive REPL has been started. The root Area is available as `root_area`.")
-    log.info("Ctrl-D to quit.")
-    embed({'root_area': area})
+    if repl:
+        log.info(
+            "An interactive REPL has been started. The root Area is available as `root_area`.")
+        log.info("Ctrl-D to quit.")
+        embed({'root_area': area})
+    else:
+        log.info("Ctrl-C to quit")
+        try:
+            while True:
+                time.sleep(.5)
+        except KeyboardInterrupt:
+            print("Exiting")
