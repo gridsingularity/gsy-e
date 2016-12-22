@@ -186,7 +186,8 @@ class Area:
             timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots
-                market = Market(notification_listener=self._broadcast_notification)
+                market = Market(timeframe, self,
+                                notification_listener=self._broadcast_notification)
                 if market not in self.inter_area_agents:
                     if self.parent and timeframe in self.parent.markets and not self.strategy:
                         # Only connect an InterAreaAgent if we have a parent, a corresponding

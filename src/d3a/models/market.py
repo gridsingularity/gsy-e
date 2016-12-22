@@ -6,6 +6,8 @@ from threading import Lock
 from typing import Dict, List, Set, Union  # noqa
 
 import sys
+
+from pendulum.pendulum import Pendulum
 from terminaltables.other_tables import SingleTable
 
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException
@@ -52,13 +54,18 @@ class Offer:
         self._call_listeners(OfferEvent.ACCEPTED, market=market, trade=trade)
 
 
-class Trade(namedtuple('Trade', ('offer', 'seller', 'buyer'))):
+class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer'))):
     def __str__(self):
-        return "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh @ {s.offer.price}".format(s=self)
+        return (
+            "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
+            "{s.offer.energy} kWh @ {s.offer.price}".format(s=self)
+        )
 
 
 class Market:
-    def __init__(self, notification_listener=None, readonly=False):
+    def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+        self.area = area
+        self.time_slot = time_slot
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
@@ -105,7 +112,8 @@ class Market:
             log.info("[OFFER][DEL] %s", offer)
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
-    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str) -> Trade:
+    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str,
+                     time: Pendulum = None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -114,7 +122,9 @@ class Market:
             offer = self.offers.pop(offer_or_id, None)
             if offer is None:
                 raise OfferNotFoundException()
-            trade = Trade(offer, offer.seller, buyer)
+            if time is None:
+                time = self._now
+            trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer)
             self.trades.append(trade)
             log.warning("[TRADE] %s", trade)
             self.accounting[offer.seller] -= offer.energy
@@ -128,7 +138,8 @@ class Market:
         return trade
 
     def __repr__(self):  # pragma: no cover
-        return "<Market offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
+        return "<Market{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
+            " {:%H:%M}".format(self.time_slot) if self.time_slot else "",
             len(self.offers),
             sum(o.energy for o in self.offers.values()),
             sum(o.price for o in self.offers.values()),
@@ -154,6 +165,13 @@ class Market:
     @property
     def sorted_offers(self):
         return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+
+    @property
+    def _now(self):
+        if self.area:
+            return self.area.get_now()
+        log.error("No area available. Using real system time!")
+        return Pendulum.now()
 
     def display(self):  # pragma: no cover
         out = []
