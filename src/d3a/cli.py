@@ -106,8 +106,17 @@ def run(interface, port, realtime, **config_params):
     for slot_no in range(config.duration // config.slot_length):
         for tick_no in range(config.ticks_per_slot):
             tick_start = time.monotonic()
-            log.debug("Slot %d, tick %d (%d)",
-                      slot_no, tick_no, (slot_no * config.ticks_per_slot) + tick_no)
+            tick_no_total = (slot_no * config.ticks_per_slot) + tick_no
+            log.debug(
+                "Slot %d, tick %d of %d (%2.0f%%) / %d of %d (%2.0f%%) total",
+                slot_no + 1,
+                tick_no + 1,
+                config.ticks_per_slot,
+                (tick_no + 1) / config.ticks_per_slot * 100,
+                tick_no_total + 1,
+                config.total_ticks,
+                (tick_no_total + 1) / config.total_ticks * 100
+            )
             area.tick()
             tick_length = time.monotonic() - tick_start
             if realtime and tick_length < tick_lengths_s:
