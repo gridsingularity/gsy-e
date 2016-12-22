@@ -169,7 +169,6 @@ class Scheduler:
         #         self.run_schedule.append(0)
 
     def gen_run_schedule(self):
-        self.run_schedule = []
         for val in self.optimal_schedule:
             index = val[1]
             for i in range(0, self.run_window):
