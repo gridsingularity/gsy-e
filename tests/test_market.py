@@ -2,6 +2,8 @@ import string
 from collections import defaultdict
 
 import pytest
+from pendulum.pendulum import Pendulum
+
 from d3a.models.events import MarketEvent
 from hypothesis import strategies as st
 from hypothesis.control import assume
@@ -65,9 +67,12 @@ def test_market_offer_delete_readonly(market: Market):
 def test_market_trade(market: Market):
     offer = market.offer(20, 10, 'A')
 
-    trade = market.accept_offer(offer, 'B')
+    now = Pendulum.now()
+    trade = market.accept_offer(offer, 'B', now)
     assert trade
     assert trade == market.trades[0]
+    assert trade.id
+    assert trade.time == now
     assert trade.offer is offer
     assert trade.seller == 'A'
     assert trade.buyer == 'B'
