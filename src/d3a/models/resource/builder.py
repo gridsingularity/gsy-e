@@ -1,5 +1,4 @@
 from d3a.models.resource.appliance import PVAppliance
-from d3a.models.strategy.simple import OfferStrategy
 from d3a.models.resource.properties import ApplianceProfileBuilder
 from d3a.models.resource.properties import ApplianceType
 from d3a.models.resource.properties import ElectricalProperties
@@ -8,8 +7,7 @@ import random
 
 
 def gen_pv_appliance() -> PVAppliance:
-    offer = OfferStrategy()
-    pv = PVAppliance("PV", None, offer)
+    pv = PVAppliance("PV")
     builder = ApplianceProfileBuilder("PV", "Roof", ApplianceType.UNCONSTRAINED)
     builder.set_contact_url("https://enphase.com/en-us/company/contact-us")
     builder.set_icon_url("https://enphase.com/sites/all/themes/enphase/assets/images/svgs/src/enphase-logo.svg")

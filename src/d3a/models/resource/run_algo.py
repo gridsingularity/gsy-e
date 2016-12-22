@@ -30,13 +30,14 @@ class Scheduler:
     Base class to handle scheduling related optimization.
     """
     def __init__(self, bids: List, cycle: List, ticks_per_bid: int, cycles_to_run: int = 1,
-                 skip: int = 0, maximize: bool = False):
+                 skip: int = 0, ticks_elapsed: int = 0, maximize: bool = False):
         """
         :param bids: List containing prices in contract spread across a certain time period.
         :param cycle: List containing power consumption curve sampled for each tick.
         :param ticks_per_bid: number of ticks in a single contract period
         :param cycles_to_run: number of appliance cycles that need to be run.
         :param skip: number of appliance cycles that can be skip
+        :param ticks_elapsed number of ticks alaredy elapsed
         :param maximize: run algorith for maximizing run cost
         """
         self.log = TaggedLogWrapper(log, RunSchedule.__name__)
@@ -62,6 +63,9 @@ class Scheduler:
             for count in range(0, ticks_per_bid):
                 self.normalized_bids.append(bid)
 
+        # Truncate elapsed ticks from optimization
+        self.normalized_bids = self.normalized_bids[ticks_elapsed:]
+
     def initialize(self):
         """
         This method initializes member variables with values derived from provided parameters.
@@ -84,6 +88,7 @@ class Scheduler:
 
         self.calculate_running_cost()
         self.place_run_cycles()
+        self.gen_run_schedule()
 
     def calculate_running_cost(self):
         """
@@ -185,6 +190,7 @@ class Scheduler:
         """
         return self.run_schedule
 
+
 class RunSchedule (Scheduler):
     """
     The concrete class inherits from Schedule class and can be used to generate optimal schedules to run appliances
@@ -192,8 +198,8 @@ class RunSchedule (Scheduler):
     if maximize is set to True, the object optimizes for max running cost.
     """
     def __init__(self, bids: List, cycle: List, ticks_per_bid: int, cycles_to_run: int = 1,
-                 skip: int = 0, maximize: bool = False):
-        super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip, maximize)
+                 skip: int = 0, ticks_elapsed=0, maximize: bool = False):
+        super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip, ticks_elapsed, maximize)
         self.initialize()
 
 
@@ -203,8 +209,8 @@ class RunScheduleLimit (Scheduler):
     an upper cost limit provided by the user. Depending on maximize flag, class can optimize for max cost.
     """
     def __init__(self, bids: List, cycle: List, ticks_per_bid: int, limit: float, cycles_to_run: int = 1,
-                 skip: int = 0, maximize: bool = False):
-        super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip, maximize)
+                 skip: int = 0, ticks_elapsed=0, maximize: bool = False):
+        super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip, ticks_elapsed, maximize)
         self.limit = limit
         self.limit_set = True
         self.initialize()
