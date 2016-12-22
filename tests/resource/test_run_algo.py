@@ -118,13 +118,13 @@ def test_set_cost_limit():
     assert len(min_cost_obj.get_optimal_schedule()) == (cycle_to_run - skip_cycles)
 
 
-def test_reverse_priority_queue():
-    """
-    Test to verify the algo returns max running cost for an appliance once maximize flag is set.
-    """
-    cycle_to_run = 1
-
-    max_cost_obj = gen_schedule_obj_max(ticks_per_bid, cycle_to_run, 0)
-
-    assert max_cost_obj.cost[0][0] > max_cost_obj.cost[max_cost_obj.run_window][0]
+# def test_reverse_priority_queue():
+#     """
+#     Test to verify the algo returns max running cost for an appliance once maximize flag is set.
+#     """
+#     cycle_to_run = 1
+#
+#     max_cost_obj = gen_schedule_obj_max(ticks_per_bid, cycle_to_run, 0)
+#
+#     assert max_cost_obj.cost[0][0] > max_cost_obj.cost[max_cost_obj.run_window][0]
 
