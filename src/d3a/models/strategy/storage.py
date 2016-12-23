@@ -17,11 +17,7 @@ class StorageStrategy(BaseStrategy):
         self.blocked_storage = 0
 
     def event_tick(self, *, area):
-        cheapest_offers = self.area.cheapest_offers
-        avg_cheapest_offer_price = (
-            sum(offer.price for offer in cheapest_offers)
-            / max(len(cheapest_offers), 1)
-        )
+        avg_cheapest_offer_price = self.find_avg_cheapest_offers()
         # Here starts the logic if energy should be bought
         for market in self.area.markets.values():
             for offer in market.sorted_offers:
@@ -42,6 +38,39 @@ class StorageStrategy(BaseStrategy):
     def event_market_cycle(self):
         # Update the energy balances
         past_market = list(self.area.past_markets.values())[-1]
-        for offer in self.done_trades[past_market]:
-            self.blocked_storage -= offer.energy
-            self.used_storage += offer.energy
+#        self.log.info("past_market: %s", past_market)
+        avg_cheapest_offer_price = self.find_avg_cheapest_offers()
+        # Maximum selling price using the highest risk is 20% above the average price
+        max_selling_price = 0.2 * avg_cheapest_offer_price
+        # formula to calculate a profitable selling price
+        selling_price = avg_cheapest_offer_price + (self.risk / 100) * max_selling_price
+        # if energy for this slot was bought: sell it in the most expensive market
+        for bought in self.done_trades[past_market]:
+            self.blocked_storage -= bought.energy
+            self.used_storage += bought.energy
+            cheapest_offers = self.area.cheapest_offers
+            # Finding the most expensive market
+            most_expensive_market = cheapest_offers.index(max(cheapest_offers))
+            market = list(self.area.markets.values())[most_expensive_market]
+            self.log.info("most_expensive_market: %s", market)
+            # Post offer in most expensive market
+            if selling_price < list(market.sorted_offers)[0].price:
+                offer = market.offer(
+                    bought.energy,
+                    selling_price,
+                    self.owner.name
+                )
+                self.offers_posted[offer.id] = market
+
+    def event_trade(self, *, market, trade):
+        if self.owner.name == trade.seller:
+            self.used_storage -= trade.offer.energy
+            # TODO post information about earned money
+
+    def find_avg_cheapest_offers(self):
+        cheapest_offers = self.area.cheapest_offers
+        avg_cheapest_offer_price = (
+            sum(offer.price for offer in cheapest_offers)
+            / max(len(cheapest_offers), 1)
+        )
+        return avg_cheapest_offer_price
