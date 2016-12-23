@@ -13,8 +13,8 @@ class StorageStrategy(BaseStrategy):
         self.risk = risk
         self.offers_posted = {}  # type: Dict[str, Market]
         self.done_trades = defaultdict(list)  # type: Dict[Market, List[Offer]]
-        self.used_storage = 0
-        self.blocked_storage = 0
+        self.used_storage = 0.00
+        self.blocked_storage = 0.00
 
     def event_tick(self, *, area):
         avg_cheapest_offer_price = self.find_avg_cheapest_offers()
@@ -27,7 +27,6 @@ class StorageStrategy(BaseStrategy):
                 ):
                     try:
                         self.accept_offer(market, offer)
-                        self.log.debug("Buying %s", offer)
                         self.blocked_storage += offer.energy
                         self.done_trades[market].append(offer)
                     except MarketException:
@@ -38,21 +37,19 @@ class StorageStrategy(BaseStrategy):
     def event_market_cycle(self):
         # Update the energy balances
         past_market = list(self.area.past_markets.values())[-1]
-#        self.log.info("past_market: %s", past_market)
         avg_cheapest_offer_price = self.find_avg_cheapest_offers()
         # Maximum selling price using the highest risk is 20% above the average price
         max_selling_price = 0.2 * avg_cheapest_offer_price
         # formula to calculate a profitable selling price
-        selling_price = avg_cheapest_offer_price + (self.risk / 100) * max_selling_price
+        selling_price = avg_cheapest_offer_price + ((self.risk / 100) * max_selling_price)
         # if energy for this slot was bought: sell it in the most expensive market
         for bought in self.done_trades[past_market]:
             self.blocked_storage -= bought.energy
+            self.log.info("self.blocked_storage %s", self.blocked_storage)
             self.used_storage += bought.energy
-            cheapest_offers = self.area.cheapest_offers
+            expensive_offers = list(self.area.cheapest_offers)[-1]
             # Finding the most expensive market
-            most_expensive_market = cheapest_offers.index(max(cheapest_offers))
-            market = list(self.area.markets.values())[most_expensive_market]
-            self.log.info("most_expensive_market: %s", market)
+            market = expensive_offers.market
             # Post offer in most expensive market
             if selling_price < list(market.sorted_offers)[0].price:
                 offer = market.offer(
