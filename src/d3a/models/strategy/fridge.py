@@ -73,9 +73,10 @@ class FridgeStrategy(BaseStrategy):
         next_market = list(self.area.markets.values())[0]
         # Here starts the logic if energy should be bought
         for offer in next_market.sorted_offers:
+            cooling_temperature = 2 * (offer.energy / FRIDGE_MIN_NEEDED_ENERGY) * 0.01
             if (
                 offer.price <= threshold_price
-                and self.fridge_temp > MIN_FRIDGE_TEMP
+                and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
                 and offer.energy >= FRIDGE_MIN_NEEDED_ENERGY
             ):
                 try:
@@ -83,7 +84,7 @@ class FridgeStrategy(BaseStrategy):
                     self.log.debug("Buying %s", offer)
                     # TODO: Set realistic temperature change
                     # Factor 2 compensates that we not only cool but avoid defrost as well
-                    self.fridge_temp -= 2 * (offer.energy / FRIDGE_MIN_NEEDED_ENERGY) * 0.01
+                    self.fridge_temp -= cooling_temperature
                     break
                 except MarketException:
                     # Offer already gone etc., try next one.
