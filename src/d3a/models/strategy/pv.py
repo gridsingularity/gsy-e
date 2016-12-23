@@ -1,7 +1,7 @@
 import math
 
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, MIN_PV_SELLING_PRICE
 
 
 class PVStrategy(BaseStrategy):
@@ -18,12 +18,13 @@ class PVStrategy(BaseStrategy):
         # risk_dependency_of_selling_price variates with the risk around the average market price
         # High risk means expensive selling price & high possibility not selling the energy
         risk_dependency_of_selling_price = (normed_risk * 0.4 * average_market_price)
-        energy_price = average_market_price + risk_dependency_of_selling_price
+        energy_price = max(average_market_price + risk_dependency_of_selling_price,
+                           MIN_PV_SELLING_PRICE)
         rounded_energy_price = round(energy_price, 2)
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
-        for time, market in self.area.markets.items():
+        for (time, market) in self.area.markets.items():
             # If there is no offer for a currently open marketplace:
             if market not in self.offers_posted.values():
                 # Sell energy and save that an offer was posted into a list

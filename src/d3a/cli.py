@@ -72,7 +72,7 @@ def run(interface, port, slowdown, repl, **config_params):
                 [
                     Area('H1 PV', strategy=PVStrategy(), appliance=SimpleAppliance()),
                     Area('H1 Fridge', strategy=FridgeStrategy(), appliance=SimpleAppliance()),
-                    Area('H1 Storage', strategy=FridgeStrategy(), appliance=SimpleAppliance())
+                    Area('H1 Storage', strategy=StorageStrategy(), appliance=SimpleAppliance())
                 ]
             ),
             Area(
@@ -80,7 +80,7 @@ def run(interface, port, slowdown, repl, **config_params):
                 [
                     Area('H2 PV', strategy=PVStrategy(), appliance=SimpleAppliance()),
                     Area('H2 Fridge', strategy=FridgeStrategy(), appliance=SimpleAppliance()),
-                    Area('H2 Storage', strategy=FridgeStrategy(), appliance=SimpleAppliance())
+                    Area('H2 Storage', strategy=StorageStrategy(), appliance=SimpleAppliance())
                 ]
             ),
             Area('Hydro', strategy=OfferStrategy(offer_chance=.1, price_fraction_choice=(3, 4)))
