@@ -23,7 +23,7 @@ class StorageStrategy(BaseStrategy):
             for offer in market.sorted_offers:
                 if (
                         self.used_storage + self.blocked_storage + offer.energy <= STORAGE_CAPACITY
-                        and offer.price < avg_cheapest_offer_price
+                        and (offer.price / offer.energy) < avg_cheapest_offer_price
                 ):
                     try:
                         self.accept_offer(market, offer)
@@ -54,7 +54,7 @@ class StorageStrategy(BaseStrategy):
             if selling_price < list(market.sorted_offers)[0].price:
                 offer = market.offer(
                     bought.energy,
-                    selling_price,
+                    (selling_price * bought.energy),
                     self.owner.name
                 )
                 self.offers_posted[offer.id] = market

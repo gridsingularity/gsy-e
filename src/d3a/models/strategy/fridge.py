@@ -75,7 +75,7 @@ class FridgeStrategy(BaseStrategy):
         for offer in next_market.sorted_offers:
             cooling_temperature = 2 * (offer.energy / FRIDGE_MIN_NEEDED_ENERGY) * 0.01
             if (
-                offer.price <= threshold_price
+                (offer.price / offer.energy) <= threshold_price
                 and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
                 and offer.energy >= FRIDGE_MIN_NEEDED_ENERGY
             ):
