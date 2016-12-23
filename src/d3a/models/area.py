@@ -134,6 +134,13 @@ class Area:
         return price / energy if energy else 0
 
     @property
+    def cheapest_offers(self):
+        cheapest_offers = []
+        for market in self.markets.values():
+            cheapest_offers.extend(market.sorted_offers[0:1])
+        return cheapest_offers
+
+    @property
     def historical_min_max_price(self):
         min_max_prices = [
             (m.min_trade_price, m.max_trade_price)
