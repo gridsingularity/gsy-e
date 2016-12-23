@@ -31,7 +31,7 @@ class PVStrategy(BaseStrategy):
                 offer = market.offer(
                     quantity_forecast[time],
                     rounded_energy_price,
-                    self.area.name
+                    self.owner.name
                 )
                 self.offers_posted[offer.id] = market
             else:

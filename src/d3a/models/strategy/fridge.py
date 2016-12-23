@@ -89,3 +89,4 @@ class FridgeStrategy(BaseStrategy):
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
         self.fridge_temp += self.area.config.slot_length.total_minutes() * 0.02
+        self.log.info("Temperature: %.2f", self.fridge_temp)

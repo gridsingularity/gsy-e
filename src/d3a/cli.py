@@ -83,7 +83,8 @@ def run(interface, port, slowdown, repl, **config_params):
                     Area('H2 Storage', strategy=StorageStrategy(), appliance=SimpleAppliance())
                 ]
             ),
-            Area('Hydro', strategy=OfferStrategy(offer_chance=.1, price_fraction_choice=(3, 4)))
+            Area('Hydro', strategy=OfferStrategy(offer_chance=.1,
+                                                 price_fraction_choice=(0.03, 0.05)))
         ],
         config=config
     )
