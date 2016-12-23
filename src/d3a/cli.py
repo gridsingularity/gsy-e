@@ -49,7 +49,7 @@ def main(log_level):
               help="Length of a market slot")
 @click.option('-m', '--market-count', type=int, default=4, show_default=True,
               help="Number of tradable market slots into the future")
-@click.option('-i', '--interface', default="localhost", show_default=True,
+@click.option('-i', '--interface', default="0.0.0.0", show_default=True,
               help="REST-API server listening interface")
 @click.option('-p', '--port', type=int, default=5000, show_default=True,
               help="REST-API server listening port")
@@ -57,7 +57,7 @@ def main(log_level):
               help="Slowdown factor [0 - 100]. "
                    "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
                    "and 100: ticks are simulated in realtime")
-@click.option('--repl/--no-repl', default=True, show_default=True,
+@click.option('--repl/--no-repl', default=False, show_default=True,
               help="Start REPL after simulation run.")
 def run(interface, port, slowdown, repl, **config_params):
     try:
