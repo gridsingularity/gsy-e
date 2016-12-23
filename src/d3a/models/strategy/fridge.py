@@ -1,4 +1,7 @@
+from typing import Dict  # noqa
+
 from d3a.exceptions import MarketException
+from d3a.models.market import Market  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, \
     MIN_FRIDGE_TEMP, FRIDGE_MIN_NEEDED_ENERGY, MAX_RISK
@@ -76,7 +79,7 @@ class FridgeStrategy(BaseStrategy):
                 and offer.energy >= FRIDGE_MIN_NEEDED_ENERGY
             ):
                 try:
-                    next_market.accept_offer(offer, self.owner.name)
+                    self.accept_offer(next_market, offer)
                     self.log.debug("Buying %s", offer)
                     # TODO: Set realistic temperature change
                     # Factor 2 compensates that we not only cool but avoid defrost as well

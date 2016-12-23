@@ -1,6 +1,7 @@
-# from d3a.exceptions import MarketException
 from collections import defaultdict
+from typing import Dict, List  # noqa
 
+from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.exceptions import MarketException
 from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY
@@ -29,7 +30,7 @@ class StorageStrategy(BaseStrategy):
                         and offer.price < avg_cheapest_offer_price
                 ):
                     try:
-                        market.accept_offer(offer, self.owner.name)
+                        self.accept_offer(market, offer)
                         self.log.debug("Buying %s", offer)
                         self.blocked_storage += offer.energy
                         self.done_trades[market].append(offer)
