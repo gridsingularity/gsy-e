@@ -137,7 +137,7 @@ class Area:
     def cheapest_offers(self):
         cheapest_offers = []
         for market in self.markets.values():
-            cheapest_offers.append(market.sorted_offers[0])
+            cheapest_offers.extend(market.sorted_offers[0:1])
         return cheapest_offers
 
     @property

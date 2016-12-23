@@ -19,14 +19,14 @@ class StorageStrategy(BaseStrategy):
         cheapest_offers = self.area.cheapest_offers
         avg_cheapest_offer_price = (
             sum(offer.price for offer in cheapest_offers)
-            / len(cheapest_offers)
+            / max(len(cheapest_offers), 1)
         )
         # Here starts the logic if energy should be bought
         for market in self.area.markets.values():
             for offer in market.sorted_offers:
                 if (
-                        self.used_storage + self.blocked_storage < STORAGE_CAPACITY and
-                        offer.price < avg_cheapest_offer_price
+                        self.used_storage + self.blocked_storage + offer.energy <= STORAGE_CAPACITY
+                        and offer.price < avg_cheapest_offer_price
                 ):
                     try:
                         market.accept_offer(offer, self.owner.name)
@@ -40,7 +40,7 @@ class StorageStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         # Update the energy balances
-        past_market = self.area.past_markets.values()[0]
+        past_market = list(self.area.past_markets.values())[-1]
         for offer in self.done_trades[past_market]:
             self.blocked_storage -= offer.energy
             self.used_storage += offer.energy
