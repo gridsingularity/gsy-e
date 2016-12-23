@@ -153,7 +153,7 @@ def _api_app(root_area: Area):
                 'seller': t.seller,
                 'buyer': t.buyer,
                 'energy': t.offer.energy,
-                'price': t.offer.price
+                'price': t.offer.price / t.offer.energy
             }
             for t in market.trades
         ]
