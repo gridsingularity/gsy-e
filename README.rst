@@ -76,3 +76,26 @@ To run the test suite simply run the following command::
 
 _`py.test`: https://pytest.org
 _`tox`: https://tox.testrun.org
+
+
+Docker
+------
+
+The repository contains a `docker`_ Dockerfile. To build an image use the
+following command::
+
+    ~# docker build -t d3a .
+
+
+After building is complete you can run the image with::
+
+    ~# docker run --rm -it -p 5000:5000 d3a
+
+
+Command line parameters can be given normally after the image name::
+
+    ~# docker run --rm -it -p 5000:5000 d3a --help
+    ~# docker run --rm -it -p 5000:5000 d3a run --help
+
+
+_`docker`: https://docker.io
