@@ -58,11 +58,12 @@ class PVStrategy(BaseStrategy):
         # Sinus_offset to prevent that we get negative energy estimations
         sinus_offset = sin_amplitude
         # enumerate counts the markets through - from 0 to n
+        minutes_of_one_day = 1440
         #
         for i, (time, market) in enumerate(self.area.markets.items()):
             energy_production_forecast[time] = round(
                 (sin_amplitude * math.sin(
-                    ((past_markets + i) / self.area.config.slot_length.total_minutes()
+                    ((past_markets + i) / minutes_of_one_day
                      ) * 2 * math.pi + phase_shift)) + sinus_offset, 2)
         return energy_production_forecast
 
