@@ -21,7 +21,6 @@ class PVStrategy(BaseStrategy):
         energy_price = max(average_market_price + risk_dependency_of_selling_price,
                            MIN_PV_SELLING_PRICE)
         rounded_energy_price = round(energy_price, 2)
-        self.log.info("rounded_energy_price: %s", rounded_energy_price)
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
@@ -31,7 +30,7 @@ class PVStrategy(BaseStrategy):
                 # Sell energy and save that an offer was posted into a list
                 offer = market.offer(
                     quantity_forecast[time],
-                    rounded_energy_price,
+                    (rounded_energy_price * quantity_forecast[time]),
                     self.owner.name
                 )
                 self.offers_posted[offer.id] = market
