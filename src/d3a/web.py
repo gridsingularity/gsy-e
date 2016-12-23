@@ -132,31 +132,27 @@ def _api_app(root_area: Area):
             'type': type_,
             'time_slot': market.time_slot.format("%H:%M"),
             'url': url_for('market', area_slug=area_slug, market_time=market.time_slot),
-            'trades': {
-                'count': len(market.trades),
-                'url': url_for('trades', area_slug=area_slug, market_time=market.time_slot),
-            },
-            'offer': {
-                'count': len(market.offers),
-                'url': ''  # url_for('offers', area_slug=area_slug, market_time=market_time),
-            },
+            'trades': [
+                {
+                    'id': t.id,
+                    'time': str(t.time),
+                    'seller': t.seller,
+                    'buyer': t.buyer,
+                    'energy': t.offer.energy,
+                    'price': t.offer.price / t.offer.energy
+                }
+                for t in market.trades
+            ],
+            'offers': [
+                {
+                    'id': o.id,
+                    'seller': o.seller,
+                    'energy': o.energy,
+                    'price': o.price / o.energy
+                }
+                for o in market.offers.values()
+            ],
         }
-
-    @app.route("/<area_slug>/market/<market_time>/trades")
-    def trades(area_slug, market_time):
-        area = _get_area(area_slug)
-        market, type_ = _get_market(area, market_time)
-        return [
-            {
-                'id': t.id,
-                'time': t.time,
-                'seller': t.seller,
-                'buyer': t.buyer,
-                'energy': t.offer.energy,
-                'price': t.offer.price / t.offer.energy
-            }
-            for t in market.trades
-        ]
 
     return app
 
