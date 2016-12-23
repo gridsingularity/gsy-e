@@ -13,7 +13,7 @@ def test_offer_id_stringified():
 
 def test_offer_market():
     market = object()
-    offer = Offer('a', 10, 20, market)
+    offer = Offer('a', 10, 20, 'A', market)
 
     assert offer.market == market
 
