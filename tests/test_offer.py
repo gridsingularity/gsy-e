@@ -11,6 +11,13 @@ def test_offer_id_stringified():
     assert "<object object at" in offer.id
 
 
+def test_offer_market():
+    market = object()
+    offer = Offer('a', 10, 20, market)
+
+    assert offer.market == market
+
+
 def test_offer_listener_deleted(called):
     offer = Offer(str(uuid4()), 10, 20, 'A')
     offer.add_listener(OfferEvent.DELETED, called)

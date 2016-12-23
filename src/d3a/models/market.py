@@ -18,11 +18,12 @@ log = getLogger(__name__)
 
 
 class Offer:
-    def __init__(self, id, price, energy, seller):
+    def __init__(self, id, price, energy, seller, market=None):
         self.id = str(id)
         self.price = price
         self.energy = energy
         self.seller = seller
+        self.market = market
         self._listeners = defaultdict(set)  # type: Dict[OfferEvent, Set[callable]]
 
     def __repr__(self):
@@ -93,7 +94,7 @@ class Market:
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
-        offer = Offer(str(uuid.uuid4()), price, energy, seller)
+        offer = Offer(str(uuid.uuid4()), price, energy, seller, self)
         with self.offer_lock:
             self.offers[offer.id] = offer
             log.info("[OFFER][NEW] %s", offer)
