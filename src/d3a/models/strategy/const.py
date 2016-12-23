@@ -15,4 +15,4 @@ FRIDGE_MIN_NEEDED_ENERGY = 1
 # Unit is percentage
 STORAGE_CAPACITY = 100
 # This price should be just above the marginal costs for a PV system - unit is cent
-MIN_PV_SELLING_PRICE = 5
+MIN_PV_SELLING_PRICE = 0.1

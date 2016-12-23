@@ -14,13 +14,14 @@ class PVStrategy(BaseStrategy):
         quantity_forecast = self.produced_energy_forecast()
         average_market_price = self.area.historical_avg_price
         # Needed to calculate risk_dependency_of_selling_price
-        normed_risk = ((self.risk - 0.5 * MAX_RISK) / 0.5 * MAX_RISK)
+        normed_risk = ((self.risk - (0.5 * MAX_RISK)) / (0.5 * MAX_RISK))
         # risk_dependency_of_selling_price variates with the risk around the average market price
         # High risk means expensive selling price & high possibility not selling the energy
         risk_dependency_of_selling_price = (normed_risk * 0.4 * average_market_price)
         energy_price = max(average_market_price + risk_dependency_of_selling_price,
                            MIN_PV_SELLING_PRICE)
         rounded_energy_price = round(energy_price, 2)
+        self.log.info("rounded_energy_price: %s", rounded_energy_price)
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
