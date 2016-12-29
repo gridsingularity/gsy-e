@@ -3,6 +3,8 @@ from d3a.models.resource.properties import ApplianceProfileBuilder
 from d3a.models.resource.properties import ApplianceType
 from d3a.models.resource.properties import ElectricalProperties
 from d3a.models.resource.appliance import EnergyCurve, ApplianceMode
+from d3a.models.area import DEFAULT_CONFIG
+from pendulum.interval import Interval
 import random
 
 
@@ -21,7 +23,7 @@ def gen_pv_appliance() -> PVAppliance:
 
     on_curve = [voltage_range[1] - 15 + random.uniform(-10, 10) for p in range(0, 1000)]
     off_curve = [0, 0]
-    curves = EnergyCurve(ApplianceMode.ON, on_curve)
+    curves = EnergyCurve(ApplianceMode.ON, on_curve, Interval(seconds=1), DEFAULT_CONFIG.tick_length)
     curves.add_mode_curve(ApplianceMode.OFF, off_curve)
 
     pv.set_appliance_properties(builder.build())

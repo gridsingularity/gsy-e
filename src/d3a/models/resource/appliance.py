@@ -3,11 +3,12 @@ from typing import List
 from enum import Enum
 from d3a.models.resource.properties import ApplianceProperties, ElectricalProperties, MeasurementParamType
 from logging import getLogger
-import random
 from d3a.models.resource.run_algo import RunSchedule
-import math
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.area import DEFAULT_CONFIG
+from pendulum import Interval
+import math
+import random
 
 
 log = getLogger(__name__)
@@ -21,15 +22,47 @@ class ApplianceMode(Enum):
 
 class EnergyCurve:
 
-    def __init__(self, mode: ApplianceMode, curve: List):
+    def __init__(self, mode: ApplianceMode, curve: List, sampling: Interval, tick_duration: Interval):
         self.dictModeCurve = dict()
+        self.sampling = sampling
+        self.tick_duration = tick_duration
         self.add_mode_curve(mode, curve)
 
     def get_mode_curve(self, mode: ApplianceMode):
         return self.dictModeCurve[mode]
 
     def add_mode_curve(self, mode: ApplianceMode, curve: List):
-        self.dictModeCurve[mode] = curve
+        sample_rate_diff = self.sampling.in_seconds() - self.tick_duration.in_seconds()
+        effective_curve = curve
+        if sample_rate_diff == 0:
+            # Sample rate is same as tick frequency
+            pass
+        elif sample_rate_diff < 0:
+            # Sample rate is more than tick frequency, scale it down to tick frequency
+            effective_curve = EnergyCurve.interglot_curve(curve, abs(sample_rate_diff))
+        else:
+            # Sample rate is less than tick freq, over sample the samples to match tick rate
+            effective_curve = EnergyCurve.over_sample_curve(curve, abs(sample_rate_diff))
+        self.dictModeCurve[mode] = effective_curve
+
+    @staticmethod
+    def over_sample_curve(curve: List, multiplier: int = 1):
+        new_curve = []
+        for sample in curve:
+            for i in range(0, multiplier):
+                new_curve.append(sample)
+
+        return new_curve
+
+    @staticmethod
+    def interglot_curve(curve: List, divider: int = 1):
+        new_curve = []
+        index = 0
+        while index < len(curve):
+            new_curve.append(curve[index])
+            index += divider
+
+        return new_curve
 
 
 class UsageGenerator:
@@ -56,8 +89,8 @@ class UsageGenerator:
 
     def get_reading_at(self, index: int):
         val = None
-        if index < 0 or index >= len(self.curve):
-            val = self.curve[index]
+        if index > 0:
+            val = self.curve[index % len(self.curve)]
 
         return val
 
@@ -76,7 +109,7 @@ class Appliance(BaseAppliance):
         self.measuring = MeasurementParamType.POWER
         # self.historicUsageCurve = dict()
         self.bids = []
-        self.tick_count = 0              # count to keep track of ticks since past
+        self.tick_count = 0             # count to keep track of ticks since past
 
         log.debug("Appliance instantiated, current mode of operation is {}".format(self.mode))
 
@@ -226,6 +259,7 @@ class PVAppliance(Appliance):
         else:
             self.multiplier = 1.0
 
+        # power = self.usageGenerator.get_reading_at((pendulum.now()).diff(pendulum.today()).in_seconds())
         power = self.iterator.__next__()
         if power is None:
             # power = self.usageGenerator.get_reading_at(self.tick_count)
@@ -242,17 +276,17 @@ class FridgeAppliance(Appliance):
 
     def __init__(self, name: str = "Fridge"):
         super().__init__(name)
-        self.max_temp = 15.0
-        self.min_temp = 5.0
-        self.current_temp = 10.0
-        self.heating_per_tick = 0.005
-        self.cooling_per_tick = -.01
-        self.temp_change_on_door_open = 5.0
-        self.optimize_duration = 1                              # Optimize for these many markets/contracts in future
-        self.duration = 0
-        self.force_cool_ticks = 0
+        self.max_temp = 15.0                    # Max temp the fridge can have
+        self.min_temp = 5.0                     # Min temp to avoid frosting
+        self.current_temp = 10.0                # Average temp between low and high
+        self.heating_per_tick = 0.005           # Temperature in fahrenheit, rise every tick fridge is not cooling
+        self.cooling_per_tick = -.01            # Temp drop every tick while the fridge is cooling.
+        self.temp_change_on_door_open = 5.0     # Temp change every tick while the door remains open
+        self.optimize_duration = 1              # Optimize for these many markets/contracts in future
+        self.door_open_duration = 0             # Ticks fridge doors will remain open
+        self.force_cool_ticks = 0               # Ticks for which fridge will have to cool no matter what
 
-    def handle_door_open(self, duration: int):
+    def handle_door_open(self, duration: int = 1):
         """
         :param duration: number of ticks door will be open for
         Do the following when fridge door is open
@@ -264,21 +298,21 @@ class FridgeAppliance(Appliance):
         3. Else continue to run optimized schedule
         """
         log.warning("Fridge door was opened")
-        self.duration = duration
-        self.current_temp += self.temp_change_on_door_open
+        self.door_open_duration = duration
+        # self.current_temp += self.temp_change_on_door_open
 
     def tick(self):
-        if self.duration > 0:
+        if self.door_open_duration > 0:
             log.warning("Fridge door is still open")
-            self.duration -= 1
+            self.door_open_duration -= 1
             self.current_temp += self.temp_change_on_door_open
 
         if self.current_temp > self.max_temp:                       # Fridge is hot, start cooling immediately
             self.update_force_cool_ticks()
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
-            else:
-                self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+            # else:
+            #     self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
         elif self.current_temp < self.min_temp:                     # Fridge is too cold
             if self.mode == ApplianceMode.ON:
                 self.change_mode_of_operation(ApplianceMode.OFF)
@@ -287,10 +321,10 @@ class FridgeAppliance(Appliance):
                 self.change_mode_of_operation(ApplianceMode.ON)
                 self.update_iterator(self.gen_run_schedule())
 
-            if self.is_appliance_consuming_energy():
-                self.current_temp += self.cooling_per_tick
-            else:
-                self.current_temp += self.heating_per_tick
+        if self.is_appliance_consuming_energy():
+            self.current_temp += self.cooling_per_tick
+        else:
+            self.current_temp += self.heating_per_tick
 
         # Fridge is being force cooled
         if self.force_cool_ticks > 0:

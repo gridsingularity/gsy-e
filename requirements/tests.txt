@@ -10,7 +10,7 @@ flake8==3.2.1
 hypothesis==3.6.1
 isort==4.2.5
 mccabe==0.5.3             # via flake8
-netCDF4==1.2.6
+netcdf4==1.2.6
 numpy==1.11.3             # via netcdf4, pandas, pvlib, scipy, siphon
 pandas==0.19.1            # via pvlib
 protobuf==3.1.0.post1     # via siphon

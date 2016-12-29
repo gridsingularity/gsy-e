@@ -24,7 +24,7 @@ surface_azimuth = 180
 albedo = 0.2
 
 start = pd.Timestamp(datetime.date.today(), tz=tz)
-end = start + pd.Timedelta(days=7)
+end = start + pd.Timedelta(days=1)
 
 fm = GFS()
 
