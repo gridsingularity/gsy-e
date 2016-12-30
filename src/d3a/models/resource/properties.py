@@ -127,26 +127,26 @@ class ApplianceProperties:
 
 
 class ElectricalProperties:
-    def __init__(self, voltagerange: tuple, variance: tuple, freq: int = 50, country: str = "US"):
+    def __init__(self, power_range: tuple, variance: tuple, freq: int = 50, country: str = "US"):
         """
         Class to set electrical properties of an appliance
-        :param voltagerange: Tuple containing min and max voltage range
+        :param power_range: Tuple containing min and max power range
         :param variance: Tuple containing range to add variation in reported params
         :param freq: Grid frequency
         :param country: Country
         """
-        self.minVoltage = voltagerange[0]
-        self.maxVoltage = voltagerange[1]
-        self.minVariance = variance[0]
-        self.maxVariance = variance[1]
+        self.min_power = power_range[0]
+        self.max_power = power_range[1]
+        self.min_variance = variance[0]
+        self.max_variance = variance[1]
         self.frequency = freq
         self.country = country
 
     def get_min_operational_voltage(self):
-        return self.minVoltage
+        return self.min_power
 
     def get_max_operational_voltage(self):
-        return self.maxVoltage
+        return self.max_power
 
     def get_operating_frequency(self):
         return self.frequency
@@ -155,8 +155,8 @@ class ElectricalProperties:
         return self.country
 
     def get_min_variance(self) -> float:
-        return self.minVariance
+        return self.min_variance
 
     def get_max_variance(self) -> float:
-        return self.maxVariance
+        return self.max_variance
 
