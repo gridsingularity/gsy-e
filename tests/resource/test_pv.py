@@ -2,6 +2,7 @@ from d3a.models.resource.builder import gen_pv_appliance
 from d3a.models.resource.appliance import PVAppliance, ApplianceMode
 from d3a.models.resource.properties import MeasurementParamType
 from pendulum.interval import Interval
+import pendulum
 
 
 def get_pv_object():
@@ -75,13 +76,39 @@ def test_historic_data_saved():
     assert not pv.get_historic_usage_curve()
 
 
-# def test_pv_partial_cloud_cover():
-#     pv = get_pv_object()
-#     cloud_cover_duration = 5
-#     pv.handle_cloud_cover(50, cloud_cover_duration)
-#
-#     for tick in range(0, cloud_cover_duration):
-#         pv.event_tick()
+def test_pv_partial_cloud_cover():
+    pv = get_pv_object()
+    cloud_cover_percent = 50
+    cloud_cover_duration = 5
+    cloud_cover_match = 0
+    clear_sky_match = 0
+    during_cloud_cover = dict()
+    after_cloud_cover = dict()
+    index = 0
+    pv.handle_cloud_cover(cloud_cover_percent, cloud_cover_duration)
 
+    for tick in range(0, cloud_cover_duration):
+        during_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds() + index] = pv.get_pv_power_generated()
+        index += 1
+
+    for tick in range(0, cloud_cover_duration):
+        after_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds() + index] = pv.get_pv_power_generated()
+        index += 1
+
+    print("During cloud cover: {}".format(during_cloud_cover))
+    print("After cloud cover: {}".format(after_cloud_cover))
+
+    for key in during_cloud_cover.keys():
+        print("During: {}, original: {}".format(during_cloud_cover[key], pv.usageGenerator.get_reading_at(key)))
+        if during_cloud_cover[key] == round(pv.usageGenerator.get_reading_at(key) * (1 - cloud_cover_percent/100), 2):
+            cloud_cover_match += 1
+
+    for key in after_cloud_cover.keys():
+        print("After: {}, original: {}".format(after_cloud_cover[key], pv.usageGenerator.get_reading_at(key)))
+        if after_cloud_cover[key] == pv.usageGenerator.get_reading_at(key):
+            clear_sky_match += 1
+
+    assert clear_sky_match == cloud_cover_duration
+    assert cloud_cover_match == cloud_cover_duration
 
 

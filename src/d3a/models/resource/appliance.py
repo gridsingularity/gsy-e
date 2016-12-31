@@ -7,6 +7,7 @@ from d3a.models.resource.run_algo import RunSchedule
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.area import DEFAULT_CONFIG
 from pendulum import Interval
+import pendulum
 import math
 import random
 
@@ -267,6 +268,15 @@ class PVAppliance(Appliance):
         self.multiplier = 1.0
         self.cloud_duration = 0
 
+    def get_pv_power_generated(self):
+        power = self.usageGenerator.get_reading_at(pendulum.now().diff(pendulum.today()).in_seconds())
+        if power is None:
+            power = 0
+
+        power *= self.multiplier
+
+        return round(power, 2)
+
     def event_tick(self):
         if self.cloud_duration > 0:
             self.cloud_duration -= 1
@@ -274,12 +284,7 @@ class PVAppliance(Appliance):
             self.multiplier = 1.0
 
         # power = self.usageGenerator.get_reading_at((pendulum.now()).diff(pendulum.today()).in_seconds())
-        power = self.iterator.__next__()
-        if power is None:
-            # power = self.usageGenerator.get_reading_at(self.tick_count)
-            power = 0
-
-        power *= self.multiplier
+        power = self.get_pv_power_generated()
 
         if self.last_reported_tick == self.report_frequency:
             # report power generation/consumption to area
