@@ -78,8 +78,7 @@ class StorageStrategy(BaseStrategy):
             # TODO Here we need to delete the old offers to prevent trying to spend the energy
             # several times
             # Deleting all old offers
-            for market in self.offers_posted.values():
-                for offer_id in self.offers_posted.keys():
+            for (market, offer_id) in self.offers_posted:
                     market.delete_offer(offer_id)
             # Posting offer with new information
             offer = market.offer(
