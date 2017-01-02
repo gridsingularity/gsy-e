@@ -20,7 +20,7 @@ class PVStrategy(BaseStrategy):
         risk_dependency_of_selling_price = (normed_risk * 0.4 * average_market_price)
         energy_price = max(average_market_price + risk_dependency_of_selling_price,
                            MIN_PV_SELLING_PRICE)
-        rounded_energy_price = round(energy_price, 2)
+        rounded_energy_price = max(round(energy_price, 2), 10)
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
