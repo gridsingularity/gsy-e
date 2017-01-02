@@ -62,13 +62,36 @@ def run(interface, port, setup, slowdown, repl, **config_params):
         config = SimulationConfig(**config_params)
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-    try:
-        setup_module = import_module("d3a.setup.{}".format(setup))
-        log.info("Using setup module '%s'", setup)
-    except ImportError:
-        log.critical("Invalid setup module '%s'", setup)
-        return
-    area = setup_module.get_setup(config)
+    area = Area(
+        'Grid',
+        [
+            Area(
+                'House 1',
+                [
+                    Area('H1 PV', strategy=PVStrategy(), appliance=SimpleAppliance()),
+                    Area('H1 Fridge', strategy=FridgeStrategy(), appliance=SimpleAppliance()),
+                    Area('H1 Storage', strategy=StorageStrategy(), appliance=SimpleAppliance())
+                ]
+            ),
+            Area(
+                'House 2',
+                [
+                    Area('H2 PV1', strategy=PVStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 PV3', strategy=PVStrategy(11), appliance=SimpleAppliance()),
+                    Area('H2 PV8', strategy=PVStrategy(100), appliance=SimpleAppliance()),
+                    Area('H2 Fridge1', strategy=FridgeStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 Fridge6', strategy=FridgeStrategy(80), appliance=SimpleAppliance()),
+                    Area('H2 Fridge7', strategy=FridgeStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 Storage6', strategy=StorageStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 Storage7', strategy=StorageStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 Storage9', strategy=StorageStrategy(0), appliance=SimpleAppliance())
+                ]
+            ),
+            Area('Hydro', strategy=OfferStrategy(offer_chance=.1,
+                                                 price_fraction_choice=(0.03, 0.05)))
+        ],
+        config=config
+    )
     log.info("Starting simulation with config %s", config)
     area.activate()
 
