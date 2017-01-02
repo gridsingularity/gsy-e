@@ -2,6 +2,7 @@ import logging
 import time
 from importlib import import_module
 from logging import getLogger
+from pkgutil import iter_modules
 
 import click
 from click.types import Choice
@@ -10,6 +11,7 @@ from colorlog.colorlog import ColoredFormatter
 from pendulum.pendulum import Pendulum
 from ptpython.repl import embed
 
+from d3a import setup as d3a_setup
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.util import IntervalType
@@ -37,6 +39,9 @@ def main(log_level):
     root_logger.addHandler(handler)
 
 
+_setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
+
+
 @main.command()
 @click.option('-d', '--duration', type=IntervalType('H:M'), default="24h", show_default=True,
               help="Duration of simulation")
@@ -50,7 +55,9 @@ def main(log_level):
               help="REST-API server listening interface")
 @click.option('-p', '--port', type=int, default=5000, show_default=True,
               help="REST-API server listening port")
-@click.option('--setup', default="default", help="Simulation setup to use")
+@click.option('--setup', default="default",
+              help="Simulation setup to use. Available setups: [{}]".format(
+                  ', '.join(_setup_modules)))
 @click.option('--slowdown', type=int, default=0,
               help="Slowdown factor [0 - 100]. "
                    "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
@@ -63,11 +70,10 @@ def run(interface, port, setup, slowdown, repl, **config_params):
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
     try:
-        setup_module = import_module("d3a.setup.{}".format(setup))
+        setup_module = import_module(".{}".format(setup), 'd3a.setup')
         log.info("Using setup module '%s'", setup)
     except ImportError:
-        log.critical("Invalid setup module '%s'", setup)
-        return
+        raise click.BadOptionUsage("Invalid setup module '{}'".format(setup))
     area = setup_module.get_setup(config)
     log.info("Starting simulation with config %s", config)
     area.activate()
