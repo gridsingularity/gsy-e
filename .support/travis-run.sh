@@ -6,7 +6,7 @@ if [ "$TOXENV" == "solium" ]; then
 fi
 
 # Sigh, since travis container infrastructure doesn't support sudo we manually "install" solc
-export PATH=$HOME/solc/usr/bin:$PATH
+export SOLC_BINARY=$HOME/solc/usr/bin/solc
 export LD_LIBRARY_PATH=$HOME/solc/usr/lib
 
 tox -- --verbose

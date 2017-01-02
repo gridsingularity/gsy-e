@@ -10,8 +10,8 @@ fi
 if [ "$TOXENV" == "py35,coverage" ] || [ "$TOXENV" == "py35" ]; then
 	# Arghhhh travis. Sudo is not available
 	mkdir $HOME/solc
-	wget https://launchpad.net/~ethereum/+archive/ubuntu/ethereum/+files/solc_0.4.6-0ubuntu1~trusty_amd64.deb
-	dpkg -x solc_0.4.6-0ubuntu1~trusty_amd64.deb $HOME/solc
+	wget https://launchpad.net/~ethereum/+archive/ubuntu/ethereum/+files/solc_0.4.7-0ubuntu1~trusty_amd64.deb
+	dpkg -x solc_0.4.7-0ubuntu1~trusty_amd64.deb $HOME/solc
 fi
 
 pip install -U tox
