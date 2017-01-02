@@ -132,6 +132,16 @@ def _api_app(root_area: Area):
             'type': type_,
             'time_slot': market.time_slot.format("%H:%M"),
             'url': url_for('market', area_slug=area_slug, market_time=market.time_slot),
+            'prices': {
+                'trade': {
+                    'min': market.min_trade_price,
+                    'max': market.max_trade_price,
+                },
+                'offer': {
+                    'min': market.min_offer_price,
+                    'max': market.max_offer_price,
+                }
+            },
             'trades': [
                 {
                     'id': t.id,
