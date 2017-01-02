@@ -76,6 +76,8 @@ class Market:
         self.accounting = defaultdict(int)
         self.min_trade_price = sys.maxsize
         self.max_trade_price = 0
+        self.min_offer_price = sys.maxsize
+        self.max_offer_price = 0
         self.offer_lock = Lock()
         self.trade_lock = Lock()
         if notification_listener:
@@ -98,6 +100,9 @@ class Market:
         with self.offer_lock:
             self.offers[offer.id] = offer
             log.info("[OFFER][NEW] %s", offer)
+            price = offer.price / offer.energy
+            self.max_offer_price = max(self.max_offer_price, price)
+            self.min_offer_price = min(self.min_offer_price, price)
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
 
@@ -134,6 +139,11 @@ class Market:
             price = offer.price / offer.energy
             self.max_trade_price = max(self.max_trade_price, price)
             self.min_trade_price = min(self.min_trade_price, price)
+            # Recalculate offer min/max price since offer was removed
+            offer_prices = [o.price / o.energy for o in self.offers.values()]
+            if offer_prices:
+                self.min_offer_price = min(offer_prices)
+                self.min_offer_price = max(offer_prices)
         offer._traded(trade, self)
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
