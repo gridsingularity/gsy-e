@@ -69,9 +69,9 @@ class StorageStrategy(BaseStrategy):
             list(market.sorted_offers)[0].energy
         )
         # Post offer in most expensive market
-        self.log.info("new_selling_price %s", new_selling_price)
-        self.log.info("sorted_offer_price %s", sorted_offer_price)
-        self.log.info("self.selling_price %s", self.selling_price)
+#        self.log.info("new_selling_price %s", new_selling_price)
+#        self.log.info("sorted_offer_price %s", sorted_offer_price)
+#        self.log.info("self.selling_price %s", self.selling_price)
         if (
                 new_selling_price <= sorted_offer_price and
                 self.used_storage > 0 and
