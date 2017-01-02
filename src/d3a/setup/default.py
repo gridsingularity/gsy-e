@@ -11,8 +11,15 @@ def get_setup(config):
                 'House 1',
                 [
                     Area(
-                        'H1 PV',
-                        strategy=OfferStrategy(offer_chance=.2, price_fraction_choice=[.025]),
+                        'H1 PV 1',
+                        strategy=OfferStrategy(offer_chance=.2,
+                                               price_fraction_choice=[.023, .026]),
+                        appliance=SimpleAppliance()
+                    ),
+                    Area(
+                        'H1 PV 2',
+                        strategy=OfferStrategy(offer_chance=.2,
+                                               price_fraction_choice=[.024, .025]),
                         appliance=SimpleAppliance()
                     ),
                     Area(
