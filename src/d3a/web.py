@@ -165,6 +165,12 @@ def _api_app(root_area: Area):
                 }
                 for o in market.offers.values()
             ],
+            'ious': {
+                buyer: {
+                    seller: total for seller, total in seller_total.items()
+                }
+                for buyer, seller_total in market.ious.items()
+            }
         }
 
     return app
