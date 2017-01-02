@@ -63,6 +63,9 @@ def _api_app(root_area: Area):
         elif market_time.isdigit():
             market = list(area.markets.values())[int(market_time)]
             type_ = 'open'
+        elif market_time[0] == '-' and market_time[1:].isdigit():
+            market = list(area.past_markets.values())[int(market_time)]
+            type_ = 'closed'
         else:
             time = pendulum.parse(market_time)
             try:
