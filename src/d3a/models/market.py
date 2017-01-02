@@ -91,7 +91,7 @@ class Market:
         for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
             listener(event, market=self, **kwargs)
 
-    def offer(self, energy: int, price: float, seller: str) -> Offer:
+    def offer(self, energy: float, price: float, seller: str) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
