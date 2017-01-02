@@ -1,6 +1,7 @@
 import logging
-from logging import getLogger
 import time
+from importlib import import_module
+from logging import getLogger
 
 import click
 from click.types import Choice
@@ -8,16 +9,12 @@ from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from pendulum.pendulum import Pendulum
 from ptpython.repl import embed
+
 from d3a.exceptions import D3AException
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.area import Area
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.simple import OfferStrategy
-from d3a.models.strategy.storage import StorageStrategy
 from d3a.util import IntervalType
 from d3a.web import start_web
+
 
 log = getLogger(__name__)
 
@@ -53,41 +50,25 @@ def main(log_level):
               help="REST-API server listening interface")
 @click.option('-p', '--port', type=int, default=5000, show_default=True,
               help="REST-API server listening port")
+@click.option('--setup', default="default", help="Simulation setup to use")
 @click.option('--slowdown', type=int, default=0,
               help="Slowdown factor [0 - 100]. "
                    "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
                    "and 100: ticks are simulated in realtime")
 @click.option('--repl/--no-repl', default=False, show_default=True,
               help="Start REPL after simulation run.")
-def run(interface, port, slowdown, repl, **config_params):
+def run(interface, port, setup, slowdown, repl, **config_params):
     try:
         config = SimulationConfig(**config_params)
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-    area = Area(
-        'Grid',
-        [
-            Area(
-                'House 1',
-                [
-                    Area('H1 PV', strategy=PVStrategy(), appliance=SimpleAppliance()),
-                    Area('H1 Fridge', strategy=FridgeStrategy(), appliance=SimpleAppliance()),
-                    Area('H1 Storage', strategy=StorageStrategy(), appliance=SimpleAppliance())
-                ]
-            ),
-            Area(
-                'House 2',
-                [
-                    Area('H2 PV', strategy=PVStrategy(), appliance=SimpleAppliance()),
-                    Area('H2 Fridge', strategy=FridgeStrategy(), appliance=SimpleAppliance()),
-                    Area('H2 Storage', strategy=StorageStrategy(), appliance=SimpleAppliance())
-                ]
-            ),
-            Area('Hydro', strategy=OfferStrategy(offer_chance=.1,
-                                                 price_fraction_choice=(0.03, 0.05)))
-        ],
-        config=config
-    )
+    log.info("Using '%s' setup.", setup)
+    try:
+        setup_module = import_module("d3a.setup.{}".format(setup))
+    except ImportError:
+        log.exception("Invalid setup module '%s'", setup)
+        return
+    area = setup_module.get_setup(config)
     log.info("Starting simulation with config %s", config)
     area.activate()
 
