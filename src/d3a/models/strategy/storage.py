@@ -15,10 +15,12 @@ class StorageStrategy(BaseStrategy):
         self.done_trades = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.used_storage = 0.00
         self.blocked_storage = 0.00
+        self.offer_price = 10000
 
     def event_tick(self, *, area):
         avg_cheapest_offer_price = self.find_avg_cheapest_offers()
-        # Here starts the logic if energy should be bought
+        # Here starts the logic if energy should be
+        #        self.log.info("self.blocked_storage %s", self.blocked_storage)
         for market in self.area.markets.values():
             for offer in market.sorted_offers:
                 if (
@@ -45,19 +47,32 @@ class StorageStrategy(BaseStrategy):
         # if energy for this slot was bought: sell it in the most expensive market
         for bought in self.done_trades[past_market]:
             self.blocked_storage -= bought.energy
-            self.log.info("self.blocked_storage %s", self.blocked_storage)
             self.used_storage += bought.energy
-            expensive_offers = list(self.area.cheapest_offers)[-1]
-            # Finding the most expensive market
-            market = expensive_offers.market
-            # Post offer in most expensive market
-            if selling_price < list(market.sorted_offers)[0].price:
-                offer = market.offer(
-                    bought.energy,
-                    (selling_price * bought.energy),
-                    self.owner.name
-                )
-                self.offers_posted[offer.id] = market
+        expensive_offers = list(self.area.cheapest_offers)[-1]
+        # Finding the most expensive market
+        market = expensive_offers.market
+        # Post offer in most expensive market
+        #        self.log.info("selling_price %s", selling_price)
+        #        self.log.info("max_selling_price %s", max_selling_price)
+        self.log.info("selling_price %s", selling_price)
+        self.log.info("list(market.sorted_offers)[0].price %s",
+                      list(market.sorted_offers)[0].price)
+        self.log.info("self.used_storage  %s", self.used_storage)
+        if (
+            selling_price < list(market.sorted_offers)[0].price and
+            self.used_storage > 0 and
+            # if selling price cheaper than the price of currently existing offer
+            selling_price < self.offer_price
+        ):
+            # TODO Here we need to delete the old offers to prevent trying to spend the energy
+            # several times
+            offer = market.offer(
+                self.used_storage,
+                selling_price,
+                self.owner.name
+            )
+            self.offers_posted[offer.id] = market
+            self.offer_price = offer.price
 
     def event_trade(self, *, market, trade):
         if self.owner.name == trade.seller:
