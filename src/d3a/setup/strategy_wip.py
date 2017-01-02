@@ -21,9 +21,15 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    Area('H2 PV', strategy=PVStrategy(), appliance=SimpleAppliance()),
-                    Area('H2 Fridge', strategy=FridgeStrategy(), appliance=SimpleAppliance()),
-                    Area('H2 Storage', strategy=StorageStrategy(), appliance=SimpleAppliance())
+                    Area('H2 PV1', strategy=PVStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 PV3', strategy=PVStrategy(11), appliance=SimpleAppliance()),
+                    Area('H2 PV8', strategy=PVStrategy(100), appliance=SimpleAppliance()),
+                    Area('H2 Fridge1', strategy=FridgeStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 Fridge6', strategy=FridgeStrategy(80), appliance=SimpleAppliance()),
+                    Area('H2 Fridge7', strategy=FridgeStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 Storage6', strategy=StorageStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 Storage7', strategy=StorageStrategy(0), appliance=SimpleAppliance()),
+                    Area('H2 Storage9', strategy=StorageStrategy(0), appliance=SimpleAppliance())
                 ]
             ),
             Area('Hydro', strategy=OfferStrategy(offer_chance=.1,

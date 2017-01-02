@@ -15,7 +15,6 @@ class StorageStrategy(BaseStrategy):
         self.done_trades = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.used_storage = 0.00
         self.blocked_storage = 0.00
-        self.offer_price = 10000
         self.selling_price = 30
 
     def event_tick(self, *, area):
@@ -59,7 +58,10 @@ class StorageStrategy(BaseStrategy):
         max_selling_price = 0.2 * avg_cheapest_offer_price
         # formula to calculate a profitable selling price
         new_selling_price = avg_cheapest_offer_price + ((self.risk / 100) * max_selling_price)
-        expensive_offers = list(self.area.cheapest_offers)[-1]
+        try:
+            expensive_offers = list(self.area.cheapest_offers)[-1]
+        except IndexError:
+            return
         # Finding the most expensive market
         market = expensive_offers.market
         sorted_offer_price = (
@@ -89,7 +91,6 @@ class StorageStrategy(BaseStrategy):
             # Updating parameters
             self.selling_price = new_selling_price
             self.offers_posted[offer.id] = market
-            self.offer_price = offer.price
 
     def find_avg_cheapest_offers(self):
         cheapest_offers = self.area.cheapest_offers
