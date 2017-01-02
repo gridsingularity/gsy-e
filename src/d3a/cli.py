@@ -27,7 +27,7 @@ def main(log_level):
     handler = logging.StreamHandler()
     handler.setFormatter(
         ColoredFormatter(
-            "%(log_color)s%(asctime)s.%(msecs)03d %(levelname)-7s (%(lineno)4d) %(name)-25s: "
+            "%(log_color)s%(asctime)s.%(msecs)03d %(levelname)-8s (%(lineno)4d) %(name)-25s: "
             "%(message)s%(reset)s",
             datefmt="%H:%M:%S"
         )
@@ -62,11 +62,11 @@ def run(interface, port, setup, slowdown, repl, **config_params):
         config = SimulationConfig(**config_params)
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-    log.info("Using '%s' setup.", setup)
     try:
         setup_module = import_module("d3a.setup.{}".format(setup))
+        log.info("Using setup module '%s'", setup)
     except ImportError:
-        log.exception("Invalid setup module '%s'", setup)
+        log.critical("Invalid setup module '%s'", setup)
         return
     area = setup_module.get_setup(config)
     log.info("Starting simulation with config %s", config)
