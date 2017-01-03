@@ -58,7 +58,7 @@ contract Market is IOUToken {
      */
     function offer(uint energyUnits, int price) returns (bytes32 offerId) {
 
-        if (energyUnits > 0 && price != 0) {
+        if (energyUnits > 0) {
             offerId = sha3(energyUnits, price, msg.sender, block.number);
             Offer offer = offers[offerId];
             offer.energyUnits = energyUnits;
@@ -105,9 +105,11 @@ contract Market is IOUToken {
             && now-marketStartTime < interval) {
             balances[buyer] += int(offer.energyUnits);
             balances[offer.seller] -= int(offer.energyUnits);
-            int cost = int(offer.energyUnits) * offer.price;
-            success = clearingToken.marketTransfer(buyer, offer.seller, cost);
-            if (success) {
+            if (offer.price != 0) {
+                int cost = int(offer.energyUnits) * offer.price;
+                success = clearingToken.marketTransfer(buyer, offer.seller, cost);
+            }
+            if (success || offer.price == 0) {
                 Trade(buyer, offer.seller, offer.energyUnits, offer.price);
                 offer.energyUnits = 0;
                 offer.price = 0;

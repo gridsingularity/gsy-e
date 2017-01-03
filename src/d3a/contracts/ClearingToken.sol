@@ -67,8 +67,8 @@ contract ClearingToken is IOUToken {
     /*
      * @notice Status whether Market is registered
      */
-    function isGloballyApproved(address _market) constant returns (bool) {
-        return clearingMemberAmount[_market] > 0;
+    function isGloballyApproved(address clearingMember) constant returns (bool) {
+        return clearingMemberAmount[clearingMember] > 0;
     }
 
     /*

@@ -77,8 +77,6 @@ def test_offer_fail(base_state_contract):
     market_contract.registerMarket(10000, sender=A_key)
     offer_id = market_contract.offer(0, 956, sender=B_key)
     assert market_contract.getOffer(offer_id) == [0, 0, zero_address]
-    offer_id = market_contract.offer(7, 0, sender=B_key)
-    assert market_contract.getOffer(offer_id) == [0, 0, zero_address]
 
 
 def test_cancel(base_state_contract):
@@ -120,6 +118,19 @@ def test_offer_price_negative(base_state_contract):
     assert market_contract.trade(offer_id, sender=buyer_key)
     assert clearing_contract.balanceOf(buyer) == 70
     assert clearing_contract.balanceOf(seller) == -70
+
+
+def test_offer_price_zero(base_state_contract):
+    zero_address = b'0' * 40
+    clearing_contract, market_contract = base_state_contract
+    assert market_contract.registerMarket(10000, sender=A_key)
+    buyer, buyer_key, seller, seller_key = B, B_key, C, C_key
+    offer_id = market_contract.offer(7, 0, sender=seller_key)
+    assert market_contract.getOffer(offer_id) == [7, 0, encode_hex(seller)]
+    assert market_contract.trade(offer_id, sender=buyer_key)
+    assert clearing_contract.balanceOf(buyer) == 0
+    assert clearing_contract.balanceOf(seller) == 0
+    assert market_contract.getOffer(offer_id) == [0, 0, zero_address]
 
 
 def test_multiple_markets(base_state_contract):
