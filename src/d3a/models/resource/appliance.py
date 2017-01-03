@@ -304,8 +304,8 @@ class FridgeAppliance(Appliance):
         self.max_temp = 15.0                    # Max temp the fridge can have
         self.min_temp = 5.0                     # Min temp to avoid frosting
         self.current_temp = 10.0                # Average temp between low and high
-        self.heating_per_tick = 0.005           # Temperature in fahrenheit, rise every tick fridge is not cooling
-        self.cooling_per_tick = -.01            # Temp drop every tick while the fridge is cooling.
+        self.heating_per_tick = 0.01            # Temperature in fahrenheit, rise every tick fridge is not cooling
+        self.cooling_per_tick = -.1             # Temp drop every tick while the fridge is cooling.
         self.temp_change_on_door_open = 5.0     # Temp change every tick while the door remains open
         self.optimize_duration = 1              # Optimize for these many markets/contracts in future
         self.door_open_duration = 0             # Ticks fridge doors will remain open
@@ -337,8 +337,8 @@ class FridgeAppliance(Appliance):
             self.update_force_cool_ticks()
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
-            # else:
-            #     self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+            else:
+                self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
         elif self.current_temp < self.min_temp:                     # Fridge is too cold
             log.warning("Fridge is too cold [{} C], stop cooling if cooling in progress".format(self.current_temp))
             if self.mode == ApplianceMode.ON:
@@ -348,22 +348,24 @@ class FridgeAppliance(Appliance):
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
                 self.update_iterator(self.gen_run_schedule())
-
-        if self.is_appliance_consuming_energy():
-            self.current_temp -= self.cooling_per_tick
-            log.info("Fridge cooling cycle is running: {} C".format(self.current_temp))
-        else:
-            self.current_temp += self.heating_per_tick
-            log.info("Fridge cooling cycle is not running: {} C".format(self.current_temp))
+            elif self.tick_count == 0:
+                self.update_iterator(self.gen_run_schedule())
 
         # Fridge is being force cooled
         if self.force_cool_ticks > 0:
-            log.warning("Fridge is being force cooled, ticks remaining: {} C".format(self.force_cool_ticks))
+            log.warning("Fridge is being force cooled, ticks remaining: {}".format(self.force_cool_ticks))
             self.force_cool_ticks -= 1
             if self.force_cool_ticks <= 0:
                 # This is last force cool tick, optimize remaining ticks
                 self.update_iterator(self.gen_run_schedule())
                 log.warning("Force cooling has ended {} C".format(self.current_temp))
+
+        if self.is_appliance_consuming_energy():
+            self.current_temp += self.cooling_per_tick
+            log.info("Fridge cooling cycle is running: {} C".format(self.current_temp))
+        else:
+            self.current_temp += self.heating_per_tick
+            log.info("Fridge cooling cycle is not running: {} C".format(self.current_temp))
 
         if self.last_reported_tick == self.report_frequency:
             # report power generation/consumption to area
@@ -382,10 +384,14 @@ class FridgeAppliance(Appliance):
         :return:
         """
         diff = self.current_temp - self.max_temp
-        ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
-        temp_drop_per_cycle = self.cooling_per_tick * ticks_per_cycle
-        cycles_to_run = math.ceil(diff/temp_drop_per_cycle)
-        self.force_cool_ticks = cycles_to_run * ticks_per_cycle
+        if diff <= 0:
+            self.force_cool_ticks = 0
+        else:
+            ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+            temp_drop_per_cycle = self.cooling_per_tick * ticks_per_cycle * -1
+            cycles_to_run = math.ceil(diff/temp_drop_per_cycle)
+            self.force_cool_ticks = cycles_to_run * ticks_per_cycle
+
         log.warning("It will take fridge {} ticks to cool.".format(self.force_cool_ticks))
 
     def get_run_skip_cycle_counts(self, ticks_remaining: int):
@@ -431,18 +437,24 @@ class FridgeAppliance(Appliance):
         total cycles = required cycles + cycles that can be skipped
         """
         t_h_max = math.floor((self.max_temp - mid)/self.heating_per_tick)       # ticks to heat to max temp
+        log.info("Ticks needed to heat to max allowed temp: {}".format(t_h_max))
+
         # ticks required to cool from max to mid
         t_c_mid = math.ceil((self.max_temp - mid)/(self.cooling_per_tick * -1))
+        log.info("Ticks needed to cool from max to mid: {}".format(t_c_mid))
+
         t_range = t_h_max + t_c_mid     # ticks need to rise to max and cool back to mid
         quo = ticks_remaining // t_range    # num of times fridge can swing between mid and max
-        rem = ticks_remaining % t_range     # remainder ticks to account for, shouldn't be more than 1
-        extra = rem * t_range               # these ticks need to be accounted for
+        rem = ticks_remaining % t_range     # remainder ticks to account for, shouldn't be more than 1 cycle
+
+        log.info("Fridge can swing: {} times in range, extra ticks: {}".format(quo, rem))
 
         cycles_required += math.ceil((quo * t_c_mid)/ticks_per_cycle)
-        t_cooling_req = extra - t_h_max     # number of ticks cooling is absolutely needed from remaining extra ticks
+        t_cooling_req = rem - t_h_max     # number of ticks cooling is absolutely needed from remaining extra ticks
+        log.info("Cooling required in extra ticks: {}".format(t_cooling_req))
 
         if t_cooling_req <= 0:   # temp will not rise beyond max in remaining time.
-            cycles_skipped += math.floor(extra/ticks_per_cycle)     # use remaining time for cooling, but not required
+            cycles_skipped += math.floor(rem/ticks_per_cycle)     # use remaining time for cooling, but not required
         else:       # temp will rise above max, at least 1 cooling will be required
             extra_cooling_cycles = math.ceil(t_cooling_req/ticks_per_cycle)
             cycles_required += 1
