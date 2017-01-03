@@ -1,12 +1,9 @@
 pragma solidity ^0.4.4;
 import "IOUToken.sol";
 import "ClearingToken.sol";
-import "byte_set_lib.sol";
 
 
 contract Market is IOUToken {
-
-    using ItSet for ItSet.ByteSet;
 
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
@@ -18,8 +15,6 @@ contract Market is IOUToken {
         address seller;
     }
 
-    // Holds set of all the offerIds
-    ItSet.ByteSet offerIdSet;
 
     // Holds the reference to clearingToken contract used for token transfers
     ClearingToken clearingToken;
@@ -52,7 +47,7 @@ contract Market is IOUToken {
     bytes32[] tempOffersIds;
 
     // Events
-    event OfferEvent(uint energyUnits, int price, address indexed seller, uint blocknumber);
+    event OfferEvent(uint energyUnits, int price, address indexed seller);
     event CancelOffer(uint energyUnits, int price, address indexed seller);
     event Trade(address indexed buyer, address indexed seller, uint energyUnits, int price);
 
@@ -69,8 +64,7 @@ contract Market is IOUToken {
             offer.energyUnits = energyUnits;
             offer.price = price;
             offer.seller = msg.sender;
-            offerIdSet.insert(offerId);
-            OfferEvent(offer.energyUnits, offer.price, offer.seller, block.number);
+            OfferEvent(offer.energyUnits, offer.price, offer.seller);
         } else {
             offerId = "";
         }
@@ -87,7 +81,6 @@ contract Market is IOUToken {
             offer.energyUnits = 0;
             offer.price = 0;
             offer.seller = 0;
-            offerIdSet.remove(offerId);
             success = true;
         } else {
           success = false;
@@ -119,7 +112,6 @@ contract Market is IOUToken {
                 offer.energyUnits = 0;
                 offer.price = 0;
                 offer.seller = 0;
-                offerIdSet.remove(offerId);
                 success = true;
             } else {
                 throw;
@@ -149,34 +141,10 @@ contract Market is IOUToken {
     }
 
     /*
-     * Gets all OfferIds in the market
-     */
-    function getAllOffers() constant returns (bytes32[]) {
-        return offerIdSet.list;
-    }
-
-    /*
      * Gets the address of the ClearingToken contract that the market is registered with
      */
     function getClearingTokenAddress() constant returns (address) {
         return address(clearingToken);
     }
 
-    /*
-     * Gets all the offerids whose offer price is below _value
-     */
-    function getOffersIdsBelow(int _value) constant returns (bytes32[]) {
-        delete tempOffersIds;
-        uint j = 0;
-        for (uint i = 0; i < offerIdSet.size(); i++) {
-            Offer offer = offers[offerIdSet.list[i]];
-            if (offer.energyUnits > 0
-                && offer.price < _value
-                && offer.seller != address(0)) {
-                tempOffersIds.push(offerIdSet.list[i]);
-                j += 1;
-            }
-        }
-        return tempOffersIds;
-    }
 }

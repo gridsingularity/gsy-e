@@ -14,20 +14,16 @@ A_key, B_key, C_key, D_key, E_key, F_key, G_key, H_key = keys[:8]
 
 
 # contract paths
-byte_set_lib_path = get_contract_path('byte_set_lib.sol')
 market_contract_path = get_contract_path('Market.sol')
 clearing_contract_path = get_contract_path('ClearingToken.sol')
 state = tester.state()
 
 
 def make_market_contract(approver, constructor_params):
-    libcode = open(byte_set_lib_path).read()
-    set_address = state.contract(libcode, language='solidity', sender=tester.k0)
     return state.abi_contract(None, path=market_contract_path,
                               language='solidity',
                               sender=approver,
-                              constructor_parameters=constructor_params,
-                              libraries={'ItSet': encode_hex(set_address)})
+                              constructor_parameters=constructor_params)
 
 
 @contextmanager
@@ -41,8 +37,6 @@ def print_gas_used(state, string):
 @pytest.fixture
 def base_state_contract():
 
-    libcode = open(byte_set_lib_path).read()
-    set_address = state.contract(libcode, language='solidity', sender=tester.k0)
     clearing_contract = state.abi_contract(None, path=clearing_contract_path,
                                            language='solidity',
                                            sender=tester.k0,
@@ -56,8 +50,7 @@ def base_state_contract():
                                          constructor_parameters=[
                                             encode_hex(clearing_contract.address),
                                             10**5, "Market", 5,
-                                            "KWh", 3*60],
-                                         libraries={'ItSet': encode_hex(set_address)})
+                                            "KWh", 3*60])
     return (clearing_contract, market_contract)
 
 
@@ -146,20 +139,6 @@ def test_multiple_markets(base_state_contract):
     assert clearing_contract.balanceOf(B) == 6320
     assert clearing_contract.balanceOf(E) == -8091
     assert clearing_contract.balanceOf(C) == 8091
-
-
-def test_getOffersIdsBelow(base_state_contract):
-    clearing_contract, market_contract = base_state_contract
-    assert market_contract.registerMarket(10000, sender=A_key)
-    offerid_a = market_contract.offer(7, 956, sender=B_key)
-    assert market_contract.getOffer(offerid_a) == [7, 956, encode_hex(B)]
-    offerid_b = market_contract.offer(8, 799, sender=C_key)
-    assert market_contract.getOffer(offerid_b) == [8, 799, encode_hex(C)]
-    offerid_c = market_contract.offer(9, 655, sender=D_key)
-    assert market_contract.getOffer(offerid_c) == [9, 655, encode_hex(D)]
-    offerid_d = market_contract.offer(11, 1024, sender=E_key)
-    assert market_contract.getOffer(offerid_d) == [11, 1024, encode_hex(E)]
-    assert market_contract.getOffersIdsBelow(1000) == [offerid_a, offerid_b, offerid_c]
 
 
 def test_trade_fail_afterinterval(base_state_contract):
