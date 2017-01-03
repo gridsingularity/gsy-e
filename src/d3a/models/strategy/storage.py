@@ -50,7 +50,6 @@ class StorageStrategy(BaseStrategy):
     def event_trade(self, *, market, trade):
         if self.owner.name == trade.seller:
             self.selling_trades[market].append(trade)
-
             # TODO post information about earned money
 
     def sell_energy(self):
@@ -78,7 +77,6 @@ class StorageStrategy(BaseStrategy):
                 self.used_storage > 0 and
                 current_selling_price < self.selling_price
         ):
-            # TODO Here we need to delete the old offers to prevent trying to spend the energy
             # several times
             # Deleting all old offers
             for (market, offer_id) in self.offers_posted:
