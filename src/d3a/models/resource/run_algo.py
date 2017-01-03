@@ -148,7 +148,7 @@ class Scheduler:
         current = 0
         end = len(self.cost)
         # self.run_schedule = []
-        self.log.error("E_N_R: {}, window: {}, cycle_len: {}".format(self.e_n_r, self.run_window, len(self.cycle)))
+        self.log.info("E_N_R: {}, window: {}, cycle_len: {}".format(self.e_n_r, self.run_window, len(self.cycle)))
         while count < self.e_n_r:
             if current >= end:
                 break

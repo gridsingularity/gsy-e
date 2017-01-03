@@ -35,7 +35,6 @@ class EnergyCurve:
     def add_mode_curve(self, mode: ApplianceMode, curve: List):
         sample_rate_diff = self.sampling.in_seconds() - self.tick_duration.in_seconds()
         effective_curve = curve
-        print("Sample rate difference: {}".format(sample_rate_diff))
         if sample_rate_diff == 0:
             # Sample rate is same as tick frequency
             # print("Sample rates are same")
@@ -99,7 +98,9 @@ class UsageGenerator:
     def get_reading_at(self, index: int):
         val = None
         if index > 0:
-            val = self.curve[index % len(self.curve)]
+            index %= len(self.curve)
+
+        val = self.curve[index]
 
         return val
 
@@ -332,36 +333,43 @@ class FridgeAppliance(Appliance):
             self.current_temp += self.temp_change_on_door_open
 
         if self.current_temp > self.max_temp:                       # Fridge is hot, start cooling immediately
+            log.warning("Fridge is warm [{} C], start cooling immediately".format(self.current_temp))
             self.update_force_cool_ticks()
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
             # else:
             #     self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
         elif self.current_temp < self.min_temp:                     # Fridge is too cold
+            log.warning("Fridge is too cold [{} C], stop cooling if cooling in progress".format(self.current_temp))
             if self.mode == ApplianceMode.ON:
                 self.change_mode_of_operation(ApplianceMode.OFF)
         else:                                                       # Fridge is in acceptable temp range
+            log.info("Fridge is in acceptable temp range: {} C".format(self.current_temp))
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
                 self.update_iterator(self.gen_run_schedule())
 
         if self.is_appliance_consuming_energy():
-            self.current_temp += self.cooling_per_tick
+            self.current_temp -= self.cooling_per_tick
+            log.info("Fridge cooling cycle is running: {} C".format(self.current_temp))
         else:
             self.current_temp += self.heating_per_tick
+            log.info("Fridge cooling cycle is not running: {} C".format(self.current_temp))
 
         # Fridge is being force cooled
         if self.force_cool_ticks > 0:
+            log.warning("Fridge is being force cooled, ticks remaining: {} C".format(self.force_cool_ticks))
             self.force_cool_ticks -= 1
             if self.force_cool_ticks <= 0:
                 # This is last force cool tick, optimize remaining ticks
                 self.update_iterator(self.gen_run_schedule())
+                log.warning("Force cooling has ended {} C".format(self.current_temp))
 
         if self.last_reported_tick == self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
-            power_used = self.iterator.__next__()
-            log.info("Power used by fridge: {} W".format(power_used))
+            # power_used = self.iterator.__next__()
+            # log.info("Power used by fridge: {} W".format(power_used))
 
         self.tick_count += 1
         self.last_reported_tick += 1
@@ -392,6 +400,8 @@ class FridgeAppliance(Appliance):
         cycles_skipped = 0
         ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
 
+        log.info("Ticks per cycle: {}, temp diff: {}".format(ticks_per_cycle, diff))
+
         if diff < 0:
             """
             Current temp is lower than mid temp, bring temp up to mid temp
@@ -400,6 +410,7 @@ class FridgeAppliance(Appliance):
 
             t_h_mid = math.ceil((diff * -1)/self.heating_per_tick)
             ticks_remaining -= t_h_mid
+            log.info("Temp {} lower than mid temp, ticks required to raise temp: {}".format(diff, t_h_mid))
 
         else:
             """
@@ -411,6 +422,7 @@ class FridgeAppliance(Appliance):
             t_c_mid = math.ceil(diff/(self.cooling_per_tick * -1))
             ticks_remaining -= t_c_mid
             cycles_required += math.ceil(t_c_mid/ticks_per_cycle)
+            log.info("Temp is above mid, cycles required to keep in range: {}".format(cycles_required))
 
         """
         In remaining ticks, the temp can be allowed to rise to max before cooling is needed
@@ -437,9 +449,12 @@ class FridgeAppliance(Appliance):
             if extra_cooling_cycles > 1:
                 cycles_skipped += extra_cooling_cycles - 1
 
+        log.info("Required cycles: {}, skip able cycles: {}".format(cycles_required, cycles_skipped))
+
         return cycles_required, cycles_skipped
 
     def gen_run_schedule(self):
+        log.info("Generating new run schedule")
         ticks_remaining = DEFAULT_CONFIG.ticks_per_slot * self.optimize_duration - self.tick_count
         cycles = self.get_run_skip_cycle_counts(ticks_remaining)
         cycles_to_run = cycles[0]
@@ -451,11 +466,14 @@ class FridgeAppliance(Appliance):
                                        DEFAULT_CONFIG.ticks_per_slot, cycles_to_run, skip_cycles, self.tick_count)
             schedule = run_schedule.get_run_schedule()
 
+        log.info("Length of schedule: {}".format(len(schedule)))
+
         return schedule
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self.bids = []
+        # TODO get current market bid here
+        # self.bids = []
         # count = self.optimize_duration
         # for key in self.markets:
         #     self.bids.append(self.markets[key].avg_offer_price)

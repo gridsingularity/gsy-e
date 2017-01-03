@@ -1,10 +1,12 @@
 from d3a.models.resource.appliance import PVAppliance
+from d3a.models.resource.appliance import FridgeAppliance
 from d3a.models.resource.properties import ApplianceProfileBuilder
 from d3a.models.resource.properties import ApplianceType
 from d3a.models.resource.properties import ElectricalProperties
 from d3a.models.resource.appliance import EnergyCurve, ApplianceMode
 from d3a.models.area import DEFAULT_CONFIG
 from pendulum.interval import Interval
+import random
 
 
 def get_pv_curves(panel_count: int = 1) -> dict:
@@ -16,7 +18,7 @@ def get_pv_curves(panel_count: int = 1) -> dict:
 
     """
     Actual power produced by one PV panel in california during month of April 2016.
-    Samples were taken every 5 mins for 24 hours period, a total of 288 samples.
+    Samples were taken every 5 minutes for 24 hours period, a total of 288 samples.
     """
     one_panel_curve = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -49,6 +51,28 @@ def get_pv_curves(panel_count: int = 1) -> dict:
     mode_curves[ApplianceMode.OFF] = [0, 0]
 
     return mode_curves
+
+
+def gen_fridge_curves() -> dict:
+    """
+    Method to generate power consumption curves in whatts
+    :return: Dictionary with appliance mode as key and curve as power produced.
+    """
+    run_cycle_duration = 5 * 60  # Fridge cooling cycle runs for 5 minutes = 300 sec
+    avg_power_consumption = 130     # Modern fridge consumes on an avg of 130 W while cooling
+    variation = (-30, 30)
+    on_curve = []
+
+    for sec in range(0, run_cycle_duration):
+        on_curve.append(avg_power_consumption + random.uniform(variation[0], variation[1]))
+
+    off_curve = [0, 0]
+
+    mode_curve = dict()
+    mode_curve[ApplianceMode.ON] = on_curve
+    mode_curve[ApplianceMode.OFF] = off_curve
+
+    return mode_curve
 
 
 def gen_pv_appliance() -> PVAppliance:
@@ -86,6 +110,37 @@ def gen_pv_appliance() -> PVAppliance:
     return pv
 
 
+def gen_fridge_appliance() -> FridgeAppliance:
+    """
+    Method to create a Fridge type appliance object
+    :return: A fully constructed FridgeAppliance type object
+    """
+    fridge = FridgeAppliance("Fridge")
+    builder = ApplianceProfileBuilder("GE Profile 22/2 cu Fridge", "Kitchen", ApplianceType.BUFFER_STORAGE)
+    builder.set_contact_url("http://www.geappliances.com/ge/service-and-support/contact.htm")
+    builder.set_icon_url\
+        ("http://products.geappliances.com/MarketingObjectRetrieval/Dispatcher?RequestType=Image&Name=CGI67704.jpg")
+    builder.set_manufacturer("GE Appliances")
+    builder.set_model_url("http://products.geappliances.com/appliance/gea-specs/PYE22PMKES")
+    builder.set_uuid("SOMERANDOMUUIDBEINGUSEDFORFRIDGE")
 
+    # Power generation curve
+    mode_curves = gen_fridge_curves()
+    on_curve = mode_curves[ApplianceMode.ON]
+    off_curve = mode_curves[ApplianceMode.OFF]
 
+    # Electrical properties
+    power_range = (min(off_curve), max(on_curve))
+    variance_range = (0, 0)  # As real data is used, variance may not be needed
+    electrical = ElectricalProperties(power_range, variance_range)
+
+    curves = EnergyCurve(ApplianceMode.ON, on_curve,
+                         Interval(seconds=1), DEFAULT_CONFIG.tick_length)
+    curves.add_mode_curve(ApplianceMode.OFF, off_curve)
+
+    fridge.set_appliance_properties(builder.build())
+    fridge.set_electrical_properties(electrical)
+    fridge.set_appliance_energy_curve(curves)
+
+    return fridge
 
