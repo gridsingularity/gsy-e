@@ -1,6 +1,6 @@
 pragma solidity ^0.4.4;
 import "IOUToken.sol";
-import "MoneyIOU.sol";
+import "ClearingToken.sol";
 import "byte_set_lib.sol";
 
 
@@ -21,8 +21,8 @@ contract Market is IOUToken {
     // Holds set of all the offerIds
     ItSet.ByteSet offerIdSet;
 
-    // Holds the reference to MoneyIOU contract used for token transfers
-    MoneyIOU moneyIOU;
+    // Holds the reference to clearingToken contract used for token transfers
+    ClearingToken clearingToken;
 
     // Initialized when the market contract is created on the blockchain
     uint marketStartTime;
@@ -31,7 +31,7 @@ contract Market is IOUToken {
     uint interval;
 
     function Market(
-        address moneyIOUAddress,
+        address clearingTokenAddress,
         uint128 _initialAmount,
         string _tokenName,
         uint8 _decimalUnits,
@@ -41,11 +41,9 @@ contract Market is IOUToken {
         _initialAmount,
         _tokenName,
         _decimalUnits,
-        _tokenSymbol
-    )
-    {
+        _tokenSymbol ) {
 
-        moneyIOU = MoneyIOU(moneyIOUAddress);
+        clearingToken = ClearingToken(clearingTokenAddress);
         interval = _interval;
         marketStartTime = now;
     }
@@ -64,6 +62,7 @@ contract Market is IOUToken {
      * @param price the price of each unit.
      */
     function offer(uint energyUnits, int price) returns (bytes32 offerId) {
+
         if (energyUnits > 0 && price != 0) {
             offerId = sha3(energyUnits, price, msg.sender, block.number);
             Offer offer = offers[offerId];
@@ -91,15 +90,15 @@ contract Market is IOUToken {
             offerIdSet.remove(offerId);
             success = true;
         } else {
-            success = false;
+          success = false;
         }
     }
 
     /*
      * @notice matches the existing offer with the Id
      * @notice adds the energyUnits to balance[buyer] and subtracts from balance[offer.seller]
-     * @notice calls the MoneyIOU contract to transfer tokens from buyer to offer.seller
-     * @notice market needs to be registered with MoneyIOU to transfer tokens
+     * @notice calls the ClearingToken contract to transfer tokens from buyer to offer.seller
+     * @notice market needs to be registered with ClearingToken to transfer tokens
      * @notice market only runs for the "interval" amount of time from the
      *         from the "marketStartTime"
      */
@@ -114,7 +113,7 @@ contract Market is IOUToken {
             balances[buyer] += int(offer.energyUnits);
             balances[offer.seller] -= int(offer.energyUnits);
             int cost = int(offer.energyUnits) * offer.price;
-            success = moneyIOU.marketTransfer(buyer, offer.seller, cost);
+            success = clearingToken.marketTransfer(buyer, offer.seller, cost);
             if (success) {
                 Trade(buyer, offer.seller, offer.energyUnits, offer.price);
                 offer.energyUnits = 0;
@@ -131,14 +130,14 @@ contract Market is IOUToken {
     }
 
     /*
-     * @notice registers the market with the MoneyIOU contract for token transfers.
-     * @notice For security the same user which makes the MoneyIOU contract calls
+     * @notice registers the market with the ClearingToken contract for token transfers.
+     * @notice For security the same user which makes the ClearingToken contract calls
                this function to register the market.
      * @param _value the maximum amount that the market is allowed to transfer
      *        between the participants
      */
     function registerMarket(uint256 _value) returns (bool success) {
-        success = moneyIOU.globallyApprove(_value);
+        success = clearingToken.globallyApprove(_value);
     }
 
     /*
@@ -157,10 +156,10 @@ contract Market is IOUToken {
     }
 
     /*
-     * Gets the address of the MoneyIOU contract that the market is registered with
+     * Gets the address of the ClearingToken contract that the market is registered with
      */
-    function getMoneyIOUAddress() constant returns (address) {
-        return address(moneyIOU);
+    function getClearingTokenAddress() constant returns (address) {
+        return address(clearingToken);
     }
 
     /*
