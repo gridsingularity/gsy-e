@@ -59,14 +59,16 @@ def test_approver(base_state_contract):
     assert clearing_contract.getApprover() == encode_hex(A)
 
 
-def test_register_market(base_state_contract):
+def test_globallyApprove(base_state_contract):
     clearing_contract, market_contract = base_state_contract
-    assert market_contract.registerMarket(1000, sender=A_key)
+    assert clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                             1000, sender=A_key)
 
 
 def test_offer(base_state_contract):
     clearing_contract, market_contract = base_state_contract
-    market_contract.registerMarket(10000, sender=A_key)
+    clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                      10000, sender=A_key)
     offer_id = market_contract.offer(7, 956, sender=B_key)
     assert market_contract.getOffer(offer_id) == [7, 956, encode_hex(B)]
 
@@ -74,7 +76,8 @@ def test_offer(base_state_contract):
 def test_offer_fail(base_state_contract):
     clearing_contract, market_contract = base_state_contract
     zero_address = b'0' * 40
-    market_contract.registerMarket(10000, sender=A_key)
+    clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                      10000, sender=A_key)
     offer_id = market_contract.offer(0, 956, sender=B_key)
     assert market_contract.getOffer(offer_id) == [0, 0, zero_address]
 
@@ -82,7 +85,8 @@ def test_offer_fail(base_state_contract):
 def test_cancel(base_state_contract):
     clearing_contract, market_contract = base_state_contract
     zero_address = b'0' * 40
-    assert market_contract.registerMarket(10000, sender=A_key)
+    assert clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                             10000, sender=A_key)
     offer_id = market_contract.offer(7, 956, sender=B_key)
     assert market_contract.getOffer(offer_id) == [7, 956, encode_hex(B)]
     assert market_contract.cancel(offer_id, sender=B_key)
@@ -91,7 +95,8 @@ def test_cancel(base_state_contract):
 
 def test_trade(base_state_contract):
     clearing_contract, market_contract = base_state_contract
-    assert market_contract.registerMarket(10000, sender=A_key)
+    assert clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                             10000, sender=A_key)
     offer_id = market_contract.offer(7, 956, sender=B_key)
     assert market_contract.trade(offer_id, sender=C_key)
     assert clearing_contract.balanceOf(C) == -6692
@@ -101,7 +106,8 @@ def test_trade(base_state_contract):
 def test_seller_trade_fail(base_state_contract):
     """Checks if msg.sender == offer.seller then trade should fail"""
     clearing_contract, market_contract = base_state_contract
-    assert market_contract.registerMarket(10000, sender=A_key)
+    assert clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                             10000, sender=A_key)
     offer_id = market_contract.offer(7, 956, sender=B_key)
     assert not market_contract.trade(offer_id, sender=B_key)
 
@@ -112,7 +118,8 @@ def test_offer_price_negative(base_state_contract):
     buyer to take your excess energy. Difference is offer price is negative.
     """
     clearing_contract, market_contract = base_state_contract
-    assert market_contract.registerMarket(10000, sender=A_key)
+    assert clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                             10000, sender=A_key)
     buyer, buyer_key, seller, seller_key = B, B_key, C, C_key
     offer_id = market_contract.offer(7, -10, sender=seller_key)
     assert market_contract.trade(offer_id, sender=buyer_key)
@@ -123,7 +130,8 @@ def test_offer_price_negative(base_state_contract):
 def test_offer_price_zero(base_state_contract):
     zero_address = b'0' * 40
     clearing_contract, market_contract = base_state_contract
-    assert market_contract.registerMarket(10000, sender=A_key)
+    assert clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                             10000, sender=A_key)
     buyer, buyer_key, seller, seller_key = B, B_key, C, C_key
     offer_id = market_contract.offer(7, 0, sender=seller_key)
     assert market_contract.getOffer(offer_id) == [7, 0, encode_hex(seller)]
@@ -140,8 +148,11 @@ def test_multiple_markets(base_state_contract):
                             10**5, "Market2", 5,
                             "KWh", 4*60])
     assert encode_hex(market_contract_a.address) != encode_hex(market_contract_b.address)
-    assert market_contract_a.registerMarket(10000, sender=tester.k0)
-    assert market_contract_b.registerMarket(20000, sender=tester.k0)
+
+    assert clearing_contract.globallyApprove(encode_hex(market_contract_a.address),
+                                             10000, sender=tester.k0)
+    assert clearing_contract.globallyApprove(encode_hex(market_contract_b.address),
+                                             20000, sender=tester.k0)
     offerid_a = market_contract_a.offer(8, 790, sender=B_key)
     offerid_b = market_contract_b.offer(9, 899, sender=C_key)
     assert market_contract_a.trade(offerid_a, sender=D_key)
@@ -154,7 +165,8 @@ def test_multiple_markets(base_state_contract):
 
 def test_trade_fail_afterinterval(base_state_contract):
     clearing_contract, market_contract = base_state_contract
-    market_contract.registerMarket(10000, sender=A_key)
+    clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                      10000, sender=A_key)
     offerid_a = market_contract.offer(7, 956, sender=B_key)
     assert market_contract.getOffer(offerid_a) == [7, 956, encode_hex(B)]
     offerid_b = market_contract.offer(8, 799, sender=C_key)
@@ -176,7 +188,8 @@ def test_trade_fail_on_marketTransfer_fail(base_state_contract):
     if money transaction fails in the trade function
     """
     clearing_contract, market_contract = base_state_contract
-    market_contract.registerMarket(1000, sender=A_key)
+    clearing_contract.globallyApprove(encode_hex(market_contract.address),
+                                      1000, sender=A_key)
     offer_id = market_contract.offer(7, 956, sender=B_key)
     with pytest.raises(tester.TransactionFailed):
         market_contract.trade(offer_id, sender=C_key)

@@ -53,12 +53,12 @@ contract ClearingToken is IOUToken {
      * @notice Approves a market to make the token transfers between participants
      * @param _value Maximum amount allowed to be transferred between the participants
      */
-    function globallyApprove(uint _value) returns (bool success) {
-        if (tx.origin == approver && _value > 0) {
-            clearingMemberAmount[msg.sender] = _value;
-            clearingMembers.push(msg.sender);
+    function globallyApprove(address clearingMember, uint _value) returns (bool success) {
+        if (msg.sender == approver && _value > 0) {
+            clearingMemberAmount[clearingMember] = _value;
+            clearingMembers.push(clearingMember);
             success = true;
-            ApproveClearingMember(msg.sender, approver);
+            ApproveClearingMember(clearingMember, approver);
         } else {
             success = false;
         }

@@ -47,7 +47,7 @@ contract Market is IOUToken {
     bytes32[] tempOffersIds;
 
     // Events
-    event OfferEvent(uint energyUnits, int price, address indexed seller);
+    event OfferEvent(bytes32 offerId, uint energyUnits, int price, address indexed seller);
     event CancelOffer(uint energyUnits, int price, address indexed seller);
     event Trade(address indexed buyer, address indexed seller, uint energyUnits, int price);
 
@@ -64,7 +64,7 @@ contract Market is IOUToken {
             offer.energyUnits = energyUnits;
             offer.price = price;
             offer.seller = msg.sender;
-            OfferEvent(offer.energyUnits, offer.price, offer.seller);
+            OfferEvent(offerId, offer.energyUnits, offer.price, offer.seller);
         } else {
             offerId = "";
         }
@@ -121,17 +121,6 @@ contract Market is IOUToken {
         } else {
             success = false;
         }
-    }
-
-    /*
-     * @notice registers the market with the ClearingToken contract for token transfers.
-     * @notice For security the same user which makes the ClearingToken contract calls
-               this function to register the market.
-     * @param _value the maximum amount that the market is allowed to transfer
-     *        between the participants
-     */
-    function registerMarket(uint256 _value) returns (bool success) {
-        success = clearingToken.globallyApprove(_value);
     }
 
     /*
