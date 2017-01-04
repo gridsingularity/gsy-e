@@ -35,12 +35,15 @@ contract ClearingToken is IOUToken {
 
     /*
      * @notice transfers _value tokens from the _from to _to address.
-     * @notice the market needs to be registered for the transfer.
+     * @notice the clearing member needs to be registered for the transfer.
      */
     function clearingTransfer(address _from, address _to, int256 _value) returns (bool success) {
         // 1st condition checks whether market is registered and
         // second condition checks whether _value is below the allowed value for transfers
         if (clearingMemberAmount[msg.sender] > 0 && _value < int(clearingMemberAmount[msg.sender])) {
+            // balance mapping has been passed on from
+            // StandardToken -> IOUToken -> ClearingToken
+            // balance could be negative
             balances[_to] += int(_value);
             balances[_from] -= int(_value);
             success = true;
@@ -50,10 +53,13 @@ contract ClearingToken is IOUToken {
     }
 
     /*
-     * @notice Approves a market to make the token transfers between participants
+     * @notice Approves a clearing member to make the token transfers between participants
+     * @param clearingMember an address which is allowed to transfer the specified
+     * _value token between any accounts
      * @param _value Maximum amount allowed to be transferred between the participants
      */
     function globallyApprove(address clearingMember, uint _value) returns (bool success) {
+        // Only the approver can call this function to add a clearingMember
         if (msg.sender == approver && _value > 0) {
             clearingMemberAmount[clearingMember] = _value;
             clearingMembers.push(clearingMember);

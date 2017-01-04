@@ -8,6 +8,7 @@ contract Market is IOUToken {
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
 
+    //Container to hold the details of the Offer
     struct Offer {
 
         uint energyUnits;
@@ -16,7 +17,7 @@ contract Market is IOUToken {
     }
 
 
-    // Holds the reference to clearingToken contract used for token transfers
+    // Holds the reference to ClearingToken contract used for token transfers
     ClearingToken clearingToken;
 
     // Initialized when the market contract is created on the blockchain
@@ -43,16 +44,15 @@ contract Market is IOUToken {
         marketStartTime = now;
     }
 
-    // Temp storage for OfferIds
-    bytes32[] tempOffersIds;
 
     // Events
     event OfferEvent(bytes32 offerId, uint energyUnits, int price, address indexed seller);
     event CancelOffer(uint energyUnits, int price, address indexed seller);
     event Trade(address indexed buyer, address indexed seller, uint energyUnits, int price);
     event OfferChanged(bytes32 oldOfferId, uint energyUnits, int price, address indexed seller);
+
     /*
-     * @notice The msg.sender is able to put new offers.
+     * @notice The msg.sender is able to introduce new offers.
      * @param energyUnits the units of energy offered generally in KWh.
      * @param price the price of each unit.
      */
@@ -94,6 +94,7 @@ contract Market is IOUToken {
      * @notice market needs to be registered with ClearingToken to transfer tokens
      * @notice market only runs for the "interval" amount of time from the
      *         from the "marketStartTime"
+     * @ tradedEnergyUnits Allows for partial trading of energyUnits from an offer
      */
     function trade(bytes32 offerId, uint tradedEnergyUnits) returns (bool success, bytes32 newOfferId) {
         Offer offer = offers[offerId];
@@ -104,7 +105,7 @@ contract Market is IOUToken {
             && now-marketStartTime < interval
             && withinRange(tradedEnergyUnits, 0, offer.energyUnits)) {
             // Allow Partial Trading, if tradedEnergyUnits  are less than the
-            // energyUnits in the offer. Make a new offer with the remaining energyUnits
+            // energyUnits in the offer, make a new offer with the remaining energyUnits
             // and the same price. Also emit OfferChanged event with old offerId
             // and new Offer values.
             if (tradedEnergyUnits < offer.energyUnits) {
@@ -113,8 +114,13 @@ contract Market is IOUToken {
                 OfferChanged(offerId, newEnergyUnits, offer.price, offer.seller);
             }
             // Record exchange of energy between buyer and seller
+            // balances mapping has been inherited in this heirarchy of contracts
+            // StandardToken -> IOUToken -> Market 
             balances[buyer] += int(tradedEnergyUnits);
             balances[offer.seller] -= int(tradedEnergyUnits);
+            // if the offer price is either positive or negative there has to be
+            // a clearingTransfer to transfer Tokens from buyer to seller or
+            // vice versa
             if (offer.price != 0) {
                 int cost = int(tradedEnergyUnits) * offer.price;
                 success = clearingToken.clearingTransfer(buyer, offer.seller, cost);
@@ -142,12 +148,15 @@ contract Market is IOUToken {
     }
 
     /*
-     * Gets the address of the ClearingToken contract that the market is registered with
+     * @notice Gets the address of the ClearingToken contract
      */
     function getClearingTokenAddress() constant returns (address) {
         return address(clearingToken);
     }
 
+    /*
+     * @notice Generates a partial offer called from the trade() function
+     */
     function partialOffer(uint energyUnits, int price, address seller)
     private returns (bytes32 offerId) {
       offerId = sha3(energyUnits, price, seller, block.number);
@@ -158,6 +167,10 @@ contract Market is IOUToken {
       OfferEvent(offerId, offer.energyUnits, offer.price, offer.seller);
     }
 
+    /*
+     * @notice Utility to check whether value is within lower(exclusive)
+     * upper(inclusive) limits
+     */
     function withinRange(uint value, uint lower, uint upper) private constant returns (bool) {
         return value > lower && value <= upper;
     }
