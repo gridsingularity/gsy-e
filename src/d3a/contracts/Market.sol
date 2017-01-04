@@ -50,7 +50,7 @@ contract Market is IOUToken {
     event OfferEvent(bytes32 offerId, uint energyUnits, int price, address indexed seller);
     event CancelOffer(uint energyUnits, int price, address indexed seller);
     event Trade(address indexed buyer, address indexed seller, uint energyUnits, int price);
-
+    event OfferChanged(bytes32 oldOfferId, uint energyUnits, int price, address indexed seller);
     /*
      * @notice The msg.sender is able to put new offers.
      * @param energyUnits the units of energy offered generally in KWh.
@@ -95,22 +95,32 @@ contract Market is IOUToken {
      * @notice market only runs for the "interval" amount of time from the
      *         from the "marketStartTime"
      */
-    function trade(bytes32 offerId) returns (bool success) {
+    function trade(bytes32 offerId, uint tradedEnergyUnits) returns (bool success, bytes32 newOfferId) {
         Offer offer = offers[offerId];
         address buyer = msg.sender;
-
         if (offer.energyUnits > 0
             && offer.seller != address(0)
             && msg.sender != offer.seller
-            && now-marketStartTime < interval) {
-            balances[buyer] += int(offer.energyUnits);
-            balances[offer.seller] -= int(offer.energyUnits);
+            && now-marketStartTime < interval
+            && withinRange(tradedEnergyUnits, 0, offer.energyUnits)) {
+            // Allow Partial Trading, if tradedEnergyUnits  are less than the
+            // energyUnits in the offer. Make a new offer with the remaining energyUnits
+            // and the same price. Also emit OfferChanged event with old offerId
+            // and new Offer values.
+            if (tradedEnergyUnits < offer.energyUnits) {
+                uint newEnergyUnits = offer.energyUnits - tradedEnergyUnits;
+                newOfferId = partialOffer(newEnergyUnits, offer.price, offer.seller);
+                OfferChanged(offerId, newEnergyUnits, offer.price, offer.seller);
+            }
+            // Record exchange of energy between buyer and seller
+            balances[buyer] += int(tradedEnergyUnits);
+            balances[offer.seller] -= int(tradedEnergyUnits);
             if (offer.price != 0) {
-                int cost = int(offer.energyUnits) * offer.price;
+                int cost = int(tradedEnergyUnits) * offer.price;
                 success = clearingToken.clearingTransfer(buyer, offer.seller, cost);
             }
             if (success || offer.price == 0) {
-                Trade(buyer, offer.seller, offer.energyUnits, offer.price);
+                Trade(buyer, offer.seller, tradedEnergyUnits, offer.price);
                 offer.energyUnits = 0;
                 offer.price = 0;
                 offer.seller = 0;
@@ -138,4 +148,17 @@ contract Market is IOUToken {
         return address(clearingToken);
     }
 
+    function partialOffer(uint energyUnits, int price, address seller)
+    private returns (bytes32 offerId) {
+      offerId = sha3(energyUnits, price, seller, block.number);
+      Offer offer = offers[offerId];
+      offer.energyUnits = energyUnits;
+      offer.price = price;
+      offer.seller = seller;
+      OfferEvent(offerId, offer.energyUnits, offer.price, offer.seller);
+    }
+
+    function withinRange(uint value, uint lower, uint upper) private constant returns (bool) {
+        return value > lower && value <= upper;
+    }
 }
