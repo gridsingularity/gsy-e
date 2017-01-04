@@ -4,8 +4,3 @@ ptpython
 tox
 captainhook
 readme-renderer
-pvlib
-netCDF4
-requests
-siphon
-scipy

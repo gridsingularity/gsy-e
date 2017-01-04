@@ -20,36 +20,22 @@ idna==2.2                 # via cryptography
 isort==4.2.5              # via captainhook
 jedi==0.9.0               # via ptpython
 mccabe==0.5.3             # via flake8
-<<<<<<< HEAD
-netcdf4==1.2.6
-=======
-netCDF4==1.2.6
->>>>>>> 11f848b7432f19df7e94025cf33d5b361d14df5a
-numpy==1.11.3             # via netcdf4, pandas, pvlib, scipy, siphon
-pandas==0.19.1            # via pvlib
 paramiko==2.1.1           # via fabric3
 pip-tools==1.8.0
 pluggy==0.4.0             # via tox
 prompt-toolkit==1.0.9     # via ptpython
-protobuf==3.1.0.post1     # via siphon
 ptpython==0.36
-pvlib==0.4.2
 py==1.4.32                # via tox
 pyasn1==0.1.9             # via cryptography, paramiko
 pycodestyle==2.2.0        # via flake8
 pycparser==2.17           # via cffi
 pyflakes==1.3.0           # via flake8
 pygments==2.1.3           # via ptpython, readme-renderer
-python-dateutil==2.6.0    # via pandas
-pytz==2016.10             # via pandas, pvlib
 readme-renderer==16.0
-requests==2.12.4
-scipy==0.18.1
-siphon==0.4.0
-six==1.10.0               # via bleach, cryptography, fabric3, html5lib, pip-tools, prompt-toolkit, protobuf, pvlib, python-dateutil, readme-renderer
+six==1.10.0               # via bleach, cryptography, fabric3, html5lib, pip-tools, prompt-toolkit, readme-renderer
 tox==2.5.0
 virtualenv==15.1.0        # via tox
 wcwidth==0.1.7            # via prompt-toolkit
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools                # via cryptography, protobuf
+# setuptools                # via cryptography

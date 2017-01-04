@@ -5,8 +5,3 @@ pytest
 pytest-catchlog
 coverage
 hypothesis
-pvlib
-netCDF4
-requests
-siphon
-scipy
