@@ -37,7 +37,7 @@ contract ClearingToken is IOUToken {
      * @notice transfers _value tokens from the _from to _to address.
      * @notice the market needs to be registered for the transfer.
      */
-    function marketTransfer(address _from, address _to, int256 _value) returns (bool success) {
+    function clearingTransfer(address _from, address _to, int256 _value) returns (bool success) {
         // 1st condition checks whether market is registered and
         // second condition checks whether _value is below the allowed value for transfers
         if (clearingMemberAmount[msg.sender] > 0 && _value < int(clearingMemberAmount[msg.sender])) {

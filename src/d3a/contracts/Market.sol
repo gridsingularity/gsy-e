@@ -107,7 +107,7 @@ contract Market is IOUToken {
             balances[offer.seller] -= int(offer.energyUnits);
             if (offer.price != 0) {
                 int cost = int(offer.energyUnits) * offer.price;
-                success = clearingToken.marketTransfer(buyer, offer.seller, cost);
+                success = clearingToken.clearingTransfer(buyer, offer.seller, cost);
             }
             if (success || offer.price == 0) {
                 Trade(buyer, offer.seller, offer.energyUnits, offer.price);

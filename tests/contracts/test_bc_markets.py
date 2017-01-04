@@ -182,7 +182,7 @@ def test_trade_fail_afterinterval(base_state_contract):
     assert clearing_contract.balanceOf(E) == 0
 
 
-def test_trade_fail_on_marketTransfer_fail(base_state_contract):
+def test_trade_fail_on_clearingTransfer_fail(base_state_contract):
     """
     Raises an exception because energy should not be transferred
     if money transaction fails in the trade function
