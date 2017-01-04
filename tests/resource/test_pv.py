@@ -2,6 +2,7 @@ from d3a.models.resource.builder import gen_pv_appliance
 from d3a.models.resource.appliance import PVAppliance, ApplianceMode
 from d3a.models.resource.properties import MeasurementParamType
 from pendulum.interval import Interval
+from time import sleep
 import pendulum
 
 
@@ -84,16 +85,19 @@ def test_pv_partial_cloud_cover():
     clear_sky_match = 0
     during_cloud_cover = dict()
     after_cloud_cover = dict()
-    index = 0
     pv.handle_cloud_cover(cloud_cover_percent, cloud_cover_duration)
+    now = pendulum.now().diff(pendulum.today()).in_seconds()
 
     for tick in range(0, cloud_cover_duration):
-        during_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds() + index] = pv.get_pv_power_generated()
-        index += 1
+        pv.event_tick()
+        during_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds()] = \
+            pv.get_pv_power_generated()
+        sleep(1)
 
     for tick in range(0, cloud_cover_duration):
-        after_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds() + index] = pv.get_pv_power_generated()
-        index += 1
+        pv.event_tick()
+        after_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds()] = pv.get_pv_power_generated()
+        sleep(1)
 
     print("During cloud cover: {}".format(during_cloud_cover))
     print("After cloud cover: {}".format(after_cloud_cover))

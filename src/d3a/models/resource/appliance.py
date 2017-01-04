@@ -123,8 +123,8 @@ class Appliance(BaseAppliance):
         self.iterator = None
         self.measuring = MeasurementParamType.POWER
         # self.historicUsageCurve = dict()
-        self.bids = []
-        self.tick_count = 0             # count to keep track of ticks since past
+        self.bids = []   # Don't need use trades from area
+        self.tick_count = 0  # Get current tick from area            # count to keep track of ticks since past
         self.report_frequency = report_freq
         self.last_reported_tick = self.report_frequency
 
@@ -211,6 +211,7 @@ class Appliance(BaseAppliance):
         pass
 
     def get_historic_usage_curve(self):
+        # Not needed, area keeps track of it
         # return self.historicUsageCurve
         return None
 
@@ -257,9 +258,7 @@ class PVAppliance(Appliance):
         self.cloud_duration = duration
         # 2% residual power generated even under 100% cloud cover
         self.multiplier = (1 - percent / 100) if percent < 98 else 0.02
-        if self.cloud_duration > 0:
-            self.change_mode_of_operation(ApplianceMode.OFF)
-        else:
+        if self.cloud_duration <= 0:
             self.end_cloud_cover()
 
     def end_cloud_cover(self):
@@ -270,6 +269,8 @@ class PVAppliance(Appliance):
         self.cloud_duration = 0
 
     def get_pv_power_generated(self):
+        # use area.get_now() instead of pendulum.now()
+        # current_tick * tick_length gets seconds since simulation started
         power = self.usageGenerator.get_reading_at(pendulum.now().diff(pendulum.today()).in_seconds())
         if power is None:
             power = 0
@@ -283,6 +284,8 @@ class PVAppliance(Appliance):
             self.cloud_duration -= 1
         else:
             self.multiplier = 1.0
+
+        # +ve for produced energy
 
         # power = self.usageGenerator.get_reading_at((pendulum.now()).diff(pendulum.today()).in_seconds())
         power = self.get_pv_power_generated()
@@ -301,6 +304,7 @@ class FridgeAppliance(Appliance):
 
     def __init__(self, name: str = "Fridge", report_freq: int = 1):
         super().__init__(name, report_freq)
+        # Take temp from const.py
         self.max_temp = 15.0                    # Max temp the fridge can have
         self.min_temp = 5.0                     # Min temp to avoid frosting
         self.current_temp = 10.0                # Average temp between low and high
@@ -362,10 +366,10 @@ class FridgeAppliance(Appliance):
 
         if self.is_appliance_consuming_energy():
             self.current_temp += self.cooling_per_tick
-            log.info("Fridge cooling cycle is running: {} C".format(self.current_temp))
+            # log.info("Fridge cooling cycle is running: {} C".format(self.current_temp))
         else:
             self.current_temp += self.heating_per_tick
-            log.info("Fridge cooling cycle is not running: {} C".format(self.current_temp))
+            # log.info("Fridge cooling cycle is not running: {} C".format(self.current_temp))
 
         if self.last_reported_tick == self.report_frequency:
             # report power generation/consumption to area
@@ -406,7 +410,7 @@ class FridgeAppliance(Appliance):
         cycles_skipped = 0
         ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
 
-        log.info("Ticks per cycle: {}, temp diff: {}".format(ticks_per_cycle, diff))
+        # log.info("Ticks per cycle: {}, temp diff: {}".format(ticks_per_cycle, diff))
 
         if diff < 0:
             """
@@ -416,7 +420,7 @@ class FridgeAppliance(Appliance):
 
             t_h_mid = math.ceil((diff * -1)/self.heating_per_tick)
             ticks_remaining -= t_h_mid
-            log.info("Temp {} lower than mid temp, ticks required to raise temp: {}".format(diff, t_h_mid))
+            # log.info("Temp {} lower than mid temp, ticks required to raise temp: {}".format(diff, t_h_mid))
 
         else:
             """
@@ -428,7 +432,7 @@ class FridgeAppliance(Appliance):
             t_c_mid = math.ceil(diff/(self.cooling_per_tick * -1))
             ticks_remaining -= t_c_mid
             cycles_required += math.ceil(t_c_mid/ticks_per_cycle)
-            log.info("Temp is above mid, cycles required to keep in range: {}".format(cycles_required))
+            # log.info("Temp is above mid, cycles required to keep in range: {}".format(cycles_required))
 
         """
         In remaining ticks, the temp can be allowed to rise to max before cooling is needed
@@ -437,21 +441,21 @@ class FridgeAppliance(Appliance):
         total cycles = required cycles + cycles that can be skipped
         """
         t_h_max = math.floor((self.max_temp - mid)/self.heating_per_tick)       # ticks to heat to max temp
-        log.info("Ticks needed to heat to max allowed temp: {}".format(t_h_max))
+        # log.info("Ticks needed to heat to max allowed temp: {}".format(t_h_max))
 
         # ticks required to cool from max to mid
         t_c_mid = math.ceil((self.max_temp - mid)/(self.cooling_per_tick * -1))
-        log.info("Ticks needed to cool from max to mid: {}".format(t_c_mid))
+        # log.info("Ticks needed to cool from max to mid: {}".format(t_c_mid))
 
         t_range = t_h_max + t_c_mid     # ticks need to rise to max and cool back to mid
         quo = ticks_remaining // t_range    # num of times fridge can swing between mid and max
         rem = ticks_remaining % t_range     # remainder ticks to account for, shouldn't be more than 1 cycle
 
-        log.info("Fridge can swing: {} times in range, extra ticks: {}".format(quo, rem))
+        # log.info("Fridge can swing: {} times in range, extra ticks: {}".format(quo, rem))
 
         cycles_required += math.ceil((quo * t_c_mid)/ticks_per_cycle)
         t_cooling_req = rem - t_h_max     # number of ticks cooling is absolutely needed from remaining extra ticks
-        log.info("Cooling required in extra ticks: {}".format(t_cooling_req))
+        # log.info("Cooling required in extra ticks: {}".format(t_cooling_req))
 
         if t_cooling_req <= 0:   # temp will not rise beyond max in remaining time.
             cycles_skipped += math.floor(rem/ticks_per_cycle)     # use remaining time for cooling, but not required
@@ -478,7 +482,7 @@ class FridgeAppliance(Appliance):
                                        DEFAULT_CONFIG.ticks_per_slot, cycles_to_run, skip_cycles, self.tick_count)
             schedule = run_schedule.get_run_schedule()
 
-        log.info("Length of schedule: {}".format(len(schedule)))
+        # log.info("Length of schedule: {}".format(len(schedule)))
 
         return schedule
 
