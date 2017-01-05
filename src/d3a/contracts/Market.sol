@@ -54,16 +54,6 @@ contract Market {
         offerId = id;
     }
 
-    /*
-     * @notice Generates a partial offer called from the trade() function
-     */
-    function partialOffer(uint energyUnits, int price, address seller)
-    private returns (bytes32 offerId) {
-        var (success, id) = _offer(energyUnits, price, seller);
-        offerId = id;
-    }
-
-
     function _offer(uint energyUnits, int price, address seller)
     private returns (bool success, bytes32 offerId) {
 
@@ -79,6 +69,7 @@ contract Market {
             offerId = "";
         }
     }
+
     /*
      * @notice Only the offer seller is able to cancel the offer
      * @param offerId Id of the offer
@@ -162,10 +153,8 @@ contract Market {
         return address(clearingToken);
     }
 
-
-
     /*
-     * @notice Gets the energy balance of _ownner
+     * @notice Gets the energy balance of _owner
      */
     function balanceOf(address _owner) constant returns (int256 balance) {
         return balances[_owner];
