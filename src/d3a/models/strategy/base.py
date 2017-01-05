@@ -1,6 +1,6 @@
 from collections import defaultdict
 from logging import getLogger
-from typing import Dict, List  # noqa
+from typing import Dict, List, Any  # noqa
 
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.events import EventMixin
@@ -37,3 +37,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
         trade = market.accept_offer(offer, buyer)
         self.trades[market].append(trade)
         return trade
+
+    def post(self, data: Dict[str, Any]):
+        self.event_data_received(data)
+
+    def event_data_received(self, data: Dict[str, Any]):
+        pass
