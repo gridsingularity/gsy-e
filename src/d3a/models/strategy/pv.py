@@ -26,15 +26,7 @@ class PVStrategy(BaseStrategy):
         # Iterate over all markets open in the future
         for (time, market) in self.area.markets.items():
             # If there is no offer for a currently open marketplace:
-            if market not in self.offers_posted.values():
-                # Sell energy and save that an offer was posted into a list
-                offer = market.offer(
-                    quantity_forecast[time],
-                    rounded_energy_price,
-                    self.owner.name
-                )
-                self.offers_posted[offer.id] = market
-            else:
+            if market in self.offers_posted.values():
                 # XXX TODO: This should check if current market offers
                 # are still in line with strategy
                 # if self.offers_posted_in_market[
@@ -42,7 +34,22 @@ class PVStrategy(BaseStrategy):
                 #                                    ] != energy_price:
                 # self.delete_offer()
                 # self.sell_energy(... see above)
-                pass
+                current_avg_market_price = round(market.avg_offer_price(), 2)
+                if current_avg_market_price == rounded_energy_price:
+                    pass
+                elif current_avg_market_price > rounded_energy_price:
+                    rounded_energy_price = current_avg_market_price
+                else:
+                    risk_limit = current_avg_market_price * (1 + self.risk / 100)
+                    rounded_energy_price = max(risk_limit, rounded_energy_price)
+
+            # Sell energy and save that an offer was posted into a list
+            offer = market.offer(
+                quantity_forecast[time],
+                rounded_energy_price,
+                self.owner.name
+            )
+            self.offers_posted[offer.id] = market
 
     def produced_energy_forecast(self):
         # Assuming that its 12hr when current_simulation_step = 0

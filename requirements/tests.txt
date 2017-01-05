@@ -4,7 +4,7 @@
 #
 #    pip-compile --no-index --output-file requirements/tests.txt requirements/tests.in
 #
-coverage==4.2
+coverage==4.3.1
 flake8-tuple==0.2.12
 flake8==3.2.1
 hypothesis==3.6.1
