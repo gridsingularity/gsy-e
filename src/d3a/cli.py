@@ -56,7 +56,7 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
 @click.option('-p', '--port', type=int, default=5000, show_default=True,
               help="REST-API server listening port")
 @click.option('--setup', default="default",
-              help="Simulation setup to use. Available setups: [{}]".format(
+              help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
 @click.option('--slowdown', type=int, default=0,
               help="Slowdown factor [0 - 100]. "
