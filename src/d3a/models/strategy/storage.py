@@ -12,8 +12,8 @@ class StorageStrategy(BaseStrategy):
         super().__init__()
         self.risk = risk
         self.offers_posted = {}  # type: Dict[str, Market]
-        self.buying_trades = defaultdict(list)  # type: Dict[Market, List[Offer]]
-        self.selling_trades = defaultdict(list)  # type: Dict[Market, List[Trade]]
+        self.buought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
+        self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Trade]]
         self.used_storage = 0.00
         self.blocked_storage = 0.00
         self.selling_price = 30
@@ -34,7 +34,7 @@ class StorageStrategy(BaseStrategy):
                     try:
                         self.accept_offer(market, offer)
                         self.blocked_storage += offer.energy
-                        self.buying_trades[market].append(offer)
+                        self.buought_offers[market].append(offer)
                     except MarketException:
                         # Offer already gone etc., try next one.
                         continue
@@ -44,11 +44,11 @@ class StorageStrategy(BaseStrategy):
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
         # if energy in this slot was bought: update the storage
-        for bought in self.buying_trades[past_market]:
+        for bought in self.buought_offers[past_market]:
             self.blocked_storage -= bought.energy
             self.used_storage += bought.energy
         # if energy in this slot was sold: update the storage
-        for sold in self.selling_trades[past_market]:
+        for sold in self.sold_offers[past_market]:
             self.used_storage -= sold.energy
         # Check if any energy from the storage can be sold now
         self.sell_energy()
@@ -56,7 +56,7 @@ class StorageStrategy(BaseStrategy):
     def event_trade(self, *, market, trade):
         # If trade happened: remember it in variable
         if self.owner.name == trade.seller:
-            self.selling_trades[market].append(trade)
+            self.sold_offers[market].append(trade.offer)
             # TODO post information about earned money
 
     def sell_energy(self):
