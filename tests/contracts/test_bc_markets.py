@@ -50,8 +50,7 @@ def base_state_contract():
                                          sender=tester.k0,
                                          constructor_parameters=[
                                             encode_hex(clearing_contract.address),
-                                            10**5, "Market", 5,
-                                            "KWh", 3*60])
+                                            3*60])
     return (clearing_contract, market_contract)
 
 
@@ -163,8 +162,7 @@ def test_multiple_markets(base_state_contract):
     clearing_contract, market_contract_a = base_state_contract
     market_contract_b = make_market_contract(tester.k0, [
                             encode_hex(clearing_contract.address),
-                            10**5, "Market2", 5,
-                            "KWh", 4*60])
+                            4*60])
     assert encode_hex(market_contract_a.address) != encode_hex(market_contract_b.address)
 
     assert clearing_contract.globallyApprove(encode_hex(market_contract_a.address),

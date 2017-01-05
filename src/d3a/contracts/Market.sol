@@ -1,12 +1,14 @@
 pragma solidity ^0.4.4;
-import "IOUToken.sol";
 import "ClearingToken.sol";
 
 
-contract Market is IOUToken {
+contract Market {
 
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
+
+    //mapping of the energy balances for market participants
+    mapping (address => int256) balances;
 
     //Container to hold the details of the Offer
     struct Offer {
@@ -26,18 +28,7 @@ contract Market is IOUToken {
     // The interval of time for which market can be used for trading
     uint interval;
 
-    function Market(
-        address clearingTokenAddress,
-        uint128 _initialAmount,
-        string _tokenName,
-        uint8 _decimalUnits,
-        string _tokenSymbol,
-        uint _interval
-    ) IOUToken(
-        _initialAmount,
-        _tokenName,
-        _decimalUnits,
-        _tokenSymbol ) {
+    function Market(address clearingTokenAddress, uint _interval) {
 
         clearingToken = ClearingToken(clearingTokenAddress);
         interval = _interval;
@@ -46,10 +37,11 @@ contract Market is IOUToken {
 
 
     // Events
-    event OfferEvent(bytes32 offerId, uint energyUnits, int price, address indexed seller);
+    event NewOffer(bytes32 offerId, uint energyUnits, int price, address indexed seller);
     event CancelOffer(uint energyUnits, int price, address indexed seller);
     event Trade(address indexed buyer, address indexed seller, uint energyUnits, int price);
-    event OfferChanged(bytes32 oldOfferId, uint energyUnits, int price, address indexed seller);
+    event OfferChanged(bytes32 oldOfferId, bytes32 newOfferId, uint energyUnits, int price,
+      address indexed seller);
 
     /*
      * @notice The msg.sender is able to introduce new offers.
@@ -57,19 +49,36 @@ contract Market is IOUToken {
      * @param price the price of each unit.
      */
     function offer(uint energyUnits, int price) returns (bytes32 offerId) {
+        var (success, id) = _offer(energyUnits, price, msg.sender);
+        if (success) NewOffer(id, energyUnits, price, msg.sender);
+        offerId = id;
+    }
+
+    /*
+     * @notice Generates a partial offer called from the trade() function
+     */
+    function partialOffer(uint energyUnits, int price, address seller)
+    private returns (bytes32 offerId) {
+        var (success, id) = _offer(energyUnits, price, seller);
+        offerId = id;
+    }
+
+
+    function _offer(uint energyUnits, int price, address seller)
+    private returns (bool success, bytes32 offerId) {
 
         if (energyUnits > 0) {
-            offerId = sha3(energyUnits, price, msg.sender, block.number);
+            offerId = sha3(energyUnits, price, seller, block.number);
             Offer offer = offers[offerId];
             offer.energyUnits = energyUnits;
             offer.price = price;
-            offer.seller = msg.sender;
-            OfferEvent(offerId, offer.energyUnits, offer.price, offer.seller);
+            offer.seller = seller;
+            success = true;
         } else {
+            success = false;
             offerId = "";
         }
     }
-
     /*
      * @notice Only the offer seller is able to cancel the offer
      * @param offerId Id of the offer
@@ -103,19 +112,18 @@ contract Market is IOUToken {
             && offer.seller != address(0)
             && msg.sender != offer.seller
             && now-marketStartTime < interval
-            && withinRange(tradedEnergyUnits, 0, offer.energyUnits)) {
+            && tradedEnergyUnits > 0
+            && tradedEnergyUnits <= offer.energyUnits) {
             // Allow Partial Trading, if tradedEnergyUnits  are less than the
             // energyUnits in the offer, make a new offer with the remaining energyUnits
             // and the same price. Also emit OfferChanged event with old offerId
             // and new Offer values.
             if (tradedEnergyUnits < offer.energyUnits) {
                 uint newEnergyUnits = offer.energyUnits - tradedEnergyUnits;
-                newOfferId = partialOffer(newEnergyUnits, offer.price, offer.seller);
-                OfferChanged(offerId, newEnergyUnits, offer.price, offer.seller);
+                (success, newOfferId) = _offer(newEnergyUnits, offer.price, offer.seller);
+                OfferChanged(offerId, newOfferId, newEnergyUnits, offer.price, offer.seller);
             }
             // Record exchange of energy between buyer and seller
-            // balances mapping has been inherited in this heirarchy of contracts
-            // StandardToken -> IOUToken -> Market 
             balances[buyer] += int(tradedEnergyUnits);
             balances[offer.seller] -= int(tradedEnergyUnits);
             // if the offer price is either positive or negative there has to be
@@ -154,24 +162,13 @@ contract Market is IOUToken {
         return address(clearingToken);
     }
 
-    /*
-     * @notice Generates a partial offer called from the trade() function
-     */
-    function partialOffer(uint energyUnits, int price, address seller)
-    private returns (bytes32 offerId) {
-      offerId = sha3(energyUnits, price, seller, block.number);
-      Offer offer = offers[offerId];
-      offer.energyUnits = energyUnits;
-      offer.price = price;
-      offer.seller = seller;
-      OfferEvent(offerId, offer.energyUnits, offer.price, offer.seller);
-    }
+
 
     /*
-     * @notice Utility to check whether value is within lower(exclusive)
-     * upper(inclusive) limits
+     * @notice Gets the energy balance of _ownner
      */
-    function withinRange(uint value, uint lower, uint upper) private constant returns (bool) {
-        return value > lower && value <= upper;
+    function balanceOf(address _owner) constant returns (int256 balance) {
+        return balances[_owner];
     }
+
 }
