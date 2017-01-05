@@ -39,7 +39,7 @@ def test_fridge_temp_rise_door_closed():
     fridge.event_market_cycle()
 
     for i in range(0, ticks):
-        fridge.event_tick()
+        fridge.event_tick(area=None)
         temp_change.append(float(format(fridge.current_temp, '.4f')))
 
     for i in range(1, ticks):
@@ -60,14 +60,14 @@ def test_fridge_door_open():
     door_open_for = 3               # Open door for 2 ticks
     before_temp = fridge.current_temp
 
-    fridge.event_tick()
-    fridge.event_tick()
+    fridge.event_tick(area=None)
+    fridge.event_tick(area=None)
     is_cooling_before_door_open = fridge.is_appliance_consuming_energy()
     is_cooling_after_door_open = False
     fridge.handle_door_open(door_open_for)
 
     for tick in range(0, 5):
-        fridge.event_tick()
+        fridge.event_tick(area=None)
 
     is_cooling_after_door_open = fridge.is_appliance_consuming_energy()
     after_temp = fridge.current_temp
@@ -85,7 +85,7 @@ def test_fridge_doesnt_cool_low_temp():
     run_for_ticks = DEFAULT_CONFIG.slot_length.in_seconds()
 
     for tick in range(0, run_for_ticks):
-        fridge.event_tick()
+        fridge.event_tick(area=None)
         if tick == run_for_ticks - 1:
             is_cooling = fridge.is_appliance_consuming_energy()
 
@@ -100,7 +100,7 @@ def test_fridge_temp_doesnt_exceed_max():
     ticks_to_run = DEFAULT_CONFIG.slot_length.in_seconds()
 
     for tick in range(0, ticks_to_run):
-        fridge.event_tick()
+        fridge.event_tick(area=None)
 
     after_temp = fridge.current_temp
 
@@ -115,7 +115,7 @@ def test_fridge_temp_doesnt_fall_below_min():
     ticks_to_run = DEFAULT_CONFIG.slot_length.in_seconds()
 
     for tick in range(0, ticks_to_run):
-        fridge.event_tick()
+        fridge.event_tick(area=None)
 
     after_temp = fridge.current_temp
 

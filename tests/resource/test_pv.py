@@ -21,13 +21,13 @@ def test_pv_creation():
 def test_pv_usage_curve():
     pv = get_pv_object()
     on_curve = pv.energyCurve.get_mode_curve(ApplianceMode.ON)
-    off_curve = pv.energyCurve.get_mode_curve(ApplianceMode.OFF)
     assert len(on_curve) == 24*60*60    # take samples per sec for 24 hours.
 
 
 def test_pv_mode_change():
     pv = get_pv_object()
     time_secs = Interval(hours=12, minutes=0, seconds=0).in_seconds()    # At noon
+    on = None
 
     # power generated at noon
     for i in range(0, time_secs):
@@ -67,16 +67,6 @@ def test_pv_get_usage_reading():
     assert reading[0] == MeasurementParamType.POWER
 
 
-def test_historic_data_saved():
-    pv = get_pv_object()
-    iterations = 1000
-    for i in range(0, iterations):
-        pv.event_tick()
-
-    # assert len(pv.get_historic_usage_curve()) == iterations
-    assert not pv.get_historic_usage_curve()
-
-
 def test_pv_partial_cloud_cover():
     pv = get_pv_object()
     cloud_cover_percent = 50
@@ -86,17 +76,16 @@ def test_pv_partial_cloud_cover():
     during_cloud_cover = dict()
     after_cloud_cover = dict()
     pv.handle_cloud_cover(cloud_cover_percent, cloud_cover_duration)
-    now = pendulum.now().diff(pendulum.today()).in_seconds()
 
     for tick in range(0, cloud_cover_duration):
-        pv.event_tick()
+        pv.event_tick(area=None)
         during_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds()] = \
-            pv.get_pv_power_generated()
+            pv.get_current_power()
         sleep(1)
 
     for tick in range(0, cloud_cover_duration):
-        pv.event_tick()
-        after_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds()] = pv.get_pv_power_generated()
+        pv.event_tick(area=None)
+        after_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds()] = pv.get_current_power()
         sleep(1)
 
     print("During cloud cover: {}".format(during_cloud_cover))
@@ -114,5 +103,4 @@ def test_pv_partial_cloud_cover():
 
     assert clear_sky_match == cloud_cover_duration
     assert cloud_cover_match == cloud_cover_duration
-
 

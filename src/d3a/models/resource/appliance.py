@@ -42,12 +42,12 @@ class EnergyCurve:
         elif sample_rate_diff < 0:
             # Sample rate is more than tick frequency, scale it down to tick frequency
             # print("Interglot the provided curve")
-            divider = math.ceil(self.tick_duration.in_seconds()/self.sampling.in_seconds())
+            divider = int(math.ceil(self.tick_duration.in_seconds()/self.sampling.in_seconds()))
             effective_curve = EnergyCurve.interglot_curve(curve, divider)
         else:
             # Sample rate is less than tick freq, over sample the samples to match tick rate
             # print("Over sample the provided curve")
-            multiplier = math.ceil(self.sampling.in_seconds()/self.tick_duration.in_seconds())
+            multiplier = int(math.ceil(self.sampling.in_seconds()/self.tick_duration.in_seconds()))
             effective_curve = EnergyCurve.over_sample_curve(curve, multiplier)
 
         # print("Length of effective curve: {}".format(len(effective_curve)))
@@ -96,13 +96,10 @@ class UsageGenerator:
         return self.iterator()
 
     def get_reading_at(self, index: int):
-        val = None
         if index > 0:
             index %= len(self.curve)
 
-        val = self.curve[index]
-
-        return val
+        return None if index < 0 else self.curve[index]
 
 
 class Appliance(BaseAppliance):
@@ -124,9 +121,11 @@ class Appliance(BaseAppliance):
         self.measuring = MeasurementParamType.POWER
         # self.historicUsageCurve = dict()
         self.bids = []   # Don't need use trades from area
-        self.tick_count = 0  # Get current tick from area            # count to keep track of ticks since past
+        self.tick_count = 0  # Get current tick from area       # count to keep track of ticks since past
         self.report_frequency = report_freq
         self.last_reported_tick = self.report_frequency
+        # TODO appliances consuming power reports -ve, make it -1
+        self.report_sign = 1                      # Consumption of power is reported as -ve and prod is +ve
 
         log.debug("Appliance instantiated, current mode of operation is {}".format(self.mode))
 
@@ -189,6 +188,10 @@ class Appliance(BaseAppliance):
             log.error("Usage generator uninitialized")
 
     def event_tick(self, *, area: Area):
+
+        if area is None:
+            return
+
         if not self.owner:
             # Should not happen
             return
@@ -197,29 +200,28 @@ class Appliance(BaseAppliance):
             # No current market yet
             return
 
+        # TODO report power in KWh, divide by 1000
         if self.last_reported_tick == self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
             # Fetch traded energy for `market`
-            energy = self.owner.strategy.energy_balance(market)
+            energy = self.get_current_power()
             if energy:
                 area.report_accounting(market, self.owner.name, energy / area.config.ticks_per_slot)
 
         self.last_reported_tick += 1
 
+    def get_current_power(self):
+        return self.iterator.__next__() * self.report_sign
+
     def event_market_cycle(self):
         pass
-
-    def get_historic_usage_curve(self):
-        # Not needed, area keeps track of it
-        # return self.historicUsageCurve
-        return None
 
     def get_measurement_param(self) -> MeasurementParamType:
         return self.measuring
 
     def get_usage_reading(self) -> tuple:
-        return self.measuring, self.iterator.__next__()
+        return self.measuring, self.get_current_power()
 
     def update_iterator(self, curve, randomize: bool = False):
         """
@@ -248,6 +250,7 @@ class PVAppliance(Appliance):
         self.cloud_duration = 0
         self.multiplier = 1.0
         self.panel_count = panel_count
+        self.report_multiplier = 1              # As PV produces energy
 
     def handle_cloud_cover(self, percent: float = 0, duration: int = 0):
         """
@@ -268,7 +271,7 @@ class PVAppliance(Appliance):
         self.multiplier = 1.0
         self.cloud_duration = 0
 
-    def get_pv_power_generated(self):
+    def get_current_power(self):
         # use area.get_now() instead of pendulum.now()
         # current_tick * tick_length gets seconds since simulation started
         power = self.usageGenerator.get_reading_at(pendulum.now().diff(pendulum.today()).in_seconds())
@@ -279,7 +282,7 @@ class PVAppliance(Appliance):
 
         return round(power, 2)
 
-    def event_tick(self):
+    def event_tick(self, *, area: Area):
         if self.cloud_duration > 0:
             self.cloud_duration -= 1
         else:
@@ -288,7 +291,7 @@ class PVAppliance(Appliance):
         # +ve for produced energy
 
         # power = self.usageGenerator.get_reading_at((pendulum.now()).diff(pendulum.today()).in_seconds())
-        power = self.get_pv_power_generated()
+        power = self.get_current_power()
 
         if self.last_reported_tick == self.report_frequency:
             # report power generation/consumption to area
@@ -330,7 +333,7 @@ class FridgeAppliance(Appliance):
         self.door_open_duration = duration
         # self.current_temp += self.temp_change_on_door_open
 
-    def event_tick(self):
+    def event_tick(self, *, area: Area):
         if self.door_open_duration > 0:
             log.warning("Fridge door is still open")
             self.door_open_duration -= 1
@@ -500,3 +503,23 @@ class FridgeAppliance(Appliance):
         self.tick_count = 0
         self.change_mode_of_operation(ApplianceMode.ON)
         self.update_iterator(self.gen_run_schedule())
+
+
+class DumbLoad(Appliance):
+
+    def __init__(self, name: str = "Dumb Load", report_freq: int = 1):
+        super().__init__(name, report_freq)
+        self.mode = ApplianceMode.OFF
+
+    def power_on_appliance(self):
+        self.change_mode_of_operation(ApplianceMode.ON)
+
+    def power_off_appliance(self):
+        self.change_mode_of_operation(ApplianceMode.OFF)
+
+    def toggle_appliance(self):
+        if self.mode is ApplianceMode.ON:
+            self.power_off_appliance()
+        else:
+            self.power_on_appliance()
+

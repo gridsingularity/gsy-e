@@ -1,5 +1,4 @@
-from d3a.models.resource.appliance import PVAppliance
-from d3a.models.resource.appliance import FridgeAppliance
+from d3a.models.resource.appliance import PVAppliance, FridgeAppliance, DumbLoad
 from d3a.models.resource.properties import ApplianceProfileBuilder
 from d3a.models.resource.properties import ApplianceType
 from d3a.models.resource.properties import ElectricalProperties
@@ -144,3 +143,52 @@ def gen_fridge_appliance() -> FridgeAppliance:
 
     return fridge
 
+
+def gen_bulb_curves() -> dict:
+    """
+    Method to generate power consumption curve for light bulbs
+    :return: A dictionary containing curves for when bulb is ON and OFF
+    """
+    on_curve = [5.5, 5.5]
+
+    off_curve = [0, 0]
+
+    mode_curve = dict()
+    mode_curve[ApplianceMode.ON] = on_curve
+    mode_curve[ApplianceMode.OFF] = off_curve
+
+    return mode_curve
+
+
+def gen_light_bulb() -> DumbLoad:
+    """
+    Method to create a Dumbload type appliance object for a light bulb
+    :return: A fully constructed Bulb type object
+    """
+    bulb = DumbLoad("LED Bulb")
+    builder = ApplianceProfileBuilder("Philips Hue White Ambiance", "Living Room", ApplianceType.UNCONTROLLED)
+    builder.set_contact_url("http://www2.meethue.com/en-us/support/")
+    builder.set_icon_url("http://www2.meethue.com/media/3857254/WA-GU10.png")
+    builder.set_manufacturer("Philips")
+    builder.set_model_url("http://www2.meethue.com/en-us/productdetail/philips-hue-white-ambiance-gu10-single-bulb")
+    builder.set_uuid("SOMERANDOMUUIDBEINGUSEDFORBULB")
+
+    # Power generation curve
+    mode_curves = gen_bulb_curves()
+    on_curve = mode_curves[ApplianceMode.ON]
+    off_curve = mode_curves[ApplianceMode.OFF]
+
+    # Electrical properties
+    power_range = (min(off_curve), max(on_curve))
+    variance_range = (0, 0)
+    electrical = ElectricalProperties(power_range, variance_range)
+
+    curves = EnergyCurve(ApplianceMode.ON, on_curve,
+                         Interval(seconds=1), DEFAULT_CONFIG.tick_length)
+    curves.add_mode_curve(ApplianceMode.OFF, off_curve)
+
+    bulb.set_appliance_properties(builder.build())
+    bulb.set_electrical_properties(electrical)
+    bulb.set_appliance_energy_curve(curves)
+
+    return bulb
