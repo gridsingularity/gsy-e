@@ -2,6 +2,8 @@ pragma solidity ^0.4.4;
 import "StandardToken.sol";
 
 
+// Since IOUToken inherits from StandardToken it has all functionalities of
+// StandardToken
 contract IOUToken is StandardToken {
     string public name;
     uint8 public decimals;

@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict, defaultdict
 from logging import getLogger
 from random import random
@@ -8,10 +9,10 @@ from pendulum.pendulum import Pendulum
 from slugify import slugify
 
 from d3a.exceptions import AreaException
+from d3a.models.appliance.base import BaseAppliance
 from d3a.models.config import SimulationConfig
 from d3a.models.events import AreaEvent, MarketEvent
 from d3a.models.market import Market
-from d3a.models.appliance.base import BaseAppliance
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.util import TaggedLogWrapper
@@ -214,6 +215,13 @@ class Area:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
     def get_now(self) -> Pendulum:
+        """Compatibility wrapper"""
+        warnings.warn("The '.get_now()' method has been replaced by the '.now' property. "
+                      "Please use that in the future.")
+        return self.now
+
+    @property
+    def now(self) -> Pendulum:
         """
         Return the 'current time' as a `Pendulum` object.
         Can be overridden in subclasses to change the meaning of 'now'.

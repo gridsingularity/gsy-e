@@ -38,7 +38,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
         self.trades[market].append(trade)
         return trade
 
-    def post(self, data: Dict[str, Any]):
+    def post(self, **data):
         self.event_data_received(data)
 
     def event_data_received(self, data: Dict[str, Any]):
