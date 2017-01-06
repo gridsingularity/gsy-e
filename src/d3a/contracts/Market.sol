@@ -1,16 +1,16 @@
 pragma solidity ^0.4.4;
-import "IOUToken.sol";
-import "MoneyIOU.sol";
-import "byte_set_lib.sol";
+import "ClearingToken.sol";
 
 
-contract Market is IOUToken {
-
-    using ItSet for ItSet.ByteSet;
+contract Market {
 
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
 
+    //mapping of the energy balances for market participants
+    mapping (address => int256) balances;
+
+    //Container to hold the details of the Offer
     struct Offer {
 
         uint energyUnits;
@@ -18,11 +18,9 @@ contract Market is IOUToken {
         address seller;
     }
 
-    // Holds set of all the offerIds
-    ItSet.ByteSet offerIdSet;
 
-    // Holds the reference to MoneyIOU contract used for token transfers
-    MoneyIOU moneyIOU;
+    // Holds the reference to ClearingToken contract used for token transfers
+    ClearingToken clearingToken;
 
     // Initialized when the market contract is created on the blockchain
     uint marketStartTime;
@@ -30,49 +28,44 @@ contract Market is IOUToken {
     // The interval of time for which market can be used for trading
     uint interval;
 
-    function Market(
-        address moneyIOUAddress,
-        uint128 _initialAmount,
-        string _tokenName,
-        uint8 _decimalUnits,
-        string _tokenSymbol,
-        uint _interval
-    ) IOUToken(
-        _initialAmount,
-        _tokenName,
-        _decimalUnits,
-        _tokenSymbol
-    )
-    {
+    function Market(address clearingTokenAddress, uint _interval) {
 
-        moneyIOU = MoneyIOU(moneyIOUAddress);
+        clearingToken = ClearingToken(clearingTokenAddress);
         interval = _interval;
         marketStartTime = now;
     }
 
-    // Temp storage for OfferIds
-    bytes32[] tempOffersIds;
 
     // Events
-    event OfferEvent(uint energyUnits, int price, address indexed seller, uint blocknumber);
+    event NewOffer(bytes32 offerId, uint energyUnits, int price, address indexed seller);
     event CancelOffer(uint energyUnits, int price, address indexed seller);
     event Trade(address indexed buyer, address indexed seller, uint energyUnits, int price);
+    event OfferChanged(bytes32 oldOfferId, bytes32 newOfferId, uint energyUnits, int price,
+      address indexed seller);
 
     /*
-     * @notice The msg.sender is able to put new offers.
+     * @notice The msg.sender is able to introduce new offers.
      * @param energyUnits the units of energy offered generally in KWh.
      * @param price the price of each unit.
      */
     function offer(uint energyUnits, int price) returns (bytes32 offerId) {
-        if (energyUnits > 0 && price != 0) {
-            offerId = sha3(energyUnits, price, msg.sender, block.number);
+        var (success, id) = _offer(energyUnits, price, msg.sender);
+        if (success) NewOffer(id, energyUnits, price, msg.sender);
+        offerId = id;
+    }
+
+    function _offer(uint energyUnits, int price, address seller)
+    private returns (bool success, bytes32 offerId) {
+
+        if (energyUnits > 0) {
+            offerId = sha3(energyUnits, price, seller, block.number);
             Offer offer = offers[offerId];
             offer.energyUnits = energyUnits;
             offer.price = price;
-            offer.seller = msg.sender;
-            offerIdSet.insert(offerId);
-            OfferEvent(offer.energyUnits, offer.price, offer.seller, block.number);
+            offer.seller = seller;
+            success = true;
         } else {
+            success = false;
             offerId = "";
         }
     }
@@ -88,39 +81,54 @@ contract Market is IOUToken {
             offer.energyUnits = 0;
             offer.price = 0;
             offer.seller = 0;
-            offerIdSet.remove(offerId);
             success = true;
         } else {
-            success = false;
+          success = false;
         }
     }
 
     /*
      * @notice matches the existing offer with the Id
      * @notice adds the energyUnits to balance[buyer] and subtracts from balance[offer.seller]
-     * @notice calls the MoneyIOU contract to transfer tokens from buyer to offer.seller
-     * @notice market needs to be registered with MoneyIOU to transfer tokens
+     * @notice calls the ClearingToken contract to transfer tokens from buyer to offer.seller
+     * @notice market needs to be registered with ClearingToken to transfer tokens
      * @notice market only runs for the "interval" amount of time from the
      *         from the "marketStartTime"
+     * @ tradedEnergyUnits Allows for partial trading of energyUnits from an offer
      */
-    function trade(bytes32 offerId) returns (bool success) {
+    function trade(bytes32 offerId, uint tradedEnergyUnits) returns (bool success, bytes32 newOfferId) {
         Offer offer = offers[offerId];
         address buyer = msg.sender;
-
         if (offer.energyUnits > 0
             && offer.seller != address(0)
             && msg.sender != offer.seller
-            && now-marketStartTime < interval) {
-            balances[buyer] += int(offer.energyUnits);
-            balances[offer.seller] -= int(offer.energyUnits);
-            int cost = int(offer.energyUnits) * offer.price;
-            success = moneyIOU.marketTransfer(buyer, offer.seller, cost);
-            if (success) {
-                Trade(buyer, offer.seller, offer.energyUnits, offer.price);
+            && now-marketStartTime < interval
+            && tradedEnergyUnits > 0
+            && tradedEnergyUnits <= offer.energyUnits) {
+            // Allow Partial Trading, if tradedEnergyUnits  are less than the
+            // energyUnits in the offer, make a new offer with the remaining energyUnits
+            // and the same price. Also emit OfferChanged event with old offerId
+            // and new Offer values.
+            if (tradedEnergyUnits < offer.energyUnits) {
+                uint newEnergyUnits = offer.energyUnits - tradedEnergyUnits;
+                (success, newOfferId) = _offer(newEnergyUnits, offer.price, offer.seller);
+                OfferChanged(offerId, newOfferId, newEnergyUnits, offer.price, offer.seller);
+            }
+            // Record exchange of energy between buyer and seller
+            balances[buyer] += int(tradedEnergyUnits);
+            balances[offer.seller] -= int(tradedEnergyUnits);
+            // if the offer price is either positive or negative there has to be
+            // a clearingTransfer to transfer Tokens from buyer to seller or
+            // vice versa
+            if (offer.price != 0) {
+                int cost = int(tradedEnergyUnits) * offer.price;
+                success = clearingToken.clearingTransfer(buyer, offer.seller, cost);
+            }
+            if (success || offer.price == 0) {
+                Trade(buyer, offer.seller, tradedEnergyUnits, offer.price);
                 offer.energyUnits = 0;
                 offer.price = 0;
                 offer.seller = 0;
-                offerIdSet.remove(offerId);
                 success = true;
             } else {
                 throw;
@@ -128,17 +136,6 @@ contract Market is IOUToken {
         } else {
             success = false;
         }
-    }
-
-    /*
-     * @notice registers the market with the MoneyIOU contract for token transfers.
-     * @notice For security the same user which makes the MoneyIOU contract calls
-               this function to register the market.
-     * @param _value the maximum amount that the market is allowed to transfer
-     *        between the participants
-     */
-    function registerMarket(uint256 _value) returns (bool success) {
-        success = moneyIOU.globallyApprove(_value);
     }
 
     /*
@@ -150,34 +147,17 @@ contract Market is IOUToken {
     }
 
     /*
-     * Gets all OfferIds in the market
+     * @notice Gets the address of the ClearingToken contract
      */
-    function getAllOffers() constant returns (bytes32[]) {
-        return offerIdSet.list;
+    function getClearingTokenAddress() constant returns (address) {
+        return address(clearingToken);
     }
 
     /*
-     * Gets the address of the MoneyIOU contract that the market is registered with
+     * @notice Gets the energy balance of _owner
      */
-    function getMoneyIOUAddress() constant returns (address) {
-        return address(moneyIOU);
+    function balanceOf(address _owner) constant returns (int256 balance) {
+        return balances[_owner];
     }
 
-    /*
-     * Gets all the offerids whose offer price is below _value
-     */
-    function getOffersIdsBelow(int _value) constant returns (bytes32[]) {
-        delete tempOffersIds;
-        uint j = 0;
-        for (uint i = 0; i < offerIdSet.size(); i++) {
-            Offer offer = offers[offerIdSet.list[i]];
-            if (offer.energyUnits > 0
-                && offer.price < _value
-                && offer.seller != address(0)) {
-                tempOffersIds.push(offerIdSet.list[i]);
-                j += 1;
-            }
-        }
-        return tempOffersIds;
-    }
 }
