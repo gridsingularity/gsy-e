@@ -10,7 +10,8 @@ import sys
 from pendulum.pendulum import Pendulum
 from terminaltables.other_tables import SingleTable
 
-from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException
+from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
+    InvalidTrade
 from d3a.models.events import MarketEvent, OfferEvent
 
 
@@ -118,7 +119,7 @@ class Market:
             log.info("[OFFER][DEL] %s", offer)
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
-    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str,
+    def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: Pendulum = None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
@@ -130,6 +131,40 @@ class Market:
                 raise OfferNotFoundException()
             if time is None:
                 time = self._now
+            if energy is not None:
+                # Partial trade
+                if energy == 0:
+                    raise InvalidTrade("Energy can not be zero.")
+                elif energy < offer.energy:
+                    original_offer = offer
+                    accepted_offer = Offer(
+                        offer.id,
+                        offer.price / offer.energy * energy,
+                        energy,
+                        offer.seller,
+                        offer.market
+                    )
+                    residual_offer = Offer(
+                        str(uuid.uuid4()),
+                        offer.price / offer.energy * (offer.energy - energy),
+                        offer.energy - energy,
+                        offer.seller,
+                        offer.market
+                    )
+                    self.offers[residual_offer.id] = residual_offer
+                    log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
+                    offer = accepted_offer
+                    self._notify_listeners(
+                        MarketEvent.OFFER_CHANGED,
+                        existing_offer=original_offer,
+                        new_offer=residual_offer
+                    )
+                elif energy > offer.energy:
+                    raise InvalidTrade("Energy can't be greater than offered energy")
+                else:
+                    # Requested partial energy is equal to offered energy - just proceed normally
+                    pass
+
             trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer)
             self.trades.append(trade)
             log.warning("[TRADE] %s", trade)
@@ -180,7 +215,7 @@ class Market:
     @property
     def _now(self):
         if self.area:
-            return self.area.get_now()
+            return self.area.now
         log.error("No area available. Using real system time!")
         return Pendulum.now()
 

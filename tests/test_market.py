@@ -68,7 +68,7 @@ def test_market_trade(market: Market):
     offer = market.offer(20, 10, 'A')
 
     now = Pendulum.now()
-    trade = market.accept_offer(offer, 'B', now)
+    trade = market.accept_offer(offer, 'B', time=now)
     assert trade
     assert trade == market.trades[0]
     assert trade.id
@@ -98,6 +98,28 @@ def test_market_trade_not_found(market: Market):
     assert market.accept_offer(offer, 'B')
     with pytest.raises(OfferNotFoundException):
         market.accept_offer(offer, 'B')
+
+
+def test_market_trade_partial(market: Market):
+    offer = market.offer(20, 20, 'A')
+
+    trade = market.accept_offer(offer, 'B', energy=5)
+    assert trade
+    assert trade == market.trades[0]
+    assert trade.id
+    assert trade.offer is not offer
+    assert trade.offer.energy == 5
+    assert trade.offer.price == 5
+    assert trade.offer.seller == 'A'
+    assert trade.seller == 'A'
+    assert trade.buyer == 'B'
+    assert len(market.offers) == 1
+    new_offer = list(market.offers.values())[0]
+    assert new_offer is not offer
+    assert new_offer.energy == 15
+    assert new_offer.price == 15
+    assert new_offer.seller == 'A'
+    assert new_offer.id != offer.id
 
 
 def test_market_acct_simple(market: Market):
@@ -161,6 +183,21 @@ def test_market_listners_offer(market, called):
     assert len(called.calls) == 1
     assert called.calls[0][0] == (repr(MarketEvent.OFFER), )
     assert called.calls[0][1] == {'offer': repr(offer), 'market': repr(market)}
+
+
+def test_market_listners_offer_changed(market, called):
+    market.add_listener(called)
+    offer = market.offer(10, 20, 'A')
+    market.accept_offer(offer, 'B', energy=3)
+
+    assert len(called.calls) == 3
+    assert called.calls[1][0] == (repr(MarketEvent.OFFER_CHANGED), )
+    call_kwargs = called.calls[1][1]
+    call_kwargs.pop('market', None)
+    assert call_kwargs == {
+        'existing_offer': repr(offer),
+        'new_offer': repr(list(market.offers.values())[0])
+    }
 
 
 def test_market_listners_offer_deleted(market, called):

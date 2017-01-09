@@ -9,6 +9,7 @@ class OfferEvent(Enum):
 
 class MarketEvent(Enum):
     OFFER = 1
+    OFFER_CHANGED = 4
     OFFER_DELETED = 2
     TRADE = 3
 
@@ -34,6 +35,9 @@ class EventMixin:
         pass
 
     def event_offer(self, *, market, offer):
+        pass
+
+    def event_offer_changed(self, *, market, existing_offer, new_offer):
         pass
 
     def event_offer_deleted(self, *, market, offer):

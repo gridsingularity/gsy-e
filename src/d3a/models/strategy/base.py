@@ -31,10 +31,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
             for t in self.trades[market]
         )
 
-    def accept_offer(self, market: Market, offer, buyer=None):
+    def accept_offer(self, market: Market, offer, *, buyer=None, energy=None):
         if buyer is None:
             buyer = self.owner.name
-        trade = market.accept_offer(offer, buyer)
+        trade = market.accept_offer(offer, buyer, energy=energy)
         self.trades[market].append(trade)
         return trade
 
