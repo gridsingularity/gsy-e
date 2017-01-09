@@ -3,7 +3,7 @@ from typing import Dict, List  # noqa
 
 from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
-from d3a.exceptions import MarketException
+from d3a.exceptions import MarketException, OfferNotFoundException
 from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY
 
 
@@ -12,7 +12,7 @@ class StorageStrategy(BaseStrategy):
         super().__init__()
         self.risk = risk
         self.offers_posted = {}  # type: Dict[str, Market]
-        self.buought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
+        self.bought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Trade]]
         self.used_storage = 0.00
         self.blocked_storage = 0.00
@@ -34,7 +34,7 @@ class StorageStrategy(BaseStrategy):
                     try:
                         self.accept_offer(market, offer)
                         self.blocked_storage += offer.energy
-                        self.buought_offers[market].append(offer)
+                        self.bought_offers[market].append(offer)
                     except MarketException:
                         # Offer already gone etc., try next one.
                         continue
@@ -44,7 +44,7 @@ class StorageStrategy(BaseStrategy):
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
         # if energy in this slot was bought: update the storage
-        for bought in self.buought_offers[past_market]:
+        for bought in self.bought_offers[past_market]:
             self.blocked_storage -= bought.energy
             self.used_storage += bought.energy
         # if energy in this slot was sold: update the storage
@@ -72,11 +72,11 @@ class StorageStrategy(BaseStrategy):
             expensive_offers = list(self.area.cheapest_offers)[-1]
         except IndexError:
             return
-        market = expensive_offers.market
+        most_expensive_market = expensive_offers.market
         # sorted_offer_price is the price of the offer expensive_offers
         sorted_offer_price = (
-            list(market.sorted_offers)[0].price /
-            list(market.sorted_offers)[0].energy
+            list(most_expensive_market.sorted_offers)[0].price /
+            list(most_expensive_market.sorted_offers)[0].energy
         )
         # Post offer in most expensive market, if strategy price is cheap enough
         if (
@@ -85,17 +85,21 @@ class StorageStrategy(BaseStrategy):
                 current_selling_price < self.selling_price
         ):
             # Deleting all old offers
-            for (market, offer_id) in self.offers_posted:
-                    market.delete_offer(offer_id)
+            for (offer_id, market) in self.offers_posted.items():
+                    if market == most_expensive_market:
+                        try:
+                            market.delete_offer(offer_id)
+                        except OfferNotFoundException:
+                            return
             # Posting offer with new price
-            offer = market.offer(
+            offer = most_expensive_market.offer(
                 self.used_storage,
                 current_selling_price * self.used_storage,
                 self.owner.name
             )
             # Updating parameters
             self.selling_price = current_selling_price
-            self.offers_posted[offer.id] = market
+            self.offers_posted[offer.id] = most_expensive_market
 
     def find_avg_cheapest_offers(self):
         # Taking the cheapest offers in every market currently open and building the average
