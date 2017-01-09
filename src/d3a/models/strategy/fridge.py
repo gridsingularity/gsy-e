@@ -73,7 +73,11 @@ class FridgeStrategy(BaseStrategy):
         next_market = list(self.area.markets.values())[0]
         # Here starts the logic if energy should be bought
         for offer in next_market.sorted_offers:
-            cooling_temperature = 2 * ((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.01
+            # offer.energy * 1000 is needed to get the energy in Wh
+            # 0.005 is the temperature decrease per every minimalistic cooling period
+            # *2 is needed because we not only cool but need to equalize the rise
+            #  of the temperature (see event_market_cycle) as well
+            cooling_temperature = ((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.005 * 2
             if (
                 (offer.price / offer.energy) <= threshold_price
                 and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
@@ -92,5 +96,6 @@ class FridgeStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
-        self.fridge_temp += self.area.config.slot_length.total_minutes() * 0.2
+        # The not cooled fridge warms 0.02C up every minute
+        self.fridge_temp += self.area.config.slot_length.total_minutes() * 0.02
         self.log.info("Temperature: %.2f", self.fridge_temp)
