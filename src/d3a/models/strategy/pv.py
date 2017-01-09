@@ -11,7 +11,8 @@ class PVStrategy(BaseStrategy):
         self.offers_posted = {}  # type: Dict[str, Market]
 
     def event_tick(self, *, area):
-        quantity_forecast = self.produced_energy_forecast()
+        # Here you can change between different forecast functions
+        quantity_forecast = self.produced_energy_forecast_sinus()
         average_market_price = self.area.historical_avg_price
         # Needed to calculate risk_dependency_of_selling_price
         normed_risk = ((self.risk - (0.5 * MAX_RISK)) / (0.5 * MAX_RISK))
@@ -44,7 +45,7 @@ class PVStrategy(BaseStrategy):
                 # self.sell_energy(... see above)
                 pass
 
-    def produced_energy_forecast(self):
+    def produced_energy_forecast_sinus(self):
         # Assuming that its 12hr when current_simulation_step = 0
         # Please see https://github.com/nrcharles/solpy
         # Might be the best way to get a realistic forecast
@@ -66,6 +67,18 @@ class PVStrategy(BaseStrategy):
                     ((past_markets + i) / minutes_of_one_day
                      ) * 2 * math.pi + phase_shift)) + sinus_offset, 2)
         return energy_production_forecast
+
+#    # TODO: Debug produced_energy_forecast_gaussian
+#    def produced_energy_forecast_gaussian(self):
+#        energy_production_forecast = {}
+#        for i, (time, market) in enumerate(self.area.markets.items()):
+#            mu = 60*4
+#            sigma = 60*2.5
+#            energy_production_forecast[time] = round(
+#                math.exp(- ((i - mu) ** 2 / (2 * (sigma ** 2)))), 2
+#            )
+#        log.info("energy_production_forecast is %", energy_production_forecast)
+#        return energy_production_forecast
 
     def event_market_cycle(self):
         pass
