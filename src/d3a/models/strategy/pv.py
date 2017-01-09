@@ -18,8 +18,9 @@ class PVStrategy(BaseStrategy):
         normed_risk = ((self.risk - (0.5 * MAX_RISK)) / (0.5 * MAX_RISK))
         # risk_dependency_of_selling_price variates with the risk around the average market price
         # High risk means expensive selling price & high possibility not selling the energy
-        risk_dependency_of_selling_price = (normed_risk * 0.4 * average_market_price)
-        energy_price = average_market_price + risk_dependency_of_selling_price
+        # The value 0.1 is to damp the effect of the risk
+        risk_dependency_of_selling_price = (normed_risk * 0.1 * average_market_price)
+        energy_price = min(average_market_price + risk_dependency_of_selling_price, 30)
         rounded_energy_price = round(energy_price, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_price != 0.0:
@@ -57,8 +58,8 @@ class PVStrategy(BaseStrategy):
         energy_production_forecast = {}
         # Assuming 3 am is the darkest time a day --> sin(3 am) = 0
         phase_shift = 5 / 24
-        # sin_amplitude / 2 should equal the maximum possible output (in kw) the pv can deliver
-        sin_amplitude = 5
+        # sin_amplitude / 2 should equal the maximum possible output (in wH) the pv can deliver
+        sin_amplitude = 0.1
         # Sinus_offset to prevent that we get negative energy estimations
         sinus_offset = sin_amplitude
         # enumerate counts the markets through - from 0 to n
@@ -69,9 +70,7 @@ class PVStrategy(BaseStrategy):
                 (sin_amplitude * math.sin(
                     ((past_markets + i) / minutes_of_one_day
                      ) * 2 * math.pi + phase_shift)
-                 # Dividing by 1000 converts the calculated output of Wh into kWh
-                 / 1000
-                 ) + sinus_offset, 0
+                 ) + sinus_offset, 4
             )
         return energy_production_forecast
 
