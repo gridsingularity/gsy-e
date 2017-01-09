@@ -73,7 +73,7 @@ class FridgeStrategy(BaseStrategy):
         next_market = list(self.area.markets.values())[0]
         # Here starts the logic if energy should be bought
         for offer in next_market.sorted_offers:
-            cooling_temperature = 2 * (offer.energy / FRIDGE_MIN_NEEDED_ENERGY) * 0.01
+            cooling_temperature = 2 * ((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.01
             if (
                 (offer.price / offer.energy) <= threshold_price
                 and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP

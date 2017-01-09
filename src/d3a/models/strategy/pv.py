@@ -58,7 +58,7 @@ class PVStrategy(BaseStrategy):
         # Assuming 3 am is the darkest time a day --> sin(3 am) = 0
         phase_shift = 5 / 24
         # sin_amplitude / 2 should equal the maximum possible output (in kw) the pv can deliver
-        sin_amplitude = 50
+        sin_amplitude = 5
         # Sinus_offset to prevent that we get negative energy estimations
         sinus_offset = sin_amplitude
         # enumerate counts the markets through - from 0 to n
@@ -69,8 +69,8 @@ class PVStrategy(BaseStrategy):
                 (sin_amplitude * math.sin(
                     ((past_markets + i) / minutes_of_one_day
                      ) * 2 * math.pi + phase_shift)
-                 # Dividing by 100 converts the calculated output of Wh into kWh
-                 / 100
+                 # Dividing by 1000 converts the calculated output of Wh into kWh
+                 / 1000
                  ) + sinus_offset, 0
             )
         return energy_production_forecast
