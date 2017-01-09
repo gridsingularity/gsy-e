@@ -52,7 +52,7 @@ class StorageStrategy(BaseStrategy):
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
                         self.used_storage + self.blocked_storage + offer.energy <= STORAGE_CAPACITY
-                        and (offer.price / offer.energy) < avg_cheapest_offer_price
+                        and (offer.price / offer.energy) <= avg_cheapest_offer_price
                 ):
                     # Try to buy the energy
                     try:
