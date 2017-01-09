@@ -7,6 +7,8 @@ from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_TEMPERATURE, MAX_FRID
     MIN_FRIDGE_TEMP, FRIDGE_MIN_NEEDED_ENERGY, MAX_RISK
 
 
+# TODO Find realistic values for consumption as well as temperature changes
+
 class FridgeStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
@@ -16,28 +18,29 @@ class FridgeStrategy(BaseStrategy):
         self.threshold_price = 0.0
 
     def event_tick(self, *, area):
+        # The not cooled fridge warms up (0.02 / 60)C up every second
+        self.fridge_temp += self.area.config.tick_length.total_seconds() * round((0.02 / 60), 6)
+
         # Assuming a linear correlation between accepted price and risk
-        # Used as acceptable points
-        # (Risk = 1, Price = 20);(Risk = 50, Price = 15);(Risk = 100, Price = 10)
-        # If risk is at average the accepted price should be less or equal the average pr
         max_risk = MAX_RISK
         median_risk = max_risk / 2
+        # The threshold buying price depends on historical market data
         min_historical_price, max_historical_price = self.area.historical_min_max_price
         average_market_price = self.area.historical_avg_price
         fridge_temp_domain = MAX_FRIDGE_TEMP - MIN_FRIDGE_TEMP
         # normalized _fridge_temp has a value between 1 and -1
-        # If self.fridge_temp =8 the normalized_fridge_temp is 1
+        # If self.fridge_temp = 8 the normalized_fridge_temp is 1
         normalized_fridge_temp = (
             (self.fridge_temp - (0.5 * (MAX_FRIDGE_TEMP + MIN_FRIDGE_TEMP))
              ) / (0.5 * fridge_temp_domain)
         )
         # deviation_from_average is the value that determines the deviation (in percentage of
-        # the average market price) - using the maximum Risk strategy of the average market price
-        deviation_from_average = 0.1 * average_market_price
+        # the average market price) - this will later be multiplied with the risk
+        max_deviation_from_average = 0.1 * average_market_price
         # accepted_price_at_highest_risk is the threshold price while going with the most risky
         # strategy This depends on the max and min historical price! (through the variable
         # deviation_from_average)
-        accepted_price_at_highest_risk = (average_market_price - deviation_from_average)
+        accepted_price_at_highest_risk = (average_market_price - max_deviation_from_average)
         # This slope is used to calculate threshold prices for
         # risks other than the maximum risk strategy
         risk_price_slope = (
@@ -51,8 +54,9 @@ class FridgeStrategy(BaseStrategy):
         # which is of course the point of highest possible risk
         # Then we add the slope times the risk (lower risk needs to result in a higher price)
         risk_dependency_of_threshold_price = (accepted_price_at_highest_risk +
-                                              (MAX_RISK - self.risk) * risk_price_slope
+                                              ((MAX_RISK - self.risk) / 100) * risk_price_slope
                                               )
+
         # temperature_dependency_of_threshold_price calculates the Y intercept that results
         # out of a different temperature of the fridge
         # If the fridge_temp is 8 degrees the fridge needs to cool no matter how high the price is
@@ -77,11 +81,11 @@ class FridgeStrategy(BaseStrategy):
             # 0.005 is the temperature decrease per every minimalistic cooling period
             # *2 is needed because we not only cool but need to equalize the rise
             #  of the temperature (see event_market_cycle) as well
-            cooling_temperature = ((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.005 * 2
+            cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.005 * 2)
             if (
                 (offer.price / offer.energy) <= threshold_price
                 and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
-                and offer.energy >= FRIDGE_MIN_NEEDED_ENERGY
+                and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
             ):
                 try:
                     self.accept_offer(next_market, offer)
@@ -96,6 +100,4 @@ class FridgeStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
-        # The not cooled fridge warms 0.02C up every minute
-        self.fridge_temp += self.area.config.slot_length.total_minutes() * 0.02
         self.log.info("Temperature: %.2f", self.fridge_temp)
