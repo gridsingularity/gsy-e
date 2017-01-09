@@ -1,8 +1,8 @@
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
+from d3a.models.strategy.commercial_producer import Commercial_Strategy
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.simple import OfferStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
 
@@ -42,8 +42,7 @@ def get_setup(config):
                     Area('H2 Storage9', strategy=StorageStrategy(0), appliance=SimpleAppliance())
                 ]
             ),
-            Area('Hydro', strategy=OfferStrategy(offer_chance=.1,
-                                                 price_fraction_choice=(0.03, 0.05)))
+            Area('Commercial Energy Producer', strategy=Commercial_Strategy())
         ],
         config=config
     )
