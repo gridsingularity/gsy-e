@@ -273,7 +273,14 @@ class MarketStateMachine(RuleBasedStateMachine):
     def check_avg_offer_price(self):
         price = sum(o.price for o in self.market.offers.values())
         energy = sum(o.energy for o in self.market.offers.values())
-        assert self.market.avg_offer_price == price / energy
+        assert self.market.avg_offer_price == round(price / energy, 4)
+
+    @precondition(lambda self: self.market.trades)
+    @rule()
+    def check_avg_trade_price(self):
+        price = sum(t.offer.price for t in self.market.trades)
+        energy = sum(t.offer.energy for t in self.market.trades)
+        assert self.market.avg_trade_price == round(price / energy, 4)
 
     @precondition(lambda self: self.market.accounting)
     @rule()
