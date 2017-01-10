@@ -76,8 +76,10 @@ class Market:
         self.ious = defaultdict(lambda: defaultdict(int))
         self.accounting = defaultdict(int)
         self.min_trade_price = sys.maxsize
+        self._avg_trade_price = None
         self.max_trade_price = 0
         self.min_offer_price = sys.maxsize
+        self._avg_offer_price = None
         self.max_offer_price = 0
         self.offer_lock = Lock()
         self.trade_lock = Lock()
@@ -101,9 +103,7 @@ class Market:
         with self.offer_lock:
             self.offers[offer.id] = offer
             log.info("[OFFER][NEW] %s", offer)
-            price = offer.price / offer.energy
-            self.max_offer_price = max(self.max_offer_price, price)
-            self.min_offer_price = min(self.min_offer_price, price)
+            self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
 
@@ -114,6 +114,7 @@ class Market:
             offer_or_id = offer_or_id.id
         with self.offer_lock:
             offer = self.offers.pop(offer_or_id, None)
+            self._update_min_max_avg_offer_prices()
             if not offer:
                 raise OfferNotFoundException()
             log.info("[OFFER][DEL] %s", offer)
@@ -171,17 +172,25 @@ class Market:
             self.accounting[offer.seller] -= offer.energy
             self.accounting[buyer] += offer.energy
             self.ious[buyer][offer.seller] += offer.price
-            price = offer.price / offer.energy
-            self.max_trade_price = max(self.max_trade_price, price)
-            self.min_trade_price = min(self.min_trade_price, price)
+            self._update_min_max_avg_trade_prices(offer.price / offer.energy)
             # Recalculate offer min/max price since offer was removed
-            offer_prices = [o.price / o.energy for o in self.offers.values()]
-            if offer_prices:
-                self.min_offer_price = min(offer_prices)
-                self.min_offer_price = max(offer_prices)
+            self._update_min_max_avg_offer_prices()
         offer._traded(trade, self)
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
+
+    def _update_min_max_avg_offer_prices(self):
+        self._avg_offer_price = None
+        offer_prices = [o.price / o.energy for o in self.offers.values()]
+        if offer_prices:
+            self.min_offer_price = round(min(offer_prices), 4)
+            self.min_offer_price = round(max(offer_prices), 4)
+
+    def _update_min_max_avg_trade_prices(self, price):
+        self.max_trade_price = round(max(self.max_trade_price, price), 4)
+        self.min_trade_price = round(min(self.min_trade_price, price), 4)
+        self._avg_trade_price = None
+        self._avg_offer_price = None
 
     def __repr__(self):  # pragma: no cover
         return "<Market{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>".format(
@@ -196,17 +205,21 @@ class Market:
 
     @property
     def avg_offer_price(self):
-        with self.offer_lock:
-            price = sum(o.price for o in self.offers.values())
-            energy = sum(o.energy for o in self.offers.values())
-        return (price / energy) if energy else 0
+        if self._avg_offer_price is None:
+            with self.offer_lock:
+                price = sum(o.price for o in self.offers.values())
+                energy = sum(o.energy for o in self.offers.values())
+            self._avg_offer_price = round(price / energy, 4) if energy else 0
+        return self._avg_offer_price
 
     @property
     def avg_trade_price(self):
-        with self.trade_lock:
-            price = sum(t.offer.price for t in self.trades)
-            energy = sum(t.offer.energy for t in self.trades)
-        return (price / energy) if energy else 0
+        if self._avg_trade_price is None:
+            with self.trade_lock:
+                price = sum(t.offer.price for t in self.trades)
+                energy = sum(t.offer.energy for t in self.trades)
+            self._avg_trade_price = round(price / energy, 4) if energy else 0
+        return self._avg_trade_price
 
     @property
     def sorted_offers(self):
