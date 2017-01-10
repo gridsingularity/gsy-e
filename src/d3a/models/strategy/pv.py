@@ -59,7 +59,7 @@ class PVStrategy(BaseStrategy):
         # Assuming 3 am is the darkest time a day --> sin(3 am) = 0
         phase_shift = 5 / 24
         # sin_amplitude / 2 should equal the maximum possible output (in wH) the pv can deliver
-        sin_amplitude = 0.24
+        sin_amplitude = 0.1
         # Sinus_offset to prevent that we get negative energy estimations
         sinus_offset = sin_amplitude
         # enumerate counts the markets through - from 0 to n
