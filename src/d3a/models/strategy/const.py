@@ -10,9 +10,9 @@ MIN_FRIDGE_TEMP = 4.0
 FRIDGE_TEMPERATURE = 6.0
 # Unit is cent
 MIN_AVERAGE_PRICE = 15
-# Unit is Wh
-FRIDGE_MIN_NEEDED_ENERGY = 1
-# Unit is percentage
-STORAGE_CAPACITY = 100
+# Unit is in Wh
+FRIDGE_MIN_NEEDED_ENERGY = 10
+# Unit is kWh
+STORAGE_CAPACITY = 0.05
 # This price should be just above the marginal costs for a PV system - unit is cent
-MIN_PV_SELLING_PRICE = 5
+MIN_PV_SELLING_PRICE = 0.1
