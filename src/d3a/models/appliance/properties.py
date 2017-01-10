@@ -15,7 +15,7 @@ class MeasurementParamType(Enum):
     CURRENT = 4
 
 
-class ApplianceProfileBuilder():
+class ApplianceProfileBuilder:
     def __init__(self, name: str, location: str, appliancetype: ApplianceType=ApplianceType.UNCONTROLLED):
         """
         Class acting as builder to ApplianceProfile class, handles setting optional params.

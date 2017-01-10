@@ -1,6 +1,4 @@
-from d3a.models.resource.appliance import ApplianceMode, DumbLoad
-from d3a.models.resource.builder import gen_light_bulb
-from d3a.models.area import Area
+from d3a.models.appliance.builder import gen_light_bulb
 
 
 def get_bulb_object():
@@ -27,7 +25,7 @@ def test_power_on_bulb():
 
     for tick in range(0, trials):
         bulb.event_tick(area=None)
-        if bulb.get_current_power() >= 5.5:
+        if bulb.get_current_power() <= -5.5:
             count += 1
 
     assert count == trials

@@ -1,8 +1,10 @@
-from d3a.models.resource.appliance import PVAppliance, FridgeAppliance, DumbLoad
-from d3a.models.resource.properties import ApplianceProfileBuilder
-from d3a.models.resource.properties import ApplianceType
-from d3a.models.resource.properties import ElectricalProperties
-from d3a.models.resource.appliance import EnergyCurve, ApplianceMode
+from d3a.models.appliance.pv import PVAppliance
+from d3a.models.appliance.fridge import FridgeAppliance
+from d3a.models.appliance.dumb_load import DumbLoad
+from d3a.models.appliance.properties import ApplianceProfileBuilder
+from d3a.models.appliance.properties import ApplianceType
+from d3a.models.appliance.properties import ElectricalProperties
+from d3a.models.appliance.appliance import EnergyCurve, ApplianceMode
 from d3a.models.area import DEFAULT_CONFIG
 from pendulum.interval import Interval
 import random

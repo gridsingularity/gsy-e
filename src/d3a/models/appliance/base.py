@@ -4,3 +4,5 @@ from d3a.models.events import EventMixin
 
 class BaseAppliance(EventMixin, AreaBehaviorBase):
     pass
+
+

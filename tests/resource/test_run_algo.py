@@ -1,5 +1,5 @@
 import random
-from d3a.models.resource.run_algo import RunSchedule, RunScheduleLimit
+from d3a.models.appliance.run_algo import RunSchedule, RunScheduleLimit
 
 # one tick per sec
 ticks_per_bid = 15*60
