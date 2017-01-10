@@ -83,6 +83,7 @@ def _api_app(root_area: Area):
             'active': area.active,
             'strategy': area.strategy.__class__.__name__ if area.strategy else None,
             'appliance': area.appliance.__class__.__name__ if area.appliance else None,
+            'market_overview_url': url_for('markets', area_slug=area_slug),
             'markets': [
                 {
                     'type': type_,
