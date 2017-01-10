@@ -1,5 +1,7 @@
 import random
+from typing import Dict  # noqa
 
+from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
 
 
