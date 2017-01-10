@@ -52,7 +52,7 @@ class StorageStrategy(BaseStrategy):
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
                         self.used_storage + self.blocked_storage + offer.energy <= STORAGE_CAPACITY
-                        and (offer.price / offer.energy) <= avg_cheapest_offer_price
+                        and (offer.price / offer.energy) < avg_cheapest_offer_price
                 ):
                     # Try to buy the energy
                     try:
@@ -70,7 +70,7 @@ class StorageStrategy(BaseStrategy):
         selling_price_with_max_risk = 0.8 * avg_cheapest_offer_price
         risk_dependent_selling_price = (
             max_selling_price -
-            ((self.risk / 100) * selling_price_with_max_risk)
+            ((self.risk / 100) * 0.1 * selling_price_with_max_risk)
         )
         # Find the most expensive offer out of the list of cheapest offers
         # in currently open markets

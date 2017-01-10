@@ -4,7 +4,7 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class CommercialStrategy(BaseStrategy):
-    def __init__(self, *, energy_range_wh=(20, 80),
+    def __init__(self, *, energy_range_wh=(50, 120),
                  energy_price=30):
         super().__init__()
         self.energy_range_wh = energy_range_wh
@@ -27,14 +27,6 @@ class CommercialStrategy(BaseStrategy):
         # If trade happened: remember it in variable
         if self.owner.name == trade.seller:
             del self.offers_posted[trade.offer]
-            energy = random.randint(*self.energy_range_wh) / 1000
-            offer = market.offer(
-                energy,
-                energy * self.energy_price,
-                self.owner.name
-            )
-            self.offers_posted[offer] = market
-            self.log.info("Offering %s @ %s", offer, market.time_slot.strftime('%H:%M'))
 
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
