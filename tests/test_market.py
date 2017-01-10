@@ -9,7 +9,8 @@ from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 
-from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException
+from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
+    InvalidTrade
 from d3a.models.market import Market
 
 
@@ -120,6 +121,14 @@ def test_market_trade_partial(market: Market):
     assert new_offer.price == 15
     assert new_offer.seller == 'A'
     assert new_offer.id != offer.id
+
+
+@pytest.mark.parametrize('energy', (0, 21))
+def test_market_trade_partial_invalid(market: Market, energy):
+    offer = market.offer(20, 20, 'A')
+
+    with pytest.raises(InvalidTrade):
+        market.accept_offer(offer, 'B', energy=energy)
 
 
 def test_market_acct_simple(market: Market):
