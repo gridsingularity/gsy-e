@@ -5,7 +5,7 @@ import pendulum
 from flask import Flask, render_template, abort
 from flask_api import FlaskAPI
 
-from flask.helpers import url_for
+from flask.helpers import url_for as url_for_original
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
@@ -225,3 +225,7 @@ def _get_market(area, market_time):
             if market.time_slot == list(area.past_markets.keys())[-1]:
                 type_ = 'current'
     return market, type_
+
+
+def url_for(target, **kwargs):
+    return url_for_original(target, **{**kwargs, '_external': True})
