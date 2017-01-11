@@ -6,7 +6,6 @@ from d3a.models.appliance.properties import MeasurementParamType
 from logging import getLogger
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.area import Area
-from d3a.models.area import DEFAULT_CONFIG
 from pendulum import Interval
 import math
 import random
@@ -23,7 +22,8 @@ class ApplianceMode(Enum):
 
 class EnergyCurve:
 
-    def __init__(self, mode: ApplianceMode, curve: List, sampling: Interval, tick_duration: Interval):
+    def __init__(self, mode: ApplianceMode, curve: List,
+                 sampling: Interval, tick_duration: Interval):
         self.dictModeCurve = dict()
         self.sampling = sampling
         self.tick_duration = tick_duration
@@ -87,7 +87,8 @@ class UsageGenerator:
     def randomize_usage_pattern(self, curve: List):
         randomized = []
         for index in range(0, len(curve)):
-            randomized.append(float(curve[index]) + random.uniform(self.minVariance, self.maxVariance))
+            randomized.append(float(curve[index]) +
+                              random.uniform(self.minVariance, self.maxVariance))
 
         return randomized
 
@@ -121,7 +122,7 @@ class Appliance(BaseAppliance):
         self.measuring = MeasurementParamType.POWER
         self.report_frequency = report_freq
         self.last_reported_tick = self.report_frequency
-        self.report_sign = -1                      # Consumption of power is reported as -ve and prod is +ve
+        self.report_sign = -1   # Consumption of power is reported as -ve and prod is +ve
 
         log.debug("Appliance instantiated, current mode of operation is {}".format(self.mode))
 
@@ -173,7 +174,8 @@ class Appliance(BaseAppliance):
         if self.usageGenerator is not None:
             if newmode is not None:
                 if newmode != self.mode:
-                    self.iterator = self.usageGenerator.change_curve(self.energyCurve.get_mode_curve(newmode), True)
+                    self.iterator = self.usageGenerator.change_curve(
+                        self.energyCurve.get_mode_curve(newmode), True)
                     self.mode = newmode
                     log.info("Appliance mode changed to: {}".format(newmode))
                 else:
@@ -188,24 +190,20 @@ class Appliance(BaseAppliance):
         if area is None:
             return
 
-        if not self.owner:
-            # Should not happen
-            return
-        market = area.current_market
-        if not market:
-            # No current market yet
-            return
-
         if self.last_reported_tick == self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
             # Fetch traded energy for `market`
-            energy = self.get_current_power()/1000
-            if energy:
-                # Convert energy to KWh, divide by 1000
-                area.report_accounting(market, self.owner.name, (energy/1000) / area.config.ticks_per_slot)
+            self.report_energy(area, self.get_current_power()/1000)
 
         self.last_reported_tick += 1
+
+    def report_energy(self, area: Area, energy: float):
+        market = area.current_market
+        if energy:
+            # Convert energy to KWh, divide by 1000
+            area.report_accounting(market, self.owner.name,
+                                   energy * self.report_sign / area.config.ticks_per_slot)
 
     def get_current_power(self):
         return self.iterator.__next__() * self.report_sign
@@ -243,10 +241,12 @@ class Appliance(BaseAppliance):
         energy = 0
         if strategy is not None:
             # -ve energy is energy bought
-            energy = strategy.energy_balance()
+            energy = strategy.energy_balance(self.area.current_market)
 
-        return energy
+        return energy * self.report_sign
 
     def get_tick_count(self):
-        return self.area.current_tick // DEFAULT_CONFIG.ticks_per_slot
+        return self.area.current_tick % self.area.config.ticks_per_slot
 
+    def get_time_in_sec(self):
+        return (self.area.current_tick * self.area.config.tick_length).in_seconds()

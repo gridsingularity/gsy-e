@@ -16,13 +16,15 @@ class MeasurementParamType(Enum):
 
 
 class ApplianceProfileBuilder:
-    def __init__(self, name: str, location: str, appliancetype: ApplianceType=ApplianceType.UNCONTROLLED):
+    def __init__(self, name: str, location: str,
+                 appliancetype: ApplianceType=ApplianceType.UNCONTROLLED):
         """
         Class acting as builder to ApplianceProfile class, handles setting optional params.
 
         :param name: Use assigned name of appliance
         :param location: location of appliance withing an area/home
-        :param appliancetype: type of appliance, Uncontrolled, Time Shiftable, Buffer Storage, or Unconstrained
+        :param appliancetype: type of appliance, Uncontrolled, Time Shiftable,
+        Buffer Storage, or Unconstrained
 
         """
         self.name = name

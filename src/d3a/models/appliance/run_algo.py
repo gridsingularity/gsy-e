@@ -71,10 +71,11 @@ class Scheduler:
         This method initializes member variables with values derived from provided parameters.
         This method also runs the algorithm and keeps the result ready for quick retrieval.
         """
-        t_b = len(self.normalized_bids)                         # Bid time
-        self.run_window = len(self.cycle)  # Time required to run a cycle.
-        t_r = self.run_window                                   # time needed to run a cycle
-        t_r_s = self.run_window - len(self.cycle) * self.skip   # Run time after skipping allowed cycles
+        t_b = len(self.normalized_bids)     # Bid time
+        self.run_window = len(self.cycle)   # Time required to run a cycle.
+        t_r = self.run_window               # time needed to run a cycle
+        # Run time after skipping allowed cycles
+        t_r_s = self.run_window - len(self.cycle) * self.skip
 
         if t_r > t_b:
             if t_r_s > t_b:
@@ -93,7 +94,8 @@ class Scheduler:
     def calculate_running_cost(self):
         """
         This method calculates cost of running appliance, in a sliding window manner.
-        saves the result in a cost list, in either ascending or descending order based on maximize flag
+        saves the result in a cost list, in either ascending or descending order based on
+        maximize flag
         a tuple with cost or running and index (tick count) is put into min heap.
         """
         costq = ReversePriorityQueue() if self.maximize else q.PriorityQueue()
@@ -142,13 +144,15 @@ class Scheduler:
 
     def place_run_cycles(self):
         """
-        Method places all the start ticks and price of running appliance, in a simple list as tuples.
+        Method places all the start ticks and price of running appliance,
+        in a simple list as tuples.
         """
         count = 0
         current = 0
         end = len(self.cost)
         # self.run_schedule = []
-        self.log.info("E_N_R: {}, window: {}, cycle_len: {}".format(self.e_n_r, self.run_window, len(self.cycle)))
+        self.log.info("E_N_R: {}, window: {}, cycle_len: {}".
+                      format(self.e_n_r, self.run_window, len(self.cycle)))
         while count < self.e_n_r:
             if current >= end:
                 break
@@ -162,11 +166,6 @@ class Scheduler:
                 # else:
                 #     self.run_schedule.append(0)
             current += 1
-
-        # self.log.error("current: {}, end: {}, schedule_len: {}".format(current, end, len(self.run_schedule)))
-        # if current < end:
-        #     for i in range(current, end):
-        #         self.run_schedule.append(0)
 
     def gen_run_schedule(self):
         for val in self.optimal_schedule:
@@ -192,9 +191,9 @@ class Scheduler:
 
 class RunSchedule (Scheduler):
     """
-    The concrete class inherits from Schedule class and can be used to generate optimal schedules to run appliances
-    in order to minimize running cost during over a/multiple bid contracts.
-    if maximize is set to True, the object optimizes for max running cost.
+    The concrete class inherits from Schedule class and can be used to generate optimal
+    schedules to run appliances in order to minimize running cost during over a/multiple
+    bid contracts. If maximize is set to True, the object optimizes for max running cost.
     """
     def __init__(self, bids: List, cycle: List, ticks_per_bid: int, cycles_to_run: int = 1,
                  skip: int = 0, ticks_elapsed=0, maximize: bool = False):
@@ -204,14 +203,13 @@ class RunSchedule (Scheduler):
 
 class RunScheduleLimit (Scheduler):
     """
-    This concrete class inherits from Schedule class and can be used to generate optimal schedules limited by
-    an upper cost limit provided by the user. Depending on maximize flag, class can optimize for max cost.
+    This concrete class inherits from Schedule class and can be used to generate optimal
+    schedules limited by an upper cost limit provided by the user. Depending on maximize flag,
+    class can optimize for max cost.
     """
-    def __init__(self, bids: List, cycle: List, ticks_per_bid: int, limit: float, cycles_to_run: int = 1,
-                 skip: int = 0, ticks_elapsed=0, maximize: bool = False):
+    def __init__(self, bids: List, cycle: List, ticks_per_bid: int, limit: float,
+                 cycles_to_run: int = 1, skip: int = 0, ticks_elapsed=0, maximize: bool = False):
         super().__init__(bids, cycle, ticks_per_bid, cycles_to_run, skip, ticks_elapsed, maximize)
         self.limit = limit
         self.limit_set = True
         self.initialize()
-
-

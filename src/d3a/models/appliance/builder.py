@@ -86,7 +86,8 @@ def gen_pv_appliance() -> PVAppliance:
     pv = PVAppliance("PV")
     builder = ApplianceProfileBuilder("PV", "Roof", ApplianceType.UNCONSTRAINED)
     builder.set_contact_url("https://enphase.com/en-us/company/contact-us")
-    builder.set_icon_url("https://enphase.com/sites/all/themes/enphase/assets/images/svgs/src/enphase-logo.svg")
+    builder.set_icon_url("https://enphase.com/sites/all/themes/enphase/assets" +
+                         "/images/svgs/src/enphase-logo.svg")
     builder.set_manufacturer("Enphase Energy")
     builder.set_model_url("Envoy S")
     builder.set_uuid("SOMERANDOMUUIDBEINGUSEDFORPV")
@@ -117,10 +118,11 @@ def gen_fridge_appliance() -> FridgeAppliance:
     :return: A fully constructed FridgeAppliance type object
     """
     fridge = FridgeAppliance("Fridge")
-    builder = ApplianceProfileBuilder("GE Profile 22/2 cu Fridge", "Kitchen", ApplianceType.BUFFER_STORAGE)
+    builder = ApplianceProfileBuilder("GE Profile 22/2 cu Fridge", "Kitchen",
+                                      ApplianceType.BUFFER_STORAGE)
     builder.set_contact_url("http://www.geappliances.com/ge/service-and-support/contact.htm")
-    builder.set_icon_url\
-        ("http://products.geappliances.com/MarketingObjectRetrieval/Dispatcher?RequestType=Image&Name=CGI67704.jpg")
+    builder.set_icon_url("http://products.geappliances.com/" +
+                         "MarketingObjectRetrieval/Dispatcher?RequestType=Image&Name=CGI67704.jpg")
     builder.set_manufacturer("GE Appliances")
     builder.set_model_url("http://products.geappliances.com/appliance/gea-specs/PYE22PMKES")
     builder.set_uuid("SOMERANDOMUUIDBEINGUSEDFORFRIDGE")
@@ -168,11 +170,13 @@ def gen_light_bulb() -> DumbLoad:
     :return: A fully constructed Bulb type object
     """
     bulb = DumbLoad("LED Bulb")
-    builder = ApplianceProfileBuilder("Philips Hue White Ambiance", "Living Room", ApplianceType.UNCONTROLLED)
+    builder = ApplianceProfileBuilder("Philips Hue White Ambiance", "Living Room",
+                                      ApplianceType.UNCONTROLLED)
     builder.set_contact_url("http://www2.meethue.com/en-us/support/")
     builder.set_icon_url("http://www2.meethue.com/media/3857254/WA-GU10.png")
     builder.set_manufacturer("Philips")
-    builder.set_model_url("http://www2.meethue.com/en-us/productdetail/philips-hue-white-ambiance-gu10-single-bulb")
+    builder.set_model_url(
+        "http://www2.meethue.com/en-us/productdetail/philips-hue-white-ambiance-gu10-single-bulb")
     builder.set_uuid("SOMERANDOMUUIDBEINGUSEDFORBULB")
 
     # Power generation curve
