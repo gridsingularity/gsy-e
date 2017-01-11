@@ -238,10 +238,10 @@ class Area:
         )
 
     def tick(self):
-        self._broadcast_notification(AreaEvent.TICK, area=self)
-        self.current_tick += 1
         if self.current_tick % self.config.ticks_per_slot == 0:
             self._cycle_markets()
+        self._broadcast_notification(AreaEvent.TICK, area=self)
+        self.current_tick += 1
 
     def report_accounting(self, market, reporter, value, time=None):
         if time is None:
