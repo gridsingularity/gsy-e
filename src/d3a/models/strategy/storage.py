@@ -49,6 +49,9 @@ class StorageStrategy(BaseStrategy):
         # Iterating over all offers in every open market
         for market in self.area.markets.values():
             for offer in market.sorted_offers:
+                if offer.seller == self.owner.name:
+                    # Don't buy our own offer
+                    continue
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
                         self.used_storage + self.blocked_storage + offer.energy <= STORAGE_CAPACITY

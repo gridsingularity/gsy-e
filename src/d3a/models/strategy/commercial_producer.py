@@ -13,7 +13,7 @@ class CommercialStrategy(BaseStrategy):
         self.offers_posted = {}  # type: Dict[Offer, Market]
 
     def event_tick(self, *, area):
-        if len(self.offers_posted) < 10:
+        if len(self.offers_posted) < 10 * self.owner.config.market_count:
             energy = random.randint(*self.energy_range_wh) / 1000
             time, market = random.choice(list(area.markets.items()))
             offer = market.offer(

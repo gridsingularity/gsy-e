@@ -21,6 +21,11 @@ class FridgeStrategy(BaseStrategy):
         # The not cooled fridge warms up (0.02 / 60)C up every second
         self.fridge_temp += self.area.config.tick_length.total_seconds() * round((0.02 / 60), 6)
 
+        # Only trade in later half of slot
+        tick_in_slot = area.current_tick % area.config.ticks_per_slot
+        if tick_in_slot / area.config.ticks_per_slot < 0.5:
+            return
+
         # Assuming a linear correlation between accepted price and risk
         max_risk = MAX_RISK
         median_risk = max_risk / 2
@@ -83,8 +88,13 @@ class FridgeStrategy(BaseStrategy):
             #  of the temperature (see event_market_cycle) as well
             cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.005 * 2)
             if (
-                (offer.price / offer.energy) <= threshold_price
-                and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
+                (
+                    (
+                        (offer.price / offer.energy) <= threshold_price
+                        and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
+                    )
+                    or self.fridge_temp >= MAX_FRIDGE_TEMP
+                )
                 and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
             ):
                 try:
@@ -96,7 +106,11 @@ class FridgeStrategy(BaseStrategy):
                     break
                 except MarketException:
                     # Offer already gone etc., try next one.
+                    self.log.exception("Couldn't buy")
                     continue
+        else:
+            if self.fridge_temp >= MAX_FRIDGE_TEMP:
+                self.log.critical("Need energy (temp: %.2f) but can't buy", self.fridge_temp)
 
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
