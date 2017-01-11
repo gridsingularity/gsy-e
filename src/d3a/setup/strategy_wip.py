@@ -28,7 +28,6 @@ def get_setup(config):
                     Area('H1 Storage1', strategy=StorageStrategy(80), appliance=SimpleAppliance()),
                     Area('H1 Storage2', strategy=StorageStrategy(90), appliance=SimpleAppliance()),
                     Area('H1 Storage3', strategy=StorageStrategy(99), appliance=SimpleAppliance()),
-                    Area('Commercial Energy Producer', strategy=CommercialStrategy())
                 ]
             ),
             Area(
@@ -48,10 +47,9 @@ def get_setup(config):
                     Area('H2 Storage1', strategy=StorageStrategy(0), appliance=SimpleAppliance()),
                     Area('H2 Storage2', strategy=StorageStrategy(10), appliance=SimpleAppliance()),
                     Area('H2 Storage3', strategy=StorageStrategy(20), appliance=SimpleAppliance()),
-                    Area('Commercial Energy Producer', strategy=CommercialStrategy())
                 ]
             ),
-            Area('Commercial Energy Producer', strategy=CommercialStrategy())
+            Area('Commercial Energy Producer', strategy=CommercialStrategy(energy_price=30))
         ],
         config=config
     )
