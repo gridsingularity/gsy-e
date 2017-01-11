@@ -43,7 +43,7 @@ class Area:
         self.children = children if children is not None else []
         for child in self.children:
             child.parent = self
-        self.inter_area_agents = {}  # type: Dict[Market, InterAreaAgent]
+        self.inter_area_agents = defaultdict(list)  # type: Dict[Market, List[InterAreaAgent]]
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
@@ -187,7 +187,7 @@ class Area:
                 self.inter_area_agents.pop(market, None)
                 self.past_markets[timeframe] = market
                 changed = True
-                self.log.info("Moving {t:%H:%M} market to past".format(t=timeframe))
+                self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
         for offset in (self.config.slot_length * i for i in range(1, self.config.market_count)):
@@ -200,14 +200,18 @@ class Area:
                     if self.parent and timeframe in self.parent.markets and not self.strategy:
                         # Only connect an InterAreaAgent if we have a parent, a corresponding
                         # timeframe market exists in the parent and we have no strategy
-                        self.inter_area_agents[market] = InterAreaAgent(
+                        iaa = InterAreaAgent(
                             owner=self,
                             higher_market=self.parent.markets[timeframe],
                             lower_market=market
                         )
+                        # Attach agent to own IAA list
+                        self.inter_area_agents[market].append(iaa)
+                        # And also to parents to allow events to flow form both markets
+                        self.parent.inter_area_agents[self.parent.markets[timeframe]].append(iaa)
                 self.markets[timeframe] = market
                 changed = True
-                self.log.info("Adding {t:{format}} market".format(
+                self.log.debug("Adding {t:{format}} market".format(
                     t=timeframe,
                     format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
                 ))
@@ -248,8 +252,10 @@ class Area:
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.children, key=lambda _: random()):
             child.event_listener(event_type, **kwargs)
-        for agent in self.inter_area_agents.values():
-            agent.event_listener(event_type, **kwargs)
+        # Also broadcast to IAAs. Again in random order
+        for agents in self.inter_area_agents.values():
+            for agent in sorted(agents, key=lambda _: random()):
+                agent.event_listener(event_type, **kwargs)
 
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:

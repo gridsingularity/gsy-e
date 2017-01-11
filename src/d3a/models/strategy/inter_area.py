@@ -1,13 +1,126 @@
-from collections import deque
-from typing import Dict  # noqa
+from collections import namedtuple
+from typing import Dict, Set  # noqa
 
 from d3a.exceptions import MarketException
-from d3a.models.events import OfferEvent
 from d3a.models.strategy.base import BaseStrategy
 
 
+OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
+Markets = namedtuple('Markets', ('source', 'target'))
+
+
+class IAAEngine:
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int, owner: "InterAreaAgent"):
+        self.name = name
+        self.markets = Markets(market_1, market_2)
+        self.min_offer_age = min_offer_age
+        self.owner = owner
+
+        self.offer_age = {}  # type: Dict[str, int]
+        # Offer.id -> OfferInfo
+        self.offered_offers = {}  # type: Dict[str, OfferInfo]
+        self.traded_offers = set()  # type: Set[str]
+
+    def __repr__(self):
+        return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
+            s=self
+        )
+
+    def tick(self, *, area):
+        # Store age of offer
+        for offer in self.markets.source.sorted_offers:
+            if offer.id not in self.offer_age:
+                self.offer_age[offer.id] = area.current_tick
+
+        # Use `list()` to avoid in place modification errors
+        for offer_id, age in list(self.offer_age.items()):
+            if offer_id in self.offered_offers:
+                continue
+            if area.current_tick - age < self.min_offer_age:
+                continue
+            offer = self.markets.source.offers.get(offer_id)
+            if not offer:
+                # Offer has gone - remove from age dict
+                del self.offer_age[offer_id]
+                continue
+            if not self.owner.usable_offer(offer):
+                # Forbidden offer (i.e. our counterpart's)
+                continue
+            forwarded_offer = self.markets.target.offer(offer.energy, offer.price, self.owner.name)
+            offer_info = OfferInfo(offer, forwarded_offer)
+            self.offered_offers[forwarded_offer.id] = offer_info
+            self.offered_offers[offer_id] = offer_info
+            self.owner.log.info("Offering %s", forwarded_offer)
+
+    def event_trade(self, *, trade):
+        offer_info = self.offered_offers.get(trade.offer.id)
+        if not offer_info:
+            # Trade doesn't concern us
+            return
+        if trade.offer == offer_info.target_offer:
+            # Offer was accepted in target market - buy in source
+            trade_source = self.owner.accept_offer(
+                self.markets.source,
+                offer_info.source_offer,
+                energy=trade.offer.energy
+            )
+            self.owner.log.info("Offer accepted %s", trade_source)
+            if trade.offer.energy == offer_info.source_offer.energy:
+                # Complete trade - remove from offered_offers
+                del self.offered_offers[offer_info.source_offer.id]
+                del self.offered_offers[offer_info.target_offer.id]
+                self.offer_age.pop(offer_info.source_offer.id, None)
+            self.traded_offers.add(offer_info.source_offer.id)
+            self.traded_offers.add(offer_info.target_offer.id)
+        elif trade.offer == offer_info.source_offer and trade.buyer == self.owner.owner.name:
+            # Flip side of the event from above buying action - do nothing
+            pass
+        elif trade.offer == offer_info.source_offer:
+            # Offer was bought in source market by another party
+            try:
+                self.markets.target.delete_offer(offer_info.target_offer)
+            except MarketException as ex:
+                self.owner.log.exception("Error deleting InterAreaAgent offer")
+            del self.offered_offers[offer_info.source_offer.id]
+            del self.offered_offers[offer_info.target_offer.id]
+            self.offer_age.pop(offer_info.source_offer.id, None)
+        else:
+            raise RuntimeError("Unknown state. Can't happen")
+
+    def event_offer_deleted(self, *, offer):
+        if offer.id in self.offer_age:
+            # Offer we're watching in source market was deleted - remove
+            del self.offer_age[offer.id]
+
+        offer_info = self.offered_offers.get(offer.id)
+        if not offer_info:
+            # Deletion doesn't concern us
+            return
+
+        if offer_info.source_offer == offer:
+            # Offer in source market of an offer we're already offering in the target market
+            # was deleted - also delete in target market
+            try:
+                self.markets.target.delete_offer(offer_info.target_offer)
+            except MarketException:
+                self.owner.log.exception("Error deleting InterAreaAgent offer")
+
+    def event_offer_changed(self, *, existing_offer, new_offer):
+        return
+        # FIXME: Implement partial orders
+        if existing_offer.id in self.offer_age:
+            # Offer we're watching in source market was changed - transfer age
+            age = self.offer_age.pop(existing_offer.id, 0)
+            self.offer_age[new_offer.id] = age
+
+        existing_offer_info = self.offered_offers.get(existing_offer.id)
+        if not existing_offer_info:
+            # Doesn't concern us
+            return
+
+
 class InterAreaAgent(BaseStrategy):
-    def __init__(self, *, owner, higher_market, lower_market, min_offer_age=1, tick_ratio=4):
+    def __init__(self, *, owner, higher_market, lower_market, min_offer_age=4, tick_ratio=4):
         """
         Equalize markets
 
@@ -15,87 +128,46 @@ class InterAreaAgent(BaseStrategy):
         :type higher_market: Market
         :param lower_market:
         :type lower_market: Market
+        :param min_offer_age: Minimum age of offer before transferring
         :param tick_ratio: How often markets should be compared (default 4 := 1/4)
-        :type tick_ratio: int
         """
         super().__init__()
         self.owner = owner
         self.name = "IAA {}".format(owner.name)
-        self.markets = {
-            'lower': lower_market,
-            'higher': higher_market,
-        }
-        self.min_offer_age = min_offer_age
-        self.tick_ratio = tick_ratio
-        self.last_avg_prices = {
-            'lower': deque(maxlen=5),
-            'higher': deque(maxlen=5)
-        }
-        self.offer_age = {}  # type: Dict[str, int]
-        # Offer.id lower market -> Offer.id higher market
-        self.offered_offers = {}  # type: Dict[str, str]
 
-    @property
-    def offered_offers_reverse(self):
-        return {v: k for k, v in self.offered_offers.items()}
+        self.engines = [
+            IAAEngine('High -> Low', higher_market, lower_market, min_offer_age, self),
+            IAAEngine('Low -> High', lower_market, higher_market, min_offer_age, self),
+        ]
+
+        self.time_slot = higher_market.time_slot.strftime("%H:%M")
+        self.tick_ratio = tick_ratio
+
+    def __repr__(self):
+        return "<InterAreaAgent {s.name} {s.time_slot}>".format(s=self)
+
+    def usable_offer(self, offer):
+        """Prevent IAAEngines from trading their counterpart's offers"""
+        return all(offer.id not in engine.offered_offers for engine in self.engines)
 
     def event_tick(self, *, area):
+        if area != self.owner:
+            # We're connected to both areas but only want tick events from our owner
+            return
         if area.current_tick % self.tick_ratio != 0:
             return
 
-        for offer in self.markets['higher'].sorted_offers:
-            if offer.id not in self.offer_age:
-                self.offer_age[offer.id] = area.current_tick
-                offer.add_listener(OfferEvent.DELETED, self.event_offer_deleted)
-                offer.add_listener(OfferEvent.ACCEPTED, self.event_trade)
-
-        # Find the first offer older than self.min_offer_age and offer it in the lower market
-        offered_offers_reverse = self.offered_offers_reverse
-        for offer_id, age in list(self.offer_age.items()):
-            if offer_id in offered_offers_reverse:
-                continue
-            if area.current_tick - age < self.min_offer_age:
-                continue
-            offer = self.markets['higher'].offers.get(offer_id)
-            if not offer:
-                self.log.error("Missing offer %s", offer_id)
-                continue
-            lower_offer = self.markets['lower'].offer(offer.energy, offer.price, self.name)
-            lower_offer.add_listener(OfferEvent.ACCEPTED, self.event_trade)
-            self.offered_offers[lower_offer.id] = offer_id
-            self.log.info("Offering %s", lower_offer)
+        for engine in self.engines:
+            engine.tick(area=area)
 
     def event_trade(self, *, market, trade, offer=None):
-        if trade.offer.id in self.offer_age:
-            # Someone else bought an offer we're watching - remove
-            del self.offer_age[trade.offer.id]
-
-        if trade.offer.id in self.offered_offers:
-            # Offer was accepted in lower market - buy in higher
-            trade_lower = self.markets['higher'].accept_offer(self.offered_offers[trade.offer.id],
-                                                              self.name)
-            self.log.info("Offer accepted %s", trade_lower)
-
-        offered_offers_reverse = self.offered_offers_reverse
-        if trade.offer.id in offered_offers_reverse:
-            # Offer from the higher market we offered in the lower market was bought
-            # by someone else in the higher market - delete offer in lower market
-            try:
-                self.markets['lower'].delete_offer(offered_offers_reverse[trade.offer.id])
-            except MarketException:
-                self.log.exception("Error deleting InterAreaAgent offer")
-            del self.offered_offers[offered_offers_reverse[trade.offer.id]]
+        for engine in self.engines:
+            engine.event_trade(trade=trade)
 
     def event_offer_deleted(self, *, market, offer):
-        if offer.id in self.offer_age:
-            # Source offer we're watching in higher market was deleted - remove
-            self.offer_age.pop(offer.id, None)
-        offered_offers_reverse = self.offered_offers_reverse
-        if offer.id in offered_offers_reverse:
-            # Source offer in higher market of an offer we're already offering in the lower market
-            # was deleted - also delete in lower market
-            try:
-                self.markets['lower'].delete_offer(offered_offers_reverse[offer.id])
-            except MarketException:
-                self.log.exception("Error deleting InterAreaAgent offer")
-            del self.offered_offers[offered_offers_reverse[offer.id]]
+        for engine in self.engines:
+            engine.event_offer_deleted(offer=offer)
+
+    def event_offer_changed(self, *, market, existing_offer, new_offer):
+        for engine in self.engines:
+            engine.event_offer_changed(existing_offer=existing_offer, new_offer=new_offer)
