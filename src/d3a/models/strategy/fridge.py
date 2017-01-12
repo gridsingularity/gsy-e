@@ -80,8 +80,8 @@ class FridgeStrategy(BaseStrategy):
                            temperature_dependency_of_threshold_price
                            )
         next_market = list(self.area.markets.values())[0]
+#        self.log.info("Threshold_price is %s", threshold_price)
 
-        self.log.info("Threshold_price is %s", threshold_price)
         # Here starts the logic if energy should be bought
         for offer in next_market.sorted_offers:
             # offer.energy * 1000 is needed to get the energy in Wh
