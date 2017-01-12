@@ -24,6 +24,19 @@ class CommercialStrategy(BaseStrategy):
             self.offers_posted[offer] = market
             self.log.info("Offering %s @ %s", offer, time.strftime('%H:%M'))
 
+        try:
+            next_market = list(self.area.markets.values())[0]
+            if next_market not in self.offers_posted.values():
+                energy = random.randint(*self.energy_range_wh) / 1000
+                offer = next_market.offer(
+                            energy,
+                            energy * self.energy_price,
+                            self.owner.name
+                        )
+                self.offers_posted[offer] = self.area.current_market
+        except Exception:
+            self.log.critical("no markets open?!")
+
     def event_trade(self, *, market, trade):
         # If trade happened: remember it in variable
         if self.owner.name == trade.seller:
