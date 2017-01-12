@@ -23,7 +23,7 @@ class FridgeStrategy(BaseStrategy):
 
         # Only trade in later half of slot
         tick_in_slot = area.current_tick % area.config.ticks_per_slot
-        if tick_in_slot / area.config.ticks_per_slot < 0.5:
+        if tick_in_slot == 1:
             return
 
         # Assuming a linear correlation between accepted price and risk
@@ -80,11 +80,13 @@ class FridgeStrategy(BaseStrategy):
                            temperature_dependency_of_threshold_price
                            )
         next_market = list(self.area.markets.values())[0]
+
+        self.log.info("Threshold_price is %s", threshold_price)
         # Here starts the logic if energy should be bought
         for offer in next_market.sorted_offers:
             # offer.energy * 1000 is needed to get the energy in Wh
-            # 0.005 is the temperature decrease per every minimalistic cooling period
-            # *2 is needed because we not only cool but need to equalize the rise
+            # 0.005 is the temperature decrease per cooling period
+            # *2 is needed because we need to cool and equalize the rise
             #  of the temperature (see event_market_cycle) as well
             cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.005 * 2)
             if (
@@ -111,6 +113,11 @@ class FridgeStrategy(BaseStrategy):
         else:
             if self.fridge_temp >= MAX_FRIDGE_TEMP:
                 self.log.critical("Need energy (temp: %.2f) but can't buy", self.fridge_temp)
+                try:
+                    self.log.info("cheapest price is is %s",
+                                  list(next_market.sorted_offers)[-1].price)
+                except TypeError:
+                    self.log.critical("Crap no offers available")
 
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
