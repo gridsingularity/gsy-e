@@ -7,7 +7,7 @@ MAX_FRIDGE_TEMP = 8.0
 # Unit is degree celsius
 MIN_FRIDGE_TEMP = 4.0
 # Unit is degree celsius
-FRIDGE_TEMPERATURE = 6.0
+FRIDGE_TEMPERATURE = 7.8
 # Unit is cent
 MIN_AVERAGE_PRICE = 15
 # Unit is in Wh
