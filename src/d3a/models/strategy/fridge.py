@@ -1,4 +1,4 @@
-from typing import Dict  # noqa
+from typing import Dict, Any  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.market import Market  # noqa
@@ -122,3 +122,6 @@ class FridgeStrategy(BaseStrategy):
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
         self.log.info("Temperature: %.2f", self.fridge_temp)
+
+    def event_data_received(self, data: Dict[str, Any]):
+        self.fridge_temp += data.get("temperature", 0)
