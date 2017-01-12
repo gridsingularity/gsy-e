@@ -82,20 +82,24 @@ def run(interface, port, setup, slowdown, repl, **config_params):
 
     tick_lengths_s = config.tick_length.total_seconds()
     run_start = Pendulum.now()
+    slot_count = int(config.duration / config.slot_length) + 1
     for slot_no in range(config.duration // config.slot_length):
+        log.error(
+            "Slot %d of %d (%2.0f%%)",
+            slot_no + 1,
+            slot_count,
+            (slot_no + 1) / slot_count * 100
+        )
+
         for tick_no in range(config.ticks_per_slot):
             tick_start = time.monotonic()
-            tick_no_total = (slot_no * config.ticks_per_slot) + tick_no
             log.debug(
-                "Slot %d, tick %d of %d (%2.0f%%) / %d of %d (%2.0f%%) total",
-                slot_no + 1,
+                "Tick %d of %d in slot %d (%2.0f%%)",
                 tick_no + 1,
                 config.ticks_per_slot,
+                slot_no + 1,
                 (tick_no + 1) / config.ticks_per_slot * 100,
-                tick_no_total + 1,
-                config.total_ticks,
-                (tick_no_total + 1) / config.total_ticks * 100
-            )
+                )
             area.tick()
             tick_length = time.monotonic() - tick_start
             if slowdown and tick_length < tick_lengths_s:
