@@ -13,22 +13,22 @@ click==6.6
 colorlog==2.10.0
 ethereum==1.6.0
 flask-api==0.6.9
-flask==0.11.1
+flask==0.12
 itsdangerous==0.24        # via flask
-jinja2==2.8               # via flask
+jinja2==2.8.1             # via flask
 markupsafe==0.23          # via jinja2
 pbkdf2==1.3               # via ethereum
-pendulum==0.7.0
+pendulum==0.8.0
 pycparser==2.17           # via cffi
 pycryptodome==3.4.3       # via ethereum
 pyethash==0.1.27          # via ethereum
-pysha3==0.3               # via ethereum
+pysha3==1.0.0             # via ethereum
 python-dateutil==2.6.0    # via pendulum
 python-rex==0.4
 pytz==2016.10             # via tzlocal
 pytzdata==2016.10         # via pendulum
 pyyaml==3.12              # via ethereum
-regex==2016.11.21         # via awesome-slugify
+regex==2016.12.27         # via awesome-slugify
 repoze.lru==0.6           # via ethereum
 rlp==0.4.6
 scrypt==0.8.0             # via ethereum
@@ -38,4 +38,4 @@ six==1.10.0               # via python-dateutil, python-rex
 terminaltables==3.1.0
 tzlocal==1.3              # via pendulum
 unidecode==0.4.19         # via awesome-slugify
-werkzeug==0.11.11         # via flask
+werkzeug==0.11.15         # via flask
