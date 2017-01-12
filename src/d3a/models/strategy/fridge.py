@@ -116,7 +116,8 @@ class FridgeStrategy(BaseStrategy):
                 try:
                     self.log.info("cheapest price is is %s",
                                   list(next_market.sorted_offers)[-1].price)
-                except (IndexError, TypeError):
+
+                except IndexError:
                     self.log.critical("Crap no offers available")
 
     def event_market_cycle(self):
