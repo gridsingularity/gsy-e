@@ -203,8 +203,8 @@ class FridgeAppliance(Appliance):
 
     def gen_run_schedule(self):
         log.info("Generating new run schedule")
-        ticks_remaining = self.area.config.ticks_per_slot *\
-                          (self.optimize_duration - self.get_tick_count())
+        ticks_remaining = \
+            self.area.config.ticks_per_slot * (self.optimize_duration - self.get_tick_count())
         cycles = self.get_run_skip_cycle_counts(ticks_remaining)
         cycles_to_run = cycles[0]
         skip_cycles = cycles[1]

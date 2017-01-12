@@ -46,7 +46,8 @@ def gen_schedule_limit(cycle_width_ticks, limit, cycles_to_run, skip):
     :param skip:
     :return:
     """
-    return RunScheduleLimit(bids, gen_run_cycle(cycle_width_ticks), ticks_per_bid, limit, cycles_to_run, skip)
+    return RunScheduleLimit(bids, gen_run_cycle(cycle_width_ticks),
+                            ticks_per_bid, limit, cycles_to_run, skip)
 
 
 def gen_schedule_obj_max(cycle_width_ticks, cycles_to_run, skip):
@@ -57,7 +58,8 @@ def gen_schedule_obj_max(cycle_width_ticks, cycles_to_run, skip):
     :param skip:
     :return:
     """
-    return RunSchedule(bids, gen_run_cycle(cycle_width_ticks), ticks_per_bid, cycles_to_run, skip, True)
+    return RunSchedule(bids, gen_run_cycle(cycle_width_ticks),
+                       ticks_per_bid, cycles_to_run, skip, True)
 
 
 def test_schedule_init():

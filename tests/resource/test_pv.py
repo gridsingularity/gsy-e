@@ -38,7 +38,8 @@ def test_pv_mode_change():
     pv.change_mode_of_operation(ApplianceMode.OFF)
     off = pv.iterator.__next__()
 
-    assert on == pv.energyCurve.get_mode_curve(ApplianceMode.ON)[time_secs - 1]  # zero index based list
+    # zero index based list
+    assert on == pv.energyCurve.get_mode_curve(ApplianceMode.ON)[time_secs - 1]
     assert int(off) == 0
 
 
@@ -89,19 +90,24 @@ def test_pv_partial_cloud_cover():
 
     for tick in range(0, cloud_cover_duration):
         pv.event_tick(area=None)
-        after_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds()] = pv.get_current_power()
+        after_cloud_cover[pendulum.now().diff(pendulum.today()).in_seconds()] = \
+            pv.get_current_power()
         sleep(1)
 
     print("During cloud cover: {}".format(during_cloud_cover))
     print("After cloud cover: {}".format(after_cloud_cover))
 
     for key in during_cloud_cover.keys():
-        print("During: {}, original: {}".format(during_cloud_cover[key], pv.usageGenerator.get_reading_at(key)))
-        if during_cloud_cover[key] == round(pv.usageGenerator.get_reading_at(key) * (1 - cloud_cover_percent/100), 2):
+        print("During: {}, original: {}".
+              format(during_cloud_cover[key], pv.usageGenerator.get_reading_at(key)))
+        if during_cloud_cover[key] == \
+                round(pv.usageGenerator.get_reading_at(key) *
+                              (1 - cloud_cover_percent/100), 2):
             cloud_cover_match += 1
 
     for key in after_cloud_cover.keys():
-        print("After: {}, original: {}".format(after_cloud_cover[key], pv.usageGenerator.get_reading_at(key)))
+        print("After: {}, original: {}".
+              format(after_cloud_cover[key], pv.usageGenerator.get_reading_at(key)))
         if after_cloud_cover[key] == pv.usageGenerator.get_reading_at(key):
             clear_sky_match += 1
 

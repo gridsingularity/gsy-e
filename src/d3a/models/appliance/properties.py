@@ -161,4 +161,3 @@ class ElectricalProperties:
 
     def get_max_variance(self) -> float:
         return self.max_variance
-
