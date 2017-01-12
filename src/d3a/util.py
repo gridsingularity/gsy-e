@@ -1,5 +1,11 @@
+import tty
 from logging import LoggerAdapter
 
+import termios
+
+import sys
+
+import select
 from click.types import ParamType
 from pendulum.interval import Interval
 from rex import rex
@@ -42,3 +48,18 @@ class IntervalType(ParamType):
                 self.allowed_formats
             )
         )
+
+
+class NonBlockingConsole(object):
+    def __enter__(self):
+        self.old_settings = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin.fileno())
+        return self
+
+    def __exit__(self, type, value, traceback):
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
+
+    def get_char(self, timeout=0):
+        if select.select([sys.stdin], [], [], timeout) == ([sys.stdin], [], []):
+            return sys.stdin.read(1)
+        return False

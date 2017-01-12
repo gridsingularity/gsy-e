@@ -168,7 +168,7 @@ class Area:
             # Since children trade in markets we only need to populate them if there are any
             return
 
-        now = self.get_now()
+        now = self.now
         time_in_hour = Interval(minutes=now.minute, seconds=now.second)
         now = now.with_time(now.hour, minute=0, second=0).add_timedelta(
             (time_in_hour // self.config.slot_length) * self.config.slot_length
@@ -245,7 +245,7 @@ class Area:
 
     def report_accounting(self, market, reporter, value, time=None):
         if time is None:
-            time = self.get_now()
+            time = self.now
         self.accounting[market][time] = (reporter, value)
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):

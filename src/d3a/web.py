@@ -9,7 +9,7 @@ from flask.helpers import url_for as url_for_original
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
-from d3a.models.area import Area
+from d3a.simulation import Simulation
 
 
 _NO_VALUE = {
@@ -19,8 +19,12 @@ _NO_VALUE = {
 }
 
 
-def start_web(interface, port, area):
-    app = DispatcherMiddleware(_html_app(area), {'/api': _api_app(area)})
+def start_web(interface, port, simulation: Simulation):
+    app = DispatcherMiddleware(
+        _html_app(simulation.area), {
+            '/api': _api_app(simulation)
+        }
+    )
     t = Thread(
         target=lambda: run_simple(
             interface,
@@ -46,16 +50,17 @@ def _html_app(area):
     return app
 
 
-def _api_app(root_area: Area):
+def _api_app(simulation: Simulation):
     app = FlaskAPI(__name__)
 
     area_slug_map = {}
+    root_area = simulation.area
     areas = [root_area]
     while areas:
-        for a in list(areas):
-            area_slug_map[a.slug] = a
-            areas.remove(a)
-            areas.extend(a.children)
+        for area in list(areas):
+            area_slug_map[area.slug] = area
+            areas.remove(area)
+            areas.extend(area.children)
 
     def _get_area(area_slug):
         try:
@@ -69,7 +74,9 @@ def _api_app(root_area: Area):
             'simulation': {
                 'config': root_area.config.as_dict(),
                 'finished': root_area.current_tick == root_area.config.total_ticks,
-                'current_tick': root_area.current_tick
+                'current_tick': root_area.current_tick,
+                'paused': simulation.paused,
+                'slowdown': simulation.slowdown
             },
             'root_area': area_tree(root_area)
         }

@@ -1,6 +1,5 @@
 import logging
 import time
-from importlib import import_module
 from logging import getLogger
 from pkgutil import iter_modules
 
@@ -8,12 +7,12 @@ import click
 from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
-from pendulum.pendulum import Pendulum
 from ptpython.repl import embed
 
 from d3a import setup as d3a_setup
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
+from d3a.simulation import Simulation
 from d3a.util import IntervalType
 from d3a.web import start_web
 
@@ -55,73 +54,41 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
               help="REST-API server listening interface")
 @click.option('-p', '--port', type=int, default=5000, show_default=True,
               help="REST-API server listening port")
-@click.option('--setup', default="default",
+@click.option('--setup', 'setup_module_name', default="default",
               help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
 @click.option('--slowdown', type=int, default=0,
               help="Slowdown factor [0 - 100]. "
                    "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
                    "and 100: ticks are simulated in realtime")
+@click.option('--paused', is_flag=True, default=False, show_default=True,
+              help="Start simulation in paused state")
 @click.option('--repl/--no-repl', default=False, show_default=True,
               help="Start REPL after simulation run.")
-def run(interface, port, setup, slowdown, repl, **config_params):
+def run(interface, port, setup_module_name, slowdown, paused, repl, **config_params):
     try:
-        config = SimulationConfig(**config_params)
+        simulation_config = SimulationConfig(**config_params)
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-    try:
-        setup_module = import_module(".{}".format(setup), 'd3a.setup')
-        log.info("Using setup module '%s'", setup)
-    except ImportError:
-        raise click.BadOptionUsage("Invalid setup module '{}'".format(setup))
-    area = setup_module.get_setup(config)
-    log.info("Starting simulation with config %s", config)
-    area.activate()
 
-    start_web(interface, port, area)
+    simulation = Simulation(setup_module_name, simulation_config, slowdown, paused)
 
-    tick_lengths_s = config.tick_length.total_seconds()
-    run_start = Pendulum.now()
-    slot_count = int(config.duration / config.slot_length) + 1
-    for slot_no in range(config.duration // config.slot_length):
-        log.error(
-            "Slot %d of %d (%2.0f%%)",
-            slot_no + 1,
-            slot_count,
-            (slot_no + 1) / slot_count * 100
-        )
+    start_web(interface, port, simulation)
 
-        for tick_no in range(config.ticks_per_slot):
-            tick_start = time.monotonic()
-            log.debug(
-                "Tick %d of %d in slot %d (%2.0f%%)",
-                tick_no + 1,
-                config.ticks_per_slot,
-                slot_no + 1,
-                (tick_no + 1) / config.ticks_per_slot * 100,
-                )
-            area.tick()
-            tick_length = time.monotonic() - tick_start
-            if slowdown and tick_length < tick_lengths_s:
-                # Simulation runs faster than real time but a slowdown was requested.
-                tick_diff = tick_lengths_s - tick_length
-                diff_slowdown = tick_diff / 100 * slowdown
-                log.debug("Slowdown: %.4f", diff_slowdown)
-                time.sleep(diff_slowdown)
+    run_duration, paused_duration = simulation.run()
 
-    for time_stamp, m in area.markets.items():
+    for time_stamp, m in simulation.area.markets.items():
         print()
         print(time_stamp)
         print(m.display())
-    run_length = Pendulum.now() - run_start
-    log.info("Run finished in %s / %.2fx real time.", run_length,
-             config.duration / run_length.as_interval())
+    log.info("Run finished in %s (%s paused) / %.2fx real time.", run_duration, paused_duration,
+             simulation_config.duration / (run_duration - paused_duration))
     log.info("REST-API still running at http://%s:%d/api", interface, port)
     if repl:
         log.info(
             "An interactive REPL has been started. The root Area is available as `root_area`.")
         log.info("Ctrl-D to quit.")
-        embed({'root_area': area})
+        embed({'root_area': simulation.area})
     else:
         log.info("Ctrl-C to quit")
         try:
