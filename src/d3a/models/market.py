@@ -268,3 +268,14 @@ class Market:
                 # Could blow up with certain unicode characters
                 pass
         return "\n".join(out)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['offer_lock']
+        del state['trade_lock']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.offer_lock = Lock()
+        self.trade_lock = Lock()

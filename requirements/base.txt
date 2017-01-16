@@ -11,6 +11,7 @@ cffi==1.9.1               # via secp256k1
 click-default-group==1.2
 click==6.6
 colorlog==2.10.0
+dill==0.2.5
 ethereum==1.6.0
 flask-api==0.6.9
 flask==0.12

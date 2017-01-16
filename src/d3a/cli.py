@@ -1,13 +1,12 @@
 import logging
-import time
 from logging import getLogger
 from pkgutil import iter_modules
 
 import click
-from click.types import Choice
+import dill
+from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
-from ptpython.repl import embed
 
 from d3a import setup as d3a_setup
 from d3a.exceptions import D3AException
@@ -71,28 +70,19 @@ def run(interface, port, setup_module_name, slowdown, paused, repl, **config_par
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
 
-    simulation = Simulation(setup_module_name, simulation_config, slowdown, paused)
-
+    api_url = "http://{}:{}/api".format(interface, port)
+    simulation = Simulation(setup_module_name, simulation_config, slowdown, paused, repl, api_url)
     start_web(interface, port, simulation)
+    simulation.run()
 
-    run_duration, paused_duration = simulation.run()
 
-    for time_stamp, m in simulation.area.markets.items():
-        print()
-        print(time_stamp)
-        print(m.display())
-    log.info("Run finished in %s (%s paused) / %.2fx real time.", run_duration, paused_duration,
-             simulation_config.duration / (run_duration - paused_duration))
-    log.info("REST-API still running at http://%s:%d/api", interface, port)
-    if repl:
-        log.info(
-            "An interactive REPL has been started. The root Area is available as `root_area`.")
-        log.info("Ctrl-D to quit.")
-        embed({'root_area': simulation.area})
-    else:
-        log.info("Ctrl-C to quit")
-        try:
-            while True:
-                time.sleep(.5)
-        except KeyboardInterrupt:
-            print("Exiting")
+@main.command()
+@click.option('-i', '--interface', default="0.0.0.0", show_default=True,
+              help="REST-API server listening interface")
+@click.option('-p', '--port', type=int, default=5000, show_default=True,
+              help="REST-API server listening port")
+@click.argument('save-file', type=File(mode='rb'))
+def resume(save_file, interface, port):
+    simulation = dill.load(save_file)
+    start_web(interface, port, simulation)
+    simulation.run(resume=True)

@@ -3,6 +3,7 @@ cached_property
 click
 click-default-group
 colorlog
+dill
 ethereum
 flask
 flask-api

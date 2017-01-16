@@ -50,7 +50,7 @@ class IntervalType(ParamType):
         )
 
 
-class NonBlockingConsole(object):
+class NonBlockingConsole:
     def __enter__(self):
         self.old_settings = termios.tcgetattr(sys.stdin)
         tty.setcbreak(sys.stdin.fileno())
