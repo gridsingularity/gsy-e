@@ -5,14 +5,33 @@ from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 
 
 class PVStrategy(BaseStrategy):
-    def __init__(self, risk=DEFAULT_RISK):
+    def __init__(self, panel_count=1, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
         self.offers_posted = {}  # type: Dict[str, Market]
+        self.panel_count = panel_count
 
     def event_tick(self, *, area):
         # Here you can change between different forecast functions
-        quantity_forecast = self.produced_energy_forecast_sinus()
+        # This gives us a pendulum object with today 8 o'clock
+        midnight = self.area.now.start_of("day").hour_(0)
+        # This returns the difference to 8 o'clock in minutes
+        difference_to_midnight_in_minutes = self.area.now.diff(midnight).in_minutes()
+        # If we passed midnight this is a negative value, but we want the time
+        # that passed since it was 8 in the morning (start of PV dataset)
+        # Therefore we need to add 60 minutes times 16 (24-8) Hours
+        # And use the difference between the time difference and the time passed between
+        # midnight and 8 am
+        if difference_to_midnight_in_minutes < 0:
+            difference_to_midnight_in_minutes = (abs(60 * 8 + difference_to_midnight_in_minutes)
+                                                 + 60 * 16
+                                                 )
+        # This function returns a forecast in the unit of kWh
+#        self.log.info("current forecast is %s",
+#                      self.gaussian_energy_forecast(difference_to_midnight_in_minutes))
+
+        quantity_forecast = self.produced_energy_forecast_real_data(
+            difference_to_midnight_in_minutes)
         average_market_price = self.area.historical_avg_price
         # Needed to calculate risk_dependency_of_selling_price
         normed_risk = ((self.risk - (0.5 * MAX_RISK)) / (0.5 * MAX_RISK))
@@ -33,12 +52,15 @@ class PVStrategy(BaseStrategy):
             # If there is no offer for a currently open marketplace:
             if market not in self.offers_posted.values():
                 # Sell energy and save that an offer was posted into a list
-                offer = market.offer(
-                    quantity_forecast[time],
-                    (rounded_energy_price * quantity_forecast[time]),
-                    self.owner.name
-                )
-                self.offers_posted[offer.id] = market
+                if quantity_forecast[time] == 0:
+                    continue
+                for i in range(self.panel_count):
+                    offer = market.offer(
+                        quantity_forecast[time],
+                        (rounded_energy_price * quantity_forecast[time]),
+                        self.owner.name
+                    )
+                    self.offers_posted[offer.id] = market
             else:
                 # XXX TODO: This should check if current market offers
                 # are still in line with strategy
@@ -74,17 +96,29 @@ class PVStrategy(BaseStrategy):
             )
         return energy_production_forecast
 
-    #    # TODO: Debug produced_energy_forecast_gaussian
-    #    def produced_energy_forecast_gaussian(self):
-    #        energy_production_forecast = {}
-    #        for i, (time, market) in enumerate(self.area.markets.items()):
-    #            mu = 60*4
-    #            sigma = 60*2.5
-    #            energy_production_forecast[time] = round(
-    #                math.exp(- ((i - mu) ** 2 / (2 * (sigma ** 2)))), 2
-    #            )
-    #        log.info("energy_production_forecast is %", energy_production_forecast)
-    #        return energy_production_forecast
+    def produced_energy_forecast_real_data(self, time_in_minutes=0):
+        # This forecast ist based on the real PV system data provided by enphase
+        # They can be found in the tools folder
+        # A fit of a gaussian function to those data results in a formula Energy(time)
+        energy_production_forecast = {}
+        for time, market in self.area.markets.items():
+            energy_production_forecast[time] = self.gaussian_energy_forecast(time_in_minutes)
+        return energy_production_forecast
+
+    def gaussian_energy_forecast(self, time_in_minutes=0):
+        # The sun rises at approx 6:30 and sets at 18hr
+        if (8 * 60 / 5) < time_in_minutes < (17.5 * 60 / 5):
+            gauss_forecast = 0
+
+        else:
+            gauss_forecast = 166.54 * math.exp(
+                # time/5 is needed because we only have one data set per 5 minutes
+                (- (((round(time_in_minutes / 5, 0)) - 147.2)
+                    / 38.60) ** 2
+                 )
+            )
+        # /1000 is needed to convert Wh into kWh
+        return round((gauss_forecast / 1000), 4)
 
     def event_market_cycle(self):
         pass
