@@ -92,3 +92,4 @@ ENV/
 .ropeproject
 
 *.DS_Store
+.d3a/
