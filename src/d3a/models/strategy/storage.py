@@ -19,6 +19,11 @@ class StorageStrategy(BaseStrategy):
         self.selling_price = 30
 
     def event_tick(self, *, area):
+        # The storage looses 1% of capacity per hour
+        self.used_storage *= (1 - ((0.01 * self.area.config.tick_length.total_seconds())
+                                   / (60 * 60)
+                                   )
+                              )
         # Taking the cheapest offers in every market currently open and building the average
         avg_cheapest_offer_price = self.find_avg_cheapest_offers()
         # Check if there are cheap offers to buy
@@ -89,9 +94,9 @@ class StorageStrategy(BaseStrategy):
         )
         # Try to create an offer to sell the stored energy
         if (
-                        risk_dependent_selling_price <= cheapest_price_in_most_expensive_market and
-                        self.used_storage > 0 and
-                        risk_dependent_selling_price <= self.selling_price
+                risk_dependent_selling_price <= cheapest_price_in_most_expensive_market and
+                self.used_storage > 0 and
+                risk_dependent_selling_price <= self.selling_price
         ):
             # Deleting all old offers
             for (offer_id, market) in self.offers_posted.items():
