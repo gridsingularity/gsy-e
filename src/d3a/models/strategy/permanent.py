@@ -3,9 +3,9 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class PermanentLoadStrategy(BaseStrategy):
-    def __init__(self, energy_wh=100, pre_buy_range=4):
+    def __init__(self, energy=100, pre_buy_range=4):
         super().__init__()
-        self.energy_wh = energy_wh
+        self.energy = energy
         self.pre_buy_range = pre_buy_range
 
         self.bought_in_market = set()
@@ -18,11 +18,10 @@ class PermanentLoadStrategy(BaseStrategy):
                 if market in self.bought_in_market:
                     continue
                 for offer in market.sorted_offers:
-                    if offer.energy < self.energy_wh / 1000:
+                    if offer.energy < self.energy / 1000:
                         continue
                     try:
                         self.accept_offer(market, offer)
-                        self.log.info("Buying %s", offer)
                         self.bought_in_market.add(market)
                         break
                     except MarketException:
