@@ -73,7 +73,7 @@ def _api_app(simulation: Simulation):
         return {
             'simulation': {
                 'config': root_area.config.as_dict(),
-                'finished': root_area.current_tick == root_area.config.total_ticks,
+                'finished': simulation.finished,
                 'current_tick': root_area.current_tick,
                 'paused': simulation.paused,
                 'slowdown': simulation.slowdown

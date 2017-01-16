@@ -33,6 +33,10 @@ class Simulation:
         log.info("Starting simulation with config %s", simulation_config)
         self.area.activate()
 
+    @property
+    def finished(self):
+        return self.area.current_tick == self.area.config.total_ticks
+
     def run(self) -> (Period, Interval):
         config = self.simulation_config
         tick_lengths_s = self.simulation_config.tick_length.total_seconds()
