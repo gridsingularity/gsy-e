@@ -5,10 +5,11 @@ from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 
 
 class PVStrategy(BaseStrategy):
-    def __init__(self, risk=DEFAULT_RISK):
+    def __init__(self, panel_count=1, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
         self.offers_posted = {}  # type: Dict[str, Market]
+        self.panel_count = panel_count
 
     def event_tick(self, *, area):
         # Here you can change between different forecast functions
@@ -52,12 +53,13 @@ class PVStrategy(BaseStrategy):
                 # Sell energy and save that an offer was posted into a list
                 if quantity_forecast[time] == 0:
                     continue
-                offer = market.offer(
-                    quantity_forecast[time],
-                    (rounded_energy_price * quantity_forecast[time]),
-                    self.owner.name
-                )
-                self.offers_posted[offer.id] = market
+                for panel in range(self.panel_count):
+                    offer = market.offer(
+                        quantity_forecast[time],
+                        (rounded_energy_price * quantity_forecast[time]),
+                        self.owner.name
+                    )
+                    self.offers_posted[offer.id] = market
             else:
                 # XXX TODO: This should check if current market offers
                 # are still in line with strategy
