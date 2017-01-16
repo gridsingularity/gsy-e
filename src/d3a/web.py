@@ -164,6 +164,11 @@ def _api_app(simulation: Simulation):
                     'max': market.max_offer_price,
                 } if market.offers else _NO_VALUE
             },
+            'energy_accounting': {
+                actor: value
+                for actor, value
+                in market.accounting.items()
+            },
             'trades': [
                 {
                     'id': t.id,
@@ -208,6 +213,11 @@ def _api_app(simulation: Simulation):
                         'avg': market.avg_offer_price,
                         'max': market.max_offer_price,
                     } if market.offers else _NO_VALUE
+                },
+                'energy_accounting': {
+                    actor: value
+                    for actor, value
+                    in market.accounting.items()
                 },
                 'trade_count': len(market.trades),
                 'offer_count': len(market.offers),
