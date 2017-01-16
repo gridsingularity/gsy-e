@@ -29,6 +29,7 @@ class PVStrategy(BaseStrategy):
         # This function returns a forecast in the unit of kWh
 #        self.log.info("current forecast is %s",
 #                      self.gaussian_energy_forecast(difference_to_midnight_in_minutes))
+
         quantity_forecast = self.produced_energy_forecast_real_data(
             difference_to_midnight_in_minutes)
         average_market_price = self.area.historical_avg_price

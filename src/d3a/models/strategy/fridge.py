@@ -119,8 +119,6 @@ class FridgeStrategy(BaseStrategy):
                 except IndexError:
                     self.log.critical("Crap no offers available")
 
-#    def buying_logic(self, min_temp, max_temp, current_temp, max_risk):
-
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
         self.log.info("Temperature: %.2f", self.fridge_temp)
