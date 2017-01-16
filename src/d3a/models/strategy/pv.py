@@ -54,7 +54,7 @@ class PVStrategy(BaseStrategy):
                 # Sell energy and save that an offer was posted into a list
                 if quantity_forecast[time] == 0:
                     continue
-                for panel in range(self.panel_count):
+                for i in range(self.panel_count):
                     offer = market.offer(
                         quantity_forecast[time],
                         (rounded_energy_price * quantity_forecast[time]),
