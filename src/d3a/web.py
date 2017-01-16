@@ -3,12 +3,14 @@ from threading import Thread
 
 import pendulum
 from flask import Flask, render_template, abort
+from flask import request
 from flask_api import FlaskAPI
 
 from flask.helpers import url_for as url_for_original
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
+import d3a
 from d3a.simulation import Simulation
 
 
@@ -80,6 +82,43 @@ def _api_app(simulation: Simulation):
             },
             'root_area': area_tree(root_area)
         }
+
+    @app.route("/pause", methods=['GET', 'POST'])
+    def pause():
+        changed = False
+        if request.method == 'POST':
+            changed = simulation.toggle_pause()
+        return {'paused': simulation.paused, 'changed': changed}
+
+    @app.route("/reset", methods=['POST'])
+    def reset():
+        simulation.reset()
+        return {'success': 'ok'}
+
+    @app.route("/save", methods=['POST'])
+    def save():
+        return {'save_file': str(simulation.save_state().resolve())}
+
+    @app.route("/slowdown", methods=['GET', 'POST'])
+    def slowdown():
+        changed = False
+        if request.method == 'POST':
+            if request.is_json:
+                data = request.get_json(silent=True)
+            else:
+                data = request.form
+            slowdown = data.get('slowdown')
+            if not slowdown:
+                return {'error': "'slowdown' parameter missing"}, 400
+            try:
+                slowdown = int(slowdown)
+            except ValueError:
+                return {'error': "'slowdown' parameter must be numeric"}, 400
+            if not -1 < slowdown < 101:
+                return {'error': "'slowdown' must be in range 0 - 100"}, 400
+            simulation.slowdown = slowdown
+            changed = True
+        return {'slowdown': simulation.slowdown, 'changed': changed}
 
     @app.route("/<area_slug>")
     def area(area_slug):
@@ -179,6 +218,11 @@ def _api_app(simulation: Simulation):
             for type_, (time, market)
             in _market_progression(area)
         ]
+
+    @app.after_request
+    def modify_server_header(response):
+        response.headers['Server'] = "d3a/{}".format(d3a.VERSION)
+        return response
 
     return app
 
