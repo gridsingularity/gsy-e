@@ -2,7 +2,7 @@ from logging import getLogger
 from d3a.models.area import Area
 from d3a.models.appliance.appliance import Appliance, ApplianceMode
 from d3a.models.appliance.run_algo import RunSchedule
-from d3a.models.strategy.const import MAX_FRIDGE_TEMP, MIN_FRIDGE_TEMP
+from d3a.models.strategy.const import MAX_STORAGE_TEMP, MIN_STORAGE_TEMP
 import math
 
 log = getLogger(__name__)
@@ -13,8 +13,8 @@ class FridgeAppliance(Appliance):
     def __init__(self, name: str = "Fridge", report_freq: int = 1):
         super().__init__(name, report_freq)
         # Take temp from const.py
-        self.max_temp = MAX_FRIDGE_TEMP         # Max temp the fridge can have
-        self.min_temp = MIN_FRIDGE_TEMP         # Min temp to avoid frosting
+        self.max_temp = MAX_STORAGE_TEMP         # Max temp the fridge can have
+        self.min_temp = MIN_STORAGE_TEMP         # Min temp to avoid frosting
         # Average temp between low and high
         self.current_temp = int((self.max_temp + self.min_temp)/2)
         # TODO have these defined in strategy.const
