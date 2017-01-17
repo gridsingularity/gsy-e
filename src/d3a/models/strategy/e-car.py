@@ -24,6 +24,7 @@ class StorageStrategy(StorageStrategy):
         # Car arrives at charging station at
         if self.area.now.diff(arrival_time).in_minutes() == 0:
             self.connected_to_grid = True
+            self.sell_energy(self.used_storage)
         # Car departs from charging station at
         if self.area.now.diff(depart_time).in_minutes() == 0:
             self.connected_to_grid = False
@@ -32,7 +33,7 @@ class StorageStrategy(StorageStrategy):
         if not self.connected_to_grid:
             # This means the car is driving around some where
             self.used_storage *= 0.9999
-            pass
+            return
         # Taking the cheapest offers in every market currently open and building the average
         # Same process as storage
         avg_cheapest_offer_price = self.find_avg_cheapest_offers()
@@ -45,3 +46,4 @@ class StorageStrategy(StorageStrategy):
     def departure(self):
         for market, offer in self.offers_posted:
             market.delete_offer(offer.id)
+            self.used_storage += offer.energy
