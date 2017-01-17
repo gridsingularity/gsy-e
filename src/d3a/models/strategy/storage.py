@@ -4,17 +4,18 @@ from typing import Dict, List  # noqa
 from d3a.exceptions import MarketException
 from d3a.models.market import Market, Offer, log  # noqa
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY
+from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
 
 
 class StorageStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.offers_posted = {}  # type: Dict[str, Market]
+        self.offers_posted = {}  # type: Dict[Offer, Market]
         self.bought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
-        self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Trade]]
+        self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.used_storage = 0.00
+        self.offered_storage = 0.00
         self.blocked_storage = 0.00
         self.selling_price = 30
 
@@ -29,7 +30,11 @@ class StorageStrategy(BaseStrategy):
         # Check if there are cheap offers to buy
         self.buy_energy(avg_cheapest_offer_price)
         # Check if any energy from the storage can be sold
-        self.sell_energy(avg_cheapest_offer_price)
+        self.sell_energy(max(o.price/o.energy
+                             for offers in list(self.bought_offers.values())
+                             for o in offers
+                             )
+                         )
 
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
@@ -40,13 +45,17 @@ class StorageStrategy(BaseStrategy):
         # if energy in this slot was sold: update the storage
         for sold in self.sold_offers[past_market]:
             self.used_storage -= sold.energy
-        # Check if any energy from the storage can be sold now
-        self.sell_energy(self.find_avg_cheapest_offers())
+        # Check if Storage posted offer in that market that has not been bought
+        # If so try to sell the offer again
+        if past_market in self.offers_posted.values():
+            self.sell_energy(max(o.price for o in self.bought_offers[past_market]))
+            del self.offers_posted[past_market]
 
     def event_trade(self, *, market, trade):
         # If trade happened: remember it in variable
         if self.owner.name == trade.seller:
             self.sold_offers[market].append(trade.offer)
+            del self.offers_posted[trade.offer]
             # TODO post information about earned money
 
     def buy_energy(self, avg_cheapest_offer_price):
@@ -59,8 +68,10 @@ class StorageStrategy(BaseStrategy):
                     continue
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
-                        self.used_storage + self.blocked_storage + offer.energy <= STORAGE_CAPACITY
-                        and (offer.price / offer.energy) < avg_cheapest_offer_price
+                            (self.used_storage + self.blocked_storage + offer.energy
+                                + self.offered_storage <= STORAGE_CAPACITY
+                             )
+                        and (offer.price / offer.energy) < (avg_cheapest_offer_price * 0.99)
                 ):
                     # Try to buy the energy
                     try:
@@ -71,14 +82,12 @@ class StorageStrategy(BaseStrategy):
                         # Offer already gone etc., try next one.
                         continue
 
-    def sell_energy(self, avg_cheapest_offer_price):
+    def sell_energy(self, buying_price):
         # Highest risk selling price using the highest risk is 20% above the average price
-        max_selling_price = 0.99 * avg_cheapest_offer_price
-        # Formula to calculate a profitable selling price
-        selling_price_with_max_risk = 0.8 * avg_cheapest_offer_price
+        min_selling_price = 1.01 * buying_price
+        # This ends up in a selling price between 101 and 120 percentage of the buying price
         risk_dependent_selling_price = (
-            max_selling_price -
-            ((self.risk / 100) * 0.1 * selling_price_with_max_risk)
+            min_selling_price * (1 + 0.2 * (self.risk / MAX_RISK))
         )
         # Find the most expensive offer out of the list of cheapest offers
         # in currently open markets
@@ -92,17 +101,21 @@ class StorageStrategy(BaseStrategy):
             list(most_expensive_market.sorted_offers)[0].price /
             list(most_expensive_market.sorted_offers)[0].energy
         )
+#        self.log.info("risk_dependent_selling_price is %s", risk_dependent_selling_price)
+#        self.log.info("cheapest_price_in_most_expensive_market is %s",
+#                             cheapest_price_in_most_expensive_market)
         # Try to create an offer to sell the stored energy
         if (
-                risk_dependent_selling_price <= cheapest_price_in_most_expensive_market and
-                self.used_storage > 0 and
-                risk_dependent_selling_price <= self.selling_price
+                        (risk_dependent_selling_price <=
+                         cheapest_price_in_most_expensive_market
+                         ) and
+                        self.used_storage >= 0
         ):
             # Deleting all old offers
-            for (offer_id, market) in self.offers_posted.items():
+            for (offer, market) in self.offers_posted.items():
                 if market == most_expensive_market:
                     try:
-                        market.delete_offer(offer_id)
+                        market.delete_offer(offer.id)
                     except MarketException:
                         return
             # Posting offer with new price
@@ -112,7 +125,8 @@ class StorageStrategy(BaseStrategy):
                 self.owner.name
             )
             # Updating parameters
-            self.selling_price = risk_dependent_selling_price
+            self.used_storage -= self.used_storage
+            self.offered_storage += self.used_storage
             self.offers_posted[offer.id] = most_expensive_market
 
     def find_avg_cheapest_offers(self):
