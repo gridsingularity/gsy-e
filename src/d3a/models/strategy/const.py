@@ -31,3 +31,7 @@ PUMP_MIN_NEEDED_ENERGY = 50
 # --> (1kWh energy = 5kWh heat)
 # This means 50 Wh increase the temp of the storage for 0.2C
 PUMP_MIN_TEMP_INCREASE = 0.2
+# Car: Arrival time at charging station
+ARRIVAL_TIME = 17
+# Car: Depart time from charging station
+DEPART_TIME = 17
