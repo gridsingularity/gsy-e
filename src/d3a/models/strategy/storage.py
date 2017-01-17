@@ -28,13 +28,16 @@ class StorageStrategy(BaseStrategy):
         # Taking the cheapest offers in every market currently open and building the average
         avg_cheapest_offer_price = self.find_avg_cheapest_offers()
         # Check if there are cheap offers to buy
-        self.buy_energy(avg_cheapest_offer_price)
-        # Check if any energy from the storage can be sold
-        self.sell_energy(max(o.price/o.energy
-                             for offers in list(self.bought_offers.values())
-                             for o in offers
-                             )
-                         )
+        if self.buy_energy(avg_cheapest_offer_price):
+            # Check if any energy from the storage can be sold
+            prices_of_accepted_offers = []
+            #            (prices_of_accepted_offers.append(o.price / o.energy)
+            for offers in list(self.bought_offers.values()):
+                for o in offers:
+                    prices_of_accepted_offers.append(o.price / o.energy)
+
+            self.log.info("prices_of_accepted_offers[-1] %s", prices_of_accepted_offers[-1])
+            self.sell_energy(prices_of_accepted_offers[-1])
 
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
@@ -48,6 +51,7 @@ class StorageStrategy(BaseStrategy):
         # Check if Storage posted offer in that market that has not been bought
         # If so try to sell the offer again
         if past_market in self.offers_posted.values():
+            # TODO Debug me
             self.sell_energy(max(o.price for o in self.bought_offers[past_market]))
             del self.offers_posted[past_market]
 
@@ -78,9 +82,13 @@ class StorageStrategy(BaseStrategy):
                         self.accept_offer(market, offer)
                         self.blocked_storage += offer.energy
                         self.bought_offers[market].append(offer)
+                        return True
                     except MarketException:
                         # Offer already gone etc., try next one.
                         continue
+                        return False
+                else:
+                    return False
 
     def sell_energy(self, buying_price):
         # Highest risk selling price using the highest risk is 20% above the average price
@@ -101,15 +109,14 @@ class StorageStrategy(BaseStrategy):
             list(most_expensive_market.sorted_offers)[0].price /
             list(most_expensive_market.sorted_offers)[0].energy
         )
-#        self.log.info("risk_dependent_selling_price is %s", risk_dependent_selling_price)
-#        self.log.info("cheapest_price_in_most_expensive_market is %s",
-#                             cheapest_price_in_most_expensive_market)
+        #        self.log.info("risk_dependent_selling_price is %s", risk_dependent_selling_price)
+        #        self.log.info("cheapest_price_in_most_expensive_market is %s",
+        #                             cheapest_price_in_most_expensive_market)
         # Try to create an offer to sell the stored energy
         if (
-                        (risk_dependent_selling_price <=
-                         cheapest_price_in_most_expensive_market
-                         ) and
-                        self.used_storage >= 0
+                    (risk_dependent_selling_price <=
+                        cheapest_price_in_most_expensive_market
+                     ) and self.used_storage > 0.0
         ):
             # Deleting all old offers
             for (offer, market) in self.offers_posted.items():
@@ -121,7 +128,7 @@ class StorageStrategy(BaseStrategy):
             # Posting offer with new price
             offer = most_expensive_market.offer(
                 self.used_storage,
-                risk_dependent_selling_price * self.used_storage,
+                self.used_storage * risk_dependent_selling_price,
                 self.owner.name
             )
             # Updating parameters
