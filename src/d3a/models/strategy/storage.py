@@ -60,7 +60,6 @@ class StorageStrategy(BaseStrategy):
         if self.owner.name == trade.seller:
             self.sold_offers[market].append(trade.offer)
             del self.offers_posted[trade.offer]
-            # TODO post information about earned money
 
     def buy_energy(self, avg_cheapest_offer_price):
         # Here starts the logic if energy should be bought
