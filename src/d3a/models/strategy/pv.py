@@ -44,7 +44,7 @@ class PVStrategy(BaseStrategy):
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_price == 0.0:
             # FIXME Price?
-            rounded_energy_price = 22.5
+            rounded_energy_price = 25.0
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
