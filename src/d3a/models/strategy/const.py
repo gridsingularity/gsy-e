@@ -10,7 +10,7 @@ MAX_FRIDGE_TEMP = 8.0
 # Unit is degree celsius
 MIN_FRIDGE_TEMP = 4.0
 # Unit is degree celsius
-FRIDGE_TEMPERATURE = 7.0
+FRIDGE_TEMPERATURE = 6.0
 
 # MARKET RELATED LIMITATIONS
 # Unit is cent
