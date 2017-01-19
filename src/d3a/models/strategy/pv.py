@@ -57,7 +57,7 @@ class PVStrategy(BaseStrategy):
                 for i in range(self.panel_count):
                     offer = market.offer(
                         quantity_forecast[time],
-                        (rounded_energy_price * quantity_forecast[time]),
+                        min((rounded_energy_price * quantity_forecast[time]), 29.9),
                         self.owner.name
                     )
                     self.offers_posted[offer.id] = market
