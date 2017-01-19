@@ -85,10 +85,10 @@ class FridgeStrategy(BaseStrategy):
         # Here starts the logic if energy should be bought
         for offer in next_market.sorted_offers:
             # offer.energy * 1000 is needed to get the energy in Wh
-            # 0.02 is the temperature decrease per cooling period and minimal needed energy
+            # 0.05 is the temperature decrease per cooling period and minimal needed energy
             # *2 is needed because we need to cool and equalize the rise
             #  of the temperature (see event_market_cycle) as well
-            cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.02 * 2)
+            cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.05 * 2)
             if (
                 (
                     (
