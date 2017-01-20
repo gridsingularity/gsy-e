@@ -67,3 +67,7 @@ class NonBlockingConsole:
         if select.select([sys.stdin], [], [], timeout) == ([sys.stdin], [], []):
             return sys.stdin.read(1)
         return False
+
+
+def make_iaa_name(owner):
+    return "IAA {}".format(owner.name)

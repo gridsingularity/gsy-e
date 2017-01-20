@@ -3,7 +3,7 @@ import uuid
 from collections import defaultdict, namedtuple
 from logging import getLogger
 from threading import Lock
-from typing import Dict, List, Set, Union  # noqa
+from typing import Any, Dict, List, Set, Union  # noqa
 
 import sys
 
@@ -74,7 +74,11 @@ class Market:
         self.notification_listeners = []
         self.trades = []  # type: List[Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
-        self.accounting = defaultdict(int)
+        self.traded_energy = defaultdict(int)
+        # Store actual energy consumption in a nested dict in the form of
+        # Timestamp -> Actor -> Value
+        self.actual_energy = defaultdict(
+            lambda: defaultdict(int))  # type: Dict[Pendulum, Dict[str, float]]
         self.min_trade_price = sys.maxsize
         self._avg_trade_price = None
         self.max_trade_price = 0
@@ -169,8 +173,8 @@ class Market:
             trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer)
             self.trades.append(trade)
             log.warning("[TRADE] %s", trade)
-            self.accounting[offer.seller] -= offer.energy
-            self.accounting[buyer] += offer.energy
+            self.traded_energy[offer.seller] += offer.energy
+            self.traded_energy[buyer] -= offer.energy
             self.ious[buyer][offer.seller] += offer.price
             self._update_min_max_avg_trade_prices(offer.price / offer.energy)
             # Recalculate offer min/max price since offer was removed
@@ -256,11 +260,11 @@ class Market:
             except:
                 # Could blow up with certain unicode characters
                 pass
-        if self.accounting:
-            out.append("Energy accounting:")
+        if self.traded_energy:
+            out.append("Traded Energy:")
             acct_table = [['Actor', 'Sum (kWh)']] + [
                 [actor, energy]
-                for actor, energy in self.accounting.items()
+                for actor, energy in self.traded_energy.items()
             ]
             try:
                 out.append(SingleTable(acct_table).table)

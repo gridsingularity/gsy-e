@@ -1,19 +1,32 @@
-from collections import defaultdict
 from logging import getLogger
-from typing import Dict, List, Any  # noqa
+from typing import Dict, Any  # noqa
 
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.events import EventMixin
-from d3a.models.market import Market, Trade  # noqa
+from d3a.models.market import Market  # noqa
 
 
 log = getLogger(__name__)
 
 
+class _TradeLookerUpper:
+    def __init__(self, owner_name):
+        self.owner_name = owner_name
+
+    def __getitem__(self, market):
+        for trade in market.trades:
+            owner_name = self.owner_name
+            if trade.seller == owner_name or trade.buyer == owner_name:
+                yield trade
+
+
 class BaseStrategy(EventMixin, AreaBehaviorBase):
     def __init__(self):
         super().__init__()
-        self.trades = defaultdict(list)  # type: Dict[Market, List[Trade]]
+
+    @property
+    def trades(self):
+        return _TradeLookerUpper(self.owner.name)
 
     def energy_balance(self, market, *, allow_open_market=False):
         """
@@ -35,7 +48,6 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
         if buyer is None:
             buyer = self.owner.name
         trade = market.accept_offer(offer, buyer, energy=energy)
-        self.trades[market].append(trade)
         return trade
 
     def post(self, **data):

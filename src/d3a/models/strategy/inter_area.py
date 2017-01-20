@@ -2,7 +2,8 @@ from collections import namedtuple
 from typing import Dict, Set  # noqa
 
 from d3a.exceptions import MarketException
-from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
+from d3a.util import make_iaa_name
 
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
@@ -62,7 +63,8 @@ class IAAEngine:
             trade_source = self.owner.accept_offer(
                 self.markets.source,
                 offer_info.source_offer,
-                energy=trade.offer.energy
+                energy=trade.offer.energy,
+                buyer=self.owner.name
             )
             self.owner.log.info("Offer accepted %s", trade_source)
             if trade.offer.energy == offer_info.source_offer.energy:
@@ -72,7 +74,7 @@ class IAAEngine:
                 self.offer_age.pop(offer_info.source_offer.id, None)
             self.traded_offers.add(offer_info.source_offer.id)
             self.traded_offers.add(offer_info.target_offer.id)
-        elif trade.offer == offer_info.source_offer and trade.buyer == self.owner.owner.name:
+        elif trade.offer == offer_info.source_offer and trade.buyer == self.owner.name:
             # Flip side of the event from above buying action - do nothing
             pass
         elif trade.offer == offer_info.source_offer:
@@ -133,7 +135,7 @@ class InterAreaAgent(BaseStrategy):
         """
         super().__init__()
         self.owner = owner
-        self.name = "IAA {}".format(owner.name)
+        self.name = make_iaa_name(owner)
 
         self.engines = [
             IAAEngine('High -> Low', higher_market, lower_market, min_offer_age, self),
@@ -142,6 +144,10 @@ class InterAreaAgent(BaseStrategy):
 
         self.time_slot = higher_market.time_slot.strftime("%H:%M")
         self.tick_ratio = tick_ratio
+
+    @property
+    def trades(self):
+        return _TradeLookerUpper(self.name)
 
     def __repr__(self):
         return "<InterAreaAgent {s.name} {s.time_slot}>".format(s=self)
