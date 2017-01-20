@@ -31,7 +31,7 @@ def get_setup(config):
                     Area(
                         'S1 House 2',
                         [
-                            Area('S1 H2 PV', strategy=PVStrategy(1, 100),
+                            Area('S1 H2 PV', strategy=PVStrategy(1, 60),
                                  appliance=SimpleAppliance()),
                             Area('S1 H2 Fridge', strategy=FridgeStrategy(50),
                                  appliance=SimpleAppliance()),
@@ -44,11 +44,11 @@ def get_setup(config):
                     Area(
                         'S1 House 3',
                         [
-                            Area('S1 H3 PV 1', strategy=PVStrategy(3, 80),
+                            Area('S1 H3 PV 1', strategy=PVStrategy(1, 60),
                                  appliance=SimpleAppliance()),
                             Area('S1 H3 PV 2', strategy=PVStrategy(1, 60),
                                  appliance=SimpleAppliance()),
-                            Area('S1 H3 PV 3', strategy=PVStrategy(1, 70),
+                            Area('S1 H3 PV 3', strategy=PVStrategy(1, 60),
                                  appliance=SimpleAppliance()),
                             Area('S1 H3 Storage', strategy=StorageStrategy(80),
                                  appliance=SimpleAppliance()),
@@ -75,7 +75,7 @@ def get_setup(config):
                     Area(
                         'S2 House 2',
                         [
-                            Area('S2 H2 PV', strategy=PVStrategy(1, 100),
+                            Area('S2 H2 PV', strategy=PVStrategy(1, 60),
                                  appliance=SimpleAppliance()),
                             Area('S2 H2 Fridge', strategy=FridgeStrategy(50),
                                  appliance=SimpleAppliance()),
@@ -92,9 +92,9 @@ def get_setup(config):
                     Area(
                         'S2 House 3',
                         [
-                            Area('S2 H3 PV 1', strategy=PVStrategy(1, 100),
+                            Area('S2 H3 PV 1', strategy=PVStrategy(1, 60),
                                  appliance=SimpleAppliance()),
-                            Area('S2 H3 PV 2', strategy=PVStrategy(1, 20),
+                            Area('S2 H3 PV 2', strategy=PVStrategy(1, 60),
                                  appliance=SimpleAppliance()),
                             Area('S2 H3 PV 3', strategy=PVStrategy(1, 60),
                                  appliance=SimpleAppliance()),
@@ -106,8 +106,8 @@ def get_setup(config):
                     ),
                 ]
             ),
-            Area('Commercial Energy Producer', strategy=CommercialStrategy(energy_range_wh=(40, 120),
-                                                                           energy_price=30))
+            Area('Commercial Energy Producer',
+                 strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30))
         ],
         config=config
     )
