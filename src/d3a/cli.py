@@ -60,18 +60,31 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
               help="Slowdown factor [0 - 100]. "
                    "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
                    "and 100: ticks are simulated in realtime")
+@click.option('--seed', help="Manually specify random seed")
 @click.option('--paused', is_flag=True, default=False, show_default=True,
               help="Start simulation in paused state")
+@click.option('--pause-after', type=IntervalType('H:M'), default="0",
+              help="Automatically pause after a certain time.  [default: disabled]")
 @click.option('--repl/--no-repl', default=False, show_default=True,
               help="Start REPL after simulation run.")
-def run(interface, port, setup_module_name, slowdown, paused, repl, **config_params):
+def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after, repl,
+        **config_params):
     try:
         simulation_config = SimulationConfig(**config_params)
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
 
     api_url = "http://{}:{}/api".format(interface, port)
-    simulation = Simulation(setup_module_name, simulation_config, slowdown, paused, repl, api_url)
+    simulation = Simulation(
+        setup_module_name,
+        simulation_config,
+        slowdown,
+        seed,
+        paused,
+        pause_after,
+        repl,
+        api_url
+    )
     start_web(interface, port, simulation)
     simulation.run()
 
