@@ -39,7 +39,8 @@ class StorageStrategy(BaseStrategy):
             self.sell_energy(price, energy)
 
         if self.used_storage > (0.8 * STORAGE_CAPACITY):
-            self.log.info("Storage reached more than 80% Battery: %s", (self.used_storage / STORAGE_CAPACITY))
+            self.log.info("Storage reached more than 80% Battery: %s", (self.used_storage
+                                                                        / STORAGE_CAPACITY))
 
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
@@ -56,7 +57,7 @@ class StorageStrategy(BaseStrategy):
             for market, offer in list(self.offers_posted.items()):
                 if market == past_market:
                     new_selling_price = (
-                        # self.offers_posted[market].price is the price we charged including our profit
+                        # self.offers_posted[market].price is the price we charged including profit
                         # But self.sell_energy expects a buying price
                         (0.99 - (0.15 * (self.risk / MAX_RISK))) *
                         self.offers_posted[market].price /
@@ -84,7 +85,8 @@ class StorageStrategy(BaseStrategy):
                             (self.used_storage + self.blocked_storage + offer.energy
                                 + self.offered_storage <= STORAGE_CAPACITY
                              )
-                        and min((offer.price / offer.energy), 30) < (avg_cheapest_offer_price * 0.99)
+                        and min((offer.price / offer.energy), 30) < (avg_cheapest_offer_price
+                                                                     * 0.99)
                 ):
                     # Try to buy the energy
                     try:
