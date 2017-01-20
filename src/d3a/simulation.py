@@ -184,23 +184,26 @@ class Simulation:
                 raise _SimulationInterruped()
             cmd = console.get_char(timeout)
             if cmd:
-                if cmd not in {'i', 'p', 'q', 'r', 's', '+', '-'}:
+                if cmd not in {'i', 'p', 'q', 'r', 'R', 's', '+', '-'}:
                     log.critical("Invalid command. Valid commands:\n"
                                  "  [i] info\n"
                                  "  [p] pause\n"
                                  "  [q] quit\n"
                                  "  [r] reset\n"
+                                 "  [R] start REPL\n"
                                  "  [s] save state\n"
                                  "  [+] increase slowdown\n"
                                  "  [-] decrease slowdown")
                     continue
 
-                if self.finished and cmd in {'p', '+', '-'}:
+                if self.finished and cmd in {'p', 'R', '+', '-'}:
                     log.error("Simulation has finished. The commands [p, +, -] are unavailable.")
                     continue
 
                 if cmd == 'r':
                     Thread(target=lambda: self.reset()).start()
+                elif cmd == 'R':
+                    self._start_repl()
                 elif cmd == 'i':
                     self._info()
                 elif cmd == 'p':
@@ -252,6 +255,13 @@ class Simulation:
             "  Completed: %(percent).1f%%",
             info
         )
+
+    def _start_repl(self):
+        log.info(
+            "An interactive REPL has been started. The root Area is available as "
+            "`root_area`.")
+        log.info("Ctrl-D to quit.")
+        embed({'root_area': self.area})
 
     def save_state(self):
         save_dir = Path('.d3a')

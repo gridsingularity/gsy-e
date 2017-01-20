@@ -45,6 +45,7 @@ i   Show information about simulation
 p   Pause simulation
 q   Quit simulation
 r   Reset and restart simulation
+R   Start a Python REPL at the current simulation step
 s   Save current state of simulation to file (see below for resuming)
 `+` Increase 'slowdown' factor
 `-` Decrease 'slowdown' factor
