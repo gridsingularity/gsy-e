@@ -1,3 +1,4 @@
+import random
 from importlib import import_module
 from logging import getLogger
 
@@ -265,6 +266,7 @@ class Simulation:
 
     def __getstate__(self):
         state = self.__dict__.copy()
+        state['_random_state'] = random.getstate()
         del state['interrupt']
         del state['interrupted']
         del state['ready']
@@ -272,6 +274,7 @@ class Simulation:
         return state
 
     def __setstate__(self, state):
+        random.setstate(state.pop('_random_state'))
         self.__dict__.update(state)
         self._load_setup_module()
         self._init_events()
