@@ -39,7 +39,7 @@ class PVStrategy(BaseStrategy):
         # High risk means expensive selling price & high possibility not selling the energy
         # The value 0.1 is to damp the effect of the risk
         risk_dependency_of_selling_price = (normed_risk * 0.1 * average_market_price)
-        energy_price = min(average_market_price + risk_dependency_of_selling_price, 30)
+        energy_price = min(average_market_price + risk_dependency_of_selling_price, 29.9)
         rounded_energy_price = round(energy_price, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_price == 0.0:
@@ -57,7 +57,7 @@ class PVStrategy(BaseStrategy):
                 for i in range(self.panel_count):
                     offer = market.offer(
                         quantity_forecast[time],
-                        min((rounded_energy_price * quantity_forecast[time]), 29.9),
+                        (min(rounded_energy_price, 29.9) * quantity_forecast[time]),
                         self.owner.name
                     )
                     self.offers_posted[offer.id] = market
