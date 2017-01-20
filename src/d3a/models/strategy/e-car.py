@@ -6,7 +6,7 @@ from d3a.models.strategy.const import DEFAULT_RISK, ARRIVAL_TIME, DEPART_TIME
 from d3a.models.strategy.storage import StorageStrategy
 
 
-class StorageStrategy(StorageStrategy):
+class ECarStrategy(StorageStrategy):
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
