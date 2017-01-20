@@ -95,7 +95,8 @@ class FridgeStrategy(BaseStrategy):
                         (offer.price / offer.energy) <= threshold_price
                         and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
                     )
-                    or self.fridge_temp >= MAX_FRIDGE_TEMP
+                    # +0.15 is needed to force the fridge into buying before reaching the MAX temp
+                    or (self.fridge_temp + 0.15) >= MAX_FRIDGE_TEMP
                 )
                 and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
             ):
