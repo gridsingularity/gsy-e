@@ -122,7 +122,7 @@ class IAAEngine:
 
 
 class InterAreaAgent(BaseStrategy):
-    def __init__(self, *, owner, higher_market, lower_market, min_offer_age=4, tick_ratio=4):
+    def __init__(self, *, owner, higher_market, lower_market, min_offer_age=2, tick_ratio=4):
         """
         Equalize markets
 
