@@ -1,7 +1,9 @@
 import random
 import uuid
 from collections import defaultdict, namedtuple
+from itertools import groupby
 from logging import getLogger
+from operator import itemgetter
 from threading import Lock
 from typing import Any, Dict, List, Set, Union  # noqa
 
@@ -235,6 +237,24 @@ class Market:
             return self.area.now
         log.error("No area available. Using real system time!")
         return Pendulum.now()
+
+    @property
+    def actual_energy_agg(self):
+        return {
+            actor: sum(value for _, value in items)
+            for actor, items
+            in groupby(
+                sorted(
+                    (
+                        (actor, value)
+                        for report_dicts in self.actual_energy.values()
+                        for actor, value in report_dicts.items()
+                    ),
+                    key=itemgetter(0)
+                ),
+                key=itemgetter(0)
+            )
+        }
 
     def display(self):  # pragma: no cover
         out = []
