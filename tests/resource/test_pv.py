@@ -100,9 +100,12 @@ def test_pv_partial_cloud_cover():
     for key in during_cloud_cover.keys():
         print("During: {}, original: {}".
               format(during_cloud_cover[key], pv.usageGenerator.get_reading_at(key)))
-        if during_cloud_cover[key] == \
-                round(pv.usageGenerator.get_reading_at(key) *
-                              (1 - cloud_cover_percent/100), 2):
+        if (
+                during_cloud_cover[key] == round(
+                    pv.usageGenerator.get_reading_at(key) * (1 - cloud_cover_percent / 100),
+                    2
+                )
+        ):
             cloud_cover_match += 1
 
     for key in after_cloud_cover.keys():
@@ -113,4 +116,3 @@ def test_pv_partial_cloud_cover():
 
     assert clear_sky_match == cloud_cover_duration
     assert cloud_cover_match == cloud_cover_duration
-
