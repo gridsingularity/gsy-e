@@ -23,7 +23,7 @@ class FridgeStrategy(BaseStrategy):
 
         # Only trade in later half of slot
         tick_in_slot = area.current_tick % area.config.ticks_per_slot
-        if tick_in_slot == 1:
+        if tick_in_slot < 5:
             return
 
         # Assuming a linear correlation between accepted price and risk
