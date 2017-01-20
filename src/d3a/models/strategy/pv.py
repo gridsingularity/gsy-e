@@ -38,13 +38,14 @@ class PVStrategy(BaseStrategy):
         # risk_dependency_of_selling_price variates with the risk around the average market price
         # High risk means expensive selling price & high possibility not selling the energy
         # The value 0.1 is to damp the effect of the risk
-        risk_dependency_of_selling_price = (normed_risk * 0.1 * average_market_price)
+        risk_dependency_of_selling_price = (normed_risk * 0.05 * average_market_price)
+        # If the risk is higher than 50 the energy_price is above the average_market_price
         energy_price = min(average_market_price + risk_dependency_of_selling_price, 29.9)
         rounded_energy_price = round(energy_price, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_price == 0.0:
-            # FIXME Price?
-            rounded_energy_price = 25.0
+            # Initial selling offer
+            rounded_energy_price = 29.9
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
@@ -61,6 +62,7 @@ class PVStrategy(BaseStrategy):
                         self.owner.name
                     )
                     self.offers_posted[offer.id] = market
+
             else:
                 # XXX TODO: This should check if current market offers
                 # are still in line with strategy

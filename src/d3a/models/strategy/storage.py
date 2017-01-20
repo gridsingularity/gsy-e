@@ -21,11 +21,10 @@ class StorageStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
         # The storage looses 1% of capacity per hour
-        # TODO: reactivate me
-        #        self.used_storage *= (1 - ((0.01 * self.area.config.tick_length.total_seconds())
-        #                                   / (60 * 60)
-        #                                   )
-        #                              )
+        self.used_storage *= (1 - ((0.01 * self.area.config.tick_length.total_seconds())
+                                   / (60 * 60)
+                                   )
+                              )
         # Taking the cheapest offers in every market currently open and building the average
         avg_cheapest_offer_price = self.find_avg_cheapest_offers()
         # Check if there are cheap offers to buy
@@ -56,14 +55,18 @@ class StorageStrategy(BaseStrategy):
         if past_market in self.offers_posted.keys():
             for market, offer in list(self.offers_posted.items()):
                 if market == past_market:
-                    new_selling_price = (
-                        # self.offers_posted[market].price is the price we charged including profit
-                        # But self.sell_energy expects a buying price
-                        (0.99 - (0.15 * (self.risk / MAX_RISK))) *
-                        self.offers_posted[market].price /
-                        self.offers_posted[market].energy
-                    )
-                    self.sell_energy(new_selling_price, self.offers_posted[market].energy)
+                    # self.offers_posted[market].price is the price we charged including profit
+                    # But self.sell_energy expects a buying price
+                    offer_price = (self.offers_posted[market].price /
+                                   self.offers_posted[market].energy)
+
+                    initial_buying_price = ((offer_price / 1.002) *
+                                            (1 /
+                                             (1.05 - (0.5 * (self.risk / MAX_RISK))
+                                              )
+                                             )
+                                            )
+                    self.sell_energy(initial_buying_price, self.offers_posted[market].energy)
                     del self.offers_posted[past_market]
 
     def event_trade(self, *, market, trade):
@@ -85,8 +88,7 @@ class StorageStrategy(BaseStrategy):
                             (self.used_storage + self.blocked_storage + offer.energy
                                 + self.offered_storage <= STORAGE_CAPACITY
                              )
-                        and min((offer.price / offer.energy), 30) < (avg_cheapest_offer_price
-                                                                     * 0.99)
+                        and (offer.price / offer.energy) < (avg_cheapest_offer_price * 0.99)
                 ):
                     # Try to buy the energy
                     try:
@@ -102,10 +104,10 @@ class StorageStrategy(BaseStrategy):
 
     def sell_energy(self, buying_price, energy=None):
         # Highest risk selling price using the highest risk is 20% above the average price
-        min_selling_price = 1.01 * buying_price
-        # This ends up in a selling price between 101 and 120 percentage of the buying price
+        min_selling_price = 1.002 * buying_price
+        # This ends up in a selling price between 101 and 105 percentage of the buying price
         risk_dependent_selling_price = (
-            min_selling_price * (1 + 0.2 * (self.risk / MAX_RISK))
+            min_selling_price * (1.05 - (0.05 * (self.risk / MAX_RISK)))
         )
         # Find the most expensive offer out of the list of cheapest offers
         # in currently open markets
@@ -114,9 +116,6 @@ class StorageStrategy(BaseStrategy):
         except IndexError:
             return
         most_expensive_market = expensive_offers.market
-        #        self.log.info("risk_dependent_selling_price is %s", risk_dependent_selling_price)
-        #        self.log.info("cheapest_price_in_most_expensive_market is %s",
-        #                             cheapest_price_in_most_expensive_market)
         # If no energy is passed, try to sell all the Energy left in the storage
         if energy is None:
             energy = self.used_storage
@@ -133,7 +132,7 @@ class StorageStrategy(BaseStrategy):
             # Posting offer with new price
             offer = most_expensive_market.offer(
                 energy,
-                min(energy * risk_dependent_selling_price, 29.9),
+                energy * min(risk_dependent_selling_price, 29.9),
                 self.owner.name
             )
             # Updating parameters
