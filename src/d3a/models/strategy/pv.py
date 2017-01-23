@@ -13,13 +13,11 @@ class PVStrategy(BaseStrategy):
         self.panel_count = panel_count
 
     def event_tick(self, *, area):
-        # Here you can change between different forecast functions
-        # This gives us a pendulum object with today 8 o'clock
+        # This gives us a pendulum object with today 0 o'clock
         midnight = self.area.now.start_of("day").hour_(0)
         # This returns the difference to 8 o'clock in minutes
         difference_to_midnight_in_minutes = self.area.now.diff(midnight).in_minutes()
-        # If we passed midnight this is a negative value, but we want the time
-        # that passed since it was 8 in the morning (start of PV dataset)
+        # We want the time that passed since it was 8 in the morning (start of PV dataset)
         # Therefore we need to add 60 minutes times 16 (24-8) Hours
         # And use the difference between the time difference and the time passed between
         # midnight and 8 am
@@ -27,9 +25,7 @@ class PVStrategy(BaseStrategy):
             difference_to_midnight_in_minutes = (abs(60 * 8 + difference_to_midnight_in_minutes)
                                                  + 60 * 16
                                                  )
-            # This function returns a forecast in the unit of kWh
-        #        self.log.info("current forecast is %s",
-        #                      self.gaussian_energy_forecast(difference_to_midnight_in_minutes))
+        # This function returns a forecast in the unit of kWh
 
         quantity_forecast = self.produced_energy_forecast_real_data(
             difference_to_midnight_in_minutes)

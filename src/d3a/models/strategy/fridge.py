@@ -34,7 +34,7 @@ class FridgeStrategy(BaseStrategy):
                             + self.temp_change_last_market
                             )
 
-        # Only trade in later half of slot
+        # Only trade after the 4th tick
         tick_in_slot = area.current_tick % area.config.ticks_per_slot
         if tick_in_slot < 5:
             return
