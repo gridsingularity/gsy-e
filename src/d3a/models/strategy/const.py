@@ -48,3 +48,7 @@ PUMP_MIN_TEMP_INCREASE = 0.2
 ARRIVAL_TIME = 17
 # Car: Depart time from charging station
 DEPART_TIME = 17
+
+# PREDEF_LEAD SETTINGS
+# Minimal consumption per household in Wh
+MIN_HOUSEHOLD_CONSUMPTION = 70
