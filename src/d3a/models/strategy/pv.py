@@ -107,7 +107,8 @@ class PVStrategy(BaseStrategy):
 
     def gaussian_energy_forecast(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
-        if (8 * 60 / 5) < time_in_minutes < (17.5 * 60 / 5):
+        # time_in_minutes is the difference in time to midnight
+        if (6.5 * 60) > time_in_minutes or time_in_minutes > (18 * 60):
             gauss_forecast = 0
 
         else:
