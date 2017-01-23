@@ -27,9 +27,9 @@ class PVStrategy(BaseStrategy):
             difference_to_midnight_in_minutes = (abs(60 * 8 + difference_to_midnight_in_minutes)
                                                  + 60 * 16
                                                  )
-        # This function returns a forecast in the unit of kWh
-#        self.log.info("current forecast is %s",
-#                      self.gaussian_energy_forecast(difference_to_midnight_in_minutes))
+            # This function returns a forecast in the unit of kWh
+        #        self.log.info("current forecast is %s",
+        #                      self.gaussian_energy_forecast(difference_to_midnight_in_minutes))
 
         quantity_forecast = self.produced_energy_forecast_real_data(
             difference_to_midnight_in_minutes)
@@ -77,7 +77,7 @@ class PVStrategy(BaseStrategy):
         # Might be the best way to get a realistic forecast
         # For now: use sinus function with Phase shift --> Simulation starts at 8:00 am
         past_markets = len(self.area.past_markets)
-        energy_production_forecast = {}
+        energy_production_forecast = {}  # type: Dict[time, energy]
         # Assuming 3 am is the darkest time a day --> sin(3 am) = 0
         phase_shift = 5 / 24
         # sin_amplitude / 2 should equal the maximum possible output (in wH) the pv can deliver
@@ -101,8 +101,9 @@ class PVStrategy(BaseStrategy):
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
         energy_production_forecast = {}
-        for time, market in self.area.markets.items():
-            energy_production_forecast[time] = self.gaussian_energy_forecast(time_in_minutes)
+        for i, (time, market) in enumerate(self.area.markets.items()):
+            energy_production_forecast[time] = self.gaussian_energy_forecast(time_in_minutes
+                                                                             + 15 * (i - 1))
         return energy_production_forecast
 
     def gaussian_energy_forecast(self, time_in_minutes=0):
