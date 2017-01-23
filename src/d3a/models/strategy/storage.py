@@ -102,7 +102,7 @@ class StorageStrategy(BaseStrategy):
 
     def sell_energy(self, buying_price, energy=None):
         # Highest risk selling price using the highest risk is 20% above the average price
-        min_selling_price = 1.03 * buying_price
+        min_selling_price = 1.01 * buying_price
         # This ends up in a selling price between 101 and 105 percentage of the buying price
         risk_dependent_selling_price = (
             min_selling_price * (1.1 - (0.1 * (self.risk / MAX_RISK)))
