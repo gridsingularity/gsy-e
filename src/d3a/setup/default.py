@@ -7,6 +7,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.heatpump import HeatPumpStrategy
+from d3a.models.strategy.mocked_storage import NightStorageStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
@@ -55,6 +56,8 @@ def get_setup(config):
                             Area('S1 H3 PV 3', strategy=PVStrategy(1, 60),
                                  appliance=gen_pv_appliance()),
                             Area('S1 H3 Storage', strategy=StorageStrategy(80),
+                                 appliance=SimpleAppliance()),
+                            Area('S1 H3 Night_Storage', strategy=NightStorageStrategy(80),
                                  appliance=SimpleAppliance()),
                         ]
                     ),
