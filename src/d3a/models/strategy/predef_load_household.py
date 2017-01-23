@@ -5,7 +5,7 @@ from d3a.models.strategy.const import DEFAULT_RISK, MIN_HOUSEHOLD_CONSUMPTION
 from d3a.models.strategy.storage import StorageStrategy
 
 if __name__ == '__main__':
-    class ECarStrategy(StorageStrategy):
+    class PredefLoadHouseholdStrategy(StorageStrategy):
         def __init__(self, risk=DEFAULT_RISK):
             super().__init__()
             self.risk = risk
