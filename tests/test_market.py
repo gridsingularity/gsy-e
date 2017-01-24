@@ -135,8 +135,8 @@ def test_market_acct_simple(market: Market):
     offer = market.offer(20, 10, 'A')
     market.accept_offer(offer, 'B')
 
-    assert market.traded_energy['A'] == -offer.energy
-    assert market.traded_energy['B'] == offer.energy
+    assert market.traded_energy['A'] == offer.energy
+    assert market.traded_energy['B'] == -offer.energy
 
 
 def test_market_acct_multiple(market: Market):
@@ -145,9 +145,9 @@ def test_market_acct_multiple(market: Market):
     market.accept_offer(offer1, 'B')
     market.accept_offer(offer2, 'C')
 
-    assert market.traded_energy['A'] == -offer1.energy + -offer2.energy == -30
-    assert market.traded_energy['B'] == offer1.energy == 20
-    assert market.traded_energy['C'] == offer2.energy == 10
+    assert market.traded_energy['A'] == offer1.energy + offer2.energy == 30
+    assert market.traded_energy['B'] == -offer1.energy == -20
+    assert market.traded_energy['C'] == -offer2.energy == -10
 
 
 def test_market_avg_offer_price(market: Market):
@@ -222,9 +222,9 @@ def test_market_listners_offer_deleted(market, called):
 @pytest.mark.parametrize(
     ('last_offer_size', 'traded_energy'),
     (
-        (20, -10),
+        (20, 10),
         (30, 0),
-        (40, 10)
+        (40, -10)
     )
 )
 def test_market_issuance_acct_reverse(market: Market, last_offer_size, traded_energy):
@@ -287,8 +287,8 @@ class MarketStateMachine(RuleBasedStateMachine):
     def check_acct(self):
         actor_sums = defaultdict(int)
         for t in self.market.trades:
-            actor_sums[t.seller] -= t.offer.energy
-            actor_sums[t.buyer] += t.offer.energy
+            actor_sums[t.seller] += t.offer.energy
+            actor_sums[t.buyer] -= t.offer.energy
         for actor, sum_ in actor_sums.items():
             assert self.market.traded_energy[actor] == sum_
         assert sum(self.market.traded_energy.values()) == 0
