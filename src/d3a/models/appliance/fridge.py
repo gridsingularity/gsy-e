@@ -101,9 +101,8 @@ class FridgeAppliance(Appliance):
             super().event_tick(area=area)
 
         # Update strategy with current fridge temp
-        # TODO enable reporting of temp to strategy
-        # if area:
-        #     area.strategy.post(temperature=self.current_temp)
+        if self.owner:
+            self.owner.strategy.post(temperature=self.current_temp)
 
     def update_force_cool_ticks(self):
         """
