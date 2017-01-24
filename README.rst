@@ -45,6 +45,7 @@ i   Show information about simulation
 p   Pause simulation
 q   Quit simulation
 r   Reset and restart simulation
+R   Start a Python REPL at the current simulation step
 s   Save current state of simulation to file (see below for resuming)
 `+` Increase 'slowdown' factor
 `-` Decrease 'slowdown' factor
@@ -128,13 +129,13 @@ following command::
 
 After building is complete you can run the image with::
 
-    ~# docker run --rm -it -p 5000:5000 d3a
+    ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a
 
 
 Command line parameters can be given normally after the image name::
 
-    ~# docker run --rm -it -p 5000:5000 d3a --help
-    ~# docker run --rm -it -p 5000:5000 d3a run --help
+    ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a --help
+    ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a run --help
 
 
 _`docker`: https://docker.io
@@ -148,6 +149,9 @@ default).
 
 The API contains a browsable HTML interface that is shown by default when
 accessing the endpoints via a browser. Otherwise JSON is returned.
+
+All places in the API where energy values are shown negative values denote
+bought energy and positive ones sold energy.
 
 The structure is as follows::
 

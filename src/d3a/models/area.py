@@ -10,6 +10,7 @@ from slugify import slugify
 
 from d3a.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
+from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.config import SimulationConfig
 from d3a.models.events import AreaEvent, MarketEvent
 from d3a.models.market import Market
@@ -51,9 +52,6 @@ class Area:
         self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
-        # Accounting of used energy per market and time
-        self.accounting = defaultdict(
-            lambda: defaultdict(list))  # type: Dict[Market, Dict[Pendulum, List[Any]]]
 
     def activate(self):
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
@@ -179,13 +177,17 @@ class Area:
 
         # Move old and current markets to `past_markets`
         # We use `list()` here to get a copy since we modify the market list in-place
+        first = True
         for timeframe in list(self.markets.keys()):
             if timeframe <= now:
                 market = self.markets.pop(timeframe)
                 market.readonly = True
-                # Remove inter area agent
-                self.inter_area_agents.pop(market, None)
                 self.past_markets[timeframe] = market
+                if not first:
+                    # Remove inter area agent
+                    self.inter_area_agents.pop(market, None)
+                else:
+                    first = False
                 changed = True
                 self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
 
@@ -209,6 +211,11 @@ class Area:
                         self.inter_area_agents[market].append(iaa)
                         # And also to parents to allow events to flow form both markets
                         self.parent.inter_area_agents[self.parent.markets[timeframe]].append(iaa)
+                        if self.parent:
+                            # Add inter area appliance to report energy
+                            self.appliance = InterAreaAppliance()
+                            self.appliance.area = self.parent
+                            self.appliance.owner = self
                 self.markets[timeframe] = market
                 changed = True
                 self.log.debug("Adding {t:{format}} market".format(
@@ -246,14 +253,21 @@ class Area:
     def report_accounting(self, market, reporter, value, time=None):
         if time is None:
             time = self.now
-        self.accounting[market][time] = (reporter, value)
+        slot = market.time_slot
+        if slot in self.markets or slot in self.past_markets:
+            market.actual_energy[time][reporter] += value
+        else:
+            raise RuntimeError("Reporting energy for unknown market")
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.children, key=lambda _: random()):
             child.event_listener(event_type, **kwargs)
         # Also broadcast to IAAs. Again in random order
-        for agents in self.inter_area_agents.values():
+        for market, agents in self.inter_area_agents.items():
+            if market.time_slot not in self.markets:
+                # exclude past IAAs
+                continue
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
 

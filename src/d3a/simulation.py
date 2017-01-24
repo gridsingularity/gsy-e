@@ -1,3 +1,4 @@
+import random
 from importlib import import_module
 from logging import getLogger
 
@@ -28,10 +29,13 @@ class _SimulationInterruped(Exception):
 
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
-                 slowdown: int = 0, paused: bool = False, use_repl: bool = False, api_url=None):
+                 slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
+                 use_repl: bool = False, api_url=None):
         self.initial_params = dict(
             slowdown=slowdown,
+            seed=seed,
             paused=paused,
+            pause_after=pause_after
         )
         self.simulation_config = simulation_config
         self.use_repl = use_repl
@@ -59,9 +63,13 @@ class Simulation:
         self.ready = Event()
         self.ready.set()
 
-    def _init(self, slowdown, paused):
+    def _init(self, slowdown, seed, paused, pause_after):
         self.paused = paused
+        self.pause_after = pause_after
         self.slowdown = slowdown
+
+        if seed:
+            random.seed(seed)
 
         self.area = self.setup_module.get_setup(self.simulation_config)
         log.info("Starting simulation with config %s", self.simulation_config)
@@ -70,6 +78,10 @@ class Simulation:
     @property
     def finished(self):
         return self.area.current_tick == self.area.config.total_ticks
+
+    @property
+    def time_since_start(self):
+        return self.area.current_tick * self.simulation_config.tick_length
 
     def reset(self):
         """
@@ -97,7 +109,8 @@ class Simulation:
             self.ready.wait()
             self.ready.clear()
             if resume:
-                if not self.run_start or not self.paused_time:
+                # FIXME: Fix resume time calculation
+                if self.run_start is None or self.paused_time is None:
                     raise RuntimeError("Can't resume without saved state")
                 slot_resume, tick_resume = divmod(self.area.current_tick, config.ticks_per_slot)
             else:
@@ -141,19 +154,15 @@ class Simulation:
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
 
-                    log.info(
+                    log.error(
                         "Run finished in %s%s / %.2fx real time.",
                         run_duration,
                         " ({} paused)".format(paused_duration if paused_duration else ""),
                         config.duration / (run_duration - paused_duration)
                     )
-                    log.info("REST-API still running at %s", self.api_url)
+                    log.error("REST-API still running at %s", self.api_url)
                     if self.use_repl:
-                        log.info(
-                            "An interactive REPL has been started. The root Area is available as "
-                            "`root_area`.")
-                        log.info("Ctrl-D to quit.")
-                        embed({'root_area': self.area})
+                        self._start_repl()
                     else:
                         log.info("Ctrl-C to quit")
                         while True:
@@ -183,23 +192,26 @@ class Simulation:
                 raise _SimulationInterruped()
             cmd = console.get_char(timeout)
             if cmd:
-                if cmd not in {'i', 'p', 'q', 'r', 's', '+', '-'}:
+                if cmd not in {'i', 'p', 'q', 'r', 'R', 's', '+', '-'}:
                     log.critical("Invalid command. Valid commands:\n"
                                  "  [i] info\n"
                                  "  [p] pause\n"
                                  "  [q] quit\n"
                                  "  [r] reset\n"
+                                 "  [R] start REPL\n"
                                  "  [s] save state\n"
                                  "  [+] increase slowdown\n"
                                  "  [-] decrease slowdown")
                     continue
 
-                if self.finished and cmd in {'p', '+', '-'}:
+                if self.finished and cmd in {'p', 'R', '+', '-'}:
                     log.error("Simulation has finished. The commands [p, +, -] are unavailable.")
                     continue
 
                 if cmd == 'r':
                     Thread(target=lambda: self.reset()).start()
+                elif cmd == 'R':
+                    self._start_repl()
                 elif cmd == 'i':
                     self._info()
                 elif cmd == 'p':
@@ -222,6 +234,9 @@ class Simulation:
                 break
 
     def _handle_paused(self, console):
+        if self.pause_after and self.time_since_start >= self.pause_after:
+            self.paused = True
+            self.pause_after = None
         if self.paused:
             start = time.monotonic()
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
@@ -252,6 +267,13 @@ class Simulation:
             info
         )
 
+    def _start_repl(self):
+        log.info(
+            "An interactive REPL has been started. The root Area is available as "
+            "`root_area`.")
+        log.info("Ctrl-D to quit.")
+        embed({'root_area': self.area})
+
     def save_state(self):
         save_dir = Path('.d3a')
         save_dir.mkdir(exist_ok=True)
@@ -265,6 +287,7 @@ class Simulation:
 
     def __getstate__(self):
         state = self.__dict__.copy()
+        state['_random_state'] = random.getstate()
         del state['interrupt']
         del state['interrupted']
         del state['ready']
@@ -272,6 +295,7 @@ class Simulation:
         return state
 
     def __setstate__(self, state):
+        random.setstate(state.pop('_random_state'))
         self.__dict__.update(state)
         self._load_setup_module()
         self._init_events()

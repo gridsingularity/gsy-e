@@ -135,8 +135,8 @@ def test_market_acct_simple(market: Market):
     offer = market.offer(20, 10, 'A')
     market.accept_offer(offer, 'B')
 
-    assert market.accounting['A'] == -offer.energy
-    assert market.accounting['B'] == offer.energy
+    assert market.traded_energy['A'] == -offer.energy
+    assert market.traded_energy['B'] == offer.energy
 
 
 def test_market_acct_multiple(market: Market):
@@ -145,9 +145,9 @@ def test_market_acct_multiple(market: Market):
     market.accept_offer(offer1, 'B')
     market.accept_offer(offer2, 'C')
 
-    assert market.accounting['A'] == -offer1.energy + -offer2.energy == -30
-    assert market.accounting['B'] == offer1.energy == 20
-    assert market.accounting['C'] == offer2.energy == 10
+    assert market.traded_energy['A'] == -offer1.energy + -offer2.energy == -30
+    assert market.traded_energy['B'] == offer1.energy == 20
+    assert market.traded_energy['C'] == offer2.energy == 10
 
 
 def test_market_avg_offer_price(market: Market):
@@ -220,14 +220,14 @@ def test_market_listners_offer_deleted(market, called):
 
 
 @pytest.mark.parametrize(
-    ('last_offer_size', 'accounting'),
+    ('last_offer_size', 'traded_energy'),
     (
         (20, -10),
         (30, 0),
         (40, 10)
     )
 )
-def test_market_issuance_acct_reverse(market: Market, last_offer_size, accounting):
+def test_market_issuance_acct_reverse(market: Market, last_offer_size, traded_energy):
     offer1 = market.offer(20, 10, 'A')
     offer2 = market.offer(10, 10, 'A')
     offer3 = market.offer(last_offer_size, 10, 'D')
@@ -236,7 +236,7 @@ def test_market_issuance_acct_reverse(market: Market, last_offer_size, accountin
     market.accept_offer(offer2, 'C')
     market.accept_offer(offer3, 'A')
 
-    assert market.accounting['A'] == accounting
+    assert market.traded_energy['A'] == traded_energy
 
 
 def test_market_iou(market: Market):
@@ -282,7 +282,7 @@ class MarketStateMachine(RuleBasedStateMachine):
         energy = sum(t.offer.energy for t in self.market.trades)
         assert self.market.avg_trade_price == round(price / energy, 4)
 
-    @precondition(lambda self: self.market.accounting)
+    @precondition(lambda self: self.market.traded_energy)
     @rule()
     def check_acct(self):
         actor_sums = defaultdict(int)
@@ -290,10 +290,10 @@ class MarketStateMachine(RuleBasedStateMachine):
             actor_sums[t.seller] -= t.offer.energy
             actor_sums[t.buyer] += t.offer.energy
         for actor, sum_ in actor_sums.items():
-            assert self.market.accounting[actor] == sum_
-        assert sum(self.market.accounting.values()) == 0
+            assert self.market.traded_energy[actor] == sum_
+        assert sum(self.market.traded_energy.values()) == 0
 
-    @precondition(lambda self: self.market.accounting)
+    @precondition(lambda self: self.market.traded_energy)
     @rule()
     def check_iou_balance(self):
         seller_ious = defaultdict(int)

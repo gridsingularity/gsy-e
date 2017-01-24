@@ -1,4 +1,5 @@
 from itertools import chain, repeat
+from operator import itemgetter
 from threading import Thread
 
 import pendulum
@@ -164,11 +165,20 @@ def _api_app(simulation: Simulation):
                     'max': market.max_offer_price,
                 } if market.offers else _NO_VALUE
             },
-            'energy_accounting': {
-                actor: value
-                for actor, value
-                in market.accounting.items()
-            },
+            'energy_aggregate': _energy_aggregate(market),
+            'energy_accounting': [
+                {
+                    'time': time.format("%H:%M:%S"),
+                    'reports': [
+                        {
+                            'actor': actor,
+                            'value': value
+                        }
+                        for actor, value in acct_dict.items()
+                    ]
+                }
+                for time, acct_dict in sorted(market.actual_energy.items(), key=itemgetter(0))
+            ],
             'trades': [
                 {
                     'id': t.id,
@@ -189,12 +199,7 @@ def _api_app(simulation: Simulation):
                 }
                 for o in market.offers.values()
             ],
-            'ious': {
-                buyer: {
-                    seller: total for seller, total in seller_total.items()
-                }
-                for buyer, seller_total in market.ious.items()
-            }
+            'ious': _ious(market)
         }
 
     @app.route("/<area_slug>/markets")
@@ -214,11 +219,8 @@ def _api_app(simulation: Simulation):
                         'max': market.max_offer_price,
                     } if market.offers else _NO_VALUE
                 },
-                'energy_accounting': {
-                    actor: value
-                    for actor, value
-                    in market.accounting.items()
-                },
+                'ious': _ious(market),
+                'energy_aggregate': _energy_aggregate(market),
                 'trade_count': len(market.trades),
                 'offer_count': len(market.offers),
                 'type': type_,
@@ -260,6 +262,33 @@ def _market_progression(area):
             area.markets.items()
         )
     )
+
+
+def _energy_aggregate(market):
+    return {
+        'traded': {
+            actor: round(value, 4)
+            for actor, value
+            in market.traded_energy.items()
+            if value > 0.0000
+        },
+        'actual': {
+            actor: round(value, 4)
+            for actor, value
+            in market.actual_energy_agg.items()
+        }
+    }
+
+
+def _ious(market):
+    return {
+        buyer: {
+            seller: round(total, 4)
+            for seller, total
+            in seller_total.items()
+            }
+        for buyer, seller_total in market.ious.items()
+        }
 
 
 def _get_market(area, market_time):

@@ -23,7 +23,7 @@ class FridgeStrategy(BaseStrategy):
 
         # Only trade in later half of slot
         tick_in_slot = area.current_tick % area.config.ticks_per_slot
-        if tick_in_slot == 1:
+        if tick_in_slot < 5:
             return
 
         # Assuming a linear correlation between accepted price and risk
@@ -85,17 +85,18 @@ class FridgeStrategy(BaseStrategy):
         # Here starts the logic if energy should be bought
         for offer in next_market.sorted_offers:
             # offer.energy * 1000 is needed to get the energy in Wh
-            # 0.02 is the temperature decrease per cooling period and minimal needed energy
+            # 0.05 is the temperature decrease per cooling period and minimal needed energy
             # *2 is needed because we need to cool and equalize the rise
             #  of the temperature (see event_market_cycle) as well
-            cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.02 * 2)
+            cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.05 * 2)
             if (
                 (
                     (
                         (offer.price / offer.energy) <= threshold_price
                         and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
                     )
-                    or self.fridge_temp >= MAX_FRIDGE_TEMP
+                    # +0.15 is needed to force the fridge into buying before reaching the MAX temp
+                    or (self.fridge_temp + 0.15) >= MAX_FRIDGE_TEMP
                 )
                 and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
             ):
@@ -116,8 +117,11 @@ class FridgeStrategy(BaseStrategy):
                 try:
                     self.log.info("cheapest price is is %s",
                                   list(next_market.sorted_offers)[-1].price)
+
                 except IndexError:
                     self.log.critical("Crap no offers available")
+
+#    def buying_logic(self, min_temp, max_temp, current_temp, max_risk):
 
     def event_market_cycle(self):
         # TODO: Set realistic temperature change

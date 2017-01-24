@@ -42,6 +42,25 @@
     </div>
 {% endfor %}
 {% endmacro %}
+{% macro energy(markets, attr) %}
+{% for time, market in markets.items() %}
+    <div class="trades {% if market.readonly %} readonly{% if loop.last %} current{% endif %}{% endif %}">
+        <h5>{{ time.strftime('%H:%M') }}</h5>
+        <table class="table table-striped">
+            <tr>
+                <th>A</th>
+                <th>kWh</th>
+            </tr>
+            {% for actor, energy in market[attr].items() %}
+                <tr>
+                    <td>{{ actor }}</td>
+                    <td>{{ "{:4.2f}".format(energy) }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endfor %}
+{% endmacro %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -88,6 +107,15 @@
         <div id="a{{ id(area) }}-trades" class="collapse">
             {{ trades(area.past_markets) }}
             {{ trades(area.markets) }}
+        </div>
+        <h5><a class="btn btn-sm btn-primary" data-toggle="collapse" href="#a{{ id(area) }}-energy-t">Traded energy balance</a></h5>
+        <div id="a{{ id(area) }}-energy-t" class="collapse">
+            {{ energy(area.past_markets, 'traded_energy') }}
+            {{ energy(area.markets, 'traded_energy') }}
+        </div>
+        <h5><a class="btn btn-sm btn-primary" data-toggle="collapse" href="#a{{ id(area) }}-energy-a">Actual energy balance</a></h5>
+        <div id="a{{ id(area) }}-energy-a" class="collapse">
+            {{ energy(area.past_markets, 'actual_energy_agg') }}
         </div>
         {% if area.children %}
             {{ loop(area.children) }}

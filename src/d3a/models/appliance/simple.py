@@ -1,10 +1,9 @@
 from d3a.models.appliance.base import BaseAppliance
-from d3a.models.area import Area
 
 
 class SimpleAppliance(BaseAppliance):
     """Example appliance that reports the traded energy in increments each tick"""
-    def event_tick(self, *, area: Area):
+    def event_tick(self, *, area):
         if not self.owner:
             # Should not happen
             return
