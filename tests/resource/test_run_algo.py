@@ -129,4 +129,3 @@ def test_set_cost_limit():
 #     max_cost_obj = gen_schedule_obj_max(ticks_per_bid, cycle_to_run, 0)
 #
 #     assert max_cost_obj.cost[0][0] > max_cost_obj.cost[max_cost_obj.run_window][0]
-

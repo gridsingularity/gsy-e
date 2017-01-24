@@ -2,7 +2,8 @@ from logging import getLogger
 from d3a.models.area import Area
 from d3a.models.appliance.appliance import Appliance, ApplianceMode
 from d3a.models.appliance.run_algo import RunSchedule
-from d3a.models.strategy.const import MAX_STORAGE_TEMP, MIN_STORAGE_TEMP
+# commenting out import until the TODO in the constructor is resolved.
+# from d3a.models.strategy.const import MAX_STORAGE_TEMP, MIN_STORAGE_TEMP
 import math
 
 log = getLogger(__name__)
@@ -143,7 +144,7 @@ class HeatPumpAppliance(Appliance):
             calculate ticks remaining to optimize run cycles
             """
 
-            t_h_mid = math.ceil(diff/ self.cool_per_tick)
+            t_h_mid = math.ceil(diff / self.cool_per_tick)
             ticks_remaining -= t_h_mid
 
         else:
