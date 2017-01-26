@@ -11,6 +11,7 @@ from d3a.models.strategy.heatpump import HeatPumpStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.e_car import ECarStrategy
 
 
 def get_setup(config):
@@ -23,14 +24,16 @@ def get_setup(config):
                     Area(
                         'S1 House 1',
                         [
-                            Area('S1 H1 Fridge 1', strategy=FridgeStrategy(50),
-                                 appliance=gen_fridge_appliance()),
-                            Area('S1 H1 Fridge 2', strategy=FridgeStrategy(50),
-                                 appliance=gen_fridge_appliance()),
+                            Area('S1 H1 Fridge 1', strategy=FridgeStrategy(100),
+                                 appliance=SimpleAppliance()),
+                            Area('S1 H1 PV 1', strategy=PVStrategy(20, 80),
+                                 appliance=SimpleAppliance()),
                             Area('S1 H1 Load', strategy=PermanentLoadStrategy(),
                                  appliance=SimpleAppliance()),
                             Area('S1 H1 Heatpump', strategy=HeatPumpStrategy(20),
-                                 appliance=gen_heat_pump_appliance()),
+                                 appliance=SimpleAppliance()),
+                            Area('S1 H1 Storage', strategy=StorageStrategy(80),
+                                 appliance=SimpleAppliance()),
                         ]
                     ),
                     Area(
@@ -49,15 +52,24 @@ def get_setup(config):
                     Area(
                         'S1 House 3',
                         [
-                            Area('S1 H3 PV 1', strategy=PVStrategy(1, 80),
-                                 appliance=gen_pv_appliance()),
-                            Area('S1 H3 PV 2', strategy=PVStrategy(1, 20),
-                                 appliance=gen_pv_appliance()),
-                            Area('S1 H3 PV 3', strategy=PVStrategy(1, 60),
-                                 appliance=gen_pv_appliance()),
+                            Area('S1 H3 PV 1', strategy=PVStrategy(20, 80),
+                                 appliance=SimpleAppliance()),
+                            Area('S1 H3 PV 2', strategy=PVStrategy(20, 30),
+                                 appliance=SimpleAppliance()),
+                            Area('S1 H3 PV 3', strategy=PVStrategy(20, 20),
+                                 appliance=SimpleAppliance()),
+                            Area('S1 H3 PV 4', strategy=PVStrategy(20, 60),
+                                 appliance=SimpleAppliance()),
                             Area('S1 H3 Storage', strategy=StorageStrategy(80),
                                  appliance=SimpleAppliance()),
                             Area('S1 H3 Night_Storage', strategy=NightStorageStrategy(80),
+                                 appliance=SimpleAppliance()),
+                        ]
+                    ),
+                    Area(
+                        'S1 ECar',
+                        [
+                            Area('S1 ECar', strategy=ECarStrategy(),
                                  appliance=SimpleAppliance()),
                         ]
                     ),
