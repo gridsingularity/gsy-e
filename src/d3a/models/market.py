@@ -134,43 +134,48 @@ class Market:
             offer_or_id = offer_or_id.id
         with self.offer_lock, self.trade_lock:
             offer = self.offers.pop(offer_or_id, None)
-            if offer is None:
-                raise OfferNotFoundException()
-            if time is None:
-                time = self._now
-            if energy is not None:
-                # Partial trade
-                if energy == 0:
-                    raise InvalidTrade("Energy can not be zero.")
-                elif energy < offer.energy:
-                    original_offer = offer
-                    accepted_offer = Offer(
-                        offer.id,
-                        offer.price / offer.energy * energy,
-                        energy,
-                        offer.seller,
-                        offer.market
-                    )
-                    residual_offer = Offer(
-                        str(uuid.uuid4()),
-                        offer.price / offer.energy * (offer.energy - energy),
-                        offer.energy - energy,
-                        offer.seller,
-                        offer.market
-                    )
-                    self.offers[residual_offer.id] = residual_offer
-                    log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
-                    offer = accepted_offer
-                    self._notify_listeners(
-                        MarketEvent.OFFER_CHANGED,
-                        existing_offer=original_offer,
-                        new_offer=residual_offer
-                    )
-                elif energy > offer.energy:
-                    raise InvalidTrade("Energy can't be greater than offered energy")
-                else:
-                    # Requested partial energy is equal to offered energy - just proceed normally
-                    pass
+            try:
+                if offer is None:
+                    raise OfferNotFoundException()
+                if time is None:
+                    time = self._now
+                if energy is not None:
+                    # Partial trade
+                    if energy == 0:
+                        raise InvalidTrade("Energy can not be zero.")
+                    elif energy < offer.energy:
+                        original_offer = offer
+                        accepted_offer = Offer(
+                            offer.id,
+                            offer.price / offer.energy * energy,
+                            energy,
+                            offer.seller,
+                            offer.market
+                        )
+                        residual_offer = Offer(
+                            str(uuid.uuid4()),
+                            offer.price / offer.energy * (offer.energy - energy),
+                            offer.energy - energy,
+                            offer.seller,
+                            offer.market
+                        )
+                        self.offers[residual_offer.id] = residual_offer
+                        log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
+                        offer = accepted_offer
+                        self._notify_listeners(
+                            MarketEvent.OFFER_CHANGED,
+                            existing_offer=original_offer,
+                            new_offer=residual_offer
+                        )
+                    elif energy > offer.energy:
+                        raise InvalidTrade("Energy can't be greater than offered energy")
+                    else:
+                        # Requested partial is equal to offered energy - just proceed normally
+                        pass
+            except:
+                # Exception happened - restore offer
+                self.offers[offer.id] = offer
+                raise
 
             trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer)
             self.trades.append(trade)
