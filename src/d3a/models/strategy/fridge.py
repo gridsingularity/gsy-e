@@ -1,6 +1,7 @@
 from typing import Dict, Any  # noqa
 
 from d3a.exceptions import MarketException
+from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.market import Market  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, \
@@ -18,8 +19,11 @@ class FridgeStrategy(BaseStrategy):
         self.threshold_price = 0.0
 
     def event_tick(self, *, area):
-        # The not cooled fridge warms up (0.02 / 60)C up every second
-        self.fridge_temp += self.area.config.tick_length.total_seconds() * round((0.02 / 60), 6)
+        # Fridge temperature will be updated from appliance
+        if not self.owner.appliance or isinstance(self.owner.appliance, SimpleAppliance):
+            # The not cooled fridge warms up (0.02 / 60)C up every second
+            self.fridge_temp += self.area.config.tick_length.in_seconds() * round((0.02 / 60), 6)
+        fridge_temp = self.fridge_temp
 
         # Only trade in later half of slot
         tick_in_slot = area.current_tick % area.config.ticks_per_slot
@@ -36,7 +40,7 @@ class FridgeStrategy(BaseStrategy):
         # normalized _fridge_temp has a value between 1 and -1
         # If self.fridge_temp = 8 the normalized_fridge_temp is 1
         normalized_fridge_temp = (
-            (self.fridge_temp - (0.5 * (MAX_FRIDGE_TEMP + MIN_FRIDGE_TEMP))
+            (fridge_temp - (0.5 * (MAX_FRIDGE_TEMP + MIN_FRIDGE_TEMP))
              ) / (0.5 * fridge_temp_domain)
         )
         # deviation_from_average is the value that determines the deviation (in percentage of
@@ -93,10 +97,10 @@ class FridgeStrategy(BaseStrategy):
                 (
                     (
                         (offer.price / offer.energy) <= threshold_price
-                        and self.fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
+                        and fridge_temp - cooling_temperature > MIN_FRIDGE_TEMP
                     )
                     # +0.15 is needed to force the fridge into buying before reaching the MAX temp
-                    or (self.fridge_temp + 0.15) >= MAX_FRIDGE_TEMP
+                    or (fridge_temp + 0.15) >= MAX_FRIDGE_TEMP
                 )
                 and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
             ):
@@ -105,15 +109,15 @@ class FridgeStrategy(BaseStrategy):
                     self.log.debug("Buying %s", offer)
                     # TODO: Set realistic temperature change
                     # Factor 2 compensates that we not only cool but avoid defrost as well
-                    self.fridge_temp -= cooling_temperature
+                    fridge_temp -= cooling_temperature
                     break
                 except MarketException:
                     # Offer already gone etc., try next one.
                     self.log.exception("Couldn't buy")
                     continue
         else:
-            if self.fridge_temp >= MAX_FRIDGE_TEMP:
-                self.log.critical("Need energy (temp: %.2f) but can't buy", self.fridge_temp)
+            if fridge_temp >= MAX_FRIDGE_TEMP:
+                self.log.critical("Need energy (temp: %.2f) but can't buy", fridge_temp)
                 try:
                     self.log.info("cheapest price is is %s",
                                   list(next_market.sorted_offers)[-1].price)
