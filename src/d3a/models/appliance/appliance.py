@@ -137,6 +137,7 @@ class Appliance(BaseAppliance):
             log.error("Appliance electrical properties not set")
             return
 
+        # FIXME: Appliances should not necessarily have to start in ON state (e.g. fridge)
         if self.energyCurve is not None:
             if self.energyCurve.get_mode_curve(ApplianceMode.ON) is not None:
                 self.change_mode_of_operation(ApplianceMode.ON)

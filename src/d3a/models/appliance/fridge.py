@@ -2,7 +2,7 @@ from logging import getLogger
 from d3a.models.area import Area
 from d3a.models.appliance.appliance import Appliance, ApplianceMode
 from d3a.models.appliance.run_algo import RunSchedule
-from d3a.models.strategy.const import MAX_STORAGE_TEMP, MIN_STORAGE_TEMP
+from d3a.models.strategy.const import FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, MIN_FRIDGE_TEMP
 import math
 
 log = getLogger(__name__)
@@ -13,23 +13,37 @@ class FridgeAppliance(Appliance):
     def __init__(self, name: str = "Fridge", report_freq: int = 1):
         super().__init__(name, report_freq)
         # Take temp from const.py
-        self.max_temp = MAX_STORAGE_TEMP         # Max temp the fridge can have
-        self.min_temp = MIN_STORAGE_TEMP         # Min temp to avoid frosting
+        self.max_temp = MAX_FRIDGE_TEMP         # Max temp the fridge can have
+        self.min_temp = MIN_FRIDGE_TEMP         # Min temp to avoid frosting
         # Average temp between low and high
-        self.current_temp = int((self.max_temp + self.min_temp)/2)
-        # TODO have these defined in strategy.const
-        # Temperature in fahrenheit, rise every tick fridge is not cooling
-        self.heating_per_tick = 0.01
-        # Temp drop every tick while the fridge is cooling.
-        self.cooling_per_tick = -.1
-        # Temp change every tick while the door remains open
-        self.temp_change_on_door_open = 5.0
+        self.current_temp = FRIDGE_TEMPERATURE
         # Optimize for these many markets/contracts in future
         self.optimize_duration = 1
         # Ticks fridge doors will remain open
         self.door_open_duration = 0
         # Ticks for which fridge will have to cool no matter what
         self.force_cool_ticks = 0
+
+        # The following values will be initialized in `event_activate`
+        # Temperature in fahrenheit, rise every tick fridge is not cooling
+        self.heating_per_tick = None
+        # Temp drop every tick while the fridge is cooling.
+        self.cooling_per_tick = None
+        # Temp change every tick while the door remains open
+        self.temp_change_on_door_open = None
+
+    def event_activate(self):
+        tick_length = self.area.config.tick_length.total_seconds()
+
+        # Fridge heats up 0.02C per minute
+        self.heating_per_tick = tick_length * round((0.02 / 60), 6)
+
+        # FIXME: Should be calculated based on bought energy (see `self.get_energy_balance()`)
+        # FIXME: See `strategy/frigde.py:L95`
+        self.cooling_per_tick = tick_length * -0.01
+
+        # Fridge with door open heats up 0.9C per minute
+        self.temp_change_on_door_open = tick_length * 0.015
 
     def handle_door_open(self, duration: int = 1):
         """
@@ -88,17 +102,19 @@ class FridgeAppliance(Appliance):
 
         if self.is_appliance_consuming_energy():
             self.current_temp += self.cooling_per_tick
-            # log.info("Fridge cooling cycle is running: {} C".format(self.current_temp))
+            self.log.critical("Fridge cooling cycle is running: {} C".format(self.current_temp))
         else:
             self.current_temp += self.heating_per_tick
-            # log.info("Fridge cooling cycle is not running: {} C".format(self.current_temp))
+            self.log.error("Fridge cooling cycle is not running: {} C".format(self.current_temp))
 
         self.last_reported_tick += 1
 
         if self.last_reported_tick == self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
-            super().event_tick(area=area)
+            # FIXME: No energy reporting is happening here.
+            # FIXME: Please add this by calling `area.report_accounting(...)`
+            # FIXME: (see `appliance/simple.py:L17` for an example)
 
         # Update strategy with current fridge temp
         if self.owner:
@@ -115,7 +131,12 @@ class FridgeAppliance(Appliance):
         if diff <= 0:
             self.force_cool_ticks = 0
         else:
-            ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+            # FIXME: This previously wasn't calculated based on `self.area.config.tick_length`
+            # FIXME: Please check if the logic below is now sound.
+            ticks_per_cycle = (
+                len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+                / self.area.config.tick_length.total_seconds()
+            )
             temp_drop_per_cycle = self.cooling_per_tick * ticks_per_cycle * -1
             cycles_to_run = math.ceil(diff/temp_drop_per_cycle)
             self.force_cool_ticks = cycles_to_run * ticks_per_cycle
@@ -223,5 +244,4 @@ class FridgeAppliance(Appliance):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self.change_mode_of_operation(ApplianceMode.ON)
         self.update_iterator(self.gen_run_schedule())
