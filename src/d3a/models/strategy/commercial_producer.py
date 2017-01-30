@@ -12,11 +12,7 @@ class CommercialStrategy(BaseStrategy):
         self.energy_price = energy_price
         self.offers_posted = {}  # type: Dict[Offer, Market]
 
-    def event_tick(self, *, area):
-        # If we already posted offers there is no need to post additional offers
-        if self.offers_posted:
-            return
-
+    def event_activate(self):
         # That's usaul an init function but the markets aren't open during the init call
         for market in self.area.markets.values():
             for i in range(20):
