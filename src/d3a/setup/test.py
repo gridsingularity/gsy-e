@@ -1,28 +1,15 @@
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.simple import OfferStrategy, BuyStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 
 
 def get_setup(config):
     area = Area(
         'Grid',
         [
-            Area(
-                'House 1',
-                [
-                    Area(
-                        'H1 PV',
-                        strategy=OfferStrategy(offer_chance=.2,
-                                               price_fraction_choice=[.023, .026]),
-                        appliance=SimpleAppliance()
-                    ),
-                    Area(
-                        'H1 Fridge',
-                        strategy=BuyStrategy(max_energy=50),
-                        appliance=SimpleAppliance()
-                    )
-                ]
-            ),
+            Area('Commercial Energy Producer',
+                 strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
+                 appliance=SimpleAppliance())
         ],
         config=config
     )
