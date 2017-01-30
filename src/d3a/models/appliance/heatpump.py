@@ -2,71 +2,72 @@ from logging import getLogger
 from d3a.models.area import Area
 from d3a.models.appliance.appliance import Appliance, ApplianceMode
 from d3a.models.appliance.run_algo import RunSchedule
-from d3a.models.strategy.const import MAX_STORAGE_TEMP, MIN_STORAGE_TEMP
+# commenting out import until the TODO in the constructor is resolved.
+# from d3a.models.strategy.const import MAX_STORAGE_TEMP, MIN_STORAGE_TEMP
 import math
 
 log = getLogger(__name__)
 
 
-class FridgeAppliance(Appliance):
+class HeatPumpAppliance(Appliance):
 
-    def __init__(self, name: str = "Fridge", report_freq: int = 1):
+    def __init__(self, name: str = "Heat Pump", report_freq: int = 1):
         super().__init__(name, report_freq)
         # Take temp from const.py
-        self.max_temp = MAX_STORAGE_TEMP         # Max temp the fridge can have
-        self.min_temp = MIN_STORAGE_TEMP         # Min temp to avoid frosting
+        # TODO have these defined in strategy.const
+        self.max_temp = 40         # Max temp in celsius the heat pump can have
+        self.min_temp = 30         # Min temp to avoid cooling
         # Average temp between low and high
         self.current_temp = int((self.max_temp + self.min_temp)/2)
-        # TODO have these defined in strategy.const
         # Temperature in fahrenheit, rise every tick fridge is not cooling
-        self.heating_per_tick = 0.01
+        self.cool_per_tick = -0.01
         # Temp drop every tick while the fridge is cooling.
-        self.cooling_per_tick = -.1
+        self.heat_per_tick = .1
         # Temp change every tick while the door remains open
-        self.temp_change_on_door_open = 5.0
+        self.temp_change_on_water_use = -5.0
         # Optimize for these many markets/contracts in future
         self.optimize_duration = 1
         # Ticks fridge doors will remain open
-        self.door_open_duration = 0
+        self.water_usage_duration = 0
         # Ticks for which fridge will have to cool no matter what
-        self.force_cool_ticks = 0
+        self.force_heat_ticks = 0
 
-    def handle_door_open(self, duration: int = 1):
+    def handle_water_use(self, duration: int = 1):
         """
-        :param duration: number of ticks door will be open for
-        Do the following when fridge door is open
-        1. Increase fridge temp
-        2. If temp increases more than max allowed temp,
-            2.a start cooling immediately
-            2.b continue cooling until temp drops below max temp
+        :param duration: number of ticks water will be used for
+        Do the following when water is being used
+        1. Decrease water temp
+        2. If temp decreases more than min allowed temp,
+            2.a start heating immediately
+            2.b continue heating until temp rises above min temp
             2.c Optimize running for remaining time in current market cycle.
         3. Else continue to run optimized schedule
         """
-        log.warning("Fridge door was opened")
-        self.door_open_duration = duration
+        log.warning("Warm water is being used")
+        self.water_usage_duration = duration
         # self.current_temp += self.temp_change_on_door_open
 
     def event_tick(self, *, area: Area):
-        if self.door_open_duration > 0:
-            log.warning("Fridge door is still open")
-            self.door_open_duration -= 1
-            self.current_temp += self.temp_change_on_door_open
+        if self.water_usage_duration > 0:
+            log.warning("Warm water is still being used")
+            self.water_usage_duration -= 1
+            self.current_temp += self.temp_change_on_water_use
 
-        if self.current_temp > self.max_temp:    # Fridge is hot, start cooling immediately
-            log.warning("Fridge is warm [{} C], start cooling immediately".
+        if self.current_temp > self.max_temp:    # water is hot, stop heating immediately
+            log.warning("Water is hot [{} C], stop heating immediately".
                         format(self.current_temp))
-            self.update_force_cool_ticks()
+            if self.mode == ApplianceMode.ON:
+                self.change_mode_of_operation(ApplianceMode.OFF)
+        elif self.current_temp < self.min_temp:                     # Water is too cold
+            log.warning("Water is too cold [{} C], start heating".
+                        format(self.current_temp))
+            self.update_force_heat_ticks()
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
             else:
                 self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
-        elif self.current_temp < self.min_temp:                     # Fridge is too cold
-            log.warning("Fridge is too cold [{} C], stop cooling if cooling in progress".
-                        format(self.current_temp))
-            if self.mode == ApplianceMode.ON:
-                self.change_mode_of_operation(ApplianceMode.OFF)
         else:                                    # Fridge is in acceptable temp range
-            log.info("Fridge is in acceptable temp range: {} C".format(self.current_temp))
+            log.info("Heater is in acceptable temp range: {} C".format(self.current_temp))
             if self.get_energy_balance() > 0:
                 if self.mode == ApplianceMode.OFF:
                     self.change_mode_of_operation(ApplianceMode.ON)
@@ -74,23 +75,23 @@ class FridgeAppliance(Appliance):
                 elif self.get_tick_count() == 0:
                     self.update_iterator(self.gen_run_schedule())
             else:
-                log.info("No trade is available, fridge will try not to use power")
+                log.info("No trade is available, heater will try not to use power")
 
-        # Fridge is being force cooled
-        if self.force_cool_ticks > 0:
-            log.warning("Fridge is being force cooled, ticks remaining: {}".
-                        format(self.force_cool_ticks))
-            self.force_cool_ticks -= 1
-            if self.force_cool_ticks <= 0:
-                # This is last force cool tick, optimize remaining ticks
+        # Heater is being force warmed
+        if self.force_heat_ticks > 0:
+            log.warning("Heater is being force warmed, ticks remaining: {}".
+                        format(self.force_heat_ticks))
+            self.force_heat_ticks -= 1
+            if self.force_heat_ticks <= 0:
+                # This is last force heat tick, optimize remaining ticks
                 self.update_iterator(self.gen_run_schedule())
-                log.warning("Force cooling has ended {} C".format(self.current_temp))
+                log.warning("Force heating has ended {} C".format(self.current_temp))
 
         if self.is_appliance_consuming_energy():
-            self.current_temp += self.cooling_per_tick
-            # log.info("Fridge cooling cycle is running: {} C".format(self.current_temp))
+            self.current_temp += self.heat_per_tick
+            # log.info("Heater heating cycle is running: {} C".format(self.current_temp))
         else:
-            self.current_temp += self.heating_per_tick
+            self.current_temp += self.cool_per_tick
             # log.info("Fridge cooling cycle is not running: {} C".format(self.current_temp))
 
         self.last_reported_tick += 1
@@ -101,26 +102,27 @@ class FridgeAppliance(Appliance):
             super().event_tick(area=area)
 
         # Update strategy with current fridge temp
-        if self.owner:
-            self.owner.strategy.post(temperature=self.current_temp)
+        # TODO enable reporting of temp to strategy
+        # if area:
+        #     area.strategy.post(temperature=self.current_temp)
 
-    def update_force_cool_ticks(self):
+    def update_force_heat_ticks(self):
         """
-        Temp of fridge is high, update the number of ticks it will take to bring
-        down the temp of fridge just below allowed max temp.
+        Temp of pump is low, update the number of ticks it will take to raise
+        the temp of heater just above allowed min temp.
         :param self:
         :return:
         """
-        diff = self.current_temp - self.max_temp
-        if diff <= 0:
-            self.force_cool_ticks = 0
+        diff = self.current_temp - self.min_temp
+        if diff >= 0:
+            self.force_heat_ticks = 0
         else:
             ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
-            temp_drop_per_cycle = self.cooling_per_tick * ticks_per_cycle * -1
-            cycles_to_run = math.ceil(diff/temp_drop_per_cycle)
-            self.force_cool_ticks = cycles_to_run * ticks_per_cycle
+            temp_rise_per_cycle = self.heat_per_tick * ticks_per_cycle
+            cycles_to_run = math.ceil((diff*-1)/temp_rise_per_cycle)
+            self.force_heat_ticks = cycles_to_run * ticks_per_cycle
 
-        log.warning("It will take fridge {} ticks to cool.".format(self.force_cool_ticks))
+        log.warning("It will take heater {} ticks to heat.".format(self.force_heat_ticks))
 
     def get_run_skip_cycle_counts(self, ticks_remaining: int):
         """
@@ -142,7 +144,7 @@ class FridgeAppliance(Appliance):
             calculate ticks remaining to optimize run cycles
             """
 
-            t_h_mid = math.ceil((diff * -1)/self.heating_per_tick)
+            t_h_mid = math.ceil(diff / self.cool_per_tick)
             ticks_remaining -= t_h_mid
 
         else:
@@ -152,7 +154,7 @@ class FridgeAppliance(Appliance):
             calculate ticks required to run these cycles
             calculate ticks remaining
             """
-            t_c_mid = math.ceil(diff/(self.cooling_per_tick * -1))
+            t_c_mid = math.ceil(diff / self.heat_per_tick)
             ticks_remaining -= t_c_mid
             cycles_required += math.ceil(t_c_mid/ticks_per_cycle)
 
@@ -163,11 +165,11 @@ class FridgeAppliance(Appliance):
         total cycles = required cycles + cycles that can be skipped
         """
         # ticks to heat to max temp
-        t_h_max = math.floor((self.max_temp - mid)/self.heating_per_tick)
+        t_h_max = math.floor((self.max_temp - mid) / self.heat_per_tick)
         # log.info("Ticks needed to heat to max allowed temp: {}".format(t_h_max))
 
         # ticks required to cool from max to mid
-        t_c_mid = math.ceil((self.max_temp - mid)/(self.cooling_per_tick * -1))
+        t_c_mid = math.ceil((self.max_temp - mid) / (self.cool_per_tick * -1))
         # log.info("Ticks needed to cool from max to mid: {}".format(t_c_mid))
 
         # ticks need to rise to max and cool back to mid

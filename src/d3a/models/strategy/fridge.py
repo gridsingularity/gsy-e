@@ -128,4 +128,4 @@ class FridgeStrategy(BaseStrategy):
         self.log.info("Temperature: %.2f", self.fridge_temp)
 
     def event_data_received(self, data: Dict[str, Any]):
-        self.fridge_temp += data.get("temperature", 0)
+        self.fridge_temp = data.get("temperature", 0)

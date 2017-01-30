@@ -1,5 +1,6 @@
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.fridge import FridgeAppliance
+from d3a.models.appliance.heatpump import HeatPumpAppliance
 from d3a.models.appliance.dumb_load import DumbLoad
 from d3a.models.appliance.properties import ApplianceProfileBuilder
 from d3a.models.appliance.properties import ApplianceType
@@ -56,11 +57,33 @@ def get_pv_curves(panel_count: int = 1) -> dict:
 
 def gen_fridge_curves() -> dict:
     """
-    Method to generate power consumption curves in whatts
-    :return: Dictionary with appliance mode as key and curve as power produced.
+    Method to generate power consumption curves in watts
+    :return: Dictionary with appliance mode as key and curve as power consumed.
     """
     run_cycle_duration = 5 * 60  # Fridge cooling cycle runs for 5 minutes = 300 sec
     avg_power_consumption = 130     # Modern fridge consumes on an avg of 130 W while cooling
+    variation = (-30, 30)
+    on_curve = []
+
+    for sec in range(0, run_cycle_duration):
+        on_curve.append(avg_power_consumption + random.uniform(variation[0], variation[1]))
+
+    off_curve = [0, 0]
+
+    mode_curve = dict()
+    mode_curve[ApplianceMode.ON] = on_curve
+    mode_curve[ApplianceMode.OFF] = off_curve
+
+    return mode_curve
+
+
+def gen_heat_pump_curves() -> dict:
+    """
+    Method to generate power consumption curves in watts
+    :return: Dictionary with appliance mode as key and curve as power consumed.
+    """
+    run_cycle_duration = 5 * 60  # Heating cycle runs for 5 minutes = 300 sec
+    avg_power_consumption = 200  # Modern water heater consumes on an avg of 200 W while heating
     variation = (-30, 30)
     on_curve = []
 
@@ -109,6 +132,8 @@ def gen_pv_appliance() -> PVAppliance:
     pv.set_electrical_properties(electrical)
     pv.set_appliance_energy_curve(curves)
 
+    pv.start_appliance()
+
     return pv
 
 
@@ -145,7 +170,48 @@ def gen_fridge_appliance() -> FridgeAppliance:
     fridge.set_electrical_properties(electrical)
     fridge.set_appliance_energy_curve(curves)
 
+    fridge.start_appliance()
+
     return fridge
+
+
+def gen_heat_pump_appliance() -> FridgeAppliance:
+    """
+    Method to create a Fridge type appliance object
+    :return: A fully constructed FridgeAppliance type object
+    """
+    heat_pump = HeatPumpAppliance("Heat Pump")
+    builder = ApplianceProfileBuilder("Stiebel Eltron Water Heater", "Garage",
+                                      ApplianceType.BUFFER_STORAGE)
+    builder.set_contact_url("http://www.stiebel-eltron-usa.com/contact-us")
+    builder.set_icon_url("http://www.stiebel-eltron-usa.com/" +
+                         "sites/default/files/main-image-dhc-borderless.png")
+    builder.set_manufacturer("Stiebel Eltron")
+    builder.set_model_url("http://www.stiebel-eltron-usa.com/" +
+                          "products/dhc-point-of-use-tankless-electric-water-heaters")
+    builder.set_uuid("SOMERANDOMUUIDBEINGUSEDFORHEATPUMP")
+
+    # Power generation curve
+    mode_curves = gen_heat_pump_curves()
+    on_curve = mode_curves[ApplianceMode.ON]
+    off_curve = mode_curves[ApplianceMode.OFF]
+
+    # Electrical properties
+    power_range = (min(off_curve), max(on_curve))
+    variance_range = (0, 0)  # As real data is used, variance may not be needed
+    electrical = ElectricalProperties(power_range, variance_range)
+
+    curves = EnergyCurve(ApplianceMode.ON, on_curve,
+                         Interval(seconds=1), DEFAULT_CONFIG.tick_length)
+    curves.add_mode_curve(ApplianceMode.OFF, off_curve)
+
+    heat_pump.set_appliance_properties(builder.build())
+    heat_pump.set_electrical_properties(electrical)
+    heat_pump.set_appliance_energy_curve(curves)
+
+    heat_pump.start_appliance()
+
+    return heat_pump
 
 
 def gen_bulb_curves() -> dict:
@@ -197,4 +263,44 @@ def gen_light_bulb() -> DumbLoad:
     bulb.set_electrical_properties(electrical)
     bulb.set_appliance_energy_curve(curves)
 
+    bulb.start_appliance()
+
     return bulb
+
+
+def gen_facebook_AP() -> DumbLoad:
+    """
+    Method to create a Dumbload type appliance object for facebook wireless AP
+    :return: A fully constructed FB wireless AP
+    """
+    facebook_wifi = DumbLoad("Facebook AP")
+    builder = ApplianceProfileBuilder("Facebook WiFi", "Living Room",
+                                      ApplianceType.UNCONTROLLED)
+    builder.set_contact_url("https://www.facebook.com/help/")
+    builder.set_icon_url("https://images.seeklogo.net/2016/09/facebook-icon-preview-1.png")
+    builder.set_manufacturer("Facebook")
+    builder.set_model_url(
+        "https://www.facebook.com")
+    builder.set_uuid("SOMERANDOMUUIDBEINGUSEDFORFBWIFI")
+
+    # Power generation curve
+    mode_curves = gen_bulb_curves()
+    on_curve = mode_curves[ApplianceMode.ON]
+    off_curve = mode_curves[ApplianceMode.OFF]
+
+    # Electrical properties
+    power_range = (min(off_curve), max(on_curve))
+    variance_range = (0, 0)
+    electrical = ElectricalProperties(power_range, variance_range)
+
+    curves = EnergyCurve(ApplianceMode.ON, on_curve,
+                         Interval(seconds=1), DEFAULT_CONFIG.tick_length)
+    curves.add_mode_curve(ApplianceMode.OFF, off_curve)
+
+    facebook_wifi.set_appliance_properties(builder.build())
+    facebook_wifi.set_electrical_properties(electrical)
+    facebook_wifi.set_appliance_energy_curve(curves)
+
+    facebook_wifi.start_appliance()
+
+    return facebook_wifi
