@@ -2,6 +2,7 @@ from logging import getLogger
 from d3a.models.area import Area
 from d3a.models.appliance.appliance import Appliance, ApplianceMode
 from d3a.models.appliance.run_algo import RunSchedule
+from d3a.models.events import Trigger
 from d3a.models.strategy.const import FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, MIN_FRIDGE_TEMP
 import math
 
@@ -9,6 +10,9 @@ log = getLogger(__name__)
 
 
 class FridgeAppliance(Appliance):
+    available_triggers = [
+        Trigger('open', {'duration': int}, help="Open fridge door for 'duration' ticks.")
+    ]
 
     def __init__(self, name: str = "Fridge", report_freq: int = 1):
         super().__init__(name, report_freq)
@@ -56,9 +60,14 @@ class FridgeAppliance(Appliance):
             2.c Optimize running for remaining time in current market cycle.
         3. Else continue to run optimized schedule
         """
-        log.warning("Fridge door was opened")
+        # wrap in int() to ensure type even when passed from API
+        duration = int(duration)
         self.door_open_duration = duration
+        log.warning("Fridge door was opened for %d ticks", duration)
         # self.current_temp += self.temp_change_on_door_open
+
+    # Alias for trigger system
+    trigger_open = handle_door_open
 
     def event_tick(self, *, area: Area):
         if self.door_open_duration > 0:
