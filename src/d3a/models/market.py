@@ -134,9 +134,9 @@ class Market:
             offer_or_id = offer_or_id.id
         with self.offer_lock, self.trade_lock:
             offer = self.offers.pop(offer_or_id, None)
+            if offer is None:
+                raise OfferNotFoundException()
             try:
-                if offer is None:
-                    raise OfferNotFoundException()
                 if time is None:
                     time = self._now
                 if energy is not None:
