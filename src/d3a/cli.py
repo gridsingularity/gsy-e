@@ -27,7 +27,7 @@ def main(log_level):
     handler = logging.StreamHandler()
     handler.setFormatter(
         ColoredFormatter(
-            "%(log_color)s%(asctime)s.%(msecs)03d %(levelname)-8s (%(lineno)4d) %(name)-25s: "
+            "%(log_color)s%(asctime)s.%(msecs)03d %(levelname)-8s (%(lineno)4d) %(name)-30s: "
             "%(message)s%(reset)s",
             datefmt="%H:%M:%S"
         )
