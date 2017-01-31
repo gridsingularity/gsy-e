@@ -93,15 +93,21 @@ class HeatPumpAppliance(Appliance):
 
         self.last_reported_tick += 1
 
-        if self.last_reported_tick == self.report_frequency:
+        if self.last_reported_tick >= self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
-            # FIXME: Please add energy reporting
+            market = area.current_market
+            if market:
+                # Fetch traded energy for `market`
+                energy = self.owner.strategy.energy_balance(market)
+                if energy:
+                    area.report_accounting(market,
+                                           self.owner.name,
+                                           energy / area.config.ticks_per_slot)
 
-        # Update strategy with current fridge temp
-        # TODO enable reporting of temp to strategy
-        # if area:
-        #     area.strategy.post(temperature=self.current_temp)
+        # Update strategy with current heat pump temp
+        if self.owner:
+            self.owner.strategy.post(temperature=self.current_temp)
 
     def update_force_heat_ticks(self):
         """

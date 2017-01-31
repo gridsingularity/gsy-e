@@ -171,6 +171,7 @@ def gen_fridge_appliance() -> FridgeAppliance:
     fridge.set_appliance_energy_curve(curves)
 
     fridge.start_appliance()
+    fridge.change_mode_of_operation(ApplianceMode.OFF)
 
     return fridge
 
@@ -210,6 +211,7 @@ def gen_heat_pump_appliance() -> FridgeAppliance:
     heat_pump.set_appliance_energy_curve(curves)
 
     heat_pump.start_appliance()
+    heat_pump.change_mode_of_operation(ApplianceMode.OFF)
 
     return heat_pump
 

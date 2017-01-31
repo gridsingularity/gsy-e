@@ -121,12 +121,16 @@ class FridgeAppliance(Appliance):
 
         self.last_reported_tick += 1
 
-        if self.last_reported_tick == self.report_frequency:
+        if self.last_reported_tick >= self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
-            # FIXME: No energy reporting is happening here.
-            # FIXME: Please add this by calling `area.report_accounting(...)`
-            # FIXME: (see `appliance/simple.py:L17` for an example)
+            market = area.current_market
+            if market:
+                energy = self.owner.strategy.energy_balance(market)
+                if energy:
+                    area.report_accounting(market,
+                                           self.owner.name,
+                                           energy / area.config.ticks_per_slot)
 
     def update_force_cool_ticks(self):
         """
