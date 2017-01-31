@@ -20,7 +20,10 @@ class FridgeStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
         # Fridge temperature will be updated from appliance
-        if not self.owner.appliance or isinstance(self.owner.appliance, SimpleAppliance):
+        temp_controlled_by_appliance = (
+            self.owner.appliance and not isinstance(self.owner.appliance, SimpleAppliance)
+        )
+        if not temp_controlled_by_appliance:
             # The not cooled fridge warms up (0.02 / 60)C up every second
             self.fridge_temp += self.area.config.tick_length.in_seconds() * round((0.02 / 60), 6)
         fridge_temp = self.fridge_temp
@@ -125,7 +128,8 @@ class FridgeStrategy(BaseStrategy):
                 except IndexError:
                     self.log.critical("Crap no offers available")
 
-#    def buying_logic(self, min_temp, max_temp, current_temp, max_risk):
+        if not temp_controlled_by_appliance:
+            self.fridge_temp = fridge_temp
 
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
