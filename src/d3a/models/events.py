@@ -1,5 +1,9 @@
 from enum import Enum
-from typing import Union
+from typing import Union, List  # noqa
+
+from functools import reduce
+
+from attr import attrs, attrib
 
 
 class OfferEvent(Enum):
@@ -45,3 +49,57 @@ class EventMixin:
 
     def event_trade(self, *, market, trade):
         pass
+
+
+@attrs
+class Trigger:
+    name = attrib()
+    params = attrib(default={})
+    help = attrib(default="")
+
+
+class TriggerMeta(type):
+    def __new__(mcs, name, bases, dict_, **kwargs):
+        triggers = dict_.get('available_triggers', [])
+        if triggers:
+            trigger_names = reduce(
+                lambda a, b: a | b,
+                (
+                    getattr(base, '_trigger_names', set())
+                    for base in bases
+                ),
+                set()
+            )
+            for trigger in triggers:
+                if not isinstance(trigger, Trigger):
+                    raise TypeError("'available_triggers' must be of type 'Trigger'.")
+                if trigger.name in trigger_names:
+                    raise TypeError("Trigger named '{}' is already defined.".format(trigger.name))
+                trigger_handler = 'trigger_{}'.format(trigger.name)
+                if trigger_handler not in dict_:
+                    raise TypeError("Trigger handler '{}' for trigger '{}' is missing.".format(
+                        trigger_handler, trigger.name
+                    ))
+                trigger_names.add(trigger.name)
+            dict_['_trigger_names'] = trigger_names
+        # Merge triggers from parent(s)
+        dict_['available_triggers'] = list(reversed(
+            sum(
+                (
+                    getattr(base, 'available_triggers', [])
+                    for base in bases
+                ),
+                triggers
+            )
+        ))
+        return super().__new__(mcs, name, bases, dict_, **kwargs)
+
+
+class TriggerMixin(metaclass=TriggerMeta):
+    available_triggers = []  # type: List[Trigger]
+
+    def fire_trigger(self, name, **params):
+        if name not in self._trigger_names:
+            raise RuntimeError("Unknown trigger '{}'".format(name))
+        self.log.debug("Firing trigger '%s'", name)
+        return getattr(self, 'trigger_{}'.format(name))(**params)

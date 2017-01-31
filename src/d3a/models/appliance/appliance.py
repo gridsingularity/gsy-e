@@ -10,6 +10,8 @@ from pendulum import Interval
 import math
 import random
 
+from d3a.models.events import Trigger
+
 
 log = getLogger(__name__)
 
@@ -104,6 +106,10 @@ class UsageGenerator:
 
 
 class Appliance(BaseAppliance):
+    available_triggers = [
+        Trigger('on', help="Turn appliance on"),
+        Trigger('off', help="Turn appliance off")
+    ]
 
     def __init__(self, name: str, report_freq: int = 1):
         """
@@ -251,3 +257,9 @@ class Appliance(BaseAppliance):
 
     def get_time_in_sec(self):
         return (self.area.current_tick * self.area.config.tick_length).in_seconds()
+
+    def trigger_on(self):
+        self.change_mode_of_operation(ApplianceMode.ON)
+
+    def trigger_off(self):
+        self.change_mode_of_operation(ApplianceMode.OFF)
