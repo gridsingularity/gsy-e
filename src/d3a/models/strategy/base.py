@@ -1,8 +1,8 @@
 from logging import getLogger
-from typing import Dict, Any  # noqa
+from typing import Dict, Any, Union  # noqa
 
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.events import EventMixin, TriggerMixin, Trigger
+from d3a.models.events import EventMixin, TriggerMixin, Trigger, AreaEvent, MarketEvent
 from d3a.models.market import Market  # noqa
 
 
@@ -25,6 +25,10 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         Trigger('enable', help="Enable trading"),
         Trigger('disable', help="Disable trading")
     ]
+
+    def __init__(self):
+        super(BaseStrategy, self).__init__()
+        self.enabled = True
 
     @property
     def trades(self):
@@ -59,7 +63,18 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         pass
 
     def trigger_enable(self, **kw):
-        pass
+        self.enabled = True
+        self.log.warning("Trading has been enabled")
 
     def trigger_disable(self):
-        pass
+        self.enabled = False
+        self.log.warning("Trading has been disabled")
+        # We've been disabled - remove all future open offers
+        for market in self.area.markets.values():
+            for offer in market.offers.values():
+                if offer.seller == self.owner.name:
+                    market.delete_offer(offer)
+
+    def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
+        if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):
+            super().event_listener(event_type, **kwargs)
