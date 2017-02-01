@@ -123,20 +123,26 @@ class PVStrategy(BaseStrategy):
     def decrease_offer_price(self, market):
         if market not in self.offers_posted.values():
             return
-        for offer, iterated_market in self.offers_posted.items():
+        for offer_id, iterated_market in self.offers_posted.items():
             if iterated_market != market:
                 continue
+            # FIXME Getting a Key Error for some offer_id s
             try:
-                market.delete_offer(offer)
+                offer = market.offers[offer_id]
+                market.delete_offer(offer_id)
                 new_offer = market.offer(
                     offer.energy,
                     offer.price * 0.98,
                     self.owner.name
                 )
-                self.offers_posted[market].remove(offer)
-                self.offers_posted[market].append(new_offer)
+                self.offers_posted.pop(offer_id, None)
+                self.offers_posted[new_offer.id] = market
 
             except MarketException:
+                continue
+
+            except KeyError:
+                self.log.warn("Getting A Key Error for some offer ids")
                 continue
 
     def event_market_cycle(self):
