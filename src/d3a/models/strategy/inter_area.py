@@ -11,10 +11,12 @@ Markets = namedtuple('Markets', ('source', 'target'))
 
 
 class IAAEngine:
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int, owner: "InterAreaAgent"):
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
+                 owner: "InterAreaAgent"):
         self.name = name
         self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
+        self.transfer_fee_pct = transfer_fee_pct
         self.owner = owner
 
         self.offer_age = {}  # type: Dict[str, int]
@@ -47,7 +49,11 @@ class IAAEngine:
             if not self.owner.usable_offer(offer):
                 # Forbidden offer (i.e. our counterpart's)
                 continue
-            forwarded_offer = self.markets.target.offer(offer.energy, offer.price, self.owner.name)
+            forwarded_offer = self.markets.target.offer(
+                offer.energy,
+                offer.price + (offer.price * (self.transfer_fee_pct / 100)),
+                self.owner.name
+            )
             offer_info = OfferInfo(offer, forwarded_offer)
             self.offered_offers[forwarded_offer.id] = offer_info
             self.offered_offers[offer_id] = offer_info
@@ -122,7 +128,8 @@ class IAAEngine:
 
 
 class InterAreaAgent(BaseStrategy):
-    def __init__(self, *, owner, higher_market, lower_market, min_offer_age=2, tick_ratio=4):
+    def __init__(self, *, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=2,
+                 tick_ratio=4):
         """
         Equalize markets
 
@@ -138,8 +145,10 @@ class InterAreaAgent(BaseStrategy):
         self.name = make_iaa_name(owner)
 
         self.engines = [
-            IAAEngine('High -> Low', higher_market, lower_market, min_offer_age, self),
-            IAAEngine('Low -> High', lower_market, higher_market, min_offer_age, self),
+            IAAEngine('High -> Low', higher_market, lower_market, min_offer_age, transfer_fee_pct,
+                      self),
+            IAAEngine('Low -> High', lower_market, higher_market, min_offer_age, transfer_fee_pct,
+                      self),
         ]
 
         self.time_slot = higher_market.time_slot.strftime("%H:%M")
