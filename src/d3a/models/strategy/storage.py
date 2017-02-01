@@ -11,7 +11,7 @@ class StorageStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.offers_posted = {}  # type: Dict[Market, Offer]
+        self.offers_posted = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.bought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.used_storage = 0.00
@@ -54,23 +54,24 @@ class StorageStrategy(BaseStrategy):
                 if market == past_market:
                     # self.offers_posted[market].price is the price we charged including profit
                     # But self.sell_energy expects a buying price
-                    offer_price = (self.offers_posted[market].price /
-                                   self.offers_posted[market].energy)
+                    for o in offer:
+                        offer_price = (o.price /
+                                       o.energy)
 
-                    initial_buying_price = ((offer_price / 1.002) *
-                                            (1 /
-                                             (1.05 - (0.5 * (self.risk / MAX_RISK))
-                                              )
-                                             )
-                                            )
-                    self.sell_energy(initial_buying_price, self.offers_posted[market].energy)
-                    del self.offers_posted[past_market]
+                        initial_buying_price = ((offer_price / 1.002) *
+                                                (1 /
+                                                 (1.05 - (0.5 * (self.risk / MAX_RISK))
+                                                  )
+                                                 )
+                                                )
+                        self.sell_energy(initial_buying_price, o.energy)
+                        del self.offers_posted[past_market]
 
     def event_trade(self, *, market, trade):
         # If trade happened: remember it in variable
         if self.owner.name == trade.seller:
             self.sold_offers[market].append(trade.offer)
-            self.offers_posted.pop(market, None)
+            self.offers_posted[market].remove(trade.offer)
 
     def buy_energy(self, avg_cheapest_offer_price):
         # Here starts the logic if energy should be bought
@@ -135,7 +136,7 @@ class StorageStrategy(BaseStrategy):
             # Updating parameters
             self.used_storage -= energy
             self.offered_storage += energy
-            self.offers_posted[most_expensive_market] = offer
+            self.offers_posted[most_expensive_market].append(offer)
 
     def find_avg_cheapest_offers(self):
         # Taking the cheapest offers in every market currently open and building the average
