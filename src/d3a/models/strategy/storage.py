@@ -26,30 +26,28 @@ class StorageStrategy(BaseStrategy):
                                    )
                               )
         # Taking the cheapest offers in every market currently open and building the average
-        avg_cheapest_offer_price = self.find_avg_cheapest_offers()
+        # avg_cheapest_offer_price = self.find_avg_cheapest_offers()
+        most_expensive_offer_price = self.find_most_expensive_market_price()
         # Check if there are cheap offers to buy
-        if self.buy_energy(avg_cheapest_offer_price):
-            # Check if any energy from the storage can be sold
-            accepted_offers = []
-            for offers in list(self.bought_offers.values()):
-                for o in offers:
-                    accepted_offers.append((o.price / o.energy, o.energy))
-            (price, energy) = accepted_offers[-1]
-            self.sell_energy(price, energy)
-
-        if self.used_storage > (0.8 * STORAGE_CAPACITY):
+        self.buy_energy(most_expensive_offer_price)
+        if (
+                    (self.used_storage + self.offered_storage + self.blocked_storage)
+                    > (0.8 * STORAGE_CAPACITY)
+        ):
             self.log.info("Storage reached more than 80% Battery: %s", (self.used_storage
                                                                         / STORAGE_CAPACITY))
 
     def event_market_cycle(self):
+        self.log.info("USED storage is is %s", (self.blocked_storage + self.offered_storage))
         past_market = list(self.area.past_markets.values())[-1]
         # if energy in this slot was bought: update the storage
         for bought in self.bought_offers[past_market]:
             self.blocked_storage -= bought.energy
             self.used_storage += bought.energy
+            self.sell_energy(buying_price=(bought.price / bought.energy), energy=bought.energy)
         # if energy in this slot was sold: update the storage
         for sold in self.sold_offers[past_market]:
-            self.used_storage -= sold.energy
+            self.offered_storage -= sold.energy
         # Check if Storage posted offer in that market that has not been bought
         # If so try to sell the offer again
         if past_market in self.offers_posted.keys():
@@ -86,7 +84,7 @@ class StorageStrategy(BaseStrategy):
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
                             (self.used_storage + self.blocked_storage + offer.energy
-                                + self.offered_storage <= STORAGE_CAPACITY
+                             + self.offered_storage <= STORAGE_CAPACITY
                              )
                         and (offer.price / offer.energy) < (avg_cheapest_offer_price * 0.99)
                 ):
@@ -104,10 +102,10 @@ class StorageStrategy(BaseStrategy):
 
     def sell_energy(self, buying_price, energy=None):
         # Highest risk selling price using the highest risk is 20% above the average price
-        min_selling_price = 1.002 * buying_price
+        min_selling_price = 1.03 * buying_price
         # This ends up in a selling price between 101 and 105 percentage of the buying price
         risk_dependent_selling_price = (
-            min_selling_price * (1.05 - (0.05 * (self.risk / MAX_RISK)))
+            min_selling_price * (1.1 - (0.1 * (self.risk / MAX_RISK)))
         )
         # Find the most expensive offer out of the list of cheapest offers
         # in currently open markets
@@ -136,8 +134,8 @@ class StorageStrategy(BaseStrategy):
                 self.owner.name
             )
             # Updating parameters
-            self.used_storage -= self.used_storage
-            self.offered_storage += self.used_storage
+            self.used_storage -= energy
+            self.offered_storage += energy
             self.offers_posted[most_expensive_market] = offer
 
     def find_avg_cheapest_offers(self):
@@ -148,3 +146,12 @@ class StorageStrategy(BaseStrategy):
             / max(len(cheapest_offers), 1)
         )
         return min(avg_cheapest_offer_price, 30)
+
+    def find_most_expensive_market_price(self):
+        cheapest_offers = self.area.cheapest_offers
+        if len(cheapest_offers) != 0:
+            most_expensive_cheapest_offer = (
+                max((offer.price / offer.energy) for offer in cheapest_offers))
+        else:
+            most_expensive_cheapest_offer = 30
+        return min(most_expensive_cheapest_offer, 30)
