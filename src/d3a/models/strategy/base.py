@@ -2,7 +2,7 @@ from logging import getLogger
 from typing import Dict, Any  # noqa
 
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.events import EventMixin
+from d3a.models.events import EventMixin, TriggerMixin, Trigger
 from d3a.models.market import Market  # noqa
 
 
@@ -20,9 +20,11 @@ class _TradeLookerUpper:
                 yield trade
 
 
-class BaseStrategy(EventMixin, AreaBehaviorBase):
-    def __init__(self):
-        super().__init__()
+class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
+    available_triggers = [
+        Trigger('enable', help="Enable trading"),
+        Trigger('disable', help="Disable trading")
+    ]
 
     @property
     def trades(self):
@@ -54,4 +56,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase):
         self.event_data_received(data)
 
     def event_data_received(self, data: Dict[str, Any]):
+        pass
+
+    def trigger_enable(self, **kw):
+        pass
+
+    def trigger_disable(self):
         pass

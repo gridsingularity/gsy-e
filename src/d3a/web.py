@@ -1,3 +1,4 @@
+import traceback
 from itertools import chain, repeat
 from operator import itemgetter
 from threading import Thread
@@ -131,6 +132,20 @@ def _api_app(simulation: Simulation):
             'strategy': area.strategy.__class__.__name__ if area.strategy else None,
             'appliance': area.appliance.__class__.__name__ if area.appliance else None,
             'market_overview_url': url_for('markets', area_slug=area_slug),
+            'available_triggers': [
+                {
+                    'name': trigger.name,
+                    'help': trigger.help,
+                    'parameters': [
+                        {
+                            'name': name,
+                            'type': type_.__name__,
+                        }
+                        for name, type_ in trigger.params.items()
+                    ]
+                }
+                for trigger in area.available_triggers.values()
+            ],
             'markets': [
                 {
                     'type': type_,
@@ -144,6 +159,23 @@ def _api_app(simulation: Simulation):
                 in _market_progression(area)
             ],
         }
+
+    @app.route("/<area_slug>/trigger/<trigger_name>", methods=['POST'])
+    def area_trigger(area_slug, trigger_name):
+        area = _get_area(area_slug)
+        triggers = area.available_triggers
+        if trigger_name not in triggers:
+            return {'error': "Unknown trigger '{}'".format(trigger_name)}, 400
+
+        if request.is_json:
+            data = request.get_json(silent=True)
+        else:
+            data = request.form
+        try:
+            rv = area._fire_trigger(trigger_name, **data)
+            return {'success': True, 'repsonse': rv}
+        except Exception as ex:
+            return {'success': False, 'exception': str(ex), 'traceback': traceback.format_exc()}
 
     @app.route("/<area_slug>/market/<market_time>")
     def market(area_slug, market_time):

@@ -172,6 +172,8 @@ The structure is as follows::
          -/market/<absolute-timestmap>  [GET]
          |
          -/market/<relative-time>       [GET]
+         |
+         -/trigger/<trigger-name>       [POST]
 
 
 The top level (`/api`) returns a summary of the simulation configuration as
@@ -197,6 +199,10 @@ markets with aggregated data per market.
 Detailed information about a market including all offers and trades is
 available at the `/<area-slug>/market/<absolute-timestmap>` and
 `/<area-slug>/market/<relative-time>` endpoints.
+
+The `/<area-slug>/trigger/<trigger-name>` endpoints allow triggering events
+within the areas. Which events are available is listed in the corresponding
+`/<area-slug>` endpoint under the `available_triggers` key.
 
 The absolute timestamps are what is linked from the `url` fields of the various
 other endpoints. They are of the form 'YYYY-MM-DDTHH:MM:SS+01:00' where the

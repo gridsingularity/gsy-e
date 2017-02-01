@@ -2,7 +2,7 @@ import warnings
 from collections import OrderedDict, defaultdict
 from logging import getLogger
 from random import random
-from typing import Any, Dict, List, Optional, Union  # noqa
+from typing import Dict, List, Optional, Union  # noqa
 
 from pendulum.interval import Interval
 from pendulum.pendulum import Pendulum
@@ -12,7 +12,7 @@ from d3a.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.config import SimulationConfig
-from d3a.models.events import AreaEvent, MarketEvent
+from d3a.models.events import AreaEvent, MarketEvent, TriggerMixin
 from d3a.models.market import Market
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
@@ -244,6 +244,15 @@ class Area:
             self.config.tick_length * self.current_tick
         )
 
+    @property
+    def available_triggers(self):
+        triggers = []
+        if isinstance(self.strategy, TriggerMixin):
+            triggers.extend(self.strategy.available_triggers)
+        if isinstance(self.appliance, TriggerMixin):
+            triggers.extend(self.appliance.available_triggers)
+        return {t.name: t for t in triggers}
+
     def tick(self):
         if self.current_tick % self.config.ticks_per_slot == 0 and self.current_tick != 0:
             self._cycle_markets()
@@ -270,6 +279,13 @@ class Area:
                 continue
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
+
+    def _fire_trigger(self, trigger_name, **params):
+        for target in (self.strategy, self.appliance):
+            if isinstance(target, TriggerMixin):
+                for trigger in target.available_triggers:
+                    if trigger.name == trigger_name:
+                        return target.fire_trigger(trigger_name, **params)
 
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:
