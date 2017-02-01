@@ -71,7 +71,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.log.warning("Trading has been disabled")
         # We've been disabled - remove all future open offers
         for market in self.area.markets.values():
-            for offer in market.offers.values():
+            for offer in list(market.offers.values()):
                 if offer.seller == self.owner.name:
                     market.delete_offer(offer)
 
