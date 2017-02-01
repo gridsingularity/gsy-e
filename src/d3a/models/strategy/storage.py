@@ -65,7 +65,8 @@ class StorageStrategy(BaseStrategy):
                                                  )
                                                 )
                         self.sell_energy(initial_buying_price, o.energy)
-                        del self.offers_posted[past_market]
+                        # FIXME getting a KeyError for certain markets
+                        self.offers_posted.pop(past_market, None)
 
     def event_trade(self, *, market, trade):
         # If trade happened: remember it in variable
