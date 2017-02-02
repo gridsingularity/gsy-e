@@ -1,5 +1,6 @@
 import math
 
+from d3a.exceptions import MarketException
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 
@@ -8,7 +9,7 @@ class PVStrategy(BaseStrategy):
     def __init__(self, panel_count=1, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.offers_posted = {}  # type: Dict[str, Market]
+        self.offers_posted = {}  # type: Dict[Offer, Market]
         self.panel_count = panel_count
 
     def event_tick(self, *, area):
@@ -64,14 +65,11 @@ class PVStrategy(BaseStrategy):
                     self.offers_posted[offer.id] = market
 
             else:
-                # XXX TODO: This should check if current market offers
-                # are still in line with strategy
-                # if self.offers_posted_in_market[
-                #                                   self.passed_markets + open_future_markets
-                #                                    ] != energy_price:
-                # self.delete_offer()
-                # self.sell_energy(... see above)
                 pass
+
+        # Decrease the selling price over the ticks in a slot
+        next_market = list(self.area.markets.values())[0]
+        self.decrease_offer_price(next_market)
 
     def produced_energy_forecast_sinus(self):
         # Assuming that its 12hr when current_simulation_step = 0
@@ -122,8 +120,33 @@ class PVStrategy(BaseStrategy):
         # /1000 is needed to convert Wh into kWh
         return round((gauss_forecast / 1000), 4)
 
+    def decrease_offer_price(self, market):
+        if market not in self.offers_posted.values():
+            return
+        for offer_id, iterated_market in self.offers_posted.items():
+            if iterated_market != market:
+                continue
+            try:
+                offer = iterated_market.offers[offer_id]
+                iterated_market.delete_offer(offer_id)
+                new_offer = iterated_market.offer(
+                    offer.energy,
+                    offer.price * 0.98,
+                    self.owner.name
+                )
+                self.offers_posted.pop(offer_id, None)
+                self.offers_posted[new_offer.id] = iterated_market
+
+            except MarketException:
+                continue
+
+#            except KeyError:
+#                self.log.warn("Offer already taken")
+#                continue
+
     def event_market_cycle(self):
         pass
 
     def event_trade(self, *, market, trade):
-        pass
+        if trade.offer.seller == self.owner.name:
+            self.offers_posted[market].remove(trade.offer)
