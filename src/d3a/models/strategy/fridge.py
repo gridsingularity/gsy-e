@@ -17,6 +17,8 @@ class FridgeStrategy(BaseStrategy):
         self.offers_posted = {}  # type: Dict[str, Market]
         self.fridge_temp = FRIDGE_TEMPERATURE
         self.threshold_price = 0.0
+        self.temp_change_open_market = 0.0
+        self.temp_change_last_market = 0.0
 
     def event_tick(self, *, area):
         # Fridge temperature will be updated from appliance
@@ -27,6 +29,10 @@ class FridgeStrategy(BaseStrategy):
             # The not cooled fridge warms up (0.02 / 60)C up every second
             self.fridge_temp += self.area.config.tick_length.in_seconds() * round((0.02 / 60), 6)
         fridge_temp = self.fridge_temp
+        if temp_controlled_by_appliance:
+            fridge_temp += (self.temp_change_open_market
+                            + self.temp_change_last_market
+                            )
 
         # Only trade in later half of slot
         tick_in_slot = area.current_tick % area.config.ticks_per_slot
@@ -113,6 +119,7 @@ class FridgeStrategy(BaseStrategy):
                     # TODO: Set realistic temperature change
                     # Factor 2 compensates that we not only cool but avoid defrost as well
                     fridge_temp -= cooling_temperature
+                    self.temp_change_open_market -= cooling_temperature
                     break
                 except MarketException:
                     # Offer already gone etc., try next one.
@@ -134,6 +141,10 @@ class FridgeStrategy(BaseStrategy):
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
         self.log.info("Temperature: %.2f", self.fridge_temp)
+        self.temp_change_last_market = self.temp_change_open_market
+        self.temp_change_open_market = 0
 
     def event_data_received(self, data: Dict[str, Any]):
-        self.fridge_temp = data.get("temperature", 0)
+        self.fridge_temp += data.get("temperature_change", 0)
+        if "temperature" in data:
+            self.fridge_temp = data.get("temperature")

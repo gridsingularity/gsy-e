@@ -74,6 +74,9 @@ class FridgeAppliance(Appliance):
             log.warning("Fridge door is still open")
             self.door_open_duration -= 1
             self.current_temp += self.temp_change_on_door_open
+            # Update strategy with current fridge temp
+            if self.owner:
+                self.owner.strategy.post(temperature_change=self.temp_change_on_door_open)
 
         if self.current_temp > self.max_temp:    # Fridge is hot, start cooling immediately
             log.warning("Fridge is warm [{} C], start cooling immediately".
@@ -124,10 +127,6 @@ class FridgeAppliance(Appliance):
             # FIXME: No energy reporting is happening here.
             # FIXME: Please add this by calling `area.report_accounting(...)`
             # FIXME: (see `appliance/simple.py:L17` for an example)
-
-        # Update strategy with current fridge temp
-        if self.owner:
-            self.owner.strategy.post(temperature=self.current_temp)
 
     def update_force_cool_ticks(self):
         """
@@ -254,3 +253,5 @@ class FridgeAppliance(Appliance):
     def event_market_cycle(self):
         super().event_market_cycle()
         self.update_iterator(self.gen_run_schedule())
+        if self.owner:
+            self.owner.strategy.post(temperature=self.current_temp)
