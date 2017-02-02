@@ -42,8 +42,6 @@ class FridgeAppliance(Appliance):
         # Fridge heats up 0.02C per minute
         self.heating_per_tick = tick_length * round((0.02 / 60), 6)
 
-        # FIXME: Should be calculated based on bought energy (see `self.get_energy_balance()`)
-        # FIXME: See `strategy/frigde.py:L95`
         self.cooling_per_tick = tick_length * -0.01
 
         # Fridge with door open heats up 0.9C per minute
