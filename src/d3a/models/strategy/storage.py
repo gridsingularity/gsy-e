@@ -50,11 +50,11 @@ class StorageStrategy(BaseStrategy):
         # Check if Storage posted offer in that market that has not been bought
         # If so try to sell the offer again
         if past_market in self.offers_posted.keys():
-            for market, offer in list(self.offers_posted.items()):
+            for market, offers in list(self.offers_posted.items()):
                 if market == past_market:
                     # self.offers_posted[market].price is the price we charged including profit
                     # But self.sell_energy expects a buying price
-                    for o in offer:
+                    for o in offers:
                         offer_price = (o.price /
                                        o.energy)
 
@@ -66,7 +66,7 @@ class StorageStrategy(BaseStrategy):
                                                 )
                         self.sell_energy(initial_buying_price, o.energy)
                         # FIXME getting a KeyError for certain markets
-                        self.offers_posted.pop(past_market, None)
+                        self.offers_posted[past_market].remove(o)
 
     def event_trade(self, *, market, trade):
         # If trade happened: remember it in variable

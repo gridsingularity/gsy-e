@@ -128,25 +128,26 @@ class PVStrategy(BaseStrategy):
                 continue
             # FIXME Getting a Key Error for some offer_id s
             try:
-                offer = market.offers[offer_id]
-                market.delete_offer(offer_id)
-                new_offer = market.offer(
+                offer = iterated_market.offers[offer_id]
+                iterated_market.delete_offer(offer_id)
+                new_offer = iterated_market.offer(
                     offer.energy,
                     offer.price * 0.98,
                     self.owner.name
                 )
                 self.offers_posted.pop(offer_id, None)
-                self.offers_posted[new_offer.id] = market
+                self.offers_posted[new_offer.id] = iterated_market
 
             except MarketException:
                 continue
 
-            except KeyError:
-                self.log.warn("Getting A Key Error for some offer ids")
-                continue
+#            except KeyError:
+#                self.log.warn("Offer already taken")
+#                continue
 
     def event_market_cycle(self):
         pass
 
     def event_trade(self, *, market, trade):
-        pass
+        if trade.offer.seller == self.owner.name:
+            self.offers_posted[market].remove(trade.offer)
