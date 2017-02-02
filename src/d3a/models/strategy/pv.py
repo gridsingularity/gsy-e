@@ -138,13 +138,13 @@ class PVStrategy(BaseStrategy):
             except MarketException:
                 continue
 
-#            except KeyError:
-#                self.log.warn("Offer already taken")
-#                continue
+            except KeyError:
+                self.log.warn("Offer already taken")
+                continue
 
     def event_market_cycle(self):
         pass
 
     def event_trade(self, *, market, trade):
         if trade.offer.seller == self.owner.name:
-            self.offers_posted[market].remove(trade.offer)
+            self.offers_posted.pop(trade.offer.id, None)
