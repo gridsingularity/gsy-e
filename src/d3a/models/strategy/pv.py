@@ -126,7 +126,6 @@ class PVStrategy(BaseStrategy):
         for offer_id, iterated_market in self.offers_posted.items():
             if iterated_market != market:
                 continue
-            # FIXME Getting a Key Error for some offer_id s
             try:
                 offer = iterated_market.offers[offer_id]
                 iterated_market.delete_offer(offer_id)

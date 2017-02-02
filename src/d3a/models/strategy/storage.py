@@ -65,7 +65,6 @@ class StorageStrategy(BaseStrategy):
                                                  )
                                                 )
                         self.sell_energy(initial_buying_price, o.energy)
-                        # FIXME getting a KeyError for certain markets
                         self.offers_posted[past_market].remove(o)
 
     def event_trade(self, *, market, trade):
