@@ -124,11 +124,9 @@ class FridgeAppliance(Appliance):
             self.last_reported_tick = 0
             market = area.current_market
             if market:
-                energy = self.owner.strategy.energy_balance(market)
-                if energy:
-                    area.report_accounting(market,
-                                           self.owner.name,
-                                           energy / area.config.ticks_per_slot)
+                area.report_accounting(market,
+                                       self.owner.name,
+                                       self.get_current_power())
 
     def update_force_cool_ticks(self):
         """

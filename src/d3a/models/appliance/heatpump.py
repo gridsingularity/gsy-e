@@ -98,12 +98,9 @@ class HeatPumpAppliance(Appliance):
             self.last_reported_tick = 0
             market = area.current_market
             if market:
-                # Fetch traded energy for `market`
-                energy = self.owner.strategy.energy_balance(market)
-                if energy:
-                    area.report_accounting(market,
-                                           self.owner.name,
-                                           energy / area.config.ticks_per_slot)
+                area.report_accounting(market,
+                                       self.owner.name,
+                                       self.get_current_power())
 
         # Update strategy with current heat pump temp
         if self.owner:
@@ -217,7 +214,7 @@ class HeatPumpAppliance(Appliance):
         bids = [self.get_energy_balance()]
 
         if bids:
-            run_schedule = RunSchedule(bids, self.energyCurve.get_mode_curve(ApplianceMode.ON),
+            run_schedule = RunSchedule(bids, self.energyCurve.get_mode_curve(self.mode),
                                        self.area.config.ticks_per_slot, cycles_to_run,
                                        skip_cycles, self.get_tick_count())
             schedule = run_schedule.get_run_schedule()
