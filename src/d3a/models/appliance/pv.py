@@ -53,7 +53,7 @@ class PVAppliance(Appliance):
 
         self.last_reported_tick += 1
 
-        if self.last_reported_tick == self.report_frequency:
+        if self.last_reported_tick >= self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
             energy_balance = self.get_energy_balance()
