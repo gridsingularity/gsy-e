@@ -243,7 +243,7 @@ class FridgeAppliance(Appliance):
         bids = [self.get_energy_balance()]
 
         if bids:
-            run_schedule = RunSchedule(bids, self.energyCurve.get_mode_curve(ApplianceMode.ON),
+            run_schedule = RunSchedule(bids, self.energyCurve.get_mode_curve(self.mode),
                                        self.area.config.ticks_per_slot, cycles_to_run,
                                        skip_cycles, self.get_tick_count())
             schedule = run_schedule.get_run_schedule()
