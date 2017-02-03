@@ -139,8 +139,6 @@ class FridgeAppliance(Appliance):
         if diff <= 0:
             self.force_cool_ticks = 0
         else:
-            # FIXME: This previously wasn't calculated based on `self.area.config.tick_length`
-            # FIXME: Please check if the logic below is now sound.
             ticks_per_cycle = (
                 len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
                 / self.area.config.tick_length.total_seconds()
