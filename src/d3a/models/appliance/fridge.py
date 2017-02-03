@@ -107,6 +107,7 @@ class FridgeAppliance(Appliance):
             self.force_cool_ticks -= 1
             if self.force_cool_ticks <= 0:
                 # This is last force cool tick, optimize remaining ticks
+                self.change_mode_of_operation(ApplianceMode.OFF)
                 self.update_iterator(self.gen_run_schedule())
                 log.warning("Force cooling has ended {} C".format(self.current_temp))
 

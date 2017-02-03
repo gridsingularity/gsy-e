@@ -81,6 +81,7 @@ class HeatPumpAppliance(Appliance):
             self.force_heat_ticks -= 1
             if self.force_heat_ticks <= 0:
                 # This is last force heat tick, optimize remaining ticks
+                self.change_mode_of_operation(ApplianceMode.OFF)
                 self.update_iterator(self.gen_run_schedule())
                 log.warning("Force heating has ended {} C".format(self.current_temp))
 
@@ -102,10 +103,6 @@ class HeatPumpAppliance(Appliance):
                                        self.owner.name,
                                        self.get_current_power())
 
-        # Update strategy with current heat pump temp
-        if self.owner:
-            self.owner.strategy.post(temperature=self.current_temp)
-
     def update_force_heat_ticks(self):
         """
         Temp of pump is low, update the number of ticks it will take to raise
@@ -117,7 +114,10 @@ class HeatPumpAppliance(Appliance):
         if diff >= 0:
             self.force_heat_ticks = 0
         else:
-            ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+            ticks_per_cycle = (
+                len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+                / self.area.config.tick_length.total_seconds()
+            )
             temp_rise_per_cycle = self.heat_per_tick * ticks_per_cycle
             cycles_to_run = math.ceil((diff*-1)/temp_rise_per_cycle)
             self.force_heat_ticks = cycles_to_run * ticks_per_cycle
@@ -225,5 +225,6 @@ class HeatPumpAppliance(Appliance):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self.change_mode_of_operation(ApplianceMode.ON)
         self.update_iterator(self.gen_run_schedule())
+        if self.owner:
+            self.owner.strategy.post(temperature=self.current_temp)
