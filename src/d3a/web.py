@@ -291,7 +291,7 @@ def _energy_aggregate(market):
             actor: round(value, 4)
             for actor, value
             in market.traded_energy.items()
-            if value > 0.0000
+            if abs(value) > 0.0000
         },
         'actual': {
             actor: round(value, 4)
