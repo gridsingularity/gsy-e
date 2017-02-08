@@ -75,7 +75,11 @@ class PVStrategy(BaseStrategy):
         # A fit of a gaussian function to those data results in a formula Energy(time)
         for slot_time in [
                     self.area.now + (self.area.config.slot_length * i)
-                    for i in range(self.area.config.duration // self.area.config.slot_length)
+                    for i in range(
+                        (
+                            self.area.config.duration
+                            + (self.area.config.market_count * self.area.config.slot_length)
+                        ) // self.area.config.slot_length)
                     ]:
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
             self.energy_production_forecast[slot_time] = self.gaussian_energy_forecast(
