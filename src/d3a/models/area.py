@@ -4,6 +4,7 @@ from logging import getLogger
 from random import random
 from typing import Dict, List, Optional, Union  # noqa
 
+from cached_property import cached_property
 from pendulum.interval import Interval
 from pendulum.pendulum import Pendulum
 from slugify import slugify
@@ -150,6 +151,17 @@ class Area:
             min(p[0] for p in min_max_prices),
             max(p[1] for p in min_max_prices)
         )
+
+    @cached_property
+    def child_by_slug(self):
+        slug_map = {}
+        areas = [self]
+        while areas:
+            for area in list(areas):
+                slug_map[area.slug] = area
+                areas.remove(area)
+                areas.extend(area.children)
+        return slug_map
 
     def _cycle_markets(self, _trigger_event=True):
         """

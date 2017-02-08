@@ -60,18 +60,9 @@ def _api_app(simulation: Simulation):
     app = FlaskAPI(__name__)
     CORS(app)
 
-    area_slug_map = {}
-    root_area = simulation.area
-    areas = [root_area]
-    while areas:
-        for area in list(areas):
-            area_slug_map[area.slug] = area
-            areas.remove(area)
-            areas.extend(area.children)
-
     def _get_area(area_slug):
         try:
-            return area_slug_map[area_slug]
+            return simulation.area.child_by_slug[area_slug]
         except KeyError:
             abort(404)
 
@@ -79,7 +70,7 @@ def _api_app(simulation: Simulation):
     def index():
         return {
             'simulation': _simulation_info(simulation),
-            'root_area': area_tree(root_area)
+            'root_area': area_tree(simulation.area)
         }
 
     @app.route("/pause", methods=['GET', 'POST'])
