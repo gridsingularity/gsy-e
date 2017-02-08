@@ -13,5 +13,5 @@ pendulum
 pysha3<1.0.0
 python-rex
 rlp==0.4.6
-simpy
+tablib
 terminaltables

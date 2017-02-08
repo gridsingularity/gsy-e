@@ -16,6 +16,7 @@ from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
 from d3a.simulation import Simulation
+from d3a.util import format_interval
 
 
 _NO_VALUE = {
@@ -339,11 +340,14 @@ def _get_market(area, market_time):
 
 
 def _simulation_info(simulation):
+    current_time = format_interval(
+        simulation.area.current_tick * simulation.area.config.tick_length
+    )
     return {
         'config': simulation.area.config.as_dict(),
         'finished': simulation.finished,
         'current_tick': simulation.area.current_tick,
-        'current_time': simulation.area.now.format("%H:%M:%S"),
+        'current_time': current_time,
         'paused': simulation.paused,
         'slowdown': simulation.slowdown
     }

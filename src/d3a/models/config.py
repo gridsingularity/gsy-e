@@ -1,6 +1,7 @@
 from pendulum.interval import Interval
 
 from d3a.exceptions import D3AException
+from d3a.util import format_interval
 
 
 class SimulationConfig:
@@ -37,13 +38,7 @@ class SimulationConfig:
         fields = {'duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
                   'total_ticks'}
         return {
-            k: (
-                "{v.days:02d}:{v.hours:02d}:{v.minutes:02d}:{v.seconds:02d}".format(v=v)
-                if v.days
-                else "{v.hours:02d}:{v.minutes:02d}:{v.seconds:02d}".format(v=v)
-            )
-            if isinstance(v, Interval)
-            else v
+            k: format_interval(v) if isinstance(v, Interval) else v
             for k, v in self.__dict__.items()
             if k in fields
         }
