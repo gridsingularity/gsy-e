@@ -77,13 +77,7 @@ def _api_app(simulation: Simulation):
     @app.route("/")
     def index():
         return {
-            'simulation': {
-                'config': root_area.config.as_dict(),
-                'finished': simulation.finished,
-                'current_tick': root_area.current_tick,
-                'paused': simulation.paused,
-                'slowdown': simulation.slowdown
-            },
+            'simulation': _simulation_info(simulation),
             'root_area': area_tree(root_area)
         }
 
@@ -349,6 +343,17 @@ def _get_market(area, market_time):
             if market.time_slot == list(area.past_markets.keys())[-1]:
                 type_ = 'current'
     return market, type_
+
+
+def _simulation_info(simulation):
+    return {
+        'config': simulation.area.config.as_dict(),
+        'finished': simulation.finished,
+        'current_tick': simulation.area.current_tick,
+        'current_time': simulation.area.now.format("%H:%M:%S"),
+        'paused': simulation.paused,
+        'slowdown': simulation.slowdown
+    }
 
 
 def url_for(target, **kwargs):
