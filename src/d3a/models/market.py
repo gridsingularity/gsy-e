@@ -1,3 +1,4 @@
+import codecs
 import random
 import uuid
 from collections import defaultdict, namedtuple
@@ -68,7 +69,9 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer'))):
 
 class Market:
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+        from d3a.models.area import Area
         self.area = area
+        assert isinstance(self.area, Area)
         self.time_slot = time_slot
         self.readonly = readonly
         # offer-id -> Offer
@@ -91,9 +94,28 @@ class Market:
         self.trade_lock = Lock()
         if notification_listener:
             self.notification_listeners.append(notification_listener)
+        self.bc_contract = None
+        if self.area.bc:
+            self.bc_contract = self.area.bc.init_contract(
+                "{s.area.slug}-{s.time_slot}",
+                "Market",
+                [
+                    self.area.bc.contracts['ClearingToken'].address,
+                    self.area.config.duration.in_seconds()
+                ],
+                self._bc_listener
+            )
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
+
+    def _bc_listener(self, log):
+        if log.topic == codecs.encode(b"NewOffer", 'hex'):
+            self._notify_listeners(MarketEvent.OFFER, **log.data)
+        elif log.topic == codecs.encode(b"CancelOffer", 'hex'):
+            self._notify_listeners(MarketEvent.OFFER_DELETED, **log.data)
+        elif log.topic == codecs.encode(b"Trade", 'hex'):
+            self._notify_listeners(MarketEvent.TRADE, **log.data)
 
     def _notify_listeners(self, event, **kwargs):
         # Deliver notifications in random order to ensure fairness
@@ -110,7 +132,8 @@ class Market:
             self.offers[offer.id] = offer
             log.info("[OFFER][NEW] %s", offer)
             self._update_min_max_avg_offer_prices()
-        self._notify_listeners(MarketEvent.OFFER, offer=offer)
+        if not self.area.bc:
+            self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
@@ -124,7 +147,8 @@ class Market:
             if not offer:
                 raise OfferNotFoundException()
             log.info("[OFFER][DEL] %s", offer)
-        self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
+        if not self.area.bc:
+            self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: Pendulum = None) -> Trade:
@@ -162,11 +186,12 @@ class Market:
                         self.offers[residual_offer.id] = residual_offer
                         log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
                         offer = accepted_offer
-                        self._notify_listeners(
-                            MarketEvent.OFFER_CHANGED,
-                            existing_offer=original_offer,
-                            new_offer=residual_offer
-                        )
+                        if not self.area.bc:
+                            self._notify_listeners(
+                                MarketEvent.OFFER_CHANGED,
+                                existing_offer=original_offer,
+                                new_offer=residual_offer
+                            )
                     elif energy > offer.energy:
                         raise InvalidTrade("Energy can't be greater than offered energy")
                     else:
@@ -187,7 +212,8 @@ class Market:
             # Recalculate offer min/max price since offer was removed
             self._update_min_max_avg_offer_prices()
         offer._traded(trade, self)
-        self._notify_listeners(MarketEvent.TRADE, trade=trade)
+        if not self.area.bc:
+            self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
 
     def _update_min_max_avg_offer_prices(self):

@@ -9,6 +9,7 @@ from pendulum.interval import Interval
 from pendulum.pendulum import Pendulum
 from slugify import slugify
 
+from d3a.blockchain import BlockChainInterface
 from d3a.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.appliance.inter_area import InterAreaAppliance
@@ -53,8 +54,11 @@ class Area:
         self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
+        self._bc = None  # type: BlockChainInterface
 
-    def activate(self):
+    def activate(self, bc=None):
+        if bc:
+            self._bc = bc
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
             if attr:
                 if self.parent:
@@ -108,6 +112,14 @@ class Area:
         if self.parent:
             return self.parent.config
         return DEFAULT_CONFIG
+
+    @property
+    def bc(self) -> Optional[BlockChainInterface]:
+        if self._bc:
+            return self._bc
+        if self.parent:
+            return self.parent.bc
+        return None
 
     @property
     def _offer_count(self):

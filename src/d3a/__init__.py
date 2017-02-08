@@ -10,9 +10,11 @@ def get_project_root():
 
 
 def get_contract_path(contract_name):
+    if contract_name.endswith(".sol"):
+        contract_name = contract_name[:-4]
     contract_path = os.path.join(
         get_project_root(),
         'contracts',
-        contract_name
+        "{}.sol".format(contract_name)
     )
     return os.path.realpath(contract_path)
