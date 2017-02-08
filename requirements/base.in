@@ -8,6 +8,7 @@ dill
 ethereum
 flask
 flask-api
+flask-cors
 pendulum
 pysha3<1.0.0
 python-rex

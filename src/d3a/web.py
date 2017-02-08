@@ -6,6 +6,7 @@ from threading import Thread
 import pendulum
 from flask import Flask, render_template, abort
 from flask import request
+from flask.ext.cors.extension import CORS
 from flask_api import FlaskAPI
 
 from flask.helpers import url_for as url_for_original
@@ -56,6 +57,7 @@ def _html_app(area):
 
 def _api_app(simulation: Simulation):
     app = FlaskAPI(__name__)
+    CORS(app)
 
     area_slug_map = {}
     root_area = simulation.area
