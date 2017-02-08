@@ -7,7 +7,7 @@ from threading import Thread
 import pendulum
 from flask import Flask, render_template, abort
 from flask import request
-from flask.ext.cors.extension import CORS
+from flask_cors import CORS
 from flask_api import FlaskAPI
 
 from flask.helpers import url_for as url_for_original
@@ -285,11 +285,11 @@ def _market_progression(area):
                 repeat('closed', times=len(area.past_markets) - 1),
                 ('current',)
             ),
-            area.past_markets.items()
+            list(area.past_markets.items())
         ),
         zip(
             repeat('open'),
-            area.markets.items()
+            list(area.markets.items())
         )
     )
 
