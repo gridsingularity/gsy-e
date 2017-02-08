@@ -252,8 +252,8 @@ class Market:
                 sorted(
                     (
                         (actor, value)
-                        for report_dicts in self.actual_energy.values()
-                        for actor, value in report_dicts.items()
+                        for report_dicts in list(self.actual_energy.values())
+                        for actor, value in list(report_dicts.items())
                     ),
                     key=itemgetter(0)
                 ),
