@@ -30,6 +30,8 @@ class StorageStrategy(BaseStrategy):
         most_expensive_offer_price = self.find_most_expensive_market_price()
         # Check if there are cheap offers to buy
         self.buy_energy(most_expensive_offer_price)
+
+        # Log a warning if the capacity reaches 80%
         if (
                     (self.used_storage + self.offered_storage + self.blocked_storage)
                     > (0.8 * STORAGE_CAPACITY)
@@ -50,22 +52,18 @@ class StorageStrategy(BaseStrategy):
         # Check if Storage posted offer in that market that has not been bought
         # If so try to sell the offer again
         if past_market in self.offers_posted.keys():
-            for market, offers in list(self.offers_posted.items()):
-                if market == past_market:
-                    # self.offers_posted[market].price is the price we charged including profit
-                    # But self.sell_energy expects a buying price
-                    for o in offers:
-                        offer_price = (o.price /
-                                       o.energy)
+            for offer in list(self.offers_posted[past_market]):
+                # self.offers_posted[market].price is the price we charged including profit
+                # But self.sell_energy expects a buying price
+                offer_price = (offer.price /
+                               offer.energy)
 
-                        initial_buying_price = ((offer_price / 1.002) *
-                                                (1 /
-                                                 (1.05 - (0.5 * (self.risk / MAX_RISK))
-                                                  )
-                                                 )
-                                                )
-                        self.sell_energy(initial_buying_price, o.energy)
-                        self.offers_posted[past_market].remove(o)
+                initial_buying_price = (
+                                            (offer_price / 1.002) *
+                                            (1 / (1.05 - (0.5 * (self.risk / MAX_RISK))))
+                                         )
+                self.sell_energy(initial_buying_price, offer.energy)
+                self.offers_posted[past_market].remove(offer)
 
     def event_trade(self, *, market, trade):
         # If trade happened: remember it in variable

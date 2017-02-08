@@ -19,6 +19,10 @@ class FridgeStrategy(BaseStrategy):
         self.threshold_price = 0.0
         self.temp_change_open_market = 0.0
         self.temp_change_last_market = 0.0
+        self.next_market = None
+
+    def event_activate(self):
+        self.next_market = list(self.area.markets.values())[0]
 
     def event_tick(self, *, area):
         # Fridge temperature will be updated from appliance
@@ -92,14 +96,13 @@ class FridgeStrategy(BaseStrategy):
         threshold_price = (risk_dependency_of_threshold_price +
                            temperature_dependency_of_threshold_price
                            )
-        next_market = list(self.area.markets.values())[0]
-#        self.log.info("Threshold_price is %s", threshold_price)
+        self.log.info("Threshold_price is %s", threshold_price)
 
         # Here starts the logic if energy should be bought
-        for offer in next_market.sorted_offers:
+        for offer in self.next_market.sorted_offers:
             # offer.energy * 1000 is needed to get the energy in Wh
             # 0.05 is the temperature decrease per cooling period and minimal needed energy
-            # *2 is needed because we need to cool and equalize the rise
+            # *2 is needed because we need to cool and equalize the increase
             #  of the temperature (see event_market_cycle) as well
             cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY) * 0.05 * 2)
             if (
@@ -114,10 +117,8 @@ class FridgeStrategy(BaseStrategy):
                 and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
             ):
                 try:
-                    self.accept_offer(next_market, offer)
+                    self.accept_offer(self.next_market, offer)
                     self.log.debug("Buying %s", offer)
-                    # TODO: Set realistic temperature change
-                    # Factor 2 compensates that we not only cool but avoid defrost as well
                     fridge_temp -= cooling_temperature
                     self.temp_change_open_market -= cooling_temperature
                     break
@@ -130,7 +131,7 @@ class FridgeStrategy(BaseStrategy):
                 self.log.critical("Need energy (temp: %.2f) but can't buy", fridge_temp)
                 try:
                     self.log.info("cheapest price is is %s",
-                                  list(next_market.sorted_offers)[-1].price)
+                                  list(self.next_market.sorted_offers)[-1].price)
 
                 except IndexError:
                     self.log.critical("Crap no offers available")
@@ -143,6 +144,7 @@ class FridgeStrategy(BaseStrategy):
         self.log.info("Temperature: %.2f", self.fridge_temp)
         self.temp_change_last_market = self.temp_change_open_market
         self.temp_change_open_market = 0
+        self.next_market = list(self.area.markets.values())[0]
 
     def event_data_received(self, data: Dict[str, Any]):
         self.fridge_temp += data.get("temperature_change", 0)
