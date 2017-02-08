@@ -1,4 +1,5 @@
 import traceback
+from functools import lru_cache
 from itertools import chain, repeat
 from operator import itemgetter
 from threading import Thread
@@ -267,6 +268,7 @@ def _api_app(simulation: Simulation):
     return app
 
 
+@lru_cache()
 def area_tree(area):
     return {
         'name': area.name,
