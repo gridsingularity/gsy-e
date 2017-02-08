@@ -13,13 +13,11 @@ class PVStrategy(BaseStrategy):
         self.panel_count = panel_count
 
     def event_tick(self, *, area):
-        # Here you can change between different forecast functions
-        # This gives us a pendulum object with today 8 o'clock
+        # This gives us a pendulum object with today 0 o'clock
         midnight = self.area.now.start_of("day").hour_(0)
         # This returns the difference to 8 o'clock in minutes
         difference_to_midnight_in_minutes = self.area.now.diff(midnight).in_minutes()
-        # If we passed midnight this is a negative value, but we want the time
-        # that passed since it was 8 in the morning (start of PV dataset)
+        # We want the time that passed since it was 8 in the morning (start of PV dataset)
         # Therefore we need to add 60 minutes times 16 (24-8) Hours
         # And use the difference between the time difference and the time passed between
         # midnight and 8 am
@@ -28,8 +26,6 @@ class PVStrategy(BaseStrategy):
                                                  + 60 * 16
                                                  )
         # This function returns a forecast in the unit of kWh
-#        self.log.info("current forecast is %s",
-#                      self.gaussian_energy_forecast(difference_to_midnight_in_minutes))
 
         quantity_forecast = self.produced_energy_forecast_real_data(
             difference_to_midnight_in_minutes)
@@ -77,7 +73,7 @@ class PVStrategy(BaseStrategy):
         # Might be the best way to get a realistic forecast
         # For now: use sinus function with Phase shift --> Simulation starts at 8:00 am
         past_markets = len(self.area.past_markets)
-        energy_production_forecast = {}
+        energy_production_forecast = {}  # type: Dict[time, energy]
         # Assuming 3 am is the darkest time a day --> sin(3 am) = 0
         phase_shift = 5 / 24
         # sin_amplitude / 2 should equal the maximum possible output (in wH) the pv can deliver
@@ -101,13 +97,15 @@ class PVStrategy(BaseStrategy):
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
         energy_production_forecast = {}
-        for time, market in self.area.markets.items():
-            energy_production_forecast[time] = self.gaussian_energy_forecast(time_in_minutes)
+        for i, (time, market) in enumerate(self.area.markets.items()):
+            energy_production_forecast[time] = self.gaussian_energy_forecast(time_in_minutes
+                                                                             + 15 * (i - 1))
         return energy_production_forecast
 
     def gaussian_energy_forecast(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
-        if (8 * 60 / 5) < time_in_minutes < (17.5 * 60 / 5):
+        # time_in_minutes is the difference in time to midnight
+        if (6.5 * 60) > time_in_minutes or time_in_minutes > (18 * 60):
             gauss_forecast = 0
 
         else:
@@ -140,13 +138,13 @@ class PVStrategy(BaseStrategy):
             except MarketException:
                 continue
 
-#            except KeyError:
-#                self.log.warn("Offer already taken")
-#                continue
+            except KeyError:
+                self.log.warn("Offer already taken")
+                continue
 
     def event_market_cycle(self):
         pass
 
     def event_trade(self, *, market, trade):
         if trade.offer.seller == self.owner.name:
-            self.offers_posted[market].remove(trade.offer)
+            self.offers_posted.pop(trade.offer.id, None)
