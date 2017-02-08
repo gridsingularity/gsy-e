@@ -10,25 +10,17 @@ class PVStrategy(BaseStrategy):
         super().__init__()
         self.risk = risk
         self.offers_posted = {}  # type: Dict[Offer, Market]
+        self.energy_production_forecast = {}  # type: Dict[Time, Energy]
         self.panel_count = panel_count
+        self.midnight = None
+
+    def event_activate(self):
+        # This gives us a pendulum object with today 0 o'clock
+        self.midnight = self.area.now.start_of("day").hour_(0)
+        # Calculating the produced energy
+        self.produced_energy_forecast_real_data()
 
     def event_tick(self, *, area):
-        # This gives us a pendulum object with today 0 o'clock
-        midnight = self.area.now.start_of("day").hour_(0)
-        # This returns the difference to 8 o'clock in minutes
-        difference_to_midnight_in_minutes = self.area.now.diff(midnight).in_minutes()
-        # We want the time that passed since it was 8 in the morning (start of PV dataset)
-        # Therefore we need to add 60 minutes times 16 (24-8) Hours
-        # And use the difference between the time difference and the time passed between
-        # midnight and 8 am
-        if difference_to_midnight_in_minutes < 0:
-            difference_to_midnight_in_minutes = (abs(60 * 8 + difference_to_midnight_in_minutes)
-                                                 + 60 * 16
-                                                 )
-        # This function returns a forecast in the unit of kWh
-
-        quantity_forecast = self.produced_energy_forecast_real_data(
-            difference_to_midnight_in_minutes)
         average_market_price = self.area.historical_avg_price
         # Needed to calculate risk_dependency_of_selling_price
         normed_risk = ((self.risk - (0.5 * MAX_RISK)) / (0.5 * MAX_RISK))
@@ -50,57 +42,45 @@ class PVStrategy(BaseStrategy):
             # If there is no offer for a currently open marketplace:
             if market not in self.offers_posted.values():
                 # Sell energy and save that an offer was posted into a list
-                if quantity_forecast[time] == 0:
+                try:
+                    if self.energy_production_forecast[time] == 0:
+                        continue
+                    for i in range(self.panel_count):
+                        offer = market.offer(
+                            self.energy_production_forecast[time],
+                            (min(rounded_energy_price, 29.9) *
+                             self.energy_production_forecast[time]),
+                            self.owner.name
+                        )
+                        self.offers_posted[offer.id] = market
+
+                except KeyError:
+                    self.log.warn("PV has no forecast data for this time")
                     continue
-                for i in range(self.panel_count):
-                    offer = market.offer(
-                        quantity_forecast[time],
-                        (min(rounded_energy_price, 29.9) * quantity_forecast[time]),
-                        self.owner.name
-                    )
-                    self.offers_posted[offer.id] = market
 
             else:
                 pass
 
-        # Decrease the selling price over the ticks in a slot
-        next_market = list(self.area.markets.values())[0]
-        self.decrease_offer_price(next_market)
+        # Decrease the selling price over the ticks in a slotp
+        if (
+                        self.area.current_tick % self.area.config.ticks_per_slot >
+                        self.area.config.ticks_per_slot - 4
+        ):
+            next_market = list(self.area.markets.values())[0]
+            self.decrease_offer_price(next_market)
 
-    def produced_energy_forecast_sinus(self):
-        # Assuming that its 12hr when current_simulation_step = 0
-        # Please see https://github.com/nrcharles/solpy
-        # Might be the best way to get a realistic forecast
-        # For now: use sinus function with Phase shift --> Simulation starts at 8:00 am
-        past_markets = len(self.area.past_markets)
-        energy_production_forecast = {}  # type: Dict[time, energy]
-        # Assuming 3 am is the darkest time a day --> sin(3 am) = 0
-        phase_shift = 5 / 24
-        # sin_amplitude / 2 should equal the maximum possible output (in wH) the pv can deliver
-        sin_amplitude = 0.1
-        # Sinus_offset to prevent that we get negative energy estimations
-        sinus_offset = sin_amplitude
-        # enumerate counts the markets through - from 0 to n
-        minutes_of_one_day = 1440
-        #
-        for i, (time, market) in enumerate(self.area.markets.items()):
-            energy_production_forecast[time] = round(
-                (sin_amplitude * math.sin(
-                    ((past_markets + i) / minutes_of_one_day
-                     ) * 2 * math.pi + phase_shift)
-                 ) + sinus_offset, 4
-            )
-        return energy_production_forecast
-
-    def produced_energy_forecast_real_data(self, time_in_minutes=0):
+    def produced_energy_forecast_real_data(self):
         # This forecast ist based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        energy_production_forecast = {}
-        for i, (time, market) in enumerate(self.area.markets.items()):
-            energy_production_forecast[time] = self.gaussian_energy_forecast(time_in_minutes
-                                                                             + 15 * (i - 1))
-        return energy_production_forecast
+        for slot_time in [
+                    self.area.now + (self.area.config.slot_length * i)
+                    for i in range(self.area.config.duration // self.area.config.slot_length)
+                    ]:
+            difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
+            self.energy_production_forecast[slot_time] = self.gaussian_energy_forecast(
+                                                                difference_to_midnight_in_minutes
+                                                                )
 
     def gaussian_energy_forecast(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
@@ -129,7 +109,7 @@ class PVStrategy(BaseStrategy):
                 iterated_market.delete_offer(offer_id)
                 new_offer = iterated_market.offer(
                     offer.energy,
-                    offer.price * 0.98,
+                    offer.price * 0.95,
                     self.owner.name
                 )
                 self.offers_posted.pop(offer_id, None)
