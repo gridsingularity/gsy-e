@@ -38,9 +38,9 @@ class NightStorageStrategy(BaseStrategy):
             (price, energy) = accepted_offers[-1]
             self.sell_energy(price, energy)
 
-        if self.used_storage > (0.8 * STORAGE_CAPACITY):
+        if self.used_storage > (0.8 * 2 * STORAGE_CAPACITY):
             self.log.info("Storage reached more than 80% Battery: %s", (self.used_storage
-                                                                        / STORAGE_CAPACITY))
+                                                                        / (2 * STORAGE_CAPACITY)))
 
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
@@ -87,7 +87,7 @@ class NightStorageStrategy(BaseStrategy):
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
                             (self.used_storage + self.blocked_storage + offer.energy
-                                + self.offered_storage <= STORAGE_CAPACITY
+                                + self.offered_storage <= STORAGE_CAPACITY * 2
                              )
                         # Now the storage buys everything cheaper than 29
                         # He will be able to sell this energy during the night
