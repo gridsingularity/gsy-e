@@ -2,10 +2,12 @@ import os
 import shutil
 from pathlib import Path
 
+import time
 from fabric.colors import blue, green, yellow
-from fabric.context_managers import hide, settings
+from fabric.context_managers import hide, settings, cd
 from fabric.decorators import task
-from fabric.operations import local
+from fabric.operations import local, run
+from fabric.state import env
 from fabric.tasks import execute
 from fabric.utils import abort, puts
 
@@ -13,6 +15,9 @@ from fabric.utils import abort, puts
 SOLIUM_VERSION = '0.2.2'
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
+
+env.use_ssh_config = True
+env.hosts = ['root@207.154.205.41']
 
 
 def _ensure_solium():
@@ -95,3 +100,17 @@ def reqs():
     """'compile' then 'sync'"""
     execute(compile)
     execute(sync)
+
+
+@task()
+def deploy():
+    with cd('d3a'):
+        run("git pull")
+        run("docker build -t d3a .")
+        with settings(warn_only=True):
+            run("docker stop d3a")
+        run('tmux new -d -s d3a '
+            '"docker run --rm --name d3a -it -p 9000:5000 -v $(pwd)/.d3a:/app/.d3a '
+            'd3a -l ERROR run -t 30s --paused"')
+        time.sleep(5)
+        run("curl -X POST http://localhost:9000/api/pause")
