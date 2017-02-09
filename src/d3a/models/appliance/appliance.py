@@ -1,7 +1,5 @@
 from typing import List
 from enum import Enum
-from d3a.models.appliance.properties import ApplianceProperties
-from d3a.models.appliance.properties import ElectricalProperties
 from d3a.models.appliance.properties import MeasurementParamType
 from logging import getLogger
 from d3a.models.appliance.base import BaseAppliance
@@ -119,9 +117,8 @@ class Appliance(BaseAppliance):
         """
         super().__init__()
         self.name = name
-        self.applianceProfile = None
-        self.electricalProperties = None
-        self.energyCurve = None
+        self.electrical_properties = None
+        self.energy_curve = None
         self.mode = ApplianceMode.OFF
         self.usageGenerator = None
         self.iterator = None
@@ -135,17 +132,16 @@ class Appliance(BaseAppliance):
     def start_appliance(self):
         log.info("Starting appliance {}".format(self.name))
 
-        if self.electricalProperties is not None:
+        if self.electrical_properties is not None:
             self.usageGenerator = UsageGenerator([],
-                                                 self.electricalProperties.get_min_variance(),
-                                                 self.electricalProperties.get_max_variance())
+                                                 self.electrical_properties.get_min_variance(),
+                                                 self.electrical_properties.get_max_variance())
         else:
             log.error("Appliance electrical properties not set")
             return
 
-        # FIXME: Appliances should not necessarily have to start in ON state (e.g. fridge)
-        if self.energyCurve is not None:
-            if self.energyCurve.get_mode_curve(ApplianceMode.ON) is not None:
+        if self.energy_curve is not None:
+            if self.energy_curve.get_mode_curve(ApplianceMode.ON) is not None:
                 self.change_mode_of_operation(ApplianceMode.ON)
             else:
                 self.mode = ApplianceMode.OFF
@@ -154,35 +150,12 @@ class Appliance(BaseAppliance):
             log.error("Energy curves not defined for operation modes")
             return
 
-    def set_appliance_energy_curve(self, curve: EnergyCurve):
-        """
-        Set appliance consumption curve.
-        :param curve: object containing energy usage curve
-        """
-        self.energyCurve = curve
-
-    def set_appliance_properties(self, properties: ApplianceProperties):
-        """
-        Provide appliance profile details
-        :param properties: Object containing appliance properties
-        """
-        self.applianceProfile = properties
-        log.debug("Updated appliance properties")
-
-    def set_electrical_properties(self, electrical: ElectricalProperties):
-        """
-        Provide electrical properties
-        :param electrical:
-        """
-        self.electricalProperties = electrical
-        log.debug("Updated electrical properties")
-
     def change_mode_of_operation(self, newmode: ApplianceMode):
         if self.usageGenerator is not None:
             if newmode is not None:
                 if newmode != self.mode:
                     self.iterator = self.usageGenerator.change_curve(
-                        self.energyCurve.get_mode_curve(newmode), True)
+                        self.energy_curve.get_mode_curve(newmode), True)
                     self.mode = newmode
                     log.info("Appliance mode changed to: {}".format(newmode))
                 else:
@@ -201,7 +174,7 @@ class Appliance(BaseAppliance):
             # report power generation/consumption to area
             self.last_reported_tick = 0
             # Fetch traded energy for `market`
-            self.report_energy(area, self.get_current_power()/1000)
+            self.report_energy(area, self.get_current_power())
 
         self.last_reported_tick += 1
 
@@ -209,11 +182,10 @@ class Appliance(BaseAppliance):
         market = area.current_market
         if energy:
             # Convert energy to KWh, divide by 1000
-            area.report_accounting(market, self.owner.name,
-                                   energy * self.report_sign / area.config.ticks_per_slot)
+            area.report_accounting(market, self.owner.name, energy * self.report_sign)
 
     def get_current_power(self):
-        return self.iterator.__next__() * self.report_sign
+        return self.iterator.__next__()
 
     def event_market_cycle(self):
         pass
@@ -244,13 +216,11 @@ class Appliance(BaseAppliance):
         return running
 
     def get_energy_balance(self) -> int:
-        strategy = self.area.strategy
-        energy = 0
-        if strategy is not None:
-            # -ve energy is energy bought
-            energy = strategy.energy_balance(self.area.current_market)
+        # -ve energy is energy bought
+        return self.owner.strategy.energy_balance(self.area.current_market)
 
-        return energy * self.report_sign
+    def get_tick_energy_balance(self, report_freqency=1):
+        return self.get_energy_balance() / (self.area.config.ticks_per_slot / report_freqency)
 
     def get_tick_count(self):
         return self.area.current_tick % self.area.config.ticks_per_slot

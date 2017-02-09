@@ -58,7 +58,7 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
               help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
 @click.option('--slowdown', type=int, default=0,
-              help="Slowdown factor [0 - 100]. "
+              help="Slowdown factor [0 - 10,000]. "
                    "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
                    "and 100: ticks are simulated in realtime")
 @click.option('--seed', help="Manually specify random seed")

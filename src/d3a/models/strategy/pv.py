@@ -83,13 +83,13 @@ class PVStrategy(BaseStrategy):
                     ]:
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
             self.energy_production_forecast[slot_time] = self.gaussian_energy_forecast(
-                                                                difference_to_midnight_in_minutes
-                                                                )
+                difference_to_midnight_in_minutes
+            )
 
     def gaussian_energy_forecast(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
         # time_in_minutes is the difference in time to midnight
-        if (6.5 * 60) > time_in_minutes or time_in_minutes > (18 * 60):
+        if (8 * 60) > time_in_minutes or time_in_minutes > (16.5 * 60):
             gauss_forecast = 0
 
         else:

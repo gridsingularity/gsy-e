@@ -147,7 +147,7 @@ class Simulation:
                                 # Simulation runs faster than real time but a slowdown was
                                 # requested
                                 tick_diff = tick_lengths_s - tick_length
-                                diff_slowdown = tick_diff / 100 * self.slowdown
+                                diff_slowdown = tick_diff * self.slowdown / 10000
                                 log.debug("Slowdown: %.4f", diff_slowdown)
                                 self._handle_input(console, diff_slowdown)
 

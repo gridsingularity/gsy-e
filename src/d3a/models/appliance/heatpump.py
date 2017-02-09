@@ -62,7 +62,7 @@ class HeatPumpAppliance(Appliance):
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
             else:
-                self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+                self.update_iterator(self.energy_curve.get_mode_curve(ApplianceMode.ON))
         else:                                    # Fridge is in acceptable temp range
             log.info("Heater is in acceptable temp range: {} C".format(self.current_temp))
             if self.get_energy_balance() > 0:
@@ -81,6 +81,7 @@ class HeatPumpAppliance(Appliance):
             self.force_heat_ticks -= 1
             if self.force_heat_ticks <= 0:
                 # This is last force heat tick, optimize remaining ticks
+                self.change_mode_of_operation(ApplianceMode.OFF)
                 self.update_iterator(self.gen_run_schedule())
                 log.warning("Force heating has ended {} C".format(self.current_temp))
 
@@ -93,15 +94,14 @@ class HeatPumpAppliance(Appliance):
 
         self.last_reported_tick += 1
 
-        if self.last_reported_tick == self.report_frequency:
+        if self.last_reported_tick >= self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
-            # FIXME: Please add energy reporting
-
-        # Update strategy with current fridge temp
-        # TODO enable reporting of temp to strategy
-        # if area:
-        #     area.strategy.post(temperature=self.current_temp)
+            market = area.current_market
+            if market:
+                area.report_accounting(market,
+                                       self.owner.name,
+                                       self.get_current_power())
 
     def update_force_heat_ticks(self):
         """
@@ -114,7 +114,10 @@ class HeatPumpAppliance(Appliance):
         if diff >= 0:
             self.force_heat_ticks = 0
         else:
-            ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+            ticks_per_cycle = (
+                len(self.energy_curve.get_mode_curve(ApplianceMode.ON))
+                / self.area.config.tick_length.total_seconds()
+            )
             temp_rise_per_cycle = self.heat_per_tick * ticks_per_cycle
             cycles_to_run = math.ceil((diff*-1)/temp_rise_per_cycle)
             self.force_heat_ticks = cycles_to_run * ticks_per_cycle
@@ -131,7 +134,7 @@ class HeatPumpAppliance(Appliance):
         diff = self.current_temp - mid
         cycles_required = 0
         cycles_skipped = 0
-        ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+        ticks_per_cycle = len(self.energy_curve.get_mode_curve(ApplianceMode.ON))
 
         # log.info("Ticks per cycle: {}, temp diff: {}".format(ticks_per_cycle, diff))
 
@@ -211,7 +214,7 @@ class HeatPumpAppliance(Appliance):
         bids = [self.get_energy_balance()]
 
         if bids:
-            run_schedule = RunSchedule(bids, self.energyCurve.get_mode_curve(ApplianceMode.ON),
+            run_schedule = RunSchedule(bids, self.energy_curve.get_mode_curve(self.mode),
                                        self.area.config.ticks_per_slot, cycles_to_run,
                                        skip_cycles, self.get_tick_count())
             schedule = run_schedule.get_run_schedule()
@@ -222,5 +225,6 @@ class HeatPumpAppliance(Appliance):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self.change_mode_of_operation(ApplianceMode.ON)
         self.update_iterator(self.gen_run_schedule())
+        if self.owner:
+            self.owner.strategy.post(temperature=self.current_temp)

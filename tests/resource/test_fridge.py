@@ -22,8 +22,8 @@ def test_fridge_object():
 
 def test_fridge_curves():
     fridge = get_fridge_object()
-    on_curve = fridge.energyCurve.get_mode_curve(ApplianceMode.ON)
-    off_curve = fridge.energyCurve.get_mode_curve(ApplianceMode.OFF)
+    on_curve = fridge.energy_curve.get_mode_curve(ApplianceMode.ON)
+    off_curve = fridge.energy_curve.get_mode_curve(ApplianceMode.OFF)
 
     assert len(on_curve) == 5 * 60      # Fridge cooling cycle runs for 5 mins
     assert len(off_curve) == 2

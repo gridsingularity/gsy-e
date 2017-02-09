@@ -1,4 +1,3 @@
-from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.heatpump import HeatPumpAppliance
 from d3a.models.appliance.dumb_load import DumbLoad
@@ -21,6 +20,7 @@ def get_pv_curves(panel_count: int = 1) -> dict:
     """
     Actual power produced by one PV panel in california during month of April 2016.
     Samples were taken every 5 minutes for 24 hours period, a total of 288 samples.
+    Samples are in W and get converted to kW before returning
     """
     one_panel_curve = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -48,9 +48,10 @@ def get_pv_curves(panel_count: int = 1) -> dict:
                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                        0.0, 0.0, 0.0]
 
-    mode_curves = dict()
-    mode_curves[ApplianceMode.ON] = [x * panel_count for x in one_panel_curve]
-    mode_curves[ApplianceMode.OFF] = [0, 0]
+    mode_curves = {
+        ApplianceMode.ON: [(x * panel_count) / 1000 for x in one_panel_curve],
+        ApplianceMode.OFF: [0, 0]
+    }
 
     return mode_curves
 
@@ -99,44 +100,6 @@ def gen_heat_pump_curves() -> dict:
     return mode_curve
 
 
-def gen_pv_appliance() -> PVAppliance:
-    """
-    Method to create a PVAppliance type object
-    :return: A fully constructed PVAppliance type object
-    """
-
-    # Manufacturer related information
-    pv = PVAppliance("PV")
-    builder = ApplianceProfileBuilder("PV", "Roof", ApplianceType.UNCONSTRAINED)
-    builder.set_contact_url("https://enphase.com/en-us/company/contact-us")
-    builder.set_icon_url("https://enphase.com/sites/all/themes/enphase/assets" +
-                         "/images/svgs/src/enphase-logo.svg")
-    builder.set_manufacturer("Enphase Energy")
-    builder.set_model_url("Envoy S")
-    builder.set_uuid("SOMERANDOMUUIDBEINGUSEDFORPV")
-
-    # Power generation curve
-    mode_curves = get_pv_curves(14)
-    on_curve = mode_curves[ApplianceMode.ON]
-
-    # Electrical properties
-    power_range = (min(on_curve), max(on_curve))
-    variance_range = (0, 0)     # As real data is used, variance may not be needed
-    electrical = ElectricalProperties(power_range, variance_range)
-
-    curves = EnergyCurve(ApplianceMode.ON, on_curve,
-                         Interval(minutes=5), DEFAULT_CONFIG.tick_length)
-    curves.add_mode_curve(ApplianceMode.OFF, mode_curves[ApplianceMode.OFF])
-
-    pv.set_appliance_properties(builder.build())
-    pv.set_electrical_properties(electrical)
-    pv.set_appliance_energy_curve(curves)
-
-    pv.start_appliance()
-
-    return pv
-
-
 def gen_fridge_appliance() -> FridgeAppliance:
     """
     Method to create a Fridge type appliance object
@@ -171,6 +134,7 @@ def gen_fridge_appliance() -> FridgeAppliance:
     fridge.set_appliance_energy_curve(curves)
 
     fridge.start_appliance()
+    fridge.change_mode_of_operation(ApplianceMode.OFF)
 
     return fridge
 
@@ -210,6 +174,7 @@ def gen_heat_pump_appliance() -> FridgeAppliance:
     heat_pump.set_appliance_energy_curve(curves)
 
     heat_pump.start_appliance()
+    heat_pump.change_mode_of_operation(ApplianceMode.OFF)
 
     return heat_pump
 

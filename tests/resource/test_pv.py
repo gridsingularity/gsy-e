@@ -21,7 +21,7 @@ def test_pv_creation():
 
 def test_pv_usage_curve():
     pv = get_pv_object()
-    on_curve = pv.energyCurve.get_mode_curve(ApplianceMode.ON)
+    on_curve = pv.energy_curve.get_mode_curve(ApplianceMode.ON)
     assert len(on_curve) == 24*60*60    # take samples per sec for 24 hours.
 
 
@@ -38,7 +38,7 @@ def test_pv_mode_change():
     off = pv.iterator.__next__()
 
     # zero index based list
-    assert on == pv.energyCurve.get_mode_curve(ApplianceMode.ON)[time_secs - 1]
+    assert on == pv.energy_curve.get_mode_curve(ApplianceMode.ON)[time_secs - 1]
     assert int(off) == 0
 
 

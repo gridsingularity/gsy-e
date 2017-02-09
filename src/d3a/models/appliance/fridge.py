@@ -11,7 +11,8 @@ log = getLogger(__name__)
 
 class FridgeAppliance(Appliance):
     available_triggers = [
-        Trigger('open', {'duration': int}, help="Open fridge door for 'duration' ticks.")
+        Trigger('open', {'duration': int}, help="Open fridge door for 'duration' ticks."),
+        Trigger('close', {}, help="Close fridge door immediately if open.")
     ]
 
     def __init__(self, name: str = "Fridge", report_freq: int = 1):
@@ -42,8 +43,6 @@ class FridgeAppliance(Appliance):
         # Fridge heats up 0.02C per minute
         self.heating_per_tick = tick_length * round((0.02 / 60), 6)
 
-        # FIXME: Should be calculated based on bought energy (see `self.get_energy_balance()`)
-        # FIXME: See `strategy/frigde.py:L95`
         self.cooling_per_tick = tick_length * -0.01
 
         # Fridge with door open heats up 0.9C per minute
@@ -63,36 +62,42 @@ class FridgeAppliance(Appliance):
         # wrap in int() to ensure type even when passed from API
         duration = int(duration)
         self.door_open_duration = duration
-        log.warning("Fridge door was opened for %d ticks", duration)
+        self.log.warning("Fridge door was opened for %d ticks", duration)
         # self.current_temp += self.temp_change_on_door_open
 
     # Alias for trigger system
     trigger_open = handle_door_open
 
+    def trigger_close(self):
+        self.door_open_duration = 0
+        self.log.warning("Fridge door closed")
+
     def event_tick(self, *, area: Area):
         if self.door_open_duration > 0:
-            log.warning("Fridge door is still open")
             self.door_open_duration -= 1
+            if self.door_open_duration == 0:
+                self.log.warning("Fridge door closed")
             self.current_temp += self.temp_change_on_door_open
             # Update strategy with current fridge temp
             if self.owner:
                 self.owner.strategy.post(temperature_change=self.temp_change_on_door_open)
 
         if self.current_temp > self.max_temp:    # Fridge is hot, start cooling immediately
-            log.warning("Fridge is warm [{} C], start cooling immediately".
-                        format(self.current_temp))
+            self.log.info("Fridge is warm [{} C], start cooling immediately".format(
+                self.current_temp))
             self.update_force_cool_ticks()
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
             else:
-                self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+                self.update_iterator(self.energy_curve.get_mode_curve(ApplianceMode.ON))
         elif self.current_temp < self.min_temp:                     # Fridge is too cold
-            log.warning("Fridge is too cold [{} C], stop cooling if cooling in progress".
-                        format(self.current_temp))
+            self.log.info("Fridge is too cold [{} C], stop cooling if cooling in progress".format(
+                self.current_temp))
             if self.mode == ApplianceMode.ON:
                 self.change_mode_of_operation(ApplianceMode.OFF)
-        else:                                    # Fridge is in acceptable temp range
-            log.info("Fridge is in acceptable temp range: {} C".format(self.current_temp))
+        else:
+            # Fridge is in acceptable temp range
+            self.log.info("Fridge is in acceptable temp range: {} C".format(self.current_temp))
             if self.get_energy_balance() > 0:
                 if self.mode == ApplianceMode.OFF:
                     self.change_mode_of_operation(ApplianceMode.ON)
@@ -100,17 +105,17 @@ class FridgeAppliance(Appliance):
                 elif self.get_tick_count() == 0:
                     self.update_iterator(self.gen_run_schedule())
             else:
-                log.info("No trade is available, fridge will try not to use power")
+                self.log.info("No trade is available, fridge will try not to use power")
 
         # Fridge is being force cooled
         if self.force_cool_ticks > 0:
-            log.warning("Fridge is being force cooled, ticks remaining: {}".
-                        format(self.force_cool_ticks))
+            self.log.warning("Force cooling: %d", self.force_cool_ticks)
             self.force_cool_ticks -= 1
             if self.force_cool_ticks <= 0:
                 # This is last force cool tick, optimize remaining ticks
+                self.change_mode_of_operation(ApplianceMode.OFF)
                 self.update_iterator(self.gen_run_schedule())
-                log.warning("Force cooling has ended {} C".format(self.current_temp))
+                self.log.warning("Force cooling has ended {} C".format(self.current_temp))
 
         if self.is_appliance_consuming_energy():
             self.current_temp += self.cooling_per_tick
@@ -121,12 +126,14 @@ class FridgeAppliance(Appliance):
 
         self.last_reported_tick += 1
 
-        if self.last_reported_tick == self.report_frequency:
+        if self.last_reported_tick >= self.report_frequency:
             # report power generation/consumption to area
             self.last_reported_tick = 0
-            # FIXME: No energy reporting is happening here.
-            # FIXME: Please add this by calling `area.report_accounting(...)`
-            # FIXME: (see `appliance/simple.py:L17` for an example)
+            market = area.current_market
+            if market:
+                area.report_accounting(market,
+                                       self.owner.name,
+                                       self.get_current_power())
 
     def update_force_cool_ticks(self):
         """
@@ -139,17 +146,15 @@ class FridgeAppliance(Appliance):
         if diff <= 0:
             self.force_cool_ticks = 0
         else:
-            # FIXME: This previously wasn't calculated based on `self.area.config.tick_length`
-            # FIXME: Please check if the logic below is now sound.
             ticks_per_cycle = (
-                len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+                len(self.energy_curve.get_mode_curve(ApplianceMode.ON))
                 / self.area.config.tick_length.total_seconds()
             )
             temp_drop_per_cycle = self.cooling_per_tick * ticks_per_cycle * -1
             cycles_to_run = math.ceil(diff/temp_drop_per_cycle)
             self.force_cool_ticks = cycles_to_run * ticks_per_cycle
 
-        log.warning("It will take fridge {} ticks to cool.".format(self.force_cool_ticks))
+        self.log.info("It will take fridge {} ticks to cool.".format(self.force_cool_ticks))
 
     def get_run_skip_cycle_counts(self, ticks_remaining: int):
         """
@@ -161,7 +166,7 @@ class FridgeAppliance(Appliance):
         diff = self.current_temp - mid
         cycles_required = 0
         cycles_skipped = 0
-        ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+        ticks_per_cycle = len(self.energy_curve.get_mode_curve(ApplianceMode.ON))
 
         # log.info("Ticks per cycle: {}, temp diff: {}".format(ticks_per_cycle, diff))
 
@@ -225,13 +230,13 @@ class FridgeAppliance(Appliance):
             if extra_cooling_cycles > 1:
                 cycles_skipped += extra_cooling_cycles - 1
 
-        log.info("Required cycles: {}, skip able cycles: {}".
-                 format(cycles_required, cycles_skipped))
+        self.log.info("Required cycles: {}, skip able cycles: {}".format(
+            cycles_required, cycles_skipped))
 
         return cycles_required, cycles_skipped
 
     def gen_run_schedule(self):
-        log.info("Generating new run schedule")
+        self.log.info("Generating new run schedule")
         ticks_remaining = \
             self.area.config.ticks_per_slot * (self.optimize_duration - self.get_tick_count())
         cycles = self.get_run_skip_cycle_counts(ticks_remaining)
@@ -241,7 +246,7 @@ class FridgeAppliance(Appliance):
         bids = [self.get_energy_balance()]
 
         if bids:
-            run_schedule = RunSchedule(bids, self.energyCurve.get_mode_curve(ApplianceMode.ON),
+            run_schedule = RunSchedule(bids, self.energy_curve.get_mode_curve(self.mode),
                                        self.area.config.ticks_per_slot, cycles_to_run,
                                        skip_cycles, self.get_tick_count())
             schedule = run_schedule.get_run_schedule()
