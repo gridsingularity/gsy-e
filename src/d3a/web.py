@@ -291,13 +291,13 @@ def _energy_aggregate(market):
         'traded': {
             actor: round(value, 4)
             for actor, value
-            in market.traded_energy.items()
+            in list(market.traded_energy.items())
             if abs(value) > 0.0000
         },
         'actual': {
             actor: round(value, 4)
             for actor, value
-            in market.actual_energy_agg.items()
+            in list(market.actual_energy_agg.items())
         }
     }
 
@@ -309,7 +309,7 @@ def _ious(market):
             for seller, total
             in seller_total.items()
             }
-        for buyer, seller_total in market.ious.items()
+        for buyer, seller_total in list(market.ious.items())
         }
 
 
