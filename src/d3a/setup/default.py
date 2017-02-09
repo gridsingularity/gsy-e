@@ -62,13 +62,8 @@ def get_setup(config):
                                  appliance=SimpleAppliance()),
                         ]
                     ),
-                    Area(
-                        'S1 ECar',
-                        [
-                            Area('S1 ECar', strategy=ECarStrategy(),
-                                 appliance=SimpleAppliance()),
-                        ]
-                    ),
+                    Area('S1 ECar', strategy=ECarStrategy(),
+                         appliance=SimpleAppliance()),
                 ]
             ),
             Area(
