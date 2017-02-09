@@ -125,6 +125,7 @@ def _api_app(simulation: Simulation):
                 {
                     'name': trigger.name,
                     'help': trigger.help,
+                    'url': url_for('area_trigger', area_slug=area_slug, trigger_name=trigger.name),
                     'parameters': [
                         {
                             'name': name,
