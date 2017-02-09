@@ -1,3 +1,4 @@
+from d3a.exceptions import MarketException
 from d3a.models.strategy.const import DEFAULT_RISK, ARRIVAL_TIME, DEPART_TIME
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -36,5 +37,8 @@ class ECarStrategy(StorageStrategy):
     def departure(self):
         for market, offers in self.offers_posted.items():
             for offer in offers:
-                market.delete_offer(offer.id)
-                self.used_storage += offer.energy
+                try:
+                    market.delete_offer(offer.id)
+                    self.used_storage += offer.energy
+                except MarketException:
+                    continue
