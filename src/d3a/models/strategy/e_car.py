@@ -34,6 +34,7 @@ class ECarStrategy(StorageStrategy):
         self.sell_energy(avg_cheapest_offer_price)
 
     def departure(self):
-        for market, offer in self.offers_posted:
-            market.delete_offer(offer.id)
-            self.used_storage += offer.energy
+        for market, offers in self.offers_posted.items():
+            for offer in offers:
+                market.delete_offer(offer.id)
+                self.used_storage += offer.energy
