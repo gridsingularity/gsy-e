@@ -62,7 +62,7 @@ class HeatPumpAppliance(Appliance):
             if self.mode == ApplianceMode.OFF:
                 self.change_mode_of_operation(ApplianceMode.ON)
             else:
-                self.update_iterator(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+                self.update_iterator(self.energy_curve.get_mode_curve(ApplianceMode.ON))
         else:                                    # Fridge is in acceptable temp range
             log.info("Heater is in acceptable temp range: {} C".format(self.current_temp))
             if self.get_energy_balance() > 0:
@@ -115,7 +115,7 @@ class HeatPumpAppliance(Appliance):
             self.force_heat_ticks = 0
         else:
             ticks_per_cycle = (
-                len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+                len(self.energy_curve.get_mode_curve(ApplianceMode.ON))
                 / self.area.config.tick_length.total_seconds()
             )
             temp_rise_per_cycle = self.heat_per_tick * ticks_per_cycle
@@ -134,7 +134,7 @@ class HeatPumpAppliance(Appliance):
         diff = self.current_temp - mid
         cycles_required = 0
         cycles_skipped = 0
-        ticks_per_cycle = len(self.energyCurve.get_mode_curve(ApplianceMode.ON))
+        ticks_per_cycle = len(self.energy_curve.get_mode_curve(ApplianceMode.ON))
 
         # log.info("Ticks per cycle: {}, temp diff: {}".format(ticks_per_cycle, diff))
 
@@ -214,7 +214,7 @@ class HeatPumpAppliance(Appliance):
         bids = [self.get_energy_balance()]
 
         if bids:
-            run_schedule = RunSchedule(bids, self.energyCurve.get_mode_curve(self.mode),
+            run_schedule = RunSchedule(bids, self.energy_curve.get_mode_curve(self.mode),
                                        self.area.config.ticks_per_slot, cycles_to_run,
                                        skip_cycles, self.get_tick_count())
             schedule = run_schedule.get_run_schedule()

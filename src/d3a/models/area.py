@@ -94,6 +94,14 @@ class Area:
             return None
 
     @property
+    def current_slot(self):
+        return self.current_tick // self.config.ticks_per_slot
+
+    @property
+    def current_tick_in_slot(self):
+        return self.current_tick % self.config.ticks_per_slot
+
+    @property
     def config(self):
         if self._config:
             return self._config
