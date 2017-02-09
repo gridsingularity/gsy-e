@@ -1,20 +1,10 @@
-from typing import Dict, List  # noqa
-
-from collections import defaultdict
-from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.const import DEFAULT_RISK, ARRIVAL_TIME, DEPART_TIME
 from d3a.models.strategy.storage import StorageStrategy
 
 
 class ECarStrategy(StorageStrategy):
     def __init__(self, risk=DEFAULT_RISK):
-        super().__init__()
-        self.risk = risk
-        self.offers_posted = {}  # type: Dict[str, Market]
-        self.bought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
-        self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
-        self.used_storage = 0.00
-        self.blocked_storage = 0.00
+        super().__init__(risk)
         self.connected_to_grid = False
 
     def event_tick(self, *, area):
