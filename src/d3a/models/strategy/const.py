@@ -45,9 +45,9 @@ PUMP_MIN_TEMP_INCREASE = 2
 
 # ECAR SETTINGS
 # Car: Arrival time at charging station
-ARRIVAL_TIME = 17
+ARRIVAL_TIME = 1
 # Car: Depart time from charging station
-DEPART_TIME = 17
+DEPART_TIME = 23
 
 # PREDEF_LEAD SETTINGS
 # Minimal consumption per household in Wh
