@@ -141,5 +141,5 @@ class PVStrategy(BaseStrategy):
             self.offers_posted.pop(trade.offer.id, None)
 
     def trigger_risk(self, new_risk: int = 0):
-        self.risk = new_risk
+        self.risk = int(new_risk)
         self.log.warn("S1H1 PV Risk has changed to %s", new_risk)
