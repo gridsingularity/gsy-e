@@ -5,12 +5,10 @@ from operator import itemgetter
 from threading import Thread
 
 import pendulum
-from flask import Flask, render_template, abort
-from flask import request
-from flask_cors import CORS
-from flask_api import FlaskAPI
-
+from flask import Flask, abort, render_template, request
 from flask.helpers import url_for as url_for_original
+from flask_api import FlaskAPI
+from flask_cors import CORS
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
@@ -349,6 +347,7 @@ def _simulation_info(simulation):
         'finished': simulation.finished,
         'current_tick': simulation.area.current_tick,
         'current_time': current_time,
+        'current_date': simulation.area.now.format('%Y-%m-%d'),
         'paused': simulation.paused,
         'slowdown': simulation.slowdown
     }
