@@ -63,7 +63,7 @@ def get_setup(config):
                                  appliance=SimpleAppliance()),
                         ]
                     ),
-                    Area('S1 ECar', strategy=ECarStrategy(),
+                    Area('S1 ECar', strategy=ECarStrategy(arrival_time=None, depart_time=None),
                          appliance=SimpleAppliance()),
                 ]
             ),
