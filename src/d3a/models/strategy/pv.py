@@ -1,7 +1,11 @@
 import math
+from typing import Dict  # noqa
+
+from pendulum import Time  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
+from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 
@@ -9,15 +13,14 @@ from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 class PVStrategy(BaseStrategy):
     available_triggers = [
         Trigger('risk', {'new_risk': int},
-                help="Changing the risk parameter for the PV system in House 1 "
-                     "- Value should be between 1 and 100")
+                help="Change the risk parameter. Valid values are between 1 and 100.")
     ]
 
     def __init__(self, panel_count=1, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
         self.offers_posted = {}  # type: Dict[Offer, Market]
-        self.energy_production_forecast = {}  # type: Dict[Time, Energy]
+        self.energy_production_forecast = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
 
@@ -141,5 +144,8 @@ class PVStrategy(BaseStrategy):
             self.offers_posted.pop(trade.offer.id, None)
 
     def trigger_risk(self, new_risk: int = 0):
-        self.risk = int(new_risk)
-        self.log.warn("S1H1 PV Risk has changed to %s", new_risk)
+        new_risk = int(new_risk)
+        if not (-1 < new_risk < 101):
+            raise ValueError("'new_risk' value has to be in range 0 - 100")
+        self.risk = new_risk
+        self.log.warn("Risk changed to %s", new_risk)
