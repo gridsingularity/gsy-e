@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 from fabric.colors import blue, green, yellow
 from fabric.context_managers import hide, settings, cd
-from fabric.decorators import task
+from fabric.decorators import task, hosts
 from fabric.operations import local, run
 from fabric.state import env
 from fabric.tasks import execute
@@ -80,6 +80,7 @@ def _post_check():
 
 
 @task
+@hosts('localhost')
 def compile():
     """Update list of requirements"""
     _pre_check()
@@ -91,6 +92,7 @@ def compile():
 
 
 @task(default=True)
+@hosts('localhost')
 def sync():
     """Ensure installed packages match requirements"""
     _pre_check()
@@ -109,6 +111,7 @@ def sync():
 
 
 @task
+@hosts('localhost')
 def reqs():
     """'compile' then 'sync'"""
     execute(compile)
