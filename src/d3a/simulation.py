@@ -17,7 +17,7 @@ from d3a.exceptions import SimulationException
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
-from d3a.util import NonBlockingConsole
+from d3a.util import NonBlockingConsole, format_interval
 
 
 log = getLogger(__name__)
@@ -30,7 +30,8 @@ class _SimulationInterruped(Exception):
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
-                 use_repl: bool = False, api_url=None):
+                 use_repl: bool = False, reset_on_finish: bool = False,
+                 reset_on_finish_wait: Interval = Interval(minutes=1), api_url=None):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -39,6 +40,8 @@ class Simulation:
         )
         self.simulation_config = simulation_config
         self.use_repl = use_repl
+        self.reset_on_finish = reset_on_finish
+        self.reset_on_finish_wait = reset_on_finish_wait
         self.api_url = api_url
         self.setup_module_name = setup_module_name
 
@@ -83,7 +86,7 @@ class Simulation:
     def time_since_start(self):
         return self.area.current_tick * self.simulation_config.tick_length
 
-    def reset(self):
+    def reset(self, sync=True):
         """
         Reset simulation to initial values and restart the run.
 
@@ -91,10 +94,11 @@ class Simulation:
         occur!
         """
         log.error("=" * 15 + " Simulation reset requested " + "=" * 15)
-        self.interrupted.clear()
-        self.interrupt.set()
-        self.interrupted.wait()
-        self.interrupt.clear()
+        if sync:
+            self.interrupted.clear()
+            self.interrupt.set()
+            self.interrupted.wait()
+            self.interrupt.clear()
         self._init(**self.initial_params)
         self.ready.set()
 
@@ -163,6 +167,18 @@ class Simulation:
                     log.error("REST-API still running at %s", self.api_url)
                     if self.use_repl:
                         self._start_repl()
+                    elif self.reset_on_finish:
+                        log.error("Automatically restarting simulation in %s",
+                                  format_interval(self.reset_on_finish_wait))
+                        self._handle_input(console, self.reset_on_finish_wait.in_seconds())
+
+                        def _reset():
+                            self.reset(sync=False)
+                            self.paused = False
+                        t = Thread(target=_reset)
+                        t.start()
+                        t.join()
+                        continue
                     else:
                         log.info("Ctrl-C to quit")
                         while True:

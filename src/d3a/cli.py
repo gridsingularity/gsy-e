@@ -68,8 +68,12 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
               help="Automatically pause after a certain time.  [default: disabled]")
 @click.option('--repl/--no-repl', default=False, show_default=True,
               help="Start REPL after simulation run.")
+@click.option('--reset-on-finish/--no-reset-on-finish', default=False, show_default=True,
+              help="Automatically reset simulation after it finishes.")
+@click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
+              help="Wait time before resetting after finishing the simulation run")
 def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after, repl,
-        **config_params):
+        reset_on_finish, reset_on_finish_wait, **config_params):
     try:
         simulation_config = SimulationConfig(**config_params)
     except D3AException as ex:
@@ -84,6 +88,8 @@ def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after,
         paused,
         pause_after,
         repl,
+        reset_on_finish,
+        reset_on_finish_wait,
         api_url
     )
     start_web(interface, port, simulation)
