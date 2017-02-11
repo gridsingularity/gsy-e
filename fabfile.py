@@ -17,7 +17,20 @@ HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
 
 env.use_ssh_config = True
-env.hosts = ['root@207.154.205.41']
+env.hosts = ['root@207.154.205.41', 'gsy@gsy-d3a-demo.local']
+
+HOST_CONFIG = {
+    '207.154.205.41': {
+        'port': "9000",
+        'session_name': "d3a",
+        'd3a_options': "-t 30s --paused"
+    },
+    'gsy-d3a-demo.local': {
+        'port': "5000",
+        'session_name': "simulation",
+        'd3a_options': "-t 10s --slowdown 5 --paused"
+    }
+}
 
 
 def _ensure_solium():
@@ -104,13 +117,14 @@ def reqs():
 
 @task()
 def deploy():
+    conf = HOST_CONFIG[env.host]
     with cd('d3a'):
         run("git pull")
         run("docker build -t d3a .")
         with settings(warn_only=True):
             run("docker stop d3a")
-        run('tmux new -d -s d3a '
-            '"docker run --rm --name d3a -it -p 9000:5000 -v $(pwd)/.d3a:/app/.d3a '
-            'd3a -l ERROR run -t 30s --paused"')
+        run('tmux new -d -s {c[session_name]} '
+            '"docker run --rm --name d3a -it -p {c[port]}:5000 -v $(pwd)/.d3a:/app/.d3a '
+            'd3a -l ERROR run {c[d3a_options]}"'.format(c=conf))
         time.sleep(5)
-        run("curl -X POST http://localhost:9000/api/pause")
+        run("curl -X POST http://localhost:{c[port]}/api/pause".format(c=conf))
