@@ -212,7 +212,8 @@ class Area:
                 self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in (self.config.slot_length * i for i in range(1, self.config.market_count)):
+        for offset in (self.config.slot_length * i
+                       for i in range(0, self.config.market_count - 1)):
             timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots
@@ -233,9 +234,7 @@ class Area:
                         self.parent.inter_area_agents[self.parent.markets[timeframe]].append(iaa)
                         if self.parent:
                             # Add inter area appliance to report energy
-                            self.appliance = InterAreaAppliance()
-                            self.appliance.area = self.parent
-                            self.appliance.owner = self
+                            self.appliance = InterAreaAppliance(self.parent, self)
                 self.markets[timeframe] = market
                 changed = True
                 self.log.debug("Adding {t:{format}} market".format(
