@@ -6,8 +6,10 @@ from d3a.models.strategy.storage import StorageStrategy
 
 class ECarStrategy(StorageStrategy):
     available_triggers = [
-        Trigger('arrive', help="E-Car arrives and starts participating in market"),
-        Trigger('depart', help="E-Car departs and stops participating in market"),
+        Trigger('arrive', state_getter=lambda s: s.connected_to_grid,
+                help="E-Car arrives and starts participating in market"),
+        Trigger('depart', state_getter=lambda s: not s.connected_to_grid,
+                help="E-Car departs and stops participating in market"),
     ]
 
     def __init__(self, risk=DEFAULT_RISK, arrival_time=ARRIVAL_TIME, depart_time=DEPART_TIME):
