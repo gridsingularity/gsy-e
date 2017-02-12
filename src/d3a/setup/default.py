@@ -1,3 +1,4 @@
+from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
@@ -23,7 +24,7 @@ def get_setup(config):
                         'S1 House 1',
                         [
                             Area('S1 H1 Fridge 1', strategy=FridgeStrategy(100),
-                                 appliance=SimpleAppliance()),
+                                 appliance=FridgeAppliance()),
                             Area('S1 H1 PV 1', strategy=PVStrategy(5, 40),
                                  appliance=PVAppliance()),
                             Area('S1 H1 Load', strategy=PermanentLoadStrategy(),
