@@ -220,7 +220,7 @@ class Simulation:
                                  "  [-] decrease slowdown")
                     continue
 
-                if self.finished and cmd in {'p', 'R', '+', '-'}:
+                if self.finished and cmd in {'p', '+', '-'}:
                     log.error("Simulation has finished. The commands [p, +, -] are unavailable.")
                     continue
 
