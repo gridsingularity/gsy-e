@@ -85,7 +85,7 @@ class Area:
             markets=[t.strftime("%H:%M") for t in self.markets.keys()]
         )
 
-    @property
+    @cached_property
     def current_market(self) -> Optional[Market]:
         """Returns the 'current' market (i.e. the one currently 'running')"""
         try:
@@ -210,6 +210,9 @@ class Area:
                     first = False
                 changed = True
                 self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
+
+        # Clear `current_market` cache
+        self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
         for offset in (self.config.slot_length * i for i in range(1, self.config.market_count)):
