@@ -1,14 +1,9 @@
-from logging import getLogger
-
 from pendulum import Interval
 
 from d3a.models.appliance.builder import get_pv_curves
 from d3a.models.appliance.properties import ElectricalProperties
 from d3a.models.appliance.appliance import Appliance, ApplianceMode, EnergyCurve
 from d3a.models.events import Trigger
-
-
-log = getLogger(__name__)
 
 
 PANEL_COUNT_AUTO = object()
@@ -61,7 +56,7 @@ class PVAppliance(Appliance):
         self.cloud_duration = duration
         # 2% residual power generated even under 100% cloud cover
         self.multiplier = (1 - percent / 100) if percent < 98 else 0.02
-        if self.cloud_duration <= 0:
+        if self.cloud_duration <= 0 or percent <= 0:
             self.end_cloud_cover()
             self.log.warning("Cloud cover ended")
         else:

@@ -48,8 +48,10 @@ def get_pv_curves(panel_count: int = 1) -> dict:
                        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                        0.0, 0.0, 0.0]
 
+    # FIXME: Arbitrary factor "18" somehow matches data from strategy.
+    # FIXME: 12 would make sense since 60 min / 5 min = 12 but...
     mode_curves = {
-        ApplianceMode.ON: [(x * panel_count) / 1000 for x in one_panel_curve],
+        ApplianceMode.ON: [(x * panel_count) / 18 / 1000 for x in one_panel_curve],
         ApplianceMode.OFF: [0, 0]
     }
 

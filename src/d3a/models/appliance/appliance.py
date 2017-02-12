@@ -58,7 +58,7 @@ class EnergyCurve:
         new_curve = []
         for sample in curve:
             for i in range(0, multiplier):
-                new_curve.append(sample)
+                new_curve.append(sample / multiplier)
 
         return new_curve
 
@@ -105,8 +105,10 @@ class UsageGenerator:
 
 class Appliance(BaseAppliance):
     available_triggers = [
-        Trigger('on', help="Turn appliance on"),
-        Trigger('off', help="Turn appliance off")
+        Trigger('on', state_getter=lambda s: s.mode == ApplianceMode.ON,
+                help="Turn appliance on. Starts consuming energy."),
+        Trigger('off', state_getter=lambda s: s.mode == ApplianceMode.OFF,
+                help="Turn appliance off. Stops consuming energy.")
     ]
 
     def __init__(self, name: str, report_freq: int = 1):
