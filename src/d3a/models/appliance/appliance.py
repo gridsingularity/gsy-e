@@ -97,10 +97,12 @@ class UsageGenerator:
         return self.iterator()
 
     def get_reading_at(self, index: int):
+        if not self.curve:
+            return 0
         if index > 0:
             index %= len(self.curve)
 
-        return None if index < 0 else self.curve[index]
+        return 0 if index < 0 else self.curve[index]
 
 
 class Appliance(BaseAppliance):
@@ -131,7 +133,7 @@ class Appliance(BaseAppliance):
 
         log.debug("Appliance instantiated, current mode of operation is {}".format(self.mode))
 
-    def start_appliance(self):
+    def start_appliance(self, turn_on=True):
         log.info("Starting appliance {}".format(self.name))
 
         if self.electrical_properties is not None:
@@ -144,7 +146,10 @@ class Appliance(BaseAppliance):
 
         if self.energy_curve is not None:
             if self.energy_curve.get_mode_curve(ApplianceMode.ON) is not None:
-                self.change_mode_of_operation(ApplianceMode.ON)
+                if turn_on:
+                    self.change_mode_of_operation(ApplianceMode.ON)
+                else:
+                    self.change_mode_of_operation(ApplianceMode.OFF)
             else:
                 self.mode = ApplianceMode.OFF
                 log.error("Power ON energy curve is not defined for appliance")
@@ -219,7 +224,10 @@ class Appliance(BaseAppliance):
 
     def get_energy_balance(self) -> int:
         # -ve energy is energy bought
-        return self.owner.strategy.energy_balance(self.area.current_market)
+        market = self.area.current_market
+        if not market:
+            return 0
+        return self.owner.strategy.energy_balance(market)
 
     def get_tick_energy_balance(self, report_freqency=1):
         return self.get_energy_balance() / (self.area.config.ticks_per_slot / report_freqency)
