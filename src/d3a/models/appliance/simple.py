@@ -12,7 +12,7 @@ class SimpleAppliance(BaseAppliance):
         if not self.owner:
             # Should not happen
             return
-        market = area.current_market
+        market = self.area.current_market
         if not market:
             # No current market yet
             return
@@ -20,5 +20,11 @@ class SimpleAppliance(BaseAppliance):
         energy = self._market_energy.get(market)
         if energy is None:
             energy = self._market_energy[market] = self.owner.strategy.energy_balance(market)
+        self.report_energy(energy)
+
+    def report_energy(self, energy):
         if energy:
-            area.report_accounting(market, self.owner.name, energy / area.config.ticks_per_slot)
+            self.area.report_accounting(
+                self.area.current_market,
+                self.owner.name, energy / self.area.config.ticks_per_slot
+            )
