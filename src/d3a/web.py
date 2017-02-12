@@ -159,12 +159,14 @@ def _api_app(simulation: Simulation):
         if request.is_json:
             data = request.get_json(silent=True)
         else:
-            data = request.form
+            data = request.form.to_dict(flat=True)
         try:
             rv = area._fire_trigger(trigger_name, **data)
             return {'success': True, 'repsonse': rv}
         except Exception as ex:
-            return {'success': False, 'exception': str(ex), 'traceback': traceback.format_exc()}
+            return (
+                {'success': False, 'exception': str(ex), 'traceback': traceback.format_exc()}, 400
+            )
 
     @app.route("/<area_slug>/market/<market_time>")
     def market(area_slug, market_time):
