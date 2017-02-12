@@ -55,7 +55,15 @@ class EventMixin:
 class Trigger:
     name = attrib()
     params = attrib(default={})
+    state_getter = attrib(default=None)
     help = attrib(default="")
+    _source = attrib(default=None)
+
+    @property
+    def state(self):
+        if self.state_getter is None or self._source is None:
+            return None
+        return self.state_getter(self._source)
 
 
 class TriggerMeta(type):
@@ -92,11 +100,17 @@ class TriggerMeta(type):
                 triggers
             )
         ))
+
         return super().__new__(mcs, name, bases, dict_, **kwargs)
 
 
 class TriggerMixin(metaclass=TriggerMeta):
     available_triggers = []  # type: List[Trigger]
+
+    def __init__(self):
+        super().__init__()
+        for trigger in self.available_triggers:
+            trigger._source = self
 
     def fire_trigger(self, name, **params):
         if name not in self._trigger_names:

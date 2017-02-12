@@ -22,8 +22,8 @@ class _TradeLookerUpper:
 
 class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     available_triggers = [
-        Trigger('enable', help="Enable trading"),
-        Trigger('disable', help="Disable trading")
+        Trigger('enable', state_getter=lambda s: s.enabled, help="Enable trading"),
+        Trigger('disable', state_getter=lambda s: not s.enabled, help="Disable trading")
     ]
 
     def __init__(self):

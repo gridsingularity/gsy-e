@@ -262,7 +262,7 @@ class Area:
             self.config.tick_length * self.current_tick
         )
 
-    @property
+    @cached_property
     def available_triggers(self):
         triggers = []
         if isinstance(self.strategy, TriggerMixin):

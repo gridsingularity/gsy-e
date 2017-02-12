@@ -119,9 +119,10 @@ def _api_app(simulation: Simulation):
             'strategy': area.strategy.__class__.__name__ if area.strategy else None,
             'appliance': area.appliance.__class__.__name__ if area.appliance else None,
             'market_overview_url': url_for('markets', area_slug=area_slug),
-            'available_triggers': [
-                {
+            'available_triggers': {
+                trigger.name: {
                     'name': trigger.name,
+                    'state': trigger.state,
                     'help': trigger.help,
                     'url': url_for('area_trigger', area_slug=area_slug, trigger_name=trigger.name),
                     'parameters': [
@@ -133,7 +134,7 @@ def _api_app(simulation: Simulation):
                     ]
                 }
                 for trigger in area.available_triggers.values()
-            ],
+            },
             'markets': [
                 {
                     'type': type_,
