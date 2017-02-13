@@ -6,7 +6,7 @@ from d3a.models.strategy.const import FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, MIN_F
 
 class FridgeAppliance(SwitchableMixin, SimpleAppliance):
     available_triggers = [
-        Trigger('open', {'duration': int}, state_getter=lambda s: s.is_door_open,
+        Trigger('open', state_getter=lambda s: s.is_door_open,
                 help="Open fridge door for 'duration' ticks."),
         Trigger('close', state_getter=lambda s: not s.is_door_open,
                 help="Close fridge door immediately if open.")
