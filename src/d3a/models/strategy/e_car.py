@@ -63,3 +63,7 @@ class ECarStrategy(StorageStrategy):
         self.log.warning("E-Car departs")
 
     trigger_depart = depart
+
+    def event_market_cycle(self):
+        if self.connected_to_grid:
+            super().event_market_cycle()
