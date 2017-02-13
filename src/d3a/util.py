@@ -13,8 +13,8 @@ from pendulum.interval import Interval
 from rex import rex
 
 
-INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,2})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
-INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,2})[m:])?(?:(?P<seconds>[0-9]{1,2})s?)?$/")
+INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
+INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2})s?)?$/")
 
 
 class TaggedLogWrapper(LoggerAdapter):
