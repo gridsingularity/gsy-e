@@ -4,6 +4,7 @@ from typing import Union, List  # noqa
 from functools import reduce
 
 from attr import attrs, attrib
+from copy import copy
 
 
 class OfferEvent(Enum):
@@ -69,6 +70,11 @@ class Trigger:
 class TriggerMeta(type):
     def __new__(mcs, name, bases, dict_, **kwargs):
         triggers = dict_.get('available_triggers', [])
+        for base in bases:
+            base_triggers = getattr(base, 'available_triggers', [])
+            if base_triggers and not hasattr(base, '_trigger_names'):
+                # Base class that hasn't bee treated by the metaclass yet (e.g. mixin)
+                triggers.extend(base_triggers)
         if triggers:
             trigger_names = reduce(
                 lambda a, b: a | b,
@@ -84,7 +90,10 @@ class TriggerMeta(type):
                 if trigger.name in trigger_names:
                     raise TypeError("Trigger named '{}' is already defined.".format(trigger.name))
                 trigger_handler = 'trigger_{}'.format(trigger.name)
-                if trigger_handler not in dict_:
+                if (
+                    trigger_handler not in dict_
+                    and not any(hasattr(base, trigger_handler) for base in bases)
+                ):
                     raise TypeError("Trigger handler '{}' for trigger '{}' is missing.".format(
                         trigger_handler, trigger.name
                     ))
@@ -109,8 +118,12 @@ class TriggerMixin(metaclass=TriggerMeta):
 
     def __init__(self):
         super().__init__()
-        for trigger in self.available_triggers:
+        triggers = []
+        for trigger in reversed(self.available_triggers):
+            trigger = copy(trigger)
+            triggers.append(trigger)
             trigger._source = self
+        self.available_triggers = triggers
 
     def fire_trigger(self, name, **params):
         if name not in self._trigger_names:
