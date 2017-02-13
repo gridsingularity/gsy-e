@@ -343,7 +343,8 @@ def _get_market(area, market_time):
 
 def _simulation_info(simulation):
     current_time = format_interval(
-        simulation.area.current_tick * simulation.area.config.tick_length
+        simulation.area.current_tick * simulation.area.config.tick_length,
+        show_day=False
     )
     return {
         'config': simulation.area.config.as_dict(),
