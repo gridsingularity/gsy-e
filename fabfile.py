@@ -17,7 +17,7 @@ HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
 
 env.use_ssh_config = True
-env.hosts = ['root@207.154.205.41', 'gsy@gsy-d3a-demo.local']
+env.hosts = ['root@207.154.205.41', 'gsy@gsy-d3a-demo.local', 'gsy@10.51.21.251']
 
 HOST_CONFIG = {
     '207.154.205.41': {
@@ -31,8 +31,10 @@ HOST_CONFIG = {
         'session_name': "simulation",
         'd3a_options': "-t 10s --slowdown 5 --reset-on-finish --reset-on-finish-wait 10s",
         'trigger_pause': False
-    }
+    },
 }
+
+HOST_CONFIG['10.51.21.251'] = HOST_CONFIG['gsy-d3a-demo.local']
 
 
 def _ensure_solium():
