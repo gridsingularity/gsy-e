@@ -59,8 +59,8 @@ class StorageStrategy(BaseStrategy):
                                offer.energy)
 
                 initial_buying_price = (
-                                            (offer_price / 1.002) *
-                                            (1 / (1.05 - (0.5 * (self.risk / MAX_RISK))))
+                                            (offer_price / 1.01) *
+                                            (1 / (1.1 - (0.1 * (self.risk / MAX_RISK))))
                                          )
                 self.sell_energy(initial_buying_price, offer.energy)
                 self.offers_posted[past_market].remove(offer)
