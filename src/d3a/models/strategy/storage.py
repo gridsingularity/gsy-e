@@ -21,10 +21,10 @@ class StorageStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
         # The storage looses 1% of capacity per hour
-        self.used_storage *= (1 - ((0.01 * self.area.config.tick_length.total_seconds())
-                                   / (60 * 60)
-                                   )
-                              )
+        # self.used_storage *= (1 - ((0.01 * self.area.config.tick_length.total_seconds())
+        #                           / (60 * 60)
+        #                           )
+        #                      )
         # Taking the cheapest offers in every market currently open and building the average
         # avg_cheapest_offer_price = self.find_avg_cheapest_offers()
         most_expensive_offer_price = self.find_most_expensive_market_price()
