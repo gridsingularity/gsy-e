@@ -17,7 +17,10 @@ HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
 
 env.use_ssh_config = True
-env.hosts = ['root@207.154.205.41', 'gsy@gsy-d3a-demo.local', 'gsy@10.51.21.251']
+env.hosts = [
+    'root@207.154.205.41',
+    'gsy@gsy-d3a-demo.local',
+]
 
 HOST_CONFIG = {
     '207.154.205.41': {
