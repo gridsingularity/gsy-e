@@ -6,7 +6,7 @@ ADD . /app
 
 WORKDIR /app
 
-RUN pip install --upgrade pip virtualenv && \
+RUN pip install --upgrade pip virtualenv setuptools && \
     virtualenv /venv && \
     /venv/bin/pip install pip-tools && \
     /venv/bin/pip-sync /app/requirements/*.txt && \

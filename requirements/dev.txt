@@ -4,7 +4,7 @@
 #
 #    pip-compile --no-index --output-file requirements/dev.txt requirements/dev.in
 #
-appdirs==1.4.0            # via setuptools
+appdirs==1.4.1            # via setuptools
 bash==0.6                 # via captainhook
 bleach==1.5.0             # via readme-renderer
 captainhook==0.8.7
