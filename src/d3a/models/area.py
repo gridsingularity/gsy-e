@@ -188,7 +188,7 @@ class Area:
 
         now = self.now
         time_in_hour = Interval(minutes=now.minute, seconds=now.second)
-        now = now.with_time(now.hour, minute=0, second=0).add_timedelta(
+        now = now.at(now.hour, minute=0, second=0).add_timedelta(
             (time_in_hour // self.config.slot_length) * self.config.slot_length
         )
 

@@ -95,7 +95,7 @@ def compile():
         puts(green("Updating requirements"), show_prefix=True)
         for file in REQ_DIR.glob('*.in'):
             puts(blue("  - {}".format(file.name.replace(".in", ""))))
-            local('pip-compile --no-index --rebuild {0}'.format(file.relative_to(HERE)))
+            local('pip-compile --no-index --upgrade --rebuild {0}'.format(file.relative_to(HERE)))
 
 
 @task(default=True)
