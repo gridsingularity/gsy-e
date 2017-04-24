@@ -6,39 +6,37 @@
 #
 appdirs==1.4.3            # via setuptools
 asn1crypto==0.22.0        # via cryptography
-bash==0.6                 # via captainhook
+aspy.yaml==0.3.0          # via pre-commit
 bleach==2.0.0             # via readme-renderer
-captainhook==0.8.7
+cached-property==1.3.0    # via pre-commit
 cffi==1.10.0              # via cryptography
 click==6.7                # via pip-tools
 cryptography==1.8.1       # via paramiko
-docopt==0.6.1             # via captainhook, ptpython
+docopt==0.6.2             # via ptpython
 docutils==0.13.1          # via readme-renderer
 fabric3==1.13.1.post1
 first==2.0.1              # via pip-tools
-flake8==3.3.0             # via captainhook
 html5lib==0.999999999     # via bleach
 idna==2.5                 # via cryptography
-isort==4.2.5              # via captainhook
 jedi==0.10.2              # via ptpython
-mccabe==0.6.1             # via flake8
+nodeenv==1.1.2            # via pre-commit
 packaging==16.8           # via cryptography, setuptools
 paramiko==2.1.2           # via fabric3
-pip-tools==1.8.2
+pip-tools==1.9.0
 pluggy==0.4.0             # via tox
+pre-commit==0.13.6
 prompt-toolkit==1.0.14    # via ptpython
 ptpython==0.39
 py==1.4.33                # via tox
 pyasn1==0.2.3             # via paramiko
-pycodestyle==2.3.1        # via flake8
 pycparser==2.17           # via cffi
-pyflakes==1.5.0           # via flake8
 pygments==2.2.0           # via ptpython, readme-renderer
 pyparsing==2.2.0          # via packaging
+pyyaml==3.12              # via aspy.yaml, pre-commit
 readme-renderer==17.2
-six==1.10.0               # via bleach, cryptography, fabric3, html5lib, packaging, pip-tools, prompt-toolkit, readme-renderer, setuptools
-tox==2.6.0
-virtualenv==15.1.0        # via tox
+six==1.10.0               # via bleach, cryptography, fabric3, html5lib, packaging, pip-tools, pre-commit, prompt-toolkit, readme-renderer, setuptools
+tox==2.7.0
+virtualenv==15.1.0        # via pre-commit, tox
 wcwidth==0.1.7            # via prompt-toolkit
 webencodings==0.5.1       # via html5lib
 

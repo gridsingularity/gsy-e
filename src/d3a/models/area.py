@@ -199,7 +199,7 @@ class Area:
         # We use `list()` here to get a copy since we modify the market list in-place
         first = True
         for timeframe in list(self.markets.keys()):
-            if timeframe <= now:
+            if timeframe < now:
                 market = self.markets.pop(timeframe)
                 market.readonly = True
                 self.past_markets[timeframe] = market
@@ -215,7 +215,7 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in (self.config.slot_length * i for i in range(1, self.config.market_count)):
+        for offset in (self.config.slot_length * i for i in range(self.config.market_count - 1)):
             timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots

@@ -1,7 +1,5 @@
 from logging import getLogger
 
-from pendulum import Interval
-
 from d3a.models.appliance.builder import gen_fridge_curves
 from d3a.models.appliance.properties import ElectricalProperties
 from d3a.models.area import Area
@@ -54,7 +52,7 @@ class FridgeAppliance(Appliance):
         self.electrical_properties = ElectricalProperties(power_range, variance_range)
 
         energy_curve = EnergyCurve(ApplianceMode.ON, on_curve, self.area.config.tick_length,
-                             self.area.config.tick_length)
+                                   self.area.config.tick_length)
         energy_curve.add_mode_curve(ApplianceMode.OFF, off_curve)
         self.energy_curve = energy_curve
         self.start_appliance(turn_on=False)

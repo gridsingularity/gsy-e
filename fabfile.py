@@ -1,5 +1,4 @@
 import os
-import shutil
 from pathlib import Path
 
 import time
@@ -58,21 +57,34 @@ def _ensure_solium():
             local("npm install --global solium@{}".format(SOLIUM_VERSION))
 
 
-def _ensure_captainhook():
-    hook = Path(".git/hooks/pre-commit")
+def _ensure_pre_commit():
+    hook_dir = Path(".git/hooks")
+    hook = hook_dir.joinpath('pre-commit')
     captainhook_installed = False
+    pre_commit_installed = False
     if hook.exists():
         captainhook_installed = ("CAPTAINHOOK IDENTIFIER" in hook.read_text())
-    if not captainhook_installed:
-        puts(yellow("Configuring 'captainhook' git pre-commit hooks"))
+    if captainhook_installed:
+        puts(yellow("Removing obsolete captainhook"))
+        checkers_dir = hook_dir.joinpath('checkers')
+        for file in checkers_dir.glob("*"):
+            file.unlink()
+        checkers_dir.rmdir()
+    if not pre_commit_installed:
+        puts(yellow("Configuring 'pre-commit' git hooks"))
         with hide('running', 'stdout'):
-            local("captainhook install --use-virtualenv-python")
-    shutil.copy('.support/solium_checker.py', '.git/hooks/checkers/')
+            local("pre-commit install --overwrite")
+    else:
+        with hide('running', 'stdout'):
+            local("pre-commit autoupdate")
 
 
-def _pre_check():
+def _ensure_venv():
     if 'VIRTUAL_ENV' not in os.environ:
         abort('No active virtualenv found. Please create / activate one before continuing.')
+
+
+def _ensure_pip_tools():
     try:
         import piptools  # noqa
     except ImportError:
@@ -81,9 +93,14 @@ def _pre_check():
             local("pip install pip-tools")
 
 
+def _pre_check():
+    _ensure_venv()
+    _ensure_pip_tools()
+
+
 def _post_check():
     _ensure_solium()
-    _ensure_captainhook()
+    _ensure_pre_commit()
 
 
 @task

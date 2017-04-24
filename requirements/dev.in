@@ -1,6 +1,6 @@
 fabric3
 pip-tools
+pre-commit
 ptpython
 tox
-captainhook
 readme-renderer
