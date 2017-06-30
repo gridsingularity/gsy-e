@@ -6,7 +6,12 @@ class Called:
         self.calls = []
 
     def __call__(self, *args, **kwargs):
-        self.calls.append((tuple(repr(a) for a in args), {k: repr(v) for k, v in kwargs.items()}))
+        self.calls.append(
+            (
+                tuple(repr(a) for a in args),
+                {k: repr(v) for k, v in kwargs.items()}
+            )
+        )
 
 
 @pytest.yield_fixture
