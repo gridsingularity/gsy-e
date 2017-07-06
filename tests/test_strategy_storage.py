@@ -237,8 +237,35 @@ def storage_strategy_test7(area_test7):
 
 
 def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
-    storage_strategy_test7.sell_energy(buying_price=10, energy=1.3)
+    energy = 1.3
+    storage_strategy_test7.sell_energy(buying_price=10, energy=energy)
     assert storage_strategy_test7.used_storage == -1.3
     assert storage_strategy_test7.offered_storage == 1.3
     assert area_test7.current_market.created_offers[0].energy == 1.3
-#    assert storage_strategy_test7.offers_posted[area_test7.current_market] == 0
+    assert len(storage_strategy_test7.offers_posted[area_test7.current_market]) > 0
+
+
+"""TEST8"""
+
+
+# Testing the sell energy function
+@pytest.fixture()
+def area_test8():
+    return FakeArea(4)
+
+
+@pytest.fixture()
+def storage_strategy_test8(area_test8):
+    s = StorageStrategy()
+    s.owner = area_test8
+    s.area = area_test8
+    s.used_storage = 100
+    return s
+
+
+def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
+    storage_strategy_test8.sell_energy(buying_price=10, energy=None)
+    assert storage_strategy_test8.used_storage == 0
+    assert storage_strategy_test8.offered_storage == 100
+    assert area_test8.current_market.created_offers[0].energy == 100
+    assert len(storage_strategy_test8.offers_posted[area_test8.current_market]) > 0
