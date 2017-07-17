@@ -54,13 +54,12 @@ class PVStrategy(BaseStrategy):
                 # Sell energy and save that an offer was posted into a list
                 try:
                     if self.energy_production_forecast[time] == 0:
-                        print('ENERGY PRODUCTION FORECAST WAS ZERO')
                         continue
                     for i in range(self.panel_count):
                         offer = market.offer(
-                            (min(rounded_energy_price, 29.9) *
-                             self.energy_production_forecast[time],
-                             self.energy_production_forecast[time]),
+                            (min(rounded_energy_price, 29.9)) *
+                            self.energy_production_forecast[time],
+                            self.energy_production_forecast[time],
                             self.owner.name
                         )
                         self.offers_posted[offer.id] = market
