@@ -54,11 +54,12 @@ class PVStrategy(BaseStrategy):
                 # Sell energy and save that an offer was posted into a list
                 try:
                     if self.energy_production_forecast[time] == 0:
+                        print('ENERGY PRODUCTION FORECAST WAS ZERO')
                         continue
                     for i in range(self.panel_count):
                         offer = market.offer(
-                            self.energy_production_forecast[time],
                             (min(rounded_energy_price, 29.9) *
+                             self.energy_production_forecast[time],
                              self.energy_production_forecast[time]),
                             self.owner.name
                         )
@@ -71,7 +72,7 @@ class PVStrategy(BaseStrategy):
             else:
                 pass
 
-        # Decrease the selling price over the ticks in a slotp
+        # Decrease the selling price over the ticks in a slot
         if (
                         self.area.current_tick % self.area.config.ticks_per_slot >
                         self.area.config.ticks_per_slot - 4
@@ -87,8 +88,10 @@ class PVStrategy(BaseStrategy):
                     self.area.now + (self.area.config.slot_length * i)
                     for i in range(
                         (
-                            self.area.config.duration
-                            + (self.area.config.market_count * self.area.config.slot_length)
+                                    self.area.config.duration
+                                    + (
+                                            self.area.config.market_count *
+                                            self.area.config.slot_length)
                         ) // self.area.config.slot_length)
                     ]:
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
