@@ -1,12 +1,13 @@
 import pytest
-from pendulum import Pendulum, pendulum
+import pendulum
+from pendulum import Pendulum
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
-TIME = pendulum.today().with_time(hour=10, minute=45, second=2)
+TIME = pendulum.today().at(hour=10, minute=45, second=2)
 
 
 class FakeArea():
@@ -113,7 +114,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     assert len(market_test2.created_offers) == 1
     assert market_test2.created_offers[0].price == 29.9 * pv_test2.energy_production_forecast[TIME]
     assert pv_test2.energy_production_forecast[
-               pendulum.today().with_time(hour=0, minute=0, second=2)
+               pendulum.today().at(hour=0, minute=0, second=2)
            ] == 0
     area_test2.current_tick = DEFAULT_CONFIG.ticks_per_slot - 2
     pv_test2.event_tick(area=area_test2)
