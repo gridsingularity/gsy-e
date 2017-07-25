@@ -1,6 +1,7 @@
 import random
 
 from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy.const import COMMERCIAL_OFFERS
 
 
 class CommercialStrategy(BaseStrategy):
@@ -12,11 +13,11 @@ class CommercialStrategy(BaseStrategy):
     def event_activate(self):
         # That's usaul an init function but the markets aren't open during the init call
         for market in self.area.markets.values():
-            for i in range(20):
+            for i in range(COMMERCIAL_OFFERS):
                 energy = random.randint(*self.energy_range_wh) / 1000
                 market.offer(
-                    energy,
                     energy * self.energy_price,
+                    energy,
                     self.owner.name
                 )
 
@@ -25,18 +26,18 @@ class CommercialStrategy(BaseStrategy):
         if self.owner.name == trade.seller:
             energy = random.randint(*self.energy_range_wh) / 1000
             market.offer(
-                energy,
                 energy * self.energy_price,
+                energy,
                 self.owner.name
             )
 
     def event_market_cycle(self):
         # Post new offers
         market = list(self.area.markets.values())[-1]
-        for i in range(20):
+        for i in range(COMMERCIAL_OFFERS):
             energy = random.randint(*self.energy_range_wh) / 1000
             market.offer(
-                energy,
                 energy * self.energy_price,
+                energy,
                 self.owner.name
             )
