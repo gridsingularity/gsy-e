@@ -52,3 +52,7 @@ DEPART_TIME = 23
 # PREDEF_LEAD SETTINGS
 # Minimal consumption per household in Wh
 MIN_HOUSEHOLD_CONSUMPTION = 70
+
+# COMMERCIAL PRODUCER SETTINGS
+# Amount of posted offers per market
+COMMERCIAL_OFFERS = 20
