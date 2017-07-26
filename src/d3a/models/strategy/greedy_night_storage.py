@@ -12,7 +12,7 @@ class NightStorageStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.offers_posted = {}  # type: Dict[Market, Offer]
+        self.offers_posted = defaultdict(list)  # type: Dict[Market, List(Offer)]
         self.bought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.used_storage = 0.00
@@ -47,30 +47,25 @@ class NightStorageStrategy(BaseStrategy):
             self.offered_storage -= sold.energy
         # Check if Storage posted offer in that market that has not been bought
         # If so try to sell the offer again
-        if past_market in self.offers_posted.keys():
-            for market, offer in list(self.offers_posted.items()):
-                if market == past_market:
-                    # self.offers_posted[market].price is the price we charged including profit
-                    # But self.sell_energy expects a buying price
-                    offer_price = (self.offers_posted[market].price /
-                                   self.offers_posted[market].energy)
 
-                    initial_buying_price = ((offer_price / 1.002) *
-                                            (1 /
-                                             (1.05 - (0.5 * (self.risk / MAX_RISK))
-                                              )
-                                             )
-                                            )
-                    self.offered_storage -= offer.energy
-                    self.used_storage += offer.energy
-                    self.sell_energy(initial_buying_price, self.offers_posted[market].energy)
-        del self.offers_posted[past_market]
+        for offer in list(self.offers_posted[past_market]):
+            # self.offers_posted[market].price is the price we charged including profit
+            # But self.sell_energy expects a buying price
+            initial_buying_price = ((offer.price / 1.002) *
+                                    (1 /
+                                     (1.05 - (0.5 * (self.risk / MAX_RISK))
+                                      )
+                                     )
+                                    )
+            self.offered_storage -= offer.energy
+            self.used_storage += offer.energy
+            self.sell_energy(initial_buying_price, offer.energy)
 
     def event_trade(self, *, market, trade):
         # If trade happened: remember it in variable
         if self.owner.name == trade.seller:
             self.sold_offers[market].append(trade.offer)
-            self.offers_posted.pop(market, None)
+            self.offers_posted[market].remove(trade.offer)
 
     def energy_buying_possible(self, max_buying_price):
         # Here starts the logic if energy should be bought
@@ -83,7 +78,7 @@ class NightStorageStrategy(BaseStrategy):
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
                             (self.used_storage + self.blocked_storage + offer.energy
-                                + self.offered_storage <= STORAGE_CAPACITY * 2
+                             + self.offered_storage <= STORAGE_CAPACITY * 2
                              )
                         # Now the storage buys everything cheaper than 29
                         # He will be able to sell this energy during the night
@@ -94,12 +89,12 @@ class NightStorageStrategy(BaseStrategy):
                         self.accept_offer(market, offer)
                         self.blocked_storage += offer.energy
                         self.bought_offers[market].append(offer)
-                        return True
+                        continue
                     except MarketException:
                         # Offer already gone etc., try next one.
-                        return False
+                        continue
                 else:
-                    return False
+                    continue
 
     def sell_energy(self, buying_price, energy=None):
         # Highest risk selling price using the highest risk is 20% above the average price
@@ -137,7 +132,7 @@ class NightStorageStrategy(BaseStrategy):
             # Updating parameters
             self.used_storage -= energy
             self.offered_storage += energy
-            self.offers_posted[most_expensive_market] = offer
+            self.offers_posted[most_expensive_market].append(offer)
 
     def find_avg_cheapest_offers(self):
         # Taking the cheapest offers in every market currently open and building the average
