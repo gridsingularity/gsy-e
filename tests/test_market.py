@@ -20,7 +20,7 @@ def market():
 
 
 def test_market_offer(market: Market):
-    offer = market.offer(20, 10, 'someone')
+    offer = market.offer(10, 20, 'someone')
 
     assert market.offers[offer.id] == offer
     assert offer.energy == 20
@@ -31,7 +31,7 @@ def test_market_offer(market: Market):
 
 def test_market_offer_invalid(market: Market):
     with pytest.raises(InvalidOffer):
-        market.offer(-1, 10, 'someone')
+        market.offer(10, -1, 'someone')
 
 
 def test_market_offer_readonly(market: Market):
@@ -140,7 +140,7 @@ def test_market_acct_simple(market: Market):
 
 
 def test_market_acct_multiple(market: Market):
-    offer1 = market.offer(20, 10, 'A')
+    offer1 = market.offer(10, 20, 'A')
     offer2 = market.offer(10, 10, 'A')
     market.accept_offer(offer1, 'B')
     market.accept_offer(offer2, 'C')
@@ -152,7 +152,7 @@ def test_market_acct_multiple(market: Market):
 
 def test_market_avg_offer_price(market: Market):
     market.offer(1, 1, 'A')
-    market.offer(1, 3, 'A')
+    market.offer(3, 1, 'A')
 
     assert market.avg_offer_price == 2
 
@@ -162,11 +162,11 @@ def test_market_avg_offer_price_empty(market: Market):
 
 
 def test_market_sorted_offers(market: Market):
-    market.offer(1, 5, 'A')
-    market.offer(1, 3, 'A')
+    market.offer(5, 1, 'A')
+    market.offer(3, 1, 'A')
     market.offer(1, 1, 'A')
-    market.offer(1, 2, 'A')
-    market.offer(1, 4, 'A')
+    market.offer(2, 1, 'A')
+    market.offer(4, 1, 'A')
 
     assert [o.price for o in market.sorted_offers] == [1, 2, 3, 4, 5]
 
@@ -228,9 +228,9 @@ def test_market_listners_offer_deleted(market, called):
     )
 )
 def test_market_issuance_acct_reverse(market: Market, last_offer_size, traded_energy):
-    offer1 = market.offer(20, 10, 'A')
+    offer1 = market.offer(10, 20, 'A')
     offer2 = market.offer(10, 10, 'A')
-    offer3 = market.offer(last_offer_size, 10, 'D')
+    offer3 = market.offer(10, last_offer_size, 'D')
 
     market.accept_offer(offer1, 'B')
     market.accept_offer(offer2, 'C')
@@ -240,7 +240,7 @@ def test_market_issuance_acct_reverse(market: Market, last_offer_size, traded_en
 
 
 def test_market_iou(market: Market):
-    offer = market.offer(20, 10, 'A')
+    offer = market.offer(10, 20, 'A')
     market.accept_offer(offer, 'B')
 
     assert market.ious['B']['A'] == 10
@@ -261,7 +261,7 @@ class MarketStateMachine(RuleBasedStateMachine):
 
     @rule(target=offers, seller=actors, energy=st.integers(min_value=1), price=st.integers())
     def offer(self, seller, energy, price):
-        return self.market.offer(energy, price, seller)
+        return self.market.offer(price, energy, seller)
 
     @rule(offer=offers, buyer=actors)
     def trade(self, offer, buyer):
