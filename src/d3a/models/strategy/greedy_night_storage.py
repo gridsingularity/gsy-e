@@ -111,7 +111,7 @@ class NightStorageStrategy(BaseStrategy):
             return
         most_expensive_market = expensive_offers.market
         # If no energy is passed, try to sell all the Energy left in the storage
-        if energy is None:
+        if energy <= 0 or energy is None:
             energy = self.used_storage
         # Try to create an offer to sell the stored energy
 
