@@ -25,9 +25,9 @@ class FakeArea():
     @property
     def cheapest_offers(self):
         offers = [
-            Offer('id', 30, 1, 'A', self),
-            Offer('id', 10, 1, 'A', self),
-            Offer('id', 20, 1, 'A', self)
+            Offer('id', 30, 1, 'A', self.current_market),
+            Offer('id', 10, 1, 'A', self.current_market),
+            Offer('id', 20, 1, 'A', self.current_market)
         ]
 
         return offers
@@ -84,7 +84,7 @@ def storage_strategy_test1(area_test1, called):
     return n
 
 
-def test_find_avg_cheapest_offers(storage_strategy_test1, area_test1):
+def test_find_avg_cheapest_offers1(storage_strategy_test1, area_test1):
     storage_strategy_test1.event_tick(area=area_test1)
     assert storage_strategy_test1.energy_buying_possible.calls[0][0][0] == '20.0'
 
@@ -270,3 +270,66 @@ def test_energy_buying_possible(storage_strategy_test4, area_test4, market_test4
     # Checking if storage respects it's current load and doesn't buy more than it has capacity
     storage_strategy_test4.used_storage = (STORAGE_CAPACITY * 2) + 1
     assert not storage_strategy_test4.energy_buying_possible(max_buying_price=30)
+
+
+"""TEST5"""
+
+
+# Test if storage sells energy
+
+@pytest.fixture()
+def area_test5():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def market_test5(area_test5, called):
+    m = area_test5.current_market
+    m.offer = called
+    return m
+
+
+@pytest.fixture()
+def storage_strategy_test5(area_test5, called):
+    n = NightStorageStrategy()
+    n.owner = area_test5
+    n.area = area_test5
+    return n
+
+
+def test_sell_energy(storage_strategy_test5, area_test5, market_test5):
+    storage_strategy_test5.sell_energy(buying_price=10, energy=1)
+    assert market_test5.offer.calls[0][0][0] == repr(10 * 1.05 * (1.05 - (0.05 * 0.5)))
+    assert market_test5.offer.calls[0][0][1] == repr(1)
+    assert market_test5.offer.calls[0][0][2] == repr('FakeArea')
+
+    storage_strategy_test5.used_storage = 2.76
+    storage_strategy_test5.sell_energy(buying_price=20.2, energy=0)
+    assert market_test5.offer.calls[1][0][0] == repr(20.2 * 1.05 * (1.05 - (0.05 * 0.5)) * 2.76)
+    assert market_test5.offer.calls[1][0][1] == repr(2.76)
+    assert market_test5.offer.calls[1][0][2] == repr('FakeArea')
+
+
+"""TEST6"""
+
+
+# Test if cheapest offer price can be found
+
+@pytest.fixture()
+def area_test6():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def storage_strategy_test6(area_test6):
+    n = NightStorageStrategy()
+    n.owner = area_test6
+    n.area = area_test6
+    return n
+
+
+def test_find_avg_cheapest_offers2(storage_strategy_test6, area_test6):
+    price = storage_strategy_test6.find_avg_cheapest_offers()
+    avg_price = (sum((offer.price / offer.energy) for offer in area_test6.cheapest_offers)
+                 / max(len(area_test6.cheapest_offers), 1))
+    assert price == avg_price

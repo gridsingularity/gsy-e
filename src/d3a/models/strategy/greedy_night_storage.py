@@ -1,9 +1,8 @@
+from collections import defaultdict
 from typing import Dict, List  # noqa
 
-from collections import defaultdict
-
 from d3a.exceptions import MarketException
-from d3a.models.market import Market, Offer, log  # noqa
+from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
 
