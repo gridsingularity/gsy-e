@@ -50,8 +50,8 @@ class IAAEngine:
                 # Forbidden offer (i.e. our counterpart's)
                 continue
             forwarded_offer = self.markets.target.offer(
-                offer.energy,
                 offer.price + (offer.price * (self.transfer_fee_pct / 100)),
+                offer.energy,
                 self.owner.name
             )
             offer_info = OfferInfo(offer, forwarded_offer)

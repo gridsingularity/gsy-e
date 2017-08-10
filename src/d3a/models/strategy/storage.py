@@ -118,17 +118,9 @@ class StorageStrategy(BaseStrategy):
         # Try to create an offer to sell the stored energy
 
         if energy > 0.0:
-            #            # Deleting all old offers
-            #            for (market, offer) in self.offers_posted.items():
-            #                if market == most_expensive_market:
-            #                    try:
-            #                        market.delete_offer(offer.id)
-            #                    except MarketException:
-            #                        return
-            # Posting offer with new price
             offer = most_expensive_market.offer(
-                energy,
                 energy * min(risk_dependent_selling_price, 29.9),
+                energy,
                 self.owner.name
             )
             # Updating parameters

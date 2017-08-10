@@ -37,7 +37,7 @@ class PVStrategy(BaseStrategy):
         # risk_dependency_of_selling_price variates with the risk around the average market price
         # High risk means expensive selling price & high possibility not selling the energy
         # The value 0.1 is to damp the effect of the risk
-        risk_dependency_of_selling_price = (normed_risk * 0.05 * average_market_price)
+        risk_dependency_of_selling_price = (normed_risk * 0.02 * average_market_price)
         # If the risk is higher than 50 the energy_price is above the average_market_price
         energy_price = min(average_market_price + risk_dependency_of_selling_price, 29.9)
         rounded_energy_price = round(energy_price, 2)
@@ -57,9 +57,9 @@ class PVStrategy(BaseStrategy):
                         continue
                     for i in range(self.panel_count):
                         offer = market.offer(
+                            (min(rounded_energy_price, 29.9)) *
                             self.energy_production_forecast[time],
-                            (min(rounded_energy_price, 29.9) *
-                             self.energy_production_forecast[time]),
+                            self.energy_production_forecast[time],
                             self.owner.name
                         )
                         self.offers_posted[offer.id] = market
@@ -71,7 +71,7 @@ class PVStrategy(BaseStrategy):
             else:
                 pass
 
-        # Decrease the selling price over the ticks in a slotp
+        # Decrease the selling price over the ticks in a slot
         if (
                         self.area.current_tick % self.area.config.ticks_per_slot >
                         self.area.config.ticks_per_slot - 4
@@ -87,8 +87,10 @@ class PVStrategy(BaseStrategy):
                     self.area.now + (self.area.config.slot_length * i)
                     for i in range(
                         (
-                            self.area.config.duration
-                            + (self.area.config.market_count * self.area.config.slot_length)
+                                    self.area.config.duration
+                                    + (
+                                            self.area.config.market_count *
+                                            self.area.config.slot_length)
                         ) // self.area.config.slot_length)
                     ]:
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
@@ -127,7 +129,7 @@ class PVStrategy(BaseStrategy):
                 iterated_market.delete_offer(offer_id)
                 new_offer = iterated_market.offer(
                     offer.energy,
-                    offer.price * 0.95,
+                    offer.price * 0.99,
                     self.owner.name
                 )
                 self.offers_posted.pop(offer_id, None)
