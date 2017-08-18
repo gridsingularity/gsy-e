@@ -1,8 +1,6 @@
 import csv
 from logging import getLogger
 
-from d3a.model.area import Area
-
 
 def export(root_area, file_prefix):
     """Export all data of the finished simulation in one CSV file per area."""
@@ -16,7 +14,7 @@ def _export_area_with_children(area, file_prefix):
 
 
 def _file_name(prefix, slug):
-    return "%s_%s"%(prefix, slug.replace(' ', '_'))
+    return "%s_%s.csv"%(prefix, slug.replace(' ', '_'))
 
 
 _labels = ['slot',
@@ -34,15 +32,15 @@ def _market_row(slot, market):
             market.avg_trade_price,
             market.min_trade_price,
             market.max_trade_price,
-            len(self.trades),
-            len(self.offers) + len(self.trades),
-            sum(trade.energy for trade in self.trades),
-            sum(trade.price for trade in self.trades)]
+            len(market.trades),
+            len(market.offers) + len(market.trades),
+            sum(trade.offer.energy for trade in market.trades),
+            sum(trade.offer.price for trade in market.trades)]
 
 
 def _export_area_flat(area, file_prefix):
     try:
-        with open(_file_name(file_prefix, area.slug), 'wb') as csv_file:
+        with open(_file_name(file_prefix, area.slug), 'w') as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(_labels)
             for slot in area.past_markets:

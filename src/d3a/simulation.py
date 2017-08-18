@@ -14,6 +14,7 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.exceptions import SimulationException
+from d3a.export import export
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
@@ -30,7 +31,7 @@ class _SimulationInterruped(Exception):
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
-                 use_repl: bool = False, reset_on_finish: bool = False,
+                 use_repl: bool = False, export: str = None, reset_on_finish: bool = False,
                  reset_on_finish_wait: Interval = Interval(minutes=1), api_url=None):
         self.initial_params = dict(
             slowdown=slowdown,
@@ -40,6 +41,8 @@ class Simulation:
         )
         self.simulation_config = simulation_config
         self.use_repl = use_repl
+        self.export_on_finish = export is not None
+        self.export_file_prefix = export
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait
         self.api_url = api_url
@@ -165,6 +168,11 @@ class Simulation:
                         config.duration / (run_duration - paused_duration)
                     )
                     log.error("REST-API still running at %s", self.api_url)
+                    if self.export_on_finish:
+                        # TODO make sure csv files are not overwritten when
+                        # --reset-on-finish is set. maybe use a timestamp in
+                        # the file name.
+                        export(self.area,self.export_file_prefix)
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:

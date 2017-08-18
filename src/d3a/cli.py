@@ -72,10 +72,10 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
               help="Automatically reset simulation after it finishes.")
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
-@click.option('--export', type=str, default="data", show_default=True,
+@click.option('--export', type=str, default=None, show_default=True,
               help="Export Simulation data in a CSV File")
 def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after, repl,
-        reset_on_finish, reset_on_finish_wait, **config_params):
+        export, reset_on_finish, reset_on_finish_wait, **config_params):
     try:
         simulation_config = SimulationConfig(**config_params)
     except D3AException as ex:
@@ -90,6 +90,7 @@ def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after,
         paused,
         pause_after,
         repl,
+        export,
         reset_on_finish,
         reset_on_finish_wait,
         api_url
