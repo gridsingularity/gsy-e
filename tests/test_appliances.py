@@ -49,7 +49,7 @@ def fridge_fixture():
 
 # door is closed by default and can be opened/closed by class-specfic triggers
 
-def test_fridge_door(fridge_fixture):
+def test_fridge_appliance_door(fridge_fixture):
     assert not fridge_fixture.is_door_open
     fridge_fixture.fire_trigger("open")
     assert fridge_fixture.is_door_open
@@ -59,21 +59,21 @@ def test_fridge_door(fridge_fixture):
 
 # reports traded surplus energy
 
-def test_fridge_report_energy_surplus(fridge_fixture):
+def test_fridge_appliance_report_energy_surplus(fridge_fixture):
     fridge_fixture.report_energy(10)
     assert fridge_fixture.area.reported_value>0
 
 
 # no report if there is no surplus or deficit
 
-def test_fridge_report_energy_balanced(fridge_fixture):
+def test_fridge_appliance_report_energy_balanced(fridge_fixture):
     fridge_fixture.report_energy(0)
     assert fridge_fixture.area.reported_value is None
 
 
 # always buys energy if we have none and upper temperature constraint is violated
 
-def test_fridge_report_energy_too_warm(fridge_fixture):
+def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
     fridge_fixture.temperature = MAX_FRIDGE_TEMP+1
     fridge_fixture.report_energy(0)
     assert fridge_fixture.area.reported_value<0
