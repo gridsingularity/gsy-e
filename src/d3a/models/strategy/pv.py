@@ -128,8 +128,8 @@ class PVStrategy(BaseStrategy):
                 offer = iterated_market.offers[offer_id]
                 iterated_market.delete_offer(offer_id)
                 new_offer = iterated_market.offer(
-                    offer.energy,
                     offer.price * 0.99,
+                    offer.energy,
                     self.owner.name
                 )
                 self.offers_posted.pop(offer_id, None)
