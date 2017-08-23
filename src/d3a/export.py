@@ -1,20 +1,33 @@
 import csv
-from logging import getLogger
+import json
+import logging
+import pathlib
 
 
-def export(root_area, file_prefix):
+_log = logging.getLogger(__name__)
+
+
+def export(root_area, path, file_prefix):
     """Export all data of the finished simulation in one CSV file per area."""
-    _export_area_with_children(root_area, file_prefix)
+    try:
+        directory = pathlib.Path(path or "~/d3a-simulation").expanduser()
+        directory.mkdir(exist_ok=True)
+    except Exception as ex:
+        _log.error("Could not open directory for csv exports: %s" % str(ex))
+        return
+    _export_area_with_children(root_area, directory, file_prefix)
+    _export_overview(root_area, directory, file_prefix)
 
 
-def _export_area_with_children(area, file_prefix):
+def _export_area_with_children(area, directory, prefix):
     for child in area.children:
-        _export_area_with_children(child, file_prefix)
-    _export_area_flat(area, file_prefix)
+        _export_area_with_children(child, directory, prefix)
+    _export_area_flat(area, directory, prefix)
 
 
-def _file_name(prefix, slug):
-    return "%s_%s.csv"%(prefix, slug.replace(' ', '_'))
+def _file_path(directory, prefix, slug):
+    file_name = ("%s_%s.csv" % (prefix, slug)).replace(' ', '_')
+    return directory.joinpath(file_name).as_posix()
 
 
 _labels = ['slot',
@@ -38,9 +51,9 @@ def _market_row(slot, market):
             sum(trade.offer.price for trade in market.trades)]
 
 
-def _export_area_flat(area, file_prefix):
+def _export_area_flat(area, directory, prefix):
     try:
-        with open(_file_name(file_prefix, area.slug), 'w') as csv_file:
+        with open(_file_path(directory, prefix, area.slug), 'w') as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(_labels)
             for slot in area.past_markets:
@@ -48,5 +61,13 @@ def _export_area_flat(area, file_prefix):
             for slot in area.markets:
                 writer.writerow(_market_row(slot, area.markets[slot]))
     except Exception as ex:
-        log = getLogger(__name__)
-        log.error("Could not export area data: %s" % str(ex))
+        _log.error("Could not export area data: %s" % str(ex))
+
+
+def _export_overview(root_area, directory, prefix):
+    overview = {  # TODO
+    }
+    try:
+        directory.joinpath("%s_overview.json" % prefix).write_text(json.dumps(overview, indent=2))
+    except Exception as ex:
+        _log.error("Error when writing overview file: %s" % str(ex))
