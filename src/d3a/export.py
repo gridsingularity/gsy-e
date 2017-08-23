@@ -38,7 +38,6 @@ _labels = ['slot',
            'min trade price',
            'max trade price',
            '# trades',
-           '# offers',
            'total energy traded',
            'total trade volume']
 
