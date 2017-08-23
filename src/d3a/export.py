@@ -2,7 +2,10 @@ import csv
 import json
 import logging
 import pathlib
+from collections import defaultdict
 
+from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
+from d3a.models.strategy.storage import StorageStrategy
 
 _log = logging.getLogger(__name__)
 
@@ -46,7 +49,6 @@ def _market_row(slot, market):
             market.min_trade_price,
             market.max_trade_price,
             len(market.trades),
-            len(market.offers) + len(market.trades),
             sum(trade.offer.energy for trade in market.trades),
             sum(trade.offer.price for trade in market.trades)]
 
@@ -71,3 +73,28 @@ def _export_overview(root_area, directory, prefix):
         directory.joinpath("%s_overview.json" % prefix).write_text(json.dumps(overview, indent=2))
     except Exception as ex:
         _log.error("Error when writing overview file: %s" % str(ex))
+
+
+# Try evaluate current storage usage
+class StorageData():
+    def __init__(self):
+        self.storage_Areas = defaultdict(set)
+        self.storages = []
+        self.market_capacities = defaultdict(
+            dict)  # type: Dict[Pendulum, Dict[area.name, capacity]]
+
+    def _get_storage_areas(self, area):
+        for child in area.children:
+            if child.strategy is not None and isinstance(child.stratetgy,
+                                                         (StorageStrategy, NightStorageStrategy)):
+                self.storage_Areas[area].add(child)
+
+    def _export_storage_capacity(self):
+        for area, children in self.storage_Areas.items():
+            for market in area.markets:
+                for trade in market.trades:
+                    if trade.seller in children:
+                        self.market_capacities[market.time_slot][trade.seller] -= \
+                            trade.offer.energy
+                    if trade.buyer in children:
+                        self.market_capacities[market.time_slot][trade.buyer] += trade.offer.energy
