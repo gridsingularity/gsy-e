@@ -200,3 +200,34 @@ def testing_trigger_risk(pv_test5):
         pv_test5.trigger_risk(101)
     with pytest.raises(ValueError):
         pv_test5.trigger_risk(-1)
+
+
+""" TEST 6"""
+# Testing with different risk test parameters
+
+
+@pytest.fixture()
+def pv_test6(area_test3):
+    p = PVStrategy()
+    p.area = area_test3
+    p.owner = area_test3
+    p.offers_posted = {}
+    p.energy_production_forecast = ENERGY_FORECAST
+    return p
+
+
+def testing_low_risk(pv_test6, market_test3):
+    pv_test6.risk = 20
+    pv_test6.event_activate()
+    pv_test6.event_tick(area=area_test3)
+    assert market_test3.created_offers[0].price == \
+        29.64 * pv_test6.energy_production_forecast[TIME]
+
+
+# when risk < 50 rounded_energy_price < 29.9, risk > 50 rounded_energy_price = 29.9
+def testing_high_risk(pv_test6, market_test3):
+    pv_test6.risk = 90
+    pv_test6.event_activate()
+    pv_test6.event_tick(area=area_test3)
+    assert market_test3.created_offers[0].price == \
+        29.9 * pv_test6.energy_production_forecast[TIME]
