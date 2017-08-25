@@ -33,6 +33,7 @@ def _file_path(directory, prefix, slug):
     return directory.joinpath(file_name).as_posix()
 
 
+# TODO: We should name the dimension of the Values
 _labels = ['slot',
            'avg trade price',
            'min trade price',
@@ -59,6 +60,10 @@ def _export_area_flat(area, directory, prefix):
             writer.writerow(_labels)
             for slot in area.past_markets:
                 writer.writerow(_market_row(slot, area.past_markets[slot]))
+            # TODO: Kann glaube ich gelöscht werden:
+            # Da wir export am Ende der Simulation aufrufen sind die momentan noch offenen Märkte
+            # in der Zukunft und sollten mMn bei auswertungen nicht berücksichtigt werden, da sie
+            # keine Finalen Ergebnisse sind sondern nur Momentaufnahmen
             for slot in area.markets:
                 writer.writerow(_market_row(slot, area.markets[slot]))
     except Exception as ex:
