@@ -7,6 +7,9 @@ contract Market {
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
 
+    // Nonce counter to ensure unique offer ids
+    uint offerNonce;
+
     //mapping of the energy balances for market participants
     mapping (address => int256) balances;
 
@@ -39,7 +42,7 @@ contract Market {
     // Events
     event NewOffer(bytes32 offerId, uint energyUnits, int price, address indexed seller);
     event CancelOffer(uint energyUnits, int price, address indexed seller);
-    event Trade(address indexed buyer, address indexed seller, uint energyUnits, int price);
+    event Trade(bytes32 offerId, address indexed buyer, address indexed seller, uint energyUnits, int price);
     event OfferChanged(bytes32 oldOfferId, bytes32 newOfferId, uint energyUnits, int price,
       address indexed seller);
 
@@ -58,7 +61,7 @@ contract Market {
     private returns (bool success, bytes32 offerId) {
 
         if (energyUnits > 0) {
-            offerId = sha3(energyUnits, price, seller, block.number);
+            offerId = sha3(energyUnits, price, seller, block.number, offerNonce++);
             Offer offer = offers[offerId];
             offer.energyUnits = energyUnits;
             offer.price = price;
@@ -125,7 +128,7 @@ contract Market {
                 success = clearingToken.clearingTransfer(buyer, offer.seller, cost);
             }
             if (success || offer.price == 0) {
-                Trade(buyer, offer.seller, tradedEnergyUnits, offer.price);
+                Trade(offerId, buyer, offer.seller, tradedEnergyUnits, offer.price);
                 offer.energyUnits = 0;
                 offer.price = 0;
                 offer.seller = 0;
