@@ -4,21 +4,15 @@
 #
 #    pip-compile --no-index --output-file requirements/tests.txt requirements/tests.in
 #
-appdirs==1.4.3            # via setuptools
-coverage==4.3.4
-flake8-tuple==0.2.12
-flake8==3.3.0
-hypothesis==3.8.0
-isort==4.2.5
+coverage==4.4.1
+flake8-tuple==0.2.13
+flake8==3.4.1
+hypothesis==3.21.3
+isort==4.2.15
 mccabe==0.6.1             # via flake8
-packaging==16.8           # via setuptools
-py==1.4.33                # via pytest, pytest-catchlog
+py==1.4.34                # via pytest, pytest-catchlog
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.5.0           # via flake8
-pyparsing==2.2.0          # via packaging
 pytest-catchlog==1.2.2
-pytest==3.0.7
-six==1.10.0               # via flake8-tuple, packaging, setuptools
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools                # via pytest
+pytest==3.2.1
+six==1.10.0               # via flake8-tuple

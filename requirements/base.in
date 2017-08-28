@@ -11,6 +11,5 @@ flask-api
 flask-cors
 pendulum
 python-rex
-rlp==0.4.6
 tablib
 terminaltables
