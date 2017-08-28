@@ -3,7 +3,8 @@ from contextlib import contextmanager
 import pytest
 from ethereum import tester
 
-from d3a import get_contract_path
+from d3a.util import get_contract_path
+
 
 # setup accounts
 accounts = tester.accounts

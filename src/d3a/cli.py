@@ -106,3 +106,7 @@ def resume(save_file, interface, port):
     simulation = dill.load(save_file)
     start_web(interface, port, simulation)
     simulation.run(resume=True)
+
+
+if __name__ == "__main__":
+    main()

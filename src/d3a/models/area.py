@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Union  # noqa
 from cached_property import cached_property
 from pendulum.interval import Interval
 from pendulum.pendulum import Pendulum
-from slugify import slugify
+# from slugify import slugify
 
 from d3a.blockchain import BlockChainInterface
 from d3a.exceptions import AreaException
@@ -41,7 +41,8 @@ class Area:
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
-        self.slug = slugify(name, to_lower=True)
+        # self.slug = slugify(name, to_lower=True)
+        self.slug = name.lower().replace(" ", "-")
         self.parent = None
         self.children = children if children is not None else []
         for child in self.children:
@@ -113,7 +114,7 @@ class Area:
             return self.parent.config
         return DEFAULT_CONFIG
 
-    @property
+    @cached_property
     def bc(self) -> Optional[BlockChainInterface]:
         if self._bc:
             return self._bc

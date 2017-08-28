@@ -1,5 +1,7 @@
 import os
+
 import d3a
+
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
 VERSION = "1.0.0a0"
@@ -7,14 +9,3 @@ VERSION = "1.0.0a0"
 
 def get_project_root():
     return os.path.dirname(d3a.__file__)
-
-
-def get_contract_path(contract_name):
-    if contract_name.endswith(".sol"):
-        contract_name = contract_name[:-4]
-    contract_path = os.path.join(
-        get_project_root(),
-        'contracts',
-        "{}.sol".format(contract_name)
-    )
-    return os.path.realpath(contract_path)

@@ -77,21 +77,21 @@ class Simulation:
             random.seed(seed)
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        self.bc = None
+        self.bc = None  # type: BlockChainInterface
         if self.use_bc:
             self.bc = BlockChainInterface(lambda: self.area.now)
             self.clearing_token = self.bc.init_contract(
-                "ClearingToken",
                 "ClearingToken",
                 [
                     10 ** 10,
                     "ClearingToken",
                     0,
                     "CT"
-                ]
+                ],
+                id_='ClearingToken'
             )
         log.info("Starting simulation with config %s", self.simulation_config)
-        self.area.activate()
+        self.area.activate(self.bc)
 
     @property
     def finished(self):

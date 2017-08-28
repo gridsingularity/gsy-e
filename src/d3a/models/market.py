@@ -18,6 +18,14 @@ from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundE
 from d3a.models.events import MarketEvent, OfferEvent
 
 
+BC_EVENT_MAP = {
+    b"NewOffer": MarketEvent.OFFER,
+    b"CancelOffer": MarketEvent.OFFER_DELETED,
+    b"Trade": MarketEvent.TRADE,
+    b"OfferChanged": MarketEvent.OFFER_CHANGED
+}
+
+
 log = getLogger(__name__)
 
 
@@ -70,12 +78,13 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer'))):
 class Market:
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
         from d3a.models.area import Area
-        self.area = area
+        self.area = area  # type: Area
         assert isinstance(self.area, Area)
         self.time_slot = time_slot
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
+        self.offers_deleted = {}  # type: Dict[str, Offer]
         self.notification_listeners = []
         self.trades = []  # type: List[Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
@@ -97,19 +106,19 @@ class Market:
         self.bc_contract = None
         if self.area.bc:
             self.bc_contract = self.area.bc.init_contract(
-                "{s.area.slug}-{s.time_slot}",
                 "Market",
                 [
                     self.area.bc.contracts['ClearingToken'].address,
                     self.area.config.duration.in_seconds()
                 ],
-                self._bc_listener
+                [self._bc_listener]
             )
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
 
-    def _bc_listener(self, log):
+    def _bc_listener(self, event):
+
         if log.topic == codecs.encode(b"NewOffer", 'hex'):
             self._notify_listeners(MarketEvent.OFFER, **log.data)
         elif log.topic == codecs.encode(b"CancelOffer", 'hex'):
@@ -127,7 +136,15 @@ class Market:
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
-        offer = Offer(str(uuid.uuid4()), price, energy, seller, self)
+        if self.bc_contract:
+            offer_id = self.bc_contract.offer(
+                energy,
+                price,
+                sender=self.area.bc.users[seller].privkey
+            )
+        else:
+            offer_id = str(uuid.uuid4())
+        offer = Offer(offer_id, price, energy, seller, self)
         with self.offer_lock:
             self.offers[offer.id] = offer
             log.info("[OFFER][NEW] %s", offer)
@@ -142,12 +159,17 @@ class Market:
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
         with self.offer_lock:
+            if self.bc_contract:
+                self.bc_contract.cancel(offer_or_id)
             offer = self.offers.pop(offer_or_id, None)
             self._update_min_max_avg_offer_prices()
             if not offer:
                 raise OfferNotFoundException()
             log.info("[OFFER][DEL] %s", offer)
-        if not self.area.bc:
+            if self.bc_contract:
+                # Hold on to deleted offer until bc event is processed
+                self.offers_deleted[offer_or_id] = offer
+        if not self.bc_contract:
             self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
