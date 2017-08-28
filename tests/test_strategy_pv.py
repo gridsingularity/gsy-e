@@ -231,3 +231,50 @@ def testing_high_risk(pv_test6, market_test3):
     pv_test6.event_tick(area=area_test3)
     assert market_test3.created_offers[0].price == \
         29.9 * pv_test6.energy_production_forecast[TIME]
+
+
+def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
+
+    pv_test6.event_activate()
+    morning_time = pendulum.today().at(hour=8, minute=20, second=0)
+    afternoon_time = pendulum.today().at(hour=16, minute=40, second=0)
+
+    class Counts(object):
+        def __init__(self, time):
+            self.total = 0
+            self.count = 0
+            self.time = time
+    morning_counts = Counts('morning')
+    afternoon_counts = Counts('afternoon')
+    evening_counts = Counts('evening')
+    for (time, power) in pv_test6.energy_production_forecast.items():
+        if time < morning_time:
+            morning_counts.total += 1
+            morning_counts.count = morning_counts.count + 1 \
+                if pv_test6.energy_production_forecast[time] == 0 else morning_counts.count
+        elif morning_time < time < afternoon_time:
+            afternoon_counts.total += 1
+            afternoon_counts.count = afternoon_counts.count + 1 \
+                if pv_test6.energy_production_forecast[time] > 0.1 else afternoon_counts.count
+        elif time > afternoon_time:
+            evening_counts.total += 1
+            evening_counts.count = evening_counts.count + 1 \
+                if pv_test6.energy_production_forecast[time] == 0 else evening_counts.count
+
+    total_count = morning_counts.total + afternoon_counts.total + evening_counts.total
+    assert len(list(pv_test6.energy_production_forecast.items())) == total_count
+
+    # Morning power generation is less we check this by percentage wise counts in the morning
+
+    morning_count_percent = (morning_counts.count / morning_counts.total) * 100
+    assert morning_count_percent > 90
+
+    # Afternoon power generation should be subsequently larger
+
+    afternoon_count_percent = (afternoon_counts.count / afternoon_counts.total) * 100
+    assert afternoon_count_percent > 50
+
+    # Evening power generation should again drop to low levels
+
+    evening_count_percent = (evening_counts.count / evening_counts.total) * 100
+    assert evening_count_percent > 90
