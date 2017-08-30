@@ -28,11 +28,16 @@ class FridgeAppliance(SwitchableMixin, SimpleAppliance):
         tick_length = self.area.config.tick_length.in_seconds()
         # If the fridge cools for the min needed energy it cools down 0.1C
         # This Value is taken from the Strategy/fridge.py file
-        self.cooling_gain = - 0.05 * 2
+        self.cooling_gain = - tick_length * 0.05 * 2
         # Fridge with door open heats up 0.9C per minute
         self.door_open_loss = tick_length * (0.9 / 60)
+        # Need to multiply energy with tick length because the full tick will be cooled
+        # And / 1000 to get kWh
+        self.force_cool_energy *= tick_length / 1000
 
     def report_energy(self, energy):
+        # This happens every tick
+        self.temperature = self.owner.strategy.fridge_temp
         if self.is_door_open:
             self.temp_change += self.door_open_loss
 
@@ -43,10 +48,10 @@ class FridgeAppliance(SwitchableMixin, SimpleAppliance):
         super().report_energy(energy)
 
     def event_market_cycle(self):
-        if self.owner:
-            self.owner.strategy.post(temperature=self.temp_change)
-        self.temperature = self.owner.strategy.fridge_temp
+        post_temp = self.temp_change
         self.temp_change = 0
+        if self.owner:
+            self.owner.strategy.post(temperature=post_temp)
 
     def trigger_open(self):
         self.is_door_open = True

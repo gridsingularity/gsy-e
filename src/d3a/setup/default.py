@@ -91,7 +91,7 @@ def get_setup(config):
                             Area('S2 H2 PV', strategy=PVStrategy(1, 40),
                                  appliance=PVAppliance()),
                             Area('S2 H2 Fridge', strategy=FridgeStrategy(50),
-                                 appliance=SimpleAppliance()),
+                                 appliance=FridgeAppliance()),
                             Area('S2 H2 Load 1', strategy=PermanentLoadStrategy(50),
                                  appliance=SimpleAppliance()),
                             Area('S2 H2 Load 2', strategy=PermanentLoadStrategy(80),
