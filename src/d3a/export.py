@@ -23,8 +23,11 @@ def export(root_area, path, file_prefix):
 
 
 def _export_area_with_children(area, directory, prefix):
-    for child in area.children:
-        _export_area_with_children(child, directory, prefix)
+    if area.children:
+        subdirectory = pathlib.Path(directory, area.slug.replace(' ', '_'))
+        subdirectory.mkdir(exist_ok=True, parents=True)
+        for child in area.children:
+            _export_area_with_children(child, subdirectory, prefix)
     _export_area_flat(area, directory, prefix)
 
 
