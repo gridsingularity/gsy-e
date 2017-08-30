@@ -4,6 +4,7 @@ import logging
 import pathlib
 from collections import defaultdict
 
+from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -36,32 +37,52 @@ def _file_path(directory, prefix, slug):
     return directory.joinpath(file_name).as_posix()
 
 
-_labels = ['slot',
-           'avg trade price [€]',
-           'min trade price [€]',
-           'max trade price [€]',
-           '# trades',
-           'total energy traded [kWh]',
-           'total trade volume [€]']
+class ExportData:
+    def __init__(self, area):
+        self.area = area
 
+    def labels(self):
+        return ['slot',
+                'avg trade price [€]',
+                'min trade price [€]',
+                'max trade price [€]',
+                '# trades',
+                'total energy traded [kWh]',
+                'total trade volume [€]'] + self._specific_labels()
 
-def _market_row(slot, market):
-    return [slot,
-            market.avg_trade_price,
-            market.min_trade_price,
-            market.max_trade_price,
-            len(market.trades),
-            sum(trade.offer.energy for trade in market.trades),
-            sum(trade.offer.price for trade in market.trades)]
+    def rows(self):
+        markets = self.area.past_markets
+        return [self._row(slot, markets[slot]) for slot in markets]
+
+    def _specific_labels(self):
+        if isinstance(self.area.strategy, FridgeStrategy):
+            return ['temperature [°C]']
+        return []
+
+    def _row(self, slot, market):
+        return [slot,
+                market.avg_trade_price,
+                market.min_trade_price,
+                market.max_trade_price,
+                len(market.trades),
+                sum(trade.offer.energy for trade in market.trades),
+                sum(trade.offer.price for trade in market.trades)] \
+                + self._specific_row(slot, market)
+
+    def _specific_row(self, slot, market):
+        if isinstance(self.area.strategy, FridgeStrategy):
+            return [self.area.strategy.fridge_temp]
+        return []
 
 
 def _export_area_flat(area, directory, prefix):
     try:
         with open(_file_path(directory, prefix, area.slug), 'w') as csv_file:
             writer = csv.writer(csv_file)
-            writer.writerow(_labels)
-            for slot in area.past_markets:
-                writer.writerow(_market_row(slot, area.past_markets[slot]))
+            data = ExportData(area)
+            writer.writerow(data.labels())
+            for row in data.rows():
+                writer.writerow(row)
     except Exception as ex:
         _log.error("Could not export area data: %s" % str(ex))
 
