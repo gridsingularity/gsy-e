@@ -71,7 +71,7 @@ class ExportData:
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
-            return [self.area.strategy.fridge_temp]
+            return [self.area.strategy.temp_history[slot]]
         return []
 
 

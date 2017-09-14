@@ -1,4 +1,5 @@
 from typing import Dict, Any  # noqa
+from collections import defaultdict
 
 from d3a.exceptions import MarketException
 from d3a.models.appliance.simple import SimpleAppliance
@@ -19,6 +20,7 @@ class FridgeStrategy(BaseStrategy):
         self.threshold_price = 0.0
         self.temp_change_open_market = 0.0
         self.temp_change_last_market = 0.0
+        self.temp_history = defaultdict(lambda: '-')
         self.next_market = None
 
     def event_activate(self):
@@ -142,6 +144,7 @@ class FridgeStrategy(BaseStrategy):
     def event_market_cycle(self):
         # TODO: Set realistic temperature change
         self.log.info("Temperature: %.2f", self.fridge_temp)
+        self.temp_history[self.area.current_slot] = self.fridge_temp
         self.temp_change_last_market = self.temp_change_open_market
         self.temp_change_open_market = 0
         self.next_market = list(self.area.markets.values())[0]
