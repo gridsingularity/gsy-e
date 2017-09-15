@@ -41,6 +41,21 @@ class ExportData:
     def __init__(self, area):
         self.area = area
 
+    @staticmethod
+    def create(area):
+        return ExportUpperLevelData(area) if area.children else ExportLeafData(area)
+
+    def rows(self):
+        return []
+
+    def labels(self):
+        return []
+
+
+class ExportUpperLevelData(ExportData):
+    def __init__(self, area):
+        super(ExportUpperLevelData, self).__init__(area)
+
     def labels(self):
         return ['slot',
                 'avg trade price [€]',
@@ -48,16 +63,11 @@ class ExportData:
                 'max trade price [€]',
                 '# trades',
                 'total energy traded [kWh]',
-                'total trade volume [€]'] + self._specific_labels()
+                'total trade volume [€]']
 
     def rows(self):
         markets = self.area.past_markets
         return [self._row(slot, markets[slot]) for slot in markets]
-
-    def _specific_labels(self):
-        if isinstance(self.area.strategy, FridgeStrategy):
-            return ['temperature [°C]']
-        return []
 
     def _row(self, slot, market):
         return [slot,
@@ -66,8 +76,23 @@ class ExportData:
                 market.max_trade_price,
                 len(market.trades),
                 sum(trade.offer.energy for trade in market.trades),
-                sum(trade.offer.price for trade in market.trades)] \
-                + self._specific_row(slot, market)
+                sum(trade.offer.price for trade in market.trades)]
+
+
+class ExportLeafData(ExportData):
+    def __init__(self, area):
+        super(ExportLeafData, self).__init__(area)
+
+    def labels():
+        return self._specific_labels()
+
+    def _specific_labels(self):
+        if isinstance(self.area.strategy, FridgeStrategy):
+            return ['temperature [°C]']
+        return []
+
+    def _row(self, slot, market):
+        return self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
@@ -76,15 +101,17 @@ class ExportData:
 
 
 def _export_area_flat(area, directory, prefix):
-    try:
-        with open(_file_path(directory, prefix, area.slug), 'w') as csv_file:
-            writer = csv.writer(csv_file)
-            data = ExportData(area)
-            writer.writerow(data.labels())
-            for row in data.rows():
-                writer.writerow(row)
-    except Exception as ex:
-        _log.error("Could not export area data: %s" % str(ex))
+    data = ExportData.create(area)
+    rows = data.rows()
+    if rows:
+        try:
+            with open(_file_path(directory, prefix, area.slug), 'w') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(data.labels())
+                for row in rows:
+                    writer.writerow(row)
+        except Exception as ex:
+            _log.error("Could not export area data: %s" % str(ex))
 
 
 def _export_overview(root_area, directory, prefix):
