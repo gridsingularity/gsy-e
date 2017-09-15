@@ -45,12 +45,6 @@ class ExportData:
     def create(area):
         return ExportUpperLevelData(area) if area.children else ExportLeafData(area)
 
-    def rows(self):
-        return []
-
-    def labels(self):
-        return []
-
 
 class ExportUpperLevelData(ExportData):
     def __init__(self, area):
@@ -83,16 +77,20 @@ class ExportLeafData(ExportData):
     def __init__(self, area):
         super(ExportLeafData, self).__init__(area)
 
-    def labels():
-        return self._specific_labels()
+    def labels(self):
+        return ['energy balance [kWh]'] + self._specific_labels()
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
         return []
 
+    def rows(self):
+        markets = self.area.parent.past_markets
+        return [self._row(slot, markets[slot]) for slot in markets]
+
     def _row(self, slot, market):
-        return self._specific_row(slot, market)
+        return [market.traded_energy[self.area.name]] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
