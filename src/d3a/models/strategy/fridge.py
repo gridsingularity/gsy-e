@@ -129,7 +129,7 @@ class FridgeStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self.log.info("Temperature: %.2f", self.fridge_temp)
-        self.temp_history[self.area.current_slot] = self.fridge_temp
+        self.temp_history[self.area.current_market.time_slot] = self.fridge_temp
         self.open_spot_markets = list(self.area.markets.values())
 
     def event_data_received(self, data: Dict[str, Any]):
