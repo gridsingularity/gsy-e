@@ -20,11 +20,11 @@ class SimpleAppliance(BaseAppliance):
         energy = self._market_energy.get(market)
         if energy is None:
             energy = self._market_energy[market] = self.owner.strategy.energy_balance(market)
-        self.report_energy(energy)
+        self.report_energy(energy / self.area.config.ticks_per_slot)
 
     def report_energy(self, energy):
         if energy:
             self.area.report_accounting(
                 self.area.current_market,
-                self.owner.name, energy / self.area.config.ticks_per_slot
+                self.owner.name, energy
             )
