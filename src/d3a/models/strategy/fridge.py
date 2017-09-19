@@ -97,7 +97,7 @@ class FridgeStrategy(BaseStrategy):
                            temperature_dependency_of_threshold_price
                            )
         self.log.info("Threshold_price is %s", threshold_price)
-
+        self.threshold_price = threshold_price
         # Here starts the logic if energy should be bought
         for offer in self.next_market.sorted_offers:
             # offer.energy * 1000 is needed to get the energy in Wh
@@ -127,11 +127,12 @@ class FridgeStrategy(BaseStrategy):
                     self.log.exception("Couldn't buy")
                     continue
         else:
-            if fridge_temp >= MAX_FRIDGE_TEMP:
+            cheapest_offer = list(self.next_market.sorted_offers)[-1]
+            if fridge_temp >= MAX_FRIDGE_TEMP or \
+                    (cheapest_offer.price / cheapest_offer.energy) > threshold_price:
                 self.log.critical("Need energy (temp: %.2f) but can't buy", fridge_temp)
                 try:
-                    self.log.info("cheapest price is is %s",
-                                  list(self.next_market.sorted_offers)[-1].price)
+                    self.log.info("cheapest price is %s", cheapest_offer.price)
 
                 except IndexError:
                     self.log.critical("Crap no offers available")
