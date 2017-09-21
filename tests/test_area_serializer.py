@@ -5,6 +5,7 @@ from d3a.area_serializer import area_to_string, area_from_string
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.fridge import FridgeStrategy
+from d3a.models.strategy.pv import PVStrategy
 
 
 def test_area_with_children_roundtrip():
@@ -36,3 +37,11 @@ def test_strategy_appliance_roundtrip():
 def test_raises_unknown_class():
     with pytest.raises(ValueError):
         area_from_string("{'name':'broken','strategy':'NonexistentStrategy'}")
+
+
+def test_strategy_roundtrip_with_params():
+    area = Area('area', [], PVStrategy(panel_count=42, risk=1))
+    area_str = area_to_string(area)
+    assert json.loads(area_str)['strategy']['params']['risk'] == 1
+    recovered = area_from_string(area_str)
+    assert recovered.strategy.panel_count == 42

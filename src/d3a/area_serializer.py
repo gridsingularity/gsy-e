@@ -29,7 +29,8 @@ class AreaEncoder(json.JSONEncoder):
 
     def _encode_strategy(self, strategy):
         result = {"type": strategy.__class__.__name__}
-        # TODO parameters
+        if strategy.parameters:
+            result['params'] = {p: getattr(strategy, p) for p in strategy.parameters}
         return result
 
     def _encode_appliance(self, appliance):
@@ -43,10 +44,9 @@ def area_to_string(area):
 
 
 def _instance_from_dict(description):
-    args = description['args'] if 'args' in description else list()
-    kwargs = description['kwargs'] if 'kwargs' in description else dict()
+    params = description['params'] if 'params' in description else dict()
     try:
-        return globals()[description['type']](*args, **kwargs)
+        return globals()[description['type']](**params)
     except Exception as exception:
         if 'type' in description and type(exception) is KeyError:
             raise ValueError("Unknown class '%s'" % description['type'])

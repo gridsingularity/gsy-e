@@ -30,6 +30,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         super(BaseStrategy, self).__init__()
         self.enabled = True
 
+    parameters = None
+
     @property
     def trades(self):
         return _TradeLookerUpper(self.owner.name)
