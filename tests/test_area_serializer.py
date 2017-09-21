@@ -6,6 +6,7 @@ from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.simple import OfferStrategy
 
 
 def test_area_with_children_roundtrip():
@@ -45,3 +46,9 @@ def test_strategy_roundtrip_with_params():
     assert json.loads(area_str)['strategy']['params']['risk'] == 1
     recovered = area_from_string(area_str)
     assert recovered.strategy.panel_count == 42
+
+
+def test_non_attr_param():
+    area1 = Area('area1', [], OfferStrategy(price_fraction_choice=(1, 10)))
+    recovered1 = area_from_string(area_to_string(area1))
+    assert recovered1.strategy.price_fraction == [1, 10]

@@ -32,6 +32,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     parameters = None
 
+    def non_attr_parameters(self):
+        return dict()
+
     @property
     def trades(self):
         return _TradeLookerUpper(self.owner.name)
