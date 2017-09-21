@@ -41,10 +41,10 @@ class AreaEncoder(json.JSONEncoder):
 
     def _encode_strategy(self, strategy):
         result = {"type": strategy.__class__.__name__}
-        result['params'] = strategy.non_attr_parameters()
+        result['kwargs'] = strategy.non_attr_parameters()
         if strategy.parameters:
             for p in strategy.parameters:
-                result['params'][p] = getattr(strategy, p)
+                result['kwargs'][p] = getattr(strategy, p)
         return result
 
     def _encode_appliance(self, appliance):
@@ -58,9 +58,8 @@ def area_to_string(area):
 
 
 def _instance_from_dict(description):
-    params = description['params'] if 'params' in description else dict()
     try:
-        return globals()[description['type']](**params)
+        return globals()[description['type']](**description.get('kwargs', dict()))
     except Exception as exception:
         if 'type' in description and type(exception) is KeyError:
             raise ValueError("Unknown class '%s'" % description['type'])
@@ -72,9 +71,7 @@ def area_from_dict(description):
     try:
         name = description['name']
         if 'children' in description:
-            children = list()
-            for child in description['children']:
-                children.append(area_from_dict(child))
+            children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
         if 'strategy' in description:

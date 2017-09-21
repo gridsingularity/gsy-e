@@ -43,7 +43,7 @@ def test_raises_unknown_class():
 def test_strategy_roundtrip_with_params():
     area = Area('area', [], PVStrategy(panel_count=42, risk=1))
     area_str = area_to_string(area)
-    assert json.loads(area_str)['strategy']['params']['risk'] == 1
+    assert json.loads(area_str)['strategy']['kwargs']['risk'] == 1
     recovered = area_from_string(area_str)
     assert recovered.strategy.panel_count == 42
 
