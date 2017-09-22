@@ -3,6 +3,7 @@ import json
 from d3a.models.area import Area
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.appliance.appliance import Appliance
 
 from d3a.models.appliance.fridge import FridgeAppliance  # NOQA
 
@@ -24,10 +25,8 @@ class AreaEncoder(json.JSONEncoder):
     def default(self, obj):
         if type(obj) is Area:
             return self._encode_area(obj)
-        elif isinstance(obj, BaseStrategy):
-            return self._encode_strategy(obj)
-        elif isinstance(obj, SimpleAppliance):
-            return self._encode_appliance(obj)
+        elif isinstance(obj, (BaseStrategy, SimpleAppliance, Appliance)):
+            return self._encode_strategy_or_appliance(obj)
 
     def _encode_area(self, area):
         result = {"name": area.name}
@@ -39,16 +38,13 @@ class AreaEncoder(json.JSONEncoder):
             result['appliance'] = area.appliance
         return result
 
-    def _encode_strategy(self, strategy):
-        result = {"type": strategy.__class__.__name__}
-        result['kwargs'] = strategy.non_attr_parameters()
-        if strategy.parameters:
-            for p in strategy.parameters:
-                result['kwargs'][p] = getattr(strategy, p)
-        return result
-
-    def _encode_appliance(self, appliance):
-        result = {"type": appliance.__class__.__name__}
+    def _encode_strategy_or_appliance(self, obj):
+        result = {"type": obj.__class__.__name__}
+        kwargs = {key: getattr(obj, key) for key in getattr(obj, 'parameters', None)}
+        if getattr(obj, 'non_attr_parameters', None):
+            kwargs.update(obj.non_attr_parameters())
+        if kwargs:
+            result['kwargs'] = kwargs
         return result
 
 
