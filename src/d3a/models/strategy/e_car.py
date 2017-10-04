@@ -12,6 +12,8 @@ class ECarStrategy(StorageStrategy):
                 help="E-Car departs and stops participating in market"),
     ]
 
+    parameters = ('risk', 'arrival_time', 'depart_time')
+
     def __init__(self, risk=DEFAULT_RISK, arrival_time=ARRIVAL_TIME, depart_time=DEPART_TIME):
         super().__init__(risk)
         self.arrival_time = arrival_time

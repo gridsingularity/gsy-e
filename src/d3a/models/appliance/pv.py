@@ -15,6 +15,8 @@ class PVAppliance(Appliance):
                 help="Set cloud cover to 'percent' for 'duration' ticks.")
     ]
 
+    parameters = ('name', 'panel_count')
+
     def __init__(self, name: str = "PV", report_freq: int = 1,
                  panel_count: int = PANEL_COUNT_AUTO):
         super().__init__(name, report_freq)

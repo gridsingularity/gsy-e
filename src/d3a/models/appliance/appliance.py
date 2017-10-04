@@ -113,6 +113,8 @@ class Appliance(BaseAppliance):
                 help="Turn appliance off. Stops consuming energy.")
     ]
 
+    parameters = ('name',)
+
     def __init__(self, name: str, report_freq: int = 1):
         """
         Initialize base Appliance class
@@ -132,6 +134,9 @@ class Appliance(BaseAppliance):
         self.report_sign = -1   # Consumption of power is reported as -ve and prod is +ve
 
         log.debug("Appliance instantiated, current mode of operation is {}".format(self.mode))
+
+    def non_attr_parameters(self):
+        return {'report_freq': self.report_frequency}
 
     def start_appliance(self, turn_on=True):
         log.info("Starting appliance {}".format(self.name))

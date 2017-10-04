@@ -5,6 +5,8 @@ from d3a.models.strategy.const import COMMERCIAL_OFFERS
 
 
 class CommercialStrategy(BaseStrategy):
+    parameters = ('energy_range_wh', 'energy_price')
+
     def __init__(self, *, energy_range_wh=(20, 80), energy_price=30):
         super().__init__()
         self.energy_range_wh = energy_range_wh

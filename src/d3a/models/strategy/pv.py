@@ -16,6 +16,8 @@ class PVStrategy(BaseStrategy):
                 help="Change the risk parameter. Valid values are between 1 and 100.")
     ]
 
+    parameters = ('panel_count', 'risk')
+
     def __init__(self, panel_count=1, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
