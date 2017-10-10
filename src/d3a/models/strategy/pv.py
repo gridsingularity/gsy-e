@@ -16,6 +16,8 @@ class PVStrategy(BaseStrategy):
                 help="Change the risk parameter. Valid values are between 1 and 100.")
     ]
 
+    parameters = ('panel_count', 'risk')
+
     def __init__(self, panel_count=1, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
@@ -128,8 +130,8 @@ class PVStrategy(BaseStrategy):
                 offer = iterated_market.offers[offer_id]
                 iterated_market.delete_offer(offer_id)
                 new_offer = iterated_market.offer(
-                    offer.energy,
                     offer.price * 0.99,
+                    offer.energy,
                     self.owner.name
                 )
                 self.offers_posted.pop(offer_id, None)

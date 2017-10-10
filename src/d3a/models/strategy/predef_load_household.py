@@ -6,6 +6,8 @@ from d3a.models.strategy.storage import StorageStrategy
 
 
 class PredefLoadHouseholdStrategy(StorageStrategy):
+    parameters = ('risk',)
+
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk

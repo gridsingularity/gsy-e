@@ -128,6 +128,9 @@ class IAAEngine:
 
 
 class InterAreaAgent(BaseStrategy):
+    parameters = ('owner', 'higher_market', 'lower_market', 'transfer_fee_pct',
+                  'min_offer_age', 'tick_ratio')
+
     def __init__(self, *, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=2,
                  tick_ratio=4):
         """
@@ -153,6 +156,12 @@ class InterAreaAgent(BaseStrategy):
 
         self.time_slot = higher_market.time_slot.strftime("%H:%M")
         self.tick_ratio = tick_ratio
+
+        # serialization parameters
+        self.higher_market = higher_market
+        self.lower_market = lower_market
+        self.transfer_fee_pct = transfer_fee_pct
+        self.min_offer_age = min_offer_age
 
     @property
     def trades(self):
