@@ -13,7 +13,7 @@ class Launcher:
                  port_min=5000,
                  port_max=5009,
                  max_delay_seconds=2):
-        self.queue = queue or Queue(connection=Redis())
+        self.queue = queue or Queue('d3a', connection=Redis())
         self.interface = interface
         self.port = port_min
         self.port_max = 5009

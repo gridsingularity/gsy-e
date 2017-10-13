@@ -10,7 +10,7 @@ from d3a.simulation import Simulation
 from d3a.web import start_web
 
 
-@job('default')
+@job('d3a')
 def start(scenario, settings):
     logging.getLogger().setLevel(logging.ERROR)
     interface = environ.get('WORKER_INTERFACE', "0.0.0.0")
@@ -40,7 +40,7 @@ def start(scenario, settings):
 
 def main():
     with Connection():
-        Worker(['default']).work()
+        Worker(['d3a']).work()
 
 
 if __name__ == "__main__":
