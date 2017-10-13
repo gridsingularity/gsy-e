@@ -8,6 +8,8 @@ from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
 
 
 class NightStorageStrategy(BaseStrategy):
+    parameters = ('risk',)
+
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk

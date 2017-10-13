@@ -9,9 +9,12 @@ class SwitchableMixin:
                 help="Turn appliance off. Stops consuming energy.")
     ]
 
+    parameters = ('initially_on',)
+
     def __init__(self, *args, initially_on=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_on = initially_on
+        self.initially_on = initially_on
 
     def trigger_on(self):
         self.is_on = True

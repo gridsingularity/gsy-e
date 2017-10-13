@@ -11,6 +11,8 @@ from d3a.models.strategy.const import DEFAULT_RISK, EARTH_TEMP, \
 # The heatpmup uses a surface collector with a season depended outside temperature
 # Currently the Heatpump pays no respect to the filling capacity of the storage!
 class HeatPumpStrategy(BaseStrategy):
+    parameters = ('risk',)
+
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk

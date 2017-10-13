@@ -58,6 +58,13 @@ class FakeMarket:
             [Offer('id', 100000000,
                    (FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
+             ],
+            [Offer('id', (30 * (FRIDGE_MIN_NEEDED_ENERGY / 1000)),
+                   (FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+                   )
+             ],
+            [
+
              ]
         ]
         return offers[self.count]
@@ -193,3 +200,54 @@ def test_if_fridge_temperature_decreases_correct(fridge_strategy_test1, area_tes
                                                     * round((0.02 / 60), 6)
                                                     )
                                                  )
+
+
+@pytest.fixture
+def market_test4():
+    return FakeMarket(2)
+
+
+@pytest.fixture
+def area_test4():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def fridge_strategy_test4(market_test4, area_test4, called):
+    f = FridgeStrategy()
+    f.next_market = market_test4
+    f.owner = area_test4
+    f.area = area_test4
+    f.accept_offer = called
+    return f
+
+
+def test_offer_price_greater_than_threshold(fridge_strategy_test4, area_test4, market_test4):
+    cheapest_offer = list(market_test4.sorted_offers)[-1]
+    fridge_strategy_test4.event_tick(area=area_test4)
+    assert (cheapest_offer.price / cheapest_offer.energy) > fridge_strategy_test4.threshold_price
+
+
+@pytest.fixture
+def market_test5():
+    return FakeMarket(3)
+
+
+@pytest.fixture
+def area_test5():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def fridge_strategy_test5(market_test5, area_test5, called):
+    f = FridgeStrategy()
+    f.next_market = market_test5
+    f.owner = area_test5
+    f.area = area_test5
+    f.accept_offer = called
+    return f
+
+
+def test_no_offers_left(fridge_strategy_test5, area_test5, market_test5):
+    with pytest.raises(IndexError):
+        fridge_strategy_test5.event_tick(area=area_test5)
