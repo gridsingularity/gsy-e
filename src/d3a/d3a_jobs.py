@@ -31,7 +31,12 @@ def start(scenario, settings):
         market_count=settings.get('market_count', 4)
     )
 
-    simulation = Simulation('default', config, api_url=api_url,
+    if scenario:
+        config.area = scenario
+
+    simulation = Simulation('json_arg' if scenario else 'default',
+                            config,
+                            api_url=api_url,
                             slowdown=settings.get('slowdown', 0))
 
     start_web(interface, port, simulation)
