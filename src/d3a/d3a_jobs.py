@@ -1,7 +1,8 @@
 import logging
 import pendulum.interval as interval
 from datetime import timedelta
-from rq import get_current_job
+from os import environ
+from rq import Connection, get_current_job, Worker
 from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
@@ -12,8 +13,8 @@ from d3a.web import start_web
 @job('default')
 def start(scenario, settings):
     logging.getLogger().setLevel(logging.ERROR)
-    interface = "0.0.0.0"
-    port = 5000
+    interface = environ.get('WORKER_INTERFACE', "0.0.0.0")
+    port = int(environ.get('WORKER_PORT', 5000))
     api_url = "http://{}:{}/api".format(interface, port)
 
     job = get_current_job()
@@ -35,3 +36,12 @@ def start(scenario, settings):
 
     start_web(interface, port, simulation)
     simulation.run()
+
+
+def main():
+    with Connection():
+        Worker(['default']).work()
+
+
+if __name__ == "__main__":
+    main()
