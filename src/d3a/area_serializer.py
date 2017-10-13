@@ -66,7 +66,7 @@ def _instance_from_dict(description):
             raise exception
 
 
-def area_from_dict(description):
+def area_from_dict(description, config=None):
     try:
         name = description['name']
         if 'children' in description:
@@ -81,11 +81,11 @@ def area_from_dict(description):
             appliance = _instance_from_dict(description['appliance'])
         else:
             appliance = None
-        return Area(name, children, strategy, appliance)
+        return Area(name, children, strategy, appliance, config)
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
         raise ValueError("Input is not a valid area description (%s)" % str(error))
 
 
-def area_from_string(string):
+def area_from_string(string, config=None):
     """Recover area from its json string representation"""
-    return area_from_dict(json.loads(string))
+    return area_from_dict(json.loads(string), config)
