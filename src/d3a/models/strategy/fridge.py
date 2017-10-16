@@ -93,7 +93,6 @@ class FridgeStrategy(BaseStrategy):
                            temperature_dependency_of_threshold_price
                            )
 
-        
         # Here starts the logic if energy should be bought
         for market in self.open_spot_markets:
             for offer in market.sorted_offers:
