@@ -113,7 +113,9 @@ def _export_area_flat(area, directory):
 
 
 def _export_overview(root_area, directory):
-    overview = {  # TODO
+    markets = root_area.past_markets
+    overview = {
+        'avg_trade_price_history': [markets[slot].avg_trade_price for slot in markets]
     }
     try:
         directory.joinpath("overview.json").write_text(json.dumps(overview, indent=2))
