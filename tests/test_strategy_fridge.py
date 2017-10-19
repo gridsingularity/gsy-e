@@ -36,10 +36,6 @@ class FakeArea():
         return min_max[self.count]
 
     @property
-    def markets(self):
-        return {'next market': "new market"}
-
-    @property
     def current_market(self):
         return FakeCurrentMarket("00:00:00")
 
@@ -88,15 +84,17 @@ def area_test1():
 @pytest.fixture
 def fridge_strategy_test1(market_test1, area_test1, called):
     f = FridgeStrategy()
-    f.next_market = market_test1
     f.owner = area_test1
     f.area = area_test1
+    f.area.markets = {'next market': market_test1}
     f.open_spot_markets = [market_test1]
     f.accept_offer = called
+
     return f
 
 
 def test_if_fridge_accepts_valid_offer(fridge_strategy_test1, area_test1, market_test1):
+    fridge_strategy_test1.event_activate()
     fridge_strategy_test1.event_tick(area=area_test1)
     assert fridge_strategy_test1.accept_offer.calls[0][0][1] == repr(market_test1.sorted_offers[0])
 
@@ -119,15 +117,16 @@ def area_test2():
 @pytest.fixture
 def fridge_strategy_test2(market_test2, area_test2, called):
     f = FridgeStrategy()
-    f.next_market = market_test2
     f.owner = area_test2
     f.area = area_test2
+    f.area.markets = {'next market': market_test2}
     f.fridge_temp = 4
     f.accept_offer = called
     return f
 
 
 def test_if_fridge_cools_too_much(fridge_strategy_test2, area_test2, market_test2):
+    fridge_strategy_test2.event_activate()
     fridge_strategy_test2.event_tick(area=area_test2)
     assert len(fridge_strategy_test2.accept_offer.calls) == 0
 
@@ -139,7 +138,7 @@ def test_if_fridge_cools_too_much(fridge_strategy_test2, area_test2, market_test
 
 @pytest.fixture
 def market_test3():
-    return FakeMarket(1)
+    return FakeMarket(0)
 
 
 @pytest.fixture
@@ -150,16 +149,16 @@ def area_test3():
 @pytest.fixture
 def fridge_strategy_test3(market_test3, area_test3, called):
     f = FridgeStrategy()
-    f.next_market = market_test3
     f.owner = area_test3
     f.area = area_test3
     f.fridge_temp = 7.9
-    f.open_spot_markets = [market_test3]
+    f.area.markets = {'next market': market_test3}
     f.accept_offer = called
     return f
 
 
 def test_if_warm_fridge_buys(fridge_strategy_test3, area_test3, market_test3):
+    fridge_strategy_test3.event_activate()
     fridge_strategy_test3.event_tick(area=area_test3)
     assert fridge_strategy_test3.accept_offer.calls[0][0][1] == repr(market_test3.sorted_offers[0])
 
@@ -184,7 +183,7 @@ def test_if_fridge_listens_to_appliance(fridge_strategy_test1, area_test1, marke
 
 def test_if_fridge_market_cycles(fridge_strategy_test1, area_test1, market_test1):
     fridge_strategy_test1.event_market_cycle()
-    assert fridge_strategy_test1.area.markets['next market'] == "new market"
+    assert fridge_strategy_test1.temp_history["00:00:00"] == 6.0
 
 
 """TEST6"""
@@ -216,14 +215,15 @@ def area_test4():
 @pytest.fixture
 def fridge_strategy_test4(market_test4, area_test4, called):
     f = FridgeStrategy()
-    f.next_market = market_test4
     f.owner = area_test4
     f.area = area_test4
+    f.area.markets = {'next market': market_test4}
     f.accept_offer = called
     return f
 
 
 def test_offer_price_greater_than_threshold(fridge_strategy_test4, area_test4, market_test4):
+    fridge_strategy_test4.event_activate()
     cheapest_offer = list(market_test4.sorted_offers)[-1]
     fridge_strategy_test4.event_tick(area=area_test4)
     assert (cheapest_offer.price / cheapest_offer.energy) > fridge_strategy_test4.threshold_price
@@ -245,10 +245,11 @@ def fridge_strategy_test5(market_test5, area_test5, called):
     f.next_market = market_test5
     f.owner = area_test5
     f.area = area_test5
+    f.area.markets = {'next market': market_test5}
     f.accept_offer = called
     return f
 
 
 def test_no_offers_left(fridge_strategy_test5, area_test5, market_test5):
-    with pytest.raises(IndexError):
-        fridge_strategy_test5.event_tick(area=area_test5)
+    fridge_strategy_test5.event_activate()
+    fridge_strategy_test5.event_tick(area=area_test5)

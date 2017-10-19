@@ -123,16 +123,16 @@ class FridgeStrategy(BaseStrategy):
                         self.log.exception("Couldn't buy")
                         continue
         else:
-            cheapest_offer = list(self.next_market.sorted_offers)[-1]
-            if self.fridge_temp >= MAX_FRIDGE_TEMP or \
-                    (cheapest_offer.price / cheapest_offer.energy) > threshold_price:
-                self.log.critical("Need energy (temp: %.2f) but can't buy", self.fridge_temp)
-                try:
-                    self.log.info("cheapest price is is %s",
-                                  list(self.open_spot_markets[0].sorted_offers)[-1].price)
-
-                except IndexError:
-                    self.log.critical("Crap no offers available")
+            try:
+                cheapest_offer = sorted(
+                    [offer for market in self.open_spot_markets for offer in market.sorted_offers],
+                    key=lambda o: o.price / o.energy)[0]
+                if self.fridge_temp >= MAX_FRIDGE_TEMP or \
+                        (cheapest_offer.price / cheapest_offer.energy) > threshold_price:
+                    self.log.critical("Need energy (temp: %.2f) but can't buy", self.fridge_temp)
+                    self.log.info("cheapest price is is %s", cheapest_offer.price)
+            except IndexError:
+                self.log.critical("Crap no offers available")
 
     def event_market_cycle(self):
         self.log.info("Temperature: %.2f", self.fridge_temp)
