@@ -91,11 +91,11 @@ def fridge_strategy_test1(market_test1, area_test1, called):
     f.next_market = market_test1
     f.owner = area_test1
     f.area = area_test1
+    f.open_spot_markets = [market_test1]
     f.accept_offer = called
     return f
 
 
-@pytest.mark.skip("broken since appliance remodelling, needs to be rewritten")
 def test_if_fridge_accepts_valid_offer(fridge_strategy_test1, area_test1, market_test1):
     fridge_strategy_test1.event_tick(area=area_test1)
     assert fridge_strategy_test1.accept_offer.calls[0][0][1] == repr(market_test1.sorted_offers[0])
@@ -154,11 +154,11 @@ def fridge_strategy_test3(market_test3, area_test3, called):
     f.owner = area_test3
     f.area = area_test3
     f.fridge_temp = 7.9
+    f.open_spot_markets = [market_test3]
     f.accept_offer = called
     return f
 
 
-@pytest.mark.skip("broken since appliance remodelling, needs to be rewritten")
 def test_if_warm_fridge_buys(fridge_strategy_test3, area_test3, market_test3):
     fridge_strategy_test3.event_tick(area=area_test3)
     assert fridge_strategy_test3.accept_offer.calls[0][0][1] == repr(market_test3.sorted_offers[0])
@@ -169,10 +169,11 @@ def test_if_warm_fridge_buys(fridge_strategy_test3, area_test3, market_test3):
 
 # Testing if fridge listens to input of appliance
 
-@pytest.mark.skip("needs to be rewritten after appliance remodelling")
+
 def test_if_fridge_listens_to_appliance(fridge_strategy_test1, area_test1, market_test1):
+    initial_fridge_temp = fridge_strategy_test1.fridge_temp
     fridge_strategy_test1.event_data_received({'temperature': 4.3})
-    assert fridge_strategy_test1.fridge_temp == 4.3
+    assert fridge_strategy_test1.fridge_temp == initial_fridge_temp + 4.3
 
 
 """TEST5"""
@@ -180,10 +181,10 @@ def test_if_fridge_listens_to_appliance(fridge_strategy_test1, area_test1, marke
 
 # Testing if market cycle works correct
 
-@pytest.mark.skip("broken since appliance remodelling, needs to be rewritten")
+
 def test_if_fridge_market_cycles(fridge_strategy_test1, area_test1, market_test1):
     fridge_strategy_test1.event_market_cycle()
-    assert fridge_strategy_test1.next_market == "new market"
+    assert fridge_strategy_test1.area.markets['next market'] == "new market"
 
 
 """TEST6"""
@@ -191,7 +192,7 @@ def test_if_fridge_market_cycles(fridge_strategy_test1, area_test1, market_test1
 
 # Testing if bought energy cools the fridge for the right amount
 
-@pytest.mark.skip("broken since appliance remodelling, needs to be rewritten")
+
 def test_if_fridge_temperature_decreases_correct(fridge_strategy_test1, area_test1, market_test1):
     fridge_strategy_test1.event_tick(area=area_test1)
     # 6.0 = start fridge temp, 0.05*2 = cooling_temperature, tick_length... = warming per tick

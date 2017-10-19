@@ -20,6 +20,7 @@ class FridgeStrategy(BaseStrategy):
         self.max_fridge_temp = 0
         self.min_fridge_temp = 0
         self.temp_history = defaultdict(lambda: '-')
+        self.threshold_price = 0
 
     def event_activate(self):
         self.open_spot_markets = list(self.area.markets.values())
@@ -93,7 +94,8 @@ class FridgeStrategy(BaseStrategy):
                            temperature_dependency_of_threshold_price
                            )
 
-        
+        self.threshold_price = threshold_price
+
         # Here starts the logic if energy should be bought
         for market in self.open_spot_markets:
             for offer in market.sorted_offers:
@@ -121,7 +123,9 @@ class FridgeStrategy(BaseStrategy):
                         self.log.exception("Couldn't buy")
                         continue
         else:
-            if self.fridge_temp >= MAX_FRIDGE_TEMP:
+            cheapest_offer = list(self.next_market.sorted_offers)[-1]
+            if self.fridge_temp >= MAX_FRIDGE_TEMP or \
+                    (cheapest_offer.price / cheapest_offer.energy) > threshold_price:
                 self.log.critical("Need energy (temp: %.2f) but can't buy", self.fridge_temp)
                 try:
                     self.log.info("cheapest price is is %s",
