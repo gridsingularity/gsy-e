@@ -244,6 +244,7 @@ def _api_app(simulation: Simulation):
                 },
                 'ious': _ious(market),
                 'energy_aggregate': _energy_aggregate(market),
+                'total_traded': _total_traded(market),
                 'trade_count': len(market.trades),
                 'offer_count': len(market.offers),
                 'type': type_,
@@ -302,6 +303,10 @@ def _energy_aggregate(market):
             in list(market.actual_energy_agg.items())
         }
     }
+
+
+def _total_traded(market):
+    return sum(trade.offer.energy for trade in market.trades) if market.trades else 0
 
 
 def _ious(market):
