@@ -172,7 +172,7 @@ class Simulation:
                     if self.export_on_finish:
                         export(self.area,
                                self.export_path,
-                               Pendulum.now().to_datetime_string())
+                               Pendulum.now().format("%Y-%m-%d_%X"))
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
