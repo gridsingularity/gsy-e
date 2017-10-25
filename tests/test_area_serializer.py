@@ -58,17 +58,17 @@ def test_non_attr_param():
 @pytest.fixture
 def appliance_fixture():
     child1 = Area('child1', appliance=FridgeAppliance(initially_on=False))
-    child2 = Area('child2', appliance=PVAppliance(name='PVA', panel_count=3))
+    child2 = Area('child2', appliance=PVAppliance())
     return area_to_string(Area('parent', [child1, child2]))
 
 
 def test_appliance(appliance_fixture):
     area_dict = json.loads(appliance_fixture)
     assert area_dict['children'][0]['appliance']['type'] == 'FridgeAppliance'
-    assert area_dict['children'][1]['appliance']['kwargs']['panel_count'] == 3
+    assert area_dict['children'][1]['appliance']['kwargs']['initially_on']
 
 
 def test_appliance_roundtrip(appliance_fixture):
     recovered = area_from_string(appliance_fixture)
-    assert recovered.children[1].appliance.name == 'PVA'
+    assert recovered.children[1].appliance.initially_on
     assert not recovered.children[0].appliance.is_on
