@@ -45,7 +45,7 @@ class AreaEncoder(json.JSONEncoder):
 
     def _encode_strategy_or_appliance(self, obj):
         result = {"type": obj.__class__.__name__}
-        kwargs = {key: getattr(obj, key) for key in getattr(obj, 'parameters', None)}
+        kwargs = {key: getattr(obj, key) for key in getattr(obj, 'parameters', [])}
         if getattr(obj, 'non_attr_parameters', None):
             kwargs.update(obj.non_attr_parameters())
         if kwargs:
