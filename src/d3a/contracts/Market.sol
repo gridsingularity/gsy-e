@@ -42,7 +42,7 @@ contract Market {
     // Events
     event NewOffer(bytes32 offerId, uint energyUnits, int price, address indexed seller);
     event CancelOffer(uint energyUnits, int price, address indexed seller);
-    event Trade(bytes32 offerId, address indexed buyer, address indexed seller, uint energyUnits, int price);
+    event Trade(bytes32 tradeId, address indexed buyer, address indexed seller, uint energyUnits, int price);
     event OfferChanged(bytes32 oldOfferId, bytes32 newOfferId, uint energyUnits, int price,
       address indexed seller);
 
@@ -99,7 +99,7 @@ contract Market {
      *         from the "marketStartTime"
      * @ tradedEnergyUnits Allows for partial trading of energyUnits from an offer
      */
-    function trade(bytes32 offerId, uint tradedEnergyUnits) returns (bool success, bytes32 newOfferId) {
+    function trade(bytes32 offerId, uint tradedEnergyUnits) returns (bool success, bytes32 newOfferId, bytes32 tradeId) {
         Offer offer = offers[offerId];
         address buyer = msg.sender;
         if (offer.energyUnits > 0
@@ -125,10 +125,12 @@ contract Market {
             // vice versa
             if (offer.price != 0) {
                 int cost = int(tradedEnergyUnits) * offer.price;
-                success = clearingToken.clearingTransfer(buyer, offer.seller, cost);
+                //success = clearingToken.clearingTransfer(buyer, offer.seller, cost);
+                success = true;
             }
             if (success || offer.price == 0) {
-                Trade(offerId, buyer, offer.seller, tradedEnergyUnits, offer.price);
+                tradeId = sha3(offerId, buyer);
+                Trade(tradeId, buyer, offer.seller, tradedEnergyUnits, offer.price);
                 offer.energyUnits = 0;
                 offer.price = 0;
                 offer.seller = 0;

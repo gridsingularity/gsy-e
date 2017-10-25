@@ -1,4 +1,5 @@
 from collections import namedtuple, defaultdict
+from functools import partial
 from typing import Dict, Mapping, List, Optional  # noqa
 
 from ethereum.common import set_execution_results, mk_block_from_prevstate
@@ -8,7 +9,7 @@ from ethereum.meta import make_head_candidate
 from ethereum.pow import chain
 from ethereum.pow.ethpow import Miner
 from ethereum.state import BLANK_UNCLES_HASH
-from ethereum.tools.tester import ABIContract, Chain as BaseChain, base_alloc, a0
+from ethereum.tools.tester import ABIContract, Chain as BaseChain, base_alloc, a0, k0
 from ethereum.utils import sha3, privtoaddr, encode_hex
 
 from d3a.util import get_cached_joined_contract_source
@@ -18,7 +19,7 @@ User = namedtuple('User', ('name', 'address', 'privkey'))
 
 
 class BCUsers:
-    def __init__(self, chain, default_balance=10 ** 24):
+    def __init__(self, chain: "Chain", default_balance=10 ** 8):
         self._users = {}
         self._chain = chain
         self._default_balance = default_balance
@@ -31,7 +32,7 @@ class BCUsers:
             self._users[username_or_addr] = user = self._mk_user(username_or_addr)
             self._users[user.address] = user
         if not self._chain.head_state.account_exists(user.address):
-            self._chain.head_state.set_balance(user.address, self._default_balance)
+            self._chain.tx(k0, user.address, self._default_balance)
         return user
 
     @staticmethod
@@ -76,7 +77,8 @@ class Chain(BaseChain):
             b, _ = make_head_candidate(self.chain, timestamp=self.time_source().int_timestamp)
             b = Miner(b).mine(rounds=100, start_nonce=0)
             assert self.chain.add_block(b)
-        self.block = mk_block_from_prevstate(self.chain, timestamp=self.time_source().int_timestamp)
+        self.block = mk_block_from_prevstate(self.chain,
+                                             timestamp=self.time_source().int_timestamp)
         self.head_state = self.chain.state.ephemeral_clone()
         self.cs.initialize(self.head_state, self.block)
 
@@ -87,17 +89,24 @@ class Chain(BaseChain):
 
 
 class BlockChainInterface:
-    def __init__(self, time_source: callable, default_user_balance=10 ** 24):
+    def __init__(self, time_source: callable, delay_listeners=True, default_user_balance=10 ** 8):
         self.chain = Chain(time_source)
         self.chain.add_listener(self._listener_proxy)
         self.users = BCUsers(self.chain, default_user_balance)  # type: Mapping[str, User]
         self.contracts = {}  # type: Dict[str, ABIContract]
         self.listeners = defaultdict(list)  # type: Dict[str, List[callable]]
+        self.delay_listeners = delay_listeners
+        self.delayed_listeners = []
 
     def _listener_proxy(self, log):
         """Translate raw `Log` instances into dict repr before calling the target listener"""
         for listener in self.listeners[log.address]:
-            listener(self.contracts[log.address].translator.listen(log))
+            event_data = self.contracts[log.address].translator.listen(log)
+            if self.delay_listeners:
+                self.delayed_listeners.append(
+                    partial(listener, event_data))
+            else:
+                listener(event_data)
 
     def init_contract(self, contract_name: str, args: list, listeners: Optional[List] = None,
                       id_: str = None) -> ABIContract:
@@ -112,3 +121,10 @@ class BlockChainInterface:
         if listeners:
             self.listeners[contract.address].extend(listeners)
         return contract
+
+    def fire_delayed_listeners(self):
+        if not self.delay_listeners:
+            return
+        for delayed_listener in self.delayed_listeners:
+            delayed_listener()
+        self.delayed_listeners = []

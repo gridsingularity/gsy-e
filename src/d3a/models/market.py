@@ -1,4 +1,3 @@
-import codecs
 import random
 import uuid
 from collections import defaultdict, namedtuple
@@ -10,6 +9,7 @@ from typing import Any, Dict, List, Set, Union  # noqa
 
 import sys
 
+from ethereum.utils import encode_hex, decode_hex
 from pendulum.pendulum import Pendulum
 from terminaltables.other_tables import SingleTable
 
@@ -24,7 +24,7 @@ BC_EVENT_MAP = {
     b"Trade": MarketEvent.TRADE,
     b"OfferChanged": MarketEvent.OFFER_CHANGED
 }
-
+BC_NUM_FACTOR = 10 ** 10
 
 log = getLogger(__name__)
 
@@ -87,6 +87,8 @@ class Market:
         self.offers_deleted = {}  # type: Dict[str, Offer]
         self.notification_listeners = []
         self.trades = []  # type: List[Trade]
+        # Store trades temporarily until bc event has fired
+        self._trades_by_id = {}  # type: Dict[str, Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
         self.traded_energy = defaultdict(int)
         # Store actual energy consumption in a nested dict in the form of
@@ -118,13 +120,17 @@ class Market:
         self.notification_listeners.append(listener)
 
     def _bc_listener(self, event):
-
-        if log.topic == codecs.encode(b"NewOffer", 'hex'):
-            self._notify_listeners(MarketEvent.OFFER, **log.data)
-        elif log.topic == codecs.encode(b"CancelOffer", 'hex'):
-            self._notify_listeners(MarketEvent.OFFER_DELETED, **log.data)
-        elif log.topic == codecs.encode(b"Trade", 'hex'):
-            self._notify_listeners(MarketEvent.TRADE, **log.data)
+        event_type = BC_EVENT_MAP[event['_event_type']]
+        kwargs = {}
+        if event_type is MarketEvent.OFFER:
+            kwargs['offer'] = self.offers[encode_hex(event['offerId'])]
+        elif event_type is MarketEvent.OFFER_DELETED:
+            kwargs['offer'] = self.offers_deleted.pop(encode_hex(event['offerId']))
+        elif event_type is MarketEvent.OFFER_CHANGED:
+            raise NotImplementedError("Partial trades not yet supported when using blockchain")
+        elif event_type is MarketEvent.TRADE:
+            kwargs['trade'] = self._trades_by_id.pop(encode_hex(event['tradeId']))
+        self._notify_listeners(event_type, **kwargs)
 
     def _notify_listeners(self, event, **kwargs):
         # Deliver notifications in random order to ensure fairness
@@ -137,10 +143,12 @@ class Market:
         if energy <= 0:
             raise InvalidOffer()
         if self.bc_contract:
-            offer_id = self.bc_contract.offer(
-                energy,
-                price,
-                sender=self.area.bc.users[seller].privkey
+            offer_id = encode_hex(
+                self.bc_contract.offer(
+                    int(energy * BC_NUM_FACTOR),
+                    int(price * BC_NUM_FACTOR),
+                    sender=self.area.bc.users[seller].privkey
+                )
             )
         else:
             offer_id = str(uuid.uuid4())
@@ -149,7 +157,9 @@ class Market:
             self.offers[offer.id] = offer
             log.info("[OFFER][NEW] %s", offer)
             self._update_min_max_avg_offer_prices()
-        if not self.area.bc:
+        if self.area.bc:
+            self.area.bc.fire_delayed_listeners()
+        else:
             self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
 
@@ -169,7 +179,9 @@ class Market:
             if self.bc_contract:
                 # Hold on to deleted offer until bc event is processed
                 self.offers_deleted[offer_or_id] = offer
-        if not self.bc_contract:
+        if self.area.bc:
+            self.area.bc.fire_delayed_listeners()
+        else:
             self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
@@ -219,22 +231,37 @@ class Market:
                     else:
                         # Requested partial is equal to offered energy - just proceed normally
                         pass
-            except:
+            except:  # noqa
                 # Exception happened - restore offer
                 self.offers[offer.id] = offer
                 raise
 
-            trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer)
+            if self.bc_contract:
+                success, _, trade_id = self.bc_contract.trade(
+                    decode_hex(offer.id),
+                    int(offer.energy * BC_NUM_FACTOR),
+                    sender=self.area.bc.users[buyer].privkey
+                )
+                trade_id = encode_hex(trade_id)
+            else:
+                trade_id = uuid.uuid4()
+            trade = Trade(trade_id, time, offer, offer.seller, buyer)
             self.trades.append(trade)
+            if self.bc_contract:
+                self._trades_by_id[trade_id] = trade
             log.warning("[TRADE] %s", trade)
+            # FIXME: The following updates need to be done in response to the BC event
             self.traded_energy[offer.seller] += offer.energy
             self.traded_energy[buyer] -= offer.energy
             self.ious[buyer][offer.seller] += offer.price
             self._update_min_max_avg_trade_prices(offer.price / offer.energy)
             # Recalculate offer min/max price since offer was removed
             self._update_min_max_avg_offer_prices()
+        # FIXME: Needs to be triggered by blockchain event
         offer._traded(trade, self)
-        if not self.area.bc:
+        if self.area.bc:
+            self.area.bc.fire_delayed_listeners()
+        else:
             self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
 
@@ -319,7 +346,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(offer_table).table)
-            except:
+            except:  # noqa
                 # Could blow up with certain unicode characters
                 pass
         if self.trades:
@@ -330,7 +357,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(trade_table).table)
-            except:
+            except:  # noqa
                 # Could blow up with certain unicode characters
                 pass
         if self.traded_energy:
@@ -341,7 +368,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(acct_table).table)
-            except:
+            except:  # noqa
                 # Could blow up with certain unicode characters
                 pass
         return "\n".join(out)

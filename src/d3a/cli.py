@@ -72,8 +72,9 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
               help="Automatically reset simulation after it finishes.")
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
+@click.option('--disable-bc', is_flag=True, help="Run simulation without blockchain")
 def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after, repl,
-        reset_on_finish, reset_on_finish_wait, **config_params):
+        reset_on_finish, reset_on_finish_wait, disable_bc, **config_params):
     try:
         simulation_config = SimulationConfig(**config_params)
     except D3AException as ex:
@@ -90,7 +91,8 @@ def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after,
         repl,
         reset_on_finish,
         reset_on_finish_wait,
-        api_url
+        api_url,
+        use_bc=not disable_bc
     )
     start_web(interface, port, simulation)
     simulation.run()
