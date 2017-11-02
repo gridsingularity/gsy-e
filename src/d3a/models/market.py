@@ -65,6 +65,15 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer'))):
             "{s.offer.energy} kWh @ {s.offer.price}".format(s=self)
         )
 
+    @classmethod
+    def _csv_fields(cls):
+        return cls._fields[:2] + ('price [ct./kWh]', 'energy [kWh]') + cls._fields[3:]
+
+    def _to_csv(self):
+        return self[:2] + (
+            round(self.offer.price / self.offer.energy, 4), self.offer.energy
+        ) + self[3:]
+
 
 class Market:
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
