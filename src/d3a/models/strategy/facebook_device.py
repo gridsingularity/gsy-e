@@ -32,9 +32,9 @@ class FacebookDeviceStrategy(BaseStrategy):
         # remaining_energy_required <= 50
         if remaining_energy_required <= self.min_energy_buy:
             energy_to_buy = remaining_energy_required
-        # 50 <= remaining_energy_required < 100:
-        elif self.min_energy_buy < remaining_energy_required < 2 * self.min_energy_buy:
+        elif remaining_energy_required > self.min_energy_buy:
             energy_to_buy = self.min_energy_buy
+
         if energy_to_buy == 0.0:
             return
         try:
