@@ -1,13 +1,16 @@
 import pendulum
 from typing import Dict, Any  # noqa
 from collections import OrderedDict
+
+from first import first
+
 from d3a.exceptions import MarketException
 from d3a.models.strategy.base import BaseStrategy
 
 
 class FacebookDeviceStrategy(BaseStrategy):
-
     def __init__(self, avg_power, hrs_per_day, hrs_per_week, consolidated_cycle=None):
+        super().__init__()
         self.avg_power = avg_power  # Average power in watts
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         self.hrs_per_week = hrs_per_week
@@ -40,14 +43,22 @@ class FacebookDeviceStrategy(BaseStrategy):
         try:
             # Don't have an idea whether we need a price mechanism, at this stage the cheapest
             # offers available in the markets is picked up
-            cheapest_offer, market = sorted(
-                [(offer, market) for market in self.open_spot_markets
-                 for offer in market.sorted_offers],
-                key=lambda o: o.price / o.energy)[0]
-            self.accept_offer(market, cheapest_offer, energy=energy_to_buy/1000)
-            self.energy_consumed[pendulum.now] = energy_to_buy
+            cheapest_offer, market = first(
+                sorted(
+                    [
+                        (offer, market) for market in self.open_spot_markets
+                        for offer in market.sorted_offers
+                        if offer.energy <= energy_to_buy / 1000
+                    ],
+                    key=lambda o: o[0].price / o[0].energy
+                ),
+                default=(None, None)
+            )
+            if cheapest_offer:
+                self.accept_offer(market, cheapest_offer)
+                self.energy_consumed[pendulum.now()] = energy_to_buy
         except MarketException:
-            self.log.critical("An Error occurred while buying an offer")
+            self.log.exception("An Error occurred while buying an offer")
 
     def event_market_cycle(self):
         self.open_spot_markets = list(self.area.markets.values())
