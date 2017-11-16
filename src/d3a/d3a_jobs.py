@@ -11,7 +11,7 @@ from d3a.web import start_web
 
 
 @job('d3a')
-def start(scenario, settings):
+def start(scenario, settings, message_url_format):
     logging.getLogger().setLevel(logging.ERROR)
     interface = environ.get('WORKER_INTERFACE', "0.0.0.0")
     port = int(environ.get('WORKER_PORT', 5000))
@@ -34,13 +34,11 @@ def start(scenario, settings):
     if scenario:
         config.area = scenario
 
-    message_url = "http://localhost:8000/simulation/message/{}/".format(job.id)
-
     simulation = Simulation('json_arg' if scenario else 'default',
                             config,
                             api_url=api_url,
                             slowdown=settings.get('slowdown', 0),
-                            message_url=message_url)
+                            message_url=message_url_format.format(job.id))
 
     start_web(interface, port, simulation)
     simulation.run()
