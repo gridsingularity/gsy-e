@@ -14,6 +14,7 @@ class Overview:
         self.url = url
         self.ticks_per_update = ticks_per_update or area.config.ticks_per_slot
         self.log = logging.getLogger(__name__)
+        area.add_listener(self)
 
     def event_listener(self, event_type, **kwargs):
         if event_type == AreaEvent.TICK:

@@ -34,10 +34,13 @@ def start(scenario, settings):
     if scenario:
         config.area = scenario
 
+    message_url = "http://localhost:8000/simulation/message/{}/".format(job.id)
+
     simulation = Simulation('json_arg' if scenario else 'default',
                             config,
                             api_url=api_url,
-                            slowdown=settings.get('slowdown', 0))
+                            slowdown=settings.get('slowdown', 0),
+                            message_url=message_url)
 
     start_web(interface, port, simulation)
     simulation.run()
