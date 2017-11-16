@@ -25,4 +25,9 @@ class Overview:
                     self.log.critical("Could not send simulation update: %s" % str(ex))
 
     def current_data(self):
-            return {'todo': 'post data'}
+            return {
+                'slot': self.area.current_slot,
+                'avg-offer-price': self.area.current_market.avg_offer_price,
+                'avg-trade-price': self.area.current_market.avg_trade_price,
+                'actual-energy-agg': self.area.current_market.actual_energy_agg
+            }
