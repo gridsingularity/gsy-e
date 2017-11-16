@@ -9,7 +9,8 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class FacebookDeviceStrategy(BaseStrategy):
-    def __init__(self, avg_power, hrs_per_day, hrs_per_week, consolidated_cycle=None):
+    def __init__(self, avg_power, hrs_per_day=None, hrs_per_week=None,
+                 hrs_of_day=(0, 23), consolidated_cycle=None):
         super().__init__()
         self.avg_power = avg_power  # Average power in watts
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
@@ -24,6 +25,7 @@ class FacebookDeviceStrategy(BaseStrategy):
         # This is the minimum batch of energy that a device buys, please check whether this could
         # be a parameter on the constructor or if we want to deal in percentages
         self.min_energy_buy = 50  # 50 wh is the energy to buy each time for the device
+        self.hrs_of_day = hrs_of_day
 
     def event_activate(self):
         self.midnight = self.area.now.start_of("day").hour_(0)
@@ -40,6 +42,7 @@ class FacebookDeviceStrategy(BaseStrategy):
 
         if energy_to_buy == 0.0:
             return
+
         try:
             # Don't have an idea whether we need a price mechanism, at this stage the cheapest
             # offers available in the markets is picked up
@@ -75,7 +78,7 @@ class FacebookDeviceStrategy(BaseStrategy):
         else:
             if self.hrs_per_day:
                 return self.avg_power * self.hrs_per_day
-            else:
+            elif self.hrs_per_week:
                 return (self.avg_power * self.hrs_per_week) / 7
 
     # This function comes into picture if we decide to buy energy in percentages of the
