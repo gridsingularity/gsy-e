@@ -1,7 +1,7 @@
 import pendulum
 from typing import Dict, Any  # noqa
 from collections import OrderedDict
-
+from d3a.exceptions import D3AException
 from first import first
 
 from d3a.exceptions import MarketException
@@ -17,7 +17,6 @@ class FacebookDeviceStrategy(BaseStrategy):
         self.hrs_per_week = hrs_per_week
         # consolidated_cycle is KWh energy consumed for the entire year
         self.consolidated_cycle = consolidated_cycle
-        self.open_spot_markets = []
         self.daily_energy_required = self.calculate_daily_energy_req()
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_consumed = OrderedDict()  # type: Dict[Pendulum, float]
@@ -26,10 +25,11 @@ class FacebookDeviceStrategy(BaseStrategy):
         # be a parameter on the constructor or if we want to deal in percentages
         self.min_energy_buy = 50  # 50 wh is the energy to buy each time for the device
         self.hrs_of_day = hrs_of_day
+        self.period_active = self.calculate_active_period()
 
     def event_activate(self):
         self.midnight = self.area.now.start_of("day").hour_(0)
-        self.open_spot_markets = list(self.area.markets.values())
+        self.period_active = self.calculate_active_period()
 
     def event_tick(self, *, area):
         energy_to_buy = 0
@@ -42,6 +42,12 @@ class FacebookDeviceStrategy(BaseStrategy):
 
         if energy_to_buy == 0.0:
             return
+        markets = []
+        for time, market in self.area.markets.items():
+            if time in self.period_active:
+                markets.append(market)
+        if not markets:
+            return
 
         try:
             # Don't have an idea whether we need a price mechanism, at this stage the cheapest
@@ -49,7 +55,7 @@ class FacebookDeviceStrategy(BaseStrategy):
             cheapest_offer, market = first(
                 sorted(
                     [
-                        (offer, market) for market in self.open_spot_markets
+                        (offer, market) for market in markets
                         for offer in market.sorted_offers
                         if offer.energy <= energy_to_buy / 1000
                     ],
@@ -64,7 +70,6 @@ class FacebookDeviceStrategy(BaseStrategy):
             self.log.exception("An Error occurred while buying an offer")
 
     def event_market_cycle(self):
-        self.open_spot_markets = list(self.area.markets.values())
         # Remove all dictionary entries of time, energy before midnight today
         for time, energy_value in self.energy_consumed.items():
             if time < self.midnight:
@@ -97,3 +102,13 @@ class FacebookDeviceStrategy(BaseStrategy):
             return 0
         else:
             return self.daily_energy_required - energy_consumed_today
+
+    def calculate_active_period(self):
+        if self.hrs_of_day[0] >= self.hrs_of_day[1]:
+            raise D3AException('Start hour cannot be greater than the end hour')
+        else:
+            # Instantiating a Period object for the hours the device is active
+            # https://pendulum.eustace.io/docs/#period
+            if self.midnight:
+                return self.midnight.end_of("hour").hour_(self.hrs_of_day[1]).diff(
+                    self.midnight.start_of("hour").hour_(self.hrs_of_day[0]))
