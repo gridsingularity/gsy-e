@@ -9,12 +9,12 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class FacebookDeviceStrategy(BaseStrategy):
-    def __init__(self, avg_power, hrs_per_day=None, hrs_per_week=None,
-                 hrs_of_day=(0, 23), consolidated_cycle=None):
+    def __init__(self, avg_power, hrs_per_day=None, hrs_of_day=(0, 23), consolidated_cycle=None):
         super().__init__()
         self.avg_power = avg_power  # Average power in watts
+        if not hrs_per_day and not consolidated_cycle:
+            raise ValueError("Either 'hrs_per_day' or 'consolidated_cycle' is required")
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
-        self.hrs_per_week = hrs_per_week
         # consolidated_cycle is KWh energy consumed for the entire year
         self.consolidated_cycle = consolidated_cycle
         self.daily_energy_required = self.calculate_daily_energy_req()
@@ -77,14 +77,10 @@ class FacebookDeviceStrategy(BaseStrategy):
 
     # Returns daily energy required by the device in watt-hours at present
     def calculate_daily_energy_req(self):
-
         if self.consolidated_cycle:
             return (self.consolidated_cycle / 365) * 1000
-        else:
-            if self.hrs_per_day:
-                return self.avg_power * self.hrs_per_day
-            elif self.hrs_per_week:
-                return (self.avg_power * self.hrs_per_week) / 7
+        elif self.hrs_per_day:
+            return self.avg_power * self.hrs_per_day
 
     # This function comes into picture if we decide to buy energy in percentages of the
     # total energy required for the day
