@@ -155,3 +155,30 @@ def test_hrs_per_week(area_test3, facebook_strategy_test3):
 def test_exception_wrong_hrsofday(area_test3, market_test3):
     with pytest.raises(D3AException):
         FacebookDeviceStrategy(avg_power=1500, hrs_per_week=2.5, hrs_of_day=(2, 1))
+
+
+@pytest.fixture()
+def area_test4():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def market_test4():
+    return FakeMarket(0)
+
+
+@pytest.fixture()
+def facebook_strategy_test4(area_test4, market_test4, called):
+    fb = FacebookDeviceStrategy(avg_power=620, hrs_per_day=4, hrs_of_day=(11, 20))
+    fb.owner = area_test4
+    fb.area = area_test4
+    fb.area.markets = {TIME: market_test4}
+    fb.accept_offer = called
+    return fb
+
+
+# Test if the device is inactive and does not accept offers outside the initialised hrs_of_day
+def test_device_inactive_outside_hrsofday(facebook_strategy_test4, area_test4, market_test4):
+    facebook_strategy_test4.event_activate()
+    facebook_strategy_test4.event_tick(area=area_test4)
+    assert len(facebook_strategy_test4.accept_offer.calls) == 0
