@@ -13,7 +13,7 @@ class StorageStrategy(BaseStrategy):
     parameters = ('risk',)
 
     def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, storage_capacity=STORAGE_CAPACITY,
-                 _fraction_factor=0.05):
+                 _fraction_size=0.05):
         super().__init__()
         self.risk = risk
         self.offers_posted = defaultdict(list)  # type: Dict[Market, List[Offer]]
@@ -24,7 +24,7 @@ class StorageStrategy(BaseStrategy):
         self.blocked_storage = initial_capacity
         self.offered_storage = 0.0
         self.selling_price = 30
-        self.fraction_factor = _fraction_factor
+        self.fraction_size = _fraction_size
 
     def event_activate(self):
         if self.blocked_storage > 0:
@@ -141,7 +141,10 @@ class StorageStrategy(BaseStrategy):
         if energy > 0.0:
             # Offer energy in .1 kWh fractions
             offered_energy = 0
-            split_factor = int(floor(energy / self.fraction_factor)) + 1
+            if self.fraction_size is None:
+                split_factor = 1
+            else:
+                split_factor = int(floor(energy / self.fraction_size)) + 1
             energy_fraction = round(energy / split_factor, 4)
             for i in range(split_factor):
                 offer = most_expensive_market.offer(
