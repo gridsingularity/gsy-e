@@ -1,3 +1,4 @@
+import uuid
 from collections import defaultdict
 from math import floor
 from typing import Dict, List  # noqa
@@ -19,11 +20,22 @@ class StorageStrategy(BaseStrategy):
         self.bought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.capacity = storage_capacity
-        self.used_storage = initial_capacity
-        self.offered_storage = 0.00
-        self.blocked_storage = 0.00
+        self.used_storage = 0.0
+        self.blocked_storage = initial_capacity
+        self.offered_storage = 0.0
         self.selling_price = 30
         self.fraction_factor = _fraction_factor
+
+    def event_activate(self):
+        if self.blocked_storage > 0:
+            self.bought_offers[list(self.area.markets.values())[0]] = [
+                Offer(
+                    'initial_storage_{}'.format(uuid.uuid4()),
+                    self.selling_price,
+                    self.blocked_storage,
+                    self.owner.name
+                )
+            ]
 
     def event_tick(self, *, area):
         # The storage looses 1% of capacity per hour
@@ -117,9 +129,10 @@ class StorageStrategy(BaseStrategy):
         # in currently open markets
         try:
             expensive_offers = list(self.area.cheapest_offers)[-1]
+            most_expensive_market = expensive_offers.market
         except IndexError:
-            return
-        most_expensive_market = expensive_offers.market
+            # No trades exist - just chose first market
+            most_expensive_market = list(self.area.markets.values())[0]
         # If no energy is passed, try to sell all the Energy left in the storage
         if energy is None:
             energy = self.used_storage
@@ -129,7 +142,7 @@ class StorageStrategy(BaseStrategy):
             # Offer energy in .1 kWh fractions
             offered_energy = 0
             split_factor = int(floor(energy / self.fraction_factor)) + 1
-            energy_fraction = energy / split_factor
+            energy_fraction = round(energy / split_factor, 4)
             for i in range(split_factor):
                 offer = most_expensive_market.offer(
                     energy * min(risk_dependent_selling_price, 29.9),
