@@ -8,9 +8,10 @@ from d3a.models.events import Trigger
 from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
+from d3a.models.strategy.mixins import FractionalOffersMixin
 
 
-class PVStrategy(BaseStrategy):
+class PVStrategy(FractionalOffersMixin, BaseStrategy):
     available_triggers = [
         Trigger('risk', {'new_risk': int},
                 help="Change the risk parameter. Valid values are between 1 and 100.")
@@ -18,8 +19,8 @@ class PVStrategy(BaseStrategy):
 
     parameters = ('panel_count', 'risk')
 
-    def __init__(self, panel_count=1, risk=DEFAULT_RISK):
-        super().__init__()
+    def __init__(self, panel_count=1, risk=DEFAULT_RISK, _offer_fraction_size=0.001):
+        super().__init__(_offer_fraction_size=_offer_fraction_size)
         self.risk = risk
         self.offers_posted = {}  # type: Dict[Offer, Market]
         self.energy_production_forecast = {}  # type: Dict[Time, float]
@@ -55,16 +56,16 @@ class PVStrategy(BaseStrategy):
             if market not in self.offers_posted.values():
                 # Sell energy and save that an offer was posted into a list
                 try:
-                    if self.energy_production_forecast[time] == 0:
+                    slot_energy = self.energy_production_forecast[time]
+                    if slot_energy == 0:
                         continue
                     for i in range(self.panel_count):
-                        offer = market.offer(
-                            (min(rounded_energy_price, 29.9)) *
-                            self.energy_production_forecast[time],
-                            self.energy_production_forecast[time],
-                            self.owner.name
-                        )
-                        self.offers_posted[offer.id] = market
+                        for offer in self.offer_fractional(
+                            market,
+                            slot_energy,
+                            min(rounded_energy_price, 29.9) * slot_energy
+                        ):
+                            self.offers_posted[offer.id] = market
 
                 except KeyError:
                     self.log.warn("PV has no forecast data for this time")
@@ -148,9 +149,6 @@ class PVStrategy(BaseStrategy):
             except KeyError:
                 self.log.warn("Offer already taken")
                 continue
-
-    def event_market_cycle(self):
-        pass
 
     def event_trade(self, *, market, trade):
         if trade.offer.seller == self.owner.name:

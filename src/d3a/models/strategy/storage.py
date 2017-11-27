@@ -1,20 +1,20 @@
 import uuid
 from collections import defaultdict
-from math import floor
 from typing import Dict, List  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.market import Market, Offer, log  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
+from d3a.models.strategy.mixins import FractionalOffersMixin
 
 
-class StorageStrategy(BaseStrategy):
+class StorageStrategy(FractionalOffersMixin, BaseStrategy):
     parameters = ('risk',)
 
     def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, storage_capacity=STORAGE_CAPACITY,
-                 _fraction_size=0.05):
-        super().__init__()
+                 _offer_fraction_size=0.001):
+        super().__init__(_offer_fraction_size=_offer_fraction_size)
         self.risk = risk
         self.offers_posted = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.bought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
@@ -24,7 +24,6 @@ class StorageStrategy(BaseStrategy):
         self.blocked_storage = initial_capacity
         self.offered_storage = 0.0
         self.selling_price = 30
-        self.fraction_size = _fraction_size
 
     def event_activate(self):
         if self.blocked_storage > 0:
@@ -139,29 +138,15 @@ class StorageStrategy(BaseStrategy):
         # Try to create an offer to sell the stored energy
 
         if energy > 0.0:
-            # Offer energy in .1 kWh fractions
-            offered_energy = 0
-            if self.fraction_size is None:
-                split_factor = 1
-            else:
-                split_factor = int(floor(energy / self.fraction_size)) + 1
-            energy_fraction = round(energy / split_factor, 4)
-            for i in range(split_factor):
-                offer = most_expensive_market.offer(
-                    energy * min(risk_dependent_selling_price, 29.9),
-                    energy_fraction,
-                    self.owner.name
-                )
+            for offer in self.offer_fractional(
+                most_expensive_market,
+                energy,
+                energy * risk_dependent_selling_price
+            ):
                 # Updating parameters
-                self.used_storage -= energy_fraction
-                self.offered_storage += energy_fraction
+                self.used_storage -= offer.energy
+                self.offered_storage += offer.energy
                 self.offers_posted[most_expensive_market].append(offer)
-                offered_energy += energy_fraction
-                if offered_energy + energy_fraction > energy:
-                    # Due to rounding errors we need to adjust the last iteration's amount
-                    energy_fraction = energy - offered_energy
-                    if energy_fraction < 0.0001:
-                        break
 
     def find_avg_cheapest_offers(self):
         # Taking the cheapest offers in every market currently open and building the average
