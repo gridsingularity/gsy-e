@@ -82,7 +82,7 @@ class FacebookDeviceStrategy(BaseStrategy):
             )
             if cheapest_offer:
                 self.accept_offer(market, cheapest_offer)
-                self.energy_bought_in_slot += energy_to_buy
+                self.energy_bought_in_slot += cheapest_offer.energy*1000
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
 
