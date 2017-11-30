@@ -26,9 +26,12 @@ class FakePVStrategy:
 
 class FakeFridgeStrategy:
 
+    def __init__(self):
+        self.temperature = FRIDGE_TEMPERATURE
+
     @property
     def fridge_temp(self):
-        return FRIDGE_TEMPERATURE
+        return self.temperature
 
     def post(self, **data):
         pass
@@ -155,9 +158,8 @@ def test_fridge_appliance_heats_up_when_open(fridge_fixture):
 
 # always buys energy if we have none and upper temperature constraint is violated
 
-@pytest.mark.skip("broken since appliance remodelling, needs to be rewritten")  # TODO FIX
 def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
-    fridge_fixture.temperature = MAX_FRIDGE_TEMP + 1
+    fridge_fixture.owner.strategy.temperature = MAX_FRIDGE_TEMP + 1
     fridge_fixture.report_energy(0)
     assert fridge_fixture.area.reported_value < 0
 

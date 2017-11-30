@@ -18,7 +18,7 @@ class FridgeAppliance(SwitchableMixin, SimpleAppliance):
         self.temperature = FRIDGE_TEMPERATURE
         self.max_temperature = MAX_FRIDGE_TEMP
         self.min_temperature = MIN_FRIDGE_TEMP
-        self.force_cool_energy = FRIDGE_MIN_NEEDED_ENERGY
+        self.force_cool_energy = -FRIDGE_MIN_NEEDED_ENERGY
         self.cooling_gain = 0
         self.door_open_loss = 0
         self.temp_change = 0
