@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from os import environ
+
+import sys
 from redis import Redis
 from rq import Queue
 from subprocess import Popen
@@ -18,7 +19,7 @@ class Launcher:
         self.port = port_min
         self.port_max = 5009
         self.max_delay = timedelta(seconds=max_delay_seconds)
-        self.command = [environ.get('WORKER_PYTHON', 'python'), 'd3a_jobs.py']
+        self.command = [sys.executable, 'src/d3a/d3a_jobs.py']
 
     def run(self):
         self._start_worker()
