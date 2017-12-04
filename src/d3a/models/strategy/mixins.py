@@ -16,9 +16,10 @@ class FractionalOffersMixin:
 
         offered_energy = 0
         energy_fraction = round(energy / split_factor, 4)
+        price_split_factor = split_factor
         for i in range(split_factor):
             offer = market.offer(
-                price * energy_fraction,
+                price / price_split_factor,
                 energy_fraction,
                 self.owner.name
             )
