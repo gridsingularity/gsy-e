@@ -36,8 +36,9 @@ def start(scenario, settings, message_url_format):
 
     simulation = Simulation('json_arg' if scenario else 'default',
                             config,
-                            api_url=api_url,
                             slowdown=settings.get('slowdown', 0),
+                            exit_on_finish=True,
+                            api_url=api_url,
                             message_url=message_url_format.format(job.id))
 
     start_web(interface, port, simulation)
