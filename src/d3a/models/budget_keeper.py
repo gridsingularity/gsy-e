@@ -23,6 +23,7 @@ class BudgetKeeper(EventMixin):
         self.period_length = period_length
         self.period_end = None
         self.priority = defaultdict(lambda: 100)
+        self.history = defaultdict(list)
         self.forecast = {}  # type: Dict[Area, float]
         self.enabled = set()
 
@@ -47,17 +48,28 @@ class BudgetKeeper(EventMixin):
             self.decide()
 
     def update_forecast(self):
-        pass  # TODO
+        for child in self.area.children:
+            consumed = defaultdict(float)
+            for trade in self._sold():
+                consumed[trade.offer.buyer] += trade.offer.price
+            for child in self.area.children:
+                self.history[child].append(consumed[child.name])
+                self.forecast[child] = sum(self.history[child]) / float(len(self.history[child]))
 
     def compute_remaining(self):
-        pass  # TODO
+        self.remaining -= sum(trade.offer.price for trade in self._sold())
+
+    def _sold(self):
+        return (trade for trade in self.area.current_market.trades
+                if trade.offer.seller == self.area.name)
 
     def decide(self):
         slot_cost_estimate = sum(self.forecast[child] for child in self.enabled)
         slots_left = (self.period_end - self.area.now) / self.area.config.slot_length
         acceptable = self.remaining / slots_left
         if slot_cost_estimate > acceptable:
-            for child in sorted(self.enabled, key=lambda c: self.priority[c]):
+            for child in sorted(self.enabled,
+                                key=lambda c: (self.priority[c], -self.forecast[c])):
                 self._disable(child)
                 slot_cost_estimate -= self.forecast[child]
                 if slot_cost_estimate <= acceptable:
