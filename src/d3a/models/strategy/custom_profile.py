@@ -11,11 +11,11 @@ class CustomProfile:
     """Compute energy needed/produced by owning strategy"""
 
     def __init__(self, strategy, *,
-                 values=[], start_time=Pendulum.now(), time_step=Interval(seconds=1)):
+                 values=None, start_time=Pendulum.now(), time_step=Interval(seconds=1)):
         assert isinstance(strategy, CustomProfileStrategy), \
                "CustomProfile should only be used with CustomProfileStrategy"
         self.strategy = strategy
-        self.set_from_list(values, start_time, time_step)
+        self.set_from_list(values or [], start_time, time_step)
 
     def set_from_list(self, values, start_time, time_step):
         self.values = tuple(values)
@@ -65,6 +65,9 @@ class CustomProfileStrategy(BaseStrategy):
     def event_tick(self, *, area):
         for slot, market in self.area.markets.items():
             for offer in market.sorted_offers:
-                if self.bought[slot] < self.slot_load[slot]:
-                    self.accept_offer(market, offer)
-                    self.bought[slot] += offer.energy
+                missing = self.slot_load[slot] - self.bought[slot]
+                if missing == 0:
+                    break
+                energy = min(offer.energy, missing)
+                self.accept_offer(market, offer, energy=energy)
+                self.bought[slot] += energy

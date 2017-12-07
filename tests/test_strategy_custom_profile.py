@@ -24,9 +24,9 @@ class FakeArea:
 
 
 class FakeCustomProfile:
-    def __init__(self, strategy):
+    def __init__(self, strategy, value=20):
         self.strategy = strategy
-        self.value = 20
+        self.value = value
         self.factor = 1/60.0
 
     def amount_over_period(self, period_start, duration):
@@ -94,3 +94,16 @@ def test_buys_right_amount(strategy2):
     strategy2.event_tick(area=strategy2.area)
     assert list(strategy2.bought.values()) == [20, 20]
     assert len(strategy2.accept_offer.calls) == 4
+
+
+@pytest.fixture
+def strategy3(strategy, called):
+    strategy.profile.value = 17
+    strategy.accept_offer = called
+    strategy.event_activate()
+    return strategy
+
+
+def test_buys_partial_offer(strategy3):
+    strategy3.event_tick(area=strategy3.area)
+    assert list(strategy3.bought.values()) == [17, 17]

@@ -228,12 +228,6 @@ def custom_profile_fixture(called):
     return fixture
 
 
-def test_custom_profile_appliance_excess(custom_profile_fixture):
-    ticks_per_slot = custom_profile_fixture.area.config.ticks_per_slot
-    custom_profile_fixture.report_energy(33.0/ticks_per_slot)
-    assert custom_profile_fixture.area.reported_value == 30.0/ticks_per_slot
-
-
 def test_custom_profile_appliance_lacking_energy_warning(custom_profile_fixture):
     custom_profile_fixture.owner.strategy.bought_val = 26.0
     custom_profile_fixture.event_market_cycle()
