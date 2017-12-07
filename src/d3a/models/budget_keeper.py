@@ -40,6 +40,8 @@ class BudgetKeeper(EventMixin):
         self.compute_remaining()
         if self.area.now >= self.period_end:
             self.begin_period()
+            self.area.log.info("End of budget period, {} of {} spent."
+                               .format(self.budget - self.remaining, self.budget))
         else:
             self.update_forecast()
             self.decide()
@@ -62,9 +64,6 @@ class BudgetKeeper(EventMixin):
                     break
 
     def begin_period(self):
-        if self.period_end is not None:
-            self.area.log.info("End of budget period, {} of {} spent."
-                               .format(self.budget - self.remaining, self.budget))
         self.period_end = self.area.now + self.period_length
         self.remaining = self.budget
         for child in self.area.children:
