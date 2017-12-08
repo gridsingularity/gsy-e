@@ -2,7 +2,7 @@ import pytest
 
 from collections import namedtuple
 
-from pendulum import Interval, Pendulum
+from pendulum import Pendulum
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.budget_keeper import BudgetKeeper
@@ -78,7 +78,7 @@ class FakeStrategy:
 
 @pytest.fixture
 def keeper():
-    fixture = BudgetKeeper(10.0, Interval(days=1), FakeArea())
+    fixture = BudgetKeeper(10.0, 1, FakeArea())
     fixture.activate()
     return fixture
 

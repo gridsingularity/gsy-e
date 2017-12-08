@@ -15,11 +15,12 @@ class BudgetKeeper:
     children can be assigned priorities to control which should and
     should not be disabled.
     """
+    parameters = ('budget', 'days_per_period')
 
-    def __init__(self, budget: float, period_length: Interval, area: Area = None):
+    def __init__(self, budget: float, days_per_period: int, area: Area = None):
         self.area = area
         self.budget = budget
-        self.period_length = period_length
+        self.days_per_period = days_per_period
         self.period_end = None
         self.priority = defaultdict(lambda: 100)
         self.history = defaultdict(list)
@@ -76,7 +77,7 @@ class BudgetKeeper:
                     break
 
     def begin_period(self):
-        self.period_end = self.area.now + self.period_length
+        self.period_end = self.area.now + Interval(self.days_per_period)
         self.remaining = self.budget
         for child in self.area.children:
             self._enable(child)
