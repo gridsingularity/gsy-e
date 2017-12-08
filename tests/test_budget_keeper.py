@@ -78,8 +78,8 @@ class FakeStrategy:
 
 @pytest.fixture
 def keeper():
-    fixture = BudgetKeeper(FakeArea(), 10.0, Interval(days=1))
-    fixture.event_activate()
+    fixture = BudgetKeeper(10.0, Interval(days=1), FakeArea())
+    fixture.activate()
     return fixture
 
 
@@ -114,11 +114,11 @@ def test_budget_keeper_update_forecast(keeper2):
 
 
 def test_budget_keeper_disables_high_consumer(keeper2):
-    keeper2.event_market_cycle()
+    keeper2.process_market_cycle()
     assert keeper2.area.children[2].strategy.fired_trigger == "disable"
 
 
 def test_budget_keeper_does_not_disable_other_consumers(keeper2):
-    keeper2.event_market_cycle()
+    keeper2.process_market_cycle()
     assert keeper2.area.children[0].strategy.fired_trigger == "enable"
     assert keeper2.area.children[1].strategy.fired_trigger == "enable"

@@ -4,10 +4,9 @@ from typing import Dict  # noqa
 from pendulum import Interval
 
 from d3a.models.area import Area
-from d3a.models.events import EventMixin
 
 
-class BudgetKeeper(EventMixin):
+class BudgetKeeper:
     """
     Budget constraint for Area.
 
@@ -17,7 +16,7 @@ class BudgetKeeper(EventMixin):
     should not be disabled.
     """
 
-    def __init__(self, area: Area, budget: float, period_length: Interval):
+    def __init__(self, budget: float, period_length: Interval, area: Area = None):
         self.area = area
         self.budget = budget
         self.period_length = period_length
@@ -34,10 +33,11 @@ class BudgetKeeper(EventMixin):
             self.area.log.warning("Area {} not in range, priority setting will be ignored."
                                   .format(child))
 
-    def event_activate(self):
+    def activate(self):
+        assert self.area, "Area not set"
         self.begin_period()
 
-    def event_market_cycle(self):
+    def process_market_cycle(self):
         self.compute_remaining()
         if self.area.now >= self.period_end:
             self.begin_period()

@@ -35,7 +35,8 @@ class Area:
     def __init__(self, name: str = None, children: List["Area"] = None,
                  strategy: BaseStrategy = None,
                  appliance: BaseAppliance = None,
-                 config: SimulationConfig = None):
+                 config: SimulationConfig = None,
+                 budget_keeper=None):
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
@@ -49,6 +50,9 @@ class Area:
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
+        self.budget_keeper = budget_keeper
+        if budget_keeper:
+            self.budget_keeper.area = self
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
@@ -69,6 +73,9 @@ class Area:
                             s=self
                         )
                     )
+
+            if self.budget_keeper:
+                self.budget_keeper.activate()
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)
@@ -185,6 +192,9 @@ class Area:
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
             return
+
+        if self.budget_keeper and _trigger_event:
+            self.budget_keeper.process_market_cycle()
 
         now = self.now
         time_in_hour = Interval(minutes=now.minute, seconds=now.second)
