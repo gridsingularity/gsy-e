@@ -6,9 +6,7 @@ from d3a.models.strategy.base import BaseStrategy
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.appliance import Appliance
 
-# from d3a.models.appliance.dumb_load import DumbLoad  # NOQA
 from d3a.models.appliance.fridge import FridgeAppliance  # NOQA
-# from d3a.models.appliance.heatpump import HeatPumpAppliance  # NOQA
 from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
 from d3a.models.appliance.pv import PVAppliance  # NOQA
 
@@ -71,25 +69,16 @@ def _instance_from_dict(description):
 
 
 def area_from_dict(description):
+    def optional(attr):
+        return _instance_from_dict(description[attr]) if attr in description else None
     try:
         name = description['name']
         if 'children' in description:
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
-        if 'strategy' in description:
-            strategy = _instance_from_dict(description['strategy'])
-        else:
-            strategy = None
-        if 'appliance' in description:
-            appliance = _instance_from_dict(description['appliance'])
-        else:
-            appliance = None
-        if 'budget_keeper' in description:
-            budget_keeper = _instance_from_dict(description['budget_keeper'])
-        else:
-            budget_keeper = None
-        return Area(name, children, strategy, appliance, budget_keeper=budget_keeper)
+        return Area(name, children, optional('strategy'), optional('appliance'), None,
+                    optional('budget_keeper'))
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
         raise ValueError("Input is not a valid area description (%s)" % str(error))
 

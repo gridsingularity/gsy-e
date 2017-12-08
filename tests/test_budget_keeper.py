@@ -8,8 +8,8 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.budget_keeper import BudgetKeeper
 
 
-class FakeOffer(namedtuple('FakeOffer', 'price buyer seller')):
-    pass
+FakeOffer = namedtuple('FakeOffer', 'price buyer seller')
+FakeMarket = namedtuple('FakeMarket', 'trades')
 
 
 class FakeTrade:
@@ -21,10 +21,6 @@ class FakeTrade:
     @property
     def offer(self):
         return FakeOffer(self.offer_price, self.buyer_name, self.seller_name)
-
-
-class FakeMarket(namedtuple('FakeMarket', 'trades')):
-    pass
 
 
 class FakeArea:
