@@ -1,6 +1,3 @@
-from math import floor
-
-
 class FractionalOffersMixin:
     def __init__(self, *args, _offer_fraction_size=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -12,7 +9,11 @@ class FractionalOffersMixin:
         if self._offer_fraction_size is None:
             split_factor = 1
         else:
-            split_factor = int(floor(energy / self._offer_fraction_size)) + 1
+            split_factor = energy / self._offer_fraction_size
+            if split_factor - int(split_factor) == 0:
+                split_factor = int(split_factor)
+            else:
+                split_factor = int(split_factor) + 1
 
         offered_energy = 0
         energy_fraction = round(energy / split_factor, 4)
@@ -29,6 +30,6 @@ class FractionalOffersMixin:
             offered_energy += energy_fraction
             if offered_energy + energy_fraction > energy:
                 # Due to rounding errors we need to adjust the last iteration's amount
-                energy_fraction = energy - offered_energy
+                energy_fraction = round(energy - offered_energy, 4)
                 if energy_fraction < 0.0001:
                     break
