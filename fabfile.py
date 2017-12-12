@@ -95,6 +95,9 @@ def _ensure_pip_tools():
 
 def _pre_check():
     _ensure_venv()
+    with hide('running', 'stdout'):
+        # Temporary until pyethereum is installable with setuptools >= 38.0.0 (should be after 2.2.0)
+        local("pip install 'setuptools<38.0.0'")
     _ensure_pip_tools()
 
 
