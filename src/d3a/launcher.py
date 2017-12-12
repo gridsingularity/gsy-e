@@ -9,6 +9,9 @@ from subprocess import Popen
 from time import sleep
 
 
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
+
+
 class Launcher:
     def __init__(self,
                  queue=None,
@@ -16,8 +19,7 @@ class Launcher:
                  port_min=5000,
                  port_max=5009,
                  max_delay_seconds=2):
-        self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(
-            os.environ.get('REDIS_URL', 'redis://localhost')))
+        self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
         self.interface = interface
         self.port = port_min
         self.port_max = 5009
@@ -43,7 +45,8 @@ class Launcher:
     def _start_worker(self):
         Popen(self.command, env={
             'WORKER_INTERFACE': self.interface,
-            'WORKER_PORT': str(self.port)
+            'WORKER_PORT': str(self.port),
+            'REDIS_URL': REDIS_URL
         })
 
 
