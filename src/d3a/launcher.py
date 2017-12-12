@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 
 import sys
-from redis import Redis
+
+import os
+from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
@@ -14,7 +16,8 @@ class Launcher:
                  port_min=5000,
                  port_max=5009,
                  max_delay_seconds=2):
-        self.queue = queue or Queue('d3a', connection=Redis())
+        self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(
+            os.environ.get('REDIS_URL', 'redis://localhost')))
         self.interface = interface
         self.port = port_min
         self.port_max = 5009
