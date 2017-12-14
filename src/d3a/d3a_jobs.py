@@ -1,7 +1,8 @@
 import logging
 from datetime import timedelta
-from os import environ
+from os import environ, getpid
 
+import pendulum
 import pendulum.interval as interval
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
@@ -50,7 +51,10 @@ def start(scenario, settings, message_url_format):
 
 def main():
     with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'))):
-        Worker(['d3a']).work()
+        Worker(
+            ['d3a'],
+            name='simulation.{}.{:%s}'.format(getpid(), pendulum.now())
+        ).work()
 
 
 if __name__ == "__main__":
