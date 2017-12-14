@@ -93,7 +93,7 @@ class Simulation:
         self.area.activate()
 
         if self.message_url is not None:
-            self.overview = Overview(self.area, self.message_url)
+            Overview(self, self.message_url).start()
 
     @property
     def finished(self):

@@ -1,32 +1,56 @@
+import json
 import logging
-import requests
+from threading import Thread
 
-from d3a.models.events import AreaEvent
+import time
+import websocket
+from pendulum import Interval
+
+from d3a.util import simulation_info
 
 
-class Overview:
+class Overview(Thread):
     """
     Send regular updates to d3a-web: Json object with overall
     status of the running simulation.
     """
-    def __init__(self, area, url, ticks_per_update=None):
-        self.area = area
+    def __init__(self, simulation, url, update_interval=Interval(seconds=1)):
+        super().__init__(name="overview", daemon=True)
+        self.simulation = simulation
+        self.area = simulation.area
         self.url = url
-        self.ticks_per_update = ticks_per_update or area.config.ticks_per_slot
+        self.update_interval = update_interval
         self.log = logging.getLogger(__name__)
-        area.add_listener(self)
+        self.ws = None
+        self._connect()
 
-    def event_listener(self, event_type, **kwargs):
-        if event_type == AreaEvent.TICK:
-            if self.area.current_tick % self.ticks_per_update == 0 and self.area.current_tick > 0:
+    def _connect(self):
+        try:
+            self.ws = websocket.create_connection(self.url)
+        except ConnectionError as ex:
+            self.log.error("Can't connect to websocket %s: %s", self.url, ex)
+            self.ws = None
+
+    def run(self):
+        self.log.info("Starting update messages to WebUI with interval %s", self.update_interval)
+        while True:
+            if self.area.current_slot > 0:
                 try:
-                    requests.post(self.url, json=self.current_data())
-                except Exception as ex:
-                    self.log.critical("Could not send simulation update: %s" % str(ex))
+                    if self.ws:
+                        self.ws.send(json.dumps(self.current_data()))
+                    else:
+                        self._connect()
+                except ConnectionError:
+                    # try reconnecting
+                    self.log.error("WebSocket connection lost, attemting reconnect.")
+                    self._connect()
+                except Exception:
+                    self.log.exception("Could not send simulation update")
+            time.sleep(self.update_interval.in_seconds())
 
     def current_data(self):
             return {
-                'slot': self.area.current_slot,
+                'simulation_status': simulation_info(self.simulation),
                 'avg-offer-price': self.area.current_market.avg_offer_price,
                 'avg-trade-price': self.area.current_market.avg_trade_price,
                 'actual-energy-agg': self.area.current_market.actual_energy_agg
