@@ -14,7 +14,7 @@ from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
 from d3a.simulation import Simulation
-from d3a.util import format_interval
+from d3a.util import simulation_info
 
 
 _NO_VALUE = {
@@ -68,7 +68,7 @@ def _api_app(simulation: Simulation):
     @app.route("/")
     def index():
         return {
-            'simulation': _simulation_info(simulation),
+            'simulation': simulation_info(simulation),
             'root_area': area_tree(simulation.area)
         }
 
@@ -344,22 +344,6 @@ def _get_market(area, market_time):
             if market.time_slot == list(area.past_markets.keys())[-1]:
                 type_ = 'current'
     return market, type_
-
-
-def _simulation_info(simulation):
-    current_time = format_interval(
-        simulation.area.current_tick * simulation.area.config.tick_length,
-        show_day=False
-    )
-    return {
-        'config': simulation.area.config.as_dict(),
-        'finished': simulation.finished,
-        'current_tick': simulation.area.current_tick,
-        'current_time': current_time,
-        'current_date': simulation.area.now.format('%Y-%m-%d'),
-        'paused': simulation.paused,
-        'slowdown': simulation.slowdown
-    }
 
 
 def url_for(target, **kwargs):
