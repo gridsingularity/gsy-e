@@ -6,21 +6,43 @@ from pendulum import Pendulum
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.budget_keeper import BudgetKeeper
+from d3a.util import make_iaa_name
 
 
-FakeOffer = namedtuple('FakeOffer', 'price buyer seller')
+FakeOffer = namedtuple('FakeOffer', 'price seller')
 FakeMarket = namedtuple('FakeMarket', 'trades')
 
 
-class FakeTrade:
-    def __init__(self, offer_price, buyer_name='FakeChild', seller_name='FakeArea'):
-        self.offer_price = offer_price
-        self.seller_name = seller_name
-        self.buyer_name = buyer_name
+class FakeLog:
+    def info(self, message):
+        pass
+
+    def warning(self, message):
+        pass
+
+    def error(self, message):
+        pass
+
+
+class FakeChild:
+    def __init__(self, id):
+        self.id = id
+        self.strategy = FakeStrategy()
 
     @property
-    def offer(self):
-        return FakeOffer(self.offer_price, self.buyer_name, self.seller_name)
+    def name(self):
+        return "FakeChild{}".format(self.id)
+
+    def _fire_trigger(self, trigger):
+        self.strategy.fire_trigger(trigger)
+
+
+class FakeStrategy:
+    def __init__(self):
+        self.fired_trigger = None
+
+    def fire_trigger(self, trigger):
+        self.fired_trigger = trigger
 
 
 class FakeArea:
@@ -46,30 +68,15 @@ class FakeArea:
         return "FakeArea"
 
 
-class FakeLog:
-    def info(self, message):
-        pass
-
-    def warning(self, message):
-        pass
-
-
-class FakeChild:
-    def __init__(self, id):
-        self.id = id
-        self.strategy = FakeStrategy()
+class FakeTrade:
+    def __init__(self, offer_price, buyer='FakeChild', seller=make_iaa_name(FakeArea())):
+        self.offer_price = offer_price
+        self.seller = seller
+        self.buyer = buyer
 
     @property
-    def name(self):
-        return "FakeChild{}".format(self.id)
-
-
-class FakeStrategy:
-    def __init__(self):
-        self.fired_trigger = None
-
-    def fire_trigger(self, trigger):
-        self.fired_trigger = trigger
+    def offer(self):
+        return FakeOffer(self.offer_price, self.seller)
 
 
 @pytest.fixture
