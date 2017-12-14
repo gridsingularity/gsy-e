@@ -1,7 +1,10 @@
+import csv
 from collections import defaultdict
+from itertools import dropwhile
+import json
 from typing import Dict  # noqa
 
-from pendulum import Interval, Pendulum
+from pendulum import Interval, parse, Pendulum
 from pendulum import Time  # noqa
 
 from d3a.models.strategy.base import BaseStrategy
@@ -40,6 +43,48 @@ class CustomProfile:
         return self.factor * sum(self._value(index) for index in range(start, end))
 
 
+class CustomProfileIrregularTimes:
+    def __init__(self, strategy):
+        assert isinstance(strategy, CustomProfileStrategy), \
+            "CustomProfile should only be used with CustomProfileStrategy"
+        self.strategy = strategy
+        self.time_step = Interval(minutes=1)
+
+    def _time_offset(self, time):
+        return int((time - self.start_time).as_interval() / self.time_step)
+
+    def set_from_dict(self, data):
+        self.start_time = min(data.keys())
+        self.times = tuple(self._time_offset(key) for key in sorted(data.keys()))
+        self.values = tuple(item[1] for item in sorted(data.items(), key=lambda item: item[0]))
+
+    def power_at(self, time):
+        offset = self._time_offset(time)
+        if not self.times[0] <= offset < self.times[-1]:
+            return 0.0
+        for i in range(len(self.times)-1):
+            if offset < self.times[i+1]:
+                return self.values[i]
+        else:
+            assert False, "Loop should find a time."
+
+    def amount_over_period(self, period_start, duration):
+        start_offset = self._time_offset(period_start)
+        if not 0 <= start_offset < self.times[-1]:
+            return 0.0
+        end = start_offset + int(duration / self.time_step)
+        times = dropwhile(lambda j: self.times[j] <= start_offset, range(1, len(self.times)))
+        i = next(times)
+        amount = self.values[i-1] * (self.times[i] - start_offset)
+        for i in times:
+            if self.times[i] >= end:
+                amount += self.values[i-1] * (end - self.times[i-1])
+                break
+            else:
+                amount += self.values[i-1] * (self.times[i] - self.times[i-1])
+        return amount
+
+
 class CustomProfileStrategy(BaseStrategy):
     """Strategy for a given load and production profile"""
 
@@ -71,3 +116,29 @@ class CustomProfileStrategy(BaseStrategy):
                 energy = min(offer.energy, missing)
                 self.accept_offer(market, offer, energy=energy)
                 self.bought[slot] += energy
+
+
+def custom_profile_strategy_from_json(area, json_str):
+    strategy = CustomProfileStrategy(area, profile_type=CustomProfileIrregularTimes)
+    strategy.profile.set_from_dict(json.loads(json_str))
+    return strategy
+
+
+def custom_profile_strategy_from_csv(area, csv_data):
+    data = {}
+    for row in csv.reader(csv_data):
+        try:
+            data[parse(row[0])] = float(row[1])
+        except ValueError:
+            area.log.error("Could not parse csv file, skipping line: {}".format(row))
+    strategy = CustomProfileStrategy(area, profile_type=CustomProfileIrregularTimes)
+    strategy.profile.set_from_dict(data)
+    return strategy
+
+
+def custom_profile_strategy_from_csv_file(area, filename):
+    try:
+        with open(filename, 'r') as data:
+            return custom_profile_strategy_from_csv(area, data)
+    except FileNotFoundError:
+        return None

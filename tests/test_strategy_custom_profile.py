@@ -3,7 +3,8 @@ import pytest
 from pendulum import Interval, Pendulum
 
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.strategy.custom_profile import CustomProfileStrategy
+from d3a.models.strategy.custom_profile import CustomProfileStrategy, \
+    CustomProfileIrregularTimes, custom_profile_strategy_from_csv
 
 
 class FakeArea:
@@ -68,9 +69,51 @@ def test_custom_profile_set_from_list(profile):
     assert profile.power_at(Pendulum(2017, 1, 1, 0, 7)) == 0.0
 
 
-def test_custom_profile_over_period(profile):
+def test_custom_profile_amount_over_period(profile):
     assert profile.amount_over_period(Pendulum(2017, 1, 1, 0, 1), Interval(minutes=2)) == 0.1
     assert profile.amount_over_period(Pendulum(2017, 1, 1, 0, 0), Interval(minutes=5)) == 0.25
+
+
+@pytest.fixture
+def profile_irreg(fake_area):
+    strategy = CustomProfileStrategy(fake_area, profile_type=CustomProfileIrregularTimes)
+    data = {
+        Pendulum(2017, 1, 1, 0, 10): 3.0,
+        Pendulum(2017, 1, 1, 0, 11): 14.0,
+        Pendulum(2017, 1, 1, 0, 15): 14.0,
+        Pendulum(2017, 1, 1, 0, 16): 11.0
+    }
+    strategy.profile.set_from_dict(data)
+    return strategy.profile
+
+
+def test_irregular_times_power_at(profile_irreg):
+    assert profile_irreg.power_at(Pendulum(2017, 1, 1, 0, 8)) == 0.0
+    assert profile_irreg.power_at(Pendulum(2017, 1, 1, 0, 10)) == 3.0
+    assert profile_irreg.power_at(Pendulum(2017, 1, 1, 0, 11)) == 14.0
+    assert profile_irreg.power_at(Pendulum(2017, 1, 1, 0, 16, 1)) == 0.0
+
+
+def test_irregular_times_amount_over_period(profile_irreg):
+    start = Pendulum(2017, 1, 1, 0, 11)
+    assert profile_irreg.amount_over_period(start, Interval(minutes=4)) == 56.0
+
+
+def test_irregular_times_amount_over_period_early_end(profile_irreg):
+    start = Pendulum(2017, 1, 1, 0, 11)
+    assert profile_irreg.amount_over_period(start, Interval(minutes=3)) == 42.0
+
+
+def test_irregular_times_amount_over_period_late_begin(profile_irreg):
+    start = Pendulum(2017, 1, 1, 0, 13)
+    assert profile_irreg.amount_over_period(start, Interval(minutes=2)) == 28.0
+
+
+def test_read_from_csv(fake_area):
+    data = ('2017-01-01T00:10:00,17.4', '2017-01-01T00:19:00,3.1', '2017-01-01T00:41:00,3.1')
+    testee = custom_profile_strategy_from_csv(fake_area, data)
+    assert testee.profile.power_at(Pendulum(2017, 1, 1, 0, 10)) == 17.4
+    assert testee.profile.power_at(Pendulum(2017, 1, 1, 0, 40)) == 3.1
 
 
 @pytest.fixture
