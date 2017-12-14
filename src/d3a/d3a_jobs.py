@@ -1,11 +1,11 @@
 import logging
-import pendulum.interval as interval
-import os
 from datetime import timedelta
 from os import environ
-from rq import Connection, get_current_job, Worker
-from rq.decorators import job
+
+import pendulum.interval as interval
 from redis import StrictRedis
+from rq import Connection, Worker, get_current_job
+from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
 from d3a.simulation import Simulation
@@ -17,7 +17,8 @@ def start(scenario, settings, message_url_format):
     logging.getLogger().setLevel(logging.ERROR)
     interface = environ.get('WORKER_INTERFACE', "0.0.0.0")
     port = int(environ.get('WORKER_PORT', 5000))
-    api_url = "http://{}:{}/api".format(interface, port)
+    api_host = environ.get('WORKER_HOST', interface)
+    api_url = "http://{}:{}/api".format(api_host, port)
 
     job = get_current_job()
     job.meta['api_url'] = api_url
@@ -48,7 +49,7 @@ def start(scenario, settings, message_url_format):
 
 
 def main():
-    with Connection(StrictRedis.from_url(os.environ.get('REDIS_URL', 'redis://localhost'))):
+    with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'))):
         Worker(['d3a']).work()
 
 

@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import sys
 
 import os
+
+import click
 from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
@@ -16,11 +18,13 @@ class Launcher:
     def __init__(self,
                  queue=None,
                  interface="0.0.0.0",
+                 host="127.0.0.1",
                  port_min=5000,
                  port_max=5009,
                  max_delay_seconds=2):
         self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
         self.interface = interface
+        self.host = host
         self.port = port_min
         self.port_max = 5009
         self.max_delay = timedelta(seconds=max_delay_seconds)
@@ -46,9 +50,16 @@ class Launcher:
         Popen(self.command, env={
             'WORKER_INTERFACE': self.interface,
             'WORKER_PORT': str(self.port),
+            'WORKER_HOST': self.host,
             'REDIS_URL': REDIS_URL
         })
 
 
+@click.command()
+@click.option('-h', '--host', default='127.0.0.1')
+def main(host):
+    Launcher(host=host).run()
+
+
 if __name__ == '__main__':
-    Launcher().run()
+    main()
