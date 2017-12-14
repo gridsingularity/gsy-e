@@ -10,13 +10,13 @@ from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
 class StorageStrategy(BaseStrategy):
     parameters = ('risk',)
 
-    def __init__(self, risk=DEFAULT_RISK):
+    def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0):
         super().__init__()
         self.risk = risk
         self.offers_posted = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.bought_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
         self.sold_offers = defaultdict(list)  # type: Dict[Market, List[Offer]]
-        self.used_storage = 0.00
+        self.used_storage = initial_capacity
         self.offered_storage = 0.00
         self.blocked_storage = 0.00
         self.selling_price = 30
