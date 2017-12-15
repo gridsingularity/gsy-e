@@ -87,6 +87,13 @@ def test_custom_profile_amount_over_period(profile):
     assert profile.amount_over_period(Pendulum(2017, 1, 1, 0, 0), Interval(minutes=5)) == 0.25
 
 
+def test_custom_profile_amount_over_period_fractioned(profile):
+    profile.set_from_list([0.0, 1.0, 2.0, 3.0, 4.0], Pendulum(2017, 1, 1), Interval(hours=1))
+    assert profile.amount_over_period(Pendulum(2017, 1, 1, 0, 30), Interval(minutes=45)) == 0.25
+    assert profile.amount_over_period(Pendulum(2017, 1, 1, 1, 5), Interval(minutes=30)) == 0.5
+    assert profile.amount_over_period(Pendulum(2017, 1, 1, 1, 45), Interval(hours=2)) == 4.5
+
+
 @pytest.fixture
 def profile_irreg(fake_owner):
     strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
