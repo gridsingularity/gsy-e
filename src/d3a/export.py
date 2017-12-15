@@ -22,6 +22,7 @@ def export(root_area, path, subdir):
         return
     _export_area_with_children(root_area, directory)
     _export_overview(root_area, directory)
+    _log.error("Simulation data export written to %s", directory)
 
 
 def _export_area_with_children(area, directory):
@@ -139,7 +140,7 @@ def _export_overview(root_area, directory):
 
 
 # Try evaluate current storage usage
-class StorageData():
+class StorageData:
     def __init__(self):
         self.storage_Areas = defaultdict(set)
         self.storages = []
