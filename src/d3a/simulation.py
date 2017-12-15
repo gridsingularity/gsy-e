@@ -150,11 +150,16 @@ class Simulation:
             try:
                 with NonBlockingConsole() as console:
                     for slot_no in range(slot_resume, config.duration // config.slot_length):
+                        run_duration = (
+                            Pendulum.now() - self.run_start - Interval(seconds=self.paused_time)
+                        )
+
                         log.error(
-                            "Slot %d of %d (%2.0f%%)",
+                            "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
                             slot_no + 1,
                             slot_count,
-                            (slot_no + 1) / slot_count * 100
+                            (slot_no + 1) / slot_count * 100,
+                            run_duration, run_duration / (slot_no + 1) * slot_count
                         )
                         if self.is_stopped:
                             log.error("Received stop command.")
