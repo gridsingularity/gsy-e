@@ -2,9 +2,10 @@ import csv
 from collections import defaultdict
 from itertools import dropwhile
 import json
+from math import ceil, floor
 from typing import Dict  # noqa
 
-from pendulum import Interval, parse, Pendulum
+from pendulum import Interval, parse
 from pendulum import Time  # noqa
 
 from d3a.models.strategy.base import BaseStrategy
@@ -14,13 +15,13 @@ class CustomProfile:
     """Compute energy needed/produced by owning strategy"""
 
     def __init__(self, strategy, *,
-                 values=None, start_time=Pendulum.now(), time_step=Interval(seconds=1)):
+                 values=None, start_time=None, time_step=Interval(seconds=1)):
         assert isinstance(strategy, CustomProfileStrategy), \
                "CustomProfile should only be used with CustomProfileStrategy"
         self.strategy = strategy
         self.set_from_list(values or [], start_time, time_step)
 
-    def set_from_list(self, values, start_time, time_step):
+    def set_from_list(self, values, start_time=None, time_step=Interval(seconds=1)):
         self.values = tuple(values)
         self.start_time = start_time
         self.time_step = time_step
@@ -38,9 +39,15 @@ class CustomProfile:
         return self._value(int((time - self.start_time).as_interval() / self.time_step))
 
     def amount_over_period(self, period_start, duration):
-        start = int((period_start - self.start_time).as_interval() / self.time_step)
-        end = start + int(duration / self.time_step)
-        return self.factor * sum(self._value(index) for index in range(start, end))
+        start = (period_start - self.start_time).as_interval() / self.time_step
+        end = start + duration / self.time_step
+        if end <= ceil(start):
+            value = (end - start) * self._value(int(start))
+        else:
+            value = (ceil(start) - start) * self._value(int(start))
+            value += sum(self._value(i) for i in range(int(ceil(start)), int(end)))
+            value += (end - floor(end)) * self._value(int(end))
+        return self.factor * value
 
 
 class CustomProfileIrregularTimes:
@@ -97,17 +104,19 @@ class CustomProfileStrategy(BaseStrategy):
     def _update_slots(self):
         self.slot_load = {
             slot_time: self.profile.amount_over_period(slot_time, self.owner.config.slot_length)
-            for slot_time in self.owner.markets
+            for slot_time in self.owner.parent.markets
         }
 
     def event_activate(self):
+        if self.profile.start_time is None:
+            self.profile.start_time = self.owner.now
         self._update_slots()
 
     def event_market_cycle(self):
         self._update_slots()
 
     def event_tick(self, *, area):
-        if area == self.owner:
+        if area == self.owner.parent:
             for slot, market in area.markets.items():
                 for offer in market.sorted_offers:
                     missing = self.slot_load[slot] - self.bought[slot]
@@ -143,3 +152,10 @@ def custom_profile_strategy_from_csv_file(filename):
             return custom_profile_strategy_from_csv(data)
     except FileNotFoundError:
         return None
+
+
+def custom_profile_strategy_from_list(values, *, time_step=Interval(seconds=1),
+                                      start_time=None):
+    strategy = CustomProfileStrategy()
+    strategy.profile.set_from_list(values, start_time, time_step)
+    return strategy

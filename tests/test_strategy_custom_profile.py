@@ -17,15 +17,22 @@ class FakeArea:
         return 5
 
     @property
+    def name(self):
+        return 'FakeArea'
+
+
+class FakeParent(FakeArea):
+    @property
     def markets(self):
         return {
             Pendulum(2017, 1, 1, 0, 0): FakeMarket(),
             Pendulum(2017, 1, 1, 0, 15): FakeMarket()
         }
 
-    @property
-    def name(self):
-        return 'FakeArea'
+
+class FakeOwner(FakeArea):
+    def __init__(self):
+        self.parent = FakeParent()
 
 
 class FakeCustomProfile:
@@ -33,6 +40,7 @@ class FakeCustomProfile:
         self.strategy = strategy
         self.value = value
         self.factor = 1/60.0
+        self.start_time = Pendulum(2017, 1, 1, 0, 0)
 
     def amount_over_period(self, period_start, duration):
         return self.value
@@ -53,14 +61,14 @@ class FakeOffer:
 
 
 @pytest.fixture
-def fake_area():
-    return FakeArea()
+def fake_owner():
+    return FakeOwner()
 
 
 @pytest.fixture
-def profile(fake_area):
+def profile(fake_owner):
     strategy = CustomProfileStrategy()
-    strategy.owner = fake_area
+    strategy.owner = fake_owner
     strategy.profile.set_from_list([5.5, 2.9, 3.1, 2.5, 1.0],
                                    Pendulum(2017, 1, 1),
                                    Interval(minutes=1))
@@ -80,9 +88,9 @@ def test_custom_profile_amount_over_period(profile):
 
 
 @pytest.fixture
-def profile_irreg(fake_area):
+def profile_irreg(fake_owner):
     strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
-    strategy.owner = fake_area
+    strategy.owner = fake_owner
     data = {
         Pendulum(2017, 1, 1, 0, 10): 3.0,
         Pendulum(2017, 1, 1, 0, 11): 14.0,
@@ -115,7 +123,7 @@ def test_irregular_times_amount_over_period_late_begin(profile_irreg):
     assert profile_irreg.amount_over_period(start, Interval(minutes=2)) == 28.0
 
 
-def test_read_from_csv(fake_area):
+def test_read_from_csv(fake_owner):
     data = ('2017-01-01T00:10:00,17.4', '2017-01-01T00:19:00,3.1', '2017-01-01T00:41:00,3.1')
     testee = custom_profile_strategy_from_csv(data)
     assert testee.profile.power_at(Pendulum(2017, 1, 1, 0, 10)) == 17.4
@@ -123,9 +131,9 @@ def test_read_from_csv(fake_area):
 
 
 @pytest.fixture
-def strategy(fake_area):
+def strategy(fake_owner):
     strategy = CustomProfileStrategy(profile_type=FakeCustomProfile)
-    strategy.owner = fake_area
+    strategy.owner = fake_owner
     return strategy
 
 
@@ -142,7 +150,7 @@ def strategy2(strategy, called):
 
 
 def test_buys_right_amount(strategy2):
-    strategy2.event_tick(area=strategy2.owner)
+    strategy2.event_tick(area=strategy2.owner.parent)
     assert list(strategy2.bought.values()) == [20, 20]
     assert len(strategy2.accept_offer.calls) == 4
 
@@ -156,5 +164,5 @@ def strategy3(strategy, called):
 
 
 def test_buys_partial_offer(strategy3):
-    strategy3.event_tick(area=strategy3.owner)
+    strategy3.event_tick(area=strategy3.owner.parent)
     assert list(strategy3.bought.values()) == [17, 17]
