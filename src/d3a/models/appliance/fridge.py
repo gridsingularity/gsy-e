@@ -1,8 +1,7 @@
 from d3a.models.appliance.mixins import SwitchableMixin
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.events import Trigger
-from d3a.models.strategy.const import FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, MIN_FRIDGE_TEMP, \
-    FRIDGE_MIN_NEEDED_ENERGY
+from d3a.models.strategy.const import FRIDGE_MIN_NEEDED_ENERGY
 
 
 class FridgeAppliance(SwitchableMixin, SimpleAppliance):
@@ -15,16 +14,19 @@ class FridgeAppliance(SwitchableMixin, SimpleAppliance):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.temperature = FRIDGE_TEMPERATURE
-        self.max_temperature = MAX_FRIDGE_TEMP
-        self.min_temperature = MIN_FRIDGE_TEMP
+        self.state = None
         self.force_cool_energy = FRIDGE_MIN_NEEDED_ENERGY
         self.cooling_gain = 0
         self.door_open_loss = 0
         self.temp_change = 0
         self.is_door_open = False
 
+    @property
+    def temperature(self):
+        return self.state.temperature if self.state else None
+
     def event_activate(self):
+        self.state = self.owner.strategy.state
         tick_length = self.area.config.tick_length.in_seconds()
         # If the fridge cools for the min needed energy it cools down 0.1C
         # This Value is taken from the Strategy/fridge.py file
@@ -37,21 +39,19 @@ class FridgeAppliance(SwitchableMixin, SimpleAppliance):
 
     def report_energy(self, energy):
         # This happens every tick
-        self.temperature = self.owner.strategy.fridge_temp
         if self.is_door_open:
             self.temp_change += self.door_open_loss
 
-        if self.temperature + self.temp_change >= self.max_temperature:
+        if self.state.temperature + self.temp_change >= self.state.max_temperature:
             energy += self.force_cool_energy
             self.temp_change += self.cooling_gain
 
         super().report_energy(energy)
 
     def event_market_cycle(self):
-        post_temp = self.temp_change
+        if self.state:
+            self.state.temperature += self.temp_change
         self.temp_change = 0
-        if self.owner:
-            self.owner.strategy.post(temperature=post_temp)
 
     def trigger_open(self):
         self.is_door_open = True

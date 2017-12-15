@@ -120,7 +120,7 @@ def fridge_strategy_test2(market_test2, area_test2, called):
     f.owner = area_test2
     f.area = area_test2
     f.area.markets = {'next market': market_test2}
-    f.fridge_temp = 4
+    f.state.temperature = 4
     f.accept_offer = called
     return f
 
@@ -151,7 +151,7 @@ def fridge_strategy_test3(market_test3, area_test3, called):
     f = FridgeStrategy()
     f.owner = area_test3
     f.area = area_test3
-    f.fridge_temp = 7.9
+    f.state.temperature = 7.9
     f.area.markets = {'next market': market_test3}
     f.accept_offer = called
     return f
@@ -163,18 +163,7 @@ def test_if_warm_fridge_buys(fridge_strategy_test3, area_test3, market_test3):
     assert fridge_strategy_test3.accept_offer.calls[0][0][1] == repr(market_test3.sorted_offers[0])
 
 
-"""TEST4"""
-
-
-# Testing if fridge listens to input of appliance
-
-
-def test_if_fridge_listens_to_appliance(fridge_strategy_test1, area_test1, market_test1):
-    initial_fridge_temp = fridge_strategy_test1.fridge_temp
-    fridge_strategy_test1.event_data_received({'temperature': 4.3})
-    assert fridge_strategy_test1.fridge_temp == initial_fridge_temp + 4.3
-
-
+# TEST4 is obsolete
 """TEST5"""
 
 

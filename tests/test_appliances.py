@@ -22,11 +22,24 @@ class FakePVStrategy:
         self.panel_count = 1
 
 
-class FakeFridgeStrategy:
+class FakeFridgeState:
+    @property
+    def temperature(self):
+        return FRIDGE_TEMPERATURE
 
+    @property
+    def max_temperature(self):
+        return MAX_FRIDGE_TEMP
+
+
+class FakeFridgeStrategy:
     @property
     def fridge_temp(self):
         return FRIDGE_TEMPERATURE
+
+    @property
+    def state(self):
+        return FakeFridgeState()
 
     def post(self, **data):
         pass
@@ -81,6 +94,7 @@ def fridge_fixture():
     fridge.area = FakeArea()
     fridge_strategy = FakeFridgeStrategy()
     fridge.owner = FakeOwnerWithStrategy(fridge_strategy)
+    fridge.event_activate()
     return fridge
 
 

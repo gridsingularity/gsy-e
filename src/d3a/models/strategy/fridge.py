@@ -1,10 +1,10 @@
 from typing import Dict, Any  # noqa
-from collections import defaultdict
 
 from d3a.exceptions import MarketException
+from d3a.models.state import FridgeState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, \
-    MIN_FRIDGE_TEMP, FRIDGE_MIN_NEEDED_ENERGY, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_FRIDGE_TEMP, MIN_FRIDGE_TEMP, \
+    FRIDGE_MIN_NEEDED_ENERGY, MAX_RISK
 
 
 # TODO Find realistic values for consumption as well as temperature changes
@@ -15,21 +15,26 @@ class FridgeStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.fridge_temp = FRIDGE_TEMPERATURE
+        self.state = FridgeState()
         self.open_spot_markets = []
-        self.max_fridge_temp = 0
-        self.min_fridge_temp = 0
-        self.temp_history = defaultdict(lambda: '-')
         self.threshold_price = 0
+
+    @property
+    def temp_history(self):
+        return self.state.temp_history
+
+    @property
+    def fridge_temp(self):
+        return self.state.temperature
 
     def event_activate(self):
         self.open_spot_markets = list(self.area.markets.values())
-        self.max_fridge_temp = MAX_FRIDGE_TEMP
-        self.min_fridge_temp = MIN_FRIDGE_TEMP
+        self.state.max_temperature = MAX_FRIDGE_TEMP
+        self.state.min_temperature = MIN_FRIDGE_TEMP
 
     def event_tick(self, *, area):
         # The not cooled fridge warms up (0.02 / 60)C up every second
-        self.fridge_temp += self.area.config.tick_length.in_seconds() * round((0.02 / 60), 6)
+        self.state.temperature += self.area.config.tick_length.in_seconds() * round((0.02 / 60), 6)
 
         # Only trade after the 4th tick
         tick_in_slot = area.current_tick % area.config.ticks_per_slot
@@ -44,9 +49,9 @@ class FridgeStrategy(BaseStrategy):
         fridge_temp_domain = MAX_FRIDGE_TEMP - MIN_FRIDGE_TEMP
 
         # normalized _fridge_temp has a value between 1 and -1
-        # If self.fridge_temp = 8 the normalized_fridge_temp is 1
+        # If self.state.fridge_temp = 8 the normalized_fridge_temp is 1
         normalized_fridge_temp = (
-            (self.fridge_temp - (0.5 * (MAX_FRIDGE_TEMP + MIN_FRIDGE_TEMP))
+            (self.state.temperature - (0.5 * (MAX_FRIDGE_TEMP + MIN_FRIDGE_TEMP))
              ) / (0.5 * fridge_temp_domain)
         )
 
@@ -107,16 +112,17 @@ class FridgeStrategy(BaseStrategy):
                                        * 0.05 * 2)
                 if (
                             (((offer.price / offer.energy) <= threshold_price
-                              and self.fridge_temp - cooling_temperature > self.min_fridge_temp
+                              and self.state.temperature - cooling_temperature
+                              > self.state.min_temperature
                               )
-                             or self.fridge_temp >= self.max_fridge_temp
+                             or self.state.temperature >= self.state.max_temperature
                              )
                         and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
                 ):
                     try:
                         self.accept_offer(market, offer)
                         self.log.debug("Buying %s", offer)
-                        self.fridge_temp -= cooling_temperature
+                        self.state.temperature -= cooling_temperature
                         break
                     except MarketException:
                         # Offer already gone etc., try next one.
@@ -125,21 +131,18 @@ class FridgeStrategy(BaseStrategy):
         else:
             try:
                 cheapest_offer = sorted(
-                    [offer for market in self.open_spot_markets for offer in market.sorted_offers],
+                    [offer for market in self.open_spot_markets
+                     for offer in market.sorted_offers],
                     key=lambda o: o.price / o.energy)[0]
-                if self.fridge_temp >= MAX_FRIDGE_TEMP or \
+                if self.state.temperature >= MAX_FRIDGE_TEMP and \
                         (cheapest_offer.price / cheapest_offer.energy) > threshold_price:
-                    self.log.critical("Need energy (temp: %.2f) but can't buy", self.fridge_temp)
+                    self.log.critical("Need energy (temp: %.2f) but can't buy",
+                                      self.state.temperature)
                     self.log.info("cheapest price is is %s", cheapest_offer.price)
             except IndexError:
                 self.log.critical("Crap no offers available")
 
     def event_market_cycle(self):
-        self.log.info("Temperature: %.2f", self.fridge_temp)
-        self.temp_history[self.area.current_market.time_slot] = self.fridge_temp
+        self.log.info("Temperature: %.2f", self.state.temperature)
+        self.state.temp_history[self.area.current_market.time_slot] = self.state.temperature
         self.open_spot_markets = list(self.area.markets.values())
-
-    def event_data_received(self, data: Dict[str, Any]):
-        # self.fridge_temp += data.get("temperature_change", 0)
-        if "temperature" in data:
-            self.fridge_temp += data.get("temperature")
