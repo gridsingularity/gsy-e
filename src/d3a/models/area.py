@@ -178,7 +178,7 @@ class Area:
                 areas.extend(area.children)
         return slug_map
 
-    def _cycle_markets(self, _trigger_event=True):
+    def _cycle_markets(self, _trigger_event=True, _market_cycle=False):
         """
         Remove markets for old time slots, add markets for new slots.
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
@@ -193,7 +193,7 @@ class Area:
             # Since children trade in markets we only need to populate them if there are any
             return
 
-        if self.budget_keeper and _trigger_event:
+        if self.budget_keeper and _market_cycle:
             self.budget_keeper.process_market_cycle()
 
         now = self.now
@@ -322,7 +322,7 @@ class Area:
         if event_type is AreaEvent.TICK:
             self.tick()
         elif event_type is AreaEvent.MARKET_CYCLE:
-            self._cycle_markets()
+            self._cycle_markets(_market_cycle=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.activate()
         if self.strategy:
