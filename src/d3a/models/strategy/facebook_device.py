@@ -16,16 +16,16 @@ class FacebookDeviceStrategy(BaseStrategy):
             raise ValueError("Either 'hrs_per_day' or 'consolidated_cycle' is required")
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
-        self.consolidated_cycle = consolidated_cycle
-        self.daily_energy_required = self.calculate_daily_energy_req()
+        self.daily_energy_required = self.avg_power * self.hrs_per_day
+        # Random factor to modify buying
+        self.random_factor = random_factor
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_bought_in_slot = 0
         self.energy_missing = 0
         self.energy_per_slot = None
-        self.random_factor = random_factor
         # This is the minimum batch of energy that a device buys, please check whether this could
+        self.energy_requirement = 0
         # be a parameter on the constructor or if we want to deal in percentages
-        self.min_energy_buy = 50  # 50 wh is the energy to buy each time for the device
         self.hrs_of_day = hrs_of_day
         active_hours_count = (hrs_of_day[1] - hrs_of_day[0] + 1)
         if hrs_per_day > active_hours_count:
@@ -48,17 +48,9 @@ class FacebookDeviceStrategy(BaseStrategy):
         )
 
     def event_tick(self, *, area):
-        energy_to_buy = self.energy_per_slot
-        if self.random_factor:
-            energy_to_buy += energy_to_buy * random.random() * self.random_factor
-        if self.energy_missing:
-            energy_to_buy += self.energy_missing
-            self.energy_missing = 0
-
-        energy_to_buy -= self.energy_bought_in_slot
-
-        if energy_to_buy < 0.0001:
+        if self.energy_requirement <= 0:
             return
+
         markets = []
         for time, market in self.area.markets.items():
             if time.hour in self.active_hours:
@@ -74,7 +66,9 @@ class FacebookDeviceStrategy(BaseStrategy):
                     [
                         (offer, market) for market in markets
                         for offer in market.sorted_offers
-                        if offer.energy <= energy_to_buy / 1000
+                        if (
+                            offer.energy <= self.energy_requirement / 1000
+                        )
                     ],
                     key=lambda o: o[0].price / o[0].energy
                 ),
@@ -82,20 +76,13 @@ class FacebookDeviceStrategy(BaseStrategy):
             )
             if cheapest_offer:
                 self.accept_offer(market, cheapest_offer)
-                self.energy_bought_in_slot += cheapest_offer.energy * 1000
+                self.energy_requirement -= cheapest_offer.energy * 1000
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
 
     def event_market_cycle(self):
-        self.energy_missing = 0
-        should_buy = list(self.area.past_markets.keys())[-1].hour in self.active_hours
-        if should_buy and self.energy_bought_in_slot < self.energy_per_slot:
-            self.energy_missing = self.energy_per_slot - self.energy_bought_in_slot
-        self.energy_bought_in_slot = 0
-
-    # Returns daily energy required by the device in watt-hours at present
-    def calculate_daily_energy_req(self):
-        if self.consolidated_cycle:
-            return (self.consolidated_cycle / 365) * 1000
-        elif self.hrs_per_day:
-            return self.avg_power * self.hrs_per_day
+        if self.area.now.hour in self.active_hours:
+            energy_per_slot = self.energy_per_slot
+            if self.random_factor:
+                energy_per_slot += energy_per_slot * random.random() * self.random_factor
+            self.energy_requirement += energy_per_slot
