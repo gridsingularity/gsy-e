@@ -6,7 +6,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
 
-FRACTION_SIZE = 0.005
+FRACTION_SIZE = 0.0005
 
 
 def get_setup(config):
@@ -18,11 +18,14 @@ def get_setup(config):
                 [
                     Area('PV H1', strategy=PVStrategy(5, 40, _offer_fraction_size=FRACTION_SIZE),
                          appliance=PVAppliance()),
-                    Area('Lighting H1', strategy=FacebookDeviceStrategy(26.25, 3.5,
-                                                                        hrs_of_day=(16, 22)),
-                            appliance=SimpleAppliance()),
+                    Area(
+                        'Lighting H1',
+                        strategy=FacebookDeviceStrategy(26.25, 3.5, hrs_of_day=(16, 22),
+                                                        daily_budget=5),
+                        appliance=SimpleAppliance(),
+                    ),
                     Area('Mobile Charger H1', strategy=FacebookDeviceStrategy(5, 0.33),
-                            appliance=SimpleAppliance()),
+                         appliance=SimpleAppliance()),
                 ],
             ),
             Area(
