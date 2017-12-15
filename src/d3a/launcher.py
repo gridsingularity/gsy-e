@@ -1,24 +1,34 @@
 from datetime import datetime, timedelta
-from os import environ
-from redis import Redis
+
+import sys
+
+import os
+
+import click
+from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
+
+
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
 
 class Launcher:
     def __init__(self,
                  queue=None,
                  interface="0.0.0.0",
+                 host="127.0.0.1",
                  port_min=5000,
                  port_max=5009,
                  max_delay_seconds=2):
-        self.queue = queue or Queue('d3a', connection=Redis())
+        self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
         self.interface = interface
+        self.host = host
         self.port = port_min
         self.port_max = 5009
         self.max_delay = timedelta(seconds=max_delay_seconds)
-        self.command = [environ.get('WORKER_PYTHON', 'python'), 'd3a_jobs.py']
+        self.command = [sys.executable, 'src/d3a/d3a_jobs.py']
 
     def run(self):
         self._start_worker()
@@ -39,9 +49,17 @@ class Launcher:
     def _start_worker(self):
         Popen(self.command, env={
             'WORKER_INTERFACE': self.interface,
-            'WORKER_PORT': str(self.port)
+            'WORKER_PORT': str(self.port),
+            'WORKER_HOST': self.host,
+            'REDIS_URL': REDIS_URL
         })
 
 
+@click.command()
+@click.option('-h', '--host', default='127.0.0.1')
+def main(host):
+    Launcher(host=host).run()
+
+
 if __name__ == '__main__':
-    Launcher().run()
+    main()
