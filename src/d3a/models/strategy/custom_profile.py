@@ -88,17 +88,16 @@ class CustomProfileIrregularTimes:
 class CustomProfileStrategy(BaseStrategy):
     """Strategy for a given load and production profile"""
 
-    def __init__(self, area, *, profile_type=CustomProfile):
+    def __init__(self, *, profile_type=CustomProfile):
         super().__init__()
-        self.area = area
         self.profile = profile_type(self)
         self.slot_load = {}  # type: Dict[Time, float]
         self.bought = defaultdict(float)
 
     def _update_slots(self):
         self.slot_load = {
-            slot_time: self.profile.amount_over_period(slot_time, self.area.config.slot_length)
-            for slot_time in self.area.markets
+            slot_time: self.profile.amount_over_period(slot_time, self.owner.config.slot_length)
+            for slot_time in self.owner.markets
         }
 
     def event_activate(self):
@@ -108,37 +107,39 @@ class CustomProfileStrategy(BaseStrategy):
         self._update_slots()
 
     def event_tick(self, *, area):
-        for slot, market in self.area.markets.items():
-            for offer in market.sorted_offers:
-                missing = self.slot_load[slot] - self.bought[slot]
-                if missing == 0:
-                    break
-                energy = min(offer.energy, missing)
-                self.accept_offer(market, offer, energy=energy)
-                self.bought[slot] += energy
+        if area == self.owner:
+            for slot, market in area.markets.items():
+                for offer in market.sorted_offers:
+                    missing = self.slot_load[slot] - self.bought[slot]
+                    if missing == 0:
+                        break
+                    energy = min(offer.energy, missing)
+                    self.accept_offer(market, offer, energy=energy)
+                    self.bought[slot] += energy
 
 
-def custom_profile_strategy_from_json(area, json_str):
-    strategy = CustomProfileStrategy(area, profile_type=CustomProfileIrregularTimes)
+def custom_profile_strategy_from_json(json_str):
+    strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
     strategy.profile.set_from_dict(json.loads(json_str))
     return strategy
 
 
-def custom_profile_strategy_from_csv(area, csv_data):
+def custom_profile_strategy_from_csv(csv_data):
     data = {}
     for row in csv.reader(csv_data):
         try:
             data[parse(row[0])] = float(row[1])
         except ValueError:
-            area.log.error("Could not parse csv file, skipping line: {}".format(row))
-    strategy = CustomProfileStrategy(area, profile_type=CustomProfileIrregularTimes)
+            pass  # TODO
+            # area.log.error("Could not parse csv file, skipping line: {}".format(row))
+    strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
     strategy.profile.set_from_dict(data)
     return strategy
 
 
-def custom_profile_strategy_from_csv_file(area, filename):
+def custom_profile_strategy_from_csv_file(filename):
     try:
         with open(filename, 'r') as data:
-            return custom_profile_strategy_from_csv(area, data)
+            return custom_profile_strategy_from_csv(data)
     except FileNotFoundError:
         return None
