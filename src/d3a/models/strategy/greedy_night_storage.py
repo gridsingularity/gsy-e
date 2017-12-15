@@ -4,13 +4,13 @@ from typing import Dict, List  # noqa
 from d3a.exceptions import MarketException
 from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK, MAX_ENERGY_PRICE
 
 
 class NightStorageStrategy(BaseStrategy):
     parameters = ('risk',)
 
-    def __init__(self, risk=DEFAULT_RISK):
+    def __init__(self, risk=DEFAULT_RISK, selling_price=MAX_ENERGY_PRICE):
         super().__init__()
         self.risk = risk
         self.offers_posted = defaultdict(list)  # type: Dict[Market, List(Offer)]
@@ -19,7 +19,7 @@ class NightStorageStrategy(BaseStrategy):
         self.used_storage = 0.00
         self.offered_storage = 0.00
         self.blocked_storage = 0.00
-        self.selling_price = 30
+        self.selling_price = selling_price
 
     def event_tick(self, *, area):
         # The storage looses 1% of capacity per hour
@@ -78,12 +78,17 @@ class NightStorageStrategy(BaseStrategy):
                     continue
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
-                            (self.used_storage + self.blocked_storage + offer.energy
-                             + self.offered_storage <= STORAGE_CAPACITY * 2
-                             )
-                        # Now the storage buys everything cheaper than 29
-                        # He will be able to sell this energy during the night
-                        and (offer.price / offer.energy) < max(max_buying_price, 29)
+                    (
+                        self.used_storage + self.blocked_storage + offer.energy
+                        + self.offered_storage <= STORAGE_CAPACITY * 2
+                    )
+                    # Now the storage buys everything cheaper than 3% below selling price
+                    # He will be able to sell this energy during the night
+                    and (
+                        (offer.price / offer.energy) < max(
+                            max_buying_price, self.selling_price - (self.selling_price * 0.03)
+                        )
+                    )
                 ):
                     # Try to buy the energy
                     try:
@@ -126,7 +131,10 @@ class NightStorageStrategy(BaseStrategy):
             #                        return
             # Posting offer with new price
             offer = most_expensive_market.offer(
-                energy * min(risk_dependent_selling_price, 29.9),
+                energy * min(
+                    risk_dependent_selling_price,
+                    self.selling_price - (self.selling_price * 0.005)
+                ),
                 energy,
                 self.owner.name
             )
@@ -142,4 +150,4 @@ class NightStorageStrategy(BaseStrategy):
             sum((offer.price / offer.energy) for offer in cheapest_offers)
             / max(len(cheapest_offers), 1)
         )
-        return min(avg_cheapest_offer_price, 30)
+        return min(avg_cheapest_offer_price, self.selling_price)

@@ -5,7 +5,7 @@ from typing import Dict, List  # noqa
 from d3a.exceptions import MarketException
 from d3a.models.market import Market, Offer, log  # noqa
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK, MAX_ENERGY_PRICE
 from d3a.models.strategy.mixins import FractionalOffersMixin
 
 
@@ -13,7 +13,7 @@ class StorageStrategy(FractionalOffersMixin, BaseStrategy):
     parameters = ('risk',)
 
     def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, storage_capacity=STORAGE_CAPACITY,
-                 _offer_fraction_size=0.001):
+                 selling_price=MAX_ENERGY_PRICE, _offer_fraction_size=0.001):
         super().__init__(_offer_fraction_size=_offer_fraction_size)
         self.risk = risk
         self.offers_posted = defaultdict(list)  # type: Dict[Market, List[Offer]]
@@ -23,7 +23,7 @@ class StorageStrategy(FractionalOffersMixin, BaseStrategy):
         self.used_storage = 0.0
         self.blocked_storage = initial_capacity
         self.offered_storage = 0.0
-        self.selling_price = 30
+        self.selling_price = selling_price
 
     def event_activate(self):
         if self.blocked_storage > 0:
@@ -155,7 +155,7 @@ class StorageStrategy(FractionalOffersMixin, BaseStrategy):
             sum((offer.price / offer.energy) for offer in cheapest_offers)
             / max(len(cheapest_offers), 1)
         )
-        return min(avg_cheapest_offer_price, 30)
+        return min(avg_cheapest_offer_price, self.selling_price)
 
     def find_most_expensive_market_price(self):
         cheapest_offers = self.area.cheapest_offers
@@ -163,5 +163,5 @@ class StorageStrategy(FractionalOffersMixin, BaseStrategy):
             most_expensive_cheapest_offer = (
                 max((offer.price / offer.energy) for offer in cheapest_offers))
         else:
-            most_expensive_cheapest_offer = 30
-        return min(most_expensive_cheapest_offer, 30)
+            most_expensive_cheapest_offer = self.selling_price
+        return min(most_expensive_cheapest_offer, self.selling_price)

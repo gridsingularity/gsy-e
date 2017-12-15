@@ -7,8 +7,11 @@ from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, MAX_ENERGY_PRICE
 from d3a.models.strategy.mixins import FractionalOffersMixin
+
+
+BELOW_MAX_PRICE = MAX_ENERGY_PRICE - (MAX_ENERGY_PRICE * 0.005)
 
 
 class PVStrategy(FractionalOffersMixin, BaseStrategy):
@@ -42,12 +45,15 @@ class PVStrategy(FractionalOffersMixin, BaseStrategy):
         # The value 0.1 is to damp the effect of the risk
         risk_dependency_of_selling_price = (normed_risk * 0.02 * average_market_price)
         # If the risk is higher than 50 the energy_price is above the average_market_price
-        energy_price = min(average_market_price + risk_dependency_of_selling_price, 29.9)
+        energy_price = min(
+            average_market_price + risk_dependency_of_selling_price,
+            BELOW_MAX_PRICE
+        )
         rounded_energy_price = round(energy_price, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_price == 0.0:
             # Initial selling offer
-            rounded_energy_price = 29.9
+            rounded_energy_price = BELOW_MAX_PRICE
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
@@ -63,7 +69,7 @@ class PVStrategy(FractionalOffersMixin, BaseStrategy):
                         for offer in self.offer_fractional(
                             market,
                             slot_energy,
-                            min(rounded_energy_price, 29.9) * slot_energy
+                            min(rounded_energy_price, BELOW_MAX_PRICE) * slot_energy
                         ):
                             self.offers_posted[offer.id] = market
 
