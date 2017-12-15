@@ -101,7 +101,7 @@ class BudgetKeeper:
     def _disable(self, child):
         self.enabled.remove(child)
         child._fire_trigger('disable')
-        self.area.log.error('BudgetKeeper disabled {}'.format(child.slug))
+        self.area.log.error('BudgetKeeper disabled {}'.format(child.name))
 
     def _enable(self, child):
         self.enabled.add(child)
