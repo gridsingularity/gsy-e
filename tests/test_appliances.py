@@ -135,7 +135,6 @@ def test_fridge_appliance_heats_up_when_open(fridge_fixture):
 
 # always buys energy if we have none and upper temperature constraint is violated
 
-# @pytest.mark.skip("broken since appliance remodelling, needs to be rewritten")  # TODO FIX
 def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
     fridge_fixture.state.temperature = MAX_FRIDGE_TEMP + 1
     fridge_fixture.report_energy(0)
