@@ -3,8 +3,7 @@ from typing import Dict, Any  # noqa
 from d3a.exceptions import MarketException
 from d3a.models.state import FridgeState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_FRIDGE_TEMP, MIN_FRIDGE_TEMP, \
-    FRIDGE_MIN_NEEDED_ENERGY, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_MIN_NEEDED_ENERGY, MAX_RISK
 
 
 # TODO Find realistic values for consumption as well as temperature changes
@@ -29,12 +28,9 @@ class FridgeStrategy(BaseStrategy):
 
     def event_activate(self):
         self.open_spot_markets = list(self.area.markets.values())
-        self.state.max_temperature = MAX_FRIDGE_TEMP
-        self.state.min_temperature = MIN_FRIDGE_TEMP
 
     def event_tick(self, *, area):
-        # The not cooled fridge warms up (0.02 / 60)C up every second
-        self.state.temperature += self.area.config.tick_length.in_seconds() * round((0.02 / 60), 6)
+        self.state.tick(self.area)
 
         # Only trade after the 4th tick
         tick_in_slot = area.current_tick % area.config.ticks_per_slot
@@ -46,14 +42,6 @@ class FridgeStrategy(BaseStrategy):
         # The threshold buying price depends on historical market data
         min_historical_price, max_historical_price = self.area.historical_min_max_price
         average_market_price = self.area.historical_avg_price
-        fridge_temp_domain = MAX_FRIDGE_TEMP - MIN_FRIDGE_TEMP
-
-        # normalized _fridge_temp has a value between 1 and -1
-        # If self.state.fridge_temp = 8 the normalized_fridge_temp is 1
-        normalized_fridge_temp = (
-            (self.state.temperature - (0.5 * (MAX_FRIDGE_TEMP + MIN_FRIDGE_TEMP))
-             ) / (0.5 * fridge_temp_domain)
-        )
 
         # deviation_from_average is the value that determines the deviation (in percentage of
         # the average market price)
@@ -87,12 +75,13 @@ class FridgeStrategy(BaseStrategy):
         # If the fridge_temp is 4 degrees the fridge can't cool no matter how low the price is
         # If the normalized fridge temp is above the average value we are tempted to cool more
         # If the normalized fridge temp is below the average value we are tempted to cool less
-        if normalized_fridge_temp >= 0:
-            temperature_dependency_of_threshold_price = normalized_fridge_temp * (
+
+        if self.state.normalized_temperature >= 0:
+            temperature_dependency_of_threshold_price = self.state.normalized_temperature * (
                 max_historical_price - risk_dependency_of_threshold_price
             )
         else:
-            temperature_dependency_of_threshold_price = normalized_fridge_temp * (
+            temperature_dependency_of_threshold_price = self.state.normalized_temperature * (
                 risk_dependency_of_threshold_price - min_historical_price
             )
         threshold_price = (risk_dependency_of_threshold_price +
@@ -134,7 +123,7 @@ class FridgeStrategy(BaseStrategy):
                     [offer for market in self.open_spot_markets
                      for offer in market.sorted_offers],
                     key=lambda o: o.price / o.energy)[0]
-                if self.state.temperature >= MAX_FRIDGE_TEMP and \
+                if self.state.temperature >= self.state.max_temperature and \
                         (cheapest_offer.price / cheapest_offer.energy) > threshold_price:
                     self.log.critical("Need energy (temp: %.2f) but can't buy",
                                       self.state.temperature)
@@ -144,5 +133,5 @@ class FridgeStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self.log.info("Temperature: %.2f", self.state.temperature)
-        self.state.temp_history[self.area.current_market.time_slot] = self.state.temperature
+        self.state.market_cycle(self.area)
         self.open_spot_markets = list(self.area.markets.values())
