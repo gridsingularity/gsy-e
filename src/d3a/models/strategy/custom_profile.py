@@ -73,7 +73,7 @@ class CustomProfileIrregularTimes:
             if offset < self.times[i+1]:
                 return self.values[i]
         else:
-            assert False, "Loop should find a time."
+            assert False
 
     def amount_over_period(self, period_start, duration):
         start_offset = self._time_offset(period_start)
@@ -98,6 +98,8 @@ class CustomProfileStrategy(BaseStrategy):
     def __init__(self, *, profile_type=CustomProfile):
         super().__init__()
         self.profile = profile_type(self)
+        self.production = profile_type(self)
+        self.offer_price = 29.9
         self.slot_load = {}  # type: Dict[Time, float]
         self.bought = defaultdict(float)
 
@@ -105,6 +107,10 @@ class CustomProfileStrategy(BaseStrategy):
         self.slot_load = {
             slot_time: self.profile.amount_over_period(slot_time, self.owner.config.slot_length)
             for slot_time in self.owner.parent.markets
+        }
+        self.slot_prod = {
+            time: self.production.amount_over_period(time, self.owner.config.slot_length)
+            for time in self.owner.parent.markets
         }
 
     def event_activate(self):
@@ -118,13 +124,17 @@ class CustomProfileStrategy(BaseStrategy):
     def event_tick(self, *, area):
         if area == self.owner.parent:
             for slot, market in area.markets.items():
-                for offer in market.sorted_offers:
-                    missing = self.slot_load[slot] - self.bought[slot]
-                    if missing == 0:
-                        break
-                    energy = min(offer.energy, missing)
-                    self.accept_offer(market, offer, energy=energy)
-                    self.bought[slot] += energy
+                balance = self.slot_prod[slot] - self.slot_load[slot]
+                if balance > 0:
+                    market.offer(self.offer_price * balance, balance, self.owner.name)
+                else:
+                    for offer in market.sorted_offers:
+                        missing = - balance - self.bought[slot]
+                        if missing == 0:
+                            break
+                        energy = min(offer.energy, missing)
+                        self.accept_offer(market, offer, energy=energy)
+                        self.bought[slot] += energy
 
 
 def custom_profile_strategy_from_json(json_str):

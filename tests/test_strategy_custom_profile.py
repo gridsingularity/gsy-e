@@ -22,9 +22,8 @@ class FakeArea:
 
 
 class FakeParent(FakeArea):
-    @property
-    def markets(self):
-        return {
+    def __init__(self):
+        self.markets = {
             Pendulum(2017, 1, 1, 0, 0): FakeMarket(),
             Pendulum(2017, 1, 1, 0, 15): FakeMarket()
         }
@@ -49,15 +48,21 @@ class FakeCustomProfile:
 class FakeMarket:
     def __init__(self):
         self.offer_energy = 10
+        self.received_offer = None
 
     @property
     def sorted_offers(self):
         return [FakeOffer(self.offer_energy)] * 10
 
+    def offer(self, price, energy, seller):
+        self.received_offer = FakeOffer(energy, price, seller)
+
 
 class FakeOffer:
-    def __init__(self, energy):
+    def __init__(self, energy, price=None, seller=None):
         self.energy = energy
+        self.price = price
+        self.seller = seller
 
 
 @pytest.fixture
@@ -141,16 +146,19 @@ def test_read_from_csv(fake_owner):
 def strategy(fake_owner):
     strategy = CustomProfileStrategy(profile_type=FakeCustomProfile)
     strategy.owner = fake_owner
+    strategy.production.value = 15
     return strategy
 
 
 def test_event_activate(strategy):
     strategy.event_activate()
     assert list(strategy.slot_load.values()) == [20, 20]
+    assert list(strategy.slot_prod.values()) == [15, 15]
 
 
 @pytest.fixture
 def strategy2(strategy, called):
+    strategy.production.value = 0
     strategy.accept_offer = called
     strategy.event_activate()
     return strategy
@@ -165,6 +173,7 @@ def test_buys_right_amount(strategy2):
 @pytest.fixture
 def strategy3(strategy, called):
     strategy.profile.value = 17
+    strategy.production.value = 0
     strategy.accept_offer = called
     strategy.event_activate()
     return strategy
@@ -173,3 +182,18 @@ def strategy3(strategy, called):
 def test_buys_partial_offer(strategy3):
     strategy3.event_tick(area=strategy3.owner.parent)
     assert list(strategy3.bought.values()) == [17, 17]
+
+
+@pytest.fixture
+def strategy4(strategy):
+    strategy.profile.value = 0
+    strategy.production.value = 5
+    strategy.event_activate()
+    return strategy
+
+
+def test_offers(strategy4):
+    strategy4.event_tick(area=strategy4.owner.parent)
+    for market in strategy4.owner.parent.markets.values():
+        assert market.received_offer.price == strategy4.offer_price * market.received_offer.energy
+        assert market.received_offer.seller == strategy4.owner.name
