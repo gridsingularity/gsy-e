@@ -97,7 +97,7 @@ class CustomProfileStrategy(BaseStrategy):
 
     def __init__(self, *, profile_type=CustomProfile):
         super().__init__()
-        self.profile = profile_type(self)
+        self.consumption = profile_type(self)
         self.production = profile_type(self)
         self.offer_price = 29.9
         self.slot_load = {}  # type: Dict[Time, float]
@@ -105,8 +105,8 @@ class CustomProfileStrategy(BaseStrategy):
 
     def _update_slots(self):
         self.slot_load = {
-            slot_time: self.profile.amount_over_period(slot_time, self.owner.config.slot_length)
-            for slot_time in self.owner.parent.markets
+            time: self.consumption.amount_over_period(time, self.owner.config.slot_length)
+            for time in self.owner.parent.markets
         }
         self.slot_prod = {
             time: self.production.amount_over_period(time, self.owner.config.slot_length)
@@ -114,8 +114,8 @@ class CustomProfileStrategy(BaseStrategy):
         }
 
     def event_activate(self):
-        if self.profile.start_time is None:
-            self.profile.start_time = self.owner.now
+        if self.consumption.start_time is None:
+            self.consumption.start_time = self.owner.now
         self._update_slots()
 
     def event_market_cycle(self):
@@ -139,7 +139,7 @@ class CustomProfileStrategy(BaseStrategy):
 
 def custom_profile_strategy_from_json(json_str):
     strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
-    strategy.profile.set_from_dict(json.loads(json_str))
+    strategy.consumption.set_from_dict(json.loads(json_str))
     return strategy
 
 
@@ -152,7 +152,7 @@ def custom_profile_strategy_from_csv(csv_data):
             pass  # TODO
             # area.log.error("Could not parse csv file, skipping line: {}".format(row))
     strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
-    strategy.profile.set_from_dict(data)
+    strategy.consumption.set_from_dict(data)
     return strategy
 
 
@@ -167,5 +167,5 @@ def custom_profile_strategy_from_csv_file(filename):
 def custom_profile_strategy_from_list(values, *, time_step=Interval(seconds=1),
                                       start_time=None):
     strategy = CustomProfileStrategy()
-    strategy.profile.set_from_list(values, start_time, time_step)
+    strategy.consumption.set_from_list(values, start_time, time_step)
     return strategy

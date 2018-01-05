@@ -74,10 +74,10 @@ def fake_owner():
 def profile(fake_owner):
     strategy = CustomProfileStrategy()
     strategy.owner = fake_owner
-    strategy.profile.set_from_list([5.5, 2.9, 3.1, 2.5, 1.0],
-                                   Pendulum(2017, 1, 1),
-                                   Interval(minutes=1))
-    return strategy.profile
+    strategy.consumption.set_from_list([5.5, 2.9, 3.1, 2.5, 1.0],
+                                       Pendulum(2017, 1, 1),
+                                       Interval(minutes=1))
+    return strategy.consumption
 
 
 def test_custom_profile_set_from_list(profile):
@@ -109,8 +109,8 @@ def profile_irreg(fake_owner):
         Pendulum(2017, 1, 1, 0, 15): 14.0,
         Pendulum(2017, 1, 1, 0, 16): 11.0
     }
-    strategy.profile.set_from_dict(data)
-    return strategy.profile
+    strategy.consumption.set_from_dict(data)
+    return strategy.consumption
 
 
 def test_irregular_times_power_at(profile_irreg):
@@ -138,8 +138,8 @@ def test_irregular_times_amount_over_period_late_begin(profile_irreg):
 def test_read_from_csv(fake_owner):
     data = ('2017-01-01T00:10:00,17.4', '2017-01-01T00:19:00,3.1', '2017-01-01T00:41:00,3.1')
     testee = custom_profile_strategy_from_csv(data)
-    assert testee.profile.power_at(Pendulum(2017, 1, 1, 0, 10)) == 17.4
-    assert testee.profile.power_at(Pendulum(2017, 1, 1, 0, 40)) == 3.1
+    assert testee.consumption.power_at(Pendulum(2017, 1, 1, 0, 10)) == 17.4
+    assert testee.consumption.power_at(Pendulum(2017, 1, 1, 0, 40)) == 3.1
 
 
 @pytest.fixture
@@ -172,7 +172,7 @@ def test_buys_right_amount(strategy2):
 
 @pytest.fixture
 def strategy3(strategy, called):
-    strategy.profile.value = 17
+    strategy.consumption.value = 17
     strategy.production.value = 0
     strategy.accept_offer = called
     strategy.event_activate()
@@ -186,7 +186,7 @@ def test_buys_partial_offer(strategy3):
 
 @pytest.fixture
 def strategy4(strategy):
-    strategy.profile.value = 0
+    strategy.consumption.value = 0
     strategy.production.value = 5
     strategy.event_activate()
     return strategy
