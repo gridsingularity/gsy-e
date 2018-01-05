@@ -136,10 +136,13 @@ def test_irregular_times_amount_over_period_late_begin(profile_irreg):
 
 
 def test_read_from_csv(fake_owner):
-    data = ('2017-01-01T00:10:00,17.4', '2017-01-01T00:19:00,3.1', '2017-01-01T00:41:00,3.1')
-    testee = custom_profile_strategy_from_csv(data)
+    cons = ('2017-01-01T00:10:00,17.4', '2017-01-01T00:19:00,3.1', '2017-01-01T00:41:00,3.1')
+    prod = ('2017-01-01T00:10:00,11.3', '2017-01-01T00:16:00,8.0', '2017-01-01T00:30:00,8.0')
+    testee = custom_profile_strategy_from_csv(cons, prod)
     assert testee.consumption.power_at(Pendulum(2017, 1, 1, 0, 10)) == 17.4
     assert testee.consumption.power_at(Pendulum(2017, 1, 1, 0, 40)) == 3.1
+    assert testee.production.power_at(Pendulum(2017, 1, 1, 0, 10)) == 11.3
+    assert testee.production.power_at(Pendulum(2017, 1, 1, 0, 18)) == 8.0
 
 
 @pytest.fixture

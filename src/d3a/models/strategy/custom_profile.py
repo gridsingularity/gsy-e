@@ -1,5 +1,6 @@
 import csv
 from collections import defaultdict
+from contextlib import contextmanager
 from itertools import dropwhile
 import json
 from math import ceil, floor
@@ -29,9 +30,10 @@ class CustomProfile:
 
     def _value(self, index):
         if not 0 <= index < len(self.values):
-            self.strategy.log.warning(
-                "CustomProfile: no value for queried time set, using 0 as default value"
-            )
+            if len(self.values) > 0:
+                self.strategy.log.warning(
+                    "CustomProfile: no value for queried time set, using 0 as default value"
+                )
             return 0.0
         return self.values[index]
 
@@ -39,6 +41,8 @@ class CustomProfile:
         return self._value(int((time - self.start_time).as_interval() / self.time_step))
 
     def amount_over_period(self, period_start, duration):
+        if len(self.values) == 0:
+            return 0.0
         start = (period_start - self.start_time).as_interval() / self.time_step
         end = start + duration / self.time_step
         if end <= ceil(start):
@@ -137,35 +141,56 @@ class CustomProfileStrategy(BaseStrategy):
                         self.bought[slot] += energy
 
 
-def custom_profile_strategy_from_json(json_str):
+def custom_profile_strategy_from_json(consumption, production=None):
     strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
-    strategy.consumption.set_from_dict(json.loads(json_str))
+    if consumption is not None:
+        strategy.consumption.set_from_dict(json.loads(consumption))
+    if production is not None:
+        strategy.production.set_from_dict(json.loads(production))
     return strategy
 
 
-def custom_profile_strategy_from_csv(csv_data):
+def _data_from_csv(csv_data, log):
     data = {}
     for row in csv.reader(csv_data):
         try:
             data[parse(row[0])] = float(row[1])
         except ValueError:
-            pass  # TODO
-            # area.log.error("Could not parse csv file, skipping line: {}".format(row))
+            if log:
+                log.error("Could not parse csv file, skipping line: {}".format(row))
+    return data
+
+
+def custom_profile_strategy_from_csv(consumption, production, *, log=None):
     strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
-    strategy.consumption.set_from_dict(data)
+    if consumption is not None:
+        strategy.consumption.set_from_dict(_data_from_csv(consumption, log))
+    if production is not None:
+        strategy.production.set_from_dict(_data_from_csv(production, log))
     return strategy
 
 
-def custom_profile_strategy_from_csv_file(filename):
-    try:
-        with open(filename, 'r') as data:
-            return custom_profile_strategy_from_csv(data)
-    except FileNotFoundError:
-        return None
+@contextmanager
+def file_option(name):
+    if name is not None:
+        file = open(name, 'r')
+        yield file
+        file.close()
+    else:
+        yield None
 
 
-def custom_profile_strategy_from_list(values, *, time_step=Interval(seconds=1),
-                                      start_time=None):
+def custom_profile_strategy_from_csv_file(consumption, production, *, log=None):
+    with file_option(consumption) as consumption_file:
+        with file_option(production) as production_file:
+            custom_profile_strategy_from_csv(consumption_file, production_file, log=log)
+
+
+def custom_profile_strategy_from_list(*, consumption=None, production=None,
+                                      time_step=Interval(seconds=1), start_time=None):
     strategy = CustomProfileStrategy()
-    strategy.consumption.set_from_list(values, start_time, time_step)
+    if consumption is not None:
+        strategy.consumption.set_from_list(consumption, start_time, time_step)
+    if production is not None:
+        strategy.production.set_from_list(production, start_time, time_step)
     return strategy

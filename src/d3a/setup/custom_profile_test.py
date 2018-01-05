@@ -25,7 +25,8 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Custom', appliance=CustomProfileAppliance(),
-                         strategy=custom_profile_strategy_from_list(values, time_step=time_step)),
+                         strategy=custom_profile_strategy_from_list(consumption=values,
+                                                                    time_step=time_step)),
                     Area('H1 PV', strategy=PVStrategy(), appliance=PVAppliance()),
                     Area('H1 Fridge', strategy=FridgeStrategy(), appliance=FridgeAppliance())
                 ]
