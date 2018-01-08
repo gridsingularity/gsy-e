@@ -61,6 +61,11 @@ class FakeMarket:
         return
 
 
+class FakeTrade:
+    def __init__(self, offer):
+        self.offer = offer
+
+
 """TEST1"""
 
 
@@ -278,3 +283,18 @@ def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
 
     evening_count_percent = (evening_counts.count / evening_counts.total) * 100
     assert evening_count_percent > 90
+
+
+# The pv sells its whole production at once if possible.
+# Make sure that it doesnt offer it again after selling.
+
+@pytest.mark.skip('bug waiting to be fixed')
+def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
+    pv_test6.event_activate()
+    pv_test6.event_tick(area=area_test3)
+    assert market_test3.created_offers[0].energy == pv_test6.energy_production_forecast[TIME]
+    fake_trade = FakeTrade(market_test3.created_offers[0])
+    pv_test6.event_trade(market=market_test3, trade=fake_trade)
+    market_test3.created_offers = []
+    pv_test6.event_tick(area=area_test3)
+    assert not market_test3.created_offers
