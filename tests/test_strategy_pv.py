@@ -183,7 +183,7 @@ def testing_event_trade(area_test3, pv_test4):
                                      seller=area_test3, buyer='buyer'
                                      )
                          )
-    assert len(pv_test4.offers_posted) == 0
+    assert len(pv_test4.offers_open) == 0
 
 
 """TEST 5"""
@@ -288,7 +288,6 @@ def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
 # The pv sells its whole production at once if possible.
 # Make sure that it doesnt offer it again after selling.
 
-@pytest.mark.skip('bug waiting to be fixed')
 def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     pv_test6.event_activate()
     pv_test6.event_tick(area=area_test3)

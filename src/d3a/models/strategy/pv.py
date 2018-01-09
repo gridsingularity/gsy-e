@@ -22,9 +22,16 @@ class PVStrategy(BaseStrategy):
         super().__init__()
         self.risk = risk
         self.offers_posted = {}  # type: Dict[Offer, Market]
+        self.offers_sold = []
         self.energy_production_forecast = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
+
+    @property
+    def offers_open(self):
+        return {id: market
+                for id, market in self.offers_posted.items()
+                if id not in self.offers_sold}
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
@@ -154,7 +161,7 @@ class PVStrategy(BaseStrategy):
 
     def event_trade(self, *, market, trade):
         if trade.offer.seller == self.owner.name:
-            self.offers_posted.pop(trade.offer.id, None)
+            self.offers_sold.append(trade.offer.id)
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
