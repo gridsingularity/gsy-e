@@ -133,9 +133,9 @@ class PVStrategy(BaseStrategy):
         return round((gauss_forecast / 1000), 4)
 
     def decrease_offer_price(self, market):
-        if market not in self.offers_posted.values():
+        if market not in self.offers_open.values():
             return
-        for offer_id, iterated_market in self.offers_posted.items():
+        for offer_id, iterated_market in self.offers_open.items():
             if iterated_market != market:
                 continue
             try:
