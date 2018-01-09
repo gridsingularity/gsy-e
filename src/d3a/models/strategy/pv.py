@@ -88,7 +88,7 @@ class PVStrategy(BaseStrategy):
                 # FIXME: MAke sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
                 # FIXME: InterAreaAgent min_offer_age
-                self.area.current_tick % 7
+                self.area.current_tick % 7 == 0
         ):
             next_market = list(self.area.markets.values())[0]
             self.decrease_offer_price(next_market)
