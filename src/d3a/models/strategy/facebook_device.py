@@ -9,7 +9,7 @@ from d3a.models.strategy.base import BaseStrategy
 
 class FacebookDeviceStrategy(BaseStrategy):
     def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
-                 daily_budget=None):
+                 daily_budget=0):
         super().__init__()
         self.avg_power = avg_power  # Average power in watts
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
@@ -20,7 +20,7 @@ class FacebookDeviceStrategy(BaseStrategy):
         # Budget for a single day in eur
         self.daily_budget = daily_budget * 100
         # Energy consumed during the day ideally should not exceed daily_energy_required
-        self.energy_per_slot = None
+        self.energy_per_slot = 0
         self.energy_requirement = 0
         # In ct. / kWh
         self.max_acceptable_energy_price = 10**20
