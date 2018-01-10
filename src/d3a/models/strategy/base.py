@@ -1,9 +1,10 @@
 from logging import getLogger
 from typing import Dict, Any, Union  # noqa
 
+from d3a.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.events import EventMixin, TriggerMixin, Trigger, AreaEvent, MarketEvent
-from d3a.models.market import Market  # noqa
+from d3a.models.market import Market, Offer  # noqa
 
 
 log = getLogger(__name__)
@@ -20,6 +21,37 @@ class _TradeLookerUpper:
                 yield trade
 
 
+class _Offers:
+    def __init__(self, strategy):
+        self.strategy = strategy
+        self.bought = {}  # type: Dict[Offer, Market]
+        self.posted = {}  # type: Dict[Offer, Market]
+        self.sold = {}  # type: Dict[Offer, Market]
+
+    @property
+    def open(self):
+        return {id: market for id, market in self.posted.items() if id not in self.sold}
+
+    def post(self, offer, market):
+        self.posted[offer] = market
+
+    def replace(self, old_offer, new_offer, market):
+        try:
+            self.posted.pop(old_offer)
+            self.post(new_offer, market)
+        except KeyError:
+            self.strategy.log.warn("Offer already taken")
+
+    def on_trade(self, market, trade):
+        try:
+            if trade.offer.seller == self.strategy.owner.name:
+                self.sold[trade.offer.id] = market
+            if trade.buyer == self.strategy.owner.name:
+                self.bought[trade.offer.id] = market
+        except AttributeError:
+            raise SimulationException("Trade event before strategy was initialized.")
+
+
 class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     available_triggers = [
         Trigger('enable', state_getter=lambda s: s.enabled, help="Enable trading"),
@@ -28,6 +60,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def __init__(self):
         super(BaseStrategy, self).__init__()
+        self.offers = _Offers(self)
         self.enabled = True
 
     parameters = None
@@ -83,3 +116,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):
             super().event_listener(event_type, **kwargs)
+
+    def event_trade(self, *, market, trade):
+        self.offers.on_trade(market, trade)
