@@ -21,7 +21,7 @@ class _TradeLookerUpper:
                 yield trade
 
 
-class _Offers:
+class Offers:
     def __init__(self, strategy):
         self.strategy = strategy
         self.bought = {}  # type: Dict[Offer, Market]
@@ -36,6 +36,9 @@ class _Offers:
         self.posted[offer] = market
 
     def replace(self, old_offer, new_offer, market):
+        if old_offer in self.sold:
+            self.strategy.log.warn("Offer already taken")
+            return
         try:
             self.posted.pop(old_offer)
             self.post(new_offer, market)
@@ -60,7 +63,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def __init__(self):
         super(BaseStrategy, self).__init__()
-        self.offers = _Offers(self)
+        self.offers = Offers(self)
         self.enabled = True
 
     parameters = None
