@@ -65,6 +65,10 @@ class FakeTrade:
     def __init__(self, offer):
         self.offer = offer
 
+    @property
+    def buyer(self):
+        return "FakeBuyer"
+
 
 """TEST1"""
 
@@ -108,7 +112,7 @@ def pv_test2(area_test2):
     p = PVStrategy()
     p.area = area_test2
     p.owner = area_test2
-    p.offers_posted = {}
+    p.offers.posted = {}
     p.energy_production_forecast = ENERGY_FORECAST
     return p
 
@@ -118,8 +122,8 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     pv_test2.event_activate()
     pv_test2.event_tick(area=area_test2)
     assert len(market_test2.created_offers) == 1
-    assert len(pv_test2.offers_posted.items()) == 1
-    offer_id1 = list(pv_test2.offers_posted.keys())[0]
+    assert len(pv_test2.offers.posted.items()) == 1
+    offer_id1 = list(pv_test2.offers.posted.keys())[0]
     offer1 = market_test2.offers[offer_id1]
     assert market_test2.created_offers[0].price == 29.9 * pv_test2.energy_production_forecast[TIME]
     assert pv_test2.energy_production_forecast[
@@ -127,10 +131,10 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
            ] == 0
     area_test2.current_tick = DEFAULT_CONFIG.ticks_per_slot - 2
     pv_test2.event_tick(area=area_test2)
-    offer_id2 = list(pv_test2.offers_posted.keys())[0]
+    offer_id2 = list(pv_test2.offers.posted.keys())[0]
     offer2 = market_test2.offers[offer_id2]
     assert offer1 != offer2
-    assert len(pv_test2.offers_posted.items()) == 1
+    assert len(pv_test2.offers.posted.items()) == 1
     # assert len(pv_test2.decrease_offer_price.calls) == 1
 
 
@@ -152,15 +156,15 @@ def pv_test3(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers_posted = {'id': area_test3.test_market}
+    p.offers.posted = {'id': area_test3.test_market}
     return p
 
 
 def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
-    assert len(pv_test3.offers_posted.items()) == 1
+    assert len(pv_test3.offers.posted.items()) == 1
     old_offer = market_test3.offers['id']
     pv_test3.decrease_offer_price(area_test3.test_market)
-    new_offer_id = list(pv_test3.offers_posted.keys())[0]
+    new_offer_id = list(pv_test3.offers.posted.keys())[0]
     new_offer = market_test3.offers[new_offer_id]
     assert new_offer.price < old_offer.price
 
@@ -173,7 +177,7 @@ def pv_test4(area_test3, called):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers_posted = {'id': area_test3.test_market}
+    p.offers.posted = {'id': area_test3.test_market}
     return p
 
 
@@ -184,7 +188,7 @@ def testing_event_trade(area_test3, pv_test4):
                                      seller=area_test3, buyer='buyer'
                                      )
                          )
-    assert len(pv_test4.offers_open) == 0
+    assert len(pv_test4.offers.open) == 0
 
 
 """TEST 5"""
@@ -195,7 +199,7 @@ def pv_test5(area_test3, called):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers_posted = {'id': area_test3.test_market}
+    p.offers.posted = {'id': area_test3.test_market}
     return p
 
 
@@ -217,7 +221,7 @@ def pv_test6(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers_posted = {}
+    p.offers.posted = {}
     p.energy_production_forecast = ENERGY_FORECAST
     return p
 
