@@ -55,6 +55,10 @@ class FakeMarket:
         self.created_offers = []
 
     @property
+    def offers(self):
+        return {'id': Offer('id', 100, 1, 'A', market=FakeMarket(0))}
+
+    @property
     def sorted_offers(self):
         offers = [
             [Offer('id', 11.8, 0.5, 'A', self)],
@@ -185,7 +189,7 @@ def e_car_strategy_test5(area_test1, called):
     e.owner = area_test1
     e.area = area_test1
     e.sell_energy = called
-    e.offers_posted = {area_test1.past_market: [Offer('id', 100, 1, 'A', market=FakeMarket(0))]}
+    e.offers.post('id', area_test1.past_market)
     return e
 
 

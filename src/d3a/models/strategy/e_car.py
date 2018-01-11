@@ -54,13 +54,13 @@ class ECarStrategy(StorageStrategy):
     trigger_arrive = arrive
 
     def depart(self):
-        for market, offers in self.offers_posted.items():
-            for offer in offers:
-                try:
-                    market.delete_offer(offer.id)
-                    self.used_storage += offer.energy
-                except MarketException:
-                    continue
+        for offer_id, market in self.offers.posted.items():
+            offer = market.offers[offer_id]
+            try:
+                market.delete_offer(offer.id)
+                self.used_storage += offer.energy
+            except MarketException:
+                continue
         self.connected_to_grid = False
         self.log.warning("E-Car departs")
 
