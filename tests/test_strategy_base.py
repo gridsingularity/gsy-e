@@ -47,3 +47,19 @@ def test_offers_does_not_replace_sold_offer(offers):
     offers.sold['id'] = 'market'
     offers.replace('id', 'new_id', 'market')
     assert 'id' in offers.posted and 'new_id' not in offers.posted
+
+
+@pytest.fixture
+def offers2():
+    fixture = Offers(FakeStrategy())
+    fixture.post('id', 'market')
+    fixture.post('id2', 'market')
+    fixture.post('id3', 'market2')
+    return fixture
+
+
+def test_offers_in_market(offers2):
+    assert offers2.posted_in_market('market') == ['id', 'id2']
+    offers2.sold['id2'] = 'market'
+    assert offers2.sold_in_market('market') == ['id2']
+    assert offers2.sold_in_market('market2') == []

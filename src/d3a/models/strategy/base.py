@@ -4,7 +4,7 @@ from typing import Dict, Any, Union  # noqa
 from d3a.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.events import EventMixin, TriggerMixin, Trigger, AreaEvent, MarketEvent
-from d3a.models.market import Market, Offer  # noqa
+from d3a.models.market import Market  # noqa
 
 
 log = getLogger(__name__)
@@ -24,16 +24,33 @@ class _TradeLookerUpper:
 class Offers:
     def __init__(self, strategy):
         self.strategy = strategy
-        self.bought = {}  # type: Dict[Offer, Market]
-        self.posted = {}  # type: Dict[Offer, Market]
-        self.sold = {}  # type: Dict[Offer, Market]
+        self.bought = {}  # type: Dict[str, Market]
+        self.posted = {}  # type: Dict[str, Market]
+        self.sold = {}  # type: Dict[str, Market]
 
     @property
     def open(self):
         return {id: market for id, market in self.posted.items() if id not in self.sold}
 
-    def post(self, offer, market):
-        self.posted[offer] = market
+    def bought_in_market(self, market):
+        return [id for id, iterated_market in self.bought.items() if market == iterated_market]
+
+    def posted_in_market(self, market):
+        return [id for id, iterated_market in self.posted.items() if market == iterated_market]
+
+    def sold_in_market(self, market):
+        return [id for id, iterated_market in self.sold.items() if market == iterated_market]
+
+    def post(self, offer_id, market):
+        self.posted[offer_id] = market
+
+    def remove(self, offer_id):
+        try:
+            self.posted.pop(offer_id)
+            if offer_id in self.sold:
+                self.sold.pop(offer_id)
+        except KeyError:
+            self.log.warn("Could not find offer to remove")
 
     def replace(self, old_offer, new_offer, market):
         if old_offer in self.sold:
