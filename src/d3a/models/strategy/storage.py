@@ -37,8 +37,7 @@ class StorageStrategy(BaseStrategy):
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
         # if energy in this slot was bought: update the storage
-        for bought_id in self.offers.bought_in_market(past_market):
-            bought = past_market.offers[bought_id]
+        for bought in self.offers.bought_in_market(past_market):
             self.blocked_storage -= bought.energy
             self.used_storage += bought.energy
             self.sell_energy(buying_price=(bought.price / bought.energy), energy=bought.energy)

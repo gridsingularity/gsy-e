@@ -36,7 +36,7 @@ class Offers:
         self.bought[offer] = market
 
     def bought_in_market(self, market):
-        return [offer.id for offer, _market in self.bought.items() if market == _market]
+        return [offer for offer, _market in self.bought.items() if market == _market]
 
     def posted_in_market(self, market):
         return [id for id, iterated_market in self.posted.items() if market == iterated_market]
@@ -69,8 +69,6 @@ class Offers:
         try:
             if trade.offer.seller == self.strategy.owner.name:
                 self.sold[trade.offer.id] = market
-            if trade.buyer == self.strategy.owner.name:
-                self.bought[trade.offer.id] = market
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")
 
@@ -114,6 +112,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def accept_offer(self, market: Market, offer, *, buyer=None, energy=None):
         if buyer is None:
             buyer = self.owner.name
+        if not isinstance(offer, Offer):
+            offer = market.offers[offer]
         self.offers.bought_offer(offer, market)
         trade = market.accept_offer(offer, buyer, energy=energy)
         return trade
