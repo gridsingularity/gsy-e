@@ -35,18 +35,22 @@ class FakeArea():
 class FakeMarket:
     def __init__(self, count):
         self.count = count
-        self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'A', self),
+        self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'FakeArea', self),
                            'FakeArea', 'buyer'
                            )
         self.created_offers = []
+        self.offers = {'id': Offer('id', 11.8, 0.5, 'FakeArea', self),
+                       'id2': Offer('id2', 20, 0.5, 'A', self),
+                       'id3': Offer('id3', 20, 1, 'A', self),
+                       'id4': Offer('id4', 19, 5.1, 'A', self)}
 
     @property
     def sorted_offers(self):
         offers = [
             [Offer('id', 11.8, 0.5, 'A', self)],
-            [Offer('id', 20, 0.5, 'A', self)],
-            [Offer('id', 20, 1, 'A', self)],
-            [Offer('id', 19, 5.1, 'A', self)]
+            [Offer('id2', 20, 0.5, 'A', self)],
+            [Offer('id3', 20, 1, 'A', self)],
+            [Offer('id4', 19, 5.1, 'A', self)]
         ]
         return offers[self.count]
 
@@ -170,9 +174,14 @@ def storage_strategy_test5(area_test5, called):
     s.owner = area_test5
     s.area = area_test5
     s.sell_energy = called
-    s.bought_offers = {area_test5.past_market: [Offer('id', 20, 1, 'A', market=FakeMarket(4))]}
-    s.sold_offers = {area_test5.past_market: [Offer('id', 20, 2.9, 'A', market=FakeMarket(4))]}
-    s.offers_posted = {area_test5.past_market: [Offer('id', 100, 1, 'A', market=FakeMarket(4))]}
+    area_test5.past_market.offers = {
+        'id': Offer('id', 20, 1, 'A', market=area_test5.past_market),
+        'id2': Offer('id2', 20, 2.9, 'FakeArea', market=area_test5.past_market),
+        'id3': Offer('id3', 100, 1, 'FakeArea', market=area_test5.past_market)
+    }
+    s.offers.bought = {'id': area_test5.past_market}
+    s.offers.sold = {'id2': area_test5.past_market}
+    s.offers.posted = {'id3': area_test5.past_market}
     return s
 
 
@@ -183,7 +192,7 @@ def test_if_storage_handles_capacity_correctly(storage_strategy_test5, area_test
     assert storage_strategy_test5.sell_energy.calls[0][1] == {'buying_price': '20.0',
                                                               'energy': '1'}
     assert storage_strategy_test5.offered_storage == -2.9
-    assert len(storage_strategy_test5.offers_posted[area_test5.past_market]) == 0
+    assert len(storage_strategy_test5.offers.posted_in_market(area_test5.past_market)) == 0
     assert storage_strategy_test5.sell_energy.calls[1][0] == ('94.2951438000943', '1')
 
 
@@ -208,14 +217,15 @@ def storage_strategy_test6(area_test6, market_test6, called):
     s.owner = area_test6
     s.area = area_test6
     s.accept_offer = called
-    s.offers_posted = {market_test6: [market_test6.trade.offer]}
+    s.offers.posted = {market_test6.trade.offer.id: market_test6}
     return s
 
 
 def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.event_trade(market=market_test6, trade=market_test6.trade)
-    assert market_test6.trade.offer in list(storage_strategy_test6.sold_offers[market_test6])
-    assert market_test6.trade.offer not in storage_strategy_test6.offers_posted[market_test6]
+    assert market_test6.trade.offer.id in\
+        storage_strategy_test6.offers.sold_in_market(market_test6)
+    assert market_test6.trade.offer.id not in storage_strategy_test6.offers.open
 
 
 """TEST7"""
@@ -242,7 +252,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     assert storage_strategy_test7.used_storage == -1.3
     assert storage_strategy_test7.offered_storage == 1.3
     assert area_test7.current_market.created_offers[0].energy == 1.3
-    assert len(storage_strategy_test7.offers_posted[area_test7.current_market]) > 0
+    assert len(storage_strategy_test7.offers.posted_in_market(area_test7.current_market)) > 0
 
 
 """TEST8"""
@@ -268,4 +278,4 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
     assert storage_strategy_test8.used_storage == 0
     assert storage_strategy_test8.offered_storage == 100
     assert area_test8.current_market.created_offers[0].energy == 100
-    assert len(storage_strategy_test8.offers_posted[area_test8.current_market]) > 0
+    assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
