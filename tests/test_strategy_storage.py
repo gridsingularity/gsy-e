@@ -179,7 +179,7 @@ def storage_strategy_test5(area_test5, called):
         'id2': Offer('id2', 20, 2.9, 'FakeArea', market=area_test5.past_market),
         'id3': Offer('id3', 100, 1, 'FakeArea', market=area_test5.past_market)
     }
-    s.offers.bought = {'id': area_test5.past_market}
+    s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market)
     s.offers.sold = {'id2': area_test5.past_market}
     s.offers.posted = {'id3': area_test5.past_market}
     return s

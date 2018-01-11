@@ -79,7 +79,6 @@ class NightStorageStrategy(BaseStrategy):
                     try:
                         self.accept_offer(market, offer)
                         self.blocked_storage += offer.energy
-                        self.offers.bought[offer.id] = market
                         continue
                     except MarketException:
                         # Offer already gone etc., try next one.
