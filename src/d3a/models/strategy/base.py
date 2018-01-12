@@ -1,5 +1,6 @@
+from collections import defaultdict
 from logging import getLogger
-from typing import Dict, Any, Union  # noqa
+from typing import List, Dict, Any, Union  # noqa
 
 from d3a.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
@@ -25,50 +26,59 @@ class Offers:
     def __init__(self, strategy):
         self.strategy = strategy
         self.bought = {}  # type: Dict[Offer, Market]
-        self.posted = {}  # type: Dict[str, Market]
-        self.sold = {}  # type: Dict[str, Market]
+        self.posted = {}  # type: Dict[Offer, Market]
+        self.sold = defaultdict(list)  # type: Dict[Market, List[str]]
 
     @property
     def open(self):
-        return {id: market for id, market in self.posted.items() if id not in self.sold}
+        return {offer: market
+                for offer, market in self.posted.items()
+                if offer.id not in self.sold[market]}
 
     def bought_offer(self, offer, market):
         self.bought[offer] = market
 
+    def sold_offer(self, offer_id, market):
+        self.sold[market].append(offer_id)
+
     def bought_in_market(self, market):
         return [offer for offer, _market in self.bought.items() if market == _market]
 
+    def open_in_market(self, market):
+        return [offer
+                for offer, _market in self.posted.items()
+                if market == _market and offer.id not in self.sold[market]]
+
     def posted_in_market(self, market):
-        return [id for id, iterated_market in self.posted.items() if market == iterated_market]
+        return [offer for offer, _market in self.posted.items() if market == _market]
 
     def sold_in_market(self, market):
-        return [id for id, iterated_market in self.sold.items() if market == iterated_market]
+        return [offer
+                for offer in self.posted_in_market(market)
+                if offer.id in self.sold[market]]
 
-    def post(self, offer_id, market):
-        self.posted[offer_id] = market
+    def post(self, offer, market):
+        self.posted[offer] = market
 
-    def remove(self, offer_id):
+    def remove(self, offer):
         try:
-            self.posted.pop(offer_id)
-            if offer_id in self.sold:
-                self.sold.pop(offer_id)
+            market = self.posted.pop(offer)
+            if offer.id in self.sold[market]:
+                self.strategy.log.error("Offer already sold, cannot remove it.")
+                self.posted[offer] = market
+            else:
+                return True
         except KeyError:
             self.strategy.log.warn("Could not find offer to remove")
 
     def replace(self, old_offer, new_offer, market):
-        if old_offer in self.sold:
-            self.strategy.log.warn("Offer already taken")
-            return
-        try:
-            self.posted.pop(old_offer)
+        if self.remove(old_offer):
             self.post(new_offer, market)
-        except KeyError:
-            self.strategy.log.warn("Offer already taken")
 
     def on_trade(self, market, trade):
         try:
             if trade.offer.seller == self.strategy.owner.name:
-                self.sold[trade.offer.id] = market
+                self.sold_offer(trade.offer.id, market)
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")
 
