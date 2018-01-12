@@ -189,7 +189,7 @@ def e_car_strategy_test5(area_test1, called):
     e.owner = area_test1
     e.area = area_test1
     e.sell_energy = called
-    e.offers.post('id', area_test1.past_market)
+    e.offers.post(Offer('id', 1, 1, 'A', market=area_test1.past_market), area_test1.past_market)
     return e
 
 

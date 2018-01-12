@@ -40,7 +40,7 @@ class FakeArea():
 class FakeMarket:
     def __init__(self, count):
         self.count = count
-        self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'A', self),
+        self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'FakeArea', self),
                            'FakeArea', 'buyer'
                            )
         self.created_offers = []
@@ -111,47 +111,52 @@ def storage_strategy_test2(area_test2, called):
 
     n.blocked_storage = 0
 
-    n.bought_offers = {area_test2.past_market: [
-        Offer('id', 30, 1, 'A', market=area_test2.past_market),
-        Offer('id', 10, 5, 'A', market=area_test2.past_market),
-        Offer('id', 20, 20, 'A', market=area_test2.past_market)
-    ],
-        FakeMarket(0): 'dummy Offer'}
+    n.offers.bought_offer(Offer('id', 30, 1, 'A', market=area_test2.past_market),
+                          area_test2.past_market)
+    n.offers.bought_offer(Offer('id2', 10, 5, 'A', market=area_test2.past_market),
+                          area_test2.past_market)
+    n.offers.bought_offer(Offer('id3', 20, 20, 'A', market=area_test2.past_market),
+                          area_test2.past_market)
+    n.offers.bought_offer(Offer('dummy', 1, 1, 'A'), FakeMarket(0))
 
-    n.sold_offers = {area_test2.past_market: [
-        Offer('id', 11, 4, 'A', market=area_test2.past_market),
-        Offer('id', 12, 2, 'A', market=area_test2.past_market)
-    ],
-        FakeMarket(0): 'dummy Offer'}
+    n.offers.post(Offer('id4', 11, 4, 'FakeArea', market=area_test2.past_market),
+                  area_test2.past_market)
+    n.offers.post(Offer('id5', 12, 2, 'FakeArea', market=area_test2.past_market),
+                  area_test2.past_market)
+    n.offers.post(Offer('id6', 30, 3, 'FakeArea', market=area_test2.past_market),
+                  area_test2.past_market)
+    n.offers.post(Offer('id7', 10, 4, 'FakeArea', market=area_test2.past_market),
+                  area_test2.past_market)
+    n.offers.post(Offer('id8', 20, 8, 'FakeArea', market=area_test2.past_market),
+                  area_test2.past_market)
+    n.offers.post(Offer('dummy2', 1, 1, 'FakeArea'), FakeMarket(0))
+    n.offers.post(Offer('dummy3', 1, 1, 'FakeArea'), FakeMarket(0))
 
-    n.offers_posted = {area_test2.past_market: [
-        Offer('id', 30, 3, 'A', market=area_test2.past_market),
-        Offer('id', 10, 4, 'A', market=area_test2.past_market),
-        Offer('id', 20, 6, 'A', market=area_test2.past_market)
-    ],
-        FakeMarket(0): 'dummy Offer'}
+    n.offers.sold_offer('id4', area_test2.past_market)
+    n.offers.sold_offer('id5', area_test2.past_market)
+    n.offers.sold_offer('dummy2', area_test2.past_market)
+
     return n
 
 
 def test_event_market_cycle(storage_strategy_test2, area_test2, bought_energy=0,
                             sold_energy=0, offered_energy=0):
     # calculate the amount of energy bought in this market
-    for b_offer in storage_strategy_test2.bought_offers[area_test2.past_market]:
+    for b_offer in storage_strategy_test2.offers.bought_in_market(area_test2.past_market):
         bought_energy += b_offer.energy
 
     # calculate the amount of energy sold in this market
-    for s_offer in storage_strategy_test2.sold_offers[area_test2.past_market]:
+    for s_offer in storage_strategy_test2.offers.sold_in_market(area_test2.past_market):
         sold_energy += s_offer.energy
 
     # calculate the amount of energy offered (but not sold) in this market
-    for o_offer in storage_strategy_test2.offers_posted[area_test2.past_market]:
+    for o_offer in storage_strategy_test2.offers.open_in_market(area_test2.past_market):
         offered_energy += o_offer.energy
 
     # Total expected amount of new selling offers that should be created
     # Consists of all bought offers and all the not sold offers
-    selling_offers = (len(storage_strategy_test2.bought_offers[area_test2.past_market]) +
-                      len(storage_strategy_test2.offers_posted[area_test2.past_market])
-                      )
+    selling_offers = (len(storage_strategy_test2.offers.bought_in_market(area_test2.past_market))
+                      + len(storage_strategy_test2.offers.open_in_market(area_test2.past_market)))
 
     # Call the market cycle function
     storage_strategy_test2.event_market_cycle()
@@ -162,7 +167,8 @@ def test_event_market_cycle(storage_strategy_test2, area_test2, bought_energy=0,
 
     # Checking if every bought offer in this market will be sold
     assert len(storage_strategy_test2.sell_energy.calls) == selling_offers
-    for i, offer in enumerate(storage_strategy_test2.bought_offers[area_test2.past_market]):
+    for i, offer in \
+            enumerate(storage_strategy_test2.offers.bought_in_market(area_test2.past_market)):
         assert storage_strategy_test2.sell_energy.calls[i][0][0] == str(offer.price)
         assert storage_strategy_test2.sell_energy.calls[i][0][1] == str(offer.energy)
 
@@ -170,8 +176,10 @@ def test_event_market_cycle(storage_strategy_test2, area_test2, bought_energy=0,
     assert storage_strategy_test2.offered_storage == -1 * (offered_energy + sold_energy)
 
     # Checking if all not sold offers in the past market are offered again in another market
-    for i, offer in enumerate(storage_strategy_test2.offers_posted[area_test2.past_market]):
-        sell_energy_position_offset = storage_strategy_test2.bought_offers[area_test2.past_market]
+    for i, offer in \
+            enumerate(storage_strategy_test2.offers.open_in_market(area_test2.past_market)):
+        sell_energy_position_offset = \
+            storage_strategy_test2.offers.bought_in_market(area_test2.past_market)
         assert (storage_strategy_test2.
                 sell_energy.
                 calls[len(sell_energy_position_offset) + i][0][1]
@@ -205,7 +213,7 @@ def storage_strategy_test3(area_test3, called):
     n.area = area_test3
     n.sell_energy = called
     # Add Offer that will be traded in the next test to the offers_posted dict
-    n.offers_posted[area_test3.current_market].append(area_test3.current_market.trade.offer)
+    n.offers.post(area_test3.current_market.trade.offer, area_test3.current_market)
     return n
 
 
@@ -215,11 +223,11 @@ def test_event_trade(storage_strategy_test3, area_test3):
                                        )
     # Check if trade is added to sold_offers dict
     assert (area_test3.current_market.trade.offer in
-            storage_strategy_test3.sold_offers[area_test3.current_market]
+            storage_strategy_test3.offers.sold_in_market(area_test3.current_market)
             )
     # Check if trade is deleted from offers_posted dict
     assert (area_test3.current_market.trade.offer not in
-            storage_strategy_test3.offers_posted[area_test3.current_market]
+            storage_strategy_test3.offers.open_in_market(area_test3.current_market)
             )
 
 

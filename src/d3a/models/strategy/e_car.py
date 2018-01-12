@@ -54,8 +54,7 @@ class ECarStrategy(StorageStrategy):
     trigger_arrive = arrive
 
     def depart(self):
-        for offer_id, market in self.offers.posted.items():
-            offer = market.offers[offer_id]
+        for offer, market in self.offers.posted.items():
             try:
                 market.delete_offer(offer.id)
                 self.used_storage += offer.energy

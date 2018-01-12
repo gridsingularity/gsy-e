@@ -156,7 +156,8 @@ def pv_test3(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {'id': area_test3.test_market}
+    p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
+                       area_test3.test_market}
     return p
 
 
@@ -164,8 +165,7 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     assert len(pv_test3.offers.posted.items()) == 1
     old_offer = market_test3.offers['id']
     pv_test3.decrease_offer_price(area_test3.test_market)
-    new_offer_id = list(pv_test3.offers.posted.keys())[0]
-    new_offer = market_test3.offers[new_offer_id]
+    new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
 
 
@@ -177,7 +177,9 @@ def pv_test4(area_test3, called):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {'id': area_test3.test_market}
+    p.offers.posted = {
+        Offer(id='id', price=20, energy=1, seller='FakeArea'): area_test3.test_market
+    }
     return p
 
 

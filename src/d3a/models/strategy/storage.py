@@ -42,13 +42,11 @@ class StorageStrategy(BaseStrategy):
             self.used_storage += bought.energy
             self.sell_energy(buying_price=(bought.price / bought.energy), energy=bought.energy)
         # if energy in this slot was sold: update the storage
-        for sold_id in self.offers.sold_in_market(past_market):
-            sold = past_market.offers[sold_id]
+        for sold in self.offers.sold_in_market(past_market):
             self.offered_storage -= sold.energy
         # Check if Storage posted offer in that market that has not been bought
         # If so try to sell the offer again
-        for offer_id in self.offers.posted_in_market(past_market):
-            offer = past_market.offers[offer_id]
+        for offer in self.offers.open_in_market(past_market):
             # self.offers_posted[market].price is the price we charged including profit
             # But self.sell_energy expects a buying price
             offer_price = (offer.price / offer.energy)
@@ -58,7 +56,7 @@ class StorageStrategy(BaseStrategy):
                                         (1 / (1.1 - (0.1 * (self.risk / MAX_RISK))))
                                     )
             self.sell_energy(initial_buying_price, offer.energy)
-            self.offers.remove(offer_id)
+            self.offers.sold_offer(offer.id, past_market)
 
     def buy_energy(self, avg_cheapest_offer_price):
         # Here starts the logic if energy should be bought
@@ -114,7 +112,7 @@ class StorageStrategy(BaseStrategy):
             # Updating parameters
             self.used_storage -= energy
             self.offered_storage += energy
-            self.offers.post(offer.id, most_expensive_market)
+            self.offers.post(offer, most_expensive_market)
 
     def find_avg_cheapest_offers(self):
         # Taking the cheapest offers in every market currently open and building the average

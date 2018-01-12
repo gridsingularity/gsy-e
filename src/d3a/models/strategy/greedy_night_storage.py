@@ -37,14 +37,12 @@ class NightStorageStrategy(BaseStrategy):
             self.used_storage += bought.energy
             self.sell_energy(bought.price, bought.energy)
         # if energy in this slot was sold: update the storage
-        for sold_id in self.offers.sold_in_market(past_market):
-            sold = past_market.offers[sold_id]
+        for sold in self.offers.sold_in_market(past_market):
             self.offered_storage -= sold.energy
         # Check if Storage posted offer in that market that has not been bought
         # If so try to sell the offer again
 
-        for offer_id in list(self.offers.posted_in_market(past_market)):
-            offer = past_market.offers[offer_id]
+        for offer in list(self.offers.open_in_market(past_market)):
             # self.offers_posted[market].price is the price we charged including profit
             # But self.sell_energy expects a buying price
             initial_buying_price = ((offer.price / 1.002) *
@@ -121,7 +119,7 @@ class NightStorageStrategy(BaseStrategy):
             # Updating parameters
             self.used_storage -= energy
             self.offered_storage += energy
-            self.offers.post(offer.id, most_expensive_market)
+            self.offers.post(offer, most_expensive_market)
 
     def find_avg_cheapest_offers(self):
         # Taking the cheapest offers in every market currently open and building the average

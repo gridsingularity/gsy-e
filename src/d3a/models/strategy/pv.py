@@ -62,7 +62,7 @@ class PVStrategy(BaseStrategy):
                             self.energy_production_forecast[time],
                             self.owner.name
                         )
-                        self.offers.post(offer.id, market)
+                        self.offers.post(offer, market)
 
                 except KeyError:
                     self.log.warn("PV has no forecast data for this time")
@@ -126,18 +126,17 @@ class PVStrategy(BaseStrategy):
     def decrease_offer_price(self, market):
         if market not in self.offers.open.values():
             return
-        for offer_id, iterated_market in self.offers.open.items():
+        for offer, iterated_market in self.offers.open.items():
             if iterated_market != market:
                 continue
             try:
-                offer = iterated_market.offers[offer_id]
-                iterated_market.delete_offer(offer_id)
+                iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
                     offer.price * 0.99,
                     offer.energy,
                     self.owner.name
                 )
-                self.offers.replace(offer_id, new_offer.id, iterated_market)
+                self.offers.replace(offer, new_offer, iterated_market)
 
             except MarketException:
                 continue
