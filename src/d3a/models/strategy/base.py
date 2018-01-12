@@ -23,6 +23,16 @@ class _TradeLookerUpper:
 
 
 class Offers:
+    """
+    Keep track of a strategy's accepted and own offers.
+
+    When writing a strategy class, use the post(), remove() and
+    replace() methods to keep track of offers.
+
+    posted_in_market() yields all offers that have been posted,
+    open_in_market() only those who have not been sold.
+    """
+
     def __init__(self, strategy):
         self.strategy = strategy
         self.bought = {}  # type: Dict[Offer, Market]
