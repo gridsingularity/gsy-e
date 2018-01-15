@@ -1,6 +1,6 @@
 from collections import defaultdict
 from logging import getLogger
-from typing import List, Dict, Any, Union  # noqa
+from typing import Set, List, Dict, Any, Union  # noqa
 
 from d3a.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
@@ -38,6 +38,7 @@ class Offers:
         self.bought = {}  # type: Dict[Offer, Market]
         self.posted = {}  # type: Dict[Offer, Market]
         self.sold = defaultdict(list)  # type: Dict[Market, List[str]]
+        self.changed = {}  # type: Dict[str, Offer]
 
     @property
     def open(self):
@@ -50,6 +51,12 @@ class Offers:
 
     def sold_offer(self, offer_id, market):
         self.sold[market].append(offer_id)
+
+    def _update_offer(self, offer):
+        old_offer_list = [o for o in self.posted.keys() if o.id == offer.id]
+        assert len(old_offer_list) == 1, "Expected to find a unique offer to update"
+        old_offer = old_offer_list[0]
+        self.posted[offer] = self.posted.pop(old_offer)
 
     def bought_in_market(self, market):
         return [offer for offer, _market in self.bought.items() if market == _market]
@@ -88,9 +95,18 @@ class Offers:
     def on_trade(self, market, trade):
         try:
             if trade.offer.seller == self.strategy.owner.name:
+                if trade.offer.id in self.changed:
+                    self._update_offer(trade.offer)
+                    self.post(self.changed.pop(trade.offer.id), market)
                 self.sold_offer(trade.offer.id, market)
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")
+
+    def on_offer_changed(self, market, existing_offer, new_offer):
+        if existing_offer.seller == self.strategy.owner.name:
+            assert existing_offer.id not in self.changed, \
+                   "Offer should only change once before each trade."
+            self.changed[existing_offer.id] = new_offer
 
 
 class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
@@ -163,3 +179,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def event_trade(self, *, market, trade):
         self.offers.on_trade(market, trade)
+
+    def event_offer_changed(self, *, market, existing_offer, new_offer):
+        self.offers.on_offer_changed(market, existing_offer, new_offer)
