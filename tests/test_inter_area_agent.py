@@ -33,7 +33,7 @@ class FakeMarket:
 
     def offer(self, price, energy, seller):
         self.offer_count += 1
-        self.forwarded_offer = Offer('fwd', 1, 1, seller, market=self)
+        self.forwarded_offer = Offer('fwd', price, energy, seller, market=self)
         return self.forwarded_offer
 
 
@@ -54,7 +54,7 @@ def test_iaa_forwards_offers(iaa):
     assert iaa.higher_market.offer_count == 1
 
 
-def test_iaa_event_trade_doesnt_deletes_forwarded_offer_when_sold(iaa, called):
+def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
     iaa.lower_market.delete_offer = called
     iaa.event_trade(trade=Trade('trade_id',
                                 datetime.now(),
@@ -65,13 +65,24 @@ def test_iaa_event_trade_doesnt_deletes_forwarded_offer_when_sold(iaa, called):
     assert len(iaa.lower_market.delete_offer.calls) == 1
 
 
-@pytest.mark.skip('fix: offer is not recognized')
-def test_iaa_event_trade_buys_accepted_offer(iaa, called):
-    iaa.lower_market.accept_offer = called
-    iaa.event_trade(trade=Trade('trade_id',
-                                datetime.now(),
-                                iaa.higher_market.forwarded_offer,
-                                'owner',
-                                'someone_else'),
-                    market=iaa.higher_market)
-    assert len(iaa.lower_market.accept_offer.calls) == 1
+@pytest.fixture
+def iaa2():
+    lower_market = FakeMarket([Offer('id', 2, 2, 'other')])
+    higher_market = FakeMarket([])
+    owner = FakeArea('owner')
+    iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    iaa.event_tick(area=iaa.owner)
+    iaa.owner.current_tick += 2
+    iaa.event_tick(area=iaa.owner)
+    return iaa
+
+
+def test_iaa_event_trade_buys_accepted_offer(iaa2, called):
+    iaa2.lower_market.accept_offer = called
+    iaa2.event_trade(trade=Trade('trade_id',
+                                 datetime.now(),
+                                 iaa2.higher_market.forwarded_offer,
+                                 'owner',
+                                 'someone_else'),
+                     market=iaa2.higher_market)
+    assert len(iaa2.lower_market.accept_offer.calls) == 1
