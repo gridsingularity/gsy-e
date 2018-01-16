@@ -29,6 +29,17 @@ class IAAEngine:
             s=self
         )
 
+    def _forward_offer(self, offer, offer_id):
+        forwarded_offer = self.markets.target.offer(
+            offer.price + (offer.price * (self.transfer_fee_pct / 100)),
+            offer.energy,
+            self.owner.name
+        )
+        offer_info = OfferInfo(offer, forwarded_offer)
+        self.offered_offers[forwarded_offer.id] = offer_info
+        self.offered_offers[offer_id] = offer_info
+        return forwarded_offer
+
     def tick(self, *, area):
         # Store age of offer
         for offer in self.markets.source.sorted_offers:
@@ -49,14 +60,7 @@ class IAAEngine:
             if not self.owner.usable_offer(offer):
                 # Forbidden offer (i.e. our counterpart's)
                 continue
-            forwarded_offer = self.markets.target.offer(
-                offer.price + (offer.price * (self.transfer_fee_pct / 100)),
-                offer.energy,
-                self.owner.name
-            )
-            offer_info = OfferInfo(offer, forwarded_offer)
-            self.offered_offers[forwarded_offer.id] = offer_info
-            self.offered_offers[offer_id] = offer_info
+            forwarded_offer = self._forward_offer(offer, offer_id)
             self.owner.log.info("Offering %s", forwarded_offer)
 
     def event_trade(self, *, trade):
@@ -114,17 +118,17 @@ class IAAEngine:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
 
     def event_offer_changed(self, *, existing_offer, new_offer):
-        return
-        # FIXME: Implement partial orders
-        if existing_offer.id in self.offer_age:
-            # Offer we're watching in source market was changed - transfer age
-            age = self.offer_age.pop(existing_offer.id, 0)
-            self.offer_age[new_offer.id] = age
-
-        existing_offer_info = self.offered_offers.get(existing_offer.id)
-        if not existing_offer_info:
-            # Doesn't concern us
-            return
+        if existing_offer.seller == self.owner.name:
+            pass  # TODO
+        elif existing_offer.id in self.offered_offers:
+            self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
+            offer_info = self.offered_offers[existing_offer.id]
+            forwarded = self._forward_offer(new_offer, new_offer.id)
+            self.owner.log.info("Offer %s changed to residual offer %s",
+                                offer_info.target_offer,
+                                forwarded)
+            del self.offered_offers[offer_info.target_offer.id]
+            del self.offered_offers[offer_info.source_offer.id]
 
 
 class InterAreaAgent(BaseStrategy):

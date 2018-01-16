@@ -86,3 +86,26 @@ def test_iaa_event_trade_buys_accepted_offer(iaa2, called):
                                  'someone_else'),
                      market=iaa2.higher_market)
     assert len(iaa2.lower_market.accept_offer.calls) == 1
+
+
+@pytest.mark.skip('later')
+def test_iaa_event_trade_buys_partial_accepted_offer(iaa2, called):
+    iaa2.lower_market.accept_offer = called
+    total_offer = iaa2.higher_market.forwarded_offer
+    accepted_offer = Offer(total_offer.id, total_offer.price, 1, total_offer.seller)
+    iaa2.event_trade(trade=Trade('trade_id',
+                                 datetime.now(),
+                                 accepted_offer,
+                                 'owner',
+                                 'someone_else'),
+                     market=iaa2.higher_market)
+    assert len(iaa2.lower_market.accept_offer.calls) == 1
+
+
+def test_iaa_forwards_partial_offer(iaa2, called):
+    full_offer = iaa2.lower_market.sorted_offers[0]
+    residual_offer = Offer('residual', 2, 1.4, 'other')
+    iaa2.event_offer_changed(market=iaa2.lower_market,
+                             existing_offer=full_offer,
+                             new_offer=residual_offer)
+    assert iaa2.higher_market.forwarded_offer.energy == 1.4
