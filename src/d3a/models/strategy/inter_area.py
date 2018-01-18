@@ -23,6 +23,8 @@ class IAAEngine:
         # Offer.id -> OfferInfo
         self.offered_offers = {}  # type: Dict[str, OfferInfo]
         self.traded_offers = set()  # type: Set[str]
+        self.trade_residual = {}  # type Dict[str, Offer]
+        self.ignored_offers = set()  # type: Set[str]
 
     def __repr__(self):
         return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
@@ -68,7 +70,7 @@ class IAAEngine:
         if not offer_info:
             # Trade doesn't concern us
             return
-        if trade.offer == offer_info.target_offer:
+        if trade.offer.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
             trade_source = self.owner.accept_offer(
                 self.markets.source,
@@ -82,6 +84,20 @@ class IAAEngine:
                 del self.offered_offers[offer_info.source_offer.id]
                 del self.offered_offers[offer_info.target_offer.id]
                 self.offer_age.pop(offer_info.source_offer.id, None)
+            else:
+                # Partial trade - connect to residual offer in source market
+                try:
+                    fwd_residual = self.trade_residual.pop(trade.offer.id)
+                    residual_offer_info = OfferInfo(trade.residual, fwd_residual)
+                    self.offered_offers[trade.residual.id] = residual_offer_info
+                    self.offered_offers[fwd_residual.id] = residual_offer_info
+                    self.ignored_offers.add(trade.residual.id)
+                except KeyError:
+                    self.owner.log.error("Not forwarding residual offer for "
+                                         "{} (Forwarded offer not found)".format(trade.offer))
+                except AttributeError:
+                    self.owner.log.error("Expected residual offer to "
+                                         "forward in trade {}".format(trade))
             self.traded_offers.add(offer_info.source_offer.id)
             self.traded_offers.add(offer_info.target_offer.id)
         elif trade.offer == offer_info.source_offer and trade.buyer == self.owner.name:
@@ -117,10 +133,16 @@ class IAAEngine:
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
 
-    def event_offer_changed(self, *, existing_offer, new_offer):
-        if existing_offer.seller == self.owner.name:
-            pass  # TODO
-        elif existing_offer.id in self.offered_offers:
+    def event_offer_changed(self, *, market, existing_offer, new_offer):
+        if market == self.markets.target and existing_offer.seller == self.owner.name:
+            # one of our forwarded offers was split, so save the residual offer
+            # for handling the upcoming trade event
+            assert existing_offer.id not in self.trade_residual, \
+                   "Offer should only change once before each trade."
+            self.trade_residual[existing_offer.id] = new_offer
+        elif market == self.markets.source and existing_offer.id in self.offered_offers:
+            # an offer in the source market was split - delete the corresponding offer
+            # in the target market and forward the new residual offer
             self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
             offer_info = self.offered_offers[existing_offer.id]
             forwarded = self._forward_offer(new_offer, new_offer.id)
@@ -198,4 +220,6 @@ class InterAreaAgent(BaseStrategy):
 
     def event_offer_changed(self, *, market, existing_offer, new_offer):
         for engine in self.engines:
-            engine.event_offer_changed(existing_offer=existing_offer, new_offer=new_offer)
+            engine.event_offer_changed(market=market,
+                                       existing_offer=existing_offer,
+                                       new_offer=new_offer)
