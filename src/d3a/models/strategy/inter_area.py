@@ -88,10 +88,12 @@ class IAAEngine:
                 # Partial trade - connect to residual offer in source market
                 try:
                     fwd_residual = self.trade_residual.pop(trade.offer.id)
-                    residual_offer_info = OfferInfo(trade.residual, fwd_residual)
-                    self.offered_offers[trade.residual.id] = residual_offer_info
+                    original_offer_age = self.offer_age.pop(trade_source.offer.id)
+                    residual_offer_info = OfferInfo(trade_source.residual, fwd_residual)
+                    self.offered_offers[trade_source.residual.id] = residual_offer_info
                     self.offered_offers[fwd_residual.id] = residual_offer_info
-                    self.ignored_offers.add(trade.residual.id)
+                    self.offer_age[trade_source.residual.id] = original_offer_age
+                    self.ignored_offers.add(trade_source.residual.id)
                 except KeyError:
                     self.owner.log.error("Not forwarding residual offer for "
                                          "{} (Forwarded offer not found)".format(trade.offer))
