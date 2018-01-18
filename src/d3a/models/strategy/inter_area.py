@@ -79,16 +79,11 @@ class IAAEngine:
                 buyer=self.owner.name
             )
             self.owner.log.info("Offer accepted %s", trade_source)
-            if trade.offer.energy == offer_info.source_offer.energy:
-                # Complete trade - remove from offered_offers
-                del self.offered_offers[offer_info.source_offer.id]
-                del self.offered_offers[offer_info.target_offer.id]
-                self.offer_age.pop(offer_info.source_offer.id, None)
-            else:
+            if trade.offer.energy < offer_info.source_offer.energy:
                 # Partial trade - connect to residual offer in source market
                 try:
                     fwd_residual = self.trade_residual.pop(trade.offer.id)
-                    original_offer_age = self.offer_age.pop(trade_source.offer.id)
+                    original_offer_age = self.offer_age[trade_source.offer.id]
                     residual_offer_info = OfferInfo(trade_source.residual, fwd_residual)
                     self.offered_offers[trade_source.residual.id] = residual_offer_info
                     self.offered_offers[fwd_residual.id] = residual_offer_info
@@ -98,8 +93,17 @@ class IAAEngine:
                     self.owner.log.error("Not forwarding residual offer for "
                                          "{} (Forwarded offer not found)".format(trade.offer))
                 except AttributeError:
-                    self.owner.log.error("Expected residual offer to "
-                                         "forward in trade {}".format(trade))
+                    if trade_source.residual is None:
+                        self.owner.log.error(
+                            "Expected residual offer to in source market trade {} - deleting "
+                            "corresponding offer in target market".format(trade_source)
+                        )
+                        self.markets.target.delete_offer(fwd_residual)
+                    else:
+                        raise
+            del self.offered_offers[offer_info.source_offer.id]
+            del self.offered_offers[offer_info.target_offer.id]
+            self.offer_age.pop(offer_info.source_offer.id, None)
             self.traded_offers.add(offer_info.source_offer.id)
             self.traded_offers.add(offer_info.target_offer.id)
         elif trade.offer == offer_info.source_offer and trade.buyer == self.owner.name:

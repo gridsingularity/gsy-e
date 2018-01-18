@@ -137,7 +137,7 @@ def iaa3(iaa2):
 
 def test_iaa_event_trade_forwards_residual_offer(iaa3):
     engine = next((e for e in iaa3.engines if 'res_fwd' in e.offered_offers), None)
-    assert engine is not None
+    assert engine is not None, "Residual of forwarded offers not found in offered_offers"
     assert engine.offer_age['res'] == 10
     offer_info = engine.offered_offers['res_fwd']
     assert offer_info.source_offer.id == 'res'
