@@ -8,6 +8,7 @@ from d3a.util import make_iaa_name
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
+ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 
 class IAAEngine:
@@ -72,6 +73,17 @@ class IAAEngine:
             return
         if trade.offer.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
+            residual_info = None
+            if trade.offer.energy < offer_info.source_offer.energy:
+                try:
+                    residual_info = ResidualInfo(
+                        forwarded=self.trade_residual.pop(trade.offer.id),
+                        age=self.offer_age[offer_info.source_offer.id]
+                    )
+                except KeyError:
+                    self.owner.log.error("Not forwarding residual offer for "
+                                         "{} (Forwarded offer not found)".format(trade.offer))
+
             trade_source = self.owner.accept_offer(
                 self.markets.source,
                 offer_info.source_offer,
@@ -79,33 +91,28 @@ class IAAEngine:
                 buyer=self.owner.name
             )
             self.owner.log.info("Offer accepted %s", trade_source)
-            if trade.offer.energy < offer_info.source_offer.energy:
-                # Partial trade - connect to residual offer in source market
-                try:
-                    fwd_residual = self.trade_residual.pop(trade.offer.id)
-                    original_offer_age = self.offer_age[trade_source.offer.id]
-                    residual_offer_info = OfferInfo(trade_source.residual, fwd_residual)
-                    self.offered_offers[trade_source.residual.id] = residual_offer_info
-                    self.offered_offers[fwd_residual.id] = residual_offer_info
-                    self.offer_age[trade_source.residual.id] = original_offer_age
+
+            if residual_info is not None:
+                # connect residual of the forwarded offer to that of the source offer
+                if trade_source.residual is not None:
+                    res_offer_info = OfferInfo(trade_source.residual, residual_info.forwarded)
+                    self.offered_offers[trade_source.residual.id] = res_offer_info
+                    self.offered_offers[residual_info.forwarded.id] = res_offer_info
+                    self.offer_age[trade_source.residual.id] = residual_info.age
                     self.ignored_offers.add(trade_source.residual.id)
-                except KeyError:
-                    self.owner.log.error("Not forwarding residual offer for "
-                                         "{} (Forwarded offer not found)".format(trade.offer))
-                except AttributeError:
-                    if trade_source.residual is None:
-                        self.owner.log.error(
-                            "Expected residual offer to in source market trade {} - deleting "
-                            "corresponding offer in target market".format(trade_source)
-                        )
-                        self.markets.target.delete_offer(fwd_residual)
-                    else:
-                        raise
-            del self.offered_offers[offer_info.source_offer.id]
-            del self.offered_offers[offer_info.target_offer.id]
+                else:
+                    self.owner.log.error(
+                        "Expected residual offer in source market trade {} - deleting "
+                        "corresponding offer in target market".format(trade_source)
+                    )
+                    self.markets.target.delete_offer(residual_info.forwarded)
+
+            self.offered_offers.pop(offer_info.source_offer.id, None)
+            self.offered_offers.pop(offer_info.target_offer.id, None)
             self.offer_age.pop(offer_info.source_offer.id, None)
             self.traded_offers.add(offer_info.source_offer.id)
             self.traded_offers.add(offer_info.target_offer.id)
+
         elif trade.offer == offer_info.source_offer and trade.buyer == self.owner.name:
             # Flip side of the event from above buying action - do nothing
             pass
