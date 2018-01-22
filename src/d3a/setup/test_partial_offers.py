@@ -4,8 +4,10 @@ from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.const import DEFAULT_RISK
+from d3a.models.strategy.e_car import ECarStrategy
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.storage import StorageStrategy
 
 
 class ModifiedFridgeStrategy(FridgeStrategy):
@@ -32,7 +34,14 @@ def get_setup(config):
                 Area('H1 Fridge', strategy=ModifiedFridgeStrategy(), appliance=FridgeAppliance())
             ]),
             Area('House 2', [
+                Area('H2 Storage',
+                     strategy=StorageStrategy(initial_capacity=5.0),
+                     appliance=SimpleAppliance()),
+                Area('H2 ECar', strategy=ECarStrategy(), appliance=SimpleAppliance()),
                 Area('H2 Fridge', strategy=ModifiedFridgeStrategy(), appliance=FridgeAppliance())
+            ]),
+            Area('House 3', [
+                Area('H3 Fridge', strategy=ModifiedFridgeStrategy(), appliance=FridgeAppliance())
             ]),
             Area(
                 'Commercial Energy Producer',
