@@ -50,7 +50,7 @@ class StorageStrategy(BaseStrategy):
                                         (offer_price / 1.01) *
                                         (1 / (1.1 - (0.1 * (self.risk / MAX_RISK))))
                                     )
-            self.sell_energy(initial_buying_price, offer.energy)
+            self.sell_energy(initial_buying_price, offer.energy, open_offer=True)
             self.offers.sold_offer(offer.id, past_market)
         self.state.market_cycle(self.area)
 
@@ -76,7 +76,7 @@ class StorageStrategy(BaseStrategy):
                 else:
                     return False
 
-    def sell_energy(self, buying_price, energy=None):
+    def sell_energy(self, buying_price, energy=None, open_offer=False):
         # Highest risk selling price using the highest risk is 20% above the average price
         min_selling_price = 1.01 * buying_price
         # This ends up in a selling price between 101 and 105 percentage of the buying price
@@ -102,7 +102,8 @@ class StorageStrategy(BaseStrategy):
                 self.owner.name
             )
             # Updating parameters
-            self.state.offer_storage(energy)
+            if not open_offer:
+                self.state.offer_storage(energy)
             self.offers.post(offer, most_expensive_market)
 
     def find_avg_cheapest_offers(self):
