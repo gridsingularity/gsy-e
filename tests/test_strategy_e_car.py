@@ -153,9 +153,9 @@ def test_car_not_depart(e_car_strategy_test2, area_test2):
 
 def test_ecar_unload(e_car_strategy_test1, area_test1):
     e_car_strategy_test1.connected_to_grid = False
-    e_car_strategy_test1.used_storage = 66
+    e_car_strategy_test1.state._used_storage = 66
     e_car_strategy_test1.event_tick(area=area_test1)
-    assert e_car_strategy_test1.used_storage == 66 * 0.9999
+    assert e_car_strategy_test1.state.used_storage == 66 * 0.9999
 
 
 """TEST4"""
@@ -172,7 +172,7 @@ def e_car_strategy_test4(area_test1, called):
     return e
 
 
-def test_ecar_arrical(e_car_strategy_test4):
+def test_ecar_arrival(e_car_strategy_test4):
     e_car_strategy_test4.arrive()
     assert e_car_strategy_test4.connected_to_grid
     assert len(e_car_strategy_test4.sell_energy.calls) == 1
@@ -190,13 +190,14 @@ def e_car_strategy_test5(area_test1, called):
     e.area = area_test1
     e.sell_energy = called
     e.offers.post(Offer('id', 1, 1, 'A', market=area_test1.past_market), area_test1.past_market)
+    e.state._offered_storage = 1
     return e
 
 
 def test_ecar_departure(e_car_strategy_test5):
     e_car_strategy_test5.depart()
     assert not e_car_strategy_test5.connected_to_grid
-    assert e_car_strategy_test5.used_storage == 1
+    assert e_car_strategy_test5.state.used_storage == 1
 
 
 """TEST6"""
@@ -214,6 +215,6 @@ def e_car_strategy_test6(area_test1, called):
     return e
 
 
-def test_ecar_market_cycle(e_car_strategy_test6, area_test1):
+def test_ecar_market_cycle(e_car_strategy_test6):
     e_car_strategy_test6.event_market_cycle()
     assert len(e_car_strategy_test6.event_market_cycle.calls) == 1
