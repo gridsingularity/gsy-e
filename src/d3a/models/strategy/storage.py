@@ -1,4 +1,5 @@
 from d3a.exceptions import MarketException
+from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
 
@@ -9,9 +10,7 @@ class StorageStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0):
         super().__init__()
         self.risk = risk
-        self.used_storage = initial_capacity
-        self.offered_storage = 0.00
-        self.blocked_storage = 0.00
+        self.state = StorageState(initial_capacity)
         self.selling_price = 30
 
     def event_tick(self, *, area):
@@ -27,23 +26,19 @@ class StorageStrategy(BaseStrategy):
         self.buy_energy(most_expensive_offer_price)
 
         # Log a warning if the capacity reaches 80%
-        if (
-                    (self.used_storage + self.offered_storage + self.blocked_storage)
-                    > (0.8 * STORAGE_CAPACITY)
-        ):
-            self.log.info("Storage reached more than 80% Battery: %s", (self.used_storage
-                                                                        / STORAGE_CAPACITY))
+        free = self.state.free_storage / STORAGE_CAPACITY
+        if free < 0.2:
+            self.log.info("Storage reached more than 80% Battery: %f", free)
 
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]
         # if energy in this slot was bought: update the storage
         for bought in self.offers.bought_in_market(past_market):
-            self.blocked_storage -= bought.energy
-            self.used_storage += bought.energy
+            self.state.fill_blocked_storage(bought.energy)
             self.sell_energy(buying_price=(bought.price / bought.energy), energy=bought.energy)
         # if energy in this slot was sold: update the storage
         for sold in self.offers.sold_in_market(past_market):
-            self.offered_storage -= sold.energy
+            self.state.sold_offered_storage(sold.energy)
         # Check if Storage posted offer in that market that has not been bought
         # If so try to sell the offer again
         for offer in self.offers.open_in_market(past_market):
@@ -57,6 +52,7 @@ class StorageStrategy(BaseStrategy):
                                     )
             self.sell_energy(initial_buying_price, offer.energy)
             self.offers.sold_offer(offer.id, past_market)
+        self.state.market_cycle(self.area)
 
     def buy_energy(self, avg_cheapest_offer_price):
         # Here starts the logic if energy should be bought
@@ -67,16 +63,12 @@ class StorageStrategy(BaseStrategy):
                     # Don't buy our own offer
                     continue
                 # Check if storage has free capacity and if the price is cheap enough
-                if (
-                            (self.used_storage + self.blocked_storage + offer.energy
-                             + self.offered_storage <= STORAGE_CAPACITY
-                             )
-                        and (offer.price / offer.energy) < (avg_cheapest_offer_price * 0.99)
-                ):
+                if (self.state.free_storage >= offer.energy
+                        and (offer.price / offer.energy) < (avg_cheapest_offer_price * 0.99)):
                     # Try to buy the energy
                     try:
                         self.accept_offer(market, offer)
-                        self.blocked_storage += offer.energy
+                        self.state.block_storage(offer.energy)
                         return True
                     except MarketException:
                         # Offer already gone etc., try next one.
@@ -100,7 +92,7 @@ class StorageStrategy(BaseStrategy):
         most_expensive_market = expensive_offers.market
         # If no energy is passed, try to sell all the Energy left in the storage
         if energy is None:
-            energy = self.used_storage
+            energy = self.state.used_storage
         # Try to create an offer to sell the stored energy
 
         if energy > 0.0:
@@ -110,8 +102,7 @@ class StorageStrategy(BaseStrategy):
                 self.owner.name
             )
             # Updating parameters
-            self.used_storage -= energy
-            self.offered_storage += energy
+            self.state.offer_storage(energy)
             self.offers.post(offer, most_expensive_market)
 
     def find_avg_cheapest_offers(self):
