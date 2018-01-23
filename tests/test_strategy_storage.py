@@ -54,6 +54,10 @@ class FakeMarket:
         ]
         return offers[self.count]
 
+    @property
+    def time_slot(self):
+        return 'time_slot'
+
     def offer(self, price, energy, seller, market=None):
         offer = Offer('id', price, energy, seller, market)
         self.created_offers.append(offer)
@@ -170,29 +174,31 @@ def area_test5():
 
 @pytest.fixture()
 def storage_strategy_test5(area_test5, called):
-    s = StorageStrategy()
+    s = StorageStrategy(initial_capacity=5)
     s.owner = area_test5
     s.area = area_test5
     s.sell_energy = called
     area_test5.past_market.offers = {
         'id': Offer('id', 20, 1, 'A', market=area_test5.past_market),
-        'id2': Offer('id2', 20, 2.9, 'FakeArea', market=area_test5.past_market),
+        'id2': Offer('id2', 20, 3, 'FakeArea', market=area_test5.past_market),
         'id3': Offer('id3', 100, 1, 'FakeArea', market=area_test5.past_market)
     }
     s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market)
     s.offers.post(area_test5.past_market.offers['id3'], area_test5.past_market)
     s.offers.post(area_test5.past_market.offers['id2'], area_test5.past_market)
     s.offers.sold_offer('id2', area_test5.past_market)
+    s.state.block_storage(1)
+    s.state.offer_storage(5)
     return s
 
 
 def test_if_storage_handles_capacity_correctly(storage_strategy_test5, area_test5):
     storage_strategy_test5.event_market_cycle()
-    assert storage_strategy_test5.blocked_storage == -1
-    assert storage_strategy_test5.used_storage == 1
+    assert storage_strategy_test5.state.blocked_storage == 0
+    assert storage_strategy_test5.state.used_storage == 1
     assert storage_strategy_test5.sell_energy.calls[0][1] == {'buying_price': '20.0',
                                                               'energy': '1'}
-    assert storage_strategy_test5.offered_storage == -2.9
+    assert storage_strategy_test5.state.offered_storage == 2
     assert len(storage_strategy_test5.offers.open_in_market(area_test5.past_market)) == 0
     assert storage_strategy_test5.sell_energy.calls[1][0] == ('94.2951438000943', '1')
 
@@ -240,18 +246,17 @@ def area_test7():
 
 @pytest.fixture()
 def storage_strategy_test7(area_test7):
-    s = StorageStrategy()
+    s = StorageStrategy(initial_capacity=3.0)
     s.owner = area_test7
     s.area = area_test7
-    s.used_storage = 0
     return s
 
 
 def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     energy = 1.3
     storage_strategy_test7.sell_energy(buying_price=10, energy=energy)
-    assert storage_strategy_test7.used_storage == -1.3
-    assert storage_strategy_test7.offered_storage == 1.3
+    assert storage_strategy_test7.state.used_storage == 1.7
+    assert storage_strategy_test7.state.offered_storage == 1.3
     assert area_test7.current_market.created_offers[0].energy == 1.3
     assert len(storage_strategy_test7.offers.posted_in_market(area_test7.current_market)) > 0
 
@@ -267,16 +272,15 @@ def area_test8():
 
 @pytest.fixture()
 def storage_strategy_test8(area_test8):
-    s = StorageStrategy()
+    s = StorageStrategy(initial_capacity=100)
     s.owner = area_test8
     s.area = area_test8
-    s.used_storage = 100
     return s
 
 
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
     storage_strategy_test8.sell_energy(buying_price=10, energy=None)
-    assert storage_strategy_test8.used_storage == 0
-    assert storage_strategy_test8.offered_storage == 100
+    assert storage_strategy_test8.state.used_storage == 0
+    assert storage_strategy_test8.state.offered_storage == 100
     assert area_test8.current_market.created_offers[0].energy == 100
     assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
