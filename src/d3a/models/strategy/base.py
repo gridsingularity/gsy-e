@@ -151,7 +151,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if not isinstance(offer, Offer):
             offer = market.offers[offer]
         trade = market.accept_offer(offer, buyer, energy=energy)
-        self.offers.bought_offer(offer, market)
+        self.offers.bought_offer(trade.offer, market)
         return trade
 
     def post(self, **data):

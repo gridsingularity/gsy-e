@@ -17,6 +17,7 @@ class FakeMarket:
         self.sorted_offers = sorted_offers
         self.offer_count = 0
         self.forwarded_offer_id = 'fwd'
+        self.calls_energy = []
 
     @property
     def offers(self):
@@ -27,6 +28,7 @@ class FakeMarket:
         return datetime.now()
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None):
+        self.calls_energy.append(energy)
         if energy < offer.energy:
             residual_energy = offer.energy - energy
             residual = Offer('res', offer.price, residual_energy, offer.seller, offer.market)
@@ -84,19 +86,17 @@ def iaa2():
     return iaa
 
 
-def test_iaa_event_trade_buys_accepted_offer(iaa2, called):
-    iaa2.lower_market.accept_offer = called
+def test_iaa_event_trade_buys_accepted_offer(iaa2):
     iaa2.event_trade(trade=Trade('trade_id',
                                  datetime.now(),
                                  iaa2.higher_market.forwarded_offer,
                                  'owner',
                                  'someone_else'),
                      market=iaa2.higher_market)
-    assert len(iaa2.lower_market.accept_offer.calls) == 1
+    assert len(iaa2.lower_market.calls_energy) == 1
 
 
-def test_iaa_event_trade_buys_partial_accepted_offer(iaa2, called):
-    iaa2.lower_market.accept_offer = called
+def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
     total_offer = iaa2.higher_market.forwarded_offer
     accepted_offer = Offer(total_offer.id, total_offer.price, 1, total_offer.seller)
     iaa2.event_trade(trade=Trade('trade_id',
@@ -106,7 +106,7 @@ def test_iaa_event_trade_buys_partial_accepted_offer(iaa2, called):
                                  'someone_else',
                                  'residual_offer'),
                      market=iaa2.higher_market)
-    assert int(iaa2.lower_market.accept_offer.calls[0][1]['energy']) == 1
+    assert iaa2.lower_market.calls_energy[0] == 1
 
 
 def test_iaa_forwards_partial_offer_from_source_market(iaa2):
