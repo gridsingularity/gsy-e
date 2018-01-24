@@ -43,6 +43,9 @@ class FakeMarket:
     def accept_offer(self, offer, id, *, energy=None, time=None):
         if self.raises:
             raise MarketException
+        else:
+            offer.energy = energy
+            return Trade('trade', 0, offer, offer.seller, 'FakeOwner')
 
 
 @pytest.fixture
@@ -117,6 +120,11 @@ def test_offers_partial_offer(offer1, offers3):
 
 
 @pytest.fixture
+def offer_to_accept():
+    return Offer('new', 1.0, 0.5, 'someone')
+
+
+@pytest.fixture
 def base():
     base = BaseStrategy()
     base.owner = FakeOwner()
@@ -124,11 +132,22 @@ def base():
     return base
 
 
-def test_accept_offer_handles_market_exception(base):
+def test_accept_offer(base, offer_to_accept):
+    market = FakeMarket(raises=False)
+    base.accept_offer(market, offer_to_accept)
+    assert offer_to_accept in base.offers.bought_in_market(market)
+
+
+def test_accept_partial_offer(base, offer_to_accept):
+    market = FakeMarket(raises=False)
+    base.accept_offer(market, offer_to_accept, energy=0.1)
+    assert base.offers.bought_in_market(market)[0].energy == 0.1
+
+
+def test_accept_offer_handles_market_exception(base, offer_to_accept):
     market = FakeMarket(raises=True)
-    offer = Offer('new', 1.0, 0.5, 'someone', market=market)
     try:
-        base.accept_offer(market, offer, energy=0.5)
+        base.accept_offer(market, offer_to_accept, energy=0.5)
     except MarketException:
         pass
     assert len(base.offers.bought_in_market(market)) == 0
