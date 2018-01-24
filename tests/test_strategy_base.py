@@ -2,7 +2,8 @@ import pytest
 
 from datetime import datetime
 
-from d3a.models.strategy.base import Offers
+from d3a.exceptions import MarketException
+from d3a.models.strategy.base import BaseStrategy, Offers
 from d3a.models.market import Offer, Trade
 
 
@@ -33,6 +34,15 @@ class FakeStrategy:
 class FakeOffer:
     def __init__(self, id):
         self.id = id
+
+
+class FakeMarket:
+    def __init__(self, *, raises):
+        self.raises = raises
+
+    def accept_offer(self, offer, id, *, energy=None, time=None):
+        if self.raises:
+            raise MarketException
 
 
 @pytest.fixture
@@ -104,3 +114,21 @@ def test_offers_partial_offer(offer1, offers3):
     assert len(offers3.sold_in_market('market')) == 1
     assert accepted_offer in offers3.sold_in_market('market')
     assert residual_offer in offers3.open_in_market('market')
+
+
+@pytest.fixture
+def base():
+    base = BaseStrategy()
+    base.owner = FakeOwner()
+    base.area = 'area'
+    return base
+
+
+def test_accept_offer_handles_market_exception(base):
+    market = FakeMarket(raises=True)
+    offer = Offer('new', 1.0, 0.5, 'someone', market=market)
+    try:
+        base.accept_offer(market, offer, energy=0.5)
+    except MarketException:
+        pass
+    assert len(base.offers.bought_in_market(market)) == 0
