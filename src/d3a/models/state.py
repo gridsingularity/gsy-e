@@ -43,10 +43,12 @@ class FridgeState:
 
 
 class StorageState:
-    def __init__(self, initial_capacity=0.0):
+    def __init__(self, initial_capacity=0.0, capacity=STORAGE_CAPACITY, loss_per_hour=0.01):
         self._blocked_storage = 0.0
         self._offered_storage = 0.0
         self._used_storage = initial_capacity
+        self.capacity = capacity
+        self.loss_per_hour = loss_per_hour
         self.offered_history = defaultdict(lambda: '-')
         self.used_history = defaultdict(lambda: '-')
 
@@ -71,6 +73,12 @@ class StorageState:
         self.used_history[area.current_market.time_slot] = self._used_storage
         self.offered_history[area.current_market.time_slot] = self._offered_storage
 
+    def tick(self, area):
+        self.lose(self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
+        free = self.free_storage / self.capacity
+        if free < 0.2:
+            area.log.info("Storage reached more than 80% Battery: %f", free)
+
     def block_storage(self, energy):
         self._blocked_storage += energy
 
@@ -88,15 +96,10 @@ class StorageState:
         assert energy <= self._offered_storage + 1e-6, 'Sale exceeds offered storage.'
         self._offered_storage -= energy
 
+    def lose(self, proportion):
+        self._used_storage *= 1.0 - proportion
 
-class ECarState(StorageState):
-    def __init__(self, initial_capacity=0.0):
-        super(ECarState, self).__init__(initial_capacity)
-
-    def remove_from_offered(self, energy):
+    def remove_offered(self, energy):
         assert energy <= self._offered_storage + 1e-6, 'Offered storage exceeded.'
         self._offered_storage -= energy
         self._used_storage += energy
-
-    def consume(self):
-        self._used_storage *= 0.9999

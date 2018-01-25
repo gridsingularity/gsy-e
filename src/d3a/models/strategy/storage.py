@@ -1,7 +1,7 @@
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 
 
 class StorageStrategy(BaseStrategy):
@@ -10,25 +10,16 @@ class StorageStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0):
         super().__init__()
         self.risk = risk
-        self.state = StorageState(initial_capacity)
+        self.state = StorageState(initial_capacity=initial_capacity, loss_per_hour=0.0)
         self.selling_price = 30
 
     def event_tick(self, *, area):
-        # The storage looses 1% of capacity per hour
-        # self.used_storage *= (1 - ((0.01 * self.area.config.tick_length.total_seconds())
-        #                           / (60 * 60)
-        #                           )
-        #                      )
         # Taking the cheapest offers in every market currently open and building the average
         # avg_cheapest_offer_price = self.find_avg_cheapest_offers()
         most_expensive_offer_price = self.find_most_expensive_market_price()
         # Check if there are cheap offers to buy
         self.buy_energy(most_expensive_offer_price)
-
-        # Log a warning if the capacity reaches 80%
-        free = self.state.free_storage / STORAGE_CAPACITY
-        if free < 0.2:
-            self.log.info("Storage reached more than 80% Battery: %f", free)
+        self.state.tick(area)
 
     def event_market_cycle(self):
         past_market = list(self.area.past_markets.values())[-1]

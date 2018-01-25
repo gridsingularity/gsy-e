@@ -1,6 +1,5 @@
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
-from d3a.models.state import ECarState
 from d3a.models.strategy.const import DEFAULT_RISK, ARRIVAL_TIME, DEPART_TIME
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -17,7 +16,6 @@ class ECarStrategy(StorageStrategy):
 
     def __init__(self, risk=DEFAULT_RISK, arrival_time=ARRIVAL_TIME, depart_time=DEPART_TIME):
         super().__init__(risk)
-        self.state = ECarState()
         self.arrival_time = arrival_time
         self.depart_time = depart_time
         self.connected_to_grid = False
@@ -37,7 +35,7 @@ class ECarStrategy(StorageStrategy):
 
         if not self.connected_to_grid:
             # This means the car is driving around some where
-            self.state.consume()
+            self.state.lose(0.0001)
             return
         # Taking the cheapest offers in every market currently open and building the average
         # Same process as storage
@@ -59,7 +57,7 @@ class ECarStrategy(StorageStrategy):
         for offer, market in self.offers.posted.items():
             try:
                 market.delete_offer(offer.id)
-                self.state.remove_from_offered(offer.energy)
+                self.state.remove_offered(offer.energy)
             except MarketException:
                 continue
         self.connected_to_grid = False

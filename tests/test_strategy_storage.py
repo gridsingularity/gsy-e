@@ -1,5 +1,7 @@
 import pytest
 
+from d3a.models.area import DEFAULT_CONFIG
+
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -30,6 +32,10 @@ class FakeArea():
     @property
     def past_markets(self):
         return {"past market": self.past_market}
+
+    @property
+    def config(self):
+        return DEFAULT_CONFIG
 
 
 class FakeMarket:
