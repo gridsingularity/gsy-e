@@ -127,7 +127,7 @@ class FridgeStrategy(BaseStrategy):
                 cheapest_offer = sorted(
                     [offer for market in self.open_spot_markets for offer in market.sorted_offers],
                     key=lambda o: o.price / o.energy)[0]
-                if self.fridge_temp >= MAX_FRIDGE_TEMP or \
+                if self.fridge_temp >= MAX_FRIDGE_TEMP and \
                         (cheapest_offer.price / cheapest_offer.energy) > threshold_price:
                     self.log.critical("Need energy (temp: %.2f) but can't buy", self.fridge_temp)
                     self.log.info("cheapest price is is %s", cheapest_offer.price)
