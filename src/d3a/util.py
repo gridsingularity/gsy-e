@@ -79,3 +79,19 @@ def format_interval(interval, show_day=True):
     else:
         template = "{i.hours:02d}:{i.minutes:02d}:{i.remaining_seconds:02d}"
     return template.format(i=interval)
+
+
+def simulation_info(simulation):
+    current_time = format_interval(
+        simulation.area.current_tick * simulation.area.config.tick_length,
+        show_day=False
+    )
+    return {
+        'config': simulation.area.config.as_dict(),
+        'finished': simulation.finished,
+        'current_tick': simulation.area.current_tick,
+        'current_time': current_time,
+        'current_date': simulation.area.now.format('%Y-%m-%d'),
+        'paused': simulation.paused,
+        'slowdown': simulation.slowdown
+    }
