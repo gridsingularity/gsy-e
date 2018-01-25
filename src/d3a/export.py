@@ -86,7 +86,7 @@ class ExportLeafData(ExportData):
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
-        elif isinstance(self.area.strategy, StorageStrategy):
+        elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             return ['offered [kWh]', 'used [kWh]']
         return []
 
@@ -100,7 +100,7 @@ class ExportLeafData(ExportData):
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
             return [self.area.strategy.temp_history[slot]]
-        elif isinstance(self.area.strategy, StorageStrategy):
+        elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             s = self.area.strategy.state
             return [s.offered_history[slot], s.used_history[slot]]
         return []

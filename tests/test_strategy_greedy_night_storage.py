@@ -44,6 +44,7 @@ class FakeMarket:
                            'FakeArea', 'buyer'
                            )
         self.created_offers = []
+        self.time_slot = 0
 
     @property
     def sorted_offers(self):
@@ -109,8 +110,6 @@ def storage_strategy_test2(area_test2, called):
 
     n.sell_energy = called
 
-    n.blocked_storage = 0
-
     n.offers.bought_offer(Offer('id', 30, 1, 'A', market=area_test2.past_market),
                           area_test2.past_market)
     n.offers.bought_offer(Offer('id2', 10, 5, 'A', market=area_test2.past_market),
@@ -159,11 +158,15 @@ def test_event_market_cycle(storage_strategy_test2, area_test2, bought_energy=0,
                       + len(storage_strategy_test2.offers.open_in_market(area_test2.past_market)))
 
     # Call the market cycle function
+    storage_strategy_test2.state.block_storage(bought_energy + sold_energy + offered_energy + 3)
+    storage_strategy_test2.state.fill_blocked_storage(offered_energy + sold_energy)
+    storage_strategy_test2.state.offer_storage(offered_energy + sold_energy)
+
     storage_strategy_test2.event_market_cycle()
 
     # Checking if storage variables are updated correctly
-    assert storage_strategy_test2.used_storage == offered_energy + bought_energy
-    assert storage_strategy_test2.blocked_storage == -1 * bought_energy
+    assert storage_strategy_test2.state.used_storage == offered_energy + bought_energy
+    assert storage_strategy_test2.state.blocked_storage == 3
 
     # Checking if every bought offer in this market will be sold
     assert len(storage_strategy_test2.sell_energy.calls) == selling_offers
@@ -173,7 +176,7 @@ def test_event_market_cycle(storage_strategy_test2, area_test2, bought_energy=0,
         assert storage_strategy_test2.sell_energy.calls[i][0][1] == str(offer.energy)
 
     # Checking if offered_storage variable is updated correctly
-    assert storage_strategy_test2.offered_storage == -1 * (offered_energy + sold_energy)
+    assert storage_strategy_test2.state.offered_storage == 0
 
     # Checking if all not sold offers in the past market are offered again in another market
     for i, offer in \
@@ -302,6 +305,8 @@ def storage_strategy_test5(area_test5, called):
     n = NightStorageStrategy()
     n.owner = area_test5
     n.area = area_test5
+    n.state.block_storage(1)
+    n.state.fill_blocked_storage(1)
     return n
 
 
@@ -311,7 +316,8 @@ def test_sell_energy(storage_strategy_test5, area_test5, market_test5):
     assert market_test5.offer.calls[0][0][1] == repr(1)
     assert market_test5.offer.calls[0][0][2] == repr('FakeArea')
 
-    storage_strategy_test5.used_storage = 2.76
+    storage_strategy_test5.state.block_storage(2.76)
+    storage_strategy_test5.state.fill_blocked_storage(2.76)
     storage_strategy_test5.sell_energy(buying_price=20.2, energy=0)
     assert market_test5.offer.calls[1][0][0] == repr(20.2 * 1.05 * (1.05 - (0.05 * 0.5)) * 2.76)
     assert market_test5.offer.calls[1][0][1] == repr(2.76)
