@@ -72,12 +72,13 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
 
     @classmethod
     def _csv_fields(cls):
-        return cls._fields[:2] + ('price [ct./kWh]', 'energy [kWh]') + cls._fields[3:]
+        return (cls._fields[:2] + ('price [ct./kWh]', 'energy [kWh]') +
+                cls._fields[3:5] + ('residual [kWh]',))
 
     def _to_csv(self):
-        return self[:2] + (
-            round(self.offer.price / self.offer.energy, 4), self.offer.energy
-        ) + self[3:]
+        price = round(self.offer.price / self.offer.energy, 4)
+        residual_energy = 0 if self.residual is None else self.residual.energy
+        return self[:2] + (price, self.offer.energy) + self[3:5] + (residual_energy,)
 
 
 class Market:
@@ -187,7 +188,7 @@ class Market:
                     else:
                         # Requested partial is equal to offered energy - just proceed normally
                         pass
-            except:
+            except:  # noqa
                 # Exception happened - restore offer
                 self.offers[offer.id] = offer
                 raise
@@ -286,7 +287,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(offer_table).table)
-            except:
+            except:  # noqa
                 # Could blow up with certain unicode characters
                 pass
         if self.trades:
@@ -297,7 +298,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(trade_table).table)
-            except:
+            except:  # noqa
                 # Could blow up with certain unicode characters
                 pass
         if self.traded_energy:
@@ -308,7 +309,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(acct_table).table)
-            except:
+            except:  # noqa
                 # Could blow up with certain unicode characters
                 pass
         return "\n".join(out)
