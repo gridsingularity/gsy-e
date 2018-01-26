@@ -61,7 +61,9 @@ class FakeMarket:
              ],
             [
 
-             ]
+             ],
+            [Offer('id', 10 * 50 * FRIDGE_MIN_NEEDED_ENERGY,
+                   50 * FRIDGE_MIN_NEEDED_ENERGY, 'A', self)]
         ]
         return offers[self.count]
 
@@ -242,3 +244,14 @@ def fridge_strategy_test5(market_test5, area_test5, called):
 def test_no_offers_left(fridge_strategy_test5, area_test5, market_test5):
     fridge_strategy_test5.event_activate()
     fridge_strategy_test5.event_tick(area=area_test5)
+    # FIXME
+
+
+def test_frigde_buys_partial_offer(area_test5, called):
+    fridge = FridgeStrategy()
+    market = FakeMarket(4)
+    fridge.area = area_test5
+    fridge.open_spot_markets = [market]
+    fridge.accept_offer = called
+    fridge.event_tick(area=area_test5)
+    assert float(fridge.accept_offer.calls[0][1]['energy']) > 0

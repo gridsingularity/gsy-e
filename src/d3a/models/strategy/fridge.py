@@ -97,19 +97,24 @@ class FridgeStrategy(BaseStrategy):
                 # 0.05 is the temperature decrease per cooling period and minimal needed energy
                 # *2 is needed because we need to cool and equalize the increase
                 #  of the temperature (see event_market_cycle) as well
+                if self.state.temperature <= self.state.min_temperature + 0.05:
+                    return
+                if offer.energy * 1000 < FRIDGE_MIN_NEEDED_ENERGY:
+                    continue
                 cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY)
                                        * 0.05 * 2)
                 if (
-                            (((offer.price / offer.energy) <= threshold_price
-                              and self.state.temperature - cooling_temperature
-                              > self.state.min_temperature
-                              )
+                            ((offer.price / offer.energy) <= threshold_price
                              or self.state.temperature >= self.state.max_temperature
                              )
-                        and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
                 ):
+                    if self.state.temperature - cooling_temperature < self.state.min_temperature:
+                        cooling_temperature = self.state.temperature - self.state.min_temperature
+                        partial = cooling_temperature * FRIDGE_MIN_NEEDED_ENERGY / (.05 * 2 * 1000)
+                    else:
+                        partial = None
                     try:
-                        self.accept_offer(market, offer)
+                        self.accept_offer(market, offer, energy=partial)
                         self.log.debug("Buying %s", offer)
                         self.state.temperature -= cooling_temperature
                         break
