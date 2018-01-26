@@ -43,6 +43,9 @@ class StorageStrategy(BaseStrategy):
                                     )
             self.sell_energy(initial_buying_price, offer.energy, open_offer=True)
             self.offers.sold_offer(offer.id, past_market)
+        # sell remaining capacity too (e. g. initial capacity)
+        if self.state.used_storage > 0:
+            self.sell_energy(self.find_most_expensive_market_price())
         self.state.market_cycle(self.area)
 
     def buy_energy(self, avg_cheapest_offer_price):
@@ -78,9 +81,12 @@ class StorageStrategy(BaseStrategy):
         # in currently open markets
         try:
             expensive_offers = list(self.area.cheapest_offers)[-1]
+            most_expensive_market = expensive_offers.market
         except IndexError:
-            return
-        most_expensive_market = expensive_offers.market
+            try:
+                most_expensive_market = next(iter(self.area.markets.values()))
+            except StopIteration:
+                return
         # If no energy is passed, try to sell all the Energy left in the storage
         if energy is None:
             energy = self.state.used_storage
