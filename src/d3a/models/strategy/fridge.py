@@ -1,5 +1,3 @@
-from typing import Dict, Any  # noqa
-
 from d3a.exceptions import MarketException
 from d3a.models.state import FridgeState
 from d3a.models.strategy.base import BaseStrategy
