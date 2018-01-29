@@ -53,6 +53,7 @@ class Area:
         self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
+        self.listeners = []
 
     def activate(self):
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
@@ -300,6 +301,8 @@ class Area:
                 continue
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
+        for listener in self.listeners:
+            listener.event_listener(event_type, **kwargs)
 
     def _fire_trigger(self, trigger_name, **params):
         for target in (self.strategy, self.appliance):
@@ -307,6 +310,9 @@ class Area:
                 for trigger in target.available_triggers:
                     if trigger.name == trigger_name:
                         return target.fire_trigger(trigger_name, **params)
+
+    def add_listener(self, listener):
+        self.listeners.append(listener)
 
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:
