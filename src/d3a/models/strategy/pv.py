@@ -22,9 +22,16 @@ class PVStrategy(BaseStrategy):
         super().__init__()
         self.risk = risk
         self.offers_posted = {}  # type: Dict[Offer, Market]
+        self.offers_sold = []
         self.energy_production_forecast = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
+
+    @property
+    def offers_open(self):
+        return {id: market
+                for id, market in self.offers_posted.items()
+                if id not in self.offers_sold}
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
@@ -81,7 +88,7 @@ class PVStrategy(BaseStrategy):
                 # FIXME: MAke sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
                 # FIXME: InterAreaAgent min_offer_age
-                self.area.current_tick % 7
+                self.area.current_tick % 7 == 0
         ):
             next_market = list(self.area.markets.values())[0]
             self.decrease_offer_price(next_market)
@@ -126,9 +133,9 @@ class PVStrategy(BaseStrategy):
         return round((gauss_forecast / 1000), 4)
 
     def decrease_offer_price(self, market):
-        if market not in self.offers_posted.values():
+        if market not in self.offers_open.values():
             return
-        for offer_id, iterated_market in self.offers_posted.items():
+        for offer_id, iterated_market in self.offers_open.items():
             if iterated_market != market:
                 continue
             try:
@@ -154,7 +161,7 @@ class PVStrategy(BaseStrategy):
 
     def event_trade(self, *, market, trade):
         if trade.offer.seller == self.owner.name:
-            self.offers_posted.pop(trade.offer.id, None)
+            self.offers_sold.append(trade.offer.id)
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
