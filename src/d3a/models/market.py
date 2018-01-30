@@ -188,7 +188,7 @@ class Market:
                     else:
                         # Requested partial is equal to offered energy - just proceed normally
                         pass
-            except:  # noqa
+            except Exception:
                 # Exception happened - restore offer
                 self.offers[offer.id] = offer
                 raise
@@ -287,7 +287,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(offer_table).table)
-            except:  # noqa
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         if self.trades:
@@ -298,7 +298,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(trade_table).table)
-            except:  # noqa
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         if self.traded_energy:
@@ -309,7 +309,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(acct_table).table)
-            except:  # noqa
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         return "\n".join(out)

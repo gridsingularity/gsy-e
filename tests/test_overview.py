@@ -32,11 +32,17 @@ class FakeArea:
     ticks_per_slot = DEFAULT_CONFIG.slot_length / DEFAULT_CONFIG.tick_length
 
 
+class FakeSimulation:
+    def __init__(self):
+        self.finished = False
+        self.area = FakeArea()
+
+
 @pytest.fixture
 def fixture():
-    area = FakeArea()
-    area.current_tick = FakeArea.ticks_per_slot
-    return Overview(area, "http://mock.com")
+    simulation = FakeSimulation()
+    simulation.area.current_tick = FakeArea.ticks_per_slot
+    return Overview(simulation, "ws://mock.com")
 
 
 @pytest.mark.skip('fix later')
