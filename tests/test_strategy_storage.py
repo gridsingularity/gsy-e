@@ -1,4 +1,5 @@
 import pytest
+import logging
 
 from d3a.models.area import DEFAULT_CONFIG
 
@@ -290,3 +291,25 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
     assert storage_strategy_test8.state.offered_storage == 100
     assert area_test8.current_market.created_offers[0].energy == 100
     assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
+
+
+"""TEST9"""
+
+
+# Test if initial capacity is sold
+def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: StorageStrategy,
+                                                  area_test8: FakeArea):
+    storage_strategy_test8.event_market_cycle()
+    assert storage_strategy_test8.state.offered_storage == 100.0
+    assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
+
+
+"""TEST10"""
+
+
+# Handling of initial_charge parameter
+def test_initial_charge(caplog):
+    with caplog.at_level(logging.WARNING):
+        storage = StorageStrategy(initial_capacity=1, initial_charge=0.6)
+    assert any('initial_capacity' in record.msg for record in caplog.records)
+    assert storage.state.used_storage == 0.6 * storage.state.capacity
