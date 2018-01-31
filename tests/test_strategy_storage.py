@@ -310,6 +310,6 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
 # Handling of initial_charge parameter
 def test_initial_charge(caplog):
     with caplog.at_level(logging.WARNING):
-        storage = StorageStrategy(initial_capacity=1, initial_charge=0.6)
+        storage = StorageStrategy(initial_capacity=1, initial_charge=60)
     assert any('initial_capacity' in record.msg for record in caplog.records)
     assert storage.state.used_storage == 0.6 * storage.state.capacity

@@ -55,7 +55,7 @@ class StorageState:
             if initial_capacity:
                 strategy.log.warning("Ignoring initial_capacity parameter since "
                                      "initial_charge has also been given.")
-            initial_capacity = capacity * initial_charge
+            initial_capacity = capacity * initial_charge / 100
         self._used_storage = initial_capacity
         self.capacity = capacity
         self.loss_per_hour = loss_per_hour
