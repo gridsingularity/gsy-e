@@ -7,10 +7,13 @@ from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 class StorageStrategy(BaseStrategy):
     parameters = ('risk',)
 
-    def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0):
+    def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, initial_charge=None):
         super().__init__()
         self.risk = risk
-        self.state = StorageState(initial_capacity=initial_capacity, loss_per_hour=0.0)
+        self.state = StorageState(initial_capacity=initial_capacity,
+                                  initial_charge=initial_charge,
+                                  loss_per_hour=0.0,
+                                  strategy=self)
         self.selling_price = 30
 
     def event_tick(self, *, area):

@@ -43,9 +43,19 @@ class FridgeState:
 
 
 class StorageState:
-    def __init__(self, initial_capacity=0.0, capacity=STORAGE_CAPACITY, loss_per_hour=0.01):
+    def __init__(self,
+                 initial_capacity=0.0,
+                 initial_charge=None,
+                 capacity=STORAGE_CAPACITY,
+                 loss_per_hour=0.01,
+                 strategy=None):
         self._blocked_storage = 0.0
         self._offered_storage = 0.0
+        if initial_charge is not None:
+            if initial_capacity:
+                strategy.log.warning("Ignoring initial_capacity parameter since "
+                                     "initial_charge has also been given.")
+            initial_capacity = capacity * initial_charge
         self._used_storage = initial_capacity
         self.capacity = capacity
         self.loss_per_hour = loss_per_hour
