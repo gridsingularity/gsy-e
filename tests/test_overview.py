@@ -45,7 +45,7 @@ def fixture():
     return Overview(simulation, "ws://mock.com")
 
 
-@pytest.mark.skip("Needs fixing")
+@pytest.mark.skip('fix later')
 def test_overview_sends(fixture):
     with requests_mock.Mocker() as mocker:
         mocker.post("http://mock.com")
@@ -54,7 +54,7 @@ def test_overview_sends(fixture):
         assert mocker.request_history[0].json()['avg-trade-price'] == 10
 
 
-@pytest.mark.skip("Needs fixing")
+@pytest.mark.skip('fix later')
 def test_overview_ignores_other_events(fixture):
     with requests_mock.Mocker() as mocker:
         mocker.post("http://mock.com")
