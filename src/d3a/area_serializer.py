@@ -23,6 +23,9 @@ from d3a.models.strategy.pv import PVStrategy  # NOQA
 from d3a.models.strategy.simple import BuyStrategy, OfferStrategy  # NOQA
 from d3a.models.strategy.storage import StorageStrategy  # NOQA
 
+from d3a.models.leaves import Leaf
+from d3a.models.leaves import *  # NOQA
+
 
 class AreaEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -66,8 +69,17 @@ def _instance_from_dict(description):
             raise exception
 
 
+def _leaf_from_dict(description):
+    leaf_type = globals().get(description.pop('type'), type(None))
+    if not issubclass(leaf_type, Leaf):
+        raise ValueError("Unknown leaf type '%s'" % leaf_type)
+    return leaf_type(**description)
+
+
 def area_from_dict(description, config=None):
     try:
+        if 'type' in description:
+            return _leaf_from_dict(description)  # Area is a Leaf
         name = description['name']
         if 'children' in description:
             children = [area_from_dict(child) for child in description['children']]
