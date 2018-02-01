@@ -21,3 +21,8 @@ def test_commercial_producer_leaf():
     leaf = CommercialProducer(name="cep", energy_range_wh=(10, 100), energy_price=23)
     assert isinstance(leaf.strategy, CommercialStrategy)
     assert leaf.strategy.energy_range_wh == (10, 100) and leaf.strategy.energy_price == 23
+
+
+def test_leaf_parameters():
+    leaf = CommercialProducer(name="cep", energy_price=33)
+    assert leaf.parameters['energy_price'] == 33

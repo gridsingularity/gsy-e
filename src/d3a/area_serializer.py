@@ -31,6 +31,8 @@ class AreaEncoder(json.JSONEncoder):
     def default(self, obj):
         if type(obj) is Area:
             return self._encode_area(obj)
+        elif isinstance(obj, Leaf):
+            return self._encode_leaf(obj)
         elif isinstance(obj, (BaseStrategy, SimpleAppliance, Appliance)):
             return self._encode_strategy_or_appliance(obj)
 
@@ -52,6 +54,11 @@ class AreaEncoder(json.JSONEncoder):
         if kwargs:
             result['kwargs'] = kwargs
         return result
+
+    def _encode_leaf(self, obj):
+        description = {"name": obj.name, "type": obj.__class__.__name__}
+        description.update(obj.parameters)
+        return description
 
 
 def area_to_string(area):

@@ -30,6 +30,11 @@ class Leaf(Area):
             config=config
         )
 
+    @property
+    def parameters(self):
+        return {key: getattr(self.strategy, key, None)
+                for key in self.strategy_type.parameters}
+
 
 class CommercialProducer(Leaf):
     strategy_type = CommercialStrategy

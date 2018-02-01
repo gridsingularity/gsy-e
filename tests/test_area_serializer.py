@@ -90,3 +90,21 @@ def test_leaf_deserialization():
     assert isinstance(fridge, Fridge) and isinstance(pv, PV)
     assert pv.strategy.panel_count == 4 and pv.strategy.risk == 50
     assert fridge.strategy.risk == DEFAULT_RISK
+
+
+@pytest.fixture
+def fixture_with_leaves():
+    area = Area("house", [Fridge("fridge"), PV("pv", panel_count=4, risk=10)])
+    return area_to_string(area)
+
+
+def test_leaf_serialization(fixture_with_leaves):
+    description = json.loads(fixture_with_leaves)
+    assert description['children'][0]['type'] == 'Fridge'
+    assert description['children'][1]['panel_count'] == 4
+
+
+def test_roundtrip_with_leaf(fixture_with_leaves):
+    recovered = area_from_string(fixture_with_leaves)
+    assert isinstance(recovered.children[0], Fridge)
+    assert isinstance(recovered.children[1].strategy, PVStrategy)
