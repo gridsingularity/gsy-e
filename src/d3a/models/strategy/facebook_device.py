@@ -18,7 +18,7 @@ class FacebookDeviceStrategy(BaseStrategy):
         # Random factor to modify buying
         self.random_factor = random_factor
         # Budget for a single day in eur
-        self.daily_budget = daily_budget * 100
+        self.daily_budget = daily_budget * 100 if daily_budget is not None else None
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot = 0
         self.energy_requirement = 0
