@@ -4,6 +4,7 @@ from first import first
 from pendulum.interval import Interval
 
 from d3a.exceptions import MarketException
+from d3a.models.state import LoadState
 from d3a.models.strategy.base import BaseStrategy
 
 
@@ -11,6 +12,7 @@ class LoadHoursStrategy(BaseStrategy):
     def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
                  daily_budget=None):
         super().__init__()
+        self.state = LoadState()
         self.avg_power = avg_power  # Average power in watts
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
@@ -86,6 +88,7 @@ class LoadHoursStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         if self.area.now.hour in self.active_hours:
+            self.state.record_desired_energy(self.area, self.avg_power)
             energy_per_slot = self.energy_per_slot
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor

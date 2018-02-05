@@ -7,6 +7,7 @@ from collections import defaultdict
 from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
 _log = logging.getLogger(__name__)
@@ -88,14 +89,19 @@ class ExportLeafData(ExportData):
             return ['temperature [°C]']
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             return ['offered [kWh]', 'used [kWh]', 'charge [%]']
+        elif isinstance(self.area.strategy, LoadHoursStrategy):
+            return ['desired energy [kWh]', 'deficit [kWh]']
         return []
 
     def rows(self):
         markets = self.area.parent.past_markets
         return [self._row(slot, markets[slot]) for slot in markets]
 
+    def _traded(self, market):
+        return market.traded_energy[self.area.name]
+
     def _row(self, slot, market):
-        return [slot, market.traded_energy[self.area.name]] + self._specific_row(slot, market)
+        return [slot, self._traded(market)] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
@@ -103,6 +109,9 @@ class ExportLeafData(ExportData):
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             s = self.area.strategy.state
             return [s.offered_history[slot], s.used_history[slot], s.charge_history[slot]]
+        elif isinstance(self.area.strategy, LoadHoursStrategy):
+            desired = self.area.strategy.state.desired_energy[slot]
+            return [desired, self._traded(market) - desired]
         return []
 
 

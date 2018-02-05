@@ -19,6 +19,14 @@ from d3a.models.strategy.const import FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, MIN_F
 #   SimpleAppliance may do.
 
 
+class LoadState:
+    def __init__(self):
+        self.desired_energy = defaultdict(lambda: 0)
+
+    def record_desired_energy(self, area, energy):
+        self.desired_energy[area.current_market.time_slot] = energy
+
+
 class FridgeState:
     def __init__(self):
         self.temperature = FRIDGE_TEMPERATURE
