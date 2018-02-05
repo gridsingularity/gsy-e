@@ -87,7 +87,7 @@ class ExportLeafData(ExportData):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
-            return ['offered [kWh]', 'used [kWh]']
+            return ['offered [kWh]', 'used [kWh]', 'charge [%]']
         return []
 
     def rows(self):
@@ -102,7 +102,7 @@ class ExportLeafData(ExportData):
             return [self.area.strategy.temp_history[slot]]
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             s = self.area.strategy.state
-            return [s.offered_history[slot], s.used_history[slot]]
+            return [s.offered_history[slot], s.used_history[slot], s.charge_history[slot]]
         return []
 
 

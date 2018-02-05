@@ -61,6 +61,7 @@ class StorageState:
         self.loss_per_hour = loss_per_hour
         self.offered_history = defaultdict(lambda: '-')
         self.used_history = defaultdict(lambda: '-')
+        self.charge_history = defaultdict(lambda: '-')
 
     @property
     def blocked_storage(self):
@@ -82,6 +83,8 @@ class StorageState:
     def market_cycle(self, area):
         self.used_history[area.current_market.time_slot] = self._used_storage
         self.offered_history[area.current_market.time_slot] = self._offered_storage
+        charge = 100.0 * (self._used_storage + self._offered_storage) / self.capacity
+        self.charge_history[area.current_market.time_slot] = charge
 
     def tick(self, area):
         self.lose(self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
