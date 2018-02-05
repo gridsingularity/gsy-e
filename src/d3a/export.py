@@ -81,7 +81,7 @@ class ExportLeafData(ExportData):
         super(ExportLeafData, self).__init__(area)
 
     def labels(self):
-        return ['energy balance [kWh]'] + self._specific_labels()
+        return ['slot', 'energy balance [kWh]'] + self._specific_labels()
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
@@ -95,7 +95,7 @@ class ExportLeafData(ExportData):
         return [self._row(slot, markets[slot]) for slot in markets]
 
     def _row(self, slot, market):
-        return [market.traded_energy[self.area.name]] + self._specific_row(slot, market)
+        return [slot, market.traded_energy[self.area.name]] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
