@@ -55,12 +55,12 @@ class ExportUpperLevelData(ExportData):
 
     def labels(self):
         return ['slot',
-                'avg trade price [€]',
-                'min trade price [€]',
-                'max trade price [€]',
+                'avg trade price [EUR]',
+                'min trade price [EUR]',
+                'max trade price [EUR]',
                 '# trades',
                 'total energy traded [kWh]',
-                'total trade volume [€]']
+                'total trade volume [EUR]']
 
     def rows(self):
         markets = self.area.past_markets
