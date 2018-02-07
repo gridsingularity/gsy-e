@@ -87,7 +87,7 @@ class ExportLeafData(ExportData):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
-            return ['offered [kWh]', 'used [kWh]', 'charge [%]']
+            return ['bought [kWh]', 'sold [kWh]', 'offered [kWh]', 'used [kWh]', 'charge [%]']
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
         return []
@@ -107,7 +107,11 @@ class ExportLeafData(ExportData):
             return [self.area.strategy.temp_history[slot]]
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             s = self.area.strategy.state
-            return [s.offered_history[slot], s.used_history[slot], s.charge_history[slot]]
+            return [market.bought_energy(self.area.name),
+                    market.sold_energy(self.area.name),
+                    s.offered_history[slot],
+                    s.used_history[slot],
+                    s.charge_history[slot]]
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             desired = self.area.strategy.state.desired_energy[slot]
             return [desired, self._traded(market) - desired]
