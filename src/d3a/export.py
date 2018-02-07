@@ -7,6 +7,7 @@ from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
 _log = logging.getLogger(__name__)
@@ -90,6 +91,8 @@ class ExportLeafData(ExportData):
             return ['bought [kWh]', 'sold [kWh]', 'offered [kWh]', 'used [kWh]', 'charge [%]']
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
+        elif isinstance(self.area.strategy, PVStrategy):
+            return ['produced [kWh]', 'not sold [kWh]', 'forecast [kWh]']
         return []
 
     def rows(self):
@@ -115,6 +118,11 @@ class ExportLeafData(ExportData):
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             desired = self.area.strategy.state.desired_energy[slot]
             return [desired, self._traded(market) - desired]
+        elif isinstance(self.area.strategy, PVStrategy):
+            produced = market.actual_energy_agg.get(self.area.name, 0)
+            return [produced,
+                    produced - self._traded(market),
+                    self.area.strategy.energy_production_forecast[slot]]
         return []
 
 
