@@ -4,6 +4,7 @@ import logging
 import pathlib
 from collections import defaultdict
 
+from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.storage import StorageStrategy
@@ -30,6 +31,8 @@ def _export_area_with_children(area, directory):
         for child in area.children:
             _export_area_with_children(child, subdirectory)
     _export_area_flat(area, directory)
+    if area.children:
+        _export_area_energy(area, directory)
 
 
 def _file_path(directory, slug):
@@ -83,6 +86,8 @@ class ExportLeafData(ExportData):
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
+        elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
+            return ['offered [kWh]', 'used [kWh]']
         return []
 
     def rows(self):
@@ -95,6 +100,9 @@ class ExportLeafData(ExportData):
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
             return [self.area.strategy.temp_history[slot]]
+        elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
+            s = self.area.strategy.state
+            return [s.offered_history[slot], s.used_history[slot]]
         return []
 
 
@@ -112,8 +120,22 @@ def _export_area_flat(area, directory):
             _log.error("Could not export area data: %s" % str(ex))
 
 
+def _export_area_energy(area, directory):
+    try:
+        with open(_file_path(directory, "{}-trades".format(area.slug)), 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(("slot",) + Trade._csv_fields())
+            for slot, market in area.past_markets.items():
+                for trade in market.trades:
+                    writer.writerow((slot, ) + trade._to_csv())
+    except OSError:
+        _log.exception("Could not export area trades")
+
+
 def _export_overview(root_area, directory):
-    overview = {  # TODO
+    markets = root_area.past_markets
+    overview = {
+        'avg_trade_price_history': [markets[slot].avg_trade_price for slot in markets]
     }
     try:
         directory.joinpath("overview.json").write_text(json.dumps(overview, indent=2))

@@ -246,6 +246,12 @@ def test_market_iou(market: Market):
     assert market.ious['B']['A'] == 10
 
 
+def test_market_accept_offer_yields_partial_trade(market: Market):
+    offer = market.offer(2.0, 4, 'seller')
+    trade = market.accept_offer(offer, 'buyer', energy=1)
+    assert trade.offer.id == offer.id and trade.offer.energy == 1 and trade.residual.energy == 3
+
+
 class MarketStateMachine(RuleBasedStateMachine):
     offers = Bundle('Offers')
     actors = Bundle('Actors')

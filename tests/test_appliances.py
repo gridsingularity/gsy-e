@@ -24,14 +24,20 @@ class FakePVStrategy:
         self.panel_count = 1
 
 
-class FakeFridgeStrategy:
-
+class FakeFridgeState:
     def __init__(self):
         self.temperature = FRIDGE_TEMPERATURE
+        self.max_temperature = MAX_FRIDGE_TEMP
 
+
+class FakeFridgeStrategy:
     @property
     def fridge_temp(self):
         return self.temperature
+
+    @property
+    def state(self):
+        return FakeFridgeState()
 
     def post(self, **data):
         pass
@@ -115,6 +121,8 @@ def fridge_fixture():
     fridge.area = FakeArea()
     fridge_strategy = FakeFridgeStrategy()
     fridge.owner = FakeOwnerWithStrategy(fridge_strategy)
+    fridge.state = FakeFridgeState()
+    fridge.event_activate()
     return fridge
 
 
@@ -159,7 +167,7 @@ def test_fridge_appliance_heats_up_when_open(fridge_fixture):
 # always buys energy if we have none and upper temperature constraint is violated
 
 def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
-    fridge_fixture.owner.strategy.temperature = MAX_FRIDGE_TEMP + 1
+    fridge_fixture.state.temperature = MAX_FRIDGE_TEMP + 1
     fridge_fixture.report_energy(0)
     assert fridge_fixture.area.reported_value < 0
 

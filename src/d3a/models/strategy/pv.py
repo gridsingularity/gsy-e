@@ -5,7 +5,6 @@ from pendulum import Time  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
-from d3a.models.market import Market, Offer  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 
@@ -21,7 +20,6 @@ class PVStrategy(BaseStrategy):
     def __init__(self, panel_count=1, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.offers_posted = {}  # type: Dict[Offer, Market]
         self.energy_production_forecast = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
@@ -52,7 +50,7 @@ class PVStrategy(BaseStrategy):
         # Iterate over all markets open in the future
         for (time, market) in self.area.markets.items():
             # If there is no offer for a currently open marketplace:
-            if market not in self.offers_posted.values():
+            if market not in self.offers.posted.values():
                 # Sell energy and save that an offer was posted into a list
                 try:
                     if self.energy_production_forecast[time] == 0:
@@ -64,7 +62,7 @@ class PVStrategy(BaseStrategy):
                             self.energy_production_forecast[time],
                             self.owner.name
                         )
-                        self.offers_posted[offer.id] = market
+                        self.offers.post(offer, market)
 
                 except KeyError:
                     self.log.warn("PV has no forecast data for this time")
@@ -75,8 +73,13 @@ class PVStrategy(BaseStrategy):
 
         # Decrease the selling price over the ticks in a slot
         if (
-                        self.area.current_tick % self.area.config.ticks_per_slot >
-                        self.area.config.ticks_per_slot - 4
+                self.area.current_tick % self.area.config.ticks_per_slot >
+                self.area.config.ticks_per_slot * 0.1
+                and
+                # FIXME: MAke sure that the offer reached every system participant.
+                # FIXME: Therefore it can only be update (depending on number of niveau and
+                # FIXME: InterAreaAgent min_offer_age
+                self.area.current_tick % 7 == 0
         ):
             next_market = list(self.area.markets.values())[0]
             self.decrease_offer_price(next_market)
@@ -121,35 +124,25 @@ class PVStrategy(BaseStrategy):
         return round((gauss_forecast / 1000), 4)
 
     def decrease_offer_price(self, market):
-        if market not in self.offers_posted.values():
+        if market not in self.offers.open.values():
             return
-        for offer_id, iterated_market in self.offers_posted.items():
+        for offer, iterated_market in self.offers.open.items():
             if iterated_market != market:
                 continue
             try:
-                offer = iterated_market.offers[offer_id]
-                iterated_market.delete_offer(offer_id)
+                iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
                     offer.price * 0.99,
                     offer.energy,
                     self.owner.name
                 )
-                self.offers_posted.pop(offer_id, None)
-                self.offers_posted[new_offer.id] = iterated_market
+                self.offers.replace(offer, new_offer, iterated_market)
 
             except MarketException:
                 continue
 
-            except KeyError:
-                self.log.warn("Offer already taken")
-                continue
-
     def event_market_cycle(self):
         pass
-
-    def event_trade(self, *, market, trade):
-        if trade.offer.seller == self.owner.name:
-            self.offers_posted.pop(trade.offer.id, None)
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)

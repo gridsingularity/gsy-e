@@ -1,7 +1,9 @@
+-r base.txt
+
+coverage
 flake8
 flake8-tuple
+hypothesis
 isort
 pytest
-pytest-catchlog
-coverage
-hypothesis
+requests-mock
