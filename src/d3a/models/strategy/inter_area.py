@@ -8,6 +8,7 @@ from d3a.util import make_iaa_name
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
+ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 
 class IAAEngine:
@@ -23,11 +24,24 @@ class IAAEngine:
         # Offer.id -> OfferInfo
         self.offered_offers = {}  # type: Dict[str, OfferInfo]
         self.traded_offers = set()  # type: Set[str]
+        self.trade_residual = {}  # type Dict[str, Offer]
+        self.ignored_offers = set()  # type: Set[str]
 
     def __repr__(self):
         return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
             s=self
         )
+
+    def _forward_offer(self, offer, offer_id):
+        forwarded_offer = self.markets.target.offer(
+            offer.price + (offer.price * (self.transfer_fee_pct / 100)),
+            offer.energy,
+            self.owner.name
+        )
+        offer_info = OfferInfo(offer, forwarded_offer)
+        self.offered_offers[forwarded_offer.id] = offer_info
+        self.offered_offers[offer_id] = offer_info
+        return forwarded_offer
 
     def tick(self, *, area):
         # Store age of offer
@@ -49,14 +63,7 @@ class IAAEngine:
             if not self.owner.usable_offer(offer):
                 # Forbidden offer (i.e. our counterpart's)
                 continue
-            forwarded_offer = self.markets.target.offer(
-                offer.price + (offer.price * (self.transfer_fee_pct / 100)),
-                offer.energy,
-                self.owner.name
-            )
-            offer_info = OfferInfo(offer, forwarded_offer)
-            self.offered_offers[forwarded_offer.id] = offer_info
-            self.offered_offers[offer_id] = offer_info
+            forwarded_offer = self._forward_offer(offer, offer_id)
             self.owner.log.info("Offering %s", forwarded_offer)
 
     def event_trade(self, *, trade):
@@ -64,8 +71,19 @@ class IAAEngine:
         if not offer_info:
             # Trade doesn't concern us
             return
-        if trade.offer == offer_info.target_offer:
+        if trade.offer.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
+            residual_info = None
+            if trade.offer.energy < offer_info.source_offer.energy:
+                try:
+                    residual_info = ResidualInfo(
+                        forwarded=self.trade_residual.pop(trade.offer.id),
+                        age=self.offer_age[offer_info.source_offer.id]
+                    )
+                except KeyError:
+                    self.owner.log.error("Not forwarding residual offer for "
+                                         "{} (Forwarded offer not found)".format(trade.offer))
+
             trade_source = self.owner.accept_offer(
                 self.markets.source,
                 offer_info.source_offer,
@@ -73,13 +91,28 @@ class IAAEngine:
                 buyer=self.owner.name
             )
             self.owner.log.info("Offer accepted %s", trade_source)
-            if trade.offer.energy == offer_info.source_offer.energy:
-                # Complete trade - remove from offered_offers
-                del self.offered_offers[offer_info.source_offer.id]
-                del self.offered_offers[offer_info.target_offer.id]
-                self.offer_age.pop(offer_info.source_offer.id, None)
+
+            if residual_info is not None:
+                # connect residual of the forwarded offer to that of the source offer
+                if trade_source.residual is not None:
+                    res_offer_info = OfferInfo(trade_source.residual, residual_info.forwarded)
+                    self.offered_offers[trade_source.residual.id] = res_offer_info
+                    self.offered_offers[residual_info.forwarded.id] = res_offer_info
+                    self.offer_age[trade_source.residual.id] = residual_info.age
+                    self.ignored_offers.add(trade_source.residual.id)
+                else:
+                    self.owner.log.error(
+                        "Expected residual offer in source market trade {} - deleting "
+                        "corresponding offer in target market".format(trade_source)
+                    )
+                    self.markets.target.delete_offer(residual_info.forwarded)
+
+            self.offered_offers.pop(offer_info.source_offer.id, None)
+            self.offered_offers.pop(offer_info.target_offer.id, None)
+            self.offer_age.pop(offer_info.source_offer.id, None)
             self.traded_offers.add(offer_info.source_offer.id)
             self.traded_offers.add(offer_info.target_offer.id)
+
         elif trade.offer == offer_info.source_offer and trade.buyer == self.owner.name:
             # Flip side of the event from above buying action - do nothing
             pass
@@ -113,18 +146,24 @@ class IAAEngine:
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
 
-    def event_offer_changed(self, *, existing_offer, new_offer):
-        return
-        # FIXME: Implement partial orders
-        if existing_offer.id in self.offer_age:
-            # Offer we're watching in source market was changed - transfer age
-            age = self.offer_age.pop(existing_offer.id, 0)
-            self.offer_age[new_offer.id] = age
-
-        existing_offer_info = self.offered_offers.get(existing_offer.id)
-        if not existing_offer_info:
-            # Doesn't concern us
-            return
+    def event_offer_changed(self, *, market, existing_offer, new_offer):
+        if market == self.markets.target and existing_offer.seller == self.owner.name:
+            # one of our forwarded offers was split, so save the residual offer
+            # for handling the upcoming trade event
+            assert existing_offer.id not in self.trade_residual, \
+                   "Offer should only change once before each trade."
+            self.trade_residual[existing_offer.id] = new_offer
+        elif market == self.markets.source and existing_offer.id in self.offered_offers:
+            # an offer in the source market was split - delete the corresponding offer
+            # in the target market and forward the new residual offer
+            self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
+            offer_info = self.offered_offers[existing_offer.id]
+            forwarded = self._forward_offer(new_offer, new_offer.id)
+            self.owner.log.info("Offer %s changed to residual offer %s",
+                                offer_info.target_offer,
+                                forwarded)
+            del self.offered_offers[offer_info.target_offer.id]
+            del self.offered_offers[offer_info.source_offer.id]
 
 
 class InterAreaAgent(BaseStrategy):
@@ -194,4 +233,6 @@ class InterAreaAgent(BaseStrategy):
 
     def event_offer_changed(self, *, market, existing_offer, new_offer):
         for engine in self.engines:
-            engine.event_offer_changed(existing_offer=existing_offer, new_offer=new_offer)
+            engine.event_offer_changed(market=market,
+                                       existing_offer=existing_offer,
+                                       new_offer=new_offer)

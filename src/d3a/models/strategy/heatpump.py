@@ -1,22 +1,18 @@
-from typing import Dict  # noqa
-
 from d3a.exceptions import MarketException
-from d3a.models.market import Market  # noqa
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, EARTH_TEMP, \
     INITIAL_PUMP_STORAGE_TEMP, MAX_RISK, MAX_STORAGE_TEMP, MIN_STORAGE_TEMP, \
     PUMP_MIN_NEEDED_ENERGY, PUMP_MIN_TEMP_INCREASE
 
 
-# The heatpmup uses a surface collector with a season depended outside temperature
-# Currently the Heatpump pays no respect to the filling capacity of the storage!
+# The heat pump uses a surface collector with a season depended outside temperature
+# Currently the heat pump pays no respect to the filling capacity of the storage!
 class HeatPumpStrategy(BaseStrategy):
     parameters = ('risk',)
 
     def __init__(self, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.offers_posted = {}  # type: Dict[str, Market]
         self.threshold_price = 0.0
         self.earth_temp = EARTH_TEMP
         # The current temperature of the water storage coupled to the heat pump

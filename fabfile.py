@@ -109,16 +109,23 @@ def _post_check():
 
 @task
 @hosts('localhost')
-def compile(upgrade=""):
+def compile(upgrade="", package=None):
     """Update list of requirements"""
+    if upgrade and package:
+        abort("Can only specify one of `upgrade` or `package`")
+    if package:
+        puts(blue("Upgrading spec for {}".format(package)))
+    elif upgrade:
+        puts(blue("Upgrading all package specs"))
     _pre_check()
     upgrade = (upgrade.lower() in {'true', 'upgrade', '1', 'yes', 'up'})
     with hide('running', 'stdout'):
         puts(green("Updating requirements"), show_prefix=True)
         for file in REQ_DIR.glob('*.in'):
             puts(blue("  - {}".format(file.name.replace(".in", ""))))
-            local('pip-compile --no-index {0} --rebuild {1}'.format(
-                '--upgrade' if upgrade else '',
+            local('pip-compile --no-index {}{} --rebuild {}'.format(
+                '--upgrade' if upgrade or package else '',
+                '-package {}'.format(package) if package else '',
                 file.relative_to(HERE)
             ))
 

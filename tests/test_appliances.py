@@ -1,7 +1,9 @@
 from copy import deepcopy
+from collections import defaultdict
 
 import pytest
 
+from d3a.models.appliance.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
@@ -22,14 +24,37 @@ class FakePVStrategy:
         self.panel_count = 1
 
 
-class FakeFridgeStrategy:
+class FakeFridgeState:
+    def __init__(self):
+        self.temperature = FRIDGE_TEMPERATURE
+        self.max_temperature = MAX_FRIDGE_TEMP
 
+
+class FakeFridgeStrategy:
     @property
     def fridge_temp(self):
-        return FRIDGE_TEMPERATURE
+        return self.temperature
+
+    @property
+    def state(self):
+        return FakeFridgeState()
 
     def post(self, **data):
         pass
+
+
+class FakeCustomProfileStrategy:
+    def __init__(self, bought, slot_load):
+        self.bought_val = bought
+        self.slot_load_val = slot_load
+
+    @property
+    def bought(self):
+        return defaultdict(lambda: self.bought_val)
+
+    @property
+    def slot_load(self):
+        return defaultdict(lambda: self.slot_load_val)
 
 
 class FakeOwner:
@@ -45,6 +70,21 @@ class FakeOwnerWithStrategy(FakeOwner):
     @property
     def strategy(self):
         return self._strategy
+
+
+class FakeOwnerWithStrategyAndMarket(FakeOwnerWithStrategy):
+    def __init__(self, strategy):
+        super().__init__(strategy)
+
+    @property
+    def current_market(self):
+        return FakeCurrentMarket()
+
+
+class FakeCurrentMarket:
+    @property
+    def time_slot(self):
+        return "time_slot"
 
 
 class FakeArea:
@@ -81,6 +121,8 @@ def fridge_fixture():
     fridge.area = FakeArea()
     fridge_strategy = FakeFridgeStrategy()
     fridge.owner = FakeOwnerWithStrategy(fridge_strategy)
+    fridge.state = FakeFridgeState()
+    fridge.event_activate()
     return fridge
 
 
@@ -124,9 +166,8 @@ def test_fridge_appliance_heats_up_when_open(fridge_fixture):
 
 # always buys energy if we have none and upper temperature constraint is violated
 
-@pytest.mark.skip("broken since appliance remodelling, needs to be rewritten")  # TODO FIX
 def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
-    fridge_fixture.temperature = MAX_FRIDGE_TEMP + 1
+    fridge_fixture.state.temperature = MAX_FRIDGE_TEMP + 1
     fridge_fixture.report_energy(0)
     assert fridge_fixture.area.reported_value < 0
 
@@ -183,3 +224,19 @@ def test_pv_appliance_cloud_cover(pv_fixture):
     pv_fixture.cloud_duration = 0
     pv_fixture.report_energy(1)
     assert pv_fixture.area.reported_value == 1
+
+
+@pytest.fixture
+def custom_profile_fixture(called):
+    fixture = CustomProfileAppliance()
+    fixture.area = FakeArea()
+    fixture.owner = FakeOwnerWithStrategyAndMarket(FakeCustomProfileStrategy(33.0, 30.0))
+    fixture.event_activate()
+    fixture.log.warning = called
+    return fixture
+
+
+def test_custom_profile_appliance_lacking_energy_warning(custom_profile_fixture):
+    custom_profile_fixture.owner.strategy.bought_val = 26.0
+    custom_profile_fixture.event_market_cycle()
+    assert len(custom_profile_fixture.log.warning.calls) == 1
