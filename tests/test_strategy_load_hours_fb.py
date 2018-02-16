@@ -125,12 +125,12 @@ def test_calculate_daily_energy_req(load_hours_strategy_test1):
 
 
 # Test if device accepts the cheapest offer
-@pytest.mark.skip  # FIXME test fails (accept_offer is not called)
 def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
+    cheapest_offer = market_test1.sorted_offers[0]
+    load_hours_strategy_test1.energy_requirement = cheapest_offer.energy * 1000 + 1
     load_hours_strategy_test1.event_tick(area=area_test1)
-    assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == \
-        repr(market_test1.sorted_offers[0])
+    assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == repr(cheapest_offer)
 
 
 def test_event_market_cycle(load_hours_strategy_test1, market_test1):
