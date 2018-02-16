@@ -1,5 +1,6 @@
 import pytest
 import pendulum
+from datetime import timedelta
 from pendulum import Pendulum
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
@@ -34,7 +35,7 @@ class FakeArea:
         have passed.
         """
         return Pendulum.now().start_of('day').add_timedelta(
-            self.config.tick_length * self.current_tick
+            timedelta(hours=10) + self.config.tick_length * self.current_tick
         )
 
 
@@ -54,14 +55,24 @@ class FakeMarket:
             [
                 Offer('id', 1, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self),
                 Offer('id', 2, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self)
+            ],
+            [
+                Offer('id', 1, 5, 'A', self),
+                Offer('id2', 2, (MIN_BUY_ENERGY / 1000), 'A', self)
             ]
         ]
         return offers[self.count]
 
+    @property
+    def time_slot(self):
+        return Pendulum.now().start_of('day').add_timedelta(timedelta(hours=10))
+
 
 @pytest.fixture()
-def area_test1():
-    return FakeArea(0)
+def area_test1(market_test1):
+    area = FakeArea(0)
+    area.current_market = market_test1
+    return area
 
 
 @pytest.fixture()
@@ -97,25 +108,18 @@ def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
         repr(market_test1.sorted_offers[0])
 
 
-@pytest.mark.skip  # FIXME fails (no attribute named energy_missing)
 def test_event_market_cycle(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
-    load_hours_strategy_test1.event_tick(area=area_test1)
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
-    assert load_hours_strategy_test1.energy_missing == load_hours_strategy_test1.energy_per_slot \
-        - market_test1.sorted_offers[0].energy*1000
+    assert load_hours_strategy_test1.energy_requirement == \
+        load_hours_strategy_test1.energy_per_slot
 
 
-@pytest.mark.skip  # FIXME fails (no attribute named energy_missing)
-def test_device_adds_energy_missing(load_hours_strategy_test1, market_test1):
+def test_event_tick(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
-    load_hours_strategy_test1.event_tick(area=area_test1)
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
-    assert load_hours_strategy_test1.energy_missing == \
-        load_hours_strategy_test1.energy_per_slot - market_test1.sorted_offers[0].energy*1000
-
-    load_hours_strategy_test1.area.markets[TIME.add(hours=2)] = market_test1
     load_hours_strategy_test1.event_tick(area=area_test1)
-    assert load_hours_strategy_test1.energy_missing == 0
+    assert load_hours_strategy_test1.energy_requirement == \
+        load_hours_strategy_test1.energy_per_slot - market_test1.sorted_offers[0].energy * 1000
