@@ -72,6 +72,15 @@ class FakeMarket:
 def area_test1(market_test1):
     area = FakeArea(0)
     area.current_market = market_test1
+    area.markets = {TIME: market_test1}
+    return area
+
+
+@pytest.fixture
+def area_test2(market_test2):
+    area = FakeArea(0)
+    area.current_market = market_test2
+    area.markets = {TIME: market_test2}
     return area
 
 
@@ -80,21 +89,37 @@ def market_test1():
     return FakeMarket(0)
 
 
-@pytest.fixture()
-def load_hours_strategy_test1(area_test1, market_test1, called):
-    fb = LoadHoursStrategy(avg_power=620, hrs_per_day=4, hrs_of_day=(8, 12))
-    fb.owner = area_test1
-    fb.area = area_test1
-    fb.area.markets = {TIME: market_test1}
-    fb.accept_offer = called
-    if 10 not in fb.active_hours:
-        fb.active_hours.pop()
-        fb.active_hours.add(10)
-    return fb
+@pytest.fixture
+def market_test2():
+    return FakeMarket(2)
+
+
+@pytest.fixture
+def load_hours_strategy_test(called):
+    strategy = LoadHoursStrategy(avg_power=620, hrs_per_day=4, hrs_of_day=(8, 12))
+    strategy.accept_offer = called
+    if 10 not in strategy.active_hours:
+        strategy.active_hours.pop()
+        strategy.active_hours.add(10)
+    return strategy
+
+
+@pytest.fixture
+def load_hours_strategy_test1(load_hours_strategy_test, area_test1):
+    load_hours_strategy_test.area = area_test1
+    load_hours_strategy_test.owner = area_test1
+    return load_hours_strategy_test
+
+
+@pytest.fixture
+def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
+    load_hours_strategy_test.area = area_test2
+    load_hours_strategy_test.owner = area_test2
+    return load_hours_strategy_test
 
 
 # Test if daily energy requirement is calculated correctly for the device
-def test_calculate_daily_energy_req(load_hours_strategy_test1, market_test1):
+def test_calculate_daily_energy_req(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.daily_energy_required = 620*4
 
@@ -123,3 +148,13 @@ def test_event_tick(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_tick(area=area_test1)
     assert load_hours_strategy_test1.energy_requirement == \
         load_hours_strategy_test1.energy_per_slot - market_test1.sorted_offers[0].energy * 1000
+
+
+def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
+    load_hours_strategy_test2.event_activate()
+    load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
+    load_hours_strategy_test2.event_market_cycle()
+    requirement = load_hours_strategy_test2.energy_requirement / 1000
+    load_hours_strategy_test2.event_tick(area=area_test2)
+    assert load_hours_strategy_test2.energy_requirement == 0
+    assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
