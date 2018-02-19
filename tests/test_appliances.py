@@ -1,7 +1,9 @@
 from copy import deepcopy
+from collections import defaultdict
 
 import pytest
 
+from d3a.models.appliance.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
@@ -31,7 +33,7 @@ class FakeFridgeState:
 class FakeFridgeStrategy:
     @property
     def fridge_temp(self):
-        return FRIDGE_TEMPERATURE
+        return self.temperature
 
     @property
     def state(self):
@@ -39,6 +41,20 @@ class FakeFridgeStrategy:
 
     def post(self, **data):
         pass
+
+
+class FakeCustomProfileStrategy:
+    def __init__(self, bought, slot_load):
+        self.bought_val = bought
+        self.slot_load_val = slot_load
+
+    @property
+    def bought(self):
+        return defaultdict(lambda: self.bought_val)
+
+    @property
+    def slot_load(self):
+        return defaultdict(lambda: self.slot_load_val)
 
 
 class FakeOwner:
@@ -54,6 +70,21 @@ class FakeOwnerWithStrategy(FakeOwner):
     @property
     def strategy(self):
         return self._strategy
+
+
+class FakeOwnerWithStrategyAndMarket(FakeOwnerWithStrategy):
+    def __init__(self, strategy):
+        super().__init__(strategy)
+
+    @property
+    def current_market(self):
+        return FakeCurrentMarket()
+
+
+class FakeCurrentMarket:
+    @property
+    def time_slot(self):
+        return "time_slot"
 
 
 class FakeArea:
@@ -193,3 +224,19 @@ def test_pv_appliance_cloud_cover(pv_fixture):
     pv_fixture.cloud_duration = 0
     pv_fixture.report_energy(1)
     assert pv_fixture.area.reported_value == 1
+
+
+@pytest.fixture
+def custom_profile_fixture(called):
+    fixture = CustomProfileAppliance()
+    fixture.area = FakeArea()
+    fixture.owner = FakeOwnerWithStrategyAndMarket(FakeCustomProfileStrategy(33.0, 30.0))
+    fixture.event_activate()
+    fixture.log.warning = called
+    return fixture
+
+
+def test_custom_profile_appliance_lacking_energy_warning(custom_profile_fixture):
+    custom_profile_fixture.owner.strategy.bought_val = 26.0
+    custom_profile_fixture.event_market_cycle()
+    assert len(custom_profile_fixture.log.warning.calls) == 1

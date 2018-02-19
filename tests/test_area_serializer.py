@@ -7,6 +7,7 @@ from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
 from d3a.models.leaves import Fridge, PV
 from d3a.models.strategy.fridge import FridgeStrategy, DEFAULT_RISK
+from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.simple import OfferStrategy
 
@@ -108,3 +109,22 @@ def test_roundtrip_with_leaf(fixture_with_leaves):
     recovered = area_from_string(fixture_with_leaves)
     assert isinstance(recovered.children[0], Fridge)
     assert isinstance(recovered.children[1].strategy, PVStrategy)
+
+
+@pytest.fixture
+def budget_keeper_fixture():
+    child = Area('child', appliance=FridgeAppliance())
+    budget_keeper = BudgetKeeper(budget=100.0, days_per_period=30)
+    return area_to_string(Area('parent', [child], budget_keeper=budget_keeper))
+
+
+def test_budget_keeper(budget_keeper_fixture):
+    area_dict = json.loads(budget_keeper_fixture)
+    assert area_dict['budget_keeper']['kwargs']['budget'] == 100.0
+    assert area_dict['budget_keeper']['kwargs']['days_per_period'] == 30
+
+
+def test_budget_keeper_roundtrip(budget_keeper_fixture):
+    recovered = area_from_string(budget_keeper_fixture)
+    assert recovered.budget_keeper.budget == 100.0
+    assert recovered.budget_keeper.days_per_period == 30
