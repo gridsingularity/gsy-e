@@ -1,6 +1,7 @@
 import json
 
 from d3a.models.area import Area
+from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.appliance import Appliance
@@ -8,7 +9,6 @@ from d3a.models.appliance.appliance import Appliance
 from d3a.models.appliance.fridge import FridgeAppliance  # NOQA
 from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
 from d3a.models.appliance.pv import PVAppliance  # NOQA
-from d3a.models.appliance.simple import SimpleAppliance  # NOQA
 
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.e_car import ECarStrategy  # NOQA
@@ -28,8 +28,8 @@ class AreaEncoder(json.JSONEncoder):
     def default(self, obj):
         if type(obj) is Area:
             return self._encode_area(obj)
-        elif isinstance(obj, (BaseStrategy, SimpleAppliance, Appliance)):
-            return self._encode_strategy_or_appliance(obj)
+        elif isinstance(obj, (BaseStrategy, SimpleAppliance, Appliance, BudgetKeeper)):
+            return self._encode_subobject(obj)
 
     def _encode_area(self, area):
         result = {"name": area.name}
@@ -39,9 +39,11 @@ class AreaEncoder(json.JSONEncoder):
             result['strategy'] = area.strategy
         if area.appliance:
             result['appliance'] = area.appliance
+        if area.budget_keeper:
+            result['budget_keeper'] = area.budget_keeper
         return result
 
-    def _encode_strategy_or_appliance(self, obj):
+    def _encode_subobject(self, obj):
         result = {"type": obj.__class__.__name__}
         kwargs = {key: getattr(obj, key) for key in getattr(obj, 'parameters', [])}
         if getattr(obj, 'non_attr_parameters', None):
@@ -67,21 +69,16 @@ def _instance_from_dict(description):
 
 
 def area_from_dict(description, config=None):
+    def optional(attr):
+        return _instance_from_dict(description[attr]) if attr in description else None
     try:
         name = description['name']
         if 'children' in description:
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
-        if 'strategy' in description:
-            strategy = _instance_from_dict(description['strategy'])
-        else:
-            strategy = None
-        if 'appliance' in description:
-            appliance = _instance_from_dict(description['appliance'])
-        else:
-            appliance = None
-        return Area(name, children, strategy, appliance, config)
+        return Area(name, children, optional('strategy'), optional('appliance'), config,
+                    optional('budget_keeper'))
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
         raise ValueError("Input is not a valid area description (%s)" % str(error))
 
