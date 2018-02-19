@@ -6,6 +6,8 @@ from d3a.models.strategy.storage import StorageStrategy
 
 
 class PredefLoadProbStrategy(StorageStrategy):
+    parameters = ('risk', 'max_consumption')
+
     # max_consumption is the maximal possible consumption of the load
     def __init__(self, risk=DEFAULT_RISK, max_consumption=200):
         super().__init__()

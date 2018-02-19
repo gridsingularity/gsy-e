@@ -95,6 +95,10 @@ def _ensure_pip_tools():
 
 def _pre_check():
     _ensure_venv()
+    with hide('running', 'stdout'):
+        # Temporary until pyethereum is installable with setuptools >= 38.0.0
+        # (should be after 2.2.0)
+        local("pip install 'setuptools<38.0.0'")
     _ensure_pip_tools()
 
 
@@ -105,14 +109,25 @@ def _post_check():
 
 @task
 @hosts('localhost')
-def compile():
+def compile(upgrade="", package=None):
     """Update list of requirements"""
+    if upgrade and package:
+        abort("Can only specify one of `upgrade` or `package`")
+    if package:
+        puts(blue("Upgrading spec for {}".format(package)))
+    elif upgrade:
+        puts(blue("Upgrading all package specs"))
     _pre_check()
+    upgrade = (upgrade.lower() in {'true', 'upgrade', '1', 'yes', 'up'})
     with hide('running', 'stdout'):
         puts(green("Updating requirements"), show_prefix=True)
         for file in REQ_DIR.glob('*.in'):
             puts(blue("  - {}".format(file.name.replace(".in", ""))))
-            local('pip-compile --no-index --upgrade --rebuild {0}'.format(file.relative_to(HERE)))
+            local('pip-compile --no-index {}{} --rebuild {}'.format(
+                '--upgrade' if upgrade or package else '',
+                '-package {}'.format(package) if package else '',
+                file.relative_to(HERE)
+            ))
 
 
 @task(default=True)

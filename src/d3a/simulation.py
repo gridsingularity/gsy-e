@@ -13,7 +13,9 @@ from pendulum.period import Period
 from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
-from d3a.exceptions import SimulationException
+from d3a.exceptions import SimulationException, D3AException
+from d3a.export import export
+from d3a.models.overview import Overview
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
@@ -30,8 +32,10 @@ class _SimulationInterruped(Exception):
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
-                 use_repl: bool = False, reset_on_finish: bool = False,
-                 reset_on_finish_wait: Interval = Interval(minutes=1), api_url=None):
+                 use_repl: bool = False, export: bool = False, export_path: str = None,
+                 reset_on_finish: bool = False,
+                 reset_on_finish_wait: Interval = Interval(minutes=1),
+                 exit_on_finish: bool = False, api_url=None, message_url=None):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -40,10 +44,20 @@ class Simulation:
         )
         self.simulation_config = simulation_config
         self.use_repl = use_repl
+        self.export_on_finish = export
+        self.export_path = export_path
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait
+        self.exit_on_finish = exit_on_finish
         self.api_url = api_url
+        self.message_url = message_url
         self.setup_module_name = setup_module_name
+
+        if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
+            raise D3AException(
+                "Can only specify one of '--reset-on-finish', '--exit-on-finish' and '--use-repl' "
+                "simultaneously."
+            )
 
         self.run_start = None
         self.paused_time = None
@@ -77,6 +91,9 @@ class Simulation:
         self.area = self.setup_module.get_setup(self.simulation_config)
         log.info("Starting simulation with config %s", self.simulation_config)
         self.area.activate()
+
+        if self.message_url is not None:
+            Overview(self, self.message_url).start()
 
     @property
     def finished(self):
@@ -165,6 +182,10 @@ class Simulation:
                         config.duration / (run_duration - paused_duration)
                     )
                     log.error("REST-API still running at %s", self.api_url)
+                    if self.export_on_finish:
+                        export(self.area,
+                               self.export_path,
+                               Pendulum.now().format("%Y-%m-%d_%X"))
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
@@ -179,11 +200,12 @@ class Simulation:
                         t.start()
                         t.join()
                         continue
+                    elif self.exit_on_finish:
+                        break
                     else:
                         log.info("Ctrl-C to quit")
                         while True:
                             self._handle_input(console, 0.5)
-
                     break
             except _SimulationInterruped:
                 self.interrupted.set()

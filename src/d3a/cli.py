@@ -72,26 +72,34 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
               help="Automatically reset simulation after it finishes.")
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
+@click.option('--exit-on-finish', is_flag=True)
+@click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
+@click.option('--export-path',  type=str, default=None, show_default=False,
+              help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after, repl,
-        reset_on_finish, reset_on_finish_wait, **config_params):
+        export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
+        **config_params):
     try:
         simulation_config = SimulationConfig(**config_params)
+
+        api_url = "http://{}:{}/api".format(interface, port)
+        simulation = Simulation(
+            setup_module_name,
+            simulation_config,
+            slowdown,
+            seed,
+            paused,
+            pause_after,
+            repl,
+            export,
+            export_path,
+            reset_on_finish,
+            reset_on_finish_wait,
+            exit_on_finish,
+            api_url
+        )
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-
-    api_url = "http://{}:{}/api".format(interface, port)
-    simulation = Simulation(
-        setup_module_name,
-        simulation_config,
-        slowdown,
-        seed,
-        paused,
-        pause_after,
-        repl,
-        reset_on_finish,
-        reset_on_finish_wait,
-        api_url
-    )
     start_web(interface, port, simulation)
     simulation.run()
 

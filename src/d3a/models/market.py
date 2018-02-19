@@ -58,12 +58,27 @@ class Offer:
         self._call_listeners(OfferEvent.ACCEPTED, market=market, trade=trade)
 
 
-class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer'))):
+class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual'))):
+    def __new__(cls, id, time, offer, seller, buyer, residual=None):
+        # overridden to give the residual field a default value
+        return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual)
+
     def __str__(self):
+        mark_partial = "(partial)" if self.residual is not None else ""
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh @ {s.offer.price}".format(s=self)
+            "{s.offer.energy} kWh {p} @ {s.offer.price}".format(s=self, p=mark_partial)
         )
+
+    @classmethod
+    def _csv_fields(cls):
+        return (cls._fields[:2] + ('price [ct./kWh]', 'energy [kWh]') +
+                cls._fields[3:5] + ('residual [kWh]',))
+
+    def _to_csv(self):
+        price = round(self.offer.price / self.offer.energy, 4)
+        residual_energy = 0 if self.residual is None else self.residual.energy
+        return self[:2] + (price, self.offer.energy) + self[3:5] + (residual_energy,)
 
 
 class Market:
@@ -132,6 +147,7 @@ class Market:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
+        residual_offer = None
         with self.offer_lock, self.trade_lock:
             offer = self.offers.pop(offer_or_id, None)
             if offer is None:
@@ -172,12 +188,12 @@ class Market:
                     else:
                         # Requested partial is equal to offered energy - just proceed normally
                         pass
-            except:
+            except Exception:
                 # Exception happened - restore offer
                 self.offers[offer.id] = offer
                 raise
 
-            trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer)
+            trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer, residual_offer)
             self.trades.append(trade)
             log.warning("[TRADE] %s", trade)
             self.traded_energy[offer.seller] += offer.energy
@@ -271,7 +287,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(offer_table).table)
-            except:
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         if self.trades:
@@ -282,7 +298,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(trade_table).table)
-            except:
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         if self.traded_energy:
@@ -293,7 +309,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(acct_table).table)
-            except:
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         return "\n".join(out)

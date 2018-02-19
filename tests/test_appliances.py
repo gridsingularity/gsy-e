@@ -1,12 +1,14 @@
 from copy import deepcopy
+from collections import defaultdict
 
 import pytest
 
+from d3a.models.appliance.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.strategy.const import MAX_FRIDGE_TEMP
+from d3a.models.strategy.const import MAX_FRIDGE_TEMP, FRIDGE_TEMPERATURE
 
 
 class FakeSwitchableStrategy:
@@ -22,6 +24,39 @@ class FakePVStrategy:
         self.panel_count = 1
 
 
+class FakeFridgeState:
+    def __init__(self):
+        self.temperature = FRIDGE_TEMPERATURE
+        self.max_temperature = MAX_FRIDGE_TEMP
+
+
+class FakeFridgeStrategy:
+    @property
+    def fridge_temp(self):
+        return self.temperature
+
+    @property
+    def state(self):
+        return FakeFridgeState()
+
+    def post(self, **data):
+        pass
+
+
+class FakeCustomProfileStrategy:
+    def __init__(self, bought, slot_load):
+        self.bought_val = bought
+        self.slot_load_val = slot_load
+
+    @property
+    def bought(self):
+        return defaultdict(lambda: self.bought_val)
+
+    @property
+    def slot_load(self):
+        return defaultdict(lambda: self.slot_load_val)
+
+
 class FakeOwner:
     @property
     def name(self):
@@ -35,6 +70,21 @@ class FakeOwnerWithStrategy(FakeOwner):
     @property
     def strategy(self):
         return self._strategy
+
+
+class FakeOwnerWithStrategyAndMarket(FakeOwnerWithStrategy):
+    def __init__(self, strategy):
+        super().__init__(strategy)
+
+    @property
+    def current_market(self):
+        return FakeCurrentMarket()
+
+
+class FakeCurrentMarket:
+    @property
+    def time_slot(self):
+        return "time_slot"
 
 
 class FakeArea:
@@ -69,7 +119,10 @@ class FakeArea:
 def fridge_fixture():
     fridge = FridgeAppliance()
     fridge.area = FakeArea()
-    fridge.owner = FakeOwner()
+    fridge_strategy = FakeFridgeStrategy()
+    fridge.owner = FakeOwnerWithStrategy(fridge_strategy)
+    fridge.state = FakeFridgeState()
+    fridge.event_activate()
     return fridge
 
 
@@ -102,18 +155,19 @@ def test_fridge_appliance_report_energy_balanced(fridge_fixture):
 
 def test_fridge_appliance_heats_up_when_open(fridge_fixture):
     open_fridge = deepcopy(fridge_fixture)
-    open_fridge.fire_trigger("open")
+    open_fridge.trigger_open()
     open_fridge.event_activate()
     fridge_fixture.event_activate()
     fridge_fixture.report_energy(0)
     open_fridge.report_energy(0)
-    assert open_fridge.temperature > fridge_fixture.temperature
+    assert open_fridge.temperature + open_fridge.temp_change \
+        > fridge_fixture.temperature + fridge_fixture.temp_change
 
 
 # always buys energy if we have none and upper temperature constraint is violated
 
 def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
-    fridge_fixture.temperature = MAX_FRIDGE_TEMP + 1
+    fridge_fixture.state.temperature = MAX_FRIDGE_TEMP + 1
     fridge_fixture.report_energy(0)
     assert fridge_fixture.area.reported_value < 0
 
@@ -158,23 +212,31 @@ def pv_fixture():
     return pv
 
 
-# has available energy by day but not by night
-
-def test_pv_appliance_has_energy_by_day(pv_fixture):
-    pv_fixture.area.set_nighttime(True)
-    pv_fixture.event_tick(area=pv_fixture.area)
-    assert pv_fixture.area.reported_value is None
-    pv_fixture.area.set_nighttime(False)
-    pv_fixture.event_tick(area=pv_fixture.area)
-    assert pv_fixture.area.reported_value > 0
-
-
 # has energy at all cloud cover percentages except 100%
 
 def test_pv_appliance_cloud_cover(pv_fixture):
-    pv_fixture.fire_trigger("cloud_cover", percent=100.0, duration=10)
-    pv_fixture.event_tick(area=pv_fixture.area)
-    assert pv_fixture.area.reported_value is None
-    pv_fixture.fire_trigger("cloud_cover", percent=95.0, duration=10)
-    pv_fixture.event_tick(area=pv_fixture.area)
-    assert pv_fixture.area.reported_value > 0
+    pv_fixture.trigger_cloud_cover(percent=100.0, duration=10)
+    pv_fixture.report_energy(1)
+    assert pv_fixture.area.reported_value == 0.02
+    pv_fixture.trigger_cloud_cover(percent=95.0, duration=10)
+    pv_fixture.report_energy(1)
+    assert round(pv_fixture.area.reported_value, 3) == 0.05
+    pv_fixture.cloud_duration = 0
+    pv_fixture.report_energy(1)
+    assert pv_fixture.area.reported_value == 1
+
+
+@pytest.fixture
+def custom_profile_fixture(called):
+    fixture = CustomProfileAppliance()
+    fixture.area = FakeArea()
+    fixture.owner = FakeOwnerWithStrategyAndMarket(FakeCustomProfileStrategy(33.0, 30.0))
+    fixture.event_activate()
+    fixture.log.warning = called
+    return fixture
+
+
+def test_custom_profile_appliance_lacking_energy_warning(custom_profile_fixture):
+    custom_profile_fixture.owner.strategy.bought_val = 26.0
+    custom_profile_fixture.event_market_cycle()
+    assert len(custom_profile_fixture.log.warning.calls) == 1

@@ -5,6 +5,8 @@ from d3a.util import make_iaa_name
 
 
 class InterAreaAppliance(SimpleAppliance):
+    parameters = ('area', 'owner')
+
     def __init__(self, area, owner):
         super().__init__()
         self.area = area
