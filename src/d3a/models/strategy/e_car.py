@@ -35,7 +35,7 @@ class ECarStrategy(StorageStrategy):
 
         if not self.connected_to_grid:
             # This means the car is driving around some where
-            self.used_storage *= 0.9999
+            self.state.lose(0.0001)
             return
         # Taking the cheapest offers in every market currently open and building the average
         # Same process as storage
@@ -49,18 +49,17 @@ class ECarStrategy(StorageStrategy):
     def arrive(self):
         self.log.warning("E-Car arrived")
         self.connected_to_grid = True
-        self.sell_energy(self.used_storage)
+        self.sell_energy(self.state.used_storage)  # FIXME find the right buying price
 
     trigger_arrive = arrive
 
     def depart(self):
-        for market, offers in self.offers_posted.items():
-            for offer in offers:
-                try:
-                    market.delete_offer(offer.id)
-                    self.used_storage += offer.energy
-                except MarketException:
-                    continue
+        for offer, market in self.offers.posted.items():
+            try:
+                market.delete_offer(offer.id)
+                self.state.remove_offered(offer.energy)
+            except MarketException:
+                continue
         self.connected_to_grid = False
         self.log.warning("E-Car departs")
 

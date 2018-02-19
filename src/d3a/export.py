@@ -86,6 +86,8 @@ class ExportLeafData(ExportData):
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
+        elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
+            return ['offered [kWh]', 'used [kWh]']
         return []
 
     def rows(self):
@@ -98,6 +100,9 @@ class ExportLeafData(ExportData):
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
             return [self.area.strategy.temp_history[slot]]
+        elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
+            s = self.area.strategy.state
+            return [s.offered_history[slot], s.used_history[slot]]
         return []
 
 
@@ -128,7 +133,9 @@ def _export_area_energy(area, directory):
 
 
 def _export_overview(root_area, directory):
-    overview = {  # TODO
+    markets = root_area.past_markets
+    overview = {
+        'avg_trade_price_history': [markets[slot].avg_trade_price for slot in markets]
     }
     try:
         directory.joinpath("overview.json").write_text(json.dumps(overview, indent=2))
