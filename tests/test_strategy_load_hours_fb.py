@@ -1,5 +1,6 @@
 import pytest
 import pendulum
+from datetime import timedelta
 from pendulum import Pendulum
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
@@ -34,7 +35,7 @@ class FakeArea:
         have passed.
         """
         return Pendulum.now().start_of('day').add_timedelta(
-            self.config.tick_length * self.current_tick
+            timedelta(hours=10) + self.config.tick_length * self.current_tick
         )
 
 
@@ -54,14 +55,33 @@ class FakeMarket:
             [
                 Offer('id', 1, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self),
                 Offer('id', 2, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self)
+            ],
+            [
+                Offer('id', 1, 5, 'A', self),
+                Offer('id2', 2, (MIN_BUY_ENERGY / 1000), 'A', self)
             ]
         ]
         return offers[self.count]
 
+    @property
+    def time_slot(self):
+        return Pendulum.now().start_of('day').add_timedelta(timedelta(hours=10))
+
 
 @pytest.fixture()
-def area_test1():
-    return FakeArea(0)
+def area_test1(market_test1):
+    area = FakeArea(0)
+    area.current_market = market_test1
+    area.markets = {TIME: market_test1}
+    return area
+
+
+@pytest.fixture
+def area_test2(market_test2):
+    area = FakeArea(0)
+    area.current_market = market_test2
+    area.markets = {TIME: market_test2}
+    return area
 
 
 @pytest.fixture()
@@ -69,53 +89,72 @@ def market_test1():
     return FakeMarket(0)
 
 
-@pytest.fixture()
-def load_hours_strategy_test1(area_test1, market_test1, called):
-    fb = LoadHoursStrategy(avg_power=620, hrs_per_day=4, hrs_of_day=(8, 12))
-    fb.owner = area_test1
-    fb.area = area_test1
-    fb.area.markets = {TIME: market_test1}
-    fb.accept_offer = called
-    if 10 not in fb.active_hours:
-        fb.active_hours.pop()
-        fb.active_hours.add(10)
-    return fb
+@pytest.fixture
+def market_test2():
+    return FakeMarket(2)
+
+
+@pytest.fixture
+def load_hours_strategy_test(called):
+    strategy = LoadHoursStrategy(avg_power=620, hrs_per_day=4, hrs_of_day=(8, 12))
+    strategy.accept_offer = called
+    if 10 not in strategy.active_hours:
+        strategy.active_hours.pop()
+        strategy.active_hours.add(10)
+    return strategy
+
+
+@pytest.fixture
+def load_hours_strategy_test1(load_hours_strategy_test, area_test1):
+    load_hours_strategy_test.area = area_test1
+    load_hours_strategy_test.owner = area_test1
+    return load_hours_strategy_test
+
+
+@pytest.fixture
+def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
+    load_hours_strategy_test.area = area_test2
+    load_hours_strategy_test.owner = area_test2
+    return load_hours_strategy_test
 
 
 # Test if daily energy requirement is calculated correctly for the device
-def test_calculate_daily_energy_req(load_hours_strategy_test1, market_test1):
+def test_calculate_daily_energy_req(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.daily_energy_required = 620*4
 
 
 # Test if device accepts the cheapest offer
-@pytest.mark.skip  # FIXME test fails (accept_offer is not called)
 def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
+    cheapest_offer = market_test1.sorted_offers[0]
+    load_hours_strategy_test1.energy_requirement = cheapest_offer.energy * 1000 + 1
     load_hours_strategy_test1.event_tick(area=area_test1)
-    assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == \
-        repr(market_test1.sorted_offers[0])
+    assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == repr(cheapest_offer)
 
 
-@pytest.mark.skip  # FIXME fails (no attribute named energy_missing)
 def test_event_market_cycle(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
-    load_hours_strategy_test1.event_tick(area=area_test1)
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
-    assert load_hours_strategy_test1.energy_missing == load_hours_strategy_test1.energy_per_slot \
-        - market_test1.sorted_offers[0].energy*1000
+    assert load_hours_strategy_test1.energy_requirement == \
+        load_hours_strategy_test1.energy_per_slot
 
 
-@pytest.mark.skip  # FIXME fails (no attribute named energy_missing)
-def test_device_adds_energy_missing(load_hours_strategy_test1, market_test1):
+def test_event_tick(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
-    load_hours_strategy_test1.event_tick(area=area_test1)
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
-    assert load_hours_strategy_test1.energy_missing == \
-        load_hours_strategy_test1.energy_per_slot - market_test1.sorted_offers[0].energy*1000
-
-    load_hours_strategy_test1.area.markets[TIME.add(hours=2)] = market_test1
     load_hours_strategy_test1.event_tick(area=area_test1)
-    assert load_hours_strategy_test1.energy_missing == 0
+    assert load_hours_strategy_test1.energy_requirement == \
+        load_hours_strategy_test1.energy_per_slot - market_test1.sorted_offers[0].energy * 1000
+
+
+def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
+    load_hours_strategy_test2.event_activate()
+    load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
+    load_hours_strategy_test2.event_market_cycle()
+    requirement = load_hours_strategy_test2.energy_requirement / 1000
+    load_hours_strategy_test2.event_tick(area=area_test2)
+    assert load_hours_strategy_test2.energy_requirement == 0
+    assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement

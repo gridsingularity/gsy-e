@@ -2,11 +2,12 @@ import csv
 import json
 import logging
 import pathlib
-from collections import defaultdict
 
 from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
 _log = logging.getLogger(__name__)
@@ -55,12 +56,12 @@ class ExportUpperLevelData(ExportData):
 
     def labels(self):
         return ['slot',
-                'avg trade price [€]',
-                'min trade price [€]',
-                'max trade price [€]',
+                'avg trade price [EUR]',
+                'min trade price [EUR]',
+                'max trade price [EUR]',
                 '# trades',
                 'total energy traded [kWh]',
-                'total trade volume [€]']
+                'total trade volume [EUR]']
 
     def rows(self):
         markets = self.area.past_markets
@@ -81,28 +82,47 @@ class ExportLeafData(ExportData):
         super(ExportLeafData, self).__init__(area)
 
     def labels(self):
-        return ['energy balance [kWh]'] + self._specific_labels()
+        return ['slot', 'energy balance [kWh]'] + self._specific_labels()
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
-            return ['offered [kWh]', 'used [kWh]']
+            return ['bought [kWh]', 'sold [kWh]', 'offered [kWh]', 'used [kWh]', 'charge [%]']
+        elif isinstance(self.area.strategy, LoadHoursStrategy):
+            return ['desired energy [kWh]', 'deficit [kWh]']
+        elif isinstance(self.area.strategy, PVStrategy):
+            return ['produced [kWh]', 'not sold [kWh]', 'forecast [kWh]']
         return []
 
     def rows(self):
         markets = self.area.parent.past_markets
         return [self._row(slot, markets[slot]) for slot in markets]
 
+    def _traded(self, market):
+        return market.traded_energy[self.area.name]
+
     def _row(self, slot, market):
-        return [market.traded_energy[self.area.name]] + self._specific_row(slot, market)
+        return [slot, self._traded(market)] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
             return [self.area.strategy.temp_history[slot]]
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             s = self.area.strategy.state
-            return [s.offered_history[slot], s.used_history[slot]]
+            return [market.bought_energy(self.area.name),
+                    market.sold_energy(self.area.name),
+                    s.offered_history[slot],
+                    s.used_history[slot],
+                    s.charge_history[slot]]
+        elif isinstance(self.area.strategy, LoadHoursStrategy):
+            desired = self.area.strategy.state.desired_energy[slot]
+            return [desired, self._traded(market) - desired]
+        elif isinstance(self.area.strategy, PVStrategy):
+            produced = market.actual_energy_agg.get(self.area.name, 0)
+            return [produced,
+                    produced - self._traded(market),
+                    self.area.strategy.energy_production_forecast[slot]]
         return []
 
 
@@ -141,28 +161,3 @@ def _export_overview(root_area, directory):
         directory.joinpath("overview.json").write_text(json.dumps(overview, indent=2))
     except Exception as ex:
         _log.error("Error when writing overview file: %s" % str(ex))
-
-
-# Try evaluate current storage usage
-class StorageData():
-    def __init__(self):
-        self.storage_Areas = defaultdict(set)
-        self.storages = []
-        self.market_capacities = defaultdict(
-            dict)  # type: Dict[Pendulum, Dict[area.name, capacity]]
-
-    def _get_storage_areas(self, area):
-        for child in area.children:
-            if child.strategy is not None and isinstance(child.stratetgy,
-                                                         (StorageStrategy, NightStorageStrategy)):
-                self.storage_Areas[area].add(child)
-
-    def _export_storage_capacity(self):
-        for area, children in self.storage_Areas.items():
-            for market in area.markets:
-                for trade in market.trades:
-                    if trade.seller in children:
-                        self.market_capacities[market.time_slot][trade.seller] -= \
-                            trade.offer.energy
-                    if trade.buyer in children:
-                        self.market_capacities[market.time_slot][trade.buyer] += trade.offer.energy

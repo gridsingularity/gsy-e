@@ -4,6 +4,7 @@ from first import first
 from pendulum.interval import Interval
 
 from d3a.exceptions import MarketException
+from d3a.models.state import LoadState
 from d3a.models.strategy.base import BaseStrategy
 
 
@@ -11,6 +12,7 @@ class LoadHoursStrategy(BaseStrategy):
     def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
                  daily_budget=None):
         super().__init__()
+        self.state = LoadState()
         self.avg_power = avg_power  # Average power in watts
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
@@ -69,23 +71,26 @@ class LoadHoursStrategy(BaseStrategy):
                     [
                         (offer, market) for market in markets
                         for offer in market.sorted_offers
-                        if (
-                            offer.energy <= self.energy_requirement / 1000
-                            and offer.price / offer.energy <= self.max_acceptable_energy_price
-                        )
+                        if offer.price / offer.energy <= self.max_acceptable_energy_price
                     ],
                     key=lambda o: o[0].price / o[0].energy
                 ),
                 default=(None, None)
             )
             if cheapest_offer:
-                self.accept_offer(market, cheapest_offer)
-                self.energy_requirement -= cheapest_offer.energy * 1000
+                max_energy = self.energy_requirement / 1000
+                if cheapest_offer.energy > max_energy:
+                    self.accept_offer(market, cheapest_offer, energy=max_energy)
+                    self.energy_requirement = 0
+                else:
+                    self.accept_offer(market, cheapest_offer)
+                    self.energy_requirement -= cheapest_offer.energy * 1000
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
 
     def event_market_cycle(self):
         if self.area.now.hour in self.active_hours:
+            self.state.record_desired_energy(self.area, self.avg_power)
             energy_per_slot = self.energy_per_slot
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor

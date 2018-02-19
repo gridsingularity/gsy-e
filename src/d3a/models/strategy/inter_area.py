@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import Dict, Set  # noqa
 
-from d3a.exceptions import MarketException
+from d3a.exceptions import MarketException, OfferNotFoundException
 from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
 from d3a.util import make_iaa_name
 
@@ -95,11 +95,12 @@ class IAAEngine:
             if residual_info is not None:
                 # connect residual of the forwarded offer to that of the source offer
                 if trade_source.residual is not None:
-                    res_offer_info = OfferInfo(trade_source.residual, residual_info.forwarded)
-                    self.offered_offers[trade_source.residual.id] = res_offer_info
-                    self.offered_offers[residual_info.forwarded.id] = res_offer_info
-                    self.offer_age[trade_source.residual.id] = residual_info.age
-                    self.ignored_offers.add(trade_source.residual.id)
+                    if trade_source.residual.id not in self.offered_offers:
+                        res_offer_info = OfferInfo(trade_source.residual, residual_info.forwarded)
+                        self.offered_offers[trade_source.residual.id] = res_offer_info
+                        self.offered_offers[residual_info.forwarded.id] = res_offer_info
+                        self.offer_age[trade_source.residual.id] = residual_info.age
+                        self.ignored_offers.add(trade_source.residual.id)
                 else:
                     self.owner.log.error(
                         "Expected residual offer in source market trade {} - deleting "
@@ -107,7 +108,9 @@ class IAAEngine:
                     )
                     self.markets.target.delete_offer(residual_info.forwarded)
 
-            self.offered_offers.pop(offer_info.source_offer.id, None)
+            current_offer_info = self.offered_offers.pop(offer_info.source_offer.id, None)
+            if current_offer_info is not None:
+                self.offered_offers.pop(current_offer_info.target_offer.id, None)
             self.offered_offers.pop(offer_info.target_offer.id, None)
             self.offer_age.pop(offer_info.source_offer.id, None)
             self.traded_offers.add(offer_info.source_offer.id)
@@ -120,10 +123,12 @@ class IAAEngine:
             # Offer was bought in source market by another party
             try:
                 self.markets.target.delete_offer(offer_info.target_offer)
+            except OfferNotFoundException:
+                pass
             except MarketException as ex:
-                self.owner.log.exception("Error deleting InterAreaAgent offer")
-            del self.offered_offers[offer_info.source_offer.id]
-            del self.offered_offers[offer_info.target_offer.id]
+                self.owner.log.error("Error deleting InterAreaAgent offer: {}".format(ex))
+            self.offered_offers.pop(offer_info.source_offer.id, None)
+            self.offered_offers.pop(offer_info.target_offer.id, None)
             self.offer_age.pop(offer_info.source_offer.id, None)
         else:
             raise RuntimeError("Unknown state. Can't happen")
@@ -156,6 +161,9 @@ class IAAEngine:
         elif market == self.markets.source and existing_offer.id in self.offered_offers:
             # an offer in the source market was split - delete the corresponding offer
             # in the target market and forward the new residual offer
+            if new_offer.id in self.ignored_offers:
+                self.ignored_offers.remove(new_offer.id)
+                return
             self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
             offer_info = self.offered_offers[existing_offer.id]
             forwarded = self._forward_offer(new_offer, new_offer.id)

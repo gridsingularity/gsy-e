@@ -137,6 +137,10 @@ def test_market_acct_simple(market: Market):
 
     assert market.traded_energy['A'] == offer.energy
     assert market.traded_energy['B'] == -offer.energy
+    assert market.bought_energy('A') == 0
+    assert market.bought_energy('B') == offer.energy
+    assert market.sold_energy('A') == offer.energy
+    assert market.sold_energy('B') == 0
 
 
 def test_market_acct_multiple(market: Market):
@@ -148,6 +152,10 @@ def test_market_acct_multiple(market: Market):
     assert market.traded_energy['A'] == offer1.energy + offer2.energy == 30
     assert market.traded_energy['B'] == -offer1.energy == -20
     assert market.traded_energy['C'] == -offer2.energy == -10
+    assert market.bought_energy('A') == 0
+    assert market.sold_energy('A') == offer1.energy + offer2.energy == 30
+    assert market.bought_energy('B') == offer1.energy == 20
+    assert market.bought_energy('C') == offer2.energy == 10
 
 
 def test_market_avg_offer_price(market: Market):

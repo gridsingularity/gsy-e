@@ -314,6 +314,12 @@ class Market:
                 pass
         return "\n".join(out)
 
+    def bought_energy(self, buyer):
+        return sum(trade.offer.energy for trade in self.trades if trade.buyer == buyer)
+
+    def sold_energy(self, seller):
+        return sum(trade.offer.energy for trade in self.trades if trade.offer.seller == seller)
+
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['offer_lock']
