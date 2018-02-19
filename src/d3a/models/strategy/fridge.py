@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from d3a.exceptions import MarketException
 from d3a.models.state import FridgeState
 from d3a.models.strategy.base import BaseStrategy
@@ -48,16 +50,18 @@ class FridgeStrategy(BaseStrategy):
                                        * 0.05 * 2)
                 if (
                             (((offer.price / offer.energy) <= self.threshold_price
-                              and self.fridge_temp - cooling_temperature > self.min_fridge_temp
+                              and (self.state.temperature - cooling_temperature >
+                                   self.state.min_temperature
+                                   )
                               )
-                             or self.fridge_temp >= self.max_fridge_temp
+                             or self.state.temperature >= self.state.max_temperature
                              )
                         and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
                 ):
                     try:
                         self.accept_offer(market, offer)
                         self.log.debug("Buying %s", offer)
-                        self.fridge_temp -= cooling_temperature
+                        self.state.temperature -= cooling_temperature
                         self.calc_threshold_price()
                         break
                     except MarketException:
@@ -70,24 +74,24 @@ class FridgeStrategy(BaseStrategy):
                             [offer for market in self.open_spot_markets for
                              offer in market.sorted_offers],
                             key=lambda o: o.price / o.energy)[0]
-                        if self.fridge_temp >= MAX_FRIDGE_TEMP and \
+                        if self.state.temperature >= self.state.max_temperature and \
                                 ((cheapest_offer.price / cheapest_offer.energy) >
                                     self.threshold_price):
                             self.log.critical("Need energy (temp: %.2f) but can't buy",
-                                              self.fridge_temp)
+                                              self.state.temperature)
                             self.log.info("cheapest price is is %s", cheapest_offer.price)
                     except IndexError:
                         self.log.critical("Crap no offers available")
 
     def event_market_cycle(self):
-        self.log.info("Temperature: %.2f", self.fridge_temp)
-        self.temp_history[self.area.current_market.time_slot] = self.fridge_temp
+        self.log.info("Temperature: %.2f", self.state.temperature)
+        self.state.market_cycle(self.area)
         self.open_spot_markets = list(self.area.markets.values())
 
     def event_data_received(self, data: Dict[str, Any]):
-        # self.fridge_temp += data.get("temperature_change", 0)
+        # self.state.temperature += data.get("temperature_change", 0)
         if "temperature" in data:
-            self.fridge_temp += data.get("temperature")
+            self.state.temperature += data.get("temperature")
 
     def calc_threshold_price(self):
 
@@ -143,4 +147,3 @@ class FridgeStrategy(BaseStrategy):
                            )
 
         self.threshold_price = threshold_price
-        
