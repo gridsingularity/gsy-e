@@ -5,8 +5,9 @@ from d3a.area_serializer import area_to_string, area_from_string
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
+from d3a.models.leaves import Fridge, PV
+from d3a.models.strategy.fridge import FridgeStrategy, DEFAULT_RISK
 from d3a.models.budget_keeper import BudgetKeeper
-from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.simple import OfferStrategy
 
@@ -73,6 +74,41 @@ def test_appliance_roundtrip(appliance_fixture):
     recovered = area_from_string(appliance_fixture)
     assert recovered.children[1].appliance.initially_on
     assert not recovered.children[0].appliance.is_on
+
+
+def test_leaf_deserialization():
+    recovered = area_from_string(
+        '''{
+             "name": "house",
+             "children":[
+                 {"name": "fridge", "type": "Fridge"},
+                 {"name": "pv", "type": "PV", "panel_count": 4, "risk": 50}
+             ]
+           }
+        '''
+    )
+    fridge, pv = recovered.children
+    assert isinstance(fridge, Fridge) and isinstance(pv, PV)
+    assert pv.strategy.panel_count == 4 and pv.strategy.risk == 50
+    assert fridge.strategy.risk == DEFAULT_RISK
+
+
+@pytest.fixture
+def fixture_with_leaves():
+    area = Area("house", [Fridge("fridge"), PV("pv", panel_count=4, risk=10)])
+    return area_to_string(area)
+
+
+def test_leaf_serialization(fixture_with_leaves):
+    description = json.loads(fixture_with_leaves)
+    assert description['children'][0]['type'] == 'Fridge'
+    assert description['children'][1]['panel_count'] == 4
+
+
+def test_roundtrip_with_leaf(fixture_with_leaves):
+    recovered = area_from_string(fixture_with_leaves)
+    assert isinstance(recovered.children[0], Fridge)
+    assert isinstance(recovered.children[1].strategy, PVStrategy)
 
 
 @pytest.fixture
