@@ -143,48 +143,4 @@ class FridgeStrategy(BaseStrategy):
                            )
 
         self.threshold_price = threshold_price
-        # Here starts the logic if energy should be bought
-        for market in self.open_spot_markets:
-            for offer in market.sorted_offers:
-                # offer.energy * 1000 is needed to get the energy in Wh
-                # 0.05 is the temperature decrease per cooling period and minimal needed energy
-                # *2 is needed because we need to cool and equalize the increase
-                #  of the temperature (see event_market_cycle) as well
-                cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY)
-                                       * 0.05 * 2)
-                if (
-                            (((offer.price / offer.energy) <= threshold_price
-                              and self.state.temperature - cooling_temperature
-                              > self.state.min_temperature
-                              )
-                             or self.state.temperature >= self.state.max_temperature
-                             )
-                        and (offer.energy * 1000) >= FRIDGE_MIN_NEEDED_ENERGY
-                ):
-                    try:
-                        self.accept_offer(market, offer)
-                        self.log.debug("Buying %s", offer)
-                        self.state.temperature -= cooling_temperature
-                        break
-                    except MarketException:
-                        # Offer already gone etc., try next one.
-                        self.log.exception("Couldn't buy")
-                        continue
-        else:
-            try:
-                cheapest_offer = sorted(
-                    [offer for market in self.open_spot_markets
-                     for offer in market.sorted_offers],
-                    key=lambda o: o.price / o.energy)[0]
-                if self.state.temperature >= self.state.max_temperature and \
-                        (cheapest_offer.price / cheapest_offer.energy) > threshold_price:
-                    self.log.critical("Need energy (temp: %.2f) but can't buy",
-                                      self.state.temperature)
-                    self.log.info("cheapest price is is %s", cheapest_offer.price)
-            except IndexError:
-                self.log.critical("Crap no offers available")
-
-    def event_market_cycle(self):
-        self.log.info("Temperature: %.2f", self.state.temperature)
-        self.state.market_cycle(self.area)
-        self.open_spot_markets = list(self.area.markets.values())
+        
