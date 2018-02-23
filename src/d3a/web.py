@@ -14,7 +14,8 @@ from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
 from d3a.simulation import Simulation, page_lock
-from d3a.util import simulation_info
+from d3a.stats import recursive_current_markets, total_avg_trade_price
+from d3a.util import make_iaa_name, simulation_info
 
 
 _NO_VALUE = {
@@ -272,6 +273,40 @@ def _api_app(simulation: Simulation):
             for type_, (time, market)
             in _market_progression(area)
         ]
+
+    def _get_child_traded_energy(market, child):
+        return market.traded_energy.get(
+            child.name,
+            market.traded_energy.get(make_iaa_name(child), '-')
+        )
+
+    @app.route("/<area_slug>/results")
+    def results(area_slug):
+        area = _get_area(area_slug)
+        market = area.current_market
+        if market is None:
+            return {'error': 'no results yet'}
+        return {
+            'summary': {
+                'avg_trade_price': market.avg_trade_price,
+                'max_trade_price': market.max_trade_price,
+                'min_trade_price': market.min_trade_price
+            },
+            'balance': {
+                child.slug: market.total_earned(child.slug) - market.total_spent(child.slug)
+                for child in area.children
+            },
+            'energy_balance': {
+                child.slug: _get_child_traded_energy(market, child)
+                for child in area.children
+            },
+            'slots': [
+                {
+                    'volume': sum(trade.offer.energy for trade in slot_market.trades),
+                }
+                for slot_market in area.past_markets.values()
+            ]
+        }
 
     @app.after_request
     def modify_server_header(response):
