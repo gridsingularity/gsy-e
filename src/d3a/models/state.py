@@ -24,7 +24,8 @@ class LoadState:
         self.desired_energy = defaultdict(lambda: 0)
 
     def record_desired_energy(self, area, energy):
-        self.desired_energy[area.current_market.time_slot] = energy
+        time_slot = area.next_market.time_slot
+        self.desired_energy[time_slot] = energy
 
 
 class FridgeState:

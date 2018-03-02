@@ -102,6 +102,14 @@ class Area:
             return None
 
     @property
+    def next_market(self) -> Optional[Market]:
+        """Returns the 'current' market (i.e. the one currently 'running')"""
+        try:
+            return list(self.markets.values())[0]
+        except IndexError:
+            return None
+
+    @property
     def current_slot(self):
         return self.current_tick // self.config.ticks_per_slot
 
