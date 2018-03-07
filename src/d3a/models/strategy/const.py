@@ -20,7 +20,7 @@ FRIDGE_MIN_NEEDED_ENERGY = 10
 
 # ENERGY STORAGE SETTINGS
 # Unit is kWh
-STORAGE_CAPACITY = 5.0
+STORAGE_CAPACITY = 1.2
 
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent
