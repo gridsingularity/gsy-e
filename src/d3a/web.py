@@ -308,6 +308,15 @@ def _api_app(simulation: Simulation):
             ]
         }
 
+    @app.route("/<area_slug>/tree-summary")
+    def tree_summary(area_slug):
+        markets = list(recursive_current_markets(_get_area(area_slug)))
+        return {
+            "min_trade_price": min(market.min_trade_price for market in markets),
+            "max_trade_price": max(market.max_trade_price for market in markets),
+            "avg_trade_price": total_avg_trade_price(markets)
+        }
+
     @app.after_request
     def modify_server_header(response):
         response.headers['Server'] = "d3a/{}".format(d3a.VERSION)
