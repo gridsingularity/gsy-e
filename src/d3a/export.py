@@ -82,17 +82,18 @@ class ExportLeafData(ExportData):
         super(ExportLeafData, self).__init__(area)
 
     def labels(self):
-        return ['slot', 'energy balance [kWh]'] + self._specific_labels()
+        return ['slot', 'energy traded [kWh]'] + self._specific_labels()
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
-            return ['bought [kWh]', 'sold [kWh]', 'offered [kWh]', 'used [kWh]', 'charge [%]']
+            return ['bought [kWh]', 'sold [kWh]', 'energy balance / offered [kWh]', 'used [kWh]',
+                    'charge [%]']
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
         elif isinstance(self.area.strategy, PVStrategy):
-            return ['produced [kWh]', 'not sold [kWh]', 'forecast [kWh]']
+            return ['produced to trade [kWh]', 'not sold [kWh]', 'forecast / generation [kWh]']
         return []
 
     def rows(self):
