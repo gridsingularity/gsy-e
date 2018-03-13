@@ -123,7 +123,7 @@ class ExportLeafData(ExportData):
             return [produced,
                     round(produced - self._traded(market), 4),
                     self.area.strategy.energy_production_forecast[slot] *
-                    self.area.strategy.panel_count
+                    self.area.strategy.panel_count * 0.25
                     ]
         return []
 
