@@ -125,8 +125,10 @@ class ExportLeafData(ExportData):
         elif isinstance(self.area.strategy, PVStrategy):
             produced = market.actual_energy_agg.get(self.area.name, 0)
             return [produced,
-                    produced - self._traded(market),
-                    self.area.strategy.energy_production_forecast[slot]]
+                    round(produced - self._traded(market), 4),
+                    self.area.strategy.energy_production_forecast[slot] *
+                    self.area.strategy.panel_count * 0.25
+                    ]
         return []
 
 
