@@ -2,6 +2,7 @@ import csv
 import json
 import logging
 import pathlib
+from pendulum import Interval
 
 from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
@@ -127,7 +128,8 @@ class ExportLeafData(ExportData):
             return [produced,
                     round(produced - self._traded(market), 4),
                     self.area.strategy.energy_production_forecast[slot] *
-                    self.area.strategy.panel_count * 0.25
+                    self.area.strategy.panel_count *
+                    (self.area.config.slot_length / Interval(hours=1))
                     ]
         return []
 
