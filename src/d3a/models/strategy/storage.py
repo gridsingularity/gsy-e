@@ -1,8 +1,7 @@
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, StorageSellingStrategy, \
-    ACTIVE_STORAGE_SELLING_STRATEGY
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
 
 
 class StorageStrategy(BaseStrategy):
@@ -81,22 +80,15 @@ class StorageStrategy(BaseStrategy):
         risk_dependent_selling_price = (
             min_selling_price * (1.1 - (0.1 * (self.risk / MAX_RISK)))
         )
-        most_expensive_market = None
-        if ACTIVE_STORAGE_SELLING_STRATEGY == StorageSellingStrategy.MOST_EXPENSIVE_MARKET:
-            # Find the most expensive offer out of the list of cheapest offers
-            # in currently open markets
+        # Find the most expensive offer out of the list of cheapest offers
+        # in currently open markets
+        try:
+            most_expensive_market = self.area.market_with_most_expensive_offer
+        except IndexError:
             try:
-                expensive_offers = list(self.area.cheapest_offers)[-1]
-                most_expensive_market = expensive_offers.market
-            except IndexError:
-                try:
-                    most_expensive_market = next(iter(self.area.markets.values()))
-                except StopIteration:
-                    return
-        elif ACTIVE_STORAGE_SELLING_STRATEGY == StorageSellingStrategy.MOST_RECENT_MARKET:
-            most_expensive_market = list(self.area.markets.values())[0]
-        else:
-            assert False, "Invalid storage selling strategy"
+                most_expensive_market = next(iter(self.area.markets.values()))
+            except StopIteration:
+                return
         # If no energy is passed, try to sell all the Energy left in the storage
         if energy is None:
             energy = self.state.used_storage

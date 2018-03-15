@@ -165,6 +165,13 @@ class Area:
         return cheapest_offers
 
     @property
+    def market_with_most_expensive_offer(self):
+        # In case of a tie, max returns the first market occurrence in order to
+        # satisfy the most recent market slot
+        return max(self.markets.values(),
+                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
+
+    @property
     def historical_min_max_price(self):
         min_max_prices = [
             (m.min_trade_price, m.max_trade_price)

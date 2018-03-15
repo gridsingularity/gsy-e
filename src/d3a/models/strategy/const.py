@@ -1,6 +1,3 @@
-from enum import Enum
-
-
 # GENERAL SETTINGS
 # Unit is percentage
 MAX_RISK = 100
@@ -26,14 +23,6 @@ FRIDGE_MIN_NEEDED_ENERGY = 10
 # ENERGY STORAGE SETTINGS
 # Unit is kWh
 STORAGE_CAPACITY = 1.2
-
-
-class StorageSellingStrategy(Enum):
-    MOST_EXPENSIVE_MARKET = 1
-    MOST_RECENT_MARKET = 2
-
-
-ACTIVE_STORAGE_SELLING_STRATEGY = StorageSellingStrategy.MOST_EXPENSIVE_MARKET
 
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent
