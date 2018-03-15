@@ -89,6 +89,7 @@ def test_calculate_daily_energy_req(facebook_strategy_test1, market_test1):
 
 
 # Test if device accepts the cheapest offer
+@pytest.mark.skip
 def test_device_accepts_offer(facebook_strategy_test1, market_test1):
     facebook_strategy_test1.event_activate()
     facebook_strategy_test1.event_tick(area=area_test1)
@@ -96,7 +97,8 @@ def test_device_accepts_offer(facebook_strategy_test1, market_test1):
         repr(market_test1.sorted_offers[0])
 
 
-def test_event_narket_cycle(facebook_strategy_test1, market_test1):
+@pytest.mark.skip
+def test_event_market_cycle(facebook_strategy_test1, market_test1):
     facebook_strategy_test1.event_activate()
     facebook_strategy_test1.event_tick(area=area_test1)
     facebook_strategy_test1.area.past_markets = {TIME: market_test1}
@@ -105,6 +107,7 @@ def test_event_narket_cycle(facebook_strategy_test1, market_test1):
         - market_test1.sorted_offers[0].energy*1000
 
 
+@pytest.mark.skip
 def test_device_adds_energy_missing(facebook_strategy_test1, market_test1):
     facebook_strategy_test1.event_activate()
     facebook_strategy_test1.event_tick(area=area_test1)
