@@ -38,6 +38,10 @@ class FakeArea:
             timedelta(hours=10) + self.config.tick_length * self.current_tick
         )
 
+    @property
+    def next_market(self):
+        return FakeMarket(15)
+
 
 class FakeMarket:
     def __init__(self, count):
