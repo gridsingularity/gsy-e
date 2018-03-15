@@ -83,8 +83,7 @@ class StorageStrategy(BaseStrategy):
         # Find the most expensive offer out of the list of cheapest offers
         # in currently open markets
         try:
-            expensive_offers = list(self.area.cheapest_offers)[-1]
-            most_expensive_market = expensive_offers.market
+            most_expensive_market = self.area.market_with_most_expensive_offer
         except IndexError:
             try:
                 most_expensive_market = next(iter(self.area.markets.values()))

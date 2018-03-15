@@ -165,6 +165,13 @@ class Area:
         return cheapest_offers
 
     @property
+    def market_with_most_expensive_offer(self):
+        # In case of a tie, max returns the first market occurrence in order to
+        # satisfy the most recent market slot
+        return max(self.markets.values(),
+                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
+
+    @property
     def historical_min_max_price(self):
         min_max_prices = [
             (m.min_trade_price, m.max_trade_price)
@@ -234,7 +241,7 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in (self.config.slot_length * i for i in range(self.config.market_count - 1)):
+        for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
             timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots
