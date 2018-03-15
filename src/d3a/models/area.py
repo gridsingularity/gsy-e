@@ -226,7 +226,7 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in (self.config.slot_length * i for i in range(self.config.market_count - 1)):
+        for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
             timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots
