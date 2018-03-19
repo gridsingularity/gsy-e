@@ -4,7 +4,7 @@ from logging import getLogger
 
 import time
 from pathlib import Path
-from threading import Event, Thread
+from threading import Event, Thread, Lock
 
 import dill
 from pendulum import Pendulum
@@ -21,8 +21,10 @@ from d3a.models.config import SimulationConfig
 from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 
-
 log = getLogger(__name__)
+
+
+page_lock = Lock()
 
 
 class _SimulationInterruped(Exception):
@@ -162,7 +164,8 @@ class Simulation:
                                 slot_no + 1,
                                 (tick_no + 1) / config.ticks_per_slot * 100,
                             )
-                            self.area.tick()
+                            with page_lock:
+                                self.area.tick()
                             tick_length = time.monotonic() - tick_start
                             if self.slowdown and tick_length < tick_lengths_s:
                                 # Simulation runs faster than real time but a slowdown was
