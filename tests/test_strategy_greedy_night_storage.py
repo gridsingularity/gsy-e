@@ -49,12 +49,12 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            Offer('id', 15, 1, 'A', self),  # Energyprice is 15
-            Offer('id', 32, 2, 'A', self),  # Energyprice is 16
-            Offer('id', 51, 3, 'A', self),  # Energyprice is 17
+            Offer('id', 3, 0.2, 'A', self),  # Energyprice is 15
+            Offer('id', 6, 0.4, 'A', self),  # Energyprice is 16
+            Offer('id', 10, 0.6, 'A', self),  # Energyprice is 17
             # This offer should be ignored because the seller equals the buyer
-            Offer('id', 1, 100, 'FakeArea', self),
-            Offer('id', 72, 4, 'A', self)  # Energyprice is 18
+            Offer('id', 0.2, 20, 'FakeArea', self),
+            Offer('id', 13, 0.8, 'A', self)  # Energyprice is 18
         ]
         return offers
 
