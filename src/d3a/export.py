@@ -116,6 +116,7 @@ class ExportLeafData(ExportData):
             stored = '-' if charge == '-' else 0.01 * charge * s.capacity
             return [market.bought_energy(self.area.name),
                     market.sold_energy(self.area.name),
+                    s.charge_history_kWh[slot],
                     s.offered_history[slot],
                     s.used_history[slot],
                     charge,
