@@ -320,6 +320,12 @@ class Market:
     def sold_energy(self, seller):
         return sum(trade.offer.energy for trade in self.trades if trade.offer.seller == seller)
 
+    def total_spent(self, buyer):
+        return sum(trade.offer.price for trade in self.trades if trade.buyer == buyer)
+
+    def total_earned(self, seller):
+        return sum(trade.offer.price for trade in self.trades if trade.seller == seller)
+
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['offer_lock']
