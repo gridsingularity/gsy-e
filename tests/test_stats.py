@@ -1,7 +1,7 @@
 import pytest
 
 from d3a.models.market import Trade
-from d3a.statistics import recursive_current_markets, total_avg_trade_price
+from d3a.stats import recursive_current_markets, total_avg_trade_price
 
 
 class FakeArea:
