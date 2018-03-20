@@ -1,5 +1,5 @@
 import traceback
-from functools import lru_cache
+from functools import lru_cache, wraps
 from itertools import chain, repeat
 from operator import itemgetter
 from threading import Thread
@@ -13,7 +13,7 @@ from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
-from d3a.simulation import Simulation
+from d3a.simulation import Simulation, page_lock
 from d3a.util import simulation_info
 
 
@@ -44,11 +44,20 @@ def start_web(interface, port, simulation: Simulation):
     return t
 
 
+def lock_flask_endpoint(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        with page_lock:
+            return f(*args, **kwargs)
+    return wrapped
+
+
 def _html_app(area):
     app = Flask(__name__)
     app.jinja_env.globals.update(id=id)
 
     @app.route("/")
+    @lock_flask_endpoint
     def index():
         return render_template("index.html", root_area=area)
 
@@ -66,6 +75,7 @@ def _api_app(simulation: Simulation):
             abort(404)
 
     @app.route("/")
+    @lock_flask_endpoint
     def index():
         return {
             'simulation': simulation_info(simulation),
@@ -73,6 +83,7 @@ def _api_app(simulation: Simulation):
         }
 
     @app.route("/pause", methods=['GET', 'POST'])
+    @lock_flask_endpoint
     def pause():
         changed = False
         if request.method == 'POST':
@@ -80,15 +91,18 @@ def _api_app(simulation: Simulation):
         return {'paused': simulation.paused, 'changed': changed}
 
     @app.route("/reset", methods=['POST'])
+    @lock_flask_endpoint
     def reset():
         simulation.reset()
         return {'success': 'ok'}
 
     @app.route("/save", methods=['POST'])
+    @lock_flask_endpoint
     def save():
         return {'save_file': str(simulation.save_state().resolve())}
 
     @app.route("/slowdown", methods=['GET', 'POST'])
+    @lock_flask_endpoint
     def slowdown():
         changed = False
         if request.method == 'POST':
@@ -110,6 +124,7 @@ def _api_app(simulation: Simulation):
         return {'slowdown': simulation.slowdown, 'changed': changed}
 
     @app.route("/<area_slug>")
+    @lock_flask_endpoint
     def area(area_slug):
         area = _get_area(area_slug)
         return {
@@ -150,6 +165,7 @@ def _api_app(simulation: Simulation):
         }
 
     @app.route("/<area_slug>/trigger/<trigger_name>", methods=['POST'])
+    @lock_flask_endpoint
     def area_trigger(area_slug, trigger_name):
         area = _get_area(area_slug)
         triggers = area.available_triggers
@@ -169,6 +185,7 @@ def _api_app(simulation: Simulation):
             )
 
     @app.route("/<area_slug>/market/<market_time>")
+    @lock_flask_endpoint
     def market(area_slug, market_time):
         area = _get_area(area_slug)
         market, type_ = _get_market(area, market_time)
@@ -226,6 +243,7 @@ def _api_app(simulation: Simulation):
         }
 
     @app.route("/<area_slug>/markets")
+    @lock_flask_endpoint
     def markets(area_slug):
         area = _get_area(area_slug)
         return [
