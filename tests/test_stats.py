@@ -20,12 +20,13 @@ class FakeMarket:
 
 
 class FakeOffer:
-    def __init__(self, price):
+    def __init__(self, price, energy):
         self.price = price
+        self.energy = energy
 
 
-def _trade(price, buyer):
-    return Trade('id', 0, FakeOffer(price), 'seller', buyer, None)
+def _trade(price, buyer, energy=1):
+    return Trade('id', 0, FakeOffer(price, energy), 'seller', buyer, None)
 
 
 @pytest.fixture
@@ -46,6 +47,7 @@ def test_recursive_current_markets(area):
 
 @pytest.fixture
 def markets():
+    """Example with all equal energy prices"""
     return (
         FakeMarket((_trade(5, 'Fridge'), _trade(3, 'PV'), _trade(10, 'IAA 1'))),
         FakeMarket((_trade(1, 'Storage'), _trade(4, 'Fridge'), _trade(6, 'Fridge'),
@@ -54,5 +56,15 @@ def markets():
     )
 
 
-def test_total_avg_trade_price(markets):
+@pytest.fixture
+def markets2():
+    """Example with different energy prices to test weighted averaging"""
+    return(
+        FakeMarket((_trade(11, 'Fridge', 11), _trade(4, 'Storage', 4))),
+        FakeMarket((_trade(3, 'ECar', 1), _trade(9, 'Fridge', 3), _trade(3, 'Storage', 1)))
+    )
+
+
+def test_total_avg_trade_price(markets, markets2):
     assert total_avg_trade_price(markets) == 3.5
+    assert total_avg_trade_price(markets2) == 1.5
