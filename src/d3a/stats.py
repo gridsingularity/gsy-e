@@ -18,6 +18,11 @@ def primary_trades(markets):
     # TODO find a less hacky way to exclude trades with IAAs as buyers
 
 
+def primary_unit_prices(markets):
+    for trade in primary_trades(markets):
+        yield trade.offer.price / trade.offer.energy
+
+
 def total_avg_trade_price(markets):
     return (
         sum(trade.offer.price for trade in primary_trades(markets)) /

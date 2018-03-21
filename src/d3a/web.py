@@ -14,9 +14,8 @@ from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
 from d3a.simulation import Simulation, page_lock
-from d3a.stats import recursive_current_markets, total_avg_trade_price
+from d3a.stats import primary_unit_prices, recursive_current_markets, total_avg_trade_price
 from d3a.util import make_iaa_name, simulation_info
-
 
 _NO_VALUE = {
     'min': None,
@@ -312,8 +311,8 @@ def _api_app(simulation: Simulation):
     def tree_summary(area_slug):
         markets = list(recursive_current_markets(_get_area(area_slug)))
         return {
-            "min_trade_price": min(market.min_trade_price for market in markets),
-            "max_trade_price": max(market.max_trade_price for market in markets),
+            "min_trade_price": min(primary_unit_prices(markets)),
+            "max_trade_price": max(primary_unit_prices(markets)),
             "avg_trade_price": total_avg_trade_price(markets)
         }
 
