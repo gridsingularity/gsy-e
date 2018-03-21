@@ -1,7 +1,7 @@
 import pytest
 
 from d3a.models.market import Trade
-from d3a.stats import recursive_current_markets, total_avg_trade_price
+from d3a.stats import primary_unit_prices, recursive_current_markets, total_avg_trade_price
 
 
 class FakeArea:
@@ -60,7 +60,7 @@ def markets():
 def markets2():
     """Example with different energy prices to test weighted averaging"""
     return(
-        FakeMarket((_trade(11, 'Fridge', 11), _trade(4, 'Storage', 4))),
+        FakeMarket((_trade(11, 'Fridge', 11), _trade(4, 'Storage', 4), _trade(1, 'IAA 1', 10))),
         FakeMarket((_trade(3, 'ECar', 1), _trade(9, 'Fridge', 3), _trade(3, 'Storage', 1)))
     )
 
@@ -68,3 +68,9 @@ def markets2():
 def test_total_avg_trade_price(markets, markets2):
     assert total_avg_trade_price(markets) == 3.5
     assert total_avg_trade_price(markets2) == 1.5
+
+
+def test_primary_unit_prices(markets2):
+    prices = list(primary_unit_prices(markets2))
+    assert min(prices) == 1
+    assert max(prices) == 3
