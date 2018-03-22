@@ -1,7 +1,3 @@
-from itertools import chain
-from statistics import mean
-
-
 def recursive_current_markets(area):
     if area.current_market is not None:
         yield area.current_market
@@ -9,16 +5,26 @@ def recursive_current_markets(area):
             yield from recursive_current_markets(child)
 
 
-def total_avg_trade_price(markets):
+def primary_trades(markets):
     """
-    Average trade price over all trades in a set of markets. We want
-    to avoid counting trades between different areas multiple times
+    We want to avoid counting trades between different areas multiple times
     (as they are represented as a chain of trades with IAAs). To achieve
     this, we skip all trades where the buyer is an IAA.
     """
-    return mean(
-        trade.offer.price
-        for trade in chain(*(market.trades for market in markets))
-        if trade.buyer[:4] != "IAA "
-    )
+    for market in markets:
+        for trade in market.trades:
+            if trade.buyer[:4] != 'IAA ':
+                yield trade
     # TODO find a less hacky way to exclude trades with IAAs as buyers
+
+
+def primary_unit_prices(markets):
+    for trade in primary_trades(markets):
+        yield trade.offer.price / trade.offer.energy
+
+
+def total_avg_trade_price(markets):
+    return (
+        sum(trade.offer.price for trade in primary_trades(markets)) /
+        sum(trade.offer.energy for trade in primary_trades(markets))
+    )
