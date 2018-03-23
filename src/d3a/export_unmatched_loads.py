@@ -13,7 +13,7 @@ def get_unmatched_loads_from_house_area(area):
     for current_slot, market in area.past_markets.items():
         # Add a dictionary entry for the current hour, that will accumulate timeslot data.
         # Add placeholder dictionary for devices.
-        if current_slot not in current_hourly_data:
+        if current_slot.hour not in current_hourly_data.keys():
             current_hourly_data[current_slot.hour] = {}
             current_hourly_data[current_slot.hour]["devices"] = {}
         for child in area.children:
@@ -23,7 +23,8 @@ def get_unmatched_loads_from_house_area(area):
                 desired_energy = child.strategy.energy
             else:
                 continue
-            current_hourly_data[current_slot.hour]["devices"][child.slug] = 0
+            if child.slug not in current_hourly_data[current_slot.hour]["devices"].keys():
+                current_hourly_data[current_slot.hour]["devices"][child.slug] = 0
             traded_energy = child.markets[current_slot].traded_energy[child.name] \
                 if current_slot in child.markets else 0.0
             deficit = traded_energy - desired_energy

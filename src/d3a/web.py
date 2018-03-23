@@ -309,6 +309,7 @@ def _api_app(simulation: Simulation):
         }
 
     @app.route("/unmatched-loads", methods=['GET'])
+    @lock_flask_endpoint
     def unmatched_loads():
         return {"unmatched_loads": final_export_unmatched_loads(simulation.area)}
 
