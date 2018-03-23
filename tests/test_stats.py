@@ -7,10 +7,10 @@ from d3a.stats import (
 
 
 class FakeArea:
-    def __init__(self, name, children=None, markets=None):
+    def __init__(self, name, children=None, past_markets=None):
         self.name = name
         self.children = children
-        self.markets = markets
+        self.past_markets = past_markets
 
     @property
     def current_market(self):
@@ -85,17 +85,17 @@ def grid():
     return FakeArea('grid', children=[
         FakeArea('house1',
                  children=[FakeArea('fridge'), FakeArea('pv')],
-                 markets={1: FakeMarket((_trade(2, 'fridge', 2, 'pv'),
-                                         _trade(3, 'fridge', 1, 'iaa'))),
-                          2: FakeMarket((_trade(1, 'fridge', 2, 'pv'),))}),
+                 past_markets={1: FakeMarket((_trade(2, 'fridge', 2, 'pv'),
+                                              _trade(3, 'fridge', 1, 'iaa'))),
+                               2: FakeMarket((_trade(1, 'fridge', 2, 'pv'),))}),
         FakeArea('house2',
                  children=[FakeArea('e-car')],
-                 markets={1: FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
-                                        _trade(1, 'e-car', 8, 'iaa'),
-                                        _trade(3, 'iaa', 5, 'e-car'))),
-                          2: FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))}),
+                 past_markets={1: FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
+                                             _trade(1, 'e-car', 8, 'iaa'),
+                                             _trade(3, 'iaa', 5, 'e-car'))),
+                               2: FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))}),
         FakeArea('commercial')
-    ], markets={
+    ], past_markets={
         1: FakeMarket((_trade(2, 'house2', 12, 'commercial'),)),
         2: FakeMarket((_trade(1, 'house2', 1, 'commercial'),))
     })

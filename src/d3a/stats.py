@@ -40,7 +40,7 @@ def energy_bills(area, from_slot=None, to_slot=None):
         return None
     result = {child.name: dict(bought=0.0, sold=0.0, spent=0.0, earned=0.0)
               for child in area.children}
-    for slot, market in area.markets.items():
+    for slot, market in area.past_markets.items():
         if (from_slot is None or slot >= from_slot) and (to_slot is None or slot < to_slot):
             for trade in market.trades:
                 if trade.buyer in result:
@@ -50,7 +50,7 @@ def energy_bills(area, from_slot=None, to_slot=None):
                     result[trade.offer.seller]['sold'] += trade.offer.energy
                     result[trade.offer.seller]['earned'] += trade.offer.price
     for child in area.children:
-        child_result = energy_bills(child)
+        child_result = energy_bills(child, from_slot, to_slot)
         if child_result is not None:
             result[child.name]['children'] = child_result
     return result

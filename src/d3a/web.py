@@ -326,7 +326,26 @@ def _api_app(simulation: Simulation):
 
     @app.route("/<area_slug>/bills")
     def bills(area_slug):
-        return energy_bills(_get_area(area_slug))
+        area = _get_area(area_slug)
+
+        def slot_query_param(name):
+            if name in request.args:
+                try:
+                    return pendulum.parse(request.args[name])
+                except pendulum.parsing.exceptions.ParserError:
+                    area.log.error(
+                        'Could not parse timestamp %s, using default for bill computation' %
+                        request.args[name])
+            return None
+
+        from_slot = slot_query_param('from')
+        to_slot = slot_query_param('to')
+        result = energy_bills(area, from_slot, to_slot)
+        if from_slot:
+            result['from'] = str(from_slot)
+        if to_slot:
+            result['to'] = str(to_slot)
+        return result
 
     @app.after_request
     def modify_server_header(response):
