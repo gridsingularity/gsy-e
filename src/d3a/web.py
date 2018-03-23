@@ -14,7 +14,9 @@ from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
 from d3a.simulation import Simulation, page_lock
-from d3a.stats import primary_unit_prices, recursive_current_markets, total_avg_trade_price
+from d3a.stats import (
+    energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
+)
 from d3a.util import make_iaa_name, simulation_info
 from d3a.export_unmatched_loads import export_unmatched_loads
 
@@ -321,6 +323,10 @@ def _api_app(simulation: Simulation):
             "max_trade_price": max(primary_unit_prices(markets)),
             "avg_trade_price": total_avg_trade_price(markets)
         }
+
+    @app.route("/<area_slug>/bills")
+    def bills(area_slug):
+        return energy_bills(_get_area(area_slug))
 
     @app.after_request
     def modify_server_header(response):
