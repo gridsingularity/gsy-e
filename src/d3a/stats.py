@@ -1,6 +1,3 @@
-from itertools import islice
-
-
 def recursive_current_markets(area):
     if area.current_market is not None:
         yield area.current_market
@@ -33,7 +30,7 @@ def total_avg_trade_price(markets):
     )
 
 
-def bills(area, from_slot=1, to_slot=None):
+def energy_bills(area, from_slot=None, to_slot=None):
     """
     Return a bill for each of area's children with total energy bought
     and sold (in kWh) and total money earned and spent (in cents).
@@ -41,18 +38,19 @@ def bills(area, from_slot=1, to_slot=None):
     """
     if not area.children:
         return None
-    result = {child.slug: dict(bought=0.0, sold=0.0, spent=0.0, earned=0.0)
+    result = {child.name: dict(bought=0.0, sold=0.0, spent=0.0, earned=0.0)
               for child in area.children}
-    for market in islice(area.markets, from_slot-1, to_slot):
-        for trade in market.trades:
-            if trade.buyer in result:
-                result[trade.buyer]['bought'] += trade.offer.energy
-                result[trade.buyer]['spent'] += trade.offer.price
-            if trade.offer.seller in result:
-                result[trade.offer.seller]['sold'] += trade.offer.energy
-                result[trade.offer.seller]['earned'] += trade.offer.price
+    for slot, market in area.markets.items():
+        if (from_slot is None or slot >= from_slot) and (to_slot is None or slot < to_slot):
+            for trade in market.trades:
+                if trade.buyer in result:
+                    result[trade.buyer]['bought'] += trade.offer.energy
+                    result[trade.buyer]['spent'] += trade.offer.price
+                if trade.offer.seller in result:
+                    result[trade.offer.seller]['sold'] += trade.offer.energy
+                    result[trade.offer.seller]['earned'] += trade.offer.price
     for child in area.children:
-        child_result = bills(child)
+        child_result = energy_bills(child)
         if child_result is not None:
-            result[child.slug]['children'] = child_result
+            result[child.name]['children'] = child_result
     return result

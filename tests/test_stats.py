@@ -1,7 +1,9 @@
 import pytest
 
 from d3a.models.market import Trade
-from d3a.stats import bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
+from d3a.stats import (
+    energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
+)
 
 
 class FakeArea:
@@ -13,10 +15,6 @@ class FakeArea:
     @property
     def current_market(self):
         return 'market %s' % self.name if self.children else None
-
-    @property
-    def slug(self):
-        return self.name
 
 
 class FakeMarket:
@@ -87,24 +85,24 @@ def grid():
     return FakeArea('grid', children=[
         FakeArea('house1',
                  children=[FakeArea('fridge'), FakeArea('pv')],
-                 markets=[FakeMarket((_trade(2, 'fridge', 2, 'pv'),
-                                      _trade(3, 'fridge', 1, 'iaa'))),
-                          FakeMarket((_trade(1, 'fridge', 2, 'pv'),))]),
+                 markets={1: FakeMarket((_trade(2, 'fridge', 2, 'pv'),
+                                         _trade(3, 'fridge', 1, 'iaa'))),
+                          2: FakeMarket((_trade(1, 'fridge', 2, 'pv'),))}),
         FakeArea('house2',
                  children=[FakeArea('e-car')],
-                 markets=[FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
-                                      _trade(1, 'e-car', 8, 'iaa'),
-                                      _trade(3, 'iaa', 5, 'e-car'))),
-                          FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))]),
+                 markets={1: FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
+                                        _trade(1, 'e-car', 8, 'iaa'),
+                                        _trade(3, 'iaa', 5, 'e-car'))),
+                          2: FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))}),
         FakeArea('commercial')
-    ], markets=[
-        FakeMarket((_trade(2, 'house2', 12, 'commercial'),)),
-        FakeMarket((_trade(1, 'house2', 1, 'commercial'),))
-    ])
+    ], markets={
+        1: FakeMarket((_trade(2, 'house2', 12, 'commercial'),)),
+        2: FakeMarket((_trade(1, 'house2', 1, 'commercial'),))
+    })
 
 
-def test_bills(grid):
-    result = bills(grid)
+def test_energy_bills(grid):
+    result = energy_bills(grid)
     assert result['house2']['bought'] == result['commercial']['sold'] == 13
     assert result['house2']['spent'] == result['commercial']['earned'] == 3
     assert result['commercial']['spent'] == result['commercial']['bought'] == 0
