@@ -13,8 +13,11 @@ def _calculate_hour_stats_for_devices(hour_data, area, current_slot):
             desired_energy = child.strategy.energy
         else:
             continue
-        traded_energy = child.markets[current_slot].traded_energy[child.name] \
-            if current_slot in child.markets else 0.0
+        traded_energy = \
+            child.past_markets[current_slot].traded_energy[child.name] \
+            if (current_slot in child.past_markets) and \
+               (child.name in child.past_markets[current_slot].traded_energy) \
+            else 0.0
         deficit = traded_energy - desired_energy
         if deficit < 0.0:
             # Get the hour data entry for this hour, or create an empty one if not there
