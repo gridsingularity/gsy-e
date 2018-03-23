@@ -1,3 +1,6 @@
+from itertools import islice
+
+
 def recursive_current_markets(area):
     if area.current_market is not None:
         yield area.current_market
@@ -28,3 +31,28 @@ def total_avg_trade_price(markets):
         sum(trade.offer.price for trade in primary_trades(markets)) /
         sum(trade.offer.energy for trade in primary_trades(markets))
     )
+
+
+def bills(area, from_slot=1, to_slot=None):
+    """
+    Return a bill for each of area's children with total energy bought
+    and sold (in kWh) and total money earned and spent (in cents).
+    Compute bills recursively for children of children etc.
+    """
+    if not area.children:
+        return None
+    result = {child.slug: dict(bought=0.0, sold=0.0, spent=0.0, earned=0.0)
+              for child in area.children}
+    for market in islice(area.markets, from_slot-1, to_slot):
+        for trade in market.trades:
+            if trade.buyer in result:
+                result[trade.buyer]['bought'] += trade.offer.energy
+                result[trade.buyer]['spent'] += trade.offer.price
+            if trade.offer.seller in result:
+                result[trade.offer.seller]['sold'] += trade.offer.energy
+                result[trade.offer.seller]['earned'] += trade.offer.price
+    for child in area.children:
+        child_result = bills(child)
+        if child_result is not None:
+            result[child.slug]['children'] = child_result
+    return result
