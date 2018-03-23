@@ -16,6 +16,7 @@ import d3a
 from d3a.simulation import Simulation, page_lock
 from d3a.stats import primary_unit_prices, recursive_current_markets, total_avg_trade_price
 from d3a.util import make_iaa_name, simulation_info
+from d3a.export_unmatched_loads import final_export_unmatched_loads
 
 _NO_VALUE = {
     'min': None,
@@ -306,6 +307,10 @@ def _api_app(simulation: Simulation):
                 for slot_market in area.past_markets.values()
             ]
         }
+
+    @app.route("/unmatched-loads", methods=['GET'])
+    def unmatched_loads():
+        return {"unmatched_loads": final_export_unmatched_loads(simulation.area)}
 
     @app.route("/<area_slug>/tree-summary")
     def tree_summary(area_slug):
