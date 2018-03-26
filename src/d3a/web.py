@@ -14,7 +14,9 @@ from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
 from d3a.simulation import Simulation, page_lock
-from d3a.stats import primary_unit_prices, recursive_current_markets, total_avg_trade_price
+from d3a.stats import (
+    energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
+)
 from d3a.util import make_iaa_name, simulation_info
 from d3a.export_unmatched_loads import export_unmatched_loads
 
@@ -321,6 +323,29 @@ def _api_app(simulation: Simulation):
             "max_trade_price": max(primary_unit_prices(markets)),
             "avg_trade_price": total_avg_trade_price(markets)
         }
+
+    @app.route("/<area_slug>/bills")
+    def bills(area_slug):
+        area = _get_area(area_slug)
+
+        def slot_query_param(name):
+            if name in request.args:
+                try:
+                    return pendulum.parse(request.args[name])
+                except pendulum.parsing.exceptions.ParserError:
+                    area.log.error(
+                        'Could not parse timestamp %s, using default for bill computation' %
+                        request.args[name])
+            return None
+
+        from_slot = slot_query_param('from')
+        to_slot = slot_query_param('to')
+        result = energy_bills(area, from_slot, to_slot)
+        if from_slot:
+            result['from'] = str(from_slot)
+        if to_slot:
+            result['to'] = str(to_slot)
+        return result
 
     @app.after_request
     def modify_server_header(response):
