@@ -138,6 +138,7 @@ def simulation_info(simulation):
     return {
         'config': simulation.area.config.as_dict(),
         'finished': simulation.finished,
+        'aborted': simulation.is_stopped,
         'current_tick': simulation.area.current_tick,
         'current_time': current_time,
         'current_date': simulation.area.now.format('%Y-%m-%d'),
