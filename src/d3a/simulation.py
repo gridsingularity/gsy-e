@@ -240,12 +240,13 @@ class Simulation:
                 raise _SimulationInterruped()
             cmd = console.get_char(timeout)
             if cmd:
-                if cmd not in {'i', 'p', 'q', 'r', 'R', 's', '+', '-'}:
+                if cmd not in {'i', 'p', 'q', 'r', 'S', 'R', 's', '+', '-'}:
                     log.critical("Invalid command. Valid commands:\n"
                                  "  [i] info\n"
                                  "  [p] pause\n"
                                  "  [q] quit\n"
                                  "  [r] reset\n"
+                                 "  [S] stop\n"
                                  "  [R] start REPL\n"
                                  "  [s] save state\n"
                                  "  [+] increase slowdown\n"
@@ -269,6 +270,8 @@ class Simulation:
                     raise KeyboardInterrupt()
                 elif cmd == 's':
                     self.save_state()
+                elif cmd == 'S':
+                    self.stop()
                 elif cmd == '+':
                     v = 5
                     if self.slowdown <= 95:
