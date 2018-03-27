@@ -351,7 +351,7 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
     UnmatchLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 
 
-# Residual Energy of House
+# Energy Profile of House
 def _house_etrade_history(path, barmode, xtitle, ytitle):
     data = list()
     key = 'energy traded [kWh]'
