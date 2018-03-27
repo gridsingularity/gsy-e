@@ -54,6 +54,7 @@ class Simulation:
         self.api_url = api_url
         self.message_url = message_url
         self.setup_module_name = setup_module_name
+        self.is_stopped = False
 
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(
@@ -121,10 +122,14 @@ class Simulation:
         self._init(**self.initial_params)
         self.ready.set()
 
+    def stop(self):
+        self.is_stopped = True
+
     def run(self, resume=False) -> (Period, Interval):
         if resume:
             log.critical("Resuming simulation")
             self._info()
+        self.is_stopped = False
         config = self.simulation_config
         tick_lengths_s = config.tick_length.total_seconds()
         slot_count = int(config.duration / config.slot_length) + 1
@@ -156,6 +161,8 @@ class Simulation:
                             tick_resume = 0
                             self._handle_input(console)
                             self.paused_time += self._handle_paused(console)
+                            if self.is_stopped:
+                                return
                             tick_start = time.monotonic()
                             log.debug(
                                 "Tick %d of %d in slot %d (%2.0f%%)",
