@@ -4,6 +4,11 @@ import logging
 import pathlib
 from pendulum import Interval
 
+import pandas as pd
+import os
+import plotly as py
+import plotly.graph_objs as go
+
 from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
@@ -24,6 +29,16 @@ def export(root_area, path, subdir):
         return
     _export_area_with_children(root_area, directory)
     _export_overview(root_area, directory)
+
+    _unmet_loads(directory, 'stack', 'Devices Un-met Loads', 'Time',
+                 'Energy (kWh)', 'Devices_unmet_loads.html')
+
+    _energy_trade_partner(directory, 'buyer', 'Cell Tower', 'seller',
+                          'Cell Tower Energy Suppliers', 'Cell_Tower_Energy_Suppliers.html')
+    _ess_history(directory, 'group', 'ESS Energy Trade', 'Time',
+                 'Energy (kWh)', 'ESS_Trade.html')
+    _house_etrade_history(directory, 'group', 'Time',
+                          'Energy (kWh)')
 
 
 def _export_area_with_children(area, directory):
@@ -167,3 +182,251 @@ def _export_overview(root_area, directory):
         directory.joinpath("overview.json").write_text(json.dumps(overview, indent=2))
     except Exception as ex:
         _log.error("Error when writing overview file: %s" % str(ex))
+
+
+class DataSets:
+    def __init__(self, path):
+        self.path = path
+        self.dataset = pd.read_csv(path)
+
+
+class UnmetLoads(DataSets):
+    def __init__(self, path, key):
+        self.key = key
+        self.umHours = dict()
+        super(UnmetLoads, self).__init__(path)
+
+    def um_time(self):
+        try:
+            self.dataset[self.key]
+        except KeyError:
+            print('key not found')
+        else:
+            for de in range(len(self.dataset[self.key])):
+                if (self.dataset[self.key][de] != 0):
+                    self.umHours[self.dataset['slot'][de]] = self.dataset[self.key][de]
+
+    def plot_bar_graph(barmode, title, xtitle, ytitle, data, iname):
+        layout = go.Layout(
+            barmode=barmode,
+            title=title,
+            yaxis=dict(
+                title=ytitle
+            ),
+            xaxis=dict(
+                title=xtitle
+            )
+        )
+
+        fig = go.Figure(data=data, layout=layout)
+        py.offline.plot(fig, filename=iname, auto_open=False)
+
+
+# Un-met Loads
+def _unmet_loads(path, barmode, title, xtitle, ytitle, iname):
+    data = list()
+    key = 'deficit [kWh]'
+    os.chdir(path)
+    sub_file = sorted(next(os.walk('grid'))[1])
+    for i in range(len(sub_file)):
+        gl = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-general-load.csv')
+        ll = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-lighting.csv')
+        tv = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-tv.csv')
+
+        if(os.path.isfile(gl)):
+            higl = UnmetLoads(gl, key)
+            higl.um_time()
+            traceigl = go.Bar(x=list(higl.umHours.keys()),
+                              y=list(higl.umHours.values()),
+                              name='House{}-GL'.format(i+1))
+            # print(traceigl)
+            data.append(traceigl)
+        if(os.path.isfile(ll)):
+            hill = UnmetLoads(ll, key)
+            hill.um_time()
+            traceill = go.Bar(x=list(hill.umHours.keys()),
+                              y=list(hill.umHours.values()),
+                              name='House{}-LL'.format(i+1))
+            data.append(traceill)
+        if(os.path.isfile(tv)):
+            hitv = UnmetLoads(tv, key)
+            hitv.um_time()
+            traceitv = go.Bar(x=list(hitv.umHours.keys()),
+                              y=list(hitv.umHours.values()),
+                              name='House{}-TV'.format(i+1))
+            data.append(traceitv)
+    plot_dir = str(path) + '/plot'
+    # print("Plot Directory: {}".format(plot_dir))
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    os.chdir(plot_dir)
+
+    UnmetLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+
+
+class TradeHistory(DataSets):
+    def __init__(self, path, key):
+        self.key = key
+        self.trade_history = dict()
+        super(TradeHistory, self).__init__(path)
+# kvalue=cell tower
+# kseller=x,y,z
+
+    def arrange_data(self, kbuyer, kseller):
+        try:
+            self.dataset[self.key]
+        except KeyError:
+            print('key not found')
+        else:
+            for de in range(len(self.dataset[self.key])):
+                self.trade_history.setdefault(self.dataset[kseller][de], int(0))
+                # print(self.trade_history)
+            for de in range(len(self.dataset[self.key])):
+                if (self.dataset[self.key][de] == kbuyer):
+                    self.trade_history[self.dataset[kseller][de]] += 1
+
+    def plot_pie_chart(self, title, iname):
+        fig = {
+            "data": [
+                {
+                    "values": list(),
+                    "labels": list(),
+                    "type": "pie"
+                }],
+            "layout": {
+                "title": title,
+            }
+        }
+        for key, value in self.trade_history.items():
+            fig["data"][0]["values"].append(value)
+            fig["data"][0]["labels"].append(key)
+
+        py.offline.plot(fig, filename=iname, auto_open=False)
+
+
+# Energy Trading Partner
+def _energy_trade_partner(path, key, buyer, seller, title, iname):
+    os.chdir(path)
+    gt = str('grid-trades.csv')
+
+    if(os.path.isfile(gt)):
+        higt = TradeHistory(gt, key)
+        # print(higt.dataset)
+        higt.arrange_data(buyer, seller)
+
+    plot_dir = str(path) + '/plot'
+    # print("Plot Directory: {}".format(plot_dir))
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    os.chdir(plot_dir)
+
+    higt.plot_pie_chart(title, iname)
+
+
+# ESS Trade History
+def _ess_history(path, barmode, title, xtitle, ytitle, iname):
+    data = list()
+    key = 'energy traded [kWh]'
+    os.chdir(path)
+    sub_file = sorted(next(os.walk('grid'))[1])
+    for i in range(len(sub_file)):
+        ss1 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage1.csv')
+        ss2 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage2.csv')
+
+        if (os.path.isfile(ss1)):
+            # print('Inside: ' + ss1)
+            hiss1 = UnmetLoads(ss1, key)
+            hiss1.um_time()
+            traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
+                               y=list(hiss1.umHours.values()),
+                               name='House{0}-Storage1'.format(i + 1))
+            # print(traceiss1)
+            data.append(traceiss1)
+        if (os.path.isfile(ss2)):
+            # print('Inside: ' + ss2)
+            hiss2 = UnmetLoads(ss2, key)
+            hiss2.um_time()
+            traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
+                               y=list(hiss2.umHours.values()),
+                               name='House{0}-Storage2'.format(i + 1))
+            data.append(traceiss2)
+
+    plot_dir = str(path) + '/plot'
+    # print("Plot Directory: {}".format(plot_dir))
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    os.chdir(plot_dir)
+
+    UnmetLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+
+
+# Residual Energy of House
+def _house_etrade_history(path, barmode, xtitle, ytitle):
+    data = list()
+    key = 'energy traded [kWh]'
+    os.chdir(path)
+    sub_file = sorted(next(os.walk('grid'))[1])
+    for i in range(len(sub_file)):
+        gl = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-general-load.csv')
+        ll = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-lighting.csv')
+        tv = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-tv.csv')
+        ss1 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage1.csv')
+        ss2 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage2.csv')
+        pv = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-pv.csv')
+        iname = str('Energy Profile of House{}.html'.format(i + 1))
+        title = str('Energy Profile of House{}'.format(i + 1))
+        if(os.path.isfile(gl)):
+            higl = UnmetLoads(gl, key)
+            higl.um_time()
+            traceigl = go.Bar(x=list(higl.umHours.keys()),
+                              y=list(higl.umHours.values()),
+                              name='House{}-GL'.format(i+1))
+            # print(traceigl)
+            data.append(traceigl)
+        if(os.path.isfile(ll)):
+            hill = UnmetLoads(ll, key)
+            hill.um_time()
+            traceill = go.Bar(x=list(hill.umHours.keys()),
+                              y=list(hill.umHours.values()),
+                              name='House{}-LL'.format(i+1))
+            data.append(traceill)
+        if(os.path.isfile(tv)):
+            hitv = UnmetLoads(tv, key)
+            hitv.um_time()
+            traceitv = go.Bar(x=list(hitv.umHours.keys()),
+                              y=list(hitv.umHours.values()),
+                              name='House{}-TV'.format(i+1))
+            data.append(traceitv)
+        if (os.path.isfile(ss1)):
+            # print('Inside: ' + ss1)
+            hiss1 = UnmetLoads(ss1, key)
+            hiss1.um_time()
+            traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
+                               y=list(hiss1.umHours.values()),
+                               name='House{0}-Storage1'.format(i + 1))
+            # print(traceiss1)
+            data.append(traceiss1)
+        if (os.path.isfile(ss2)):
+            # print('Inside: ' + ss2)
+            hiss2 = UnmetLoads(ss2, key)
+            hiss2.um_time()
+            traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
+                               y=list(hiss2.umHours.values()),
+                               name='House{0}-Storage2'.format(i + 1))
+            data.append(traceiss2)
+        if (os.path.isfile(pv)):
+            # print('Inside: ' + pv)
+            hipv = UnmetLoads(pv, key)
+            hipv.um_time()
+            traceipv = go.Bar(x=list(hipv.umHours.keys()), y=list(hipv.umHours.values()),
+                              name='House{0}-PV'.format(i + 1))
+            data.append(traceipv)
+        plot_dir = str(path) + '/plot'
+        # print("Plot Directory: {}".format(plot_dir))
+        if not os.path.exists(plot_dir):
+            os.makedirs(plot_dir)
+        os.chdir(plot_dir)
+
+        UnmetLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+        os.chdir('..')
+        data = list()
