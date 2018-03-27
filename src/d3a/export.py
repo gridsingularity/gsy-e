@@ -30,14 +30,14 @@ def export(root_area, path, subdir):
     _export_area_with_children(root_area, directory)
     _export_overview(root_area, directory)
 
-    _unmet_loads(directory, 'stack', 'Devices Un-met Loads', 'Time',
-                 'Energy (kWh)', 'Devices_unmet_loads.html')
+    _unmatch_loads(directory, 'relative', 'Devices Un-matched Loads', 'Time',
+                   'Energy (kWh)', 'Devices_unmatch_loads.html')
 
     _energy_trade_partner(directory, 'buyer', 'Cell Tower', 'seller',
                           'Cell Tower Energy Suppliers', 'Cell_Tower_Energy_Suppliers.html')
-    _ess_history(directory, 'group', 'ESS Energy Trade', 'Time',
+    _ess_history(directory, 'relative', 'ESS Energy Trade', 'Time',
                  'Energy (kWh)', 'ESS_Trade.html')
-    _house_etrade_history(directory, 'group', 'Time',
+    _house_etrade_history(directory, 'relative', 'Time',
                           'Energy (kWh)')
 
 
@@ -193,11 +193,11 @@ class DataSets:
         self.dataset = pd.read_csv(path)
 
 
-class UnmetLoads(DataSets):
+class UnmatchLoads(DataSets):
     def __init__(self, path, key):
         self.key = key
         self.umHours = dict()
-        super(UnmetLoads, self).__init__(path)
+        super(UnmatchLoads, self).__init__(path)
 
     def um_time(self):
         try:
@@ -226,7 +226,7 @@ class UnmetLoads(DataSets):
 
 
 # Un-met Loads
-def _unmet_loads(path, barmode, title, xtitle, ytitle, iname):
+def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
     data = list()
     key = 'deficit [kWh]'
     os.chdir(path)
@@ -237,34 +237,32 @@ def _unmet_loads(path, barmode, title, xtitle, ytitle, iname):
         tv = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-tv.csv')
 
         if(os.path.isfile(gl)):
-            higl = UnmetLoads(gl, key)
+            higl = UnmatchLoads(gl, key)
             higl.um_time()
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name='House{}-GL'.format(i+1))
-            # print(traceigl)
             data.append(traceigl)
         if(os.path.isfile(ll)):
-            hill = UnmetLoads(ll, key)
+            hill = UnmatchLoads(ll, key)
             hill.um_time()
             traceill = go.Bar(x=list(hill.umHours.keys()),
                               y=list(hill.umHours.values()),
                               name='House{}-LL'.format(i+1))
             data.append(traceill)
         if(os.path.isfile(tv)):
-            hitv = UnmetLoads(tv, key)
+            hitv = UnmatchLoads(tv, key)
             hitv.um_time()
             traceitv = go.Bar(x=list(hitv.umHours.keys()),
                               y=list(hitv.umHours.values()),
                               name='House{}-TV'.format(i+1))
             data.append(traceitv)
     plot_dir = str(path) + '/plot'
-    # print("Plot Directory: {}".format(plot_dir))
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     os.chdir(plot_dir)
 
-    UnmetLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+    UnmatchLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 
 
 class TradeHistory(DataSets):
@@ -283,7 +281,6 @@ class TradeHistory(DataSets):
         else:
             for de in range(len(self.dataset[self.key])):
                 self.trade_history.setdefault(self.dataset[kseller][de], int(0))
-                # print(self.trade_history)
             for de in range(len(self.dataset[self.key])):
                 if (self.dataset[self.key][de] == kbuyer):
                     self.trade_history[self.dataset[kseller][de]] += 1
@@ -314,11 +311,9 @@ def _energy_trade_partner(path, key, buyer, seller, title, iname):
 
     if(os.path.isfile(gt)):
         higt = TradeHistory(gt, key)
-        # print(higt.dataset)
         higt.arrange_data(buyer, seller)
 
     plot_dir = str(path) + '/plot'
-    # print("Plot Directory: {}".format(plot_dir))
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     os.chdir(plot_dir)
@@ -337,17 +332,14 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
         ss2 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage2.csv')
 
         if (os.path.isfile(ss1)):
-            # print('Inside: ' + ss1)
-            hiss1 = UnmetLoads(ss1, key)
+            hiss1 = UnmatchLoads(ss1, key)
             hiss1.um_time()
             traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
-            # print(traceiss1)
             data.append(traceiss1)
         if (os.path.isfile(ss2)):
-            # print('Inside: ' + ss2)
-            hiss2 = UnmetLoads(ss2, key)
+            hiss2 = UnmatchLoads(ss2, key)
             hiss2.um_time()
             traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
                                y=list(hiss2.umHours.values()),
@@ -355,12 +347,11 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
             data.append(traceiss2)
 
     plot_dir = str(path) + '/plot'
-    # print("Plot Directory: {}".format(plot_dir))
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
     os.chdir(plot_dir)
 
-    UnmetLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+    UnmatchLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 
 
 # Energy Profile of House
@@ -379,57 +370,51 @@ def _house_etrade_history(path, barmode, xtitle, ytitle):
         iname = str('Energy Profile of House{}.html'.format(i + 1))
         title = str('Energy Profile of House{}'.format(i + 1))
         if(os.path.isfile(gl)):
-            higl = UnmetLoads(gl, key)
+            higl = UnmatchLoads(gl, key)
             higl.um_time()
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name='House{}-GL'.format(i+1))
-            # print(traceigl)
             data.append(traceigl)
         if(os.path.isfile(ll)):
-            hill = UnmetLoads(ll, key)
+            hill = UnmatchLoads(ll, key)
             hill.um_time()
             traceill = go.Bar(x=list(hill.umHours.keys()),
                               y=list(hill.umHours.values()),
                               name='House{}-LL'.format(i+1))
             data.append(traceill)
         if(os.path.isfile(tv)):
-            hitv = UnmetLoads(tv, key)
+            hitv = UnmatchLoads(tv, key)
             hitv.um_time()
             traceitv = go.Bar(x=list(hitv.umHours.keys()),
                               y=list(hitv.umHours.values()),
                               name='House{}-TV'.format(i+1))
             data.append(traceitv)
         if (os.path.isfile(ss1)):
-            # print('Inside: ' + ss1)
-            hiss1 = UnmetLoads(ss1, key)
+            hiss1 = UnmatchLoads(ss1, key)
             hiss1.um_time()
             traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
-            # print(traceiss1)
             data.append(traceiss1)
         if (os.path.isfile(ss2)):
-            # print('Inside: ' + ss2)
-            hiss2 = UnmetLoads(ss2, key)
+            hiss2 = UnmatchLoads(ss2, key)
             hiss2.um_time()
             traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
             data.append(traceiss2)
         if (os.path.isfile(pv)):
-            # print('Inside: ' + pv)
-            hipv = UnmetLoads(pv, key)
+            hipv = UnmatchLoads(pv, key)
             hipv.um_time()
             traceipv = go.Bar(x=list(hipv.umHours.keys()), y=list(hipv.umHours.values()),
                               name='House{0}-PV'.format(i + 1))
             data.append(traceipv)
         plot_dir = str(path) + '/plot'
-        # print("Plot Directory: {}".format(plot_dir))
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
         os.chdir(plot_dir)
 
-        UnmetLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+        UnmatchLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
         os.chdir('..')
         data = list()
