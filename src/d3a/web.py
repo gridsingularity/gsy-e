@@ -99,6 +99,12 @@ def _api_app(simulation: Simulation):
         simulation.reset()
         return {'success': 'ok'}
 
+    @app.route("/stop", methods=['POST'])
+    @lock_flask_endpoint
+    def stop():
+        simulation.stop()
+        return {'success': 'ok'}
+
     @app.route("/save", methods=['POST'])
     @lock_flask_endpoint
     def save():
