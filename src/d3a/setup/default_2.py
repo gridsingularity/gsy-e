@@ -112,7 +112,7 @@ def get_setup(config):
 
             Area('Cell Tower', strategy=LoadHoursStrategy(avg_power=100,
                                                           hrs_per_day=24,
-                                                          hrs_of_day=(0, 24)),
+                                                          hrs_of_day=(0, 23)),
                  appliance=SwitchableAppliance())
         ],
         config=config
