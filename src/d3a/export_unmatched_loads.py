@@ -5,6 +5,9 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
+DEFICIT_THRESHOLD_Wh = 0.0001
+
+
 def _calculate_hour_stats_for_devices(hour_data, area, current_slot):
     for child in area.children:
         if isinstance(child.strategy, LoadHoursStrategy):
@@ -19,7 +22,7 @@ def _calculate_hour_stats_for_devices(hour_data, area, current_slot):
                (child.name in child.past_markets[current_slot].traded_energy) \
             else 0.0
         deficit = traded_energy - desired_energy
-        if deficit < 0.0:
+        if deficit < DEFICIT_THRESHOLD_Wh:
             # Get the hour data entry for this hour, or create an empty one if not there
             device = hour_data["devices"].get(
                 child.slug,
