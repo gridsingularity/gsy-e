@@ -3,6 +3,7 @@ from importlib import import_module
 from logging import getLogger
 
 import time
+from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 
@@ -155,14 +156,15 @@ class Simulation:
                             slot_count,
                             (slot_no + 1) / slot_count * 100
                         )
+                        if self.is_stopped:
+                            sleep(5)
+                            break
 
                         for tick_no in range(tick_resume, config.ticks_per_slot):
                             # reset tick_resume after possible resume
                             tick_resume = 0
                             self._handle_input(console)
                             self.paused_time += self._handle_paused(console)
-                            if self.is_stopped:
-                                return
                             tick_start = time.monotonic()
                             log.debug(
                                 "Tick %d of %d in slot %d (%2.0f%%)",
@@ -335,6 +337,19 @@ class Simulation:
             dill.dump(self, save_file, protocol=HIGHEST_PROTOCOL)
         log.critical("Saved state to %s", save_file_name.resolve())
         return save_file_name
+
+    @property
+    def status(self):
+        if self.is_stopped:
+            return "stopped"
+        elif self.finished:
+            return "finished"
+        elif self.paused:
+            return "paused"
+        elif self.ready.is_set():
+            return "ready"
+        else:
+            return "running"
 
     def __getstate__(self):
         state = self.__dict__.copy()

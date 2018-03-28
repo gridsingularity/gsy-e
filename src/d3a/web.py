@@ -110,6 +110,11 @@ def _api_app(simulation: Simulation):
     def save():
         return {'save_file': str(simulation.save_state().resolve())}
 
+    @app.route("/status", methods=['GET'])
+    @lock_flask_endpoint
+    def status():
+        return {'status': simulation.status}
+
     @app.route("/slowdown", methods=['GET', 'POST'])
     @lock_flask_endpoint
     def slowdown():
