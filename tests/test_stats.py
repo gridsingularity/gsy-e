@@ -4,6 +4,7 @@ from d3a.models.market import Trade
 from d3a.stats import (
     energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
 )
+from d3a.util import make_iaa_name
 
 
 class FakeArea:
@@ -110,3 +111,21 @@ def test_energy_bills(grid):
     assert result1['fridge']['bought'] == 5 and result1['fridge']['spent'] == 6
     assert result1['pv']['sold'] == 4 and result1['pv']['earned'] == 3
     assert 'children' not in result1
+
+
+@pytest.fixture
+def grid2():
+    house1 = FakeArea('house1')
+    house2 = FakeArea('house2')
+    return FakeArea(
+        'street',
+        children=[house1, house2],
+        past_markets={1: FakeMarket(
+            (_trade(2, make_iaa_name(house1), 3, make_iaa_name(house2)),)
+        )}
+    )
+
+
+def test_energy_bills_finds_iaas(grid2):
+    result = energy_bills(grid2)
+    assert result['house1']['bought'] == result['house2']['sold'] == 3
