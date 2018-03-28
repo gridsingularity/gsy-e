@@ -5,7 +5,7 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-DEFICIT_THRESHOLD_Wh = 0.0001
+DEFICIT_THRESHOLD_Wh = 0.001
 
 
 def _calculate_hour_stats_for_devices(hour_data, area, current_slot):
@@ -21,8 +21,8 @@ def _calculate_hour_stats_for_devices(hour_data, area, current_slot):
             if (current_slot in child.past_markets) and \
                (child.name in child.past_markets[current_slot].traded_energy) \
             else 0.0
-        deficit = traded_energy - desired_energy
-        if deficit < DEFICIT_THRESHOLD_Wh:
+        deficit = desired_energy - traded_energy
+        if deficit > DEFICIT_THRESHOLD_Wh:
             # Get the hour data entry for this hour, or create an empty one if not there
             device = hour_data["devices"].get(
                 child.slug,
@@ -46,10 +46,8 @@ def _accumulate_device_stats_to_area_stats(per_hour_device_data):
             (per_hour_device_data[hour]["unmatched_load_count"] == 0)
         # For the UI's convenience, devices should be presented as arrays
         per_hour_device_data[hour]["devices"] = [per_hour_device_data[hour]["devices"]]
-    # Sort according to the hour, Python dict does not guarantee order by key
-    sorted_hourly_data = sorted(per_hour_device_data.items(), key=lambda kv: kv[0])
     area_data = {
-        "timeslots": [timeslot for (_, timeslot) in sorted_hourly_data],
+        "timeslots": per_hour_device_data,
         "unmatched_load_count": sum([data["unmatched_load_count"]
                                      for _, data in per_hour_device_data.items()])
     }
@@ -89,9 +87,11 @@ def _recurse_area_tree(area):
 
 
 def export_unmatched_loads(area):
-    final_unmatched = _recurse_area_tree(area)
+    unmatched_loads_result = {}
+    area_tree = _recurse_area_tree(area)
     # Calculate overall metrics for the whole grid
-    final_unmatched["unmatched_load_count"] = \
-        sum([v["unmatched_load_count"] for k, v in final_unmatched.items()])
-    final_unmatched["all_loads_met"] = (final_unmatched["unmatched_load_count"] == 0)
-    return final_unmatched
+    unmatched_loads_result["unmatched_load_count"] = \
+        sum([v["unmatched_load_count"] for k, v in area_tree.items()])
+    unmatched_loads_result["all_loads_met"] = (unmatched_loads_result["unmatched_load_count"] == 0)
+    unmatched_loads_result["areas"] = area_tree
+    return unmatched_loads_result
