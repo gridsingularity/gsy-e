@@ -50,11 +50,9 @@ class LoadHoursStrategy(BaseStrategy):
             self.max_acceptable_energy_price = (
                 self.daily_budget / self.daily_energy_required * 1000
             )
-        self.energy_per_slot = (
-            self.daily_energy_required
-            /
-            (Interval(hours=1) / self.area.config.slot_length)
-        )
+        # Avg_power is actually the power per slot, since it is calculated by dividing the
+        # avg_power_in_Wh by the number of slots per hour
+        self.energy_per_slot = self.avg_power
 
     def event_tick(self, *, area):
         if self.energy_requirement <= 0:
