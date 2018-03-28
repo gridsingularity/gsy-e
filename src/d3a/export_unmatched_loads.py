@@ -21,8 +21,8 @@ def _calculate_hour_stats_for_devices(hour_data, area, current_slot):
             if (current_slot in child.past_markets) and \
                (child.name in child.past_markets[current_slot].traded_energy) \
             else 0.0
-        deficit = traded_energy - desired_energy
-        if abs(deficit) < DEFICIT_THRESHOLD_Wh:
+        deficit = desired_energy - traded_energy
+        if deficit > DEFICIT_THRESHOLD_Wh:
             # Get the hour data entry for this hour, or create an empty one if not there
             device = hour_data["devices"].get(
                 child.slug,
