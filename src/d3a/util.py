@@ -122,6 +122,10 @@ def make_iaa_name(owner):
     return "IAA {}".format(owner.name)
 
 
+def area_name_from_area_or_iaa_name(name):
+    return name[4:] if name[:4] == 'IAA ' else name
+
+
 def format_interval(interval, show_day=True):
     if interval.days and show_day:
         template = "{i.days:02d}:{i.hours:02d}:{i.minutes:02d}:{i.remaining_seconds:02d}"
