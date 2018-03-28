@@ -9,7 +9,7 @@ from d3a.models.strategy.base import BaseStrategy
 
 class LoadHoursStrategy(BaseStrategy):
     def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
-                 daily_budget=None):
+                 daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
         self.avg_power_in_Wh = avg_power
@@ -25,7 +25,7 @@ class LoadHoursStrategy(BaseStrategy):
         self.energy_per_slot = None
         self.energy_requirement = 0
         # In ct. / kWh
-        self.max_acceptable_energy_price = 10 ** 20
+        self.acceptable_energy_rate = acceptable_energy_rate
         # be a parameter on the constructor or if we want to deal in percentages
         self.hrs_of_day = hrs_of_day
         active_hours_count = (hrs_of_day[1] - hrs_of_day[0] + 1)
@@ -45,11 +45,8 @@ class LoadHoursStrategy(BaseStrategy):
         self.avg_power = (self.avg_power_in_Wh /
                           (Interval(hours=1) / self.area.config.slot_length)
                           )
+#        self.acceptable_energy_rate = self.acceptable_energy_rate/1000
         self.daily_energy_required = self.avg_power * self.hrs_per_day
-        if self.daily_budget:
-            self.max_acceptable_energy_price = (
-                self.daily_budget / self.daily_energy_required * 1000
-            )
         # Avg_power is actually the power per slot, since it is calculated by dividing the
         # avg_power_in_Wh by the number of slots per hour
         self.energy_per_slot = self.avg_power
@@ -69,7 +66,10 @@ class LoadHoursStrategy(BaseStrategy):
             try:
                 market = list(self.area.markets.values())[0]
                 acceptable_offer = market.sorted_offers[0]
-                if acceptable_offer:
+
+                if acceptable_offer and \
+                        ((acceptable_offer.price/acceptable_offer.energy) <
+                         self.acceptable_energy_rate):
                     max_energy = self.energy_requirement / 1000
                     if acceptable_offer.energy > max_energy:
                         self.accept_offer(market, acceptable_offer, energy=max_energy)

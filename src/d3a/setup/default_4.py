@@ -14,8 +14,9 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power=100,
-                                                                       hrs_per_day=4,
-                                                                       hrs_of_day=(12, 15)),
+                                                                       hrs_per_day=6,
+                                                                       hrs_of_day=(12, 22),
+                                                                       acceptable_energy_rate=30),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
                          appliance=SwitchableAppliance()),

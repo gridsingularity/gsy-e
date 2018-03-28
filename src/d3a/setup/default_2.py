@@ -16,8 +16,9 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power=100,
-                                                                       hrs_per_day=1,
-                                                                       hrs_of_day=(12, 13)),
+                                                                       hrs_per_day=4,
+                                                                       hrs_of_day=(12, 20),
+                                                                       acceptable_energy_rate=29),
                          appliance=SwitchableAppliance()),
                     Area('H1 Lighting', strategy=LoadHoursStrategy(avg_power=100,
                                                                    hrs_per_day=4,
@@ -33,8 +34,9 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 General Load', strategy=LoadHoursStrategy(avg_power=100,
-                                                                       hrs_per_day=1,
-                                                                       hrs_of_day=(12, 13)),
+                                                                       hrs_per_day=3,
+                                                                       hrs_of_day=(12, 18),
+                                                                       acceptable_energy_rate=50),
                          appliance=SwitchableAppliance()),
                     Area('H2 Lighting', strategy=LoadHoursStrategy(avg_power=100,
                                                                    hrs_per_day=4,
