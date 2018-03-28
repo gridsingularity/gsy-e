@@ -157,6 +157,7 @@ class Simulation:
                             (slot_no + 1) / slot_count * 100
                         )
                         if self.is_stopped:
+                            log.error("Received stop command.")
                             sleep(5)
                             break
 
@@ -187,13 +188,15 @@ class Simulation:
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
 
-                    log.error(
-                        "Run finished in %s%s / %.2fx real time.",
-                        run_duration,
-                        " ({} paused)".format(paused_duration if paused_duration else ""),
-                        config.duration / (run_duration - paused_duration)
-                    )
-                    log.error("REST-API still running at %s", self.api_url)
+                    if not self.is_stopped:
+                        log.error(
+                            "Run finished in %s%s / %.2fx real time",
+                            run_duration,
+                            " ({} paused)".format(paused_duration) if paused_duration else "",
+                            config.duration / (run_duration - paused_duration)
+                        )
+                    if not self.exit_on_finish:
+                        log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
                         export(self.area,
                                self.export_path,
@@ -213,6 +216,7 @@ class Simulation:
                         t.join()
                         continue
                     elif self.exit_on_finish:
+                        log.error("Terminating. (--exit-on-finish set.)")
                         break
                     else:
                         log.info("Ctrl-C to quit")
