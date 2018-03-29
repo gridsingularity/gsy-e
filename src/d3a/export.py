@@ -349,6 +349,9 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
         os.makedirs(plot_dir)
     os.chdir(plot_dir)
 
+    if not data:
+        return
+
     UnmatchLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 
 
