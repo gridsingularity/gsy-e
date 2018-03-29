@@ -2,7 +2,6 @@ import csv
 import json
 import logging
 import pathlib
-from pendulum import Interval
 
 import pandas as pd
 import os
@@ -140,9 +139,8 @@ class ExportLeafData(ExportData):
             produced = market.actual_energy_agg.get(self.area.name, 0)
             return [produced,
                     round(produced - self._traded(market), 4),
-                    self.area.strategy.energy_production_forecast[slot] *
-                    self.area.strategy.panel_count *
-                    (self.area.config.slot_length / Interval(hours=1))
+                    self.area.strategy.energy_production_forecast_kWh[slot] *
+                    self.area.strategy.panel_count
                     ]
         return []
 
