@@ -145,6 +145,19 @@ def test_event_market_cycle(load_hours_strategy_test1, market_test1):
         load_hours_strategy_test1.energy_per_slot
 
 
+def test_event_market_cycle_resets_energy_requirement(load_hours_strategy_test1, market_test1):
+    load_hours_strategy_test1.event_activate()
+    load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
+    load_hours_strategy_test1.energy_requirement = 150.0
+    load_hours_strategy_test1.event_market_cycle()
+    assert load_hours_strategy_test1.energy_requirement == \
+        load_hours_strategy_test1.energy_per_slot
+    load_hours_strategy_test1.energy_requirement += 1000000.0
+    load_hours_strategy_test1.event_market_cycle()
+    assert load_hours_strategy_test1.energy_requirement == \
+        load_hours_strategy_test1.energy_per_slot
+
+
 def test_event_tick(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
