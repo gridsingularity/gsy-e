@@ -1,7 +1,7 @@
 import math
 from typing import Dict  # noqa
 
-from pendulum import Time  # noqa
+from pendulum import Time, Interval  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
@@ -116,12 +116,14 @@ class PVStrategy(BaseStrategy):
         else:
             gauss_forecast = 166.54 * math.exp(
                 # time/5 is needed because we only have one data set per 5 minutes
+
                 (- (((round(time_in_minutes / 5, 0)) - 147.2)
                     / 38.60) ** 2
                  )
             )
-        # /1000 is needed to convert Wh into kWh
-        return round((gauss_forecast / 1000), 4)
+        # /1000 is needed to convert Wh into kW
+        w_to_wh_factor = (self.area.config.slot_length / Interval(hours=1))
+        return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def decrease_offer_price(self, market):
         if market not in self.offers.open.values():
