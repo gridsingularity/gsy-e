@@ -24,6 +24,7 @@ class LoadHoursStrategy(BaseStrategy):
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot = None
         self.energy_requirement = 0
+        self.max_acceptable_energy_price = 10**20
         # In ct. / kWh
         self.acceptable_energy_rate = acceptable_energy_rate
         # be a parameter on the constructor or if we want to deal in percentages
@@ -45,8 +46,11 @@ class LoadHoursStrategy(BaseStrategy):
         self.avg_power = (self.avg_power_in_Wh /
                           (Interval(hours=1) / self.area.config.slot_length)
                           )
-#        self.acceptable_energy_rate = self.acceptable_energy_rate/1000
         self.daily_energy_required = self.avg_power * self.hrs_per_day
+        if self.daily_budget:
+            self.max_acceptable_energy_price = (
+                self.daily_budget / self.daily_energy_required * 1000
+            )
         # Avg_power is actually the power per slot, since it is calculated by dividing the
         # avg_power_in_Wh by the number of slots per hour
         self.energy_per_slot = self.avg_power
