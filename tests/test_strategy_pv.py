@@ -268,7 +268,8 @@ def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
         elif morning_time < time < afternoon_time:
             afternoon_counts.total += 1
             afternoon_counts.count = afternoon_counts.count + 1 \
-                if pv_test6.energy_production_forecast_kWh[time] > 0.1 else afternoon_counts.count
+                if pv_test6.energy_production_forecast_kWh[time] > 0.001 \
+                else afternoon_counts.count
         elif time > afternoon_time:
             evening_counts.total += 1
             evening_counts.count = evening_counts.count + 1 \
