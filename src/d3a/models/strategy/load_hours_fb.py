@@ -83,6 +83,7 @@ class LoadHoursStrategy(BaseStrategy):
                 self.log.exception("An Error occurred while buying an offer")
 
     def event_market_cycle(self):
+        self.energy_requirement = 0
         if self.area.now.hour in self.active_hours:
             self.state.record_desired_energy(self.area, self.avg_power)
             energy_per_slot = self.energy_per_slot
