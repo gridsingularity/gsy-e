@@ -1,6 +1,5 @@
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
-from d3a.models.area import AreaType
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -34,12 +33,12 @@ def _calculate_stats_for_single_device(hour_data, area, current_slot):
 
 
 def _calculate_hour_stats_for_area(hour_data, area, current_slot):
-    if area.area_type is AreaType.HOUSE:
+    if not area.children:
+        return _calculate_stats_for_single_device(hour_data, area, current_slot)
+    else:
         for child in area.children:
             hour_data = _calculate_stats_for_single_device(hour_data, child, current_slot)
         return hour_data
-    elif area.area_type is AreaType.CELL_TOWER:
-        return _calculate_stats_for_single_device(hour_data, area, current_slot)
 
 
 def _accumulate_device_stats_to_area_stats(per_hour_device_data):
@@ -71,8 +70,19 @@ def _calculate_area_stats(area):
         per_hour_device_data[current_slot.hour] = \
             _calculate_hour_stats_for_area(hour_data, area, current_slot)
     area_data = _accumulate_device_stats_to_area_stats(per_hour_device_data)
-    area_data["type"] = area.area_type.name
+    area_data["type"] = "cell_tower" if isinstance(area, CellTowerLoadHoursStrategy) else "house"
     return area_data
+
+
+def _is_house_node(area):
+    return all(grandkid.children == [] for grandkid in area.children) and \
+           (any(isinstance(grandkid.strategy, LoadHoursStrategy) or
+                isinstance(grandkid.strategy, PermanentLoadStrategy)
+                for grandkid in area.children))
+
+
+def _is_cell_tower_node(area):
+    return isinstance(area.strategy, CellTowerLoadHoursStrategy)
 
 
 def _recurse_area_tree(area):
@@ -82,7 +92,7 @@ def _recurse_area_tree(area):
             # We are at a leaf node, no point in recursing further. This node's calculation
             # should be done on the upper level
             continue
-        elif child.area_type is not AreaType.NONE:
+        elif _is_house_node(child) or _is_cell_tower_node(child):
             # Need to iterate, because the area has been marked as a house or cell tower
             unmatched_loads[child.slug] = _calculate_area_stats(child)
         else:

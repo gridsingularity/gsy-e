@@ -95,3 +95,7 @@ class LoadHoursStrategy(BaseStrategy):
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement += energy_per_slot
+
+
+class CellTowerLoadHoursStrategy(LoadHoursStrategy):
+    pass
