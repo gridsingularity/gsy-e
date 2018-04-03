@@ -1,7 +1,7 @@
 import math
 from typing import Dict  # noqa
 
-from pendulum import Time  # noqa
+from pendulum import Time, Interval  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
@@ -20,7 +20,7 @@ class PVStrategy(BaseStrategy):
     def __init__(self, panel_count=1, risk=DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.energy_production_forecast = {}  # type: Dict[Time, float]
+        self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
 
@@ -53,13 +53,13 @@ class PVStrategy(BaseStrategy):
             if market not in self.offers.posted.values():
                 # Sell energy and save that an offer was posted into a list
                 try:
-                    if self.energy_production_forecast[time] == 0:
+                    if self.energy_production_forecast_kWh[time] == 0:
                         continue
                     for i in range(self.panel_count):
                         offer = market.offer(
                             (min(rounded_energy_price, 29.9)) *
-                            self.energy_production_forecast[time],
-                            self.energy_production_forecast[time],
+                            self.energy_production_forecast_kWh[time],
+                            self.energy_production_forecast_kWh[time],
                             self.owner.name
                         )
                         self.offers.post(offer, market)
@@ -99,11 +99,11 @@ class PVStrategy(BaseStrategy):
                         ) // self.area.config.slot_length)
                     ]:
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
-            self.energy_production_forecast[slot_time] = self.gaussian_energy_forecast(
+            self.energy_production_forecast_kWh[slot_time] = self.gaussian_energy_forecast_kWh(
                 difference_to_midnight_in_minutes
             )
 
-    def gaussian_energy_forecast(self, time_in_minutes=0):
+    def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
         # time_in_minutes is the difference in time to midnight
 
@@ -116,12 +116,14 @@ class PVStrategy(BaseStrategy):
         else:
             gauss_forecast = 166.54 * math.exp(
                 # time/5 is needed because we only have one data set per 5 minutes
+
                 (- (((round(time_in_minutes / 5, 0)) - 147.2)
                     / 38.60) ** 2
                  )
             )
-        # /1000 is needed to convert Wh into kWh
-        return round((gauss_forecast / 1000), 4)
+        # /1000 is needed to convert Wh into kW
+        w_to_wh_factor = (self.area.config.slot_length / Interval(hours=1))
+        return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def decrease_offer_price(self, market):
         if market not in self.offers.open.values():

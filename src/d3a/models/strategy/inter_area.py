@@ -116,10 +116,10 @@ class IAAEngine:
             self.traded_offers.add(offer_info.source_offer.id)
             self.traded_offers.add(offer_info.target_offer.id)
 
-        elif trade.offer == offer_info.source_offer and trade.buyer == self.owner.name:
+        elif trade.offer.id == offer_info.source_offer.id and trade.buyer == self.owner.name:
             # Flip side of the event from above buying action - do nothing
             pass
-        elif trade.offer == offer_info.source_offer:
+        elif trade.offer.id == offer_info.source_offer.id:
             # Offer was bought in source market by another party
             try:
                 self.markets.target.delete_offer(offer_info.target_offer)
@@ -170,8 +170,10 @@ class IAAEngine:
             self.owner.log.info("Offer %s changed to residual offer %s",
                                 offer_info.target_offer,
                                 forwarded)
-            del self.offered_offers[offer_info.target_offer.id]
-            del self.offered_offers[offer_info.source_offer.id]
+            # Do not delete the offered offer entries for the case of residual offers
+            if existing_offer.seller != new_offer.seller:
+                del self.offered_offers[offer_info.target_offer.id]
+                del self.offered_offers[offer_info.source_offer.id]
 
 
 class InterAreaAgent(BaseStrategy):

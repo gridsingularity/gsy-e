@@ -69,6 +69,8 @@ class LoadHoursStrategy(BaseStrategy):
         if self.area.now.hour in self.active_hours:
             try:
                 market = list(self.area.markets.values())[0]
+                if len(market.sorted_offers) < 1:
+                    return
                 acceptable_offer = market.sorted_offers[0]
 
                 if acceptable_offer and \
