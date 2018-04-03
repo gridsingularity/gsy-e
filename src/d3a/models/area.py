@@ -3,7 +3,7 @@ from collections import OrderedDict, defaultdict
 from logging import getLogger
 from random import random
 from typing import Dict, List, Optional, Union  # noqa
-from enum import Enum, auto
+from enum import Enum
 
 from cached_property import cached_property
 from pendulum.interval import Interval
@@ -33,9 +33,9 @@ DEFAULT_CONFIG = SimulationConfig(
 
 
 class AreaType(Enum):
-    HOUSE = auto()
-    CELL_TOWER = auto()
-    NONE = auto()
+    HOUSE = 1
+    CELL_TOWER = 2
+    NONE = 3
 
 
 class Area:
