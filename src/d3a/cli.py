@@ -1,6 +1,5 @@
 import logging
 from logging import getLogger
-from pkgutil import iter_modules
 
 import click
 import dill
@@ -8,11 +7,10 @@ from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 
-from d3a import setup as d3a_setup
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.simulation import Simulation
-from d3a.util import IntervalType
+from d3a.util import IntervalType, available_simulation_scenarios
 from d3a.web import start_web
 
 
@@ -38,7 +36,7 @@ def main(log_level):
     root_logger.addHandler(handler)
 
 
-_setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
+_setup_modules = available_simulation_scenarios
 
 
 @main.command()

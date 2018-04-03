@@ -11,6 +11,7 @@ from rq.decorators import job
 from d3a.models.config import SimulationConfig
 from d3a.simulation import Simulation
 from d3a.web import start_web
+from d3a.util import available_simulation_scenarios
 
 
 @job('d3a')
@@ -35,10 +36,15 @@ def start(scenario, settings, message_url_format):
         market_count=settings.get('market_count', 4)
     )
 
-    if scenario:
+    if scenario is None:
+        scenario_name = "default"
+    elif scenario in available_simulation_scenarios:
+        scenario_name = scenario
+    else:
+        scenario_name = 'json_arg'
         config.area = scenario
 
-    simulation = Simulation('json_arg' if scenario else 'default',
+    simulation = Simulation(scenario_name,
                             config,
                             slowdown=settings.get('slowdown', 0),
                             exit_on_finish=True,
@@ -47,6 +53,11 @@ def start(scenario, settings, message_url_format):
 
     start_web(interface, port, simulation)
     simulation.run()
+
+
+@job('d3a')
+def get_simulation_scenarios():
+    return available_simulation_scenarios
 
 
 def main():
