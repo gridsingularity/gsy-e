@@ -1,6 +1,6 @@
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.area import Area, AreaType
+from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.e_car import ECarStrategy
 from d3a.models.strategy.fridge import FridgeStrategy
@@ -31,8 +31,7 @@ def get_setup(config):
                                  appliance=SimpleAppliance()),
                             Area('S1 H1 Storage', strategy=StorageStrategy(80),
                                  appliance=SimpleAppliance()),
-                        ],
-                        area_type=AreaType.HOUSE
+                        ]
                     ),
                     Area(
                         'S1 House 2',
@@ -45,8 +44,7 @@ def get_setup(config):
                                  appliance=SimpleAppliance()),
                             Area('S1 H2 Load 2', strategy=PermanentLoadStrategy(80),
                                  appliance=SimpleAppliance()),
-                        ],
-                        area_type=AreaType.HOUSE
+                        ]
                     ),
                     Area(
                         'S1 House 3',
@@ -63,8 +61,7 @@ def get_setup(config):
                                  appliance=SimpleAppliance()),
                             Area('S1 H3 Night_Storage', strategy=NightStorageStrategy(80),
                                  appliance=SimpleAppliance()),
-                        ],
-                        area_type=AreaType.HOUSE
+                        ]
                     ),
                     Area('S1 ECar', strategy=ECarStrategy(), appliance=SimpleAppliance()),
                 ]
@@ -83,8 +80,7 @@ def get_setup(config):
                                  appliance=SimpleAppliance()),
                             Area('S2 H1 Load 2', strategy=PermanentLoadStrategy(80),
                                  appliance=SimpleAppliance()),
-                        ],
-                        area_type=AreaType.HOUSE
+                        ]
                     ),
                     Area(
                         'S2 House 2',
@@ -101,8 +97,7 @@ def get_setup(config):
                                  appliance=SimpleAppliance()),
                             Area('S2 H2 Load 4', strategy=PermanentLoadStrategy(10),
                                  appliance=SimpleAppliance()),
-                        ],
-                        area_type=AreaType.HOUSE
+                        ]
                     ),
                     Area(
                         'S2 House 3',
@@ -117,8 +112,7 @@ def get_setup(config):
                                  appliance=SimpleAppliance()),
                             Area('S2 H3 Heatpump', strategy=HeatPumpStrategy(0),
                                  appliance=SimpleAppliance()),
-                        ],
-                        area_type=AreaType.HOUSE
+                        ]
                     ),
                 ]
             ),
