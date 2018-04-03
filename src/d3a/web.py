@@ -1,5 +1,5 @@
 import traceback
-from functools import lru_cache
+from functools import lru_cache, wraps
 from itertools import chain, repeat
 from operator import itemgetter
 from threading import Thread
@@ -13,9 +13,12 @@ from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
-from d3a.simulation import Simulation
-from d3a.util import simulation_info
-
+from d3a.simulation import Simulation, page_lock
+from d3a.stats import (
+    energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
+)
+from d3a.util import make_iaa_name, simulation_info
+from d3a.export_unmatched_loads import export_unmatched_loads
 
 _NO_VALUE = {
     'min': None,
@@ -44,11 +47,20 @@ def start_web(interface, port, simulation: Simulation):
     return t
 
 
+def lock_flask_endpoint(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        with page_lock:
+            return f(*args, **kwargs)
+    return wrapped
+
+
 def _html_app(area):
     app = Flask(__name__)
     app.jinja_env.globals.update(id=id)
 
     @app.route("/")
+    @lock_flask_endpoint
     def index():
         return render_template("index.html", root_area=area)
 
@@ -66,6 +78,7 @@ def _api_app(simulation: Simulation):
             abort(404)
 
     @app.route("/")
+    @lock_flask_endpoint
     def index():
         return {
             'simulation': simulation_info(simulation),
@@ -73,6 +86,7 @@ def _api_app(simulation: Simulation):
         }
 
     @app.route("/pause", methods=['GET', 'POST'])
+    @lock_flask_endpoint
     def pause():
         changed = False
         if request.method == 'POST':
@@ -80,15 +94,29 @@ def _api_app(simulation: Simulation):
         return {'paused': simulation.paused, 'changed': changed}
 
     @app.route("/reset", methods=['POST'])
+    @lock_flask_endpoint
     def reset():
         simulation.reset()
         return {'success': 'ok'}
 
+    @app.route("/stop", methods=['POST'])
+    @lock_flask_endpoint
+    def stop():
+        simulation.stop()
+        return {'success': 'ok'}
+
     @app.route("/save", methods=['POST'])
+    @lock_flask_endpoint
     def save():
         return {'save_file': str(simulation.save_state().resolve())}
 
+    @app.route("/status", methods=['GET'])
+    @lock_flask_endpoint
+    def status():
+        return {'status': simulation.status}
+
     @app.route("/slowdown", methods=['GET', 'POST'])
+    @lock_flask_endpoint
     def slowdown():
         changed = False
         if request.method == 'POST':
@@ -110,6 +138,7 @@ def _api_app(simulation: Simulation):
         return {'slowdown': simulation.slowdown, 'changed': changed}
 
     @app.route("/<area_slug>")
+    @lock_flask_endpoint
     def area(area_slug):
         area = _get_area(area_slug)
         return {
@@ -150,6 +179,7 @@ def _api_app(simulation: Simulation):
         }
 
     @app.route("/<area_slug>/trigger/<trigger_name>", methods=['POST'])
+    @lock_flask_endpoint
     def area_trigger(area_slug, trigger_name):
         area = _get_area(area_slug)
         triggers = area.available_triggers
@@ -169,6 +199,7 @@ def _api_app(simulation: Simulation):
             )
 
     @app.route("/<area_slug>/market/<market_time>")
+    @lock_flask_endpoint
     def market(area_slug, market_time):
         area = _get_area(area_slug)
         market, type_ = _get_market(area, market_time)
@@ -226,6 +257,7 @@ def _api_app(simulation: Simulation):
         }
 
     @app.route("/<area_slug>/markets")
+    @lock_flask_endpoint
     def markets(area_slug):
         area = _get_area(area_slug)
         return [
@@ -254,6 +286,77 @@ def _api_app(simulation: Simulation):
             for type_, (time, market)
             in _market_progression(area)
         ]
+
+    def _get_child_traded_energy(market, child):
+        return market.traded_energy.get(
+            child.name,
+            market.traded_energy.get(make_iaa_name(child), '-')
+        )
+
+    @app.route("/<area_slug>/results")
+    def results(area_slug):
+        area = _get_area(area_slug)
+        market = area.current_market
+        if market is None:
+            return {'error': 'no results yet'}
+        return {
+            'summary': {
+                'avg_trade_price': market.avg_trade_price,
+                'max_trade_price': market.max_trade_price,
+                'min_trade_price': market.min_trade_price
+            },
+            'balance': {
+                child.slug: market.total_earned(child.slug) - market.total_spent(child.slug)
+                for child in area.children
+            },
+            'energy_balance': {
+                child.slug: _get_child_traded_energy(market, child)
+                for child in area.children
+            },
+            'slots': [
+                {
+                    'volume': sum(trade.offer.energy for trade in slot_market.trades),
+                }
+                for slot_market in area.past_markets.values()
+            ]
+        }
+
+    @app.route("/unmatched-loads", methods=['GET'])
+    @lock_flask_endpoint
+    def unmatched_loads():
+        return {"unmatched_loads": export_unmatched_loads(simulation.area)}
+
+    @app.route("/<area_slug>/tree-summary")
+    def tree_summary(area_slug):
+        markets = list(recursive_current_markets(_get_area(area_slug)))
+        return {
+            "min_trade_price": min(primary_unit_prices(markets)),
+            "max_trade_price": max(primary_unit_prices(markets)),
+            "avg_trade_price": total_avg_trade_price(markets)
+        }
+
+    @app.route("/<area_slug>/bills")
+    def bills(area_slug):
+        area = _get_area(area_slug)
+
+        def slot_query_param(name):
+            if name in request.args:
+                try:
+                    return pendulum.parse(request.args[name])
+                except pendulum.parsing.exceptions.ParserError:
+                    area.log.error(
+                        'Could not parse timestamp %s, using default for bill computation' %
+                        request.args[name])
+            return None
+
+        from_slot = slot_query_param('from')
+        to_slot = slot_query_param('to')
+        result = energy_bills(area, from_slot, to_slot)
+        if from_slot:
+            result['from'] = str(from_slot)
+        if to_slot:
+            result['to'] = str(to_slot)
+        return result
 
     @app.after_request
     def modify_server_header(response):

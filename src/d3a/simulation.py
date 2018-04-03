@@ -3,8 +3,9 @@ from importlib import import_module
 from logging import getLogger
 
 import time
+from time import sleep
 from pathlib import Path
-from threading import Event, Thread
+from threading import Event, Thread, Lock
 
 import dill
 from pendulum import Pendulum
@@ -21,8 +22,10 @@ from d3a.models.config import SimulationConfig
 from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 
-
 log = getLogger(__name__)
+
+
+page_lock = Lock()
 
 
 class _SimulationInterruped(Exception):
@@ -52,6 +55,7 @@ class Simulation:
         self.api_url = api_url
         self.message_url = message_url
         self.setup_module_name = setup_module_name
+        self.is_stopped = False
 
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(
@@ -119,10 +123,14 @@ class Simulation:
         self._init(**self.initial_params)
         self.ready.set()
 
+    def stop(self):
+        self.is_stopped = True
+
     def run(self, resume=False) -> (Period, Interval):
         if resume:
             log.critical("Resuming simulation")
             self._info()
+        self.is_stopped = False
         config = self.simulation_config
         tick_lengths_s = config.tick_length.total_seconds()
         slot_count = int(config.duration / config.slot_length) + 1
@@ -153,6 +161,10 @@ class Simulation:
                             (slot_no + 1) / slot_count * 100,
                             run_duration, run_duration / (slot_no + 1) * slot_count
                         )
+                        if self.is_stopped:
+                            log.error("Received stop command.")
+                            sleep(5)
+                            break
 
                         for tick_no in range(tick_resume, config.ticks_per_slot):
                             # reset tick_resume after possible resume
@@ -167,7 +179,8 @@ class Simulation:
                                 slot_no + 1,
                                 (tick_no + 1) / config.ticks_per_slot * 100,
                             )
-                            self.area.tick()
+                            with page_lock:
+                                self.area.tick()
                             tick_length = time.monotonic() - tick_start
                             if self.slowdown and tick_length < tick_lengths_s:
                                 # Simulation runs faster than real time but a slowdown was
@@ -180,13 +193,15 @@ class Simulation:
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
 
-                    log.error(
-                        "Run finished in %s%s / %.2fx real time.",
-                        run_duration,
-                        " ({} paused)".format(paused_duration if paused_duration else ""),
-                        config.duration / (run_duration - paused_duration)
-                    )
-                    log.error("REST-API still running at %s", self.api_url)
+                    if not self.is_stopped:
+                        log.error(
+                            "Run finished in %s%s / %.2fx real time",
+                            run_duration,
+                            " ({} paused)".format(paused_duration) if paused_duration else "",
+                            config.duration / (run_duration - paused_duration)
+                        )
+                    if not self.exit_on_finish:
+                        log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
                         export(self.area,
                                self.export_path,
@@ -206,6 +221,7 @@ class Simulation:
                         t.join()
                         continue
                     elif self.exit_on_finish:
+                        log.error("Terminating. (--exit-on-finish set.)")
                         break
                     else:
                         log.info("Ctrl-C to quit")
@@ -235,12 +251,13 @@ class Simulation:
                 raise _SimulationInterruped()
             cmd = console.get_char(timeout)
             if cmd:
-                if cmd not in {'i', 'p', 'q', 'r', 'R', 's', '+', '-'}:
+                if cmd not in {'i', 'p', 'q', 'r', 'S', 'R', 's', '+', '-'}:
                     log.critical("Invalid command. Valid commands:\n"
                                  "  [i] info\n"
                                  "  [p] pause\n"
                                  "  [q] quit\n"
                                  "  [r] reset\n"
+                                 "  [S] stop\n"
                                  "  [R] start REPL\n"
                                  "  [s] save state\n"
                                  "  [+] increase slowdown\n"
@@ -264,6 +281,8 @@ class Simulation:
                     raise KeyboardInterrupt()
                 elif cmd == 's':
                     self.save_state()
+                elif cmd == 'S':
+                    self.stop()
                 elif cmd == '+':
                     v = 5
                     if self.slowdown <= 95:
@@ -327,6 +346,19 @@ class Simulation:
             dill.dump(self, save_file, protocol=HIGHEST_PROTOCOL)
         log.critical("Saved state to %s", save_file_name.resolve())
         return save_file_name
+
+    @property
+    def status(self):
+        if self.is_stopped:
+            return "stopped"
+        elif self.finished:
+            return "finished"
+        elif self.paused:
+            return "paused"
+        elif self.ready.is_set():
+            return "ready"
+        else:
+            return "running"
 
     def __getstate__(self):
         state = self.__dict__.copy()

@@ -126,12 +126,15 @@ class ExportLeafData(ExportData):
             return [self.area.strategy.temp_history[slot]]
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             s = self.area.strategy.state
+            charge = s.charge_history[slot]
+            stored = '-' if charge == '-' else 0.01 * charge * s.capacity
             return [market.bought_energy(self.area.name),
                     market.sold_energy(self.area.name),
                     s.charge_history_kWh[slot],
                     s.offered_history[slot],
                     s.used_history[slot],
-                    s.charge_history[slot]]
+                    charge,
+                    stored]
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             desired = self.area.strategy.state.desired_energy[slot] / 1000
             return [desired, self._traded(market) + desired]

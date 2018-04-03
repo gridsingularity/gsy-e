@@ -122,6 +122,10 @@ def make_iaa_name(owner):
     return "IAA {}".format(owner.name)
 
 
+def area_name_from_area_or_iaa_name(name):
+    return name[4:] if name[:4] == 'IAA ' else name
+
+
 def format_interval(interval, show_day=True):
     if interval.days and show_day:
         template = "{i.days:02d}:{i.hours:02d}:{i.minutes:02d}:{i.remaining_seconds:02d}"
@@ -138,6 +142,7 @@ def simulation_info(simulation):
     return {
         'config': simulation.area.config.as_dict(),
         'finished': simulation.finished,
+        'aborted': simulation.is_stopped,
         'current_tick': simulation.area.current_tick,
         'current_time': current_time,
         'current_date': simulation.area.now.format('%Y-%m-%d'),
