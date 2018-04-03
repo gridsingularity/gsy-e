@@ -1,38 +1,45 @@
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
+from d3a.models.area import AreaType
 from logging import getLogger
 
 log = getLogger(__name__)
 
-
 DEFICIT_THRESHOLD_Wh = 0.001
 
 
-def _calculate_hour_stats_for_devices(hour_data, area, current_slot):
-    for child in area.children:
-        if isinstance(child.strategy, LoadHoursStrategy):
-            desired_energy = child.strategy.state.desired_energy[current_slot]
-        elif isinstance(child.strategy, PermanentLoadStrategy):
-            desired_energy = child.strategy.energy
-        else:
-            continue
-        traded_energy = \
-            child.past_markets[current_slot].traded_energy[child.name] \
-            if (current_slot in child.past_markets) and \
-               (child.name in child.past_markets[current_slot].traded_energy) \
-            else 0.0
-        deficit = desired_energy - traded_energy
-        if deficit > DEFICIT_THRESHOLD_Wh:
-            # Get the hour data entry for this hour, or create an empty one if not there
-            device = hour_data["devices"].get(
-                child.slug,
-                {"unmatched_load_count": 0, "timepoints": []}
-            )
-            # Update load hour entry
-            device["unmatched_load_count"] += 1
-            device["timepoints"].append(current_slot.to_time_string())
-            hour_data["devices"][child.slug] = device
+def _calculate_stats_for_single_device(hour_data, area, current_slot):
+    if isinstance(area.strategy, LoadHoursStrategy):
+        desired_energy = area.strategy.state.desired_energy[current_slot]
+    elif isinstance(area.strategy, PermanentLoadStrategy):
+        desired_energy = area.strategy.energy
+    else:
+        return hour_data
+    traded_energy = area.past_markets[current_slot].traded_energy[area.name] \
+        if (current_slot in area.past_markets) and \
+           (area.name in area.past_markets[current_slot].traded_energy) \
+        else 0.0
+    deficit = desired_energy - traded_energy
+    if deficit > DEFICIT_THRESHOLD_Wh:
+        # Get the hour data entry for this hour, or create an empty one if not there
+        device = hour_data["devices"].get(
+            area.slug,
+            {"unmatched_load_count": 0, "timepoints": []}
+        )
+        # Update load hour entry
+        device["unmatched_load_count"] += 1
+        device["timepoints"].append(current_slot.to_time_string())
+        hour_data["devices"][area.slug] = device
     return hour_data
+
+
+def _calculate_hour_stats_for_area(hour_data, area, current_slot):
+    if area.area_type is AreaType.HOUSE:
+        for child in area.children:
+            hour_data = _calculate_stats_for_single_device(hour_data, child, current_slot)
+        return hour_data
+    elif area.area_type is AreaType.CELL_TOWER:
+        return _calculate_stats_for_single_device(hour_data, area, current_slot)
 
 
 def _accumulate_device_stats_to_area_stats(per_hour_device_data):
@@ -55,15 +62,17 @@ def _accumulate_device_stats_to_area_stats(per_hour_device_data):
     return area_data
 
 
-def _calculate_house_area_stats(area):
+def _calculate_area_stats(area):
     per_hour_device_data = {}
     # Iterate first through all the available market slots of the area
     for current_slot, market in area.past_markets.items():
         hour_data = per_hour_device_data.get(current_slot.hour, {"devices": {}})
         # Update hour data for the area, by accumulating slots in one hour
         per_hour_device_data[current_slot.hour] = \
-            _calculate_hour_stats_for_devices(hour_data, area, current_slot)
-    return _accumulate_device_stats_to_area_stats(per_hour_device_data)
+            _calculate_hour_stats_for_area(hour_data, area, current_slot)
+    area_data = _accumulate_device_stats_to_area_stats(per_hour_device_data)
+    area_data["type"] = area.area_type.name
+    return area_data
 
 
 def _recurse_area_tree(area):
@@ -73,13 +82,9 @@ def _recurse_area_tree(area):
             # We are at a leaf node, no point in recursing further. This node's calculation
             # should be done on the upper level
             continue
-        elif all(grandkid.children == [] for grandkid in child.children) and \
-                (any(isinstance(grandkid.strategy, LoadHoursStrategy) or
-                     isinstance(grandkid.strategy, PermanentLoadStrategy)
-                     for grandkid in child.children)):
-            # House level: validate that all grandkids are leaves, and there is
-            # at least one load included amongst children
-            unmatched_loads[child.slug] = _calculate_house_area_stats(child)
+        elif child.area_type is not AreaType.NONE:
+            # Need to iterate, because the area has been marked as a house or cell tower
+            unmatched_loads[child.slug] = _calculate_area_stats(child)
         else:
             # Recurse even further. Merge new results with existing ones
             unmatched_loads = {**unmatched_loads, **_recurse_area_tree(child)}

@@ -3,6 +3,7 @@ from collections import OrderedDict, defaultdict
 from logging import getLogger
 from random import random
 from typing import Dict, List, Optional, Union  # noqa
+from enum import Enum, auto
 
 from cached_property import cached_property
 from pendulum.interval import Interval
@@ -31,12 +32,19 @@ DEFAULT_CONFIG = SimulationConfig(
 )
 
 
+class AreaType(Enum):
+    HOUSE = auto()
+    CELL_TOWER = auto()
+    NONE = auto()
+
+
 class Area:
     def __init__(self, name: str = None, children: List["Area"] = None,
                  strategy: BaseStrategy = None,
                  appliance: BaseAppliance = None,
                  config: SimulationConfig = None,
-                 budget_keeper=None):
+                 budget_keeper=None,
+                 area_type=AreaType.NONE):
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
@@ -58,6 +66,7 @@ class Area:
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
         self.listeners = []
+        self.area_type = area_type
 
     def activate(self):
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
