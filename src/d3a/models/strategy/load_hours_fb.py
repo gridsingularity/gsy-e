@@ -9,7 +9,7 @@ from d3a.models.strategy.base import BaseStrategy
 
 class LoadHoursStrategy(BaseStrategy):
     def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
-                 daily_budget=None):
+                 daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
         self.avg_power_in_Wh = avg_power
@@ -24,8 +24,9 @@ class LoadHoursStrategy(BaseStrategy):
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot = None
         self.energy_requirement = 0
+        self.max_acceptable_energy_price = 10**20
         # In ct. / kWh
-        self.max_acceptable_energy_price = 10 ** 20
+        self.acceptable_energy_rate = acceptable_energy_rate
         # be a parameter on the constructor or if we want to deal in percentages
         self.hrs_of_day = hrs_of_day
         active_hours_count = (hrs_of_day[1] - hrs_of_day[0] + 1)
@@ -71,7 +72,10 @@ class LoadHoursStrategy(BaseStrategy):
                 if len(market.sorted_offers) < 1:
                     return
                 acceptable_offer = market.sorted_offers[0]
-                if acceptable_offer:
+
+                if acceptable_offer and \
+                        ((acceptable_offer.price/acceptable_offer.energy) <
+                         self.acceptable_energy_rate):
                     max_energy = self.energy_requirement / 1000
                     if acceptable_offer.energy > max_energy:
                         self.accept_offer(market, acceptable_offer, energy=max_energy)
