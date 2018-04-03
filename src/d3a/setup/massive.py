@@ -2,7 +2,7 @@ from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
-from d3a.models.area import Area
+from d3a.models.area import Area, AreaType
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.e_car import ECarStrategy
 from d3a.models.strategy.fridge import FridgeStrategy
@@ -29,7 +29,8 @@ def get_setup(config):
                          appliance=SimpleAppliance()),
                     Area('S{} H{} Storage'.format(s, h), strategy=StorageStrategy(80),
                          appliance=SimpleAppliance()),
-                ]
+                ],
+                area_type=AreaType.HOUSE
             )
             for h in range(50)
 

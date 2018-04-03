@@ -1,5 +1,5 @@
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.area import Area
+from d3a.models.area import Area, AreaType
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
@@ -27,7 +27,8 @@ def get_setup(config):
                          appliance=SimpleAppliance()),
                     Area('Tenant 6', strategy=PermanentLoadStrategy(energy=100),
                          appliance=SimpleAppliance()),
-                ]
+                ],
+                area_type=AreaType.HOUSE
             ),
             Area('Commercial Energy Producer',
                  strategy=CommercialStrategy(energy_price=30, energy_range_wh=(40, 100)))
