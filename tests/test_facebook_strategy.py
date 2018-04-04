@@ -1,6 +1,7 @@
 import pytest
 import pendulum
 from pendulum import Pendulum
+from datetime import timedelta
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
 from d3a.models.strategy.facebook_device import FacebookDeviceStrategy
@@ -37,6 +38,10 @@ class FakeArea:
             self.config.tick_length * self.current_tick
         )
 
+    @property
+    def next_market(self):
+        return FakeMarket(50)
+
 
 class FakeMarket:
     def __init__(self, count):
@@ -57,6 +62,10 @@ class FakeMarket:
             ]
         ]
         return offers[self.count]
+
+    @property
+    def time_slot(self):
+        return Pendulum.now().start_of('day').add_timedelta(timedelta(hours=10))
 
 
 @pytest.fixture()
