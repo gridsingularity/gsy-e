@@ -102,7 +102,7 @@ class StorageState:
         self.lose(self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
         free = self.free_storage / self.capacity
         if free < 0.2:
-            area.log.info("Storage reached more than 80% Battery: " + str(free))
+            area.log.info("Storage reached more than 80%% Battery: %f" % free)
 
     def block_storage(self, energy):
         self._blocked_storage += energy

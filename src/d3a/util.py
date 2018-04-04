@@ -8,8 +8,10 @@ from logging import LoggerAdapter
 from click.types import ParamType
 from pendulum.interval import Interval
 from rex import rex
+from pkgutil import iter_modules
 
 from d3a import get_project_root
+from d3a import setup as d3a_setup
 
 
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
@@ -17,6 +19,9 @@ INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2
 IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
 
 _CONTRACT_CACHE = {}
+
+
+available_simulation_scenarios = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
 
 
 class TaggedLogWrapper(LoggerAdapter):
