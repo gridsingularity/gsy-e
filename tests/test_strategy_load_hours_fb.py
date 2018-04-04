@@ -125,7 +125,17 @@ def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
 # Test if daily energy requirement is calculated correctly for the device
 def test_calculate_daily_energy_req(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
-    load_hours_strategy_test1.daily_energy_required = 620*4
+    assert load_hours_strategy_test1.daily_energy_required == 620*4
+
+
+# Test if daily energy requirement is calculated correctly for the device
+def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
+    load_hours_strategy_test1.event_activate()
+    assert load_hours_strategy_test1.energy_requirement == \
+        load_hours_strategy_test1.energy_per_slot
+    ts = load_hours_strategy_test1.area.next_market.time_slot
+    assert load_hours_strategy_test1.state.desired_energy[ts] == \
+        load_hours_strategy_test1.energy_requirement
 
 
 # Test if device accepts the cheapest offer
