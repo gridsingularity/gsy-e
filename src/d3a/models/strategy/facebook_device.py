@@ -99,6 +99,6 @@ class FacebookDeviceStrategy(BaseStrategy):
     def event_market_cycle(self):
         self._update_energy_requirement()
 
-        
+
 class CellTowerFacebookDeviceStrategy(FacebookDeviceStrategy):
     pass
