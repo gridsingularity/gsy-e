@@ -5,7 +5,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 
 
 def get_setup(config):
@@ -112,9 +112,9 @@ def get_setup(config):
                  strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
                  appliance=SimpleAppliance()),
 
-            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power=100,
-                                                          hrs_per_day=24,
-                                                          hrs_of_day=(0, 23)),
+            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power=100,
+                                                                   hrs_per_day=24,
+                                                                   hrs_of_day=(0, 23)),
                  appliance=SwitchableAppliance())
         ],
         config=config
