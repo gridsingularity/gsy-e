@@ -1,7 +1,8 @@
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.facebook_device import FacebookDeviceStrategy
+from d3a.models.strategy.facebook_device import FacebookDeviceStrategy, \
+    CellTowerFacebookDeviceStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
@@ -328,7 +329,7 @@ def get_setup(config):
             ),
 
             # The Cell tower is currently programmed as a conventional load
-            Area('Cell Tower', strategy=FacebookDeviceStrategy(100, 24),
+            Area('Cell Tower', strategy=CellTowerFacebookDeviceStrategy(100, 24),
                  appliance=SimpleAppliance()),
         ],
         config=config
