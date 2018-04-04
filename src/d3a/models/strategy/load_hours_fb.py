@@ -46,7 +46,7 @@ class LoadHoursStrategy(BaseStrategy):
         self.avg_power = (self.avg_power_in_Wh /
                           (Interval(hours=1) / self.area.config.slot_length)
                           )
-        self.daily_energy_required = self.avg_power * self.hrs_per_day
+        self.daily_energy_required = self.avg_power_in_Wh * self.hrs_per_day
         if self.daily_budget:
             self.max_acceptable_energy_price = (
                 self.daily_budget / self.daily_energy_required * 1000
