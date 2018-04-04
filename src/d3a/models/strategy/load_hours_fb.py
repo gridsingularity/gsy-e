@@ -89,11 +89,11 @@ class LoadHoursStrategy(BaseStrategy):
     def event_market_cycle(self):
         self.energy_requirement = 0
         if self.area.now.hour in self.active_hours:
-            self.state.record_desired_energy(self.area, self.avg_power)
             energy_per_slot = self.energy_per_slot
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement += energy_per_slot
+        self.state.record_desired_energy(self.area, self.avg_power)
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):

@@ -1,14 +1,14 @@
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.facebook_device import FacebookDeviceStrategy, \
+    CellTowerFacebookDeviceStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
-from logging import getLogger
-
-log = getLogger(__name__)
 
 DEFICIT_THRESHOLD_Wh = 0.001
 
 
 def _calculate_stats_for_single_device(hour_data, area, current_slot):
-    if isinstance(area.strategy, LoadHoursStrategy):
+    if isinstance(area.strategy, LoadHoursStrategy) or \
+       isinstance(area.strategy, FacebookDeviceStrategy):
         desired_energy = area.strategy.state.desired_energy[current_slot]
     elif isinstance(area.strategy, PermanentLoadStrategy):
         desired_energy = area.strategy.energy
@@ -70,19 +70,21 @@ def _calculate_area_stats(area):
         per_hour_device_data[current_slot.hour] = \
             _calculate_hour_stats_for_area(hour_data, area, current_slot)
     area_data = _accumulate_device_stats_to_area_stats(per_hour_device_data)
-    area_data["type"] = "cell_tower" if isinstance(area, CellTowerLoadHoursStrategy) else "house"
+    area_data["type"] = "cell_tower" if _is_cell_tower_node(area) else "house"
     return area_data
 
 
 def _is_house_node(area):
     return all(grandkid.children == [] for grandkid in area.children) and \
            (any(isinstance(grandkid.strategy, LoadHoursStrategy) or
-                isinstance(grandkid.strategy, PermanentLoadStrategy)
+                isinstance(grandkid.strategy, PermanentLoadStrategy) or
+                isinstance(grandkid.strategy, FacebookDeviceStrategy)
                 for grandkid in area.children))
 
 
 def _is_cell_tower_node(area):
-    return isinstance(area.strategy, CellTowerLoadHoursStrategy)
+    return isinstance(area.strategy, CellTowerLoadHoursStrategy) \
+           or isinstance(area.strategy, CellTowerFacebookDeviceStrategy)
 
 
 def _recurse_area_tree(area):
