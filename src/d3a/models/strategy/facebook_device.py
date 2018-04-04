@@ -5,12 +5,14 @@ from pendulum.interval import Interval
 
 from d3a.exceptions import MarketException
 from d3a.models.strategy.base import BaseStrategy
+from d3a.models.state import LoadState
 
 
 class FacebookDeviceStrategy(BaseStrategy):
     def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
                  daily_budget=0):
         super().__init__()
+        self.state = LoadState()
         self.avg_power = avg_power  # Average power in watts
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
@@ -49,6 +51,7 @@ class FacebookDeviceStrategy(BaseStrategy):
             /
             (self.hrs_per_day * Interval(hours=1) / self.area.config.slot_length)
         )
+        self._update_energy_requirement()
 
     def event_tick(self, *, area):
         if self.energy_requirement <= 0:
@@ -84,9 +87,14 @@ class FacebookDeviceStrategy(BaseStrategy):
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
 
-    def event_market_cycle(self):
+    def _update_energy_requirement(self):
+        self.energy_requirement = 0
         if self.area.now.hour in self.active_hours:
             energy_per_slot = self.energy_per_slot
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement += energy_per_slot
+        self.state.record_desired_energy(self.area, self.avg_power)
+
+    def event_market_cycle(self):
+        self._update_energy_requirement()

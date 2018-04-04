@@ -54,6 +54,7 @@ class LoadHoursStrategy(BaseStrategy):
         # Avg_power is actually the power per slot, since it is calculated by dividing the
         # avg_power_in_Wh by the number of slots per hour
         self.energy_per_slot = self.avg_power
+        self._update_energy_requirement()
 
     def event_tick(self, *, area):
         if self.energy_requirement <= 0:
@@ -86,14 +87,17 @@ class LoadHoursStrategy(BaseStrategy):
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
 
-    def event_market_cycle(self):
+    def _update_energy_requirement(self):
         self.energy_requirement = 0
         if self.area.now.hour in self.active_hours:
-            self.state.record_desired_energy(self.area, self.avg_power)
             energy_per_slot = self.energy_per_slot
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement += energy_per_slot
+        self.state.record_desired_energy(self.area, self.avg_power)
+
+    def event_market_cycle(self):
+        self._update_energy_requirement()
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):
