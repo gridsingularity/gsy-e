@@ -53,6 +53,7 @@ class LoadHoursStrategy(BaseStrategy):
         # Avg_power is actually the power per slot, since it is calculated by dividing the
         # avg_power_in_Wh by the number of slots per hour
         self.energy_per_slot = self.avg_power
+        self._update_energy_requirement()
 
     def event_tick(self, *, area):
         if self.energy_requirement <= 0:
