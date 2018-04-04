@@ -94,7 +94,7 @@ class FacebookDeviceStrategy(BaseStrategy):
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement += energy_per_slot
-        self.state.record_desired_energy(self.area, self.avg_power)
+        self.state.record_desired_energy(self.area, self.energy_requirement)
 
     def event_market_cycle(self):
         self._update_energy_requirement()
