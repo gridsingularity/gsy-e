@@ -104,7 +104,7 @@ class ExportLeafData(ExportData):
             return ['temperature [°C]']
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             return ['bought [kWh]', 'sold [kWh]', 'energy balance [kWh]', 'offered [kWh]',
-                    'used [kWh]', 'charge [%]']
+                    'used [kWh]', 'charge [%]', 'stored [kWh]']
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
         elif isinstance(self.area.strategy, PVStrategy):
