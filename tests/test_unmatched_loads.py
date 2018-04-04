@@ -6,7 +6,6 @@ from parameterized import parameterized
 from d3a.models.area import Area
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.strategy.facebook_device import CellTowerFacebookDeviceStrategy
 from d3a.models.state import LoadState
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.config import SimulationConfig
@@ -80,7 +79,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load1": -0.9}
+            mock_market.traded_energy = {"load1": -0.09}
             self.strategy1.state.desired_energy[timeslot] = 100
             self.area1.past_markets[timeslot] = mock_market
 
@@ -97,8 +96,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         assert unmatched_loads["unmatched_load_count"] == 10
         assert not unmatched_loads["all_loads_met"]
 
-    @parameterized.expand([('facebook device strategy', CellTowerFacebookDeviceStrategy),
-                           ('load hours strategy', CellTowerLoadHoursStrategy)])
+    @parameterized.expand([('load hours strategy', CellTowerLoadHoursStrategy)])
     def test_export_unmatched_loads_reports_cell_tower_areas(self, _, strategy_type):
         house1 = Area("House1", [self.area1, self.area2])
         ct_strategy = MagicMock(spec=strategy_type)
@@ -108,12 +106,12 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load1": -0.9}
+            mock_market.traded_energy = {"load1": -0.09}
             self.strategy1.state.desired_energy[timeslot] = 100
             self.area1.past_markets[timeslot] = mock_market
 
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load2": -0.99}
+            mock_market.traded_energy = {"load2": -0.099}
             self.strategy2.energy = 100
             self.area2.past_markets[timeslot] = mock_market
 
