@@ -35,17 +35,17 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load1":  101}
+            mock_market.traded_energy = {"load1": -0.101}
             self.strategy1.state.desired_energy[timeslot] = 100
             self.area1.past_markets[timeslot] = mock_market
 
             mock_market2 = MagicMock(spec=Market)
-            mock_market2.traded_energy = {"load2": 101}
+            mock_market2.traded_energy = {"load2": -0.101}
             self.strategy2.energy = 100
             self.area2.past_markets[timeslot] = mock_market2
 
             mock_market3 = MagicMock(spec=Market)
-            mock_market3.traded_energy = {"load1":  101, "load2": 101}
+            mock_market3.traded_energy = {"load1": -0.101, "load2": -0.101}
             house1.past_markets[timeslot] = mock_market3
         self.grid = Area("Grid", [house1])
 
@@ -58,17 +58,17 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load1":  90}
+            mock_market.traded_energy = {"load1": -0.09}
             self.strategy1.state.desired_energy[timeslot] = 100
             self.area1.past_markets[timeslot] = mock_market
 
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load2": 70}
+            mock_market.traded_energy = {"load2": -0.07}
             self.strategy2.energy = 100
             self.area2.past_markets[timeslot] = mock_market
 
             mock_market3 = MagicMock(spec=Market)
-            mock_market3.traded_energy = {"load1":  100, "load2": 100}
+            mock_market3.traded_energy = {"load1": -0.09, "load2": -0.07}
             house1.past_markets[timeslot] = mock_market3
         self.grid = Area("Grid", [house1])
         unmatched_loads = export_unmatched_loads(self.grid)
@@ -80,17 +80,17 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load1":  90}
+            mock_market.traded_energy = {"load1": -0.09}
             self.strategy1.state.desired_energy[timeslot] = 100
             self.area1.past_markets[timeslot] = mock_market
 
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load2": 101}
+            mock_market.traded_energy = {"load2": -0.101}
             self.strategy2.energy = 100
             self.area2.past_markets[timeslot] = mock_market
 
             mock_market3 = MagicMock(spec=Market)
-            mock_market3.traded_energy = {"load1":  100, "load2": 101}
+            mock_market3.traded_energy = {"load1": -0.09, "load2": -0.101}
             house1.past_markets[timeslot] = mock_market3
         self.grid = Area("Grid", [house1])
         unmatched_loads = export_unmatched_loads(self.grid)
@@ -108,21 +108,21 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load1":  90}
+            mock_market.traded_energy = {"load1": -0.09}
             self.strategy1.state.desired_energy[timeslot] = 100
             self.area1.past_markets[timeslot] = mock_market
 
             mock_market = MagicMock(spec=Market)
-            mock_market.traded_energy = {"load2": 99}
+            mock_market.traded_energy = {"load2": -0.099}
             self.strategy2.energy = 100
             self.area2.past_markets[timeslot] = mock_market
 
             mock_market3 = MagicMock(spec=Market)
-            mock_market3.traded_energy = {"load1":  100, "load2": 101}
+            mock_market3.traded_energy = {"load1": -0.09, "load2": -0.099}
             house1.past_markets[timeslot] = mock_market3
 
             mock_market_ct = MagicMock(spec=Market)
-            mock_market_ct.traded_energy = {"Cell Tower": 400}
+            mock_market_ct.traded_energy = {"Cell Tower": -0.4}
             ct_strategy.state.desired_energy[timeslot] = 1000
             cell_tower.past_markets[timeslot] = mock_market_ct
 

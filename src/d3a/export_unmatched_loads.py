@@ -9,16 +9,17 @@ DEFICIT_THRESHOLD_Wh = 0.001
 def _calculate_stats_for_single_device(hour_data, area, current_slot):
     if isinstance(area.strategy, LoadHoursStrategy) or \
        isinstance(area.strategy, FacebookDeviceStrategy):
-        desired_energy = area.strategy.state.desired_energy[current_slot]
+        desired_energy_Wh = area.strategy.state.desired_energy[current_slot]
     elif isinstance(area.strategy, PermanentLoadStrategy):
-        desired_energy = area.strategy.energy
+        desired_energy_Wh = area.strategy.energy
     else:
         return hour_data
-    traded_energy = area.past_markets[current_slot].traded_energy[area.name] \
-        if (current_slot in area.past_markets) and \
-           (area.name in area.past_markets[current_slot].traded_energy) \
+    traded_energy_kWh = area.parent.past_markets[current_slot].traded_energy[area.name] \
+        if (current_slot in area.parent.past_markets) and \
+           (area.name in area.parent.past_markets[current_slot].traded_energy) \
         else 0.0
-    deficit = desired_energy - traded_energy
+    # Different sign conventions, hence the +
+    deficit = desired_energy_Wh + traded_energy_kWh * 1000.0
     if deficit > DEFICIT_THRESHOLD_Wh:
         # Get the hour data entry for this hour, or create an empty one if not there
         device = hour_data["devices"].get(
