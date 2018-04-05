@@ -20,6 +20,9 @@ from d3a.models.events import MarketEvent, OfferEvent
 log = getLogger(__name__)
 
 
+OFFER_PRICE_THRESHOLD = 0.00001
+
+
 class Offer:
     def __init__(self, id, price, energy, seller, market=None):
         self.id = str(id)
@@ -256,7 +259,7 @@ class Market:
     def most_affordable_offers(self):
         sort_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         rate = sort_offers[0].price / sort_offers[0].energy
-        return [o for o in sort_offers if abs(o.price / o.energy - rate) < 0.00001]
+        return [o for o in sort_offers if abs(o.price / o.energy - rate) < OFFER_PRICE_THRESHOLD]
 
     @property
     def _now(self):
