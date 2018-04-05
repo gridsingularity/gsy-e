@@ -55,6 +55,10 @@ class LoadHoursStrategy(BaseStrategy):
         self.energy_per_slot = self.avg_power
         self._update_energy_requirement()
 
+    def _find_acceptable_offer(self, market):
+        offers = market.most_affordable_offers
+        return random.choice(offers)
+
     def event_tick(self, *, area):
         if self.energy_requirement <= 0:
             return
@@ -71,8 +75,8 @@ class LoadHoursStrategy(BaseStrategy):
                 market = list(self.area.markets.values())[0]
                 if len(market.sorted_offers) < 1:
                     return
-                acceptable_offer = market.sorted_offers[0]
 
+                acceptable_offer = self._find_acceptable_offer(market)
                 if acceptable_offer and \
                         ((acceptable_offer.price/acceptable_offer.energy) <
                          self.acceptable_energy_rate):

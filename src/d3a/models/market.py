@@ -253,6 +253,12 @@ class Market:
         return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
 
     @property
+    def most_affordable_offers(self):
+        sort_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        rate = sort_offers[0].price / sort_offers[0].energy
+        return [o for o in sort_offers if abs(o.price / o.energy - rate) < 0.00001]
+
+    @property
     def _now(self):
         if self.area:
             return self.area.now
