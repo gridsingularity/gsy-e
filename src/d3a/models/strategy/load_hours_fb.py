@@ -51,6 +51,7 @@ class LoadHoursStrategy(BaseStrategy):
             /
             (self.hrs_per_day * Interval(hours=1) / self.area.config.slot_length)
         )
+        self._update_energy_requirement()
 
     def event_tick(self, *, area):
         if self.energy_requirement <= 0:
@@ -88,13 +89,17 @@ class LoadHoursStrategy(BaseStrategy):
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
 
-    def event_market_cycle(self):
+    def _update_energy_requirement(self):
+        self.energy_requirement = 0
         if self.area.now.hour in self.active_hours:
-            self.state.record_desired_energy(self.area, self.avg_power)
             energy_per_slot = self.energy_per_slot
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement += energy_per_slot
+        self.state.record_desired_energy(self.area, self.energy_requirement)
+
+    def event_market_cycle(self):
+        self._update_energy_requirement()
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):

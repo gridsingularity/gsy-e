@@ -13,7 +13,7 @@ class CommercialStrategy(BaseStrategy):
         self.energy_price = energy_price
 
     def event_activate(self):
-        # That's usaul an init function but the markets aren't open during the init call
+        # That's usual an init function but the markets aren't open during the init call
         for market in self.area.markets.values():
             for i in range(COMMERCIAL_OFFERS):
                 energy = random.randint(*self.energy_range_wh) / 1000
