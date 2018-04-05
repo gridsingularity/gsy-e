@@ -73,7 +73,6 @@ class LoadHoursStrategy(BaseStrategy):
                 if len(market.sorted_offers) < 1:
                     return
                 acceptable_offer = market.sorted_offers[0]
-
                 if acceptable_offer and \
                         ((acceptable_offer.price/acceptable_offer.energy) <
                          self.acceptable_energy_rate):
