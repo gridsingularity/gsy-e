@@ -219,13 +219,13 @@ class DataSets:
         self.dataset = pd.read_csv(path)
 
 
-class UnmatchLoads(DataSets):
+class BarGraph(DataSets):
     def __init__(self, path, key):
         self.key = key
         self.umHours = dict()
-        super(UnmatchLoads, self).__init__(path)
+        super(BarGraph, self).__init__(path)
 
-    def um_time(self):
+    def graph_value(self):
         try:
             self.dataset[self.key]
         except KeyError:
@@ -263,22 +263,22 @@ def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
         tv = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-tv.csv')
 
         if(os.path.isfile(gl)):
-            higl = UnmatchLoads(gl, key)
-            higl.um_time()
+            higl = BarGraph(gl, key)
+            higl.graph_value()
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name='House{}-GL'.format(i+1))
             data.append(traceigl)
         if(os.path.isfile(ll)):
-            hill = UnmatchLoads(ll, key)
-            hill.um_time()
+            hill = BarGraph(ll, key)
+            hill.graph_value()
             traceill = go.Bar(x=list(hill.umHours.keys()),
                               y=list(hill.umHours.values()),
                               name='House{}-LL'.format(i+1))
             data.append(traceill)
         if(os.path.isfile(tv)):
-            hitv = UnmatchLoads(tv, key)
-            hitv.um_time()
+            hitv = BarGraph(tv, key)
+            hitv.graph_value()
             traceitv = go.Bar(x=list(hitv.umHours.keys()),
                               y=list(hitv.umHours.values()),
                               name='House{}-TV'.format(i+1))
@@ -288,7 +288,7 @@ def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
         os.makedirs(plot_dir)
     os.chdir(plot_dir)
 
-    UnmatchLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 
 
 class TradeHistory(DataSets):
@@ -358,15 +358,15 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
         ss2 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage2.csv')
 
         if (os.path.isfile(ss1)):
-            hiss1 = UnmatchLoads(ss1, key)
-            hiss1.um_time()
+            hiss1 = BarGraph(ss1, key)
+            hiss1.graph_value()
             traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
             data.append(traceiss1)
         if (os.path.isfile(ss2)):
-            hiss2 = UnmatchLoads(ss2, key)
-            hiss2.um_time()
+            hiss2 = BarGraph(ss2, key)
+            hiss2.graph_value()
             traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
@@ -377,7 +377,10 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
         os.makedirs(plot_dir)
     os.chdir(plot_dir)
 
-    UnmatchLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+    if not data:
+        return
+
+    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 
 
 # Energy Profile of House
@@ -396,43 +399,43 @@ def _house_etrade_history(path, barmode, xtitle, ytitle):
         iname = str('Energy Profile of House{}.html'.format(i + 1))
         title = str('Energy Profile of House{}'.format(i + 1))
         if(os.path.isfile(gl)):
-            higl = UnmatchLoads(gl, key)
-            higl.um_time()
+            higl = BarGraph(gl, key)
+            higl.graph_value()
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name='House{}-GL'.format(i+1))
             data.append(traceigl)
         if(os.path.isfile(ll)):
-            hill = UnmatchLoads(ll, key)
-            hill.um_time()
+            hill = BarGraph(ll, key)
+            hill.graph_value()
             traceill = go.Bar(x=list(hill.umHours.keys()),
                               y=list(hill.umHours.values()),
                               name='House{}-LL'.format(i+1))
             data.append(traceill)
         if(os.path.isfile(tv)):
-            hitv = UnmatchLoads(tv, key)
-            hitv.um_time()
+            hitv = BarGraph(tv, key)
+            hitv.graph_value()
             traceitv = go.Bar(x=list(hitv.umHours.keys()),
                               y=list(hitv.umHours.values()),
                               name='House{}-TV'.format(i+1))
             data.append(traceitv)
         if (os.path.isfile(ss1)):
-            hiss1 = UnmatchLoads(ss1, key)
-            hiss1.um_time()
+            hiss1 = BarGraph(ss1, key)
+            hiss1.graph_value()
             traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
             data.append(traceiss1)
         if (os.path.isfile(ss2)):
-            hiss2 = UnmatchLoads(ss2, key)
-            hiss2.um_time()
+            hiss2 = BarGraph(ss2, key)
+            hiss2.graph_value()
             traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
             data.append(traceiss2)
         if (os.path.isfile(pv)):
-            hipv = UnmatchLoads(pv, key)
-            hipv.um_time()
+            hipv = BarGraph(pv, key)
+            hipv.graph_value()
             traceipv = go.Bar(x=list(hipv.umHours.keys()), y=list(hipv.umHours.values()),
                               name='House{0}-PV'.format(i + 1))
             data.append(traceipv)
@@ -441,6 +444,6 @@ def _house_etrade_history(path, barmode, xtitle, ytitle):
             os.makedirs(plot_dir)
         os.chdir(plot_dir)
 
-        UnmatchLoads.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
         os.chdir('..')
         data = list()
