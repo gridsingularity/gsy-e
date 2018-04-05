@@ -1,7 +1,7 @@
-# from d3a.models.appliance.simple import SimpleAppliance
+# from d3a.models.appliance.simple import SimpleAppliance # NOQA
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-# from d3a.models.strategy.commercial_producer import CommercialStrategy
+# from d3a.models.strategy.commercial_producer import CommercialStrategy # NOQA
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
@@ -48,7 +48,6 @@ def get_setup(config):
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
             #      appliance=SimpleAppliance()
             #      ),
-
         ],
         config=config
     )
