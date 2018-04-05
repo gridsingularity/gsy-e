@@ -189,7 +189,7 @@ def test_market_most_affordable_offers(market: Market):
     market.offer(2, 1, 'A')
     market.offer(4, 1, 'A')
 
-    assert [o.price for o in market.most_affordable_offers] == [1, 10, 20, 20000]
+    assert {o.price for o in market.most_affordable_offers} == {1, 10, 20, 20000}
 
 
 def test_market_listeners_init(called):
