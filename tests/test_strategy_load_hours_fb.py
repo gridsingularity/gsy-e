@@ -46,6 +46,7 @@ class FakeArea:
 class FakeMarket:
     def __init__(self, count):
         self.count = count
+        self.most_affordable_energy = 0.1551
 
     @property
     def sorted_offers(self):
@@ -66,6 +67,10 @@ class FakeMarket:
             ]
         ]
         return offers[self.count]
+
+    @property
+    def most_affordable_offers(self):
+        return [Offer('id_affordable', 1, self.most_affordable_energy, 'A', self)]
 
     @property
     def time_slot(self):
@@ -138,10 +143,10 @@ def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
         load_hours_strategy_test1.energy_requirement
 
 
-# Test if device accepts the cheapest offer
+# Test if device accepts the most affordable offer
 def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
-    cheapest_offer = market_test1.sorted_offers[0]
+    cheapest_offer = market_test1.most_affordable_offers[0]
     load_hours_strategy_test1.energy_requirement = cheapest_offer.energy * 1000 + 1
     load_hours_strategy_test1.event_tick(area=area_test1)
     assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == repr(cheapest_offer)
@@ -169,15 +174,22 @@ def test_event_market_cycle_resets_energy_requirement(load_hours_strategy_test1,
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):
+    market_test1.most_affordable_energy = 0.155
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
     load_hours_strategy_test1.event_tick(area=area_test1)
-    assert load_hours_strategy_test1.energy_requirement == \
-        load_hours_strategy_test1.energy_per_slot - market_test1.sorted_offers[0].energy * 1000
+    assert load_hours_strategy_test1.energy_requirement == 0
+    market_test1.most_affordable_energy = 0.154
+    load_hours_strategy_test1.event_activate()
+    load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
+    load_hours_strategy_test1.event_market_cycle()
+    load_hours_strategy_test1.event_tick(area=area_test1)
+    assert load_hours_strategy_test1.energy_requirement == 0.001 * 1000.0
 
 
 def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
+    market_test2.most_affordable_energy = 0.156
     load_hours_strategy_test2.event_activate()
     load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test2.event_market_cycle()

@@ -179,7 +179,20 @@ def test_market_sorted_offers(market: Market):
     assert [o.price for o in market.sorted_offers] == [1, 2, 3, 4, 5]
 
 
-def test_market_listners_init(called):
+def test_market_most_affordable_offers(market: Market):
+    market.offer(5, 1, 'A')
+    market.offer(3, 1, 'A')
+    market.offer(1, 1, 'A')
+    market.offer(10, 10, 'A')
+    market.offer(20, 20, 'A')
+    market.offer(20000, 20000, 'A')
+    market.offer(2, 1, 'A')
+    market.offer(4, 1, 'A')
+
+    assert [o.price for o in market.most_affordable_offers] == [1, 10, 20, 20000]
+
+
+def test_market_listeners_init(called):
     market = Market(notification_listener=called)
     market.offer(10, 20, 'A')
 
