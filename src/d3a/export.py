@@ -233,7 +233,7 @@ class BarGraph(DataSets):
         else:
             for de in range(len(self.dataset[self.key])):
                 if (self.dataset[self.key][de] != 0):
-                    self.umHours[self.dataset['slot'][de]] = self.dataset[self.key][de]
+                    self.umHours[self.dataset['slot'][de]] = round(self.dataset[self.key][de], 5)
 
     def plot_bar_graph(barmode, title, xtitle, ytitle, data, iname):
         layout = go.Layout(
