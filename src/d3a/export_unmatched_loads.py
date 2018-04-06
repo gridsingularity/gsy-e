@@ -1,6 +1,7 @@
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 
+
 DEFICIT_THRESHOLD_Wh = 0.001
 
 
@@ -73,6 +74,8 @@ def _calculate_area_stats(area):
 
 
 def _is_house_node(area):
+    # Should not include any houses that do not have loads, therefore the houses are
+    # further filtered out to contain at least one load
     return all(grandkid.children == [] for grandkid in area.children) and \
            (any(isinstance(grandkid.strategy, LoadHoursStrategy) or
                 isinstance(grandkid.strategy, PermanentLoadStrategy)

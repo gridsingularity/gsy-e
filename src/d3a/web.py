@@ -19,6 +19,8 @@ from d3a.stats import (
 )
 from d3a.util import make_iaa_name, simulation_info
 from d3a.export_unmatched_loads import export_unmatched_loads
+from d3a.area_statistics import export_cumulative_loads
+
 
 _NO_VALUE = {
     'min': None,
@@ -294,6 +296,7 @@ def _api_app(simulation: Simulation):
         )
 
     @app.route("/<area_slug>/results")
+    @lock_flask_endpoint
     def results(area_slug):
         area = _get_area(area_slug)
         market = area.current_market
@@ -325,6 +328,11 @@ def _api_app(simulation: Simulation):
     @lock_flask_endpoint
     def unmatched_loads():
         return {"unmatched_loads": export_unmatched_loads(simulation.area)}
+
+    @app.route("/cumulative-load-price", methods=['GET'])
+    @lock_flask_endpoint
+    def cumulative_load():
+        return {"cumulative-load-price": export_cumulative_loads(simulation.area)}
 
     @app.route("/<area_slug>/tree-summary")
     def tree_summary(area_slug):
