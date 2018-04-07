@@ -36,8 +36,9 @@ def export(root_area, path, subdir):
                           'Cell Tower Energy Suppliers', 'Cell_Tower_Energy_Suppliers.html')
     _ess_history(directory, 'relative', 'ESS Energy Trade', 'Time',
                  'Energy (kWh)', 'ESS_Trade.html')
-    _house_etrade_history(directory, 'relative', 'Time',
+    _house_energy_history(directory, 'relative', 'Time',
                           'Energy (kWh)')
+    _house_trade_history(directory, 'bar', 'Time', 'price [ct./kWh]')
 
 
 def _export_area_with_children(area, directory):
@@ -356,7 +357,7 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
 
 
 # Energy Profile of House
-def _house_etrade_history(path, barmode, xtitle, ytitle):
+def _house_energy_history(path, barmode, xtitle, ytitle):
     data = list()
     key = 'energy traded [kWh]'
     os.chdir(path)
@@ -419,3 +420,59 @@ def _house_etrade_history(path, barmode, xtitle, ytitle):
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
         os.chdir('..')
         data = list()
+
+
+# Energy Trade Profile of House
+def _house_trade_history(path, barmode, xtitle, ytitle):
+    data = list()
+    os.chdir(path)
+    sub_file = sorted(next(os.walk('grid'))[1])
+    for i in range(len(sub_file)):
+        trade = str('grid/' + sub_file[i] + '-trades.csv')
+        iname = str('Energy Trade Profile of House{}.html'.format(i + 1))
+        title = str('Energy Trade Profile of House{}'.format(i + 1))
+        if(os.path.isfile(trade)):
+            dataset = pd.read_csv(trade)
+            dataset = dataset.drop(['id', 'time', 'energy [kWh]'], axis=1)
+            DBkey = dataset.iloc[:, -1].values
+            DBkey = set(DBkey)
+            DSKey = dataset.iloc[:, -2].values
+            DSkey = set(DSKey)
+
+            for key in DSkey:
+                dataset_Sk = dataset[dataset.buyer == key]
+                DX = dataset_Sk.iloc[:, 0].values
+                Dy = dataset_Sk.iloc[:, 1].values
+                traceit = go.Bar(x=DX, y=Dy, name=key)
+                data.append(traceit)
+                del DX
+                del Dy
+
+            for key in DBkey:
+                dataset_k = dataset[dataset.buyer == key]
+                DX = dataset_k.iloc[:, 0].values
+                Dy = dataset_k.iloc[:, 1].values
+                traceit = go.Bar(x=DX, y=-1.0*Dy, name=key)
+                data.append(traceit)
+                del DX
+                del Dy
+            layout = go.Layout(
+                barmode=barmode,
+                title=title,
+                yaxis=dict(
+                    title=ytitle,
+                    range=[-35, 35]
+                ),
+                xaxis=dict(
+                    title=xtitle
+                )
+            )
+            fig = go.Figure(data=data, layout=layout)
+            plot_dir = str(path) + '/plot'
+            if not os.path.exists(plot_dir):
+                os.makedirs(plot_dir)
+            os.chdir(plot_dir)
+            py.offline.plot(fig, filename=iname, auto_open=False)
+
+            os.chdir('..')
+            data = list()
