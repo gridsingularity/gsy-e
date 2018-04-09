@@ -50,7 +50,7 @@ class PVStrategy(BaseStrategy):
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_price == 0.0:
             # Initial selling offer
-            rounded_energy_price = 29.9
+            rounded_energy_price = MAX_ENERGY_PRICE
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
@@ -63,7 +63,7 @@ class PVStrategy(BaseStrategy):
                         continue
                     for i in range(self.panel_count):
                         offer = market.offer(
-                            (min(rounded_energy_price, 10)) *
+                            (rounded_energy_price) *
                             self.energy_production_forecast_kWh[time],
                             self.energy_production_forecast_kWh[time],
                             self.owner.name
