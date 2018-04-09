@@ -332,7 +332,11 @@ def _api_app(simulation: Simulation):
     @app.route("/cumulative-load-price", methods=['GET'])
     @lock_flask_endpoint
     def cumulative_load():
-        return {"cumulative-load-price": export_cumulative_loads(simulation.area)}
+        return {
+            "price-currency": "Euro Cent",
+            "load-unit": "kWh",
+            "cumulative-load-price": export_cumulative_loads(simulation.area)
+        }
 
     @app.route("/<area_slug>/tree-summary")
     def tree_summary(area_slug):
