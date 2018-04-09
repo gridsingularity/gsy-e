@@ -17,12 +17,13 @@ class PVStrategy(BaseStrategy):
 
     parameters = ('panel_count', 'risk')
 
-    def __init__(self, panel_count=1, risk=DEFAULT_RISK):
+    def __init__(self, panel_count=1, risk=DEFAULT_RISK, min_selling_price=5):
         super().__init__()
         self.risk = risk
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
+        self.min_selling_price = min_selling_price
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
@@ -39,7 +40,8 @@ class PVStrategy(BaseStrategy):
         # The value 0.1 is to damp the effect of the risk
         risk_dependency_of_selling_price = (normed_risk * 0.02 * average_market_price)
         # If the risk is higher than 50 the energy_price is above the average_market_price
-        energy_price = min(average_market_price + risk_dependency_of_selling_price, 29.9)
+        energy_price = max(average_market_price + risk_dependency_of_selling_price,
+                           self.min_selling_price)
         rounded_energy_price = round(energy_price, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_price == 0.0:
@@ -57,7 +59,7 @@ class PVStrategy(BaseStrategy):
                         continue
                     for i in range(self.panel_count):
                         offer = market.offer(
-                            (min(rounded_energy_price, 29.9)) *
+                            (min(rounded_energy_price, 10)) *
                             self.energy_production_forecast_kWh[time],
                             self.energy_production_forecast_kWh[time],
                             self.owner.name
