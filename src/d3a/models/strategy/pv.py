@@ -38,6 +38,8 @@ class PVStrategy(BaseStrategy):
         else:
             average_market_price = self.area.historical_avg_price
         # Needed to calculate risk_dependency_of_selling_price
+        # if risk 0-100 then energy_price less than average_market_price
+        # if risk >100 then energy_price more than average_market_price
         risk_dependency_of_selling_price = ((self.risk/MAX_RISK) - 1) * average_market_price
         energy_price = max(average_market_price + risk_dependency_of_selling_price,
                            self.min_selling_price)
