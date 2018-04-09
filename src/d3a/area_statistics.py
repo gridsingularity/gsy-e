@@ -55,7 +55,7 @@ def _is_cell_tower_node(area):
            or isinstance(area.strategy, CellTowerFacebookDeviceStrategy)
 
 
-def accumulate_cell_tower_node(cell_tower, grid, accumulated_trades):
+def _accumulate_cell_tower_trades(cell_tower, grid, accumulated_trades):
     accumulated_trades[cell_tower.name] = {
         "type": "cell_tower",
         "id": cell_tower.area_id,
@@ -70,7 +70,7 @@ def accumulate_cell_tower_node(cell_tower, grid, accumulated_trades):
     return accumulated_trades
 
 
-def accumulate_house_node(house, grid, accumulated_trades):
+def _accumulate_house_trades(house, grid, accumulated_trades):
     if house.name not in accumulated_trades:
         accumulated_trades[house.name] = {
             "type": "house",
@@ -98,17 +98,17 @@ def accumulate_house_node(house, grid, accumulated_trades):
     return accumulated_trades
 
 
-def accumulate_trades(area, accumulated_trades):
+def _accumulate_grid_trades(area, accumulated_trades):
     for child in area.children:
         if _is_cell_tower_node(child):
-            accumulated_trades = accumulate_cell_tower_node(child, area, accumulated_trades)
+            accumulated_trades = _accumulate_cell_tower_trades(child, area, accumulated_trades)
         elif _is_house_node(child):
-            accumulated_trades = accumulate_house_node(child, area, accumulated_trades)
+            accumulated_trades = _accumulate_house_trades(child, area, accumulated_trades)
         elif child.children == []:
             # Leaf node, no need for calculating cumulative trades, continue iteration
             continue
         else:
-            accumulated_trades = accumulate_trades(child, accumulated_trades)
+            accumulated_trades = _accumulate_grid_trades(child, accumulated_trades)
     return accumulated_trades
 
 
@@ -126,4 +126,4 @@ def area_name_to_id(area_name, grid):
 
 
 def export_cumulative_grid_trades(area):
-    return accumulate_trades(area, {})
+    return _accumulate_grid_trades(area, {})
