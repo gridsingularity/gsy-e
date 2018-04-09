@@ -34,9 +34,10 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
 def export_cumulative_loads(area):
     load_price_lists = {}
     area_raw_results = gather_area_loads_and_trade_prices(area, load_price_lists)
-    return {
-        hour: {
+    return [
+        {
+            "time": hour,
             "load": sum(load_price.load) if len(load_price.load) > 0 else 0,
             "price": mean(load_price.price) if len(load_price.price) > 0 else 0
-        }
-        for hour, load_price in area_raw_results.items()}
+        } for hour, load_price in area_raw_results.items()
+    ]
