@@ -1,20 +1,23 @@
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, BREAK_EVEN
 
 
 class StorageStrategy(BaseStrategy):
     parameters = ('risk',)
 
-    def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, initial_charge=None):
+    def __init__(self, risk=DEFAULT_RISK,
+                 initial_capacity=0.0,
+                 initial_charge=None,
+                 break_even=BREAK_EVEN):
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
                                   initial_charge=initial_charge,
                                   loss_per_hour=0.0,
                                   strategy=self)
-        self.selling_price = 30
+        self.break_even = break_even
 
     def event_tick(self, *, area):
         # Taking the cheapest offers in every market currently open and building the average
@@ -94,9 +97,10 @@ class StorageStrategy(BaseStrategy):
             energy = self.state.used_storage
         # Try to create an offer to sell the stored energy
 
+        # selling should be more than break-even price
         if energy > 0.0:
             offer = most_expensive_market.offer(
-                energy * min(risk_dependent_selling_price, 29.9),
+                energy * max(risk_dependent_selling_price, self.break_even),
                 energy,
                 self.owner.name
             )
@@ -112,7 +116,7 @@ class StorageStrategy(BaseStrategy):
             sum((offer.price / offer.energy) for offer in cheapest_offers)
             / max(len(cheapest_offers), 1)
         )
-        return min(avg_cheapest_offer_price, 30)
+        return min(avg_cheapest_offer_price, self.break_even)
 
     def find_most_expensive_market_price(self):
         cheapest_offers = self.area.cheapest_offers
@@ -120,5 +124,5 @@ class StorageStrategy(BaseStrategy):
             most_expensive_cheapest_offer = (
                 max((offer.price / offer.energy) for offer in cheapest_offers))
         else:
-            most_expensive_cheapest_offer = 30
-        return min(most_expensive_cheapest_offer, 30)
+            most_expensive_cheapest_offer = self.break_even
+        return min(most_expensive_cheapest_offer, self.break_even)
