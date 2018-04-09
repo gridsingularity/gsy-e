@@ -1,7 +1,7 @@
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, BREAK_EVEN
 
 
 class StorageStrategy(BaseStrategy):
@@ -10,7 +10,7 @@ class StorageStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK,
                  initial_capacity=0.0,
                  initial_charge=None,
-                 break_even=30):
+                 break_even=BREAK_EVEN):
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
