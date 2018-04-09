@@ -19,7 +19,7 @@ from d3a.stats import (
 )
 from d3a.util import make_iaa_name, simulation_info
 from d3a.export_unmatched_loads import export_unmatched_loads
-from d3a.area_statistics import export_cumulative_loads
+from d3a.area_statistics import export_cumulative_loads, export_cumulative_grid_trades
 
 
 _NO_VALUE = {
@@ -336,6 +336,14 @@ def _api_app(simulation: Simulation):
             "price-currency": "Euro Cent",
             "load-unit": "kWh",
             "cumulative-load-price": export_cumulative_loads(simulation.area)
+        }
+
+    @app.route("/cumulative-grid-trades", methods=['GET'])
+    @lock_flask_endpoint
+    def cumulative_grid_trades():
+        return {
+            "unit": "kWh",
+            "cumulative-grid-trades": export_cumulative_grid_trades(simulation.area)
         }
 
     @app.route("/<area_slug>/tree-summary")
