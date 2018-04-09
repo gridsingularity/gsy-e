@@ -1,9 +1,12 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
+from d3a.models.strategy.load_hours_fb import CellTowerLoadHoursStrategy
+from d3a.models.strategy.facebook_device import CellTowerFacebookDeviceStrategy
+from d3a.util import area_name_from_area_or_iaa_name, make_iaa_name
 
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
@@ -41,3 +44,86 @@ def export_cumulative_loads(area):
             "price": mean(load_price.price) if len(load_price.price) > 0 else 0
         } for hour, load_price in area_raw_results.items()
     ]
+
+
+def _is_house_node(area):
+    return all(child.children == [] for child in area.children)
+
+
+def _is_cell_tower_node(area):
+    return isinstance(area.strategy, CellTowerLoadHoursStrategy) \
+           or isinstance(area.strategy, CellTowerFacebookDeviceStrategy)
+
+
+def accumulate_cell_tower_node(cell_tower, grid, accumulated_trades):
+    accumulated_trades[cell_tower.name] = {
+        "type": "cell_tower",
+        "id": cell_tower.area_id,
+        "produced": 0.0,
+        "consumedFrom": defaultdict(int)
+    }
+    for slot, market in grid.past_markets.items():
+        for trade in market.trades:
+            if trade.buyer == cell_tower.name:
+                sell_id = area_name_to_id(area_name_from_area_or_iaa_name(trade.seller), grid)
+                accumulated_trades[cell_tower.name]["consumedFrom"][sell_id] += trade.offer.energy
+    return accumulated_trades
+
+
+def accumulate_house_node(house, grid, accumulated_trades):
+    if house.name not in accumulated_trades:
+        accumulated_trades[house.name] = {
+            "type": "house",
+            "id": house.area_id,
+            "produced": 0.0,
+            "consumedFrom": defaultdict(int)
+        }
+    house_IAA_name = make_iaa_name(house)
+    child_names = [c.name for c in house.children]
+    for slot, market in house.past_markets.items():
+        for trade in market.trades:
+            if area_name_from_area_or_iaa_name(trade.seller) in child_names and \
+                    area_name_from_area_or_iaa_name(trade.buyer) in child_names:
+                # House self-consumption trade
+                accumulated_trades[house.name]["produced"] -= trade.offer.energy
+                accumulated_trades[house.name]["consumedFrom"][house.area_id] += trade.offer.energy
+            elif trade.buyer == house_IAA_name:
+                accumulated_trades[house.name]["produced"] -= trade.offer.energy
+
+    for slot, market in grid.past_markets.items():
+        for trade in market.trades:
+            if trade.buyer == house_IAA_name:
+                sell_id = area_name_to_id(area_name_from_area_or_iaa_name(trade.seller), grid)
+                accumulated_trades[house.name]["consumedFrom"][sell_id] += trade.offer.energy
+    return accumulated_trades
+
+
+def accumulate_trades(area, accumulated_trades):
+    for child in area.children:
+        if _is_cell_tower_node(child):
+            accumulated_trades = accumulate_cell_tower_node(child, area, accumulated_trades)
+        elif _is_house_node(child):
+            accumulated_trades = accumulate_house_node(child, area, accumulated_trades)
+        elif child.children == []:
+            # Leaf node, no need for calculating cumulative trades, continue iteration
+            continue
+        else:
+            accumulated_trades = accumulate_trades(child, accumulated_trades)
+    return accumulated_trades
+
+
+def area_name_to_id(area_name, grid):
+    for child in grid.children:
+        if child.name == area_name:
+            return child.area_id
+        elif child.children == []:
+            continue
+        else:
+            res = area_name_to_id(area_name, child)
+            if res is not None:
+                return res
+    return None
+
+
+def export_cumulative_grid_trades(area):
+    return accumulate_trades(area, {})
