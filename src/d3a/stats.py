@@ -1,4 +1,5 @@
 from d3a.util import area_name_from_area_or_iaa_name
+from d3a.area_statistics import get_area_type_string
 
 
 def recursive_current_markets(area):
@@ -41,7 +42,9 @@ def energy_bills(area, from_slot=None, to_slot=None):
     """
     if not area.children:
         return None
-    result = {child.name: dict(bought=0.0, sold=0.0, spent=0.0, earned=0.0)
+    result = {child.name: dict(bought=0.0, sold=0.0,
+                               spent=0.0, earned=0.0,
+                               type=get_area_type_string(child))
               for child in area.children}
     for slot, market in area.past_markets.items():
         if (from_slot is None or slot >= from_slot) and (to_slot is None or slot < to_slot):

@@ -12,6 +12,18 @@ from d3a.util import area_name_from_area_or_iaa_name, make_iaa_name
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
 
 
+def get_area_type_string(area):
+    if isinstance(area.strategy, CellTowerLoadHoursStrategy) or \
+            isinstance(area.strategy, CellTowerFacebookDeviceStrategy):
+        return "cell_tower"
+    elif area.children is None:
+        return "unknown"
+    elif area.children != [] and all(child.children == [] for child in area.children):
+        return "house"
+    else:
+        return "unknown"
+
+
 def gather_area_loads_and_trade_prices(area, load_price_lists):
     for child in area.children:
         if child.children == [] and not \
