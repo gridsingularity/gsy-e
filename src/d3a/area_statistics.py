@@ -5,11 +5,21 @@ from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import CellTowerLoadHoursStrategy
-from d3a.models.strategy.facebook_device import CellTowerFacebookDeviceStrategy
 from d3a.util import area_name_from_area_or_iaa_name, make_iaa_name
 
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
+
+
+def get_area_type_string(area):
+    if isinstance(area.strategy, CellTowerLoadHoursStrategy):
+        return "cell_tower"
+    elif area.children is None:
+        return "unknown"
+    elif area.children != [] and all(child.children == [] for child in area.children):
+        return "house"
+    else:
+        return "unknown"
 
 
 def gather_area_loads_and_trade_prices(area, load_price_lists):
@@ -51,8 +61,7 @@ def _is_house_node(area):
 
 
 def _is_cell_tower_node(area):
-    return isinstance(area.strategy, CellTowerLoadHoursStrategy) \
-           or isinstance(area.strategy, CellTowerFacebookDeviceStrategy)
+    return isinstance(area.strategy, CellTowerLoadHoursStrategy)
 
 
 def _accumulate_cell_tower_trades(cell_tower, grid, accumulated_trades):
