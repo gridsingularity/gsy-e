@@ -440,7 +440,7 @@ def _house_trade_history(path, barmode, xtitle, ytitle):
             DSkey = set(DSKey)
 
             for key in DSkey:
-                dataset_Sk = dataset[dataset.buyer == key]
+                dataset_Sk = dataset[dataset.seller == key]
                 DX = dataset_Sk.iloc[:, 0].values
                 Dy = dataset_Sk.iloc[:, 1].values
                 traceit = go.Bar(x=DX, y=Dy, name=key)
