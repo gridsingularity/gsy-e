@@ -29,7 +29,7 @@ jobs:
        if [[ ($TRAVIS_BRANCH == travis_aws_deploy) &&
              ($TRAVIS_PULL_REQUEST == false) ]] ; then
          curl -LO --retry 3 https://raw.github.com/mernst/plume-lib/master/bin/trigger-travis.sh
-         sh trigger-travis.sh gridsingularity d3a-web $TRAVIS_ACCESS_TOKEN
+         sh trigger-travis.sh --pro gridsingularity d3a-web $TRAVIS_ACCESS_TOKEN
        fi
 
 notifications:
