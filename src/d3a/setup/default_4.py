@@ -34,7 +34,7 @@ def get_setup(config):
                                                                        hrs_of_day=(12, 15),
                                                                        acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4, 90),
+                    Area('H2 PV', strategy=PVStrategy(4, 80),
                          appliance=PVAppliance()),
 
                 ]

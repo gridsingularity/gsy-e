@@ -20,6 +20,9 @@ from d3a.models.events import MarketEvent, OfferEvent
 log = getLogger(__name__)
 
 
+OFFER_PRICE_THRESHOLD = 0.00001
+
+
 class Offer:
     def __init__(self, id, price, energy, seller, market=None):
         self.id = str(id)
@@ -73,12 +76,12 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
     @classmethod
     def _csv_fields(cls):
         return (cls._fields[:2] + ('price [ct./kWh]', 'energy [kWh]') +
-                cls._fields[3:5] + ('residual [kWh]',))
+                cls._fields[3:5])
 
     def _to_csv(self):
         price = round(self.offer.price / self.offer.energy, 4)
-        residual_energy = 0 if self.residual is None else self.residual.energy
-        return self[:2] + (price, self.offer.energy) + self[3:5] + (residual_energy,)
+        # residual_energy = 0 if self.residual is None else self.residual.energy
+        return self[:2] + (price, self.offer.energy) + self[3:5]
 
 
 class Market:
@@ -251,6 +254,13 @@ class Market:
     @property
     def sorted_offers(self):
         return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+
+    @property
+    def most_affordable_offers(self):
+        cheapest_offer = self.sorted_offers[0]
+        rate = cheapest_offer.price / cheapest_offer.energy
+        return [o for o in self.sorted_offers if
+                abs(o.price / o.energy - rate) < OFFER_PRICE_THRESHOLD]
 
     @property
     def _now(self):

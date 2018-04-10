@@ -82,18 +82,18 @@ class ExportLeafData(ExportData):
         super(ExportLeafData, self).__init__(area)
 
     def labels(self):
-        return ['slot', 'energy balance [kWh]'] + self._specific_labels()
+        return ['slot', 'energy traded [kWh]'] + self._specific_labels()
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
-            return ['bought [kWh]', 'sold [kWh]', 'offered [kWh]',
+            return ['bought [kWh]', 'sold [kWh]', 'energy balance [kWh]', 'offered [kWh]',
                     'used [kWh]', 'charge [%]', 'stored [kWh]']
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
         elif isinstance(self.area.strategy, PVStrategy):
-            return ['produced [kWh]', 'not sold [kWh]', 'forecast [kWh]']
+            return ['produced to trade [kWh]', 'not sold [kWh]', 'forecast / generation [kWh]']
         return []
 
     def rows(self):
@@ -115,18 +115,21 @@ class ExportLeafData(ExportData):
             stored = '-' if charge == '-' else 0.01 * charge * s.capacity
             return [market.bought_energy(self.area.name),
                     market.sold_energy(self.area.name),
+                    s.charge_history_kWh[slot],
                     s.offered_history[slot],
                     s.used_history[slot],
                     charge,
                     stored]
         elif isinstance(self.area.strategy, LoadHoursStrategy):
-            desired = self.area.strategy.state.desired_energy[slot]
-            return [desired, self._traded(market) - desired]
+            desired = self.area.strategy.state.desired_energy[slot] / 1000
+            return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
             produced = market.actual_energy_agg.get(self.area.name, 0)
             return [produced,
-                    produced - self._traded(market),
-                    self.area.strategy.energy_production_forecast[slot]]
+                    round(produced - self._traded(market), 4),
+                    self.area.strategy.energy_production_forecast_kWh[slot] *
+                    self.area.strategy.panel_count
+                    ]
         return []
 
 

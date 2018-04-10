@@ -102,6 +102,14 @@ class Area:
             return None
 
     @property
+    def next_market(self) -> Optional[Market]:
+        """Returns the 'current' market (i.e. the one currently 'running')"""
+        try:
+            return list(self.markets.values())[0]
+        except IndexError:
+            return None
+
+    @property
     def current_slot(self):
         return self.current_tick // self.config.ticks_per_slot
 
@@ -155,6 +163,13 @@ class Area:
         for market in self.markets.values():
             cheapest_offers.extend(market.sorted_offers[0:1])
         return cheapest_offers
+
+    @property
+    def market_with_most_expensive_offer(self):
+        # In case of a tie, max returns the first market occurrence in order to
+        # satisfy the most recent market slot
+        return max(self.markets.values(),
+                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
 
     @property
     def historical_min_max_price(self):
@@ -226,7 +241,7 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in (self.config.slot_length * i for i in range(self.config.market_count - 1)):
+        for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
             timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots

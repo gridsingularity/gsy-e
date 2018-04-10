@@ -1,6 +1,5 @@
 import random
 
-from first import first
 from pendulum.interval import Interval
 
 from d3a.exceptions import MarketException
@@ -10,13 +9,14 @@ from d3a.models.strategy.base import BaseStrategy
 
 class LoadHoursStrategy(BaseStrategy):
     def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
-                 daily_budget=None):
+                 daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
-        self.avg_power = avg_power  # Average power in watts
+        self.avg_power_in_Wh = avg_power  # Average power in watts
+        self.avg_power = None
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
-        self.daily_energy_required = self.avg_power * self.hrs_per_day
+        self.daily_energy_required = None
         # Random factor to modify buying
         self.random_factor = random_factor
         # Budget for a single day in eur
@@ -24,12 +24,9 @@ class LoadHoursStrategy(BaseStrategy):
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot = None
         self.energy_requirement = 0
-        # In ct. / kWh
         self.max_acceptable_energy_price = 10**20
-        if self.daily_budget:
-            self.max_acceptable_energy_price = (
-                self.daily_budget / self.daily_energy_required * 1000
-            )
+        # In ct. / kWh
+        self.acceptable_energy_rate = acceptable_energy_rate
         # be a parameter on the constructor or if we want to deal in percentages
         self.hrs_of_day = hrs_of_day
         active_hours_count = (hrs_of_day[1] - hrs_of_day[0] + 1)
@@ -46,12 +43,22 @@ class LoadHoursStrategy(BaseStrategy):
         self.active_hours = active_hours
 
     def event_activate(self):
-        self.energy_per_slot = (
-            self.daily_energy_required
-            /
-            (self.hrs_per_day * Interval(hours=1) / self.area.config.slot_length)
-        )
+        self.avg_power = (self.avg_power_in_Wh /
+                          (Interval(hours=1) / self.area.config.slot_length)
+                          )
+        self.daily_energy_required = self.avg_power_in_Wh * self.hrs_per_day
+        if self.daily_budget:
+            self.max_acceptable_energy_price = (
+                self.daily_budget / self.daily_energy_required * 1000
+            )
+        # Avg_power is actually the power per slot, since it is calculated by dividing the
+        # avg_power_in_Wh by the number of slots per hour
+        self.energy_per_slot = self.avg_power
         self._update_energy_requirement()
+
+    def _find_acceptable_offer(self, market):
+        offers = market.most_affordable_offers
+        return random.choice(offers)
 
     def event_tick(self, *, area):
         if self.energy_requirement <= 0:
@@ -64,30 +71,24 @@ class LoadHoursStrategy(BaseStrategy):
         if not markets:
             return
 
-        try:
-            # Don't have an idea whether we need a price mechanism, at this stage the cheapest
-            # offers available in the markets is picked up
-            cheapest_offer, market = first(
-                sorted(
-                    [
-                        (offer, market) for market in markets
-                        for offer in market.sorted_offers
-                        if offer.price / offer.energy <= self.max_acceptable_energy_price
-                    ],
-                    key=lambda o: o[0].price / o[0].energy
-                ),
-                default=(None, None)
-            )
-            if cheapest_offer:
-                max_energy = self.energy_requirement / 1000
-                if cheapest_offer.energy > max_energy:
-                    self.accept_offer(market, cheapest_offer, energy=max_energy)
-                    self.energy_requirement = 0
-                else:
-                    self.accept_offer(market, cheapest_offer)
-                    self.energy_requirement -= cheapest_offer.energy * 1000
-        except MarketException:
-            self.log.exception("An Error occurred while buying an offer")
+        if self.area.now.hour in self.active_hours:
+            try:
+                market = list(self.area.markets.values())[0]
+                if len(market.sorted_offers) < 1:
+                    return
+                acceptable_offer = self._find_acceptable_offer(market)
+                if acceptable_offer and \
+                        ((acceptable_offer.price/acceptable_offer.energy) <
+                         self.acceptable_energy_rate):
+                    max_energy = self.energy_requirement / 1000
+                    if acceptable_offer.energy > max_energy:
+                        self.accept_offer(market, acceptable_offer, energy=max_energy)
+                        self.energy_requirement = 0
+                    else:
+                        self.accept_offer(market, acceptable_offer)
+                        self.energy_requirement -= acceptable_offer.energy * 1000
+            except MarketException:
+                self.log.exception("An Error occurred while buying an offer")
 
     def _update_energy_requirement(self):
         self.energy_requirement = 0
