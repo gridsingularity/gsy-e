@@ -258,6 +258,15 @@ def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
     data = list()
     key = 'deficit [kWh]'
     os.chdir(path)
+    ct = str('grid/' + 'cell-tower.csv')
+    if (os.path.isfile(ct)):
+        hict = BarGraph(ct, key)
+        hict.graph_value()
+        traceict = go.Bar(x=list(hict.umHours.keys()),
+                          y=list(hict.umHours.values()),
+                          name='Cell Tower')
+        data.append(traceict)
+
     sub_file = sorted(next(os.walk('grid'))[1])
     for i in range(len(sub_file)):
         gl = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-general-load.csv')
