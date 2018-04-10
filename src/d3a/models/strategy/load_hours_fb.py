@@ -12,10 +12,11 @@ class LoadHoursStrategy(BaseStrategy):
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
-        self.avg_power = avg_power  # Average power in watts
+        self.avg_power_in_Wh = avg_power  # Average power in watts
+        self.avg_power = None
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
-        self.daily_energy_required = self.avg_power * self.hrs_per_day
+        self.daily_energy_required = None
         # Random factor to modify buying
         self.random_factor = random_factor
         # Budget for a single day in eur
@@ -75,7 +76,6 @@ class LoadHoursStrategy(BaseStrategy):
                 market = list(self.area.markets.values())[0]
                 if len(market.sorted_offers) < 1:
                     return
-
                 acceptable_offer = self._find_acceptable_offer(market)
                 if acceptable_offer and \
                         ((acceptable_offer.price/acceptable_offer.energy) <
