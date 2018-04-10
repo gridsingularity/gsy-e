@@ -39,6 +39,7 @@ def export(root_area, path, subdir):
     _house_energy_history(directory, 'relative', 'Time',
                           'Energy (kWh)')
     _house_trade_history(directory, 'bar', 'Time', 'price [ct./kWh]')
+    _avg_trade_price(directory, 'bar', 'Time', 'price [ct./kWh]')
 
 
 def _export_area_with_children(area, directory):
@@ -420,6 +421,41 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
         os.chdir('..')
         data = list()
+
+
+# Average Trade Price Graph
+def _avg_trade_price(path, barmode, xtitle, ytitle):
+    data = list()
+    key = 'avg trade price [EUR]'
+    os.chdir(path)
+    gap = str('grid.csv')
+    iname = str('Average Trade Price.html')
+    title = str('Average Trade Price')
+    if (os.path.isfile(gap)):
+        higap = BarGraph(gap, key)
+        higap.graph_value()
+        traceigap = go.Bar(x=list(higap.umHours.keys()),
+                           y=list(higap.umHours.values()),
+                           name='Grid')
+        data.append(traceigap)
+    sub_file = sorted(next(os.walk('grid'))[1])
+    for i in range(len(sub_file)):
+        lap = str('grid/' + sub_file[i] + '.csv')
+        if(os.path.isfile(lap)):
+            hilap = BarGraph(lap, key)
+            hilap.graph_value()
+            traceilap = go.Bar(x=list(hilap.umHours.keys()),
+                               y=list(hilap.umHours.values()),
+                               name='House{}'.format(i+1))
+            data.append(traceilap)
+    plot_dir = str(path) + '/plot'
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    os.chdir(plot_dir)
+
+    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+    os.chdir('..')
+    data = list()
 
 
 # Energy Trade Profile of House
