@@ -4,9 +4,23 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
+from d3a.models.strategy.load_hours_fb import CellTowerLoadHoursStrategy
+from d3a.models.strategy.facebook_device import FacebookDeviceStrategy
 
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
+
+
+def get_area_type_string(area):
+    if isinstance(area.strategy, CellTowerLoadHoursStrategy) or \
+            isinstance(area.strategy, FacebookDeviceStrategy):
+        return "cell_tower"
+    elif area.children is None:
+        return "unknown"
+    elif area.children != [] and all(child.children == [] for child in area.children):
+        return "house"
+    else:
+        return "unknown"
 
 
 def gather_area_loads_and_trade_prices(area, load_price_lists):
