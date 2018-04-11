@@ -349,12 +349,6 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
             data.append(traceiss1)
-            chss1 = BarGraph(ss1, 'charge [%]')
-            chss1.graph_value()
-            tracechss1 = go.Scatter(x=list(chss1.umHours.keys()),
-                                    y=list(chss1.umHours.values()),
-                                    name='House{0}-Storage1'.format(i + 1))
-            data.append(tracechss1)
         if (os.path.isfile(ss2)):
             hiss2 = BarGraph(ss2, key)
             hiss2.graph_value()
@@ -362,13 +356,6 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
             data.append(traceiss2)
-            chss2 = BarGraph(ss2, 'charge [%]')
-            chss2.graph_value()
-            tracechss1 = go.Scatter(x=list(chss2.umHours.keys()),
-                                    y=list(chss2.umHours.values()),
-                                    name='House{0}-Storage2'.format(i + 1))
-            data.append(tracechss1)
-
     plot_dir = str(path) + '/plot'
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
