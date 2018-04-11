@@ -28,7 +28,12 @@ class StorageStrategy(BaseStrategy):
         self.state.tick(area)
 
     def event_market_cycle(self):
-        past_market = list(self.area.past_markets.values())[-1]
+        if self.area.past_markets:
+            past_market = list(self.area.past_markets.values())[-1]
+        else:
+            if self.state.used_storage > 0:
+                self.sell_energy(self.find_most_expensive_market_price())
+            return
         # if energy in this slot was bought: update the storage
         for bought in self.offers.bought_in_market(past_market):
             self.state.fill_blocked_storage(bought.energy)

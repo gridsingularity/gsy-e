@@ -3,7 +3,7 @@ from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.area_statistics import get_area_type_string
 
 
-DEFICIT_THRESHOLD_Wh = 0.001
+DEFICIT_THRESHOLD_Wh = 0.0001
 
 
 def _calculate_stats_for_single_device(hour_data, area, current_slot):
