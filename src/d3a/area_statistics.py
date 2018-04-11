@@ -34,9 +34,10 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
             for slot, market in child.parent.past_markets.items():
                 if slot.hour not in load_price_lists.keys():
                     load_price_lists[slot.hour] = loads_avg_prices(load=[], price=[])
-                load_price_lists[slot.hour].load.append(market.traded_energy[child.name])
+                load_price_lists[slot.hour].load.append(abs(market.traded_energy[child.name]))
                 trade_prices = [
-                    t.offer.price / t.offer.energy
+                    # Convert from cents to euro
+                    t.offer.price / 100.0 / t.offer.energy
                     for t in market.trades
                     if t.buyer == child.name
                 ]

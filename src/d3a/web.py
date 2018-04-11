@@ -333,7 +333,7 @@ def _api_app(simulation: Simulation):
     @lock_flask_endpoint
     def cumulative_load():
         return {
-            "price-currency": "Euro Cent",
+            "price-currency": "Euros",
             "load-unit": "kWh",
             "cumulative-load-price": export_cumulative_loads(simulation.area)
         }
