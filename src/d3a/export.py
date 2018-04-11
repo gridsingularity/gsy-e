@@ -471,9 +471,9 @@ def _avg_trade_price(path, barmode, xtitle, ytitle):
     if (os.path.isfile(gap)):
         higap = BarGraph(gap, key)
         higap.graph_value()
-        traceigap = go.Bar(x=list(higap.umHours.keys()),
-                           y=list(higap.umHours.values()),
-                           name='Grid')
+        traceigap = go.Scatter(x=list(higap.umHours.keys()),
+                               y=list(higap.umHours.values()),
+                               name='Grid')
         data.append(traceigap)
     sub_file = sorted(next(os.walk('grid'))[1])
     for i in range(len(sub_file)):
@@ -481,9 +481,9 @@ def _avg_trade_price(path, barmode, xtitle, ytitle):
         if(os.path.isfile(lap)):
             hilap = BarGraph(lap, key)
             hilap.graph_value()
-            traceilap = go.Bar(x=list(hilap.umHours.keys()),
-                               y=list(hilap.umHours.values()),
-                               name='House{}'.format(i+1))
+            traceilap = go.Scatter(x=list(hilap.umHours.keys()),
+                                   y=list(hilap.umHours.values()),
+                                   name='House{}'.format(i+1))
             data.append(traceilap)
     plot_dir = str(path) + '/plot'
     if not os.path.exists(plot_dir):
