@@ -1,10 +1,12 @@
 import pytest
+from unittest.mock import MagicMock
 
 from d3a.models.market import Trade
 from d3a.stats import (
     energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
 )
 from d3a.util import make_iaa_name
+from d3a.models.strategy.base import BaseStrategy
 
 
 class FakeArea:
@@ -12,6 +14,7 @@ class FakeArea:
         self.name = name
         self.children = children
         self.past_markets = past_markets
+        self.strategy = MagicMock(spec=BaseStrategy)
 
     @property
     def current_market(self):
