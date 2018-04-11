@@ -39,6 +39,8 @@ def export(root_area, path, subdir):
                           'Cell Tower Energy Suppliers', 'Cell_Tower_Energy_Suppliers.html')
     _ess_history(directory, 'relative', 'ESS Energy Trade', 'Time',
                  'Energy (kWh)', 'ESS_Trade.html')
+    _soc_history(directory, 'relative', 'ESS SOC', 'Time',
+                 'charge [%]', 'ESS_SOC_history.html')
     _house_energy_history(directory, 'relative', 'Time',
                           'Energy (kWh)')
     _house_trade_history(directory, 'bar', 'Time', 'price [ct./kWh]')
@@ -375,6 +377,12 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
             data.append(traceiss1)
+            chss1 = BarGraph(ss1, 'charge [%]')
+            chss1.graph_value()
+            tracechss1 = go.Scatter(x=list(chss1.umHours.keys()),
+                                    y=list(chss1.umHours.values()),
+                                    name='House{0}-Storage1'.format(i + 1))
+            data.append(tracechss1)
         if (os.path.isfile(ss2)):
             hiss2 = BarGraph(ss2, key)
             hiss2.graph_value()
@@ -382,6 +390,48 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
             data.append(traceiss2)
+            chss2 = BarGraph(ss2, 'charge [%]')
+            chss2.graph_value()
+            tracechss1 = go.Scatter(x=list(chss2.umHours.keys()),
+                                    y=list(chss2.umHours.values()),
+                                    name='House{0}-Storage2'.format(i + 1))
+            data.append(tracechss1)
+
+    plot_dir = str(path) + '/plot'
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+    os.chdir(plot_dir)
+
+    if not data:
+        return
+
+    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+
+
+# ESS SOC Trade History
+def _soc_history(path, barmode, title, xtitle, ytitle, iname):
+    data = list()
+    key = 'charge [%]'
+    os.chdir(path)
+    sub_file = sorted(next(os.walk('grid'))[1])
+    for i in range(len(sub_file)):
+        ss1 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage1.csv')
+        ss2 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage2.csv')
+
+        if (os.path.isfile(ss1)):
+            chss1 = BarGraph(ss1, key)
+            chss1.graph_value()
+            tracechss1 = go.Scatter(x=list(chss1.umHours.keys()),
+                                    y=list(chss1.umHours.values()),
+                                    name='House{0}-Storage1'.format(i + 1))
+            data.append(tracechss1)
+        if (os.path.isfile(ss2)):
+            chss2 = BarGraph(ss2, key)
+            chss2.graph_value()
+            tracechss1 = go.Scatter(x=list(chss2.umHours.keys()),
+                                    y=list(chss2.umHours.values()),
+                                    name='House{0}-Storage2'.format(i + 1))
+            data.append(tracechss1)
 
     plot_dir = str(path) + '/plot'
     if not os.path.exists(plot_dir):
