@@ -341,10 +341,7 @@ def _api_app(simulation: Simulation):
     @app.route("/cumulative-grid-trades", methods=['GET'])
     @lock_flask_endpoint
     def cumulative_grid_trades():
-        return {
-            "unit": "kWh",
-            "cumulative-grid-trades": export_cumulative_grid_trades(simulation.area)
-        }
+        return export_cumulative_grid_trades(simulation.area)
 
     @app.route("/<area_slug>/tree-summary")
     def tree_summary(area_slug):
