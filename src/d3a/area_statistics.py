@@ -1,4 +1,4 @@
-from collections import namedtuple, defaultdict
+from collections import namedtuple, defaultdict, OrderedDict
 from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
@@ -73,11 +73,13 @@ def gather_prices_pv_stor_energ(area, price_energ_lists):
             if child.children == [] and \
                     (isinstance(child.strategy, StorageStrategy) or
                      isinstance(child.strategy, NightStorageStrategy)):
-                traded_energy = [
-                    t.offer.energy
-                    for t in market.trades
-                    if t.seller == child.name
-                ]
+                traded_energy = []
+
+                for t in market.trades:
+                    if t.seller == child.name:
+                        traded_energy.append(-t.offer.energy)
+                    elif t.buyer == child.name:
+                        traded_energy.append(t.offer.energy)
                 price_energ_lists[slot_time_str].stor_energ.extend(traded_energy)
 
         if child.children != []:
@@ -86,14 +88,13 @@ def gather_prices_pv_stor_energ(area, price_energ_lists):
 
 
 def export_cumulative_loads(area):
-    load_price_lists = {}
-    area_raw_results = gather_area_loads_and_trade_prices(area, load_price_lists)
+    load_price_lists = gather_area_loads_and_trade_prices(area, {})
     return [
         {
             "time": hour,
             "load": sum(load_price.load) if len(load_price.load) > 0 else 0,
             "price": mean(load_price.price) if len(load_price.price) > 0 else 0
-        } for hour, load_price in area_raw_results.items()
+        } for hour, load_price in load_price_lists.items()
     ]
 
 
@@ -244,8 +245,7 @@ def export_cumulative_grid_trades(area):
 
 
 def export_price_energy_day(area):
-    price_lists = {}
-    area_results = gather_prices_pv_stor_energ(area, price_lists)
+    price_lists = gather_prices_pv_stor_energ(area, OrderedDict())
     return [
         {
             "timeslot": ii,
@@ -255,5 +255,5 @@ def export_price_energy_day(area):
             "max_price": max(trades.price) if len(trades.price) > 0 else 0,
             "cum_pv_gen": -1*sum(trades.pv_energ),
             "cum_stor_prof": sum(trades.stor_energ)
-        } for ii, (hour, trades) in enumerate(area_results.items())
+        } for ii, (hour, trades) in enumerate(price_lists.items())
     ]
