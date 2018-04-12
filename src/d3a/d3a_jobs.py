@@ -48,7 +48,7 @@ def start(scenario, settings, message_url_format):
                             config,
                             slowdown=settings.get('slowdown', 0),
                             exit_on_finish=True,
-                            exit_on_finish_wait=interval.instance(timedelta(seconds=30)),
+                            exit_on_finish_wait=interval.instance(timedelta(seconds=10)),
                             api_url=api_url,
                             message_url=message_url_format.format(job.id))
 
