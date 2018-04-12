@@ -1,4 +1,4 @@
-from collections import namedtuple, defaultdict
+from collections import namedtuple, defaultdict, OrderedDict
 from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
@@ -9,6 +9,7 @@ from d3a.util import area_name_from_area_or_iaa_name, make_iaa_name
 
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
+prices_pv_stor_energy = namedtuple('prices_pv_stor_energy', ['price', 'pv_energ', 'stor_energ'])
 
 
 def get_area_type_string(area):
@@ -45,15 +46,55 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
     return load_price_lists
 
 
+def gather_prices_pv_stor_energ(area, price_energ_lists):
+    for child in area.children:
+        for slot, market in child.parent.past_markets.items():
+            slot_time_str = "%02d:%02d" % (slot.hour, slot.minute)
+            if slot_time_str not in price_energ_lists.keys():
+                price_energ_lists[slot_time_str] = prices_pv_stor_energy(price=[],
+                                                                         pv_energ=[],
+                                                                         stor_energ=[])
+            trade_prices = [
+                # Convert from cents to euro
+                t.offer.price / 100.0 / t.offer.energy
+                for t in market.trades
+                if t.buyer == child.name
+            ]
+            price_energ_lists[slot_time_str].price.extend(trade_prices)
+
+            if child.children == [] and isinstance(child.strategy, PVStrategy):
+                traded_energy = [
+                    t.offer.energy
+                    for t in market.trades
+                    if t.seller == child.name
+                ]
+                price_energ_lists[slot_time_str].pv_energ.extend(traded_energy)
+
+            if child.children == [] and \
+                    (isinstance(child.strategy, StorageStrategy) or
+                     isinstance(child.strategy, NightStorageStrategy)):
+                traded_energy = []
+
+                for t in market.trades:
+                    if t.seller == child.name:
+                        traded_energy.append(-t.offer.energy)
+                    elif t.buyer == child.name:
+                        traded_energy.append(t.offer.energy)
+                price_energ_lists[slot_time_str].stor_energ.extend(traded_energy)
+
+        if child.children != []:
+            price_energ_lists = gather_prices_pv_stor_energ(child, price_energ_lists)
+    return price_energ_lists
+
+
 def export_cumulative_loads(area):
-    load_price_lists = {}
-    area_raw_results = gather_area_loads_and_trade_prices(area, load_price_lists)
+    load_price_lists = gather_area_loads_and_trade_prices(area, {})
     return [
         {
             "time": hour,
             "load": sum(load_price.load) if len(load_price.load) > 0 else 0,
             "price": mean(load_price.price) if len(load_price.price) > 0 else 0
-        } for hour, load_price in area_raw_results.items()
+        } for hour, load_price in load_price_lists.items()
     ]
 
 
@@ -201,3 +242,18 @@ def export_cumulative_grid_trades(area):
             *_generate_intraarea_consumption_entries(accumulated_trades)]
 
     }
+
+
+def export_price_energy_day(area):
+    price_lists = gather_prices_pv_stor_energ(area, OrderedDict())
+    return [
+        {
+            "timeslot": ii,
+            "time": hour,
+            "av_price": mean(trades.price) if len(trades.price) > 0 else 0,
+            "min_price": min(trades.price) if len(trades.price) > 0 else 0,
+            "max_price": max(trades.price) if len(trades.price) > 0 else 0,
+            "cum_pv_gen": -1*sum(trades.pv_energ),
+            "cum_stor_prof": sum(trades.stor_energ)
+        } for ii, (hour, trades) in enumerate(price_lists.items())
+    ]
