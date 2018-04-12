@@ -42,8 +42,8 @@ def get_setup(config):
                                                                    hrs_per_day=4,
                                                                    hrs_of_day=(12, 15)),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(1, 80),
-                         appliance=PVAppliance()),
+                    # Area('H2 PV', strategy=PVStrategy(1, 80),
+                    #      appliance=PVAppliance()),
                 ]
             ),
             Area(
@@ -99,7 +99,7 @@ def get_setup(config):
                                                              hrs_per_day=4,
                                                              hrs_of_day=(10, 13)),
                          appliance=SwitchableAppliance()),
-                    Area('H5 PV', strategy=PVStrategy(2, 60),
+                    Area('H5 PV', strategy=PVStrategy(1, 60),
                          appliance=PVAppliance()),
                     Area('H5 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
                          appliance=SwitchableAppliance()),
