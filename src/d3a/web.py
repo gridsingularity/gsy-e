@@ -4,6 +4,7 @@ from functools import lru_cache, wraps
 from itertools import chain, repeat
 from operator import itemgetter
 from threading import Thread
+from statistics import mean
 
 import pendulum
 from flask import Flask, abort, render_template, request
@@ -16,7 +17,7 @@ from werkzeug.wsgi import DispatcherMiddleware
 import d3a
 from d3a.simulation import Simulation, page_lock
 from d3a.stats import (
-    energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
+    energy_bills
 )
 from d3a.util import make_iaa_name, simulation_info
 from d3a.export_unmatched_loads import export_unmatched_loads
@@ -356,11 +357,18 @@ def _api_app(simulation: Simulation):
 
     @app.route("/<area_slug>/tree-summary")
     def tree_summary(area_slug):
-        markets = list(recursive_current_markets(_get_area(area_slug)))
+        price_energy_list = export_price_energy_day(_get_area(area_slug))
+
+        def calculate_prices(key, functor):
+            # Need to convert to euro cents to avoid having to change the backend
+            # TODO: Both this and the frontend have to remove the recalculation
+            return round(100 * functor(
+                [price_energy[key] for price_energy in price_energy_list]
+            ), 2)
         return {
-            "min_trade_price": min(primary_unit_prices(markets)),
-            "max_trade_price": max(primary_unit_prices(markets)),
-            "avg_trade_price": total_avg_trade_price(markets)
+            "min_trade_price": calculate_prices("min_price", min),
+            "max_trade_price": calculate_prices("max_price", max),
+            "avg_trade_price": calculate_prices("av_price", mean),
         }
 
     @app.route("/<area_slug>/bills")
