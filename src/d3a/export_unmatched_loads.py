@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.facebook_device import FacebookDeviceStrategy, \
     CellTowerFacebookDeviceStrategy
@@ -97,7 +99,7 @@ def _recurse_area_tree(area):
     for child in area.children:
         if _is_house_node(child) or _is_cell_tower_node(child):
             # Need to iterate, because the area has been marked as a house or cell tower
-            unmatched_loads[child.slug] = _calculate_area_stats(child)
+            unmatched_loads[child.name] = _calculate_area_stats(child)
         elif child.children is None:
             # We are at a leaf node, no point in recursing further. This node's calculation
             # should be done on the upper level
@@ -115,5 +117,6 @@ def export_unmatched_loads(area):
     unmatched_loads_result["unmatched_load_count"] = \
         sum([v["unmatched_load_count"] for k, v in area_tree.items()])
     unmatched_loads_result["all_loads_met"] = (unmatched_loads_result["unmatched_load_count"] == 0)
+    area_tree = OrderedDict(sorted(area_tree.items()))
     unmatched_loads_result["areas"] = area_tree
     return unmatched_loads_result
