@@ -1,4 +1,5 @@
 import traceback
+from collections import OrderedDict
 from functools import lru_cache, wraps
 from itertools import chain, repeat
 from operator import itemgetter
@@ -19,7 +20,8 @@ from d3a.stats import (
 )
 from d3a.util import make_iaa_name, simulation_info
 from d3a.export_unmatched_loads import export_unmatched_loads
-from d3a.area_statistics import export_cumulative_loads, export_cumulative_grid_trades
+from d3a.area_statistics import export_cumulative_loads, export_cumulative_grid_trades, \
+    export_price_energy_day
 
 
 _NO_VALUE = {
@@ -338,6 +340,15 @@ def _api_app(simulation: Simulation):
             "cumulative-load-price": export_cumulative_loads(simulation.area)
         }
 
+    @app.route("/price-energy-day", methods=['GET'])
+    @lock_flask_endpoint
+    def price_energy_day():
+        return {
+            "price-currency": "Euros",
+            "load-unit": "kWh",
+            "price-energy-day": export_price_energy_day(simulation.area)
+        }
+
     @app.route("/cumulative-grid-trades", methods=['GET'])
     @lock_flask_endpoint
     def cumulative_grid_trades():
@@ -369,6 +380,7 @@ def _api_app(simulation: Simulation):
         from_slot = slot_query_param('from')
         to_slot = slot_query_param('to')
         result = energy_bills(area, from_slot, to_slot)
+        result = OrderedDict(sorted(result.items()))
         if from_slot:
             result['from'] = str(from_slot)
         if to_slot:
