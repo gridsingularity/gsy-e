@@ -239,8 +239,8 @@ def export_cumulative_grid_trades(area):
             # Then self consumption energy for all areas
             _generate_self_consumption_entries(accumulated_trades),
             # Then consumption entries for intra-house trades
-            _generate_intraarea_consumption_entries(accumulated_trades)
-        ]
+            *_generate_intraarea_consumption_entries(accumulated_trades)]
+
     }
 
 

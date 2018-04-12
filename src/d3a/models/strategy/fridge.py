@@ -136,5 +136,8 @@ class FridgeStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self.log.info("Temperature: %.2f", self.state.temperature)
-        self.state.market_cycle(self.area)
+        # This happens on the first market cycle, if there is no current_market
+        # (AKA the most recent of the past markets) don't update the fridge state
+        if self.area.current_market is not None:
+            self.state.market_cycle(self.area)
         self.open_spot_markets = list(self.area.markets.values())
