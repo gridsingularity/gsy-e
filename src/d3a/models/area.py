@@ -273,7 +273,9 @@ class Area:
                     t=timeframe,
                     format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
                 ))
-        if changed and _trigger_event:
+
+        # Force market cycle event in case this is the first market slot
+        if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
     def get_now(self) -> Pendulum:
@@ -305,7 +307,7 @@ class Area:
         return {t.name: t for t in triggers}
 
     def tick(self):
-        if self.current_tick % self.config.ticks_per_slot == 0 and self.current_tick != 0:
+        if self.current_tick % self.config.ticks_per_slot == 0:
             self._cycle_markets()
         self._broadcast_notification(AreaEvent.TICK, area=self)
         self.current_tick += 1

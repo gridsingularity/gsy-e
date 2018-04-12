@@ -32,6 +32,8 @@ class TestUnmatchedLoad(unittest.TestCase):
 
     def test_export_unmatched_loads_is_reported_correctly_for_all_loads_matched(self):
         house1 = Area("House1", [self.area1, self.area2])
+        self.grid = Area("Grid", [house1])
+        self.grid.past_markets = {}
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
@@ -47,7 +49,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market3 = MagicMock(spec=Market)
             mock_market3.traded_energy = {"load1": -0.101, "load2": -0.101}
             house1.past_markets[timeslot] = mock_market3
-        self.grid = Area("Grid", [house1])
+            self.grid.past_markets[timeslot] = mock_market3
 
         unmatched_loads = export_unmatched_loads(self.grid)
         assert unmatched_loads["unmatched_load_count"] == 0
@@ -55,6 +57,8 @@ class TestUnmatchedLoad(unittest.TestCase):
 
     def test_export_unmatched_loads_is_reported_correctly_for_all_loads_unmatched(self):
         house1 = Area("House1", [self.area1, self.area2])
+        self.grid = Area("Grid", [house1])
+        self.grid.past_markets = {}
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
@@ -70,13 +74,15 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market3 = MagicMock(spec=Market)
             mock_market3.traded_energy = {"load1": -0.09, "load2": -0.07}
             house1.past_markets[timeslot] = mock_market3
-        self.grid = Area("Grid", [house1])
+            self.grid.past_markets[timeslot] = mock_market3
         unmatched_loads = export_unmatched_loads(self.grid)
         assert unmatched_loads["unmatched_load_count"] == 20
         assert not unmatched_loads["all_loads_met"]
 
     def test_export_unmatched_loads_is_reported_correctly_for_half_loads_unmatched(self):
         house1 = Area("House1", [self.area1, self.area2])
+        self.grid = Area("Grid", [house1])
+        self.grid.past_markets = {}
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
@@ -92,7 +98,8 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market3 = MagicMock(spec=Market)
             mock_market3.traded_energy = {"load1": -0.09, "load2": -0.101}
             house1.past_markets[timeslot] = mock_market3
-        self.grid = Area("Grid", [house1])
+            self.grid.past_markets[timeslot] = mock_market3
+
         unmatched_loads = export_unmatched_loads(self.grid)
         assert unmatched_loads["unmatched_load_count"] == 10
         assert not unmatched_loads["all_loads_met"]
@@ -105,6 +112,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         ct_strategy.state = MagicMock(spec=LoadState)
         ct_strategy.state.desired_energy = {}
         cell_tower = Area("Cell Tower", strategy=ct_strategy)
+        self.grid = Area("Grid", [house1, cell_tower])
         for i in range(1, 11):
             timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
@@ -126,7 +134,8 @@ class TestUnmatchedLoad(unittest.TestCase):
             ct_strategy.state.desired_energy[timeslot] = 1000
             cell_tower.past_markets[timeslot] = mock_market_ct
 
-        self.grid = Area("Grid", [house1, cell_tower])
+            self.grid.past_markets[timeslot] = mock_market3
+
         unmatched_loads = export_unmatched_loads(self.grid)
         assert unmatched_loads["unmatched_load_count"] == 30
         assert not unmatched_loads["all_loads_met"]
