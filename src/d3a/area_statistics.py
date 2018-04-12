@@ -64,7 +64,6 @@ def gather_prices_pv_stor_energ(area, price_energ_lists):
 
             if child.children == [] and isinstance(child.strategy, PVStrategy):
                 traded_energy = [
-                    # Convert from cents to euro
                     t.offer.energy
                     for t in market.trades
                     if t.seller == child.name
@@ -75,10 +74,9 @@ def gather_prices_pv_stor_energ(area, price_energ_lists):
                     (isinstance(child.strategy, StorageStrategy) or
                      isinstance(child.strategy, NightStorageStrategy)):
                 traded_energy = [
-                    # Convert from cents to euro
                     t.offer.energy
                     for t in market.trades
-                    if t.buyer == child.name
+                    if t.seller == child.name
                 ]
                 price_energ_lists[slot_time_str].stor_energ.extend(traded_energy)
 
