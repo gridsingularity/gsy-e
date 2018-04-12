@@ -21,8 +21,14 @@ class NightStorageStrategy(BaseStrategy):
         self.state.tick(area)
 
     def event_market_cycle(self):
-        past_market = list(self.area.past_markets.values())[-1]
-        # if energy in this slot was bought: update the storage & try to sell it
+        if self.area.past_markets:
+            past_market = list(self.area.past_markets.values())[-1]
+        else:
+            if self.state.used_storage > 0:
+                # For the case of the first market slot sell with a default value.
+                self.sell_energy(self.selling_price)
+            return
+
         for bought in self.offers.bought_in_market(past_market):
             self.state.fill_blocked_storage(bought.energy)
             self.sell_energy(bought.price, bought.energy)
