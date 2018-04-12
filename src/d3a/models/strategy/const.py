@@ -24,7 +24,8 @@ FRIDGE_MIN_NEEDED_ENERGY = 10
 # Unit is kWh
 STORAGE_CAPACITY = 1.2
 # Energy Sell/Buy Break-even
-BREAK_EVEN = 30
+STORAGE_BREAK_EVEN = 30
+MAX_SELL_PRICE = 35
 
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent

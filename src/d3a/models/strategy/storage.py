@@ -1,7 +1,7 @@
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, BREAK_EVEN
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, STORAGE_BREAK_EVEN, MAX_SELL_PRICE
 
 
 class StorageStrategy(BaseStrategy):
@@ -10,7 +10,9 @@ class StorageStrategy(BaseStrategy):
     def __init__(self, risk=DEFAULT_RISK,
                  initial_capacity=0.0,
                  initial_charge=None,
-                 break_even=BREAK_EVEN):
+                 break_even=STORAGE_BREAK_EVEN,
+                 max_selling_price=MAX_SELL_PRICE,
+                 cap_price_strategy=False):
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
@@ -18,6 +20,8 @@ class StorageStrategy(BaseStrategy):
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.break_even = break_even
+        self.max_selling_price = max_selling_price
+        self.cap_price_strategy = cap_price_strategy
 
     def event_tick(self, *, area):
         # Taking the cheapest offers in every market currently open and building the average
@@ -104,11 +108,19 @@ class StorageStrategy(BaseStrategy):
 
         # selling should be more than break-even price
         if energy > 0.0:
-            offer = most_expensive_market.offer(
-                energy * max(risk_dependent_selling_price, self.break_even),
-                energy,
-                self.owner.name
-            )
+            if self.cap_price_strategy:
+                cdsp = self.capacity_dependant_sell_price()
+                offer = most_expensive_market.offer(
+                    energy * cdsp,
+                    energy,
+                    self.owner.name
+                )
+            else:
+                offer = most_expensive_market.offer(
+                    energy * max(risk_dependent_selling_price, self.break_even),
+                    energy,
+                    self.owner.name
+                )
             # Updating parameters
             if not open_offer:
                 self.state.offer_storage(energy)
@@ -131,3 +143,14 @@ class StorageStrategy(BaseStrategy):
         else:
             most_expensive_cheapest_offer = self.break_even
         return min(most_expensive_cheapest_offer, self.break_even)
+
+    def capacity_dependant_sell_price(self):
+        most_recent_past_ts = sorted(self.area.past_markets.keys())
+
+        if len(self.area.past_markets.keys()) > 1:
+            charge_per = self.state.charge_history[most_recent_past_ts[-2]]
+            price = self.max_selling_price -\
+                ((self.max_selling_price-self.break_even)*(charge_per/100))
+            return price
+        else:
+            return self.max_selling_price
