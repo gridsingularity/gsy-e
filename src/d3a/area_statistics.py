@@ -92,8 +92,8 @@ def export_cumulative_loads(area):
     return [
         {
             "time": hour,
-            "load": sum(load_price.load) if len(load_price.load) > 0 else 0,
-            "price": mean(load_price.price) if len(load_price.price) > 0 else 0
+            "load": round(sum(load_price.load), 3) if len(load_price.load) > 0 else 0,
+            "price": round(mean(load_price.price), 2) if len(load_price.price) > 0 else 0
         } for hour, load_price in load_price_lists.items()
     ]
 
@@ -182,7 +182,7 @@ def _generate_produced_energy_entries(accumulated_trades):
         "x": area_name,
         "y": area_data["produced"],
         "target": area_name,
-        "label": str(area_name) + " produced " + str(abs(area_data["produced"])) + " kWh"
+        "label": str(area_name) + " produced " + str(round(abs(area_data["produced"]), 3)) + " kWh"
     } for area_name, area_data in accumulated_trades.items()]
     return sorted(produced_energy, key=lambda a: a["x"])
 
@@ -198,7 +198,9 @@ def _generate_self_consumption_entries(accumulated_trades):
             "x": area_name,
             "y": sc_energy,
             "target": area_name,
-            "label": str(area_name) + " consumed " + str(sc_energy) + " kWh from " + str(area_name)
+            "label":
+                str(area_name) + " consumed " + str(round(sc_energy, 3)) +
+                " kWh from " + str(area_name)
         })
     return sorted(self_consumed_energy, key=lambda a: a["x"])
 
@@ -222,7 +224,9 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
                 "x": area_name,
                 "y": consumption,
                 "target": target_area,
-                "label": area_name + " consumed " + str(consumption) + " kWh from " + target_area
+                "label":
+                    area_name + " consumed " + str(round(consumption, 3)) +
+                    " kWh from " + target_area
             })
         consumption_rows.append(sorted(consumption_row, key=lambda x: x["x"]))
     return consumption_rows
