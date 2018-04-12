@@ -1,4 +1,5 @@
 import traceback
+from collections import OrderedDict
 from functools import lru_cache, wraps
 from itertools import chain, repeat
 from operator import itemgetter
@@ -379,6 +380,7 @@ def _api_app(simulation: Simulation):
         from_slot = slot_query_param('from')
         to_slot = slot_query_param('to')
         result = energy_bills(area, from_slot, to_slot)
+        result = OrderedDict(sorted(result.items()))
         if from_slot:
             result['from'] = str(from_slot)
         if to_slot:
