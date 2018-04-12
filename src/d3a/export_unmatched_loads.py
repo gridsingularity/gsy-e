@@ -3,7 +3,7 @@ from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.area_statistics import get_area_type_string
 
 
-DEFICIT_THRESHOLD_Wh = 0.001
+DEFICIT_THRESHOLD_Wh = 0.0001
 
 
 def _calculate_stats_for_single_device(hour_data, area, current_slot):
@@ -33,7 +33,7 @@ def _calculate_stats_for_single_device(hour_data, area, current_slot):
 
 
 def _calculate_hour_stats_for_area(hour_data, area, current_slot):
-    if not area.children:
+    if area.children == []:
         return _calculate_stats_for_single_device(hour_data, area, current_slot)
     else:
         for child in area.children:
@@ -64,7 +64,7 @@ def _accumulate_device_stats_to_area_stats(per_hour_device_data):
 def _calculate_area_stats(area):
     per_hour_device_data = {}
     # Iterate first through all the available market slots of the area
-    for current_slot, market in area.past_markets.items():
+    for current_slot, market in area.parent.past_markets.items():
         hour_data = per_hour_device_data.get(current_slot.hour, {"devices": {}})
         # Update hour data for the area, by accumulating slots in one hour
         per_hour_device_data[current_slot.hour] = \
@@ -90,13 +90,13 @@ def _is_cell_tower_node(area):
 def _recurse_area_tree(area):
     unmatched_loads = {}
     for child in area.children:
-        if child.children is None:
+        if _is_house_node(child) or _is_cell_tower_node(child):
+            # Need to iterate, because the area has been marked as a house or cell tower
+            unmatched_loads[child.slug] = _calculate_area_stats(child)
+        elif child.children is None:
             # We are at a leaf node, no point in recursing further. This node's calculation
             # should be done on the upper level
             continue
-        elif _is_house_node(child) or _is_cell_tower_node(child):
-            # Need to iterate, because the area has been marked as a house or cell tower
-            unmatched_loads[child.slug] = _calculate_area_stats(child)
         else:
             # Recurse even further. Merge new results with existing ones
             unmatched_loads = {**unmatched_loads, **_recurse_area_tree(child)}
