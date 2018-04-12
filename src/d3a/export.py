@@ -220,6 +220,9 @@ class BarGraph(DataSets):
             ),
             xaxis=dict(
                 title=xtitle
+            ),
+            font=dict(
+                size=16
             )
         )
 
@@ -306,6 +309,8 @@ class TradeHistory(DataSets):
                 }],
             "layout": {
                 "title": title,
+                "font": {"size": 16
+                         }
             }
         }
         for key, value in self.trade_history.items():
