@@ -580,6 +580,9 @@ def _house_trade_history(path, barmode, xtitle, ytitle):
                 ),
                 xaxis=dict(
                     title=xtitle
+                ),
+                font=dict(
+                    size=16
                 )
             )
             fig = go.Figure(data=data, layout=layout)
