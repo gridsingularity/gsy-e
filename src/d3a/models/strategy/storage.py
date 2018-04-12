@@ -1,7 +1,7 @@
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, BREAK_EVEN
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, BREAK_EVEN, MAX_SELL_PRICE
 
 
 class StorageStrategy(BaseStrategy):
@@ -11,7 +11,8 @@ class StorageStrategy(BaseStrategy):
                  initial_capacity=0.0,
                  initial_charge=None,
                  break_even=BREAK_EVEN,
-                 max_price=35):
+                 max_selling_price=MAX_SELL_PRICE,
+                 cap_price_strategy=False):
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
@@ -19,7 +20,8 @@ class StorageStrategy(BaseStrategy):
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.break_even = break_even
-        self.max_price = max_price
+        self.max_selling_price = max_selling_price
+        self.cap_price_strategy = cap_price_strategy
 
     def event_tick(self, *, area):
         # Taking the cheapest offers in every market currently open and building the average
@@ -79,13 +81,12 @@ class StorageStrategy(BaseStrategy):
                     return False
 
     def sell_energy(self, buying_price, energy=None, open_offer=False):
-        cdsp = self.capacity_dependant_sell_price()
         # Highest risk selling price using the highest risk is 20% above the average price
-        # min_selling_price = 1.01 * buying_price
+        min_selling_price = 1.01 * buying_price
         # This ends up in a selling price between 101 and 105 percentage of the buying price
-        # risk_dependent_selling_price = (
-        #     min_selling_price * (1.1 - (0.1 * (self.risk / MAX_RISK)))
-        # )
+        risk_dependent_selling_price = (
+            min_selling_price * (1.1 - (0.1 * (self.risk / MAX_RISK)))
+        )
         # Find the most expensive offer out of the list of cheapest offers
         # in currently open markets
         try:
@@ -102,11 +103,19 @@ class StorageStrategy(BaseStrategy):
 
         # selling should be more than break-even price
         if energy > 0.0:
-            offer = most_expensive_market.offer(
-                energy * cdsp,
-                energy,
-                self.owner.name
-            )
+            if self.cap_price_strategy:
+                cdsp = self.capacity_dependant_sell_price()
+                offer = most_expensive_market.offer(
+                    energy * cdsp,
+                    energy,
+                    self.owner.name
+                )
+            else:
+                offer = most_expensive_market.offer(
+                    energy * max(risk_dependent_selling_price, self.break_even),
+                    energy,
+                    self.owner.name
+                )
             # Updating parameters
             if not open_offer:
                 self.state.offer_storage(energy)
@@ -122,18 +131,6 @@ class StorageStrategy(BaseStrategy):
         return min(avg_cheapest_offer_price, self.break_even)
 
     def find_most_expensive_market_price(self):
-        # most_recent_past_ts = sorted(self.area.past_markets.keys(), reverse=True)
-        # if len(most_recent_past_ts) > 1:
-        #     print("time: {}".format(most_recent_past_ts[0]))
-        #     charge_per = self.state.charge_history[most_recent_past_ts[0]]
-        #     print("ESS Charge: {}".format(charge_per))
-        #     # print("ESS Charge Type: {}".format(type(charge_per)))
-        #     # print("Max Price Type: {}".format(type(self.max_price)))
-        #     # print("Break_even Type: {}".format(type(self.break_even)))
-        #     # print("ESS Charge Type: {}".format(type(charge_per)))
-        #
-        #     price = self.max_price - ((self.max_price - self.break_even) * (charge_per/ 100))
-        #     print("ESS Trade Price: {}".format(price))
         cheapest_offers = self.area.cheapest_offers
         if len(cheapest_offers) != 0:
             most_expensive_cheapest_offer = (
@@ -147,7 +144,8 @@ class StorageStrategy(BaseStrategy):
 
         if len(self.area.past_markets.keys()) > 1:
             charge_per = self.state.charge_history[most_recent_past_ts[-2]]
-            price = self.max_price - ((self.max_price - self.break_even) * (charge_per / 100))
+            price = self.max_selling_price -\
+                ((self.max_selling_price-self.break_even)*(charge_per/100))
             return price
         else:
-            return self.max_price
+            return self.max_selling_price
