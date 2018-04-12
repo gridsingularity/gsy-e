@@ -32,7 +32,7 @@ def start(scenario, settings, message_url_format):
     config = SimulationConfig(
         duration=interval.instance(settings.get('duration', timedelta(days=1))),
         slot_length=interval.instance(settings.get('slot_length', timedelta(minutes=15))),
-        tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=1))),
+        tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=15))),
         market_count=settings.get('market_count', 4)
     )
 
@@ -48,6 +48,7 @@ def start(scenario, settings, message_url_format):
                             config,
                             slowdown=settings.get('slowdown', 0),
                             exit_on_finish=True,
+                            exit_on_finish_wait=interval.instance(timedelta(seconds=30)),
                             api_url=api_url,
                             message_url=message_url_format.format(job.id))
 
