@@ -250,10 +250,10 @@ def export_price_energy_day(area):
         {
             "timeslot": ii,
             "time": hour,
-            "av_price": mean(trades.price) if len(trades.price) > 0 else 0,
-            "min_price": min(trades.price) if len(trades.price) > 0 else 0,
-            "max_price": max(trades.price) if len(trades.price) > 0 else 0,
-            "cum_pv_gen": -1*sum(trades.pv_energ),
-            "cum_stor_prof": sum(trades.stor_energ)
+            "av_price": round(mean(trades.price) if len(trades.price) > 0 else 0, 2),
+            "min_price": round(min(trades.price) if len(trades.price) > 0 else 0, 2),
+            "max_price": round(max(trades.price) if len(trades.price) > 0 else 0, 2),
+            "cum_pv_gen": round(-1*sum(trades.pv_energ), 2),
+            "cum_stor_prof": round(sum(trades.stor_energ), 2)
         } for ii, (hour, trades) in enumerate(price_lists.items())
     ]
