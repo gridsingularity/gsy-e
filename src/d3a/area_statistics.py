@@ -49,7 +49,7 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
 def gather_prices_pv_stor_energ(area, price_energ_lists):
     for child in area.children:
         for slot, market in child.parent.past_markets.items():
-            slot_time_str = "%02d:%02d" % (slot.hour, slot.minute)
+            slot_time_str = "%02d:00" % slot.hour
             if slot_time_str not in price_energ_lists.keys():
                 price_energ_lists[slot_time_str] = prices_pv_stor_energy(price=[],
                                                                          pv_energ=[],
