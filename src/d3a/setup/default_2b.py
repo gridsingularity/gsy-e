@@ -17,7 +17,7 @@ def get_setup(config):
                 [
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power=200,
                                                                        hrs_per_day=6,
-                                                                       hrs_of_day=(12, 22),
+                                                                       hrs_of_day=(12, 17),
                                                                        acceptable_energy_rate=25),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
@@ -34,7 +34,7 @@ def get_setup(config):
                                                                        hrs_of_day=(12, 15),
                                                                        acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(1, 80),
+                    Area('H2 PV', strategy=PVStrategy(4, 80),
                          appliance=PVAppliance()),
 
                 ]
@@ -42,7 +42,7 @@ def get_setup(config):
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=(0, 23),
-                                                                   acceptable_energy_rate=100),
+                                                                   acceptable_energy_rate=35),
                  appliance=SwitchableAppliance())
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
