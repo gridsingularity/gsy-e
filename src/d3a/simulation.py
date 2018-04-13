@@ -152,7 +152,7 @@ class Simulation:
 
             try:
                 with NonBlockingConsole() as console:
-                    for slot_no in range(slot_resume, config.duration // config.slot_length):
+                    for slot_no in range(slot_resume, slot_count):
                         run_duration = (
                             Pendulum.now() - self.run_start - Interval(seconds=self.paused_time)
                         )
