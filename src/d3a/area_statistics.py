@@ -182,7 +182,7 @@ def _generate_produced_energy_entries(accumulated_trades):
         "x": area_name,
         "y": area_data["produced"],
         "target": area_name,
-        "label": str(area_name) + " produced " + str(round(abs(area_data["produced"]), 3)) + " kWh"
+        "label": str(area_name) + " Produced " + str(round(abs(area_data["produced"]), 3)) + " kWh"
     } for area_name, area_data in accumulated_trades.items()]
     return sorted(produced_energy, key=lambda a: a["x"])
 
@@ -199,7 +199,7 @@ def _generate_self_consumption_entries(accumulated_trades):
             "y": sc_energy,
             "target": area_name,
             "label":
-                str(area_name) + " consumed " + str(round(sc_energy, 3)) +
+                str(area_name) + " Consumed " + str(round(sc_energy, 3)) +
                 " kWh from " + str(area_name)
         })
     return sorted(self_consumed_energy, key=lambda a: a["x"])
@@ -225,7 +225,7 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
                 "y": consumption,
                 "target": target_area,
                 "label":
-                    area_name + " consumed " + str(round(consumption, 3)) +
+                    area_name + " Consumed " + str(round(consumption, 3)) +
                     " kWh from " + target_area
             })
         consumption_rows.append(sorted(consumption_row, key=lambda x: x["x"]))
