@@ -38,7 +38,9 @@ class Simulation:
                  use_repl: bool = False, export: bool = False, export_path: str = None,
                  reset_on_finish: bool = False,
                  reset_on_finish_wait: Interval = Interval(minutes=1),
-                 exit_on_finish: bool = False, api_url=None, message_url=None):
+                 exit_on_finish: bool = False,
+                 exit_on_finish_wait: Interval = Interval(seconds=1),
+                 api_url=None, message_url=None):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -52,6 +54,7 @@ class Simulation:
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait
         self.exit_on_finish = exit_on_finish
+        self.exit_on_finish_wait = exit_on_finish_wait
         self.api_url = api_url
         self.message_url = message_url
         self.setup_module_name = setup_module_name
@@ -221,6 +224,7 @@ class Simulation:
                         t.join()
                         continue
                     elif self.exit_on_finish:
+                        self._handle_input(console, self.exit_on_finish_wait.in_seconds())
                         log.error("Terminating. (--exit-on-finish set.)")
                         break
                     else:
