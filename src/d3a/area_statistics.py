@@ -143,7 +143,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
 
     for slot, market in grid.past_markets.items():
         for trade in market.trades:
-            if trade.buyer == house_IAA_name:
+            if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
                 seller_id = area_name_from_area_or_iaa_name(trade.seller)
                 accumulated_trades[house.name]["consumedFrom"][seller_id] += trade.offer.energy
     return accumulated_trades
