@@ -1,7 +1,10 @@
+-r base.txt
+
+coverage
 flake8
 flake8-tuple
-isort
-pytest
-pytest-catchlog
-coverage
 hypothesis
+isort
+parameterized
+pytest
+requests-mock

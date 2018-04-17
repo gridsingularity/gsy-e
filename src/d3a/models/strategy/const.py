@@ -3,6 +3,8 @@
 MAX_RISK = 100
 # Unit is percentage
 DEFAULT_RISK = 50
+# Max energy price in ct / kWh
+MAX_ENERGY_PRICE = 30  # 0.3 Eur
 
 # FRIDGE SETTINGS
 # Unit is degree celsius
@@ -20,11 +22,13 @@ FRIDGE_MIN_NEEDED_ENERGY = 10
 
 # ENERGY STORAGE SETTINGS
 # Unit is kWh
-STORAGE_CAPACITY = 5.0
+STORAGE_CAPACITY = 1.2
+# Energy Sell/Buy Break-even
+BREAK_EVEN = 30
 
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent
-MIN_PV_SELLING_PRICE = 0.1
+MIN_PV_SELLING_PRICE = 5
 
 # HEATPUMP SETTINGS
 # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)

@@ -1,18 +1,19 @@
-import tty
-from logging import LoggerAdapter
-
-import termios
-
-import sys
-
-import select
-
 import os
+import select
+import sys
+import termios
+import tty
+from logging import LoggerAdapter, getLogger
+from pkgutil import iter_modules
+
 from click.types import ParamType
 from pendulum.interval import Interval
 from rex import rex
 
-from d3a import get_project_root
+from d3a import get_project_root, setup as d3a_setup
+
+
+log = getLogger(__name__)
 
 
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
@@ -20,6 +21,8 @@ INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2
 IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
 
 _CONTRACT_CACHE = {}
+
+available_simulation_scenarios = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
 
 
 class TaggedLogWrapper(LoggerAdapter):
@@ -99,7 +102,7 @@ class ContractJoiner(object):
             return []
 
         self.seen.add(contract_file.name)
-        print('Reading {}'.format(contract_file.name))
+        log.trace('Reading contract file "%s"', contract_file.name)
 
         for line in contract_file:
             line = line.strip('\r\n')
@@ -125,12 +128,33 @@ def make_iaa_name(owner):
     return "IAA {}".format(owner.name)
 
 
+def area_name_from_area_or_iaa_name(name):
+    return name[4:] if name[:4] == 'IAA ' else name
+
+
 def format_interval(interval, show_day=True):
     if interval.days and show_day:
         template = "{i.days:02d}:{i.hours:02d}:{i.minutes:02d}:{i.remaining_seconds:02d}"
     else:
         template = "{i.hours:02d}:{i.minutes:02d}:{i.remaining_seconds:02d}"
     return template.format(i=interval)
+
+
+def simulation_info(simulation):
+    current_time = format_interval(
+        simulation.area.current_tick * simulation.area.config.tick_length,
+        show_day=False
+    )
+    return {
+        'config': simulation.area.config.as_dict(),
+        'finished': simulation.finished,
+        'aborted': simulation.is_stopped,
+        'current_tick': simulation.area.current_tick,
+        'current_time': current_time,
+        'current_date': simulation.area.now.format('%Y-%m-%d'),
+        'paused': simulation.paused,
+        'slowdown': simulation.slowdown
+    }
 
 
 def get_contract_path(contract_name):

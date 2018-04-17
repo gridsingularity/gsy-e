@@ -11,5 +11,9 @@ flask-api
 flask-cors
 pendulum
 python-rex
+rlp==0.4.7
 tablib
 terminaltables
+rq
+requests
+websocket-client

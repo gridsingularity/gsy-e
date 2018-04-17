@@ -185,7 +185,7 @@ There are four endpoints to control the simulation. In details these are:
 Endpoint Purpose
 ======== =======
 pause    Pause / unpause the simulation
-reset    Reset the simulaiton and restart the current run
+reset    Reset the simulation and restart the current run
 save     Save the current state of the simulation to a file
 slowdown Adjust 'slowdown' parameter to control the simulation speed
 ======== =======

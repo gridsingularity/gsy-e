@@ -137,6 +137,10 @@ def test_market_acct_simple(market: Market):
 
     assert market.traded_energy['A'] == offer.energy
     assert market.traded_energy['B'] == -offer.energy
+    assert market.bought_energy('A') == 0
+    assert market.bought_energy('B') == offer.energy
+    assert market.sold_energy('A') == offer.energy
+    assert market.sold_energy('B') == 0
 
 
 def test_market_acct_multiple(market: Market):
@@ -148,6 +152,10 @@ def test_market_acct_multiple(market: Market):
     assert market.traded_energy['A'] == offer1.energy + offer2.energy == 30
     assert market.traded_energy['B'] == -offer1.energy == -20
     assert market.traded_energy['C'] == -offer2.energy == -10
+    assert market.bought_energy('A') == 0
+    assert market.sold_energy('A') == offer1.energy + offer2.energy == 30
+    assert market.bought_energy('B') == offer1.energy == 20
+    assert market.bought_energy('C') == offer2.energy == 10
 
 
 def test_market_avg_offer_price(market: Market):
@@ -171,7 +179,20 @@ def test_market_sorted_offers(market: Market):
     assert [o.price for o in market.sorted_offers] == [1, 2, 3, 4, 5]
 
 
-def test_market_listners_init(called):
+def test_market_most_affordable_offers(market: Market):
+    market.offer(5, 1, 'A')
+    market.offer(3, 1, 'A')
+    market.offer(1, 1, 'A')
+    market.offer(10, 10, 'A')
+    market.offer(20, 20, 'A')
+    market.offer(20000, 20000, 'A')
+    market.offer(2, 1, 'A')
+    market.offer(4, 1, 'A')
+
+    assert {o.price for o in market.most_affordable_offers} == {1, 10, 20, 20000}
+
+
+def test_market_listeners_init(called):
     market = Market(notification_listener=called)
     market.offer(10, 20, 'A')
 
@@ -244,6 +265,12 @@ def test_market_iou(market: Market):
     market.accept_offer(offer, 'B')
 
     assert market.ious['B']['A'] == 10
+
+
+def test_market_accept_offer_yields_partial_trade(market: Market):
+    offer = market.offer(2.0, 4, 'seller')
+    trade = market.accept_offer(offer, 'buyer', energy=1)
+    assert trade.offer.id == offer.id and trade.offer.energy == 1 and trade.residual.energy == 3
 
 
 class MarketStateMachine(RuleBasedStateMachine):

@@ -5,6 +5,8 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class BuyStrategy(BaseStrategy):
+    parameters = ('buy_chance', 'max_energy')
+
     def __init__(self, *, buy_chance=0.1, max_energy=None):
         super().__init__()
         self.buy_chance = buy_chance
@@ -29,11 +31,16 @@ class BuyStrategy(BaseStrategy):
 
 
 class OfferStrategy(BaseStrategy):
+    parameters = ('offer_chance', 'energy_range')
+
     def __init__(self, *, offer_chance=0.01, energy_range=(2, 10), price_fraction_choice=(3, 4)):
         super().__init__()
         self.offer_chance = offer_chance
         self.energy_range = energy_range
         self.price_fraction = price_fraction_choice
+
+    def non_attr_parameters(self):
+        return {'price_fraction_choice': self.price_fraction}
 
     def event_tick(self, *, area):
         if random.random() <= self.offer_chance:

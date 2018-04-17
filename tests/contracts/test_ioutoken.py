@@ -1,10 +1,9 @@
 from contextlib import contextmanager
 
 import pytest
-from ethereum import tester
+from ethereum.tools import tester
 
-from d3a.util import get_contract_path
-
+from d3a.util import get_cached_joined_contract_source
 
 # setup accounts
 accounts = tester.accounts
@@ -23,12 +22,12 @@ def print_gas_used(state, string):
 
 @pytest.fixture
 def base_state_contract():
-    state = tester.state()
-    iou_token_path = get_contract_path("IOUToken.sol")
+    state = tester.Chain()
     logs = []
-    contract = state.abi_contract(None, path=iou_token_path, language='solidity', sender=tester.k0,
-                                  constructor_parameters=[10**5, "Testcoin", 5, "$$"])
-    return (state, contract, logs)
+    contract = state.contract(get_cached_joined_contract_source("IOUToken.sol"),
+                              [10**5, "Testcoin", 5, "$$"],
+                              language='solidity', sender=tester.k0)
+    return state, contract, logs
 
 
 def test_balanceOf(base_state_contract):

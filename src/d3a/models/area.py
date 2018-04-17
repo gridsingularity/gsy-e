@@ -33,16 +33,21 @@ DEFAULT_CONFIG = SimulationConfig(
 
 
 class Area:
+    _area_id_counter = 1
+
     def __init__(self, name: str = None, children: List["Area"] = None,
                  strategy: BaseStrategy = None,
                  appliance: BaseAppliance = None,
-                 config: SimulationConfig = None):
+                 config: SimulationConfig = None,
+                 budget_keeper=None):
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
         # self.slug = slugify(name, to_lower=True)
         self.slug = name.lower().replace(" ", "-")
+        self.area_id = Area._area_id_counter
+        Area._area_id_counter += 1
         self.parent = None
         self.children = children if children is not None else []
         for child in self.children:
@@ -51,11 +56,15 @@ class Area:
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
+        self.budget_keeper = budget_keeper
+        if budget_keeper:
+            self.budget_keeper.area = self
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
         self._bc = None  # type: BlockChainInterface
+        self.listeners = []
 
     def activate(self, bc=None):
         if bc:
@@ -74,6 +83,9 @@ class Area:
                             s=self
                         )
                     )
+
+            if self.budget_keeper:
+                self.budget_keeper.activate()
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)
@@ -95,6 +107,14 @@ class Area:
         """Returns the 'current' market (i.e. the one currently 'running')"""
         try:
             return list(self.past_markets.values())[-1]
+        except IndexError:
+            return None
+
+    @property
+    def next_market(self) -> Optional[Market]:
+        """Returns the 'current' market (i.e. the one currently 'running')"""
+        try:
+            return list(self.markets.values())[0]
         except IndexError:
             return None
 
@@ -162,6 +182,13 @@ class Area:
         return cheapest_offers
 
     @property
+    def market_with_most_expensive_offer(self):
+        # In case of a tie, max returns the first market occurrence in order to
+        # satisfy the most recent market slot
+        return max(self.markets.values(),
+                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
+
+    @property
     def historical_min_max_price(self):
         min_max_prices = [
             (m.min_trade_price, m.max_trade_price)
@@ -184,7 +211,7 @@ class Area:
                 areas.extend(area.children)
         return slug_map
 
-    def _cycle_markets(self, _trigger_event=True):
+    def _cycle_markets(self, _trigger_event=True, _market_cycle=False):
         """
         Remove markets for old time slots, add markets for new slots.
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
@@ -198,6 +225,9 @@ class Area:
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
             return
+
+        if self.budget_keeper and _market_cycle:
+            self.budget_keeper.process_market_cycle()
 
         now = self.now
         time_in_hour = Interval(minutes=now.minute, seconds=now.second)
@@ -228,7 +258,7 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in (self.config.slot_length * i for i in range(self.config.market_count - 1)):
+        for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
             timeframe = now.add_timedelta(offset)
             if timeframe not in self.markets:
                 # Create markets for missing slots
@@ -256,7 +286,9 @@ class Area:
                     t=timeframe,
                     format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
                 ))
-        if changed and _trigger_event:
+
+        # Force market cycle event in case this is the first market slot
+        if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
     def get_now(self) -> Pendulum:
@@ -288,7 +320,7 @@ class Area:
         return {t.name: t for t in triggers}
 
     def tick(self):
-        if self.current_tick % self.config.ticks_per_slot == 0 and self.current_tick != 0:
+        if self.current_tick % self.config.ticks_per_slot == 0:
             self._cycle_markets()
         self._broadcast_notification(AreaEvent.TICK, area=self)
         self.current_tick += 1
@@ -313,6 +345,8 @@ class Area:
                 continue
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
+        for listener in self.listeners:
+            listener.event_listener(event_type, **kwargs)
 
     def _fire_trigger(self, trigger_name, **params):
         for target in (self.strategy, self.appliance):
@@ -321,11 +355,14 @@ class Area:
                     if trigger.name == trigger_name:
                         return target.fire_trigger(trigger_name, **params)
 
+    def add_listener(self, listener):
+        self.listeners.append(listener)
+
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:
             self.tick()
         elif event_type is AreaEvent.MARKET_CYCLE:
-            self._cycle_markets()
+            self._cycle_markets(_market_cycle=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.activate()
         if self.strategy:

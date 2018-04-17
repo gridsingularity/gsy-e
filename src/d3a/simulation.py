@@ -3,8 +3,9 @@ from importlib import import_module
 from logging import getLogger
 
 import time
+from time import sleep
 from pathlib import Path
-from threading import Event, Thread
+from threading import Event, Thread, Lock
 
 import dill
 from pendulum import Pendulum
@@ -14,14 +15,18 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.blockchain import BlockChainInterface
-from d3a.exceptions import SimulationException
+from d3a.exceptions import SimulationException, D3AException
+from d3a.export import export
+from d3a.models.overview import Overview
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 
-
 log = getLogger(__name__)
+
+
+page_lock = Lock()
 
 
 class _SimulationInterruped(Exception):
@@ -29,10 +34,25 @@ class _SimulationInterruped(Exception):
 
 
 class Simulation:
-    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
-                 slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
-                 use_repl: bool = False, reset_on_finish: bool = False,
-                 reset_on_finish_wait: Interval = Interval(minutes=1), api_url=None, use_bc=True):
+    def __init__(
+            self,
+            setup_module_name: str,
+            simulation_config: SimulationConfig,
+            slowdown: int = 0,
+            seed=None,
+            paused: bool = False,
+            pause_after: Interval = None,
+            use_repl: bool = False,
+            export: bool = False,
+            export_path: str = None,
+            reset_on_finish: bool = False,
+            reset_on_finish_wait: Interval = Interval(minutes=1),
+            exit_on_finish: bool = False,
+            exit_on_finish_wait: Interval = Interval(seconds=1),
+            api_url=None,
+            message_url=None,
+            use_bc=True
+    ):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -41,11 +61,23 @@ class Simulation:
         )
         self.simulation_config = simulation_config
         self.use_repl = use_repl
+        self.export_on_finish = export
+        self.export_path = export_path
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait
+        self.exit_on_finish = exit_on_finish
+        self.exit_on_finish_wait = exit_on_finish_wait
         self.api_url = api_url
+        self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.use_bc = use_bc
+        self.is_stopped = False
+
+        if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
+            raise D3AException(
+                "Can only specify one of '--reset-on-finish', '--exit-on-finish' and '--use-repl' "
+                "simultaneously."
+            )
 
         self.run_start = None
         self.paused_time = None
@@ -93,6 +125,9 @@ class Simulation:
         log.info("Starting simulation with config %s", self.simulation_config)
         self.area.activate(self.bc)
 
+        if self.message_url is not None:
+            Overview(self, self.message_url).start()
+
     @property
     def finished(self):
         return self.area.current_tick == self.area.config.total_ticks
@@ -117,10 +152,14 @@ class Simulation:
         self._init(**self.initial_params)
         self.ready.set()
 
+    def stop(self):
+        self.is_stopped = True
+
     def run(self, resume=False) -> (Period, Interval):
         if resume:
             log.critical("Resuming simulation")
             self._info()
+        self.is_stopped = False
         config = self.simulation_config
         tick_lengths_s = config.tick_length.total_seconds()
         slot_count = int(config.duration / config.slot_length) + 1
@@ -139,13 +178,22 @@ class Simulation:
 
             try:
                 with NonBlockingConsole() as console:
-                    for slot_no in range(slot_resume, config.duration // config.slot_length):
+                    for slot_no in range(slot_resume, slot_count):
+                        run_duration = (
+                            Pendulum.now() - self.run_start - Interval(seconds=self.paused_time)
+                        )
+
                         log.error(
-                            "Slot %d of %d (%2.0f%%)",
+                            "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
                             slot_no + 1,
                             slot_count,
-                            (slot_no + 1) / slot_count * 100
+                            (slot_no + 1) / slot_count * 100,
+                            run_duration, run_duration / (slot_no + 1) * slot_count
                         )
+                        if self.is_stopped:
+                            log.error("Received stop command.")
+                            sleep(5)
+                            break
 
                         for tick_no in range(tick_resume, config.ticks_per_slot):
                             # reset tick_resume after possible resume
@@ -160,7 +208,8 @@ class Simulation:
                                 slot_no + 1,
                                 (tick_no + 1) / config.ticks_per_slot * 100,
                             )
-                            self.area.tick()
+                            with page_lock:
+                                self.area.tick()
                             tick_length = time.monotonic() - tick_start
                             if self.slowdown and tick_length < tick_lengths_s:
                                 # Simulation runs faster than real time but a slowdown was
@@ -173,13 +222,19 @@ class Simulation:
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
 
-                    log.error(
-                        "Run finished in %s%s / %.2fx real time.",
-                        run_duration,
-                        " ({} paused)".format(paused_duration if paused_duration else ""),
-                        config.duration / (run_duration - paused_duration)
-                    )
-                    log.error("REST-API still running at %s", self.api_url)
+                    if not self.is_stopped:
+                        log.error(
+                            "Run finished in %s%s / %.2fx real time",
+                            run_duration,
+                            " ({} paused)".format(paused_duration) if paused_duration else "",
+                            config.duration / (run_duration - paused_duration)
+                        )
+                    if not self.exit_on_finish:
+                        log.error("REST-API still running at %s", self.api_url)
+                    if self.export_on_finish:
+                        export(self.area,
+                               self.export_path,
+                               Pendulum.now().format("%Y-%m-%d_%X"))
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
@@ -194,11 +249,14 @@ class Simulation:
                         t.start()
                         t.join()
                         continue
+                    elif self.exit_on_finish:
+                        self._handle_input(console, self.exit_on_finish_wait.in_seconds())
+                        log.error("Terminating. (--exit-on-finish set.)")
+                        break
                     else:
                         log.info("Ctrl-C to quit")
                         while True:
                             self._handle_input(console, 0.5)
-
                     break
             except _SimulationInterruped:
                 self.interrupted.set()
@@ -223,12 +281,13 @@ class Simulation:
                 raise _SimulationInterruped()
             cmd = console.get_char(timeout)
             if cmd:
-                if cmd not in {'i', 'p', 'q', 'r', 'R', 's', '+', '-'}:
+                if cmd not in {'i', 'p', 'q', 'r', 'S', 'R', 's', '+', '-'}:
                     log.critical("Invalid command. Valid commands:\n"
                                  "  [i] info\n"
                                  "  [p] pause\n"
                                  "  [q] quit\n"
                                  "  [r] reset\n"
+                                 "  [S] stop\n"
                                  "  [R] start REPL\n"
                                  "  [s] save state\n"
                                  "  [+] increase slowdown\n"
@@ -252,6 +311,8 @@ class Simulation:
                     raise KeyboardInterrupt()
                 elif cmd == 's':
                     self.save_state()
+                elif cmd == 'S':
+                    self.stop()
                 elif cmd == '+':
                     v = 5
                     if self.slowdown <= 95:
@@ -315,6 +376,19 @@ class Simulation:
             dill.dump(self, save_file, protocol=HIGHEST_PROTOCOL)
         log.critical("Saved state to %s", save_file_name.resolve())
         return save_file_name
+
+    @property
+    def status(self):
+        if self.is_stopped:
+            return "stopped"
+        elif self.finished:
+            return "finished"
+        elif self.paused:
+            return "paused"
+        elif self.ready.is_set():
+            return "ready"
+        else:
+            return "running"
 
     def __getstate__(self):
         state = self.__dict__.copy()

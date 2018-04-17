@@ -1,18 +1,22 @@
-from collections import namedtuple, defaultdict
+from collections import defaultdict, namedtuple
 from functools import partial
-from typing import Dict, Mapping, List, Optional  # noqa
+from logging import getLogger
+from typing import Dict, List, Mapping, Optional  # noqa
 
-from ethereum.common import set_execution_results, mk_block_from_prevstate
+from ethereum.common import mk_block_from_prevstate, set_execution_results
 from ethereum.consensus_strategy import get_consensus_strategy
 from ethereum.genesis_helpers import mk_basic_state
 from ethereum.meta import make_head_candidate
 from ethereum.pow import chain
 from ethereum.pow.ethpow import Miner
 from ethereum.state import BLANK_UNCLES_HASH
-from ethereum.tools.tester import ABIContract, Chain as BaseChain, base_alloc, a0, k0
-from ethereum.utils import sha3, privtoaddr, encode_hex
+from ethereum.tools.tester import ABIContract, Chain as BaseChain, a0, base_alloc, k0
+from ethereum.utils import encode_hex, privtoaddr, sha3
 
 from d3a.util import get_cached_joined_contract_source
+
+
+log = getLogger(__name__)
 
 
 User = namedtuple('User', ('name', 'address', 'privkey'))
@@ -50,7 +54,7 @@ class Chain(BaseChain):
                 base_alloc,
                 header={
                     "number": 0,
-                    "gas_limit": 10 ** 9,
+                    "gas_limit": 10 ** 10,
                     "gas_used": 0,
                     "timestamp": self.time_source().int_timestamp - 1,
                     "difficulty": 1,
@@ -98,10 +102,10 @@ class BlockChainInterface:
         self.delay_listeners = delay_listeners
         self.delayed_listeners = []
 
-    def _listener_proxy(self, log):
+    def _listener_proxy(self, log_):
         """Translate raw `Log` instances into dict repr before calling the target listener"""
-        for listener in self.listeners[log.address]:
-            event_data = self.contracts[log.address].translator.listen(log)
+        for listener in self.listeners[log_.address]:
+            event_data = self.contracts[log_.address].translator.listen(log_)
             if self.delay_listeners:
                 self.delayed_listeners.append(
                     partial(listener, event_data))
@@ -110,6 +114,7 @@ class BlockChainInterface:
 
     def init_contract(self, contract_name: str, args: list, listeners: Optional[List] = None,
                       id_: str = None) -> ABIContract:
+        log.debug("Initializing contract '%s'", contract_name)
         contract = self.chain.contract(
             get_cached_joined_contract_source(contract_name),
             args,
@@ -125,6 +130,7 @@ class BlockChainInterface:
     def fire_delayed_listeners(self):
         if not self.delay_listeners:
             return
-        for delayed_listener in self.delayed_listeners:
+        while self.delayed_listeners:
+            delayed_listener = self.delayed_listeners.pop()
             delayed_listener()
         self.delayed_listeners = []

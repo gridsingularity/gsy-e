@@ -1,6 +1,5 @@
 import logging
 from logging import getLogger
-from pkgutil import iter_modules
 
 import click
 import dill
@@ -8,11 +7,10 @@ from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 
-from d3a import setup as d3a_setup
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.simulation import Simulation
-from d3a.util import IntervalType
+from d3a.util import IntervalType, available_simulation_scenarios
 from d3a.web import start_web
 
 
@@ -38,7 +36,7 @@ def main(log_level):
     root_logger.addHandler(handler)
 
 
-_setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
+_setup_modules = available_simulation_scenarios
 
 
 @main.command()
@@ -72,28 +70,40 @@ _setup_modules = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
               help="Automatically reset simulation after it finishes.")
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
+@click.option('--exit-on-finish', is_flag=True)
+@click.option('--exit-on-finish-wait', type=IntervalType('M:S'), default="0",
+              help="Wait time before exiting after finishing the simulation run. "
+                   "[default: disabled]")
+@click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
+@click.option('--export-path',  type=str, default=None, show_default=False,
+              help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 @click.option('--disable-bc', is_flag=True, help="Run simulation without blockchain")
 def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after, repl,
-        reset_on_finish, reset_on_finish_wait, disable_bc, **config_params):
+        export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
+        exit_on_finish_wait, disable_bc, **config_params):
     try:
         simulation_config = SimulationConfig(**config_params)
+
+        api_url = "http://{}:{}/api".format(interface, port)
+        simulation = Simulation(
+            setup_module_name,
+            simulation_config,
+            slowdown,
+            seed,
+            paused,
+            pause_after,
+            repl,
+            export,
+            export_path,
+            reset_on_finish,
+            reset_on_finish_wait,
+            exit_on_finish,
+            exit_on_finish_wait,
+            api_url,
+            use_bc=not disable_bc
+        )
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-
-    api_url = "http://{}:{}/api".format(interface, port)
-    simulation = Simulation(
-        setup_module_name,
-        simulation_config,
-        slowdown,
-        seed,
-        paused,
-        pause_after,
-        repl,
-        reset_on_finish,
-        reset_on_finish_wait,
-        api_url,
-        use_bc=not disable_bc
-    )
     start_web(interface, port, simulation)
     simulation.run()
 

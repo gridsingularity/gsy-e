@@ -69,7 +69,7 @@ contract Market {
             success = true;
         } else {
             success = false;
-            offerId = "";
+            offerId = 0x0;
         }
     }
 

@@ -29,6 +29,9 @@ BC_NUM_FACTOR = 10 ** 10
 log = getLogger(__name__)
 
 
+OFFER_PRICE_THRESHOLD = 0.00001
+
+
 class Offer:
     def __init__(self, id, price, energy, seller, market=None):
         self.id = str(id)
@@ -67,12 +70,27 @@ class Offer:
         self._call_listeners(OfferEvent.ACCEPTED, market=market, trade=trade)
 
 
-class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer'))):
+class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual'))):
+    def __new__(cls, id, time, offer, seller, buyer, residual=None):
+        # overridden to give the residual field a default value
+        return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual)
+
     def __str__(self):
+        mark_partial = "(partial)" if self.residual is not None else ""
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh @ {s.offer.price}".format(s=self)
+            "{s.offer.energy} kWh {p} @ {s.offer.price}".format(s=self, p=mark_partial)
         )
+
+    @classmethod
+    def _csv_fields(cls):
+        return (cls._fields[:2] + ('price [ct./kWh]', 'energy [kWh]') +
+                cls._fields[3:5])
+
+    def _to_csv(self):
+        price = round(self.offer.price / self.offer.energy, 4)
+        # residual_energy = 0 if self.residual is None else self.residual.energy
+        return self[:2] + (price, self.offer.energy) + self[3:5]
 
 
 class Market:
@@ -85,6 +103,7 @@ class Market:
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
         self.offers_deleted = {}  # type: Dict[str, Offer]
+        self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
         self.notification_listeners = []
         self.trades = []  # type: List[Trade]
         # Store trades temporarily until bc event has fired
@@ -127,7 +146,9 @@ class Market:
         elif event_type is MarketEvent.OFFER_DELETED:
             kwargs['offer'] = self.offers_deleted.pop(encode_hex(event['offerId']))
         elif event_type is MarketEvent.OFFER_CHANGED:
-            raise NotImplementedError("Partial trades not yet supported when using blockchain")
+            existing_offer, new_offer = self.offers_changed.pop(encode_hex(event['offerId']))
+            kwargs['existing_offer'] = existing_offer
+            kwargs['new_offer'] = new_offer
         elif event_type is MarketEvent.TRADE:
             kwargs['trade'] = self._trades_by_id.pop(encode_hex(event['tradeId']))
         self._notify_listeners(event_type, **kwargs)
@@ -170,7 +191,7 @@ class Market:
             offer_or_id = offer_or_id.id
         with self.offer_lock:
             if self.bc_contract:
-                self.bc_contract.cancel(offer_or_id)
+                self.bc_contract.cancel(decode_hex(offer_or_id))
             offer = self.offers.pop(offer_or_id, None)
             self._update_min_max_avg_offer_prices()
             if not offer:
@@ -190,6 +211,7 @@ class Market:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
+        residual_offer = None
         with self.offer_lock, self.trade_lock:
             offer = self.offers.pop(offer_or_id, None)
             if offer is None:
@@ -220,7 +242,9 @@ class Market:
                         self.offers[residual_offer.id] = residual_offer
                         log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
                         offer = accepted_offer
-                        if not self.area.bc:
+                        if self.area.bc:
+                            self.offers_changed[offer.id] = (original_offer, residual_offer)
+                        else:
                             self._notify_listeners(
                                 MarketEvent.OFFER_CHANGED,
                                 existing_offer=original_offer,
@@ -231,7 +255,7 @@ class Market:
                     else:
                         # Requested partial is equal to offered energy - just proceed normally
                         pass
-            except:  # noqa
+            except Exception:
                 # Exception happened - restore offer
                 self.offers[offer.id] = offer
                 raise
@@ -244,8 +268,8 @@ class Market:
                 )
                 trade_id = encode_hex(trade_id)
             else:
-                trade_id = uuid.uuid4()
-            trade = Trade(trade_id, time, offer, offer.seller, buyer)
+                trade_id = str(uuid.uuid4())
+            trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer)
             self.trades.append(trade)
             if self.bc_contract:
                 self._trades_by_id[trade_id] = trade
@@ -312,6 +336,13 @@ class Market:
         return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
 
     @property
+    def most_affordable_offers(self):
+        cheapest_offer = self.sorted_offers[0]
+        rate = cheapest_offer.price / cheapest_offer.energy
+        return [o for o in self.sorted_offers if
+                abs(o.price / o.energy - rate) < OFFER_PRICE_THRESHOLD]
+
+    @property
     def _now(self):
         if self.area:
             return self.area.now
@@ -346,7 +377,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(offer_table).table)
-            except:  # noqa
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         if self.trades:
@@ -357,7 +388,7 @@ class Market:
             ]
             try:
                 out.append(SingleTable(trade_table).table)
-            except:  # noqa
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         if self.traded_energy:
@@ -368,10 +399,22 @@ class Market:
             ]
             try:
                 out.append(SingleTable(acct_table).table)
-            except:  # noqa
+            except UnicodeError:
                 # Could blow up with certain unicode characters
                 pass
         return "\n".join(out)
+
+    def bought_energy(self, buyer):
+        return sum(trade.offer.energy for trade in self.trades if trade.buyer == buyer)
+
+    def sold_energy(self, seller):
+        return sum(trade.offer.energy for trade in self.trades if trade.offer.seller == seller)
+
+    def total_spent(self, buyer):
+        return sum(trade.offer.price for trade in self.trades if trade.buyer == buyer)
+
+    def total_earned(self, seller):
+        return sum(trade.offer.price for trade in self.trades if trade.seller == seller)
 
     def __getstate__(self):
         state = self.__dict__.copy()

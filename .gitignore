@@ -93,3 +93,5 @@ ENV/
 
 *.DS_Store
 .d3a/
+
+requirements/local.*
