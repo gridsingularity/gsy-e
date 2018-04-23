@@ -1,5 +1,5 @@
 pragma solidity ^0.4.4;
-import "ClearingToken.sol";
+import "./ClearingToken.sol";
 
 
 contract Market {
