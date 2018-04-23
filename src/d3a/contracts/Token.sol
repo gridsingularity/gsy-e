@@ -1,9 +1,10 @@
 // Abstract contract for the full ERC 20 Token standard
 // https://github.com/ethereum/EIPs/issues/20
 pragma solidity ^0.4.4;
+import "github.com/ethereum/solidity/std/mortal.sol";
 
 
-contract Token {
+contract Token is mortal {
     /* This is a slight change to the ERC20 base standard.
     function totalSupply() constant returns (uint256 supply);
     is replaced with:
