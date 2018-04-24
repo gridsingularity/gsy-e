@@ -1,5 +1,5 @@
 pragma solidity ^0.4.4;
-import "StandardToken.sol";
+import "./StandardToken.sol";
 
 
 // Since IOUToken inherits from StandardToken it has all functionalities of

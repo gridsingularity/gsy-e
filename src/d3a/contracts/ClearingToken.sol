@@ -1,5 +1,5 @@
 pragma solidity ^0.4.4;
-import "IOUToken.sol";
+import "./IOUToken.sol";
 
 
 contract ClearingToken is IOUToken {
