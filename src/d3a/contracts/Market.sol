@@ -1,7 +1,6 @@
 pragma solidity ^0.4.4;
 import "ClearingToken.sol";
-import "github.com/ethereum/solidity/std/mortal.sol";
-
+import "./mortal.sol";
 
 contract Market is mortal {
 
