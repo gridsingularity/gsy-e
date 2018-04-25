@@ -197,7 +197,7 @@ def _api_app(simulation: Simulation):
             data = request.form.to_dict(flat=True)
         try:
             rv = area._fire_trigger(trigger_name, **data)
-            return {'success': True, 'repsonse': rv}
+            return {'success': True, 'response': rv}
         except Exception as ex:
             return (
                 {'success': False, 'exception': str(ex), 'traceback': traceback.format_exc()}, 400
@@ -362,9 +362,8 @@ def _api_app(simulation: Simulation):
         def calculate_prices(key, functor):
             # Need to convert to euro cents to avoid having to change the backend
             # TODO: Both this and the frontend have to remove the recalculation
-            return round(100 * functor(
-                [price_energy[key] for price_energy in price_energy_list]
-            ), 2)
+            energy_prices = [price_energy[key] for price_energy in price_energy_list]
+            return round(100 * functor(energy_prices), 2) if len(energy_prices) > 0 else 0.0
         return {
             "min_trade_price": calculate_prices("min_price", min),
             "max_trade_price": calculate_prices("max_price", max),
