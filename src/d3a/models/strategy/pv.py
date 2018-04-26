@@ -20,7 +20,6 @@ class PVStrategy(BaseStrategy):
 
     def __init__(self, panel_count=1, risk=DEFAULT_RISK, min_selling_price=MIN_PV_SELLING_PRICE):
         super().__init__()
-        self.data = {}
         self.risk = risk
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
@@ -102,14 +101,10 @@ class PVStrategy(BaseStrategy):
                                             self.area.config.slot_length)
                         ) // self.area.config.slot_length)
                     ]:
-            if (len(self.data) == 0):
-                difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
-                self.energy_production_forecast_kWh[slot_time] = self.gaussian_energy_forecast_kWh(
-                    difference_to_midnight_in_minutes
-                )
-            else:
-                self.energy_production_forecast_kWh[slot_time] =\
-                    self.data[slot_time.format('%H:%M')]
+            difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
+            self.energy_production_forecast_kWh[slot_time] = self.gaussian_energy_forecast_kWh(
+                difference_to_midnight_in_minutes
+            )
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
