@@ -35,7 +35,7 @@ def get_setup(config):
                                                                        acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVPredefinedStrategy(
-                        '/Users/muhammad.faizan/Downloads/PV_DATA.csv',
+                        '/Users/muhammad.faizan/Downloads/PV_DATA_1.csv',
                         90, 5),
                          appliance=PVAppliance()),
 
