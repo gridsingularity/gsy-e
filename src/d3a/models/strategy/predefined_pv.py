@@ -22,4 +22,4 @@ class PVPredefinedStrategy(PVStrategy):
             for row in readCSV:
                 k, v = row
                 self.data[k] = float(v)
-            print("CSV Data: {}".format(self.data))
+            # print("CSV Data: {}".format(self.data))
