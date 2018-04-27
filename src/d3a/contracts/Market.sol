@@ -1,8 +1,8 @@
 pragma solidity ^0.4.4;
-import "ClearingToken.sol";
+import "./ClearingToken.sol";
+import "./mortal.sol";
 
-
-contract Market {
+contract Market is mortal {
 
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
