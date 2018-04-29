@@ -4,6 +4,7 @@ from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy # NOQA
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.predef_load import DefinedLoadStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 
@@ -15,10 +16,10 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power=200,
-                                                                       hrs_per_day=6,
-                                                                       hrs_of_day=(12, 17),
-                                                                       acceptable_energy_rate=25),
+                    Area('H1 General Load',
+                         strategy=DefinedLoadStrategy(
+                             path='/Users/muhammad.faizan/Downloads/LOAD_DATA_1.csv',
+                             acceptable_energy_rate=25),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
                          appliance=SwitchableAppliance()),
