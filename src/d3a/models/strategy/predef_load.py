@@ -39,7 +39,6 @@ class DefinedLoadStrategy(BaseStrategy):
         markets = []
         for time, market in self.area.markets.items():
             if time.format('%H:%M') in self.data.keys():
-                print("Inside Market")
                 markets.append(market)
         if not markets:
             return
