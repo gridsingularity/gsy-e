@@ -26,9 +26,21 @@ class AreaEvent(Enum):
 
 
 class EventMixin:
+
+    def __init__(self):
+        self.event_to_method = {
+            AreaEvent.TICK: self.event_tick,
+            AreaEvent.MARKET_CYCLE: self.event_market_cycle,
+            AreaEvent.ACTIVATE: self.event_activate,
+            MarketEvent.OFFER: self.event_offer,
+            MarketEvent.OFFER_CHANGED: self.event_offer_changed,
+            MarketEvent.OFFER_DELETED: self.event_offer_deleted,
+            MarketEvent.TRADE: self.event_trade
+        }
+
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         self.log.debug("Dispatching event %s", event_type.name)
-        getattr(self, "event_{}".format(event_type.name.lower()))(**kwargs)
+        self.event_to_method[event_type](**kwargs)
 
     def event_tick(self, *, area):
         pass

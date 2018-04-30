@@ -105,6 +105,7 @@ class Market:
         self.min_offer_price = sys.maxsize
         self._avg_offer_price = None
         self.max_offer_price = 0
+        self._sorted_offers = []
         self.offer_lock = Lock()
         self.trade_lock = Lock()
         if notification_listener:
@@ -126,6 +127,7 @@ class Market:
         offer = Offer(str(uuid.uuid4()), price, energy, seller, self)
         with self.offer_lock:
             self.offers[offer.id] = offer
+            self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
             log.info("[OFFER][NEW] %s", offer)
             self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
@@ -138,6 +140,7 @@ class Market:
             offer_or_id = offer_or_id.id
         with self.offer_lock:
             offer = self.offers.pop(offer_or_id, None)
+            self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
             self._update_min_max_avg_offer_prices()
             if not offer:
                 raise OfferNotFoundException()
@@ -153,6 +156,8 @@ class Market:
         residual_offer = None
         with self.offer_lock, self.trade_lock:
             offer = self.offers.pop(offer_or_id, None)
+            self._sorted_offers = sorted(self.offers.values(),
+                                         key=lambda o: o.price / o.energy)
             if offer is None:
                 raise OfferNotFoundException()
             try:
@@ -181,6 +186,8 @@ class Market:
                         self.offers[residual_offer.id] = residual_offer
                         log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
                         offer = accepted_offer
+                        self._sorted_offers = sorted(self.offers.values(),
+                                                     key=lambda o: o.price / o.energy)
                         self._notify_listeners(
                             MarketEvent.OFFER_CHANGED,
                             existing_offer=original_offer,
@@ -194,6 +201,8 @@ class Market:
             except Exception:
                 # Exception happened - restore offer
                 self.offers[offer.id] = offer
+                self._sorted_offers = sorted(self.offers.values(),
+                                             key=lambda o: o.price / o.energy)
                 raise
 
             trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer, residual_offer)
@@ -253,7 +262,7 @@ class Market:
 
     @property
     def sorted_offers(self):
-        return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        return self._sorted_offers
 
     @property
     def most_affordable_offers(self):
