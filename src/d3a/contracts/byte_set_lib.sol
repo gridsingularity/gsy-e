@@ -1,4 +1,4 @@
-pragma solidity ^0.4.4;
+pragma solidity ^0.4.23;
 
 
 library ItSet {
@@ -12,9 +12,8 @@ library ItSet {
     }
 
     function insert(ByteSet storage self, bytes32 k) internal {
-        var entry = self.entries[k];
-        if (entry.idx == 0) {
-            entry.idx = self.list.length + 1;
+        if (self.entries[k].idx == 0) {
+            self.entries[k].idx = self.list.length + 1;
             self.list.push(k);
         }
     }
