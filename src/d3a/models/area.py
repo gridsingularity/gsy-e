@@ -53,13 +53,7 @@ class Area:
         self.inter_area_agents = defaultdict(list)  # type: Dict[Market, List[InterAreaAgent]]
         self.strategy = strategy
         self.appliance = appliance
-
-        if config:
-            self._config = config
-        elif self.parent:
-            self._config = self.parent.config
-        else:
-            self._config = DEFAULT_CONFIG
+        self._config = config
 
         self.budget_keeper = budget_keeper
         if budget_keeper:
@@ -132,7 +126,11 @@ class Area:
 
     @property
     def config(self):
-        return self._config
+        if self._config:
+            return self._config
+        if self.parent:
+            return self.parent.config
+        return DEFAULT_CONFIG
 
     @property
     def _offer_count(self):
