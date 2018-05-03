@@ -27,20 +27,25 @@ class AreaEvent(Enum):
 
 class EventMixin:
 
-    def __init__(self):
-        self.event_to_method = {
-            AreaEvent.TICK: self.event_tick,
-            AreaEvent.MARKET_CYCLE: self.event_market_cycle,
-            AreaEvent.ACTIVATE: self.event_activate,
-            MarketEvent.OFFER: self.event_offer,
-            MarketEvent.OFFER_CHANGED: self.event_offer_changed,
-            MarketEvent.OFFER_DELETED: self.event_offer_deleted,
-            MarketEvent.TRADE: self.event_trade
-        }
+    @property
+    def _event_mapping(self):
+        try:
+            return self._event_map
+        except AttributeError:
+            self._event_map = {
+                AreaEvent.TICK: self.event_tick,
+                AreaEvent.MARKET_CYCLE: self.event_market_cycle,
+                AreaEvent.ACTIVATE: self.event_activate,
+                MarketEvent.OFFER: self.event_offer,
+                MarketEvent.OFFER_CHANGED: self.event_offer_changed,
+                MarketEvent.OFFER_DELETED: self.event_offer_deleted,
+                MarketEvent.TRADE: self.event_trade
+            }
+            return self._event_map
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         self.log.debug("Dispatching event %s", event_type.name)
-        self.event_to_method[event_type](**kwargs)
+        self._event_mapping[event_type](**kwargs)
 
     def event_tick(self, *, area):
         pass
