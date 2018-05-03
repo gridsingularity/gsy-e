@@ -15,7 +15,7 @@ contract IOUToken is StandardToken {
         revert();
     }
 
-    constructor(
+    constructor (
         uint128 _initialAmount,
         string _tokenName,
         uint8 _decimalUnits,

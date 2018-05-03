@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 import "./IOUToken.sol";
 
+
 contract ClearingToken is IOUToken {
 
     // Approves Clearing Members to be registered with this contract
@@ -14,12 +15,12 @@ contract ClearingToken is IOUToken {
     // list of all the clearing members
     address[] clearingMembers;
 
-    constructor(
+    constructor (
         uint128 _initialAmount,
         string _tokenName,
         uint8 _decimalUnits,
         string _tokenSymbol
-    ) IOUToken(
+    ) IOUToken (
         _initialAmount,
         _tokenName,
         _decimalUnits,
@@ -72,21 +73,21 @@ contract ClearingToken is IOUToken {
     /*
      * @notice Status whether Market is registered
      */
-    function isGloballyApproved(address clearingMember) public constant returns (bool) {
+    function isGloballyApproved(address clearingMember) public view returns (bool) {
         return clearingMemberAmount[clearingMember] > 0;
     }
 
     /*
      * @notice Gets the owner which approves cleaing members of the contract
      */
-    function getApprover() public constant returns (address) {
+    function getApprover() public view returns (address) {
         return approver;
     }
 
     /*
      * @notice Gets all approved markets in the contracts
      */
-    function getApprovedMarkets() public constant returns (address[]) {
+    function getApprovedMarkets() public view returns (address[]) {
         return clearingMembers;
     }
 

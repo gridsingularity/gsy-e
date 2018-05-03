@@ -35,7 +35,7 @@ contract Market is mortal {
 
         clearingToken = ClearingToken(clearingTokenAddress);
         interval = _interval;
-        marketStartTime = now;
+        marketStartTime = block.timestamp;
     }
 
 
@@ -44,7 +44,7 @@ contract Market is mortal {
     event CancelOffer(uint energyUnits, int price, address indexed seller);
     event Trade(bytes32 tradeId, address indexed buyer, address indexed seller, uint energyUnits, int price);
     event OfferChanged(bytes32 oldOfferId, bytes32 newOfferId, uint energyUnits, int price,
-      address indexed seller);
+    address indexed seller);
 
     /*
      * @notice The msg.sender is able to introduce new offers.
@@ -85,8 +85,9 @@ contract Market is mortal {
             offers[offerId].price = 0;
             offers[offerId].seller = 0;
             success = true;
-        } else {
-          success = false;
+        }
+        else {
+            success = false;
         }
     }
 
@@ -100,12 +101,12 @@ contract Market is mortal {
      * @ tradedEnergyUnits Allows for partial trading of energyUnits from an offer
      */
     function trade(bytes32 offerId, uint tradedEnergyUnits) public returns (bool success, bytes32 newOfferId, bytes32 tradeId) {
-        if (offers[offerId].energyUnits > 0
-            && offers[offerId].seller != address(0)
-            && msg.sender != offers[offerId].seller
-            && now-marketStartTime < interval
-            && tradedEnergyUnits > 0
-            && tradedEnergyUnits <= offers[offerId].energyUnits) {
+        if ((offers[offerId].energyUnits > 0)&&
+        (offers[offerId].seller != address(0))&&
+        (msg.sender != offers[offerId].seller)&&
+        (block.timestamp-marketStartTime < interval)&&
+        (tradedEnergyUnits > 0)&&
+        (tradedEnergyUnits <= offers[offerId].energyUnits)) {
             // Allow Partial Trading, if tradedEnergyUnits  are less than the
             // energyUnits in the offer, make a new offer with the remaining energyUnits
             // and the same price. Also emit OfferChanged event with old offerId
@@ -142,21 +143,21 @@ contract Market is mortal {
     /*
      * @notice Gets the Offer tuple if given a valid offerid
      */
-    function getOffer(bytes32 offerId) public constant returns (uint, int, address) {
+    function getOffer(bytes32 offerId) public view returns (uint, int, address) {
         return (offers[offerId].energyUnits, offers[offerId].price, offers[offerId].seller);
     }
 
     /*
      * @notice Gets the address of the ClearingToken contract
      */
-    function getClearingTokenAddress() public constant returns (address) {
+    function getClearingTokenAddress() public view returns (address) {
         return address(clearingToken);
     }
 
     /*
      * @notice Gets the energy balance of _owner
      */
-    function balanceOf(address _owner) public constant returns (int256 balance) {
+    function balanceOf(address _owner) public view returns (int256 balance) {
         return balances[_owner];
     }
 
