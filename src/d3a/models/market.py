@@ -108,6 +108,8 @@ class Market:
         self._sorted_offers = []
         self.offer_lock = Lock()
         self.trade_lock = Lock()
+        self.accumulated_trade_price = 0
+        self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
 
@@ -207,6 +209,7 @@ class Market:
 
             trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer, residual_offer)
             self.trades.append(trade)
+            self._update_accumulated_trade_price_energy(trade)
             log.warning("[TRADE] %s", trade)
             self.traded_energy[offer.seller] += offer.energy
             self.traded_energy[buyer] -= offer.energy
@@ -217,6 +220,10 @@ class Market:
         offer._traded(trade, self)
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
+
+    def _update_accumulated_trade_price_energy(self, trade):
+        self.accumulated_trade_price += trade.offer.price
+        self.accumulated_trade_energy += trade.offer.energy
 
     def _update_min_max_avg_offer_prices(self):
         self._avg_offer_price = None
@@ -238,8 +245,8 @@ class Market:
             sum(o.energy for o in self.offers.values()),
             sum(o.price for o in self.offers.values()),
             len(self.trades),
-            sum(t.offer.energy for t in self.trades),
-            sum(t.offer.price for t in self.trades)
+            self.accumulated_trade_energy,
+            self.accumulated_trade_price
         )
 
     @property
@@ -254,9 +261,9 @@ class Market:
     @property
     def avg_trade_price(self):
         if self._avg_trade_price is None:
-            with self.trade_lock:
-                price = sum(t.offer.price for t in self.trades)
-                energy = sum(t.offer.energy for t in self.trades)
+            # with self.trade_lock:
+            price = self.accumulated_trade_price
+            energy = self.accumulated_trade_energy
             self._avg_trade_price = round(price / energy, 4) if energy else 0
         return self._avg_trade_price
 

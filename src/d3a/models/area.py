@@ -151,14 +151,12 @@ class Area:
     @property
     def historical_avg_price(self):
         price = sum(
-            t.offer.price
+            market.accumulated_trade_price
             for market in self.markets.values()
-            for t in market.trades
         ) + self._accumulated_past_price
         energy = sum(
-            t.offer.energy
+            market.accumulated_trade_energy
             for market in self.markets.values()
-            for t in market.trades
         ) + self._accumulated_past_energy
         return price / energy if energy else 0
 
@@ -243,14 +241,12 @@ class Area:
                 self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
 
         self._accumulated_past_price = sum(
-            t.offer.price
+            market.accumulated_trade_price
             for market in self.past_markets.values()
-            for t in market.trades
         )
         self._accumulated_past_energy = sum(
-            t.offer.energy
+            market.accumulated_trade_energy
             for market in self.past_markets.values()
-            for t in market.trades
         )
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
