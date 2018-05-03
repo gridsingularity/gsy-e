@@ -16,6 +16,7 @@
     "blank-lines": true,
     "indentation": true,
     "whitespace": true,
-    "deprecated-suicide": true
+    "deprecated-suicide": true,
+    "pragma-on-top": true
   }
 }

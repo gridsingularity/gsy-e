@@ -18,7 +18,7 @@ library ItSet {
         }
     }
 
-    function contains(ByteSet storage self, bytes32 k) internal constant returns (bool) {
+    function contains(ByteSet storage self, bytes32 k) internal view returns (bool) {
         return self.entries[k].idx > 0;
     }
 
@@ -34,7 +34,7 @@ library ItSet {
         }
     }
 
-    function size(ByteSet storage self) internal constant returns (uint) {
+    function size(ByteSet storage self) internal view returns (uint) {
         return self.list.length;
     }
 }

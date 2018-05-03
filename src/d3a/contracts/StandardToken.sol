@@ -23,7 +23,7 @@ contract StandardToken is Token {
         if (_value > 0) {
             balances[msg.sender] -= int(_value);
             balances[_to] += int(_value);
-            emit Transfer(msg.sender, _to, _value);
+            emit Transfer (msg.sender, _to, _value);
             return true;
         } else {
             return false;
@@ -50,7 +50,7 @@ contract StandardToken is Token {
      * @notice Gets the token balance of _ownner
      */
      //@faizan: might be better to use msg.sender rather than _owner
-    function balanceOf(address _owner) public constant returns (int256 balance) {
+    function balanceOf(address _owner) public view returns (int256 balance) {
         return balances[_owner];
     }
 
@@ -68,8 +68,8 @@ contract StandardToken is Token {
      * @notice Gets the amounts of tokens _owner has authorised _spender to
      * spend on its behalf
      */
-    function allowance(address _owner, address _spender) public constant returns (uint256 remaining) {
-      return allowed[_owner][_spender];
+    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
+        return allowed[_owner][_spender];
     }
 
     // Balances can be negative hence mapping from address to int256 type
