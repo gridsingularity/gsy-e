@@ -4,7 +4,7 @@ pragma solidity ^0.4.23;
 import "./Mortal.sol";
 
 
-contract Token is mortal {
+contract Token is Mortal {
     /* This is a slight change to the ERC20 base standard.
     function totalSupply() constant returns (uint256 supply);
     is replaced with:
