@@ -2,6 +2,7 @@ import csv
 import json
 import logging
 import pathlib
+from slugify import slugify
 
 import pandas as pd
 import os
@@ -16,6 +17,8 @@ from d3a.models.strategy.predef_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
+slugify.to_lower = True
+
 _log = logging.getLogger(__name__)
 
 
@@ -28,6 +31,7 @@ def export(root_area, path, subdir):
         _log.error("Could not open directory for csv exports: %s" % str(ex))
         return
     _export_area_with_children(root_area, directory)
+    _export_iaa_energy(root_area, directory)
     _export_overview(root_area, directory)
 
     _unmatch_loads(directory, 'relative', 'Devices Un-matched Loads', 'Time',
@@ -52,7 +56,7 @@ def _export_area_with_children(area, directory):
         for child in area.children:
             _export_area_with_children(child, subdirectory)
     _export_area_flat(area, directory)
-    if area.children:
+    if (area.children):
         _export_area_energy(area, directory)
 
 
@@ -175,6 +179,36 @@ def _export_area_energy(area, directory):
             for slot, market in area.past_markets.items():
                 for trade in market.trades:
                     writer.writerow((slot, ) + trade._to_csv())
+    except OSError:
+        _log.exception("Could not export area trades")
+
+
+def _export_iaa_energy(area, directory):
+    try:
+        i = 1
+        for child in area.children:
+            if child.children:
+                with open(_file_path(directory, "{}-residual-trades".format(child.slug)), 'w')\
+                        as csv_file:
+                    writer = csv.writer(csv_file)
+                    a = Trade._csv_fields()
+                    a = tuple(a[2:4])
+                    writer.writerow(("slot",) + a)
+                    for slot, market in area.past_markets.items():
+                        for trade in market.trades:
+                            if trade._to_csv()[-1] == 'IAA House {}'.format(i):
+                                a = list(trade._to_csv())
+                                a[3] = a[3] * -1
+                                a = tuple(a[2:4])
+                                writer.writerow((slot, ) + a)
+                            elif trade._to_csv()[-2] == 'IAA House {}'.format(i):
+                                a = trade._to_csv()
+                                a = tuple(a[2:4])
+                                writer.writerow((slot, ) + a)
+                            else:
+                                pass
+            i += 1
+
     except OSError:
         _log.exception("Could not export area trades")
 
