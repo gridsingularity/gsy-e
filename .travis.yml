@@ -7,16 +7,16 @@ branches:
 
 jobs:
  include:
-   - python: 3.5
+   - python: 3.6
      env: TOXENV=check_readme
      install: .support/travis-install.sh
      script: .support/travis-run.sh
-   - python: 3.5
+   - python: 3.6
      env: TOXENV=flake8
      install: .support/travis-install.sh
      script: .support/travis-run.sh
-   - python: 3.5
-     env: TOXENV=py35,coverage
+   - python: 3.6
+     env: TOXENV=py36,coverage
      install: .support/travis-install.sh
      script: .support/travis-run.sh
 # this is to trigger a new build of d3a-web for every push to master
