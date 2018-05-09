@@ -71,12 +71,14 @@ _setup_modules = available_simulation_scenarios
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
 @click.option('--exit-on-finish', is_flag=True)
+@click.option('--exit-on-finish-wait', type=IntervalType('M:S'), default="1s", show_default=True,
+              help="Wait time before exiting after finishing the simulation run")
 @click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after, repl,
         export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
-        **config_params):
+        exit_on_finish_wait, **config_params):
     try:
         simulation_config = SimulationConfig(**config_params)
 
@@ -94,6 +96,7 @@ def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after,
             reset_on_finish,
             reset_on_finish_wait,
             exit_on_finish,
+            exit_on_finish_wait,
             api_url
         )
     except D3AException as ex:
