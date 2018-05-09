@@ -1,7 +1,6 @@
 import os
 import importlib
 import glob
-import shutil
 from pendulum.interval import Interval
 from behave import given
 from behave import when
@@ -25,9 +24,7 @@ def install_check(context):
 
 @when('we run the d3a simulation on console with {scenario}')
 def run_sim_console(context, scenario):
-    context.export_path = os.path.join("./d3a-simulation", "integration_tests", scenario)
-    if os.path.isdir(context.export_path):
-        shutil.rmtree(context.export_path)
+    context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
     os.system("d3a -l FATAL run -d 2h --setup={scenario} --export --export-path={export_path} "
               "--exit-on-finish".format(export_path=context.export_path, scenario=scenario))
@@ -38,11 +35,8 @@ def test_export_data_csv(context, scenario):
     data_fn = "grid.csv"
     sim_data_csv = glob.glob(os.path.join(context.export_path, "*", data_fn))
     if len(sim_data_csv) != 1:
-        print(os.path.join(context.export_path, "*", data_fn))
         raise FileExistsError("Not found in {path}: {file} ".format(path=context.export_path,
                                                                     file=data_fn))
-    else:
-        shutil.rmtree(context.export_path)
 
 
 @when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
