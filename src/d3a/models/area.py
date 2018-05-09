@@ -324,7 +324,7 @@ class Area:
             time = self.now
         slot = market.time_slot
         if slot in self.markets or slot in self.past_markets:
-            market.actual_energy[time][reporter] += value
+            market.set_actual_energy(time, reporter, value)
         else:
             raise RuntimeError("Reporting energy for unknown market")
 
@@ -337,6 +337,7 @@ class Area:
             if market.time_slot not in self.markets:
                 # exclude past IAAs
                 continue
+
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         for listener in self.listeners:
