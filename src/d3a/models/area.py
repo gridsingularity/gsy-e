@@ -54,6 +54,7 @@ class Area:
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
+
         self.budget_keeper = budget_keeper
         if budget_keeper:
             self.budget_keeper.area = self
@@ -62,6 +63,8 @@ class Area:
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
         self.listeners = []
+        self._accumulated_past_price = 0
+        self._accumulated_past_energy = 0
 
     def activate(self):
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
@@ -148,17 +151,13 @@ class Area:
     @property
     def historical_avg_price(self):
         price = sum(
-            t.offer.price
-            for market_container in (self.markets.values(), self.past_markets.values())
-            for market in market_container
-            for t in market.trades
-        )
+            market.accumulated_trade_price
+            for market in self.markets.values()
+        ) + self._accumulated_past_price
         energy = sum(
-            t.offer.energy
-            for market_container in (self.markets.values(), self.past_markets.values())
-            for market in market_container
-            for t in market.trades
-        )
+            market.accumulated_trade_energy
+            for market in self.markets.values()
+        ) + self._accumulated_past_energy
         return price / energy if energy else 0
 
     @property
@@ -241,6 +240,14 @@ class Area:
                 changed = True
                 self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
 
+        self._accumulated_past_price = sum(
+            market.accumulated_trade_price
+            for market in self.past_markets.values()
+        )
+        self._accumulated_past_energy = sum(
+            market.accumulated_trade_energy
+            for market in self.past_markets.values()
+        )
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
 
