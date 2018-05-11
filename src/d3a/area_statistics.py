@@ -51,7 +51,7 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
 def gather_prices_pv_stor_energ(area, price_energ_lists):
     for child in area.children:
         for slot, market in child.parent.past_markets.items():
-            slot_time_str = "%02d:%02d" % (slot.hour, slot.minute)
+            slot_time_str = "%02d:00" % slot.hour
             if slot_time_str not in price_energ_lists.keys():
                 price_energ_lists[slot_time_str] = prices_pv_stor_energy(price=[],
                                                                          pv_energ=[],
@@ -146,7 +146,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
 
     for slot, market in grid.past_markets.items():
         for trade in market.trades:
-            if trade.buyer == house_IAA_name:
+            if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
                 seller_id = area_name_from_area_or_iaa_name(trade.seller)
                 accumulated_trades[house.name]["consumedFrom"][seller_id] += trade.offer.energy
     return accumulated_trades
@@ -257,10 +257,10 @@ def export_price_energy_day(area):
         {
             "timeslot": ii,
             "time": hour,
-            "av_price": mean(trades.price) if len(trades.price) > 0 else 0,
-            "min_price": min(trades.price) if len(trades.price) > 0 else 0,
-            "max_price": max(trades.price) if len(trades.price) > 0 else 0,
-            "cum_pv_gen": -1*sum(trades.pv_energ),
-            "cum_stor_prof": sum(trades.stor_energ)
+            "av_price": round(mean(trades.price) if len(trades.price) > 0 else 0, 2),
+            "min_price": round(min(trades.price) if len(trades.price) > 0 else 0, 2),
+            "max_price": round(max(trades.price) if len(trades.price) > 0 else 0, 2),
+            "cum_pv_gen": round(-1*sum(trades.pv_energ), 2),
+            "cum_stor_prof": round(sum(trades.stor_energ), 2)
         } for ii, (hour, trades) in enumerate(price_lists.items())
     ]

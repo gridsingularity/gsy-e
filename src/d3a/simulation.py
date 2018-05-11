@@ -21,6 +21,7 @@ from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
+from d3a.endpoint_buffer import SimulationEndpointBuffer
 
 log = getLogger(__name__)
 
@@ -59,6 +60,7 @@ class Simulation:
         self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.is_stopped = False
+        self.endpoint_buffer = SimulationEndpointBuffer()
 
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(
@@ -152,7 +154,7 @@ class Simulation:
 
             try:
                 with NonBlockingConsole() as console:
-                    for slot_no in range(slot_resume, config.duration // config.slot_length):
+                    for slot_no in range(slot_resume, slot_count):
                         run_duration = (
                             Pendulum.now() - self.run_start - Interval(seconds=self.paused_time)
                         )
@@ -182,8 +184,10 @@ class Simulation:
                                 slot_no + 1,
                                 (tick_no + 1) / config.ticks_per_slot * 100,
                             )
+
                             with page_lock:
                                 self.area.tick()
+
                             tick_length = time.monotonic() - tick_start
                             if self.slowdown and tick_length < tick_lengths_s:
                                 # Simulation runs faster than real time but a slowdown was
@@ -192,6 +196,9 @@ class Simulation:
                                 diff_slowdown = tick_diff * self.slowdown / 10000
                                 log.debug("Slowdown: %.4f", diff_slowdown)
                                 self._handle_input(console, diff_slowdown)
+
+                        with page_lock:
+                            self.endpoint_buffer.update(self.area)
 
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)

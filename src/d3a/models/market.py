@@ -1,9 +1,7 @@
 import random
 import uuid
 from collections import defaultdict, namedtuple
-from itertools import groupby
 from logging import getLogger
-from operator import itemgetter
 from threading import Lock
 from typing import Any, Dict, List, Set, Union  # noqa
 
@@ -99,14 +97,18 @@ class Market:
         # Timestamp -> Actor -> Value
         self.actual_energy = defaultdict(
             lambda: defaultdict(int))  # type: Dict[Pendulum, Dict[str, float]]
+        self.accumulated_actual_energy_agg = {}
         self.min_trade_price = sys.maxsize
         self._avg_trade_price = None
         self.max_trade_price = 0
         self.min_offer_price = sys.maxsize
         self._avg_offer_price = None
         self.max_offer_price = 0
+        self._sorted_offers = []
         self.offer_lock = Lock()
         self.trade_lock = Lock()
+        self.accumulated_trade_price = 0
+        self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
 
@@ -126,6 +128,7 @@ class Market:
         offer = Offer(str(uuid.uuid4()), price, energy, seller, self)
         with self.offer_lock:
             self.offers[offer.id] = offer
+            self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
             log.info("[OFFER][NEW] %s", offer)
             self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
@@ -138,6 +141,7 @@ class Market:
             offer_or_id = offer_or_id.id
         with self.offer_lock:
             offer = self.offers.pop(offer_or_id, None)
+            self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
             self._update_min_max_avg_offer_prices()
             if not offer:
                 raise OfferNotFoundException()
@@ -153,6 +157,8 @@ class Market:
         residual_offer = None
         with self.offer_lock, self.trade_lock:
             offer = self.offers.pop(offer_or_id, None)
+            self._sorted_offers = sorted(self.offers.values(),
+                                         key=lambda o: o.price / o.energy)
             if offer is None:
                 raise OfferNotFoundException()
             try:
@@ -181,6 +187,8 @@ class Market:
                         self.offers[residual_offer.id] = residual_offer
                         log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
                         offer = accepted_offer
+                        self._sorted_offers = sorted(self.offers.values(),
+                                                     key=lambda o: o.price / o.energy)
                         self._notify_listeners(
                             MarketEvent.OFFER_CHANGED,
                             existing_offer=original_offer,
@@ -194,10 +202,13 @@ class Market:
             except Exception:
                 # Exception happened - restore offer
                 self.offers[offer.id] = offer
+                self._sorted_offers = sorted(self.offers.values(),
+                                             key=lambda o: o.price / o.energy)
                 raise
 
             trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer, residual_offer)
             self.trades.append(trade)
+            self._update_accumulated_trade_price_energy(trade)
             log.warning("[TRADE] %s", trade)
             self.traded_energy[offer.seller] += offer.energy
             self.traded_energy[buyer] -= offer.energy
@@ -208,6 +219,10 @@ class Market:
         offer._traded(trade, self)
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
+
+    def _update_accumulated_trade_price_energy(self, trade):
+        self.accumulated_trade_price += trade.offer.price
+        self.accumulated_trade_energy += trade.offer.energy
 
     def _update_min_max_avg_offer_prices(self):
         self._avg_offer_price = None
@@ -229,8 +244,8 @@ class Market:
             sum(o.energy for o in self.offers.values()),
             sum(o.price for o in self.offers.values()),
             len(self.trades),
-            sum(t.offer.energy for t in self.trades),
-            sum(t.offer.price for t in self.trades)
+            self.accumulated_trade_energy,
+            self.accumulated_trade_price
         )
 
     @property
@@ -245,15 +260,15 @@ class Market:
     @property
     def avg_trade_price(self):
         if self._avg_trade_price is None:
-            with self.trade_lock:
-                price = sum(t.offer.price for t in self.trades)
-                energy = sum(t.offer.energy for t in self.trades)
+            # with self.trade_lock:
+            price = self.accumulated_trade_price
+            energy = self.accumulated_trade_energy
             self._avg_trade_price = round(price / energy, 4) if energy else 0
         return self._avg_trade_price
 
     @property
     def sorted_offers(self):
-        return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        return self._sorted_offers
 
     @property
     def most_affordable_offers(self):
@@ -269,23 +284,16 @@ class Market:
         log.error("No area available. Using real system time!")
         return Pendulum.now()
 
+    def set_actual_energy(self, time, reporter, value):
+        self.actual_energy[time][reporter] += value
+        if reporter in self.accumulated_actual_energy_agg:
+            self.accumulated_actual_energy_agg[reporter] += value
+        else:
+            self.accumulated_actual_energy_agg[reporter] = value
+
     @property
     def actual_energy_agg(self):
-        return {
-            actor: sum(value for _, value in items)
-            for actor, items
-            in groupby(
-                sorted(
-                    (
-                        (actor, value)
-                        for report_dicts in list(self.actual_energy.values())
-                        for actor, value in list(report_dicts.items())
-                    ),
-                    key=itemgetter(0)
-                ),
-                key=itemgetter(0)
-            )
-        }
+        return self.accumulated_actual_energy_agg
 
     def display(self):  # pragma: no cover
         out = []
