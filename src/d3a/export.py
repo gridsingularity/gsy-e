@@ -192,10 +192,13 @@ def _export_iaa_energy(area, directory):
                     for slot, market in area.past_markets.items():
                         for trade in market.trades:
                             if trade.buyer == 'IAA House {}'.format(i):
-                                writer.writerow((slot, ) + (trade.offer.price,
-                                                            (trade.offer.energy*(-1))))
+                                writer.writerow((slot, ) +
+                                                (round(trade.offer.price/trade.offer.energy, 4),
+                                                 (trade.offer.energy*(-1))))
                             elif trade.seller == 'IAA House {}'.format(i):
-                                writer.writerow((slot, ) + (trade.offer.price, trade.offer.energy))
+                                writer.writerow((slot, ) +
+                                                (round(trade.offer.price/trade.offer.energy, 4),
+                                                 trade.offer.energy))
                             else:
                                 pass
 
