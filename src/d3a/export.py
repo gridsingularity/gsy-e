@@ -2,7 +2,6 @@ import csv
 import json
 import logging
 import pathlib
-from slugify import slugify
 
 from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
@@ -12,7 +11,6 @@ from d3a.models.strategy.predef_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
-slugify.to_lower = True
 
 _log = logging.getLogger(__name__)
 
@@ -166,8 +164,7 @@ def _export_area_energy(area, directory):
 
 def _export_iaa_energy(area, directory):
     try:
-        i = 1
-        for child in area.children:
+        for i, child in enumerate(area.children, 1):
             if child.children:
                 with open(_file_path(directory, "{}-residual-trades".format(child.slug)), 'w')\
                         as csv_file:
@@ -182,7 +179,6 @@ def _export_iaa_energy(area, directory):
                                 writer.writerow((slot, ) + (trade.offer.price, trade.offer.energy))
                             else:
                                 pass
-            i += 1
 
     except OSError:
         _log.exception("Could not export area trades")
