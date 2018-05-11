@@ -1,9 +1,7 @@
 import random
 import uuid
 from collections import defaultdict, namedtuple
-from itertools import groupby
 from logging import getLogger
-from operator import itemgetter
 from threading import Lock
 from typing import Any, Dict, List, Set, Union  # noqa
 
@@ -99,6 +97,7 @@ class Market:
         # Timestamp -> Actor -> Value
         self.actual_energy = defaultdict(
             lambda: defaultdict(int))  # type: Dict[Pendulum, Dict[str, float]]
+        self.accumulated_actual_energy_agg = {}
         self.min_trade_price = sys.maxsize
         self._avg_trade_price = None
         self.max_trade_price = 0
@@ -285,23 +284,16 @@ class Market:
         log.error("No area available. Using real system time!")
         return Pendulum.now()
 
+    def set_actual_energy(self, time, reporter, value):
+        self.actual_energy[time][reporter] += value
+        if reporter in self.accumulated_actual_energy_agg:
+            self.accumulated_actual_energy_agg[reporter] += value
+        else:
+            self.accumulated_actual_energy_agg[reporter] = value
+
     @property
     def actual_energy_agg(self):
-        return {
-            actor: sum(value for _, value in items)
-            for actor, items
-            in groupby(
-                sorted(
-                    (
-                        (actor, value)
-                        for report_dicts in list(self.actual_energy.values())
-                        for actor, value in list(report_dicts.items())
-                    ),
-                    key=itemgetter(0)
-                ),
-                key=itemgetter(0)
-            )
-        }
+        return self.accumulated_actual_energy_agg
 
     def display(self):  # pragma: no cover
         out = []
