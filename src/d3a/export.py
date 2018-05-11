@@ -16,6 +16,7 @@ from d3a.models.strategy.predef_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
+
 _log = logging.getLogger(__name__)
 
 
@@ -28,6 +29,7 @@ def export(root_area, path, subdir):
         _log.error("Could not open directory for csv exports: %s" % str(ex))
         return
     _export_area_with_children(root_area, directory)
+    _export_iaa_energy(root_area, directory)
     _export_overview(root_area, directory)
 
     _unmatch_loads(directory, 'relative', 'Devices Un-matched Loads', 'Time',
@@ -52,7 +54,7 @@ def _export_area_with_children(area, directory):
         for child in area.children:
             _export_area_with_children(child, subdirectory)
     _export_area_flat(area, directory)
-    if area.children:
+    if (area.children):
         _export_area_energy(area, directory)
 
 
@@ -175,6 +177,28 @@ def _export_area_energy(area, directory):
             for slot, market in area.past_markets.items():
                 for trade in market.trades:
                     writer.writerow((slot, ) + trade._to_csv())
+    except OSError:
+        _log.exception("Could not export area trades")
+
+
+def _export_iaa_energy(area, directory):
+    try:
+        for i, child in enumerate(area.children, 1):
+            if child.children:
+                with open(_file_path(directory, "{}-residual-trades".format(child.slug)), 'w')\
+                        as csv_file:
+                    writer = csv.writer(csv_file)
+                    writer.writerow(("slot", "price [ct./kWh]", "energy [kWh]"))
+                    for slot, market in area.past_markets.items():
+                        for trade in market.trades:
+                            if trade.buyer == 'IAA House {}'.format(i):
+                                writer.writerow((slot, ) + (trade.offer.price,
+                                                            (trade.offer.energy*(-1))))
+                            elif trade.seller == 'IAA House {}'.format(i):
+                                writer.writerow((slot, ) + (trade.offer.price, trade.offer.energy))
+                            else:
+                                pass
+
     except OSError:
         _log.exception("Could not export area trades")
 
