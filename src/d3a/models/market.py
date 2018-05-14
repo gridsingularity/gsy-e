@@ -75,7 +75,7 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
 
     @classmethod
     def _csv_fields(cls):
-        return (cls._fields[:2] + ('price [ct./kWh]', 'energy [kWh]') +
+        return (cls._fields[:2] + ('rate [ct./kWh]', 'energy [kWh]') +
                 cls._fields[3:5])
 
     def _to_csv(self):

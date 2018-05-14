@@ -43,8 +43,8 @@ def export(root_area, path, subdir):
                  'charge [%]', 'ESS_SOC_history.html')
     _house_energy_history(directory, 'relative', 'Time',
                           'Energy (kWh)')
-    _house_trade_history(directory, 'bar', 'Time', 'price [ct./kWh]')
-    _avg_trade_price(directory, 'bar', 'Time', 'price [ct./kWh]')
+    _house_trade_history(directory, 'bar', 'Time', 'rate [ct./kWh]')
+    _avg_trade_price(directory, 'bar', 'Time', 'rate [ct./kWh]')
 
 
 def _export_area_with_children(area, directory):
@@ -78,9 +78,9 @@ class ExportUpperLevelData(ExportData):
 
     def labels(self):
         return ['slot',
-                'avg trade price [EUR]',
-                'min trade price [EUR]',
-                'max trade price [EUR]',
+                'avg trade rate [ct./kWh]',
+                'min trade rate [ct./kWh]',
+                'max trade rate [ct./kWh]',
                 '# trades',
                 'total energy traded [kWh]',
                 'total trade volume [EUR]']
@@ -505,7 +505,7 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
 # Average Trade Price Graph
 def _avg_trade_price(path, barmode, xtitle, ytitle):
     data = list()
-    key = 'avg trade price [EUR]'
+    key = 'avg trade rate [ct./kWh]'
     os.chdir(path)
     gap = str('grid.csv')
     iname = str('Average Trade Price.html')
