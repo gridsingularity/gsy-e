@@ -8,11 +8,11 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class LoadHoursStrategy(BaseStrategy):
-    def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
+    def __init__(self, avg_power_W, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
-        self.avg_power = avg_power
+        self.avg_power_W = avg_power_W
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
         self.daily_energy_required = None
@@ -21,7 +21,7 @@ class LoadHoursStrategy(BaseStrategy):
         # Budget for a single day in eur
         self.daily_budget = daily_budget * 100 if daily_budget is not None else None
         # Energy consumed during the day ideally should not exceed daily_energy_required
-        self.energy_per_slot = None
+        self.energy_per_slot_W = None
         self.energy_requirement = 0
         self.max_acceptable_energy_price = 10**20
         # In ct. / kWh
@@ -42,10 +42,9 @@ class LoadHoursStrategy(BaseStrategy):
         self.active_hours = active_hours
 
     def event_activate(self):
-        self.energy_per_slot = (self.avg_power /
-                                (Interval(hours=1) / self.area.config.slot_length)
-                                )
-        self.daily_energy_required = self.avg_power * self.hrs_per_day
+        self.energy_per_slot_W = (self.avg_power_W /
+                                  (Interval(hours=1)/self.area.config.slot_length))
+        self.daily_energy_required = self.avg_power_W * self.hrs_per_day
         if self.daily_budget:
             self.max_acceptable_energy_price = (
                 self.daily_budget / self.daily_energy_required * 1000
@@ -89,7 +88,7 @@ class LoadHoursStrategy(BaseStrategy):
     def _update_energy_requirement(self):
         self.energy_requirement = 0
         if self.area.now.hour in self.active_hours:
-            energy_per_slot = self.energy_per_slot
+            energy_per_slot = self.energy_per_slot_W
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement += energy_per_slot
