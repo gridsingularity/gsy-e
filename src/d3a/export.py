@@ -59,9 +59,9 @@ class ExportUpperLevelData(ExportData):
 
     def labels(self):
         return ['slot',
-                'avg trade price [EUR]',
-                'min trade price [EUR]',
-                'max trade price [EUR]',
+                'avg trade rate [ct./kWh]',
+                'min trade rate [ct./kWh]',
+                'max trade rate [ct./kWh]',
                 '# trades',
                 'total energy traded [kWh]',
                 'total trade volume [EUR]']

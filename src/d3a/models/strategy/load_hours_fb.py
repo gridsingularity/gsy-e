@@ -8,12 +8,11 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class LoadHoursStrategy(BaseStrategy):
-    def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
+    def __init__(self, energy_in_Wh, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
-        self.avg_power_in_Wh = avg_power  # Average power in watts
-        self.avg_power = None
+        self.energy_in_Wh = energy_in_Wh
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
         self.daily_energy_required = None
@@ -43,17 +42,14 @@ class LoadHoursStrategy(BaseStrategy):
         self.active_hours = active_hours
 
     def event_activate(self):
-        self.avg_power = (self.avg_power_in_Wh /
-                          (Interval(hours=1) / self.area.config.slot_length)
-                          )
-        self.daily_energy_required = self.avg_power_in_Wh * self.hrs_per_day
+        self.energy_per_slot = (self.energy_in_Wh /
+                                (Interval(hours=1) / self.area.config.slot_length)
+                                )
+        self.daily_energy_required = self.energy_in_Wh * self.hrs_per_day
         if self.daily_budget:
             self.max_acceptable_energy_price = (
                 self.daily_budget / self.daily_energy_required * 1000
             )
-        # Avg_power is actually the power per slot, since it is calculated by dividing the
-        # avg_power_in_Wh by the number of slots per hour
-        self.energy_per_slot = self.avg_power
         self._update_energy_requirement()
 
     def _find_acceptable_offer(self, market):

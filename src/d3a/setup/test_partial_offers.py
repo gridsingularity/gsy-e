@@ -53,7 +53,9 @@ def get_setup(config):
                      strategy=ModifiedFridgeStrategy(),
                      appliance=FridgeAppliance()),
                 Area('H3 Charger',
-                     strategy=LoadHoursStrategy(avg_power=10, hrs_per_day=4, hrs_of_day=(8, 22)),
+                     strategy=LoadHoursStrategy(energy_in_Wh=10,
+                                                hrs_per_day=4,
+                                                hrs_of_day=(8, 22)),
                      appliance=SimpleAppliance())
             ]),
             Area('Commercial Energy Producer',
