@@ -8,11 +8,11 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class LoadHoursStrategy(BaseStrategy):
-    def __init__(self, energy_in_Wh, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
+    def __init__(self, avg_power, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
-        self.energy_in_Wh = energy_in_Wh
+        self.avg_power = avg_power
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
         self.daily_energy_required = None
@@ -42,10 +42,10 @@ class LoadHoursStrategy(BaseStrategy):
         self.active_hours = active_hours
 
     def event_activate(self):
-        self.energy_per_slot = (self.energy_in_Wh /
+        self.energy_per_slot = (self.avg_power /
                                 (Interval(hours=1) / self.area.config.slot_length)
                                 )
-        self.daily_energy_required = self.energy_in_Wh * self.hrs_per_day
+        self.daily_energy_required = self.avg_power * self.hrs_per_day
         if self.daily_budget:
             self.max_acceptable_energy_price = (
                 self.daily_budget / self.daily_energy_required * 1000

@@ -16,7 +16,7 @@ def get_setup(config):
                 [
                     Area('H1 General Load',
                          strategy=LoadHoursStrategy(
-                             energy_in_Wh=100,
+                             avg_power=100,
                              hrs_per_day=4,
                              hrs_of_day=(12, 15)
                          ),
