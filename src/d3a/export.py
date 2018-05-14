@@ -188,7 +188,7 @@ def _export_iaa_energy(area, directory):
                 with open(_file_path(directory, "{}-residual-trades".format(child.slug)), 'w')\
                         as csv_file:
                     writer = csv.writer(csv_file)
-                    writer.writerow(("slot", "price [ct./kWh]", "energy [kWh]"))
+                    writer.writerow(("slot", "rate [ct./kWh]", "energy [kWh]"))
                     for slot, market in area.past_markets.items():
                         for trade in market.trades:
                             if trade.buyer == 'IAA House {}'.format(i):
