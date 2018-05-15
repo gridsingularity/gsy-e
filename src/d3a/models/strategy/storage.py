@@ -1,4 +1,4 @@
-from . import ureg, Q_
+from d3a.models.strategy import ureg, Q_
 
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
@@ -114,9 +114,8 @@ class StorageStrategy(BaseStrategy):
         # selling should be more than break-even price
         if energy > 0.0:
             if self.cap_price_strategy:
-                cdsr = self.capacity_dependant_sell_rate()
                 offer = most_expensive_market.offer(
-                    energy * cdsr,
+                    energy * self.capacity_dependant_sell_rate(),
                     energy,
                     self.owner.name
                 )
@@ -154,8 +153,8 @@ class StorageStrategy(BaseStrategy):
 
         if len(self.area.past_markets.keys()) > 1:
             charge_per = self.state.charge_history[most_recent_past_ts[-2]]
-            rate = self.max_selling_rate_cents_per_kwh.m -\
-                ((self.max_selling_rate_cents_per_kwh.m-self.break_even.m)*(charge_per/100))
-            return rate
+            rate = self.max_selling_rate_cents_per_kwh -\
+                ((self.max_selling_rate_cents_per_kwh-self.break_even)*(charge_per/100))
+            return rate.m
         else:
             return self.max_selling_rate_cents_per_kwh.m

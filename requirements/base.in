@@ -10,6 +10,7 @@ flask
 flask-api
 flask-cors
 pendulum
+pint
 python-rex
 rlp==0.4.7
 tablib

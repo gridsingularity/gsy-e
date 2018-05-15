@@ -1,5 +1,5 @@
 import random
-from . import ureg, Q_
+from d3a.models.strategy import ureg, Q_
 from pendulum.interval import Interval
 
 from d3a.exceptions import MarketException
@@ -12,7 +12,7 @@ class LoadHoursStrategy(BaseStrategy):
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
-        self.avg_power_W = Q_(avg_power_W * ureg.W)
+        self.avg_power_W = Q_(avg_power_W, ureg.W)
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
         self.daily_energy_required = None
