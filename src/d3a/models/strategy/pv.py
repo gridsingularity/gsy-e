@@ -1,5 +1,6 @@
 import math
 from typing import Dict  # noqa
+from . import ureg, Q_
 
 from pendulum import Time, Interval  # noqa
 
@@ -24,7 +25,7 @@ class PVStrategy(BaseStrategy):
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
-        self.min_selling_price = min_selling_price
+        self.min_selling_price = Q_(min_selling_price, (ureg.EUR_cents/ureg.kWh))
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
@@ -42,7 +43,7 @@ class PVStrategy(BaseStrategy):
         # if risk >100 then energy_price more than average_market_price
         risk_dependency_of_selling_price = ((self.risk/MAX_RISK) - 1) * average_market_price
         energy_price = max(average_market_price + risk_dependency_of_selling_price,
-                           self.min_selling_price)
+                           self.min_selling_price.m)
         rounded_energy_price = round(energy_price, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_price == 0.0:

@@ -1,3 +1,5 @@
+from . import ureg, Q_
+
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
@@ -20,8 +22,9 @@ class StorageStrategy(BaseStrategy):
                                   initial_charge=initial_charge,
                                   loss_per_hour=0.0,
                                   strategy=self)
-        self.break_even = break_even
-        self.max_selling_rate_cents_per_kwh = max_selling_rate_cents_per_kwh
+        self.break_even = Q_(break_even, (ureg.EUR_cents/ureg.kWh))
+        self.max_selling_rate_cents_per_kwh =\
+            Q_(max_selling_rate_cents_per_kwh, (ureg.EUR_cents/ureg.kWh))
         self.cap_price_strategy = cap_price_strategy
 
     def event_tick(self, *, area):
@@ -119,7 +122,7 @@ class StorageStrategy(BaseStrategy):
                 )
             else:
                 offer = most_expensive_market.offer(
-                    energy * max(risk_dependent_selling_rate, self.break_even),
+                    energy * max(risk_dependent_selling_rate, self.break_even.m),
                     energy,
                     self.owner.name
                 )
@@ -135,7 +138,7 @@ class StorageStrategy(BaseStrategy):
             sum((offer.price / offer.energy) for offer in cheapest_offers)
             / max(len(cheapest_offers), 1)
         )
-        return min(avg_cheapest_offer_rate, self.break_even)
+        return min(avg_cheapest_offer_rate, self.break_even.m)
 
     def find_most_expensive_market_rate(self):
         cheapest_offers = self.area.cheapest_offers
@@ -143,16 +146,16 @@ class StorageStrategy(BaseStrategy):
             most_expensive_cheapest_offer = (
                 max((offer.price / offer.energy) for offer in cheapest_offers))
         else:
-            most_expensive_cheapest_offer = self.break_even
-        return min(most_expensive_cheapest_offer, self.break_even)
+            most_expensive_cheapest_offer = self.break_even.m
+        return min(most_expensive_cheapest_offer, self.break_even.m)
 
     def capacity_dependant_sell_rate(self):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
 
         if len(self.area.past_markets.keys()) > 1:
             charge_per = self.state.charge_history[most_recent_past_ts[-2]]
-            rate = self.max_selling_rate_cents_per_kwh -\
-                ((self.max_selling_rate_cents_per_kwh-self.break_even)*(charge_per/100))
+            rate = self.max_selling_rate_cents_per_kwh.m -\
+                ((self.max_selling_rate_cents_per_kwh.m-self.break_even.m)*(charge_per/100))
             return rate
         else:
-            return self.max_selling_rate_cents_per_kwh
+            return self.max_selling_rate_cents_per_kwh.m

@@ -1,5 +1,5 @@
 import random
-
+from . import ureg, Q_
 from pendulum.interval import Interval
 
 from d3a.exceptions import MarketException
@@ -12,7 +12,7 @@ class LoadHoursStrategy(BaseStrategy):
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
-        self.avg_power_W = avg_power_W
+        self.avg_power_W = Q_(avg_power_W * ureg.W)
         self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
         # consolidated_cycle is KWh energy consumed for the entire year
         self.daily_energy_required = None
@@ -21,11 +21,11 @@ class LoadHoursStrategy(BaseStrategy):
         # Budget for a single day in eur
         self.daily_budget = daily_budget * 100 if daily_budget is not None else None
         # Energy consumed during the day ideally should not exceed daily_energy_required
-        self.energy_per_slot_W = None
+        self.energy_per_slot_Wh = None
         self.energy_requirement = 0
         self.max_acceptable_energy_price = 10**20
         # In ct. / kWh
-        self.acceptable_energy_rate = acceptable_energy_rate
+        self.acceptable_energy_rate = Q_(acceptable_energy_rate, (ureg.EUR_cents/ureg.kWh))
         # be a parameter on the constructor or if we want to deal in percentages
         self.hrs_of_day = hrs_of_day
         active_hours_count = (hrs_of_day[1] - hrs_of_day[0] + 1)
@@ -42,8 +42,9 @@ class LoadHoursStrategy(BaseStrategy):
         self.active_hours = active_hours
 
     def event_activate(self):
-        self.energy_per_slot_W = (self.avg_power_W /
-                                  (Interval(hours=1)/self.area.config.slot_length))
+        self.energy_per_slot_Wh = (self.avg_power_W /
+                                   (Interval(hours=1)/self.area.config.slot_length))
+        self.energy_per_slot_Wh = Q_(self.energy_per_slot_Wh.m, ureg.Wh)
         self.daily_energy_required = self.avg_power_W * self.hrs_per_day
         if self.daily_budget:
             self.max_acceptable_energy_price = (
@@ -74,7 +75,7 @@ class LoadHoursStrategy(BaseStrategy):
                 acceptable_offer = self._find_acceptable_offer(market)
                 if acceptable_offer and \
                         ((acceptable_offer.price/acceptable_offer.energy) <
-                         self.acceptable_energy_rate):
+                         self.acceptable_energy_rate.m):
                     max_energy = self.energy_requirement / 1000
                     if acceptable_offer.energy > max_energy:
                         self.accept_offer(market, acceptable_offer, energy=max_energy)
@@ -88,7 +89,7 @@ class LoadHoursStrategy(BaseStrategy):
     def _update_energy_requirement(self):
         self.energy_requirement = 0
         if self.area.now.hour in self.active_hours:
-            energy_per_slot = self.energy_per_slot_W
+            energy_per_slot = self.energy_per_slot_Wh.m
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement += energy_per_slot

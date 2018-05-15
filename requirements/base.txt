@@ -15,6 +15,7 @@ colorlog==3.1.0
 dill==0.2.7.1
 et-xmlfile==1.0.1         # via openpyxl
 ethereum==2.3.0
+pint==0.8.1
 flask-api==1.0
 flask-cors==3.0.3
 flask==0.12.2
