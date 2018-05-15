@@ -13,6 +13,7 @@ nbformat
 pandas
 parameterized
 pendulum
+pint
 plotly
 python-rex
 rlp==0.4.7

@@ -4,7 +4,7 @@ MAX_RISK = 100
 # Unit is percentage
 DEFAULT_RISK = 50
 # Max energy price in ct / kWh
-MAX_ENERGY_PRICE = 30  # 0.3 Eur
+MAX_ENERGY_RATE = 30  # 0.3 Eur
 
 # FRIDGE SETTINGS
 # Unit is degree celsius
@@ -25,7 +25,7 @@ FRIDGE_MIN_NEEDED_ENERGY = 10
 STORAGE_CAPACITY = 1.2
 # Energy Sell/Buy Break-even
 STORAGE_BREAK_EVEN = 30
-MAX_SELL_PRICE = 35
+MAX_SELL_RATE_c_per_Kwh = 35
 
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent

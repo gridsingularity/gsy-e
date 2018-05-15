@@ -1,12 +1,13 @@
 import math
 from typing import Dict  # noqa
+from d3a.models.strategy import ureg, Q_
 
 from pendulum import Time, Interval  # noqa
 
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, MAX_ENERGY_PRICE, \
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, MAX_ENERGY_RATE, \
     MIN_PV_SELLING_PRICE
 
 
@@ -24,7 +25,7 @@ class PVStrategy(BaseStrategy):
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
-        self.min_selling_price = min_selling_price
+        self.min_selling_price = Q_(min_selling_price, (ureg.EUR_cents/ureg.kWh))
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
@@ -34,20 +35,20 @@ class PVStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
         if (self.area.historical_avg_price == 0):
-            average_market_price = MAX_ENERGY_PRICE
+            average_market_rate = Q_(MAX_ENERGY_RATE, (ureg.EUR_cents/ureg.kWh))
         else:
-            average_market_price = self.area.historical_avg_price
-        # Needed to calculate risk_dependency_of_selling_price
-        # if risk 0-100 then energy_price less than average_market_price
-        # if risk >100 then energy_price more than average_market_price
-        risk_dependency_of_selling_price = ((self.risk/MAX_RISK) - 1) * average_market_price
-        energy_price = max(average_market_price + risk_dependency_of_selling_price,
-                           self.min_selling_price)
-        rounded_energy_price = round(energy_price, 2)
+            average_market_rate = Q_(self.area.historical_avg_price, (ureg.EUR_cents/ureg.kWh))
+        # Needed to calculate risk_dependency_of_selling_rate
+        # if risk 0-100 then energy_price less than average_market_rate
+        # if risk >100 then energy_price more than average_market_rate
+        risk_dependency_of_selling_rate = ((self.risk/MAX_RISK) - 1) * average_market_rate
+        energy_rate = max(average_market_rate.m + risk_dependency_of_selling_rate.m,
+                          self.min_selling_price.m)
+        rounded_energy_rate = round(energy_rate, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
-        if rounded_energy_price == 0.0:
+        if rounded_energy_rate == 0.0:
             # Initial selling offer
-            rounded_energy_price = MAX_ENERGY_PRICE
+            rounded_energy_rate = MAX_ENERGY_RATE
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
@@ -60,7 +61,7 @@ class PVStrategy(BaseStrategy):
                         continue
                     for i in range(self.panel_count):
                         offer = market.offer(
-                            (rounded_energy_price) *
+                            (rounded_energy_rate) *
                             self.energy_production_forecast_kWh[time],
                             self.energy_production_forecast_kWh[time],
                             self.owner.name
