@@ -185,7 +185,7 @@ def _export_iaa_energy(area, directory):
     try:
         for i, child in enumerate(area.children, 1):
             if child.children:
-                with open(_file_path(directory, "{}-residual-trades".format(child.slug)), 'w')\
+                with open(_file_path(directory, "{}-external-trades".format(child.slug)), 'w')\
                         as csv_file:
                     writer = csv.writer(csv_file)
                     writer.writerow(("slot", "rate [ct./kWh]", "energy [kWh]"))
