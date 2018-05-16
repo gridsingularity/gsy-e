@@ -6,7 +6,7 @@ from pendulum import Pendulum
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import MAX_ENERGY_PRICE
+from d3a.models.strategy.const import MAX_ENERGY_RATE
 
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
@@ -236,7 +236,7 @@ def testing_low_risk(pv_test6, market_test3):
     pv_test6.event_activate()
     pv_test6.event_tick(area=area_test3)
     assert market_test3.created_offers[0].price == \
-        MAX_ENERGY_PRICE * 0.2 * pv_test6.energy_production_forecast_kWh[TIME]
+        MAX_ENERGY_RATE * 0.2 * pv_test6.energy_production_forecast_kWh[TIME]
 
 
 def testing_high_risk(pv_test6, market_test3):
@@ -244,7 +244,7 @@ def testing_high_risk(pv_test6, market_test3):
     pv_test6.event_activate()
     pv_test6.event_tick(area=area_test3)
     assert market_test3.created_offers[0].price == \
-        MAX_ENERGY_PRICE * 0.9 * pv_test6.energy_production_forecast_kWh[TIME]
+        MAX_ENERGY_RATE * 0.9 * pv_test6.energy_production_forecast_kWh[TIME]
 
 
 def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
