@@ -1,11 +1,13 @@
-# from d3a.models.appliance.simple import SimpleAppliance
+# from d3a.models.appliance.simple import SimpleAppliance # NOQA
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-# from d3a.models.strategy.commercial_producer import CommercialStrategy
+# from d3a.models.strategy.commercial_producer import CommercialStrategy # NOQA
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.predef_load import DefinedLoadStrategy
 from d3a.models.appliance.pv import PVAppliance
-from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
+import pathlib
 
 
 def get_setup(config):
@@ -15,10 +17,11 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=6,
-                                                                       hrs_of_day=(12, 17),
-                                                                       acceptable_energy_rate=25),
+                    Area('H1 General Load',
+                         strategy=DefinedLoadStrategy(
+                             path=pathlib.Path(pathlib.Path.cwd(),
+                                               'src/d3a/resources/LOAD_DATA_1.csv').expanduser(),
+                             acceptable_energy_rate=25),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
                          appliance=SwitchableAppliance()),
@@ -34,7 +37,10 @@ def get_setup(config):
                                                                        hrs_of_day=(12, 15),
                                                                        acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4, 80),
+                    Area('H2 PV', strategy=PVPredefinedStrategy(
+                        pathlib.Path(pathlib.Path.cwd(),
+                                     'src/d3a/resources/PV_DATA_1.csv').expanduser(),
+                        90, 5),
                          appliance=PVAppliance()),
 
                 ]
@@ -48,7 +54,6 @@ def get_setup(config):
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
             #      appliance=SimpleAppliance()
             #      ),
-
         ],
         config=config
     )

@@ -7,8 +7,10 @@ from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.predef_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
+
 
 _log = logging.getLogger(__name__)
 
@@ -22,6 +24,7 @@ def export(root_area, path, subdir):
         _log.error("Could not open directory for csv exports: %s" % str(ex))
         return
     _export_area_with_children(root_area, directory)
+    _export_iaa_energy(root_area, directory)
     _export_overview(root_area, directory)
 
 
@@ -32,7 +35,7 @@ def _export_area_with_children(area, directory):
         for child in area.children:
             _export_area_with_children(child, subdirectory)
     _export_area_flat(area, directory)
-    if area.children:
+    if (area.children):
         _export_area_energy(area, directory)
 
 
@@ -56,9 +59,9 @@ class ExportUpperLevelData(ExportData):
 
     def labels(self):
         return ['slot',
-                'avg trade price [EUR]',
-                'min trade price [EUR]',
-                'max trade price [EUR]',
+                'avg trade rate [ct./kWh]',
+                'min trade rate [ct./kWh]',
+                'max trade rate [ct./kWh]',
                 '# trades',
                 'total energy traded [kWh]',
                 'total trade volume [EUR]']
@@ -90,7 +93,7 @@ class ExportLeafData(ExportData):
         elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
             return ['bought [kWh]', 'sold [kWh]', 'energy balance [kWh]', 'offered [kWh]',
                     'used [kWh]', 'charge [%]', 'stored [kWh]']
-        elif isinstance(self.area.strategy, LoadHoursStrategy):
+        elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy)):
             return ['desired energy [kWh]', 'deficit [kWh]']
         elif isinstance(self.area.strategy, PVStrategy):
             return ['produced to trade [kWh]', 'not sold [kWh]', 'forecast / generation [kWh]']
@@ -120,7 +123,7 @@ class ExportLeafData(ExportData):
                     s.used_history[slot],
                     charge,
                     stored]
-        elif isinstance(self.area.strategy, LoadHoursStrategy):
+        elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy)):
             desired = self.area.strategy.state.desired_energy[slot] / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
@@ -155,6 +158,31 @@ def _export_area_energy(area, directory):
             for slot, market in area.past_markets.items():
                 for trade in market.trades:
                     writer.writerow((slot, ) + trade._to_csv())
+    except OSError:
+        _log.exception("Could not export area trades")
+
+
+def _export_iaa_energy(area, directory):
+    try:
+        for i, child in enumerate(area.children, 1):
+            if child.children:
+                with open(_file_path(directory, "{}-external-trades".format(child.slug)), 'w')\
+                        as csv_file:
+                    writer = csv.writer(csv_file)
+                    writer.writerow(("slot", "rate [ct./kWh]", "energy [kWh]"))
+                    for slot, market in area.past_markets.items():
+                        for trade in market.trades:
+                            if trade.buyer == 'IAA House {}'.format(i):
+                                writer.writerow((slot, ) +
+                                                (round(trade.offer.price/trade.offer.energy, 4),
+                                                 (trade.offer.energy*(-1))))
+                            elif trade.seller == 'IAA House {}'.format(i):
+                                writer.writerow((slot, ) +
+                                                (round(trade.offer.price/trade.offer.energy, 4),
+                                                 trade.offer.energy))
+                            else:
+                                pass
+
     except OSError:
         _log.exception("Could not export area trades")
 
