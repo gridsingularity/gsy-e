@@ -1,13 +1,13 @@
 import random
 
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import COMMERCIAL_OFFERS, MAX_ENERGY_PRICE
+from d3a.models.strategy.const import COMMERCIAL_OFFERS, MAX_ENERGY_RATE
 
 
 class CommercialStrategy(BaseStrategy):
     parameters = ('energy_range_wh', 'energy_price')
 
-    def __init__(self, *, energy_range_wh=(20, 80), energy_price=MAX_ENERGY_PRICE):
+    def __init__(self, *, energy_range_wh=(20, 80), energy_price=MAX_ENERGY_RATE):
         super().__init__()
         self.energy_range_wh = energy_range_wh
         self.energy_price = energy_price
