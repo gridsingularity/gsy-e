@@ -105,7 +105,7 @@ def market_test2():
 
 @pytest.fixture
 def load_hours_strategy_test(called):
-    strategy = LoadHoursStrategy(avg_power=620, hrs_per_day=4, hrs_of_day=(8, 12))
+    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=(8, 12))
     strategy.accept_offer = called
     if 10 not in strategy.active_hours:
         strategy.active_hours.pop()
@@ -130,14 +130,14 @@ def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
 # Test if daily energy requirement is calculated correctly for the device
 def test_calculate_daily_energy_req(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
-    assert load_hours_strategy_test1.daily_energy_required == 620*4
+    assert load_hours_strategy_test1.daily_energy_required.m == 620*4
 
 
 # Test if daily energy requirement is calculated correctly for the device
 def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
     assert load_hours_strategy_test1.energy_requirement == \
-        load_hours_strategy_test1.energy_per_slot
+        load_hours_strategy_test1.energy_per_slot_Wh.m
     ts = load_hours_strategy_test1.area.next_market.time_slot
     assert load_hours_strategy_test1.state.desired_energy[ts] == \
         load_hours_strategy_test1.energy_requirement
@@ -157,7 +157,7 @@ def test_event_market_cycle(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
     assert load_hours_strategy_test1.energy_requirement == \
-        load_hours_strategy_test1.energy_per_slot
+        load_hours_strategy_test1.energy_per_slot_Wh.m
 
 
 def test_event_market_cycle_resets_energy_requirement(load_hours_strategy_test1, market_test1):
@@ -166,11 +166,11 @@ def test_event_market_cycle_resets_energy_requirement(load_hours_strategy_test1,
     load_hours_strategy_test1.energy_requirement = 150.0
     load_hours_strategy_test1.event_market_cycle()
     assert load_hours_strategy_test1.energy_requirement == \
-        load_hours_strategy_test1.energy_per_slot
+        load_hours_strategy_test1.energy_per_slot_Wh.m
     load_hours_strategy_test1.energy_requirement += 1000000.0
     load_hours_strategy_test1.event_market_cycle()
     assert load_hours_strategy_test1.energy_requirement == \
-        load_hours_strategy_test1.energy_per_slot
+        load_hours_strategy_test1.energy_per_slot_Wh.m
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):
