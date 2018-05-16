@@ -207,7 +207,7 @@ def test_if_storage_handles_capacity_correctly(storage_strategy_test5, area_test
     storage_strategy_test5.event_market_cycle()
     assert storage_strategy_test5.state.blocked_storage == 0
     assert storage_strategy_test5.state.used_storage == 1
-    assert storage_strategy_test5.sell_energy.calls[0][1] == {'buying_price': '20.0',
+    assert storage_strategy_test5.sell_energy.calls[0][1] == {'buying_rate': '20.0',
                                                               'energy': '1'}
     assert storage_strategy_test5.state.offered_storage == 2
     assert len(storage_strategy_test5.offers.open_in_market(area_test5.past_market)) == 0
@@ -265,7 +265,7 @@ def storage_strategy_test7(area_test7):
 
 def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     energy = 1.3
-    storage_strategy_test7.sell_energy(buying_price=10, energy=energy)
+    storage_strategy_test7.sell_energy(buying_rate=10, energy=energy)
     assert storage_strategy_test7.state.used_storage == 1.7
     assert storage_strategy_test7.state.offered_storage == 1.3
     assert area_test7.current_market.created_offers[0].energy == 1.3
@@ -290,7 +290,7 @@ def storage_strategy_test8(area_test8):
 
 
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
-    storage_strategy_test8.sell_energy(buying_price=10, energy=None)
+    storage_strategy_test8.sell_energy(buying_rate=10, energy=None)
     assert storage_strategy_test8.state.used_storage == 0
     assert storage_strategy_test8.state.offered_storage == 100
     assert area_test8.current_market.created_offers[0].energy == 100
