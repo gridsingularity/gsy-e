@@ -25,7 +25,7 @@ FRIDGE_MIN_NEEDED_ENERGY = 10
 STORAGE_CAPACITY = 1.2
 # Energy Sell/Buy Break-even
 STORAGE_BREAK_EVEN = 30
-MAX_SELL_RATE_c_per_Kwh = 35
+STORAGE_MAX_SELL_RATE_c_per_Kwh = 35
 
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent
@@ -61,3 +61,6 @@ MIN_HOUSEHOLD_CONSUMPTION = 70
 # COMMERCIAL PRODUCER SETTINGS
 # Amount of posted offers per market
 COMMERCIAL_OFFERS = 20
+
+MAX_OFFER_TRAVERSAL_LENGTH = 10
+PV_DECREASE_PER_SECOND_BY = 0.01

@@ -8,7 +8,8 @@ from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, MAX_ENERGY_RATE, \
-    MIN_PV_SELLING_PRICE
+    MIN_PV_SELLING_PRICE, MAX_OFFER_TRAVERSAL_LENGTH, \
+    PV_DECREASE_PER_SECOND_BY
 
 
 class PVStrategy(BaseStrategy):
@@ -26,18 +27,22 @@ class PVStrategy(BaseStrategy):
         self.panel_count = panel_count
         self.midnight = None
         self.min_selling_price = Q_(min_selling_price, (ureg.EUR_cents/ureg.kWh))
+        self._decrease_price_timepoint_s = 0
+        self._decrease_price_every_nr_s = 0
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
         self.midnight = self.area.now.start_of("day").hour_(0)
         # Calculating the produced energy
         self.produced_energy_forecast_real_data()
+        self._decrease_price_every_nr_s = \
+            self.area.config.tick_length.seconds * MAX_OFFER_TRAVERSAL_LENGTH + 1
 
     def event_tick(self, *, area):
-        if (self.area.historical_avg_price == 0):
-            average_market_rate = Q_(MAX_ENERGY_RATE, (ureg.EUR_cents/ureg.kWh))
-        else:
-            average_market_rate = Q_(self.area.historical_avg_price, (ureg.EUR_cents/ureg.kWh))
+        average_market_rate = Q_(
+            MAX_ENERGY_RATE if self.area.historical_avg_price == 0
+            else self.area.historical_avg_price,
+            ureg.EUR_cents / ureg.kWh)
         # Needed to calculate risk_dependency_of_selling_rate
         # if risk 0-100 then energy_price less than average_market_rate
         # if risk >100 then energy_price more than average_market_rate
@@ -61,7 +66,7 @@ class PVStrategy(BaseStrategy):
                         continue
                     for i in range(self.panel_count):
                         offer = market.offer(
-                            (rounded_energy_rate) *
+                            rounded_energy_rate *
                             self.energy_production_forecast_kWh[time],
                             self.energy_production_forecast_kWh[time],
                             self.owner.name
@@ -74,19 +79,43 @@ class PVStrategy(BaseStrategy):
 
             else:
                 pass
+        self._decrease_energy_price_over_ticks()
 
+    def _decrease_energy_price_over_ticks(self):
         # Decrease the selling price over the ticks in a slot
+        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
+        elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
         if (
-                self.area.current_tick % self.area.config.ticks_per_slot >
-                self.area.config.ticks_per_slot * 0.1
-                and
                 # FIXME: MAke sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
                 # FIXME: InterAreaAgent min_offer_age
-                self.area.current_tick % 7 == 0
+                current_tick_number > MAX_OFFER_TRAVERSAL_LENGTH
+                and elapsed_seconds > self._decrease_price_timepoint_s
         ):
+            self._decrease_price_timepoint_s += self._decrease_price_every_nr_s
             next_market = list(self.area.markets.values())[0]
             self.decrease_offer_price(next_market)
+
+    def decrease_offer_price(self, market):
+        if market not in self.offers.open.values():
+            return
+        for offer, iterated_market in self.offers.open.items():
+            if iterated_market != market:
+                continue
+            try:
+                iterated_market.delete_offer(offer.id)
+                new_offer = iterated_market.offer(
+                    offer.price * self._calculate_price_decrease_rate(),
+                    offer.energy,
+                    self.owner.name
+                )
+                self.offers.replace(offer, new_offer, iterated_market)
+
+            except MarketException:
+                continue
+
+    def _calculate_price_decrease_rate(self):
+        return 1.0 - PV_DECREASE_PER_SECOND_BY * self._decrease_price_every_nr_s
 
     def produced_energy_forecast_real_data(self):
         # This forecast ist based on the real PV system data provided by enphase
@@ -129,26 +158,8 @@ class PVStrategy(BaseStrategy):
         w_to_wh_factor = (self.area.config.slot_length / Interval(hours=1))
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
-    def decrease_offer_price(self, market):
-        if market not in self.offers.open.values():
-            return
-        for offer, iterated_market in self.offers.open.items():
-            if iterated_market != market:
-                continue
-            try:
-                iterated_market.delete_offer(offer.id)
-                new_offer = iterated_market.offer(
-                    offer.price * 0.99,
-                    offer.energy,
-                    self.owner.name
-                )
-                self.offers.replace(offer, new_offer, iterated_market)
-
-            except MarketException:
-                continue
-
     def event_market_cycle(self):
-        pass
+        self._decrease_price_timepoint_s = 0
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
