@@ -27,8 +27,8 @@ class PVStrategy(BaseStrategy):
         self.panel_count = panel_count
         self.midnight = None
         self.min_selling_price = Q_(min_selling_price, (ureg.EUR_cents/ureg.kWh))
-        self._decrease_price_timepoint_s = 0
-        self._decrease_price_every_nr_s = 0
+        self._decrease_price_timepoint_s = 0 * ureg.seconds
+        self._decrease_price_every_nr_s = 0 * ureg.seconds
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
@@ -36,7 +36,7 @@ class PVStrategy(BaseStrategy):
         # Calculating the produced energy
         self.produced_energy_forecast_real_data()
         self._decrease_price_every_nr_s = \
-            self.area.config.tick_length.seconds * MAX_OFFER_TRAVERSAL_LENGTH + 1
+            (self.area.config.tick_length.seconds * MAX_OFFER_TRAVERSAL_LENGTH + 1) * ureg.seconds
 
     def event_tick(self, *, area):
         average_market_rate = Q_(
@@ -84,7 +84,7 @@ class PVStrategy(BaseStrategy):
     def _decrease_energy_price_over_ticks(self):
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
-        elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
+        elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds * ureg.seconds
         if (
                 # FIXME: MAke sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
@@ -115,7 +115,7 @@ class PVStrategy(BaseStrategy):
                 continue
 
     def _calculate_price_decrease_rate(self):
-        return 1.0 - PV_DECREASE_PER_SECOND_BY * self._decrease_price_every_nr_s
+        return 1.0 - PV_DECREASE_PER_SECOND_BY * self._decrease_price_every_nr_s.m
 
     def produced_energy_forecast_real_data(self):
         # This forecast ist based on the real PV system data provided by enphase
@@ -159,7 +159,7 @@ class PVStrategy(BaseStrategy):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self._decrease_price_timepoint_s = 0
+        self._decrease_price_timepoint_s = 0 * ureg.seconds
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
