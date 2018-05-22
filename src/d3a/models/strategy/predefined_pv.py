@@ -4,15 +4,25 @@ from typing import Dict  # noqa
 from pendulum import Time, Interval  # noqa
 
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE
+from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, DEFAULT_CLOUD
+import pathlib
 
 
 class PVPredefinedStrategy(PVStrategy):
 
-    def __init__(self, path, risk=DEFAULT_RISK, min_selling_price=MIN_PV_SELLING_PRICE):
+    def __init__(self, risk=DEFAULT_RISK,
+                 min_selling_price=MIN_PV_SELLING_PRICE, cloud=DEFAULT_CLOUD):
         super().__init__(panel_count=1, risk=risk, min_selling_price=min_selling_price)
         self.data = {}
-        self.readCSV(path)
+        if cloud == 'sunny':
+            self.readCSV(pathlib.Path(pathlib.Path.cwd(),
+                                      'src/d3a/resources/PV_DATA_sunny.csv').expanduser())
+        elif cloud == 'partial':
+            self.readCSV(pathlib.Path(pathlib.Path.cwd(),
+                                      'src/d3a/resources/PV_DATA_partial.csv').expanduser())
+        elif cloud == 'cloudy':
+            self.readCSV(pathlib.Path(pathlib.Path.cwd(),
+                                      'src/d3a/resources/PV_DATA_cloudy.csv').expanduser())
 
     def readCSV(self, path):
         with open(path) as csvfile:
