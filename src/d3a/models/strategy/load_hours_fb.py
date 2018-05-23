@@ -30,11 +30,10 @@ class LoadHoursStrategy(BaseStrategy):
         self.acceptable_energy_rate = Q_(acceptable_energy_rate, (ureg.EUR_cents/ureg.kWh))
         # be a parameter on the constructor or if we want to deal in percentages
         if hrs_of_day is None:
-            hrs_of_day = list(range(1, 25))
             self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
             active_hours = set()
             while len(active_hours) < hrs_per_day:
-                active_hours.add(random.randrange(hrs_of_day[0], hrs_of_day[1] + 1))
+                active_hours.add(random.randrange(1, 24))
         else:
             active_hours = set(hrs_of_day)
             self.hrs_per_day = len(active_hours)  # Hrs the device is charged per day
