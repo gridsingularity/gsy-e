@@ -55,7 +55,7 @@ def get_setup(config):
                 Area('H3 Charger',
                      strategy=LoadHoursStrategy(avg_power_W=10,
                                                 hrs_per_day=4,
-                                                hrs_of_day=(8, 22)),
+                                                hrs_of_day=list(range(8, 22))),
                      appliance=SimpleAppliance())
             ]),
             Area('Commercial Energy Producer',
