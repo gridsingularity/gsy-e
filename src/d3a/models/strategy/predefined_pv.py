@@ -14,13 +14,13 @@ class PVPredefinedStrategy(PVStrategy):
                  min_selling_price=MIN_PV_SELLING_PRICE, cloud=DEFAULT_CLOUD):
         super().__init__(panel_count=1, risk=risk, min_selling_price=min_selling_price)
         self.data = {}
-        if cloud == 'sunny':
+        if cloud == 0:  # 0:sunny
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
                                       'src/d3a/resources/PV_DATA_sunny.csv').expanduser())
-        elif cloud == 'partial':
+        elif cloud == 2:  # 2:partial
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
                                       'src/d3a/resources/PV_DATA_partial.csv').expanduser())
-        elif cloud == 'cloudy':
+        elif cloud == 1:  # 1:cloudy
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
                                       'src/d3a/resources/PV_DATA_cloudy.csv').expanduser())
 
