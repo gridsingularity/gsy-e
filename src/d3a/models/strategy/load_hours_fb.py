@@ -10,7 +10,7 @@ from d3a.models.strategy.base import BaseStrategy
 class LoadHoursStrategy(BaseStrategy):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day')
 
-    def __init__(self, avg_power_W, hrs_per_day, hrs_of_day=None, random_factor=0,
+    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, random_factor=0,
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
@@ -29,14 +29,26 @@ class LoadHoursStrategy(BaseStrategy):
         # In ct. / kWh
         self.acceptable_energy_rate = Q_(acceptable_energy_rate, (ureg.EUR_cents/ureg.kWh))
         # be a parameter on the constructor or if we want to deal in percentages
-        if hrs_of_day is None:
-            self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
-            active_hours = set()
-            while len(active_hours) < hrs_per_day:
-                active_hours.add(random.randrange(1, 24))
+        if hrs_per_day is None:
+            if hrs_of_day is not None:
+                self.hrs_per_day = len(hrs_of_day)
+                active_hours = set(hrs_of_day)
+            else:
+                raise ValueError(
+                    "At least one of 'hrs_per_day' or 'hrs_of_day' should be defined.")
         else:
-            active_hours = set(hrs_of_day)
-            self.hrs_per_day = len(active_hours)  # Hrs the device is charged per day
+            self.hrs_per_day = hrs_per_day
+            active_hours = set()
+            if hrs_of_day is None:
+                while len(active_hours) < hrs_per_day:
+                    active_hours.add(random.randrange(1, 24))
+            else:
+                if len(hrs_of_day) < hrs_per_day:
+                    raise ValueError(
+                        "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
+                else:
+                    while len(active_hours) < hrs_per_day:
+                        active_hours.add(random.choice(hrs_of_day))
 
         self.active_hours = active_hours
 
