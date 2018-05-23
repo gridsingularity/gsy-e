@@ -38,10 +38,7 @@ def get_setup(config):
                                                                            range(12, 15)),
                                                                        acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVPredefinedStrategy(
-                        pathlib.Path(pathlib.Path.cwd(),
-                                     'src/d3a/resources/PV_DATA_1.csv').expanduser(),
-                        90, 5),
+                    Area('H2 PV', strategy=PVPredefinedStrategy(90, 5),
                          appliance=PVAppliance()),
 
                 ]
