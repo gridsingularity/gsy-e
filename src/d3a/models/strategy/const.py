@@ -30,6 +30,7 @@ STORAGE_MAX_SELL_RATE_c_per_Kwh = 35
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent
 MIN_PV_SELLING_PRICE = 5
+DEFAULT_CLOUD = 0  # sunny
 
 # HEATPUMP SETTINGS
 # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)
