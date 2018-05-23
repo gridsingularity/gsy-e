@@ -8,12 +8,14 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class LoadHoursStrategy(BaseStrategy):
-    def __init__(self, avg_power_W, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
+    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day')
+
+    def __init__(self, avg_power_W, hrs_per_day, hrs_of_day=None, random_factor=0,
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
         self.state = LoadState()
         self.avg_power_W = Q_(avg_power_W, ureg.W)
-        self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
+
         # consolidated_cycle is KWh energy consumed for the entire year
         self.daily_energy_required = None
         # Random factor to modify buying
@@ -27,18 +29,16 @@ class LoadHoursStrategy(BaseStrategy):
         # In ct. / kWh
         self.acceptable_energy_rate = Q_(acceptable_energy_rate, (ureg.EUR_cents/ureg.kWh))
         # be a parameter on the constructor or if we want to deal in percentages
-        self.hrs_of_day = hrs_of_day
-        active_hours_count = (hrs_of_day[1] - hrs_of_day[0] + 1)
-        if hrs_per_day > active_hours_count:
-            raise ValueError(
-                "Device can't be active more hours per day than active hours: {} > {}".format(
-                    hrs_per_day,
-                    active_hours_count
-                )
-            )
-        active_hours = set()
-        while len(active_hours) < hrs_per_day:
-            active_hours.add(random.randrange(hrs_of_day[0], hrs_of_day[1] + 1))
+        if hrs_of_day is None:
+            hrs_of_day = list(range(1, 25))
+            self.hrs_per_day = hrs_per_day  # Hrs the device is charged per day
+            active_hours = set()
+            while len(active_hours) < hrs_per_day:
+                active_hours.add(random.randrange(hrs_of_day[0], hrs_of_day[1] + 1))
+        else:
+            active_hours = set(hrs_of_day)
+            self.hrs_per_day = len(active_hours)  # Hrs the device is charged per day
+
         self.active_hours = active_hours
 
     def event_activate(self):
