@@ -12,9 +12,9 @@ def get_setup(config):
     area = Area(
         'Grid',
         [*[Area('House ' + str(i), [
-            Area('H1 General Load', strategy=LoadHoursStrategy(avg_power=100,
+            Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                hrs_per_day=4,
-                                                               hrs_of_day=(12, 15)),
+                                                               hrs_of_day=list(range(12, 15))),
                  appliance=SwitchableAppliance()),
             Area('H2 PV',
                  strategy=PVStrategy(6, 80),
