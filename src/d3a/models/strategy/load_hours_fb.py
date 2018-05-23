@@ -30,25 +30,19 @@ class LoadHoursStrategy(BaseStrategy):
         self.acceptable_energy_rate = Q_(acceptable_energy_rate, (ureg.EUR_cents/ureg.kWh))
         # be a parameter on the constructor or if we want to deal in percentages
         if hrs_per_day is None:
-            if hrs_of_day is not None:
-                self.hrs_per_day = len(hrs_of_day)
-                active_hours = set(hrs_of_day)
-            else:
-                raise ValueError(
-                    "At least one of 'hrs_per_day' or 'hrs_of_day' should be defined.")
+            hrs_per_day = len(hrs_of_day)
+        if hrs_of_day is None:
+            hrs_of_day = list(range(24))
+
+        self.hrs_per_day = hrs_per_day
+        active_hours = set()
+
+        if len(hrs_of_day) < hrs_per_day:
+            raise ValueError(
+                "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
         else:
-            self.hrs_per_day = hrs_per_day
-            active_hours = set()
-            if hrs_of_day is None:
-                while len(active_hours) < hrs_per_day:
-                    active_hours.add(random.randrange(1, 24))
-            else:
-                if len(hrs_of_day) < hrs_per_day:
-                    raise ValueError(
-                        "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
-                else:
-                    while len(active_hours) < hrs_per_day:
-                        active_hours.add(random.choice(hrs_of_day))
+            while len(active_hours) < hrs_per_day:
+                active_hours.add(random.choice(hrs_of_day))
 
         self.active_hours = active_hours
 

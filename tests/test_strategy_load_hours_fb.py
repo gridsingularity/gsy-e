@@ -119,8 +119,6 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
             self.Mock_LoadHoursStrategy(
                 energy, 4, None).daily_energy_required.m, energy * 4)
         with self.assertRaises(ValueError):
-            self.Mock_LoadHoursStrategy(energy, None, None)
-        with self.assertRaises(ValueError):
             self.Mock_LoadHoursStrategy(energy, 4, [1, 2])
 
 
