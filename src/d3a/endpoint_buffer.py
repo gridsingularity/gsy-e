@@ -17,7 +17,8 @@ _NO_VALUE = {
 
 
 class SimulationEndpointBuffer:
-    def __init__(self):
+    def __init__(self, job_id):
+        self.job_id = job_id
         self.unmatched_loads = {}
         self.cumulative_loads = {}
         self.price_energy_day = {}
@@ -32,6 +33,7 @@ class SimulationEndpointBuffer:
     def generate_result_report(self):
         self.update()
         return {
+            "job_id": self.job_id,
             **self.unmatched_loads,
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day,
