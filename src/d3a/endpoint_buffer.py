@@ -29,6 +29,16 @@ class SimulationEndpointBuffer:
         self.market = {}
         self.area = {}
 
+    def generate_result_report(self):
+        return {
+            **self.unmatched_loads,
+            "cumulative_loads": self.cumulative_loads,
+            "price_energy_day": self.price_energy_day,
+            "cumulative_grid_trades": self.cumulative_grid_trades,
+            "bills": self.bills,
+            "tree_summary": self.tree_summary
+        }
+
     def update(self, area):
         self.unmatched_loads = {"unmatched_loads": export_unmatched_loads(area)}
         self.cumulative_loads = {
