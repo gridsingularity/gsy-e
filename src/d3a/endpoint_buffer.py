@@ -30,6 +30,7 @@ class SimulationEndpointBuffer:
         self.area = {}
 
     def generate_result_report(self):
+        self.update()
         return {
             **self.unmatched_loads,
             "cumulative_loads": self.cumulative_loads,
