@@ -8,6 +8,8 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class LoadHoursStrategy(BaseStrategy):
+    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day')
+
     def __init__(self, avg_power_W, hrs_per_day, hrs_of_day=(0, 23), random_factor=0,
                  daily_budget=None, acceptable_energy_rate=10 ** 20):
         super().__init__()
