@@ -17,7 +17,6 @@ from ptpython.repl import embed
 
 from d3a.exceptions import SimulationException, D3AException
 from d3a.export import export
-from d3a.models.overview import Overview
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
@@ -104,9 +103,6 @@ class Simulation:
         self.area = self.setup_module.get_setup(self.simulation_config)
         log.info("Starting simulation with config %s", self.simulation_config)
         self.area.activate()
-
-        if self.message_url is not None:
-            Overview(self, self.message_url).start()
 
     @property
     def finished(self):
