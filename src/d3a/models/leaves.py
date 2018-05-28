@@ -1,6 +1,7 @@
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.e_car import ECarStrategy
@@ -9,6 +10,7 @@ from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 
 
 class Leaf(Area):
@@ -64,3 +66,8 @@ class PV(Leaf):
 
 class Storage(Leaf):
     strategy_type = StorageStrategy
+
+
+class GeneralLoad(Leaf):
+    strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance

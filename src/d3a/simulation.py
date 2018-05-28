@@ -41,7 +41,7 @@ class Simulation:
                  reset_on_finish_wait: Interval = Interval(minutes=1),
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: Interval = Interval(seconds=1),
-                 api_url=None, message_url=None):
+                 api_url=None, message_url=None, redis_job_id=None):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -60,7 +60,7 @@ class Simulation:
         self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.is_stopped = False
-        self.endpoint_buffer = SimulationEndpointBuffer()
+        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id)
 
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(

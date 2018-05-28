@@ -9,6 +9,7 @@ from d3a.models.appliance.appliance import Appliance
 from d3a.models.appliance.fridge import FridgeAppliance  # NOQA
 from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
 from d3a.models.appliance.pv import PVAppliance  # NOQA
+from d3a.models.appliance.switchable import SwitchableAppliance # NOQA
 
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.e_car import ECarStrategy  # NOQA

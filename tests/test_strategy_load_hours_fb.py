@@ -1,9 +1,12 @@
 import pytest
+import unittest
 import pendulum
+from unittest.mock import MagicMock
 from datetime import timedelta
 from pendulum import Pendulum
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
+from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 
 TIME = pendulum.today().at(hour=10, minute=45, second=2)
@@ -77,6 +80,48 @@ class FakeMarket:
         return Pendulum.now().start_of('day').add_timedelta(timedelta(hours=10))
 
 
+class TestLoadHoursStrategyInput(unittest.TestCase):
+
+    def setUp(self):
+        self.appliance = MagicMock(spec=SimpleAppliance)
+        self.strategy1 = MagicMock(spec=LoadHoursStrategy)
+
+    def tearDown(self):
+        pass
+
+    def area_test(self):
+        area = FakeArea(0)
+        area.current_market = FakeMarket(0)
+        area.markets = {TIME: FakeMarket(0)}
+        return area
+
+    def Mock_LoadHoursStrategy(self, avg_power_W, hrs_per_day, hrs_of_day):
+        strategy = LoadHoursStrategy(avg_power_W=avg_power_W,
+                                     hrs_per_day=hrs_per_day,
+                                     hrs_of_day=hrs_of_day)
+        strategy.area = self.area_test()
+        strategy.owner = self.area_test()
+        strategy.event_activate()
+        return strategy
+
+    def test_LoadHoursStrategy_input(self):
+        energy = 620
+        self.assertEqual(
+            self.Mock_LoadHoursStrategy(
+                energy, 4, [1, 2, 3, 4]).daily_energy_required.m,  energy * 4)
+        self.assertEqual(
+            self.Mock_LoadHoursStrategy(
+                energy, None, [1, 2, 3, 4]).daily_energy_required.m, energy * 4)
+        self.assertEqual(
+            self.Mock_LoadHoursStrategy(
+                energy, 4, [1, 2, 3, 4, 5, 6]).daily_energy_required.m, energy * 4)
+        self.assertEqual(
+            self.Mock_LoadHoursStrategy(
+                energy, 4, None).daily_energy_required.m, energy * 4)
+        with self.assertRaises(ValueError):
+            self.Mock_LoadHoursStrategy(energy, 4, [1, 2])
+
+
 @pytest.fixture()
 def area_test1(market_test1):
     area = FakeArea(0)
@@ -105,7 +150,7 @@ def market_test2():
 
 @pytest.fixture
 def load_hours_strategy_test(called):
-    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=(8, 12))
+    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
     strategy.accept_offer = called
     if 10 not in strategy.active_hours:
         strategy.active_hours.pop()
