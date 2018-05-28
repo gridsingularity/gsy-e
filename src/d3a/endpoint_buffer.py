@@ -31,7 +31,6 @@ class SimulationEndpointBuffer:
         self.area = {}
 
     def generate_result_report(self):
-        self.update()
         return {
             "job_id": self.job_id,
             **self.unmatched_loads,
