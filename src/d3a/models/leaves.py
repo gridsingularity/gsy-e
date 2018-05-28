@@ -68,11 +68,6 @@ class Storage(Leaf):
     strategy_type = StorageStrategy
 
 
-class GeneralLoad(Leaf):
-    strategy_type = LoadHoursStrategy
-    appliance_type = SwitchableAppliance
-
-
 class LoadHours(Leaf):
     strategy_type = LoadHoursStrategy
     appliance_type = SwitchableAppliance
