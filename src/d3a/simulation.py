@@ -1,12 +1,13 @@
 import random
 from importlib import import_module
 from logging import getLogger
-
+import os
 import time
 from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
-
+from redis import StrictRedis
+import json
 import dill
 from pendulum import Pendulum
 from pendulum.interval import Interval
@@ -27,6 +28,8 @@ log = getLogger(__name__)
 
 
 page_lock = Lock()
+
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
 
 class _SimulationInterruped(Exception):
@@ -203,6 +206,12 @@ class Simulation:
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
 
+                    results = {**{"status": "finished"},
+                               **self.endpoint_buffer.generate_result_report()}
+                    results_string = json.dumps(results)
+                    redis_db = StrictRedis.from_url(REDIS_URL)
+                    redis_db.publish("d3a-results", results_string)
+
                     if not self.is_stopped:
                         log.error(
                             "Run finished in %s%s / %.2fx real time",
@@ -238,6 +247,7 @@ class Simulation:
                         log.info("Ctrl-C to quit")
                         while True:
                             self._handle_input(console, 0.5)
+
                     break
             except _SimulationInterruped:
                 self.interrupted.set()
