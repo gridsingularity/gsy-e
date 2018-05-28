@@ -50,7 +50,8 @@ def start(scenario, settings, message_url_format):
                             exit_on_finish=True,
                             exit_on_finish_wait=interval.instance(timedelta(seconds=10)),
                             api_url=api_url,
-                            message_url=message_url_format.format(job.id))
+                            message_url=message_url_format.format(job.id),
+                            redis_job_id=job.id)
 
     start_web(interface, port, simulation)
     simulation.run()
