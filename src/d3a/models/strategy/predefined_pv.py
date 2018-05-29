@@ -1,11 +1,11 @@
 import csv
-from typing import Dict  # noqa
-
-from pendulum import Time, Interval  # noqa
+import pathlib
 
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, DEFAULT_CLOUD
-import pathlib
+
+from typing import Dict  # noqa
+from pendulum import Time, Interval  # noqa
 
 
 class PVPredefinedStrategy(PVStrategy):
@@ -16,13 +16,13 @@ class PVPredefinedStrategy(PVStrategy):
         self.data = {}
         if cloud == 0:  # 0:sunny
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
-                                      'src/d3a/resources/PV_DATA_sunny.csv').expanduser())
+                                      'src/d3a/resources/Solar_Curve_W_sunny.csv').expanduser())
         elif cloud == 2:  # 2:partial
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
-                                      'src/d3a/resources/PV_DATA_partial.csv').expanduser())
+                                      'src/d3a/resources/Solar_Curve_W_partial.csv').expanduser())
         elif cloud == 1:  # 1:cloudy
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
-                                      'src/d3a/resources/PV_DATA_cloudy.csv').expanduser())
+                                      'src/d3a/resources/Solar_Curve_W_cloudy.csv').expanduser())
 
     def readCSV(self, path):
         with open(path) as csvfile:
