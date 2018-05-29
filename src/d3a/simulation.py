@@ -17,7 +17,6 @@ from ptpython.repl import embed
 
 from d3a.exceptions import SimulationException, D3AException
 from d3a.export import export
-from d3a.models.overview import Overview
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
@@ -63,8 +62,8 @@ class Simulation:
         self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.is_stopped = False
-        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id)
         self.result_channel = "d3a-results"
+        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
 
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(
@@ -105,8 +104,9 @@ class Simulation:
         log.info("Starting simulation with config %s", self.simulation_config)
         self.area.activate()
 
-        if self.message_url is not None:
-            Overview(self, self.message_url).start()
+        # TODO: Disable overview websocket for now, implement proper intermediary data reporting
+        # if self.message_url is not None:
+        #     Overview(self, self.message_url).start()
 
     @property
     def finished(self):
