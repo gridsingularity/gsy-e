@@ -9,6 +9,7 @@ from pendulum import Time, Interval  # noqa
 
 
 class PVPredefinedStrategy(PVStrategy):
+    parameters = ('min_selling_price', 'cloud')
 
     def __init__(self, risk=DEFAULT_RISK,
                  min_selling_price=MIN_PV_SELLING_PRICE, cloud=DEFAULT_CLOUD):
