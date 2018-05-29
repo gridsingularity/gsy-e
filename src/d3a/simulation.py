@@ -62,8 +62,8 @@ class Simulation:
         self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.is_stopped = False
-        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id)
         self.result_channel = "d3a-results"
+        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
 
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(
@@ -103,6 +103,10 @@ class Simulation:
         self.area = self.setup_module.get_setup(self.simulation_config)
         log.info("Starting simulation with config %s", self.simulation_config)
         self.area.activate()
+
+        # TODO: Disable overview websocket for now, implement proper intermediary data reporting
+        # if self.message_url is not None:
+        #     Overview(self, self.message_url).start()
 
     @property
     def finished(self):
