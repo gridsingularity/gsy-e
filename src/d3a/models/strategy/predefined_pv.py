@@ -2,7 +2,7 @@ import csv
 import pathlib
 
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, DEFAULT_CLOUD
+from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, DEFAULT_PV_ENERGY_PROFILE
 
 from typing import Dict  # noqa
 from pendulum import Time, Interval  # noqa
@@ -12,16 +12,16 @@ class PVPredefinedStrategy(PVStrategy):
     parameters = ('min_selling_price', 'cloud')
 
     def __init__(self, risk=DEFAULT_RISK,
-                 min_selling_price=MIN_PV_SELLING_PRICE, cloud=DEFAULT_CLOUD):
+                 min_selling_price=MIN_PV_SELLING_PRICE, energy_profile=DEFAULT_PV_ENERGY_PROFILE):
         super().__init__(panel_count=1, risk=risk, min_selling_price=min_selling_price)
         self.data = {}
-        if cloud == 0:  # 0:sunny
+        if energy_profile == 0:  # 0:sunny
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
                                       'src/d3a/resources/Solar_Curve_W_sunny.csv').expanduser())
-        elif cloud == 2:  # 2:partial
+        elif energy_profile == 2:  # 2:partial
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
                                       'src/d3a/resources/Solar_Curve_W_partial.csv').expanduser())
-        elif cloud == 1:  # 1:cloudy
+        elif energy_profile == 1:  # 1:cloudy
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
                                       'src/d3a/resources/Solar_Curve_W_cloudy.csv').expanduser())
 
