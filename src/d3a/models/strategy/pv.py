@@ -21,7 +21,7 @@ class PVStrategy(BaseStrategy):
     parameters = ('panel_count', 'risk')
 
     def __init__(self, panel_count=1, risk=DEFAULT_RISK, min_selling_price=MIN_PV_SELLING_PRICE):
-        assert self._validate_parameters(panel_count, risk)
+        self._validate_constructor_arguments(panel_count, risk)
         super().__init__()
         self.risk = risk
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
@@ -31,8 +31,11 @@ class PVStrategy(BaseStrategy):
         self._decrease_price_timepoint_s = 0 * ureg.seconds
         self._decrease_price_every_nr_s = 0 * ureg.seconds
 
-    def _validate_parameters(self, panel_count, risk):
-        return 0 <= risk <= 100 and panel_count > 1
+    @staticmethod
+    def _validate_constructor_arguments(panel_count, risk):
+        if not (0 <= risk <= 100 and panel_count >= 1):
+            raise ValueError("Risk is a percentage value, should be "
+                             "between 0 and 100, panel_count should be positive.")
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock

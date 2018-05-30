@@ -5,9 +5,9 @@ from d3a.models.strategy.base import BaseStrategy
 class PermanentLoadStrategy(BaseStrategy):
     parameters = ('energy', 'pre_buy_range')
 
-    # TODO: Sanitize input parameters
-
     def __init__(self, energy=100, pre_buy_range=4):
+        if energy <= 0 or pre_buy_range <= 1:
+            raise ValueError("Incorrect parameter values for PermanentLoad.")
         super().__init__()
         self.energy = energy
         self.pre_buy_range = pre_buy_range

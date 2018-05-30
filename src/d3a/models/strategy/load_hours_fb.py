@@ -1,4 +1,5 @@
 import random
+import sys
 from d3a.models.strategy import ureg, Q_
 from pendulum.interval import Interval
 
@@ -11,7 +12,7 @@ class LoadHoursStrategy(BaseStrategy):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'acceptable_energy_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, random_factor=0,
-                 daily_budget=None, acceptable_energy_rate=10 ** 20):
+                 daily_budget=None, acceptable_energy_rate=sys.maxsize):
         super().__init__()
         self.state = LoadState()
         self.avg_power_W = Q_(avg_power_W, ureg.W)
@@ -37,7 +38,9 @@ class LoadHoursStrategy(BaseStrategy):
         self.hrs_per_day = hrs_per_day
         active_hours = set()
 
-        # TODO: Add check that the hrs_of_day list contains ints in the range [0, 23]
+        if not all([0 <= h <= 23 for h in hrs_of_day]):
+            raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
+
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError(
                 "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
