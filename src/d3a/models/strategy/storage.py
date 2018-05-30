@@ -6,6 +6,8 @@ from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK,\
     STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh, STORAGE_CAPACITY
 
+# TODO: Add validation checking of the parameters
+
 
 class StorageStrategy(BaseStrategy):
     parameters = ('risk', 'initial_capacity', 'initial_charge', 'battery_capacity')

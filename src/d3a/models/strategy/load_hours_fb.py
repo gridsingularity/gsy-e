@@ -37,6 +37,7 @@ class LoadHoursStrategy(BaseStrategy):
         self.hrs_per_day = hrs_per_day
         active_hours = set()
 
+        # TODO: Add check that the hrs_of_day list contains ints in the range [0, 23]
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError(
                 "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")

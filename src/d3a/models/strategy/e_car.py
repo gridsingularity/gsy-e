@@ -12,7 +12,10 @@ class ECarStrategy(StorageStrategy):
                 help="E-Car departs and stops participating in market"),
     ]
 
-    parameters = ('risk', 'arrival_time', 'depart_time')
+    # TODO: Add parameters. Do validation checking
+
+    parameters = ('risk', 'arrival_time', 'depart_time', 'initial_capacity',
+                  'initial_charge', 'battery_capacity')
 
     def __init__(self, risk=DEFAULT_RISK, arrival_time=ARRIVAL_TIME, depart_time=DEPART_TIME):
         super().__init__(risk)

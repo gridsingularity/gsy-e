@@ -33,7 +33,8 @@ def start(scenario, settings, message_url_format):
         duration=interval.instance(settings.get('duration', timedelta(days=1))),
         slot_length=interval.instance(settings.get('slot_length', timedelta(minutes=15))),
         tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=1))),
-        market_count=settings.get('market_count', 4)
+        market_count=settings.get('market_count', 4),
+        cloud_coverage=settings.get('cloud_coverage', 0)
     )
 
     if scenario is None:

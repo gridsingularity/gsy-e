@@ -5,6 +5,8 @@ from d3a.models.strategy.base import BaseStrategy
 class PermanentLoadStrategy(BaseStrategy):
     parameters = ('energy', 'pre_buy_range')
 
+    # TODO: Sanitize input parameters
+
     def __init__(self, energy=100, pre_buy_range=4):
         super().__init__()
         self.energy = energy

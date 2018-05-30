@@ -7,6 +7,7 @@ from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_MIN_NEEDED_ENERGY, MA
 # TODO Find realistic values for consumption as well as temperature changes
 
 class FridgeStrategy(BaseStrategy):
+    # TODO: Sanitize risk parameter
     parameters = ('risk',)
 
     def __init__(self, risk=DEFAULT_RISK):
