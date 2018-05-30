@@ -24,6 +24,7 @@ itsdangerous==0.24        # via flask
 jdcal==1.3                # via openpyxl
 jinja2==2.10              # via flask
 markupsafe==1.0           # via jinja2
+numpy==1.14.3
 odfpy==1.3.6              # via tablib
 openpyxl==2.4.9           # via tablib
 pbkdf2==1.3               # via ethereum
