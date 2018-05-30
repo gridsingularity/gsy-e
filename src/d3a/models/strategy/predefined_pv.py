@@ -1,20 +1,26 @@
 import csv
 import pathlib
+import pendulum
+import numpy as np
 
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, DEFAULT_PV_ENERGY_PROFILE
 
 from typing import Dict  # noqa
-from pendulum import Time, Interval  # noqa
+from pendulum import Time  # noqa
 
 
 class PVPredefinedStrategy(PVStrategy):
-    parameters = ('min_selling_price', 'cloud')
+    parameters = ('min_selling_price', 'energy_profile')
 
     def __init__(self, risk=DEFAULT_RISK,
                  min_selling_price=MIN_PV_SELLING_PRICE, energy_profile=DEFAULT_PV_ENERGY_PROFILE):
         super().__init__(panel_count=1, risk=risk, min_selling_price=min_selling_price)
+
         self.data = {}
+        self.solar_data = {}
+        self.time_format = "%H:%M"
+        self.interp_energy_kWh = np.array(())
         if energy_profile == 0:  # 0:sunny
             self.readCSV(pathlib.Path(pathlib.Path.cwd(),
                                       'src/d3a/resources/Solar_Curve_W_sunny.csv').expanduser())
@@ -30,10 +36,43 @@ class PVPredefinedStrategy(PVStrategy):
             next(csvfile)
             csv_rows = csv.reader(csvfile, delimiter=';')
             for row in csv_rows:
-                k, v = row
-                self.data[k] = float(v)
+                timestr, wattstr = row
+                self.solar_data[timestr] = float(wattstr)
+
+    def prepair_solar_data(self, data):
+        """
+        Interpolates solar power curves onto slot times and converts it into energy (kWh)
+
+        The intrinsic conversion to seconds is done in order to enable slot-lengths < 1 minute
+        """
+
+        timestr_solar_array = np.array(list(data.keys()))
+        solar_power_W = np.array(list(data.values()))
+
+        time0 = pendulum.fromtimestamp(-3600)
+        time_solar_array = np.array([
+            (pendulum.strptime(ti, self.time_format) - time0).seconds
+            for ti in timestr_solar_array
+                                    ])
+
+        whole_day_sec = 24 * 60 * 60
+        tt = np.append(time_solar_array, [whole_day_sec])
+        timediff_array = [j - i for i, j in zip(tt[:-1], tt[1:])]
+        solar_energy_kWh = solar_power_W * timediff_array / 60 / 60 / 1000
+
+        slot_time_list = np.arange(0, whole_day_sec, self.area.config.slot_length.seconds)
+
+        self.interp_energy_kWh = np.interp(slot_time_list, time_solar_array, solar_energy_kWh)
+
+        return {pendulum.fromtimestamp(slot_time_list[ii]).strftime(self.time_format):
+                self.interp_energy_kWh[ii]
+                for ii in range(len(self.interp_energy_kWh))
+                }
 
     def produced_energy_forecast_real_data(self):
+
+        self.data = self.prepair_solar_data(self.solar_data)
+
         for slot_time in [
             self.area.now + (self.area.config.slot_length * i)
             for i in range(
@@ -44,4 +83,5 @@ class PVPredefinedStrategy(PVStrategy):
                                 self.area.config.slot_length)
                 ) // self.area.config.slot_length)
         ]:
-            self.energy_production_forecast_kWh[slot_time] = self.data[slot_time.format('%H:%M')]
+            self.energy_production_forecast_kWh[slot_time] = \
+                self.data[slot_time.format(self.time_format)]
