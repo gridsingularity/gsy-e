@@ -1,8 +1,7 @@
 import csv
 import pathlib
-import pendulum
 import numpy as np
-
+from datetime import datetime
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, DEFAULT_PV_ENERGY_PROFILE
 
@@ -49,22 +48,21 @@ class PVPredefinedStrategy(PVStrategy):
         timestr_solar_array = np.array(list(data.keys()))
         solar_power_W = np.array(list(data.values()))
 
-        time0 = pendulum.fromtimestamp(-3600)
+        time0 = datetime.fromtimestamp(-3600)
         time_solar_array = np.array([
-            (pendulum.strptime(ti, self.time_format) - time0).seconds
+            (datetime.strptime(ti, self.time_format) - time0).seconds
             for ti in timestr_solar_array
                                     ])
 
         whole_day_sec = 24 * 60 * 60
         tt = np.append(time_solar_array, [whole_day_sec])
         timediff_array = [j - i for i, j in zip(tt[:-1], tt[1:])]
-        solar_energy_kWh = solar_power_W * timediff_array / 60 / 60 / 1000
+        solar_energy_kWh = solar_power_W * timediff_array / 60 / 60 / 1000.
 
         slot_time_list = np.arange(0, whole_day_sec, self.area.config.slot_length.seconds)
 
         self.interp_energy_kWh = np.interp(slot_time_list, time_solar_array, solar_energy_kWh)
-
-        return {pendulum.fromtimestamp(slot_time_list[ii]).strftime(self.time_format):
+        return {datetime.fromtimestamp(slot_time_list[ii]).strftime(self.time_format):
                 self.interp_energy_kWh[ii]
                 for ii in range(len(self.interp_energy_kWh))
                 }
