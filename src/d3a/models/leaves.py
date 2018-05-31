@@ -66,6 +66,7 @@ class PV(Leaf):
 
 class Storage(Leaf):
     strategy_type = StorageStrategy
+    appliance_type = SwitchableAppliance
 
 
 class LoadHours(Leaf):
