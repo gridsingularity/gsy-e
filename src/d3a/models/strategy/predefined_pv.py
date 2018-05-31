@@ -1,30 +1,30 @@
 import csv
-from typing import Dict  # noqa
-
-from pendulum import Time, Interval  # noqa
+import pathlib
 
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, DEFAULT_CLOUD
-import pathlib
+from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE
 
 
 class PVPredefinedStrategy(PVStrategy):
+    parameters = ('panel_count', 'risk')
 
-    def __init__(self, risk=DEFAULT_RISK,
-                 min_selling_price=MIN_PV_SELLING_PRICE, cloud=DEFAULT_CLOUD):
-        super().__init__(panel_count=1, risk=risk, min_selling_price=min_selling_price)
+    def __init__(self, risk=DEFAULT_RISK, panel_count=1,
+                 min_selling_price=MIN_PV_SELLING_PRICE, cloud_coverage=None):
+        super().__init__(panel_count=panel_count, risk=risk, min_selling_price=min_selling_price)
         self.data = {}
-        if cloud == 0:  # 0:sunny
-            self.readCSV(pathlib.Path(pathlib.Path.cwd(),
-                                      'src/d3a/resources/PV_DATA_sunny.csv').expanduser())
-        elif cloud == 2:  # 2:partial
-            self.readCSV(pathlib.Path(pathlib.Path.cwd(),
-                                      'src/d3a/resources/PV_DATA_partial.csv').expanduser())
-        elif cloud == 1:  # 1:cloudy
-            self.readCSV(pathlib.Path(pathlib.Path.cwd(),
-                                      'src/d3a/resources/PV_DATA_cloudy.csv').expanduser())
+        if cloud_coverage is None:
+            cloud_coverage = self.owner.config.cloud_coverage
+        if cloud_coverage == 0:  # 0:sunny
+            profile_filename = 'src/d3a/resources/PV_DATA_sunny.csv'
+        elif cloud_coverage:  # 1:cloudy
+            profile_filename = 'src/d3a/resources/PV_DATA_cloudy.csv'
+        elif cloud_coverage == 2:  # 2:partial
+            profile_filename = 'src/d3a/resources/PV_DATA_partial.csv'
+        else:
+            raise ValueError("Cloud coverage setting should be between 0 and 2.")
+        self._readCSV(pathlib.Path(pathlib.Path.cwd(), profile_filename).expanduser())
 
-    def readCSV(self, path):
+    def _readCSV(self, path):
         with open(path) as csvfile:
             next(csvfile)
             csv_rows = csv.reader(csvfile, delimiter=';')

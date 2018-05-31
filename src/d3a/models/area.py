@@ -27,7 +27,8 @@ DEFAULT_CONFIG = SimulationConfig(
     duration=Interval(hours=24),
     market_count=4,
     slot_length=Interval(minutes=15),
-    tick_length=Interval(seconds=1)
+    tick_length=Interval(seconds=1),
+    cloud_coverage=0
 )
 
 

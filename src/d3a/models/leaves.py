@@ -8,9 +8,11 @@ from d3a.models.strategy.e_car import ECarStrategy
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.heatpump import HeatPumpStrategy
 
 
 class Leaf(Area):
@@ -62,6 +64,15 @@ class PermanentLoad(Leaf):
 class PV(Leaf):
     strategy_type = PVStrategy
     appliance_type = PVAppliance
+
+
+class PVProfile(Leaf):
+    strategy_type = PVPredefinedStrategy
+    appliance_type = PVAppliance
+
+
+class Heatpump(Leaf):
+    strategy_type = HeatPumpStrategy
 
 
 class Storage(Leaf):

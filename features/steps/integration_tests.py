@@ -44,7 +44,9 @@ def run_sim(context, scenario, duration, slot_length, tick_length):
 
     simulation_config = SimulationConfig(Interval(hours=int(duration)),
                                          Interval(minutes=int(slot_length)),
-                                         Interval(seconds=int(tick_length)), market_count=5)
+                                         Interval(seconds=int(tick_length)),
+                                         market_count=5,
+                                         cloud_coverage=0)
 
     slowdown = 0
     seed = 0

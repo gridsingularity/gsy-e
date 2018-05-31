@@ -107,3 +107,16 @@ def testing_event_market_cycle(commercial_test3, area_test3):
     for i in range(COMMERCIAL_OFFERS - 1):
         assert area_test3.test_market.created_offers[i].energy <= max_energy / 1000
         assert area_test3.test_market.created_offers[i].energy >= min_energy / 1000
+
+
+def test_commercial_producer_constructor_rejects_invalid_parameters():
+    with pytest.raises(TypeError):
+        CommercialStrategy(energy_range_wh=-1)
+    with pytest.raises(ValueError):
+        CommercialStrategy(energy_range_wh=(150, 20))
+    with pytest.raises(ValueError):
+        CommercialStrategy(energy_range_wh=[150, 20])
+    with pytest.raises(ValueError):
+        CommercialStrategy(energy_range_wh=[20, 150, 200])
+    with pytest.raises(ValueError):
+        CommercialStrategy(energy_price=-1)
