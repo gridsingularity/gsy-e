@@ -38,7 +38,7 @@ class PVPredefinedStrategy(PVStrategy):
                 timestr, wattstr = row
                 self.solar_data[timestr] = float(wattstr)
 
-    def prepair_solar_data(self, data):
+    def prepare_solar_data(self, data):
         """
         Interpolates solar power curves onto slot times and converts it into energy (kWh)
 
@@ -55,7 +55,7 @@ class PVPredefinedStrategy(PVStrategy):
                                     ])
 
         whole_day_sec = 24 * 60 * 60
-        tt = np.append(time_solar_array, [whole_day_sec])
+        tt = np.append(time_solar_array, whole_day_sec)
         timediff_array = [j - i for i, j in zip(tt[:-1], tt[1:])]
         solar_energy_kWh = solar_power_W * timediff_array / 60 / 60 / 1000.
 
@@ -69,7 +69,7 @@ class PVPredefinedStrategy(PVStrategy):
 
     def produced_energy_forecast_real_data(self):
 
-        self.data = self.prepair_solar_data(self.solar_data)
+        self.data = self.prepare_solar_data(self.solar_data)
 
         for slot_time in [
             self.area.now + (self.area.config.slot_length * i)
