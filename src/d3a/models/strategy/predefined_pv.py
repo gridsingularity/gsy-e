@@ -9,14 +9,16 @@ class PVPredefinedStrategy(PVStrategy):
     parameters = ('panel_count', 'risk')
 
     def __init__(self, risk=DEFAULT_RISK, panel_count=1,
-                 min_selling_price=MIN_PV_SELLING_PRICE):
+                 min_selling_price=MIN_PV_SELLING_PRICE, cloud_coverage=None):
         super().__init__(panel_count=panel_count, risk=risk, min_selling_price=min_selling_price)
         self.data = {}
-        if self.owner.config.cloud_coverage == 0:  # 0:sunny
+        if cloud_coverage is None:
+            cloud_coverage = self.owner.config.cloud_coverage
+        if cloud_coverage == 0:  # 0:sunny
             profile_filename = 'src/d3a/resources/PV_DATA_sunny.csv'
-        elif self.owner.config.cloud_coverage == 1:  # 1:cloudy
+        elif cloud_coverage:  # 1:cloudy
             profile_filename = 'src/d3a/resources/PV_DATA_cloudy.csv'
-        elif self.owner.config.cloud_coverage == 2:  # 2:partial
+        elif cloud_coverage == 2:  # 2:partial
             profile_filename = 'src/d3a/resources/PV_DATA_partial.csv'
         else:
             raise ValueError("Cloud coverage setting should be between 0 and 2.")
