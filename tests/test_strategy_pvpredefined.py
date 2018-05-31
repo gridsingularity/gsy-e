@@ -1,7 +1,7 @@
 import pytest
 import pendulum
 import uuid
-from pendulum import Pendulum
+from pendulum import Pendulum, Interval
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
@@ -20,6 +20,7 @@ class FakeArea():
         self.name = 'FakeArea'
         self.count = count
         self.test_market = FakeMarket(0)
+        # self.config.slot_length = 15
 
     @property
     def config(self):
@@ -182,7 +183,7 @@ def pv_test6(area_test3):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {}
-    p.energy_production_forecast_kWh = ENERGY_FORECAST
+    p.event_activate()
     return p
 
 
@@ -263,6 +264,11 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
 
 
 @pytest.fixture()
+def area_test7():
+    return FakeArea(0)
+
+
+@pytest.fixture()
 def pv_test_sunny(area_test3):
     p = PVPredefinedStrategy(energy_profile=0)
     p.area = area_test3
@@ -271,18 +277,19 @@ def pv_test_sunny(area_test3):
 
 
 @pytest.fixture()
-def pv_test_partial(area_test3):
+def pv_test_partial(area_test7):
     p = PVPredefinedStrategy(energy_profile=2)
-    p.area = area_test3
-    p.owner = area_test3
+    p.area = area_test7
+    p.owner = area_test7
     return p
 
 
 @pytest.fixture()
-def pv_test_cloudy(area_test3):
+def pv_test_cloudy(area_test7):
     p = PVPredefinedStrategy(energy_profile=1)
-    p.area = area_test3
-    p.owner = area_test3
+    p.area = area_test7
+    p.owner = area_test7
+    p.area.config.slot_length = Interval(minutes=20)
     return p
 
 
@@ -292,10 +299,10 @@ def test_energy_profiles(pv_test_sunny, pv_test_partial, pv_test_cloudy):
     pv_test_partial.event_activate()
     pv_test_cloudy.event_activate()
 
-    sum_energ_sunny = sum(pv_test_sunny.energy_production_forecast_kWh.values())
-    sum_energ_partial = sum(pv_test_partial.energy_production_forecast_kWh.values())
-    sum_energ_cloudy = sum(pv_test_cloudy.energy_production_forecast_kWh.values())
+    assert sum(pv_test_sunny.energy_production_forecast_kWh.values()) > 0
+    assert sum(pv_test_partial.energy_production_forecast_kWh.values()) > 0
+    assert sum(pv_test_cloudy.energy_production_forecast_kWh.values()) > 0
 
-    assert sum_energ_sunny > 0
-    assert sum_energ_cloudy > 0
-    assert sum_energ_partial > 0
+    # checking whether the interpolation is done on the right sampling points
+    assert list(pv_test_cloudy.energy_production_forecast_kWh.keys())[1].minute % \
+        pv_test_partial.area.config.slot_length.minutes == 0
