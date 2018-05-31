@@ -191,6 +191,7 @@ def testing_low_risk(pv_test6, market_test3):
     pv_test6.risk = 20
     pv_test6.event_activate()
     pv_test6.event_tick(area=area_test3)
+    assert isinstance(pv_test6.energy_production_forecast_kWh, dict)
     assert market_test3.created_offers[0].price == \
         MAX_ENERGY_RATE * 0.2 * pv_test6.energy_production_forecast_kWh[TIME]
 
