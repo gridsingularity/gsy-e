@@ -20,6 +20,8 @@ class ECarStrategy(StorageStrategy):
                  depart_time=DEPART_TIME):
         if not 0 <= arrival_time <= 23 or not 0 <= depart_time <= 23:
             raise ValueError("Depart_time and arrival_time should be between 0 and 23.")
+        if not arrival_time < depart_time:
+            raise ValueError("Arrival time should be less than depart time.")
         super().__init__(risk, initial_capacity, initial_charge, battery_capacity)
         self.arrival_time = arrival_time
         self.depart_time = depart_time

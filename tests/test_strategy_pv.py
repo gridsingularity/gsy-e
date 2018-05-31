@@ -307,3 +307,12 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     market_test3.created_offers = []
     pv_test6.event_tick(area=area_test3)
     assert not market_test3.created_offers
+
+
+def test_pv_constructor_rejects_incorrect_parameters():
+    with pytest.raises(ValueError):
+        PVStrategy(risk=-1)
+    with pytest.raises(ValueError):
+        PVStrategy(risk=101)
+    with pytest.raises(ValueError):
+        PVStrategy(panel_count=0)

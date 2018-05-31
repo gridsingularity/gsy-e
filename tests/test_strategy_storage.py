@@ -317,3 +317,18 @@ def test_initial_charge(caplog):
         storage = StorageStrategy(initial_capacity=1, initial_charge=60)
     assert any('initial_capacity' in record.msg for record in caplog.records)
     assert storage.state.used_storage == 0.6 * storage.state.capacity
+
+
+def test_storage_constructor_rejects_incorrect_parameters():
+    with pytest.raises(ValueError):
+        StorageStrategy(risk=101)
+    with pytest.raises(ValueError):
+        StorageStrategy(risk=-1)
+    with pytest.raises(ValueError):
+        StorageStrategy(battery_capacity=-1)
+    with pytest.raises(ValueError):
+        StorageStrategy(battery_capacity=100, initial_capacity=101)
+    with pytest.raises(ValueError):
+        StorageStrategy(initial_charge=101)
+    with pytest.raises(ValueError):
+        StorageStrategy(initial_charge=-1)
