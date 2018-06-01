@@ -30,6 +30,8 @@ class PVPredefinedStrategy(PVStrategy):
             self.readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_partial.csv'))
         elif energy_profile == 1:  # 1:cloudy
             self.readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv'))
+        else:
+            raise ValueError("Energy_profile has to be in [0,1,2]")
 
     def readCSV(self, path):
         with open(path) as csvfile:
@@ -39,17 +41,17 @@ class PVPredefinedStrategy(PVStrategy):
                 timestr, wattstr = row
                 self.solar_data[timestr] = float(wattstr)
 
-    def prepare_solar_data(self, data):
+    def prepare_solar_data(self):
         """
         Interpolates solar power curves onto slot times and converts it into energy (kWh)
 
         The intrinsic conversion to seconds is done in order to enable slot-lengths < 1 minute
         """
 
-        timestr_solar_array = np.array(list(data.keys()))
-        solar_power_W = np.array(list(data.values()))
+        timestr_solar_array = np.array(list(self.solar_data.keys()))
+        solar_power_W = np.array(list(self.solar_data.values()))
 
-        time0 = datetime.fromtimestamp(-3600)
+        time0 = datetime.utcfromtimestamp(0)
         time_solar_array = np.array([
             (datetime.strptime(ti, self.time_format) - time0).seconds
             for ti in timestr_solar_array
@@ -63,14 +65,15 @@ class PVPredefinedStrategy(PVStrategy):
         slot_time_list = np.arange(0, whole_day_sec, self.area.config.slot_length.seconds)
 
         self.interp_energy_kWh = np.interp(slot_time_list, time_solar_array, solar_energy_kWh)
-        return {datetime.fromtimestamp(slot_time_list[ii]).strftime(self.time_format):
+
+        return {datetime.utcfromtimestamp(slot_time_list[ii]).strftime(self.time_format):
                 self.interp_energy_kWh[ii]
                 for ii in range(len(self.interp_energy_kWh))
                 }
 
     def produced_energy_forecast_real_data(self):
 
-        self.data = self.prepare_solar_data(self.solar_data)
+        self.data = self.prepare_solar_data()
 
         for slot_time in [
             self.area.now + (self.area.config.slot_length * i)

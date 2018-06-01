@@ -20,7 +20,6 @@ class FakeArea():
         self.name = 'FakeArea'
         self.count = count
         self.test_market = FakeMarket(0)
-        # self.config.slot_length = 15
 
     @property
     def config(self):
@@ -183,7 +182,6 @@ def pv_test6(area_test3):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {}
-    p.event_activate()
     return p
 
 
@@ -191,7 +189,7 @@ def testing_low_risk(pv_test6, market_test3):
     pv_test6.risk = 20
     pv_test6.event_activate()
     pv_test6.event_tick(area=area_test3)
-    assert isinstance(pv_test6.energy_production_forecast_kWh, dict)
+    assert len(market_test3.created_offers) > 0
     assert market_test3.created_offers[0].price == \
         MAX_ENERGY_RATE * 0.2 * pv_test6.energy_production_forecast_kWh[TIME]
 
@@ -204,11 +202,11 @@ def testing_high_risk(pv_test6, market_test3):
         MAX_ENERGY_RATE * 0.9 * pv_test6.energy_production_forecast_kWh[TIME]
 
 
-def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
+def testing_produced_energy_forecast_real_data(pv_test6):
 
     pv_test6.event_activate()
-    morning_time = pendulum.today().at(hour=8, minute=20, second=0)
-    afternoon_time = pendulum.today().at(hour=16, minute=40, second=0)
+    morning_time = pendulum.today().at(hour=5, minute=10, second=0)
+    afternoon_time = pendulum.today().at(hour=19, minute=10, second=0)
 
     class Counts(object):
         def __init__(self, time):
@@ -237,18 +235,17 @@ def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
     assert len(list(pv_test6.energy_production_forecast_kWh.items())) == total_count
 
     morning_count_percent = (morning_counts.count / morning_counts.total) * 100
-    assert morning_count_percent > 70
+    assert morning_count_percent > 90
 
     afternoon_count_percent = (afternoon_counts.count / afternoon_counts.total) * 100
     assert afternoon_count_percent > 90
 
     evening_count_percent = (evening_counts.count / evening_counts.total) * 100
-    assert evening_count_percent > 50
+    assert evening_count_percent > 90
 
 
 # The pv sells its whole production at once if possible.
 # Make sure that it doesnt offer it again after selling.
-
 def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     pv_test6.event_activate()
     pv_test6.event_tick(area=area_test3)
