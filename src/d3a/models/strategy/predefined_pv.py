@@ -11,23 +11,23 @@ d3a_path = d3a.__path__[0]
 
 
 class PVPredefinedStrategy(PVStrategy):
-    parameters = ('panel_count', 'risk', 'energy_profile')
+    parameters = ('panel_count', 'risk', 'power_profile')
 
     def __init__(self, risk=DEFAULT_RISK, panel_count=1,
-                 min_selling_price=MIN_PV_SELLING_PRICE, energy_profile=None):
+                 min_selling_price=MIN_PV_SELLING_PRICE, power_profile=None):
         super().__init__(panel_count=panel_count, risk=risk, min_selling_price=min_selling_price)
 
         self.data = {}
         self.solar_data = {}
         self.time_format = "%H:%M"
         self.interp_energy_kWh = np.array(())
-        if energy_profile is None:
-            energy_profile = self.owner.config.cloud_coverage
-        if energy_profile == 0:  # 0:sunny
+        if power_profile is None:
+            power_profile = self.owner.config.cloud_coverage
+        if power_profile == 0:  # 0:sunny
             self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv'))
-        elif energy_profile == 2:  # 2:partial
+        elif power_profile == 2:  # 2:partial
             self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_partial.csv'))
-        elif energy_profile == 1:  # 1:cloudy
+        elif power_profile == 1:  # 1:cloudy
             self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv'))
         else:
             raise ValueError("Energy_profile has to be in [0,1,2]")
