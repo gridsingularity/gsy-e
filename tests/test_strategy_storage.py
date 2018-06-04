@@ -188,7 +188,7 @@ def area_test5():
 
 @pytest.fixture()
 def storage_strategy_test5(area_test5, called):
-    s = StorageStrategy(initial_capacity=5, battery_capacity=6)
+    s = StorageStrategy(initial_capacity=5, battery_capacity=5.01)
     s.owner = area_test5
     s.area = area_test5
     s.sell_energy = called
@@ -260,7 +260,7 @@ def area_test7():
 
 @pytest.fixture()
 def storage_strategy_test7(area_test7):
-    s = StorageStrategy(initial_capacity=3.0, max_abs_battery_power=5.21)
+    s = StorageStrategy(initial_capacity=3.0, battery_capacity=3.01, max_abs_battery_power=5.21)
     s.owner = area_test7
     s.area = area_test7
     return s
@@ -287,7 +287,7 @@ def area_test8():
 
 @pytest.fixture()
 def storage_strategy_test8(area_test8):
-    s = StorageStrategy(initial_capacity=100, max_abs_battery_power=401)
+    s = StorageStrategy(initial_capacity=100, battery_capacity=101, max_abs_battery_power=401)
     s.owner = area_test8
     s.area = area_test8
     return s
@@ -323,18 +323,3 @@ def test_initial_charge(caplog):
         storage = StorageStrategy(initial_capacity=1, initial_charge=60)
     assert any('initial_capacity' in record.msg for record in caplog.records)
     assert storage.state.used_storage == 0.6 * storage.state.capacity
-
-
-def test_storage_constructor_rejects_incorrect_parameters():
-    with pytest.raises(ValueError):
-        StorageStrategy(risk=101)
-    with pytest.raises(ValueError):
-        StorageStrategy(risk=-1)
-    with pytest.raises(ValueError):
-        StorageStrategy(battery_capacity=-1)
-    with pytest.raises(ValueError):
-        StorageStrategy(battery_capacity=100, initial_capacity=101)
-    with pytest.raises(ValueError):
-        StorageStrategy(initial_charge=101)
-    with pytest.raises(ValueError):
-        StorageStrategy(initial_charge=-1)
