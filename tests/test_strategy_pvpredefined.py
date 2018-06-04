@@ -6,7 +6,7 @@ from pendulum import Pendulum, Interval
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-from d3a.models.strategy.const import MAX_ENERGY_RATE
+from d3a.models.strategy.const import MAX_ENERGY_RATE, DEFAULT_PV_ENERGY_PROFILE
 
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
@@ -82,13 +82,13 @@ def area_test1():
 
 @pytest.fixture()
 def pv_test1(area_test1):
-    p = PVPredefinedStrategy()
+    p = PVPredefinedStrategy(energy_profile=DEFAULT_PV_ENERGY_PROFILE)
     p.area = area_test1
     p.owner = area_test1
     return p
 
 
-def testing_activation(pv_test1, area_test1):
+def test_activation(pv_test1, area_test1):
     pv_test1.event_activate()
     # Pendulum.today() returns pendulum object with the date of today and midnight
     assert pv_test1.midnight == pendulum.today()
@@ -111,7 +111,7 @@ def market_test3(area_test3):
 
 @pytest.fixture()
 def pv_test3(area_test3):
-    p = PVPredefinedStrategy()
+    p = PVPredefinedStrategy(energy_profile=DEFAULT_PV_ENERGY_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
@@ -132,7 +132,7 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
 
 @pytest.fixture()
 def pv_test4(area_test3, called):
-    p = PVPredefinedStrategy()
+    p = PVPredefinedStrategy(energy_profile=DEFAULT_PV_ENERGY_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
@@ -178,7 +178,7 @@ def testing_trigger_risk(pv_test5):
 
 @pytest.fixture()
 def pv_test6(area_test3):
-    p = PVPredefinedStrategy()
+    p = PVPredefinedStrategy(energy_profile=DEFAULT_PV_ENERGY_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {}
