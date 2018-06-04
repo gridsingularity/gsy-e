@@ -2,7 +2,7 @@ from collections import defaultdict
 from pendulum.interval import Interval
 
 from d3a.models.strategy.const import FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, MIN_FRIDGE_TEMP, \
-    STORAGE_CAPACITY, BATTERY_POWER
+    STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER
 
 
 # Complex device models should be split in three classes each:
@@ -57,7 +57,7 @@ class StorageState:
                  initial_capacity=0.0,
                  initial_charge=None,
                  capacity=STORAGE_CAPACITY,
-                 battery_power=BATTERY_POWER,
+                 max_abs_battery_power=MAX_ABS_BATTERY_POWER,
                  loss_per_hour=0.01,
                  strategy=None):
         self._blocked_storage = 0.0
@@ -69,7 +69,7 @@ class StorageState:
             initial_capacity = capacity * initial_charge / 100
         self._used_storage = initial_capacity
         self.capacity = capacity
-        self.battery_power = battery_power
+        self.max_abs_battery_power = max_abs_battery_power
         self.loss_per_hour = loss_per_hour
         self.offered_history = defaultdict(lambda: '-')
         self.used_history = defaultdict(lambda: '-')
@@ -109,7 +109,7 @@ class StorageState:
             area.log.info("Storage reached more than 80%% Battery: %f" % free)
 
     def battery_energy_per_slot(self, slot_length):
-        self.battery_energy_per_slot = self.battery_power * (slot_length/Interval(hours=1))
+        self.battery_energy_per_slot = self.max_abs_battery_power * (slot_length/Interval(hours=1))
 
     def available_energy_per_slot(self, slot):
         if self.residual_energy_per_slot[slot] is '-':
