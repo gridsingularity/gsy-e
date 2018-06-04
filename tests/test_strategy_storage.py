@@ -87,7 +87,7 @@ def area_test1():
 
 @pytest.fixture()
 def storage_strategy_test1(area_test1, called):
-    s = StorageStrategy(battery_power=2.01)
+    s = StorageStrategy(max_abs_battery_power=2.01)
     s.owner = area_test1
     s.area = area_test1
     s.accept_offer = called
@@ -113,7 +113,7 @@ def area_test2():
 
 @pytest.fixture()
 def storage_strategy_test2(area_test2, called):
-    s = StorageStrategy(battery_power=2.01)
+    s = StorageStrategy(max_abs_battery_power=2.01)
     s.owner = area_test2
     s.area = area_test2
     s.accept_offer = called
@@ -138,7 +138,7 @@ def area_test3():
 
 @pytest.fixture()
 def storage_strategy_test3(area_test3, called):
-    s = StorageStrategy(battery_power=2.01)
+    s = StorageStrategy(max_abs_battery_power=2.01)
     s.owner = area_test3
     s.area = area_test3
     s.accept_offer = called
@@ -260,7 +260,7 @@ def area_test7():
 
 @pytest.fixture()
 def storage_strategy_test7(area_test7):
-    s = StorageStrategy(initial_capacity=3.0, battery_power=5.21)
+    s = StorageStrategy(initial_capacity=3.0, max_abs_battery_power=5.21)
     s.owner = area_test7
     s.area = area_test7
     return s
@@ -287,7 +287,7 @@ def area_test8():
 
 @pytest.fixture()
 def storage_strategy_test8(area_test8):
-    s = StorageStrategy(initial_capacity=100, battery_power=401)
+    s = StorageStrategy(initial_capacity=100, max_abs_battery_power=401)
     s.owner = area_test8
     s.area = area_test8
     return s
