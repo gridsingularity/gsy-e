@@ -87,7 +87,7 @@ def area_test1():
 
 @pytest.fixture()
 def storage_strategy_test1(area_test1, called):
-    s = StorageStrategy()
+    s = StorageStrategy(battery_power=2.01)
     s.owner = area_test1
     s.area = area_test1
     s.accept_offer = called
@@ -95,6 +95,7 @@ def storage_strategy_test1(area_test1, called):
 
 
 def test_if_storage_buys_cheap_energy(storage_strategy_test1, area_test1):
+    storage_strategy_test1.event_activate()
     storage_strategy_test1.event_tick(area=area_test1)
     assert storage_strategy_test1.accept_offer.calls[0][0][1] == repr(
         FakeMarket(0).sorted_offers[0])
@@ -112,7 +113,7 @@ def area_test2():
 
 @pytest.fixture()
 def storage_strategy_test2(area_test2, called):
-    s = StorageStrategy()
+    s = StorageStrategy(battery_power=2.01)
     s.owner = area_test2
     s.area = area_test2
     s.accept_offer = called
@@ -120,6 +121,7 @@ def storage_strategy_test2(area_test2, called):
 
 
 def test_if_storage_doesnt_buy_30ct(storage_strategy_test2, area_test2):
+    storage_strategy_test2.event_activate()
     storage_strategy_test2.event_tick(area=area_test2)
     assert len(storage_strategy_test2.accept_offer.calls) == 0
 
@@ -136,7 +138,7 @@ def area_test3():
 
 @pytest.fixture()
 def storage_strategy_test3(area_test3, called):
-    s = StorageStrategy()
+    s = StorageStrategy(battery_power=2.01)
     s.owner = area_test3
     s.area = area_test3
     s.accept_offer = called
@@ -144,6 +146,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
+    storage_strategy_test3.event_activate()
     storage_strategy_test3.event_tick(area=area_test3)
     assert len(storage_strategy_test3.accept_offer.calls) == 0
 
@@ -257,13 +260,14 @@ def area_test7():
 
 @pytest.fixture()
 def storage_strategy_test7(area_test7):
-    s = StorageStrategy(initial_capacity=3.0)
+    s = StorageStrategy(initial_capacity=3.0, battery_power=5.21)
     s.owner = area_test7
     s.area = area_test7
     return s
 
 
 def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
+    storage_strategy_test7.event_activate()
     energy = 1.3
     storage_strategy_test7.sell_energy(buying_rate=10, energy=energy)
     assert storage_strategy_test7.state.used_storage == 1.7
@@ -283,13 +287,14 @@ def area_test8():
 
 @pytest.fixture()
 def storage_strategy_test8(area_test8):
-    s = StorageStrategy(initial_capacity=100)
+    s = StorageStrategy(initial_capacity=100, battery_power=401)
     s.owner = area_test8
     s.area = area_test8
     return s
 
 
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
+    storage_strategy_test8.event_activate()
     storage_strategy_test8.sell_energy(buying_rate=10, energy=None)
     assert storage_strategy_test8.state.used_storage == 0
     assert storage_strategy_test8.state.offered_storage == 100
@@ -303,6 +308,7 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
 # Test if initial capacity is sold
 def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: StorageStrategy,
                                                   area_test8: FakeArea):
+    storage_strategy_test8.event_activate()
     storage_strategy_test8.event_market_cycle()
     assert storage_strategy_test8.state.offered_storage == 100.0
     assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
