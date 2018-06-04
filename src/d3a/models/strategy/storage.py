@@ -4,15 +4,16 @@ from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK,\
-    STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh
+    STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh, STORAGE_CAPACITY
 
 
 class StorageStrategy(BaseStrategy):
-    parameters = ('risk',)
+    parameters = ('risk', 'initial_capacity', 'initial_charge', 'battery_capacity')
 
     def __init__(self, risk=DEFAULT_RISK,
                  initial_capacity=0.0,
                  initial_charge=None,
+                 battery_capacity=STORAGE_CAPACITY,
                  break_even=STORAGE_BREAK_EVEN,
                  max_selling_rate_cents_per_kwh=STORAGE_MAX_SELL_RATE_c_per_Kwh,
                  cap_price_strategy=False):
@@ -20,6 +21,7 @@ class StorageStrategy(BaseStrategy):
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
                                   initial_charge=initial_charge,
+                                  capacity=battery_capacity,
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.break_even = Q_(break_even, (ureg.EUR_cents/ureg.kWh))

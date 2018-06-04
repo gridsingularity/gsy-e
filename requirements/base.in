@@ -12,6 +12,7 @@ flask-cors
 nbformat
 pandas
 parameterized
+numpy
 pendulum
 pint
 plotly

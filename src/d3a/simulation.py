@@ -1,12 +1,13 @@
 import random
 from importlib import import_module
 from logging import getLogger
-
+import os
 import time
 from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
-
+from redis import StrictRedis
+import json
 import dill
 from pendulum import Pendulum
 from pendulum.interval import Interval
@@ -16,7 +17,6 @@ from ptpython.repl import embed
 
 from d3a.exceptions import SimulationException, D3AException
 from d3a.export import export
-from d3a.models.overview import Overview
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
@@ -27,6 +27,8 @@ log = getLogger(__name__)
 
 
 page_lock = Lock()
+
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
 
 class _SimulationInterruped(Exception):
@@ -41,7 +43,7 @@ class Simulation:
                  reset_on_finish_wait: Interval = Interval(minutes=1),
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: Interval = Interval(seconds=1),
-                 api_url=None, message_url=None):
+                 api_url=None, message_url=None, redis_job_id=None):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -60,7 +62,8 @@ class Simulation:
         self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.is_stopped = False
-        self.endpoint_buffer = SimulationEndpointBuffer()
+        self.result_channel = "d3a-results"
+        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
 
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(
@@ -101,8 +104,9 @@ class Simulation:
         log.info("Starting simulation with config %s", self.simulation_config)
         self.area.activate()
 
-        if self.message_url is not None:
-            Overview(self, self.message_url).start()
+        # TODO: Disable overview websocket for now, implement proper intermediary data reporting
+        # if self.message_url is not None:
+        #     Overview(self, self.message_url).start()
 
     @property
     def finished(self):
@@ -203,6 +207,8 @@ class Simulation:
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
 
+                    self.send_results()
+
                     if not self.is_stopped:
                         log.error(
                             "Run finished in %s%s / %.2fx real time",
@@ -238,12 +244,20 @@ class Simulation:
                         log.info("Ctrl-C to quit")
                         while True:
                             self._handle_input(console, 0.5)
+
                     break
             except _SimulationInterruped:
                 self.interrupted.set()
             except KeyboardInterrupt:
                 print("Exiting")
                 break
+
+    def send_results(self):
+        results = {**{"status": "finished"},
+                   **self.endpoint_buffer.generate_result_report()}
+        results_string = json.dumps(results)
+        redis_db = StrictRedis.from_url(REDIS_URL)
+        redis_db.publish(self.result_channel, results_string)
 
     def toggle_pause(self):
         if self.finished:

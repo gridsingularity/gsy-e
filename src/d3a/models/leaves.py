@@ -10,7 +10,8 @@ from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 
 
 class Leaf(Area):
@@ -64,10 +65,20 @@ class PV(Leaf):
     appliance_type = PVAppliance
 
 
+class PVPredefined(Leaf):
+    strategy_type = PVPredefinedStrategy
+    appliance_type = PVAppliance
+
+
 class Storage(Leaf):
     strategy_type = StorageStrategy
 
 
-class GeneralLoad(Leaf):
+class LoadHours(Leaf):
     strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance
+
+
+class CellTower(Leaf):
+    strategy_type = CellTowerLoadHoursStrategy
     appliance_type = SwitchableAppliance

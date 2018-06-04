@@ -17,7 +17,9 @@ _NO_VALUE = {
 
 
 class SimulationEndpointBuffer:
-    def __init__(self):
+    def __init__(self, job_id, initial_params):
+        self.job_id = job_id
+        self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.unmatched_loads = {}
         self.cumulative_loads = {}
         self.price_energy_day = {}
@@ -28,6 +30,18 @@ class SimulationEndpointBuffer:
         self.markets = {}
         self.market = {}
         self.area = {}
+
+    def generate_result_report(self):
+        return {
+            "job_id": self.job_id,
+            "random_seed": self.random_seed,
+            **self.unmatched_loads,
+            "cumulative_loads": self.cumulative_loads,
+            "price_energy_day": self.price_energy_day,
+            "cumulative_grid_trades": self.cumulative_grid_trades,
+            "bills": self.bills,
+            "tree_summary": self.tree_summary
+        }
 
     def update(self, area):
         self.unmatched_loads = {"unmatched_loads": export_unmatched_loads(area)}
