@@ -9,7 +9,7 @@ from colorlog.colorlog import ColoredFormatter
 
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import DEFAULT_PV_ENERGY_PROFILE
+from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE
 from d3a.simulation import Simulation
 from d3a.util import IntervalType, available_simulation_scenarios
 from d3a.web import start_web
@@ -48,7 +48,7 @@ _setup_modules = available_simulation_scenarios
 @click.option('-s', '--slot-length', type=IntervalType('M:S'), default="15m", show_default=True,
               help="Length of a market slot")
 @click.option('-c', '--cloud_coverage', type=int,
-              default=DEFAULT_PV_ENERGY_PROFILE, show_default=True,
+              default=DEFAULT_PV_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
 @click.option('-m', '--market-count', type=int, default=5, show_default=True,
               help="Number of tradable market slots into the future")
