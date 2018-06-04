@@ -218,3 +218,16 @@ def e_car_strategy_test6(area_test1, called):
 def test_ecar_market_cycle(e_car_strategy_test6):
     e_car_strategy_test6.event_market_cycle()
     assert len(e_car_strategy_test6.event_market_cycle.calls) == 1
+
+
+def test_ecar_constructor_rejects_invalid_parameters():
+    with pytest.raises(ValueError):
+        ECarStrategy(arrival_time=-1)
+    with pytest.raises(ValueError):
+        ECarStrategy(arrival_time=24)
+    with pytest.raises(ValueError):
+        ECarStrategy(depart_time=-1)
+    with pytest.raises(ValueError):
+        ECarStrategy(depart_time=24)
+    with pytest.raises(ValueError):
+        ECarStrategy(arrival_time=12, depart_time=11)

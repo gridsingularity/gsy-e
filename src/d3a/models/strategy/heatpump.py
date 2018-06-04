@@ -11,6 +11,8 @@ class HeatPumpStrategy(BaseStrategy):
     parameters = ('risk',)
 
     def __init__(self, risk=DEFAULT_RISK):
+        if not 0 <= risk <= 100:
+            raise ValueError("Risk is a percentage value, should be between 0 and 100.")
         super().__init__()
         self.risk = risk
         self.threshold_price = 0.0

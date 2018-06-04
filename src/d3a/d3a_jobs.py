@@ -9,6 +9,7 @@ from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
+from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE
 from d3a.simulation import Simulation
 from d3a.web import start_web
 from d3a.util import available_simulation_scenarios
@@ -33,7 +34,8 @@ def start(scenario, settings, message_url_format):
         duration=interval.instance(settings.get('duration', timedelta(days=1))),
         slot_length=interval.instance(settings.get('slot_length', timedelta(minutes=15))),
         tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=15))),
-        market_count=settings.get('market_count', 4)
+        market_count=settings.get('market_count', 4),
+        cloud_coverage=settings.get('cloud_coverage', DEFAULT_PV_POWER_PROFILE)
     )
 
     if scenario is None:
