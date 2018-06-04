@@ -1,6 +1,6 @@
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
-from d3a.models.strategy.const import DEFAULT_RISK, ARRIVAL_TIME, DEPART_TIME
+from d3a.models.strategy.const import DEFAULT_RISK, ARRIVAL_TIME, DEPART_TIME, STORAGE_CAPACITY
 from d3a.models.strategy.storage import StorageStrategy
 
 
@@ -12,10 +12,17 @@ class ECarStrategy(StorageStrategy):
                 help="E-Car departs and stops participating in market"),
     ]
 
-    parameters = ('risk', 'arrival_time', 'depart_time')
+    parameters = ('risk', 'arrival_time', 'depart_time', 'initial_capacity',
+                  'initial_charge', 'battery_capacity')
 
-    def __init__(self, risk=DEFAULT_RISK, arrival_time=ARRIVAL_TIME, depart_time=DEPART_TIME):
-        super().__init__(risk)
+    def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, initial_charge=None,
+                 battery_capacity=STORAGE_CAPACITY, arrival_time=ARRIVAL_TIME,
+                 depart_time=DEPART_TIME):
+        if not 0 <= arrival_time <= 23 or not 0 <= depart_time <= 23:
+            raise ValueError("Depart_time and arrival_time should be between 0 and 23.")
+        if not arrival_time < depart_time:
+            raise ValueError("Arrival time should be less than depart time.")
+        super().__init__(risk, initial_capacity, initial_charge, battery_capacity)
         self.arrival_time = arrival_time
         self.depart_time = depart_time
         self.connected_to_grid = False

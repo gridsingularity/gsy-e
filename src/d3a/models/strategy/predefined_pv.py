@@ -5,35 +5,34 @@ from datetime import datetime
 import d3a
 
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, DEFAULT_PV_ENERGY_PROFILE
-
-from typing import Dict  # noqa
-from pendulum import Time  # noqa
+from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE
 
 d3a_path = d3a.__path__[0]
 
 
 class PVPredefinedStrategy(PVStrategy):
-    parameters = ('min_selling_price', 'energy_profile')
+    parameters = ('panel_count', 'risk', 'energy_profile')
 
-    def __init__(self, risk=DEFAULT_RISK,
-                 min_selling_price=MIN_PV_SELLING_PRICE, energy_profile=DEFAULT_PV_ENERGY_PROFILE):
-        super().__init__(panel_count=1, risk=risk, min_selling_price=min_selling_price)
+    def __init__(self, risk=DEFAULT_RISK, panel_count=1,
+                 min_selling_price=MIN_PV_SELLING_PRICE, energy_profile=None):
+        super().__init__(panel_count=panel_count, risk=risk, min_selling_price=min_selling_price)
 
         self.data = {}
         self.solar_data = {}
         self.time_format = "%H:%M"
         self.interp_energy_kWh = np.array(())
+        if energy_profile is None:
+            energy_profile = self.owner.config.cloud_coverage
         if energy_profile == 0:  # 0:sunny
-            self.readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv'))
+            self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv'))
         elif energy_profile == 2:  # 2:partial
-            self.readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_partial.csv'))
+            self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_partial.csv'))
         elif energy_profile == 1:  # 1:cloudy
-            self.readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv'))
+            self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv'))
         else:
             raise ValueError("Energy_profile has to be in [0,1,2]")
 
-    def readCSV(self, path):
+    def _readCSV(self, path):
         with open(path) as csvfile:
             next(csvfile)
             csv_rows = csv.reader(csvfile, delimiter=';')

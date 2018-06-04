@@ -255,3 +255,10 @@ def test_frigde_buys_partial_offer(area_test5, called):
     fridge.accept_offer = called
     fridge.event_tick(area=area_test5)
     assert float(fridge.accept_offer.calls[0][1]['energy']) > 0
+
+
+def test_heatpump_constructor_rejects_invalid_parameters():
+    with pytest.raises(ValueError):
+        FridgeStrategy(risk=-1)
+    with pytest.raises(ValueError):
+        FridgeStrategy(risk=101)

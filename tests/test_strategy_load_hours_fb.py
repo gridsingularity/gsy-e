@@ -242,3 +242,8 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
     load_hours_strategy_test2.event_tick(area=area_test2)
     assert load_hours_strategy_test2.energy_requirement == 0
     assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
+
+
+def test_load_hours_constructor_rejects_incorrect_hrs_of_day():
+    with pytest.raises(ValueError):
+        LoadHoursStrategy(100, hrs_of_day=[12, 13, 24])
