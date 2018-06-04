@@ -83,3 +83,10 @@ def test_event_tick(heatpump_strategy_test1, area_test1):
     assert (heatpump_strategy_test1.accept_offer.calls[0][0][1] ==
             repr(area_test1.current_market.sorted_offers[0])
             )
+
+
+def test_heatpump_constructor_rejects_invalid_parameters():
+    with pytest.raises(ValueError):
+        HeatPumpStrategy(risk=-1)
+    with pytest.raises(ValueError):
+        HeatPumpStrategy(risk=101)

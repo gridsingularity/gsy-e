@@ -17,6 +17,8 @@ class StorageStrategy(BaseStrategy):
                  break_even=STORAGE_BREAK_EVEN,
                  max_selling_rate_cents_per_kwh=STORAGE_MAX_SELL_RATE_c_per_Kwh,
                  cap_price_strategy=False):
+        self._validate_constructor_arguments(risk, initial_capacity,
+                                             initial_charge, battery_capacity)
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
@@ -28,6 +30,18 @@ class StorageStrategy(BaseStrategy):
         self.max_selling_rate_cents_per_kwh =\
             Q_(max_selling_rate_cents_per_kwh, (ureg.EUR_cents/ureg.kWh))
         self.cap_price_strategy = cap_price_strategy
+
+    @staticmethod
+    def _validate_constructor_arguments(risk, initial_capacity, initial_charge, battery_capacity):
+        if battery_capacity < 0:
+            raise ValueError("Battery capacity should be a positive integer")
+        if initial_charge and not 0 <= initial_charge <= 100:
+            raise ValueError("Initial charge is a percentage value, should be between 0 and 100.")
+        if not 0 <= risk <= 100:
+            raise ValueError("Risk is a percentage value, should be between 0 and 100.")
+        if initial_capacity and not 0 <= initial_capacity <= battery_capacity:
+            raise ValueError("Initial capacity should be between 0 and "
+                             "battery_capacity parameter.")
 
     def event_tick(self, *, area):
         # Taking the cheapest offers in every market currently open and building the average

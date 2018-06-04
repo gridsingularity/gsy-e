@@ -30,6 +30,7 @@ STORAGE_MAX_SELL_RATE_c_per_Kwh = 35
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent
 MIN_PV_SELLING_PRICE = 5
+
 DEFAULT_PV_ENERGY_PROFILE = 0  # sunny
 
 # HEATPUMP SETTINGS

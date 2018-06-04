@@ -1,9 +1,9 @@
-import math
 from typing import Dict  # noqa
+from pendulum import Time # noqa
+import math
+from pendulum import Interval
+
 from d3a.models.strategy import ureg, Q_
-
-from pendulum import Time, Interval  # noqa
-
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
@@ -21,6 +21,7 @@ class PVStrategy(BaseStrategy):
     parameters = ('panel_count', 'risk')
 
     def __init__(self, panel_count=1, risk=DEFAULT_RISK, min_selling_price=MIN_PV_SELLING_PRICE):
+        self._validate_constructor_arguments(panel_count, risk)
         super().__init__()
         self.risk = risk
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
@@ -29,6 +30,12 @@ class PVStrategy(BaseStrategy):
         self.min_selling_price = Q_(min_selling_price, (ureg.EUR_cents/ureg.kWh))
         self._decrease_price_timepoint_s = 0 * ureg.seconds
         self._decrease_price_every_nr_s = 0 * ureg.seconds
+
+    @staticmethod
+    def _validate_constructor_arguments(panel_count, risk):
+        if not (0 <= risk <= 100 and panel_count >= 1):
+            raise ValueError("Risk is a percentage value, should be "
+                             "between 0 and 100, panel_count should be positive.")
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
@@ -86,7 +93,7 @@ class PVStrategy(BaseStrategy):
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds * ureg.seconds
         if (
-                # FIXME: MAke sure that the offer reached every system participant.
+                # FIXME: Make sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
                 # FIXME: InterAreaAgent min_offer_age
                 current_tick_number > MAX_OFFER_TRAVERSAL_LENGTH

@@ -6,7 +6,7 @@ from d3a.util import format_interval
 
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
-                 market_count: int):
+                 market_count: int, cloud_coverage: int):
         self.duration = duration
         self.slot_length = slot_length
         self.tick_length = tick_length
@@ -22,6 +22,12 @@ class SimulationConfig:
                 self.ticks_per_slot
             ))
         self.total_ticks = self.duration // self.slot_length * self.ticks_per_slot
+        # TODO: Once the d3a uses a common API to the d3a-web, this should be removed
+        # since this limitation already exists on d3a-web
+        if 0 <= cloud_coverage <= 2:
+            self.cloud_coverage = cloud_coverage
+        else:
+            raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
 
     def __repr__(self):
         return (
@@ -30,13 +36,14 @@ class SimulationConfig:
             "slot_length='{s.slot_length}', "
             "tick_length='{s.tick_length}', "
             "market_count='{s.market_count}', "
-            "ticks_per_slot='{s.ticks_per_slot}'"
+            "ticks_per_slot='{s.ticks_per_slot}', "
+            "cloud_coverage='{s.cloud_coverage}'"
             ")>"
         ).format(s=self)
 
     def as_dict(self):
         fields = {'duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
-                  'total_ticks'}
+                  'total_ticks', 'cloud_coverage'}
         return {
             k: format_interval(v) if isinstance(v, Interval) else v
             for k, v in self.__dict__.items()
