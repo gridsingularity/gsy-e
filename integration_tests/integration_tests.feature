@@ -7,7 +7,7 @@ Feature: Run integration tests
      Then we test the export functionality of <scenario>
   Examples: Scenarios
      | scenario |
-     | default_2a |
+     | integration_test_setup |
 
   Scenario Outline: Run integration tests
      Given we have a scenario named <scenario>
@@ -16,5 +16,5 @@ Feature: Run integration tests
      Then we test the output of the simulation of <scenario> [<duration>, <slot_length>, <tick_length>]
   Examples: Settings
      | scenario   | duration | slot_length | tick_length |
-     | default_2a |    2     |      15     |      1      |
-     | default_2b |    4     |      10     |      5      |
+     | integration_test_setup |    2     |      20     |      1      |
+     | integration_test_setup |    4     |      10     |      5      |
