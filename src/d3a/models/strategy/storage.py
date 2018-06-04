@@ -122,9 +122,9 @@ class StorageStrategy(BaseStrategy):
         # Try to create an offer to sell the stored energy
 
         # selling should be more than break-even price
-        if ((energy > 0.0)
-                and (self.state.available_energy_per_slot(most_expensive_market.time_slot)
-                     > energy)):
+        if (energy > 0.0
+                and self.state.available_energy_per_slot(most_expensive_market.time_slot)
+                > energy):
             if self.cap_price_strategy:
                 offer = most_expensive_market.offer(
                     energy * self.capacity_dependant_sell_rate(),
