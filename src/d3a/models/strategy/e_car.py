@@ -18,6 +18,10 @@ class ECarStrategy(StorageStrategy):
     def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, initial_charge=None,
                  battery_capacity=STORAGE_CAPACITY, arrival_time=ARRIVAL_TIME,
                  depart_time=DEPART_TIME):
+        if arrival_time is None:
+            arrival_time = ARRIVAL_TIME
+        if depart_time is None:
+            depart_time = DEPART_TIME
         if not 0 <= arrival_time <= 23 or not 0 <= depart_time <= 23:
             raise ValueError("Depart_time and arrival_time should be between 0 and 23.")
         if not arrival_time < depart_time:
