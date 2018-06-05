@@ -36,7 +36,7 @@ class StorageStrategy(BaseStrategy):
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
-        
+
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity, initial_charge, battery_capacity):
         if battery_capacity < 0:
