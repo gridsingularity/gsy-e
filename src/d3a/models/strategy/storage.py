@@ -4,16 +4,18 @@ from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK,\
-    STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh, STORAGE_CAPACITY
+    STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER
 
 
 class StorageStrategy(BaseStrategy):
-    parameters = ('risk', 'initial_capacity', 'initial_charge', 'battery_capacity')
+    parameters = ('risk', 'initial_capacity', 'initial_charge',
+                  'battery_capacity', 'max_abs_battery_power')
 
     def __init__(self, risk=DEFAULT_RISK,
                  initial_capacity=0.0,
                  initial_charge=None,
                  battery_capacity=STORAGE_CAPACITY,
+                 max_abs_battery_power=MAX_ABS_BATTERY_POWER,
                  break_even=STORAGE_BREAK_EVEN,
                  max_selling_rate_cents_per_kwh=STORAGE_MAX_SELL_RATE_c_per_Kwh,
                  cap_price_strategy=False):
@@ -24,12 +26,16 @@ class StorageStrategy(BaseStrategy):
         self.state = StorageState(initial_capacity=initial_capacity,
                                   initial_charge=initial_charge,
                                   capacity=battery_capacity,
+                                  max_abs_battery_power=max_abs_battery_power,
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.break_even = Q_(break_even, (ureg.EUR_cents/ureg.kWh))
         self.max_selling_rate_cents_per_kwh =\
             Q_(max_selling_rate_cents_per_kwh, (ureg.EUR_cents/ureg.kWh))
         self.cap_price_strategy = cap_price_strategy
+
+    def event_activate(self):
+        self.state.battery_energy_per_slot(self.area.config.slot_length)
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity, initial_charge, battery_capacity):
@@ -94,10 +100,12 @@ class StorageStrategy(BaseStrategy):
                     continue
                 # Check if storage has free capacity and if the price is cheap enough
                 if (self.state.free_storage >= offer.energy
+                        and (self.state.available_energy_per_slot(market.time_slot) > offer.energy)
                         and (offer.price / offer.energy) < (avg_cheapest_offer_rate * 0.99)):
                     # Try to buy the energy
                     try:
                         self.accept_offer(market, offer)
+                        self.state.update_energy_per_slot(offer.energy, market.time_slot)
                         self.state.block_storage(offer.energy)
                         return True
                     except MarketException:
@@ -128,19 +136,23 @@ class StorageStrategy(BaseStrategy):
         # Try to create an offer to sell the stored energy
 
         # selling should be more than break-even price
-        if energy > 0.0:
+        if (energy > 0.0
+                and self.state.available_energy_per_slot(most_expensive_market.time_slot)
+                > energy):
             if self.cap_price_strategy:
                 offer = most_expensive_market.offer(
                     energy * self.capacity_dependant_sell_rate(),
                     energy,
                     self.owner.name
                 )
+                self.state.update_energy_per_slot(energy, most_expensive_market.time_slot)
             else:
                 offer = most_expensive_market.offer(
                     energy * max(risk_dependent_selling_rate, self.break_even.m),
                     energy,
                     self.owner.name
                 )
+            self.state.update_energy_per_slot(energy, most_expensive_market.time_slot)
             # Updating parameters
             if not open_offer:
                 self.state.offer_storage(energy)
