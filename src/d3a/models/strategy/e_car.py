@@ -32,16 +32,15 @@ class ECarStrategy(StorageStrategy):
         self.connected_to_grid = False
 
     def event_tick(self, *, area):
-        if self.arrival_time is not None:
-            arrival_time = self.area.now.start_of("day").hour_(self.arrival_time)
+        current_time = self.area.now.hour
+        if not self.connected_to_grid:
             # Car arrives at charging station at
-            if self.area.now.diff(arrival_time).in_minutes() == 0:
+            if self.arrival_time == current_time:
                 self.arrive()
 
-        if self.depart_time is not None:
-            depart_time = self.area.now.start_of("day").hour_(self.depart_time)
+        if self.connected_to_grid:
             # Car departs from charging station at
-            if self.area.now.diff(depart_time).in_minutes() == 0:
+            if current_time == self.depart_time:
                 self.depart()
 
         if not self.connected_to_grid:
@@ -58,21 +57,24 @@ class ECarStrategy(StorageStrategy):
         self.sell_energy(avg_cheapest_offer_price)
 
     def arrive(self):
-        self.log.warning("E-Car arrived")
+        self.log.info("E-Car arrived")
         self.connected_to_grid = True
         self.sell_energy(self.state.used_storage)  # FIXME find the right buying price
 
     trigger_arrive = arrive
 
-    def depart(self):
+    def _remove_offers_on_depart(self):
         for offer, market in self.offers.posted.items():
             try:
                 market.delete_offer(offer.id)
                 self.state.remove_offered(offer.energy)
             except MarketException:
                 continue
+
+    def depart(self):
+        self._remove_offers_on_depart()
         self.connected_to_grid = False
-        self.log.warning("E-Car departs")
+        self.log.info("E-Car departs")
 
     trigger_depart = depart
 
