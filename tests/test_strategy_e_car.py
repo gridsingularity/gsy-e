@@ -231,3 +231,13 @@ def test_ecar_constructor_rejects_invalid_parameters():
         ECarStrategy(depart_time=24)
     with pytest.raises(ValueError):
         ECarStrategy(arrival_time=12, depart_time=11)
+
+
+def test_ecar_constructor_handles_none_arrive_depart_values():
+    from d3a.models.strategy.const import ARRIVAL_TIME, DEPART_TIME
+    try:
+        ecar = ECarStrategy(arrival_time=None, depart_time=None)
+        assert ecar.arrival_time == ARRIVAL_TIME
+        assert ecar.depart_time == DEPART_TIME
+    except Exception:
+        assert False
