@@ -23,19 +23,10 @@ from d3a.models.strategy.const import FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, MIN_F
 class LoadState:
     def __init__(self):
         self.desired_energy = defaultdict(lambda: 0)
-        self.purchased_energy = defaultdict(lambda: 0)
 
     def record_desired_energy(self, area, energy):
         time_slot = area.next_market.time_slot
         self.desired_energy[time_slot] = energy
-        print("Desired Energy: {} @ Time: {}"
-              .format(self.desired_energy[time_slot], time_slot))
-
-    def record_purchased_energy(self, area, energy):
-        time_slot = area.next_market.time_slot
-        self.purchased_energy[time_slot] += energy
-        print("Purchased Energy: {} @ Time: {}"
-              .format(self.purchased_energy[time_slot], time_slot))
 
 
 class FridgeState:

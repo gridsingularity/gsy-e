@@ -37,6 +37,7 @@ class LoadHoursStrategy(BaseStrategy):
 
         self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
+        self.hrs_utilized = 0
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
@@ -62,9 +63,6 @@ class LoadHoursStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
 
-        if self.state.purchased_energy[self.area.now] >= self.state.desired_energy[self.area.now]:
-            return
-
         if self.energy_requirement <= 0:
             return
 
@@ -89,16 +87,23 @@ class LoadHoursStrategy(BaseStrategy):
                     max_energy = self.energy_requirement / 1000
                     if acceptable_offer.energy > max_energy:
                         self.accept_offer(market, acceptable_offer, energy=max_energy)
-                        self.state.record_purchased_energy(self.area, self.energy_requirement)
                         self.energy_requirement = 0
-                        self.hrs_per_day -= self.area.config.slot_length/Interval(hours=1)
+                        self.hrs_per_day -=\
+                            ((max_energy*1000) / self.energy_per_slot_Wh.m)\
+                            * (self.area.config.slot_length/Interval(hours=1))
+                        self.hrs_utilized +=\
+                            ((max_energy*1000) / self.energy_per_slot_Wh.m)\
+                            * (self.area.config.slot_length/Interval(hours=1))
                     else:
                         self.accept_offer(market, acceptable_offer)
-                        self.state.record_purchased_energy(self.area, acceptable_offer.energy)
                         self.energy_requirement -= acceptable_offer.energy * 1000
                         self.hrs_per_day -=\
                             ((acceptable_offer.energy*1000) / self.energy_per_slot_Wh.m)\
-                            * self.area.config.slot_length/Interval(hours=1)
+                            * (self.area.config.slot_length/Interval(hours=1))
+                        self.hrs_utilized +=\
+                            ((acceptable_offer.energy*1000) / self.energy_per_slot_Wh.m)\
+                            * (self.area.config.slot_length/Interval(hours=1))
+
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
 
