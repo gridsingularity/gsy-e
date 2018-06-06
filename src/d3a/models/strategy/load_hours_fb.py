@@ -35,8 +35,9 @@ class LoadHoursStrategy(BaseStrategy):
         if hrs_of_day is None:
             hrs_of_day = list(range(24))
 
+        self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
-        active_hours = set()
+        # active_hours = set()
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
@@ -44,11 +45,11 @@ class LoadHoursStrategy(BaseStrategy):
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError(
                 "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
-        else:
-            while len(active_hours) < hrs_per_day:
-                active_hours.add(random.choice(hrs_of_day))
-
-        self.active_hours = active_hours
+        # else:
+        #     while len(active_hours) < hrs_per_day:
+        #         active_hours.add(random.choice(hrs_of_day))
+        #
+        # self.active_hours = active_hours
 
     def event_activate(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
@@ -66,38 +67,61 @@ class LoadHoursStrategy(BaseStrategy):
         return random.choice(offers)
 
     def event_tick(self, *, area):
+
+        if self.state.purchased_energy[self.area.now] >= self.state.desired_energy[self.area.now]:
+            # print("desired_energy: {} @ Time: {}"
+            #       .format(self.state.desired_energy[self.area.now], self.area.now))
+            # print("purchased_energy: {} @ {}"
+            #       .format(self.state.purchased_energy[self.area.now], self.area.now))
+            #
+            # print("Energy fulfilled for this slot")
+            return
+
         if self.energy_requirement <= 0:
             return
 
         markets = []
         for time, market in self.area.markets.items():
-            if time.hour in self.active_hours:
+            if time.hour in self.hrs_of_day \
+                    and self.hrs_per_day > 0:
                 markets.append(market)
+                # print("Markets: {}".format(markets))
         if not markets:
             return
-
-        if self.area.now.hour in self.active_hours:
+        # print("Now: {}".format(self.area.now))
+        if self.area.now.hour in self.hrs_of_day \
+                and self.hrs_per_day > 0:
             try:
                 market = list(self.area.markets.values())[0]
+                # print("Market: {} @ Time: {}".format(market, market.time_slot))
                 if len(market.sorted_offers) < 1:
                     return
+
                 acceptable_offer = self._find_acceptable_offer(market)
+                # print("acceptable_offer: {}".format(acceptable_offer))
                 if acceptable_offer and \
                         ((acceptable_offer.price/acceptable_offer.energy) <
                          self.acceptable_energy_rate.m):
                     max_energy = self.energy_requirement / 1000
                     if acceptable_offer.energy > max_energy:
                         self.accept_offer(market, acceptable_offer, energy=max_energy)
+                        self.state.record_purchased_energy(self.area, self.energy_requirement)
                         self.energy_requirement = 0
+                        self.hrs_per_day -= self.area.config.slot_length/Interval(hours=1)
                     else:
                         self.accept_offer(market, acceptable_offer)
+                        self.state.record_purchased_energy(self.area, acceptable_offer.energy)
                         self.energy_requirement -= acceptable_offer.energy * 1000
+                        self.hrs_per_day -=\
+                            ((acceptable_offer.energy*1000) / self.energy_per_slot_Wh.m)\
+                            * self.area.config.slot_length/Interval(hours=1)
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
 
     def _update_energy_requirement(self):
         self.energy_requirement = 0
-        if self.area.now.hour in self.active_hours:
+        if self.area.now.hour in self.hrs_of_day\
+                and self.hrs_per_day > 0:
             energy_per_slot = self.energy_per_slot_Wh.m
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
