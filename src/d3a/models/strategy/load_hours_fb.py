@@ -37,7 +37,6 @@ class LoadHoursStrategy(BaseStrategy):
 
         self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
-        # active_hours = set()
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
@@ -45,11 +44,6 @@ class LoadHoursStrategy(BaseStrategy):
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError(
                 "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
-        # else:
-        #     while len(active_hours) < hrs_per_day:
-        #         active_hours.add(random.choice(hrs_of_day))
-        #
-        # self.active_hours = active_hours
 
     def event_activate(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
@@ -69,12 +63,6 @@ class LoadHoursStrategy(BaseStrategy):
     def event_tick(self, *, area):
 
         if self.state.purchased_energy[self.area.now] >= self.state.desired_energy[self.area.now]:
-            # print("desired_energy: {} @ Time: {}"
-            #       .format(self.state.desired_energy[self.area.now], self.area.now))
-            # print("purchased_energy: {} @ {}"
-            #       .format(self.state.purchased_energy[self.area.now], self.area.now))
-            #
-            # print("Energy fulfilled for this slot")
             return
 
         if self.energy_requirement <= 0:
@@ -85,20 +73,16 @@ class LoadHoursStrategy(BaseStrategy):
             if time.hour in self.hrs_of_day \
                     and self.hrs_per_day > 0:
                 markets.append(market)
-                # print("Markets: {}".format(markets))
         if not markets:
             return
-        # print("Now: {}".format(self.area.now))
         if self.area.now.hour in self.hrs_of_day \
                 and self.hrs_per_day > 0:
             try:
                 market = list(self.area.markets.values())[0]
-                # print("Market: {} @ Time: {}".format(market, market.time_slot))
                 if len(market.sorted_offers) < 1:
                     return
 
                 acceptable_offer = self._find_acceptable_offer(market)
-                # print("acceptable_offer: {}".format(acceptable_offer))
                 if acceptable_offer and \
                         ((acceptable_offer.price/acceptable_offer.energy) <
                          self.acceptable_energy_rate.m):
