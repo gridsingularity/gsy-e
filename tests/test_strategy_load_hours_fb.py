@@ -105,21 +105,21 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
         return strategy
 
     def test_LoadHoursStrategy_input(self):
-        energy = 620
+        power_W = 620
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                energy, 4, [1, 2, 3, 4]).daily_energy_required.m,  energy * 4)
+                power_W, 4, [1, 2, 3, 4]).daily_energy_required.m,  power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                energy, None, [1, 2, 3, 4]).daily_energy_required.m, energy * 4)
+                power_W, None, [1, 2, 3, 4]).daily_energy_required.m, power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                energy, 4, [1, 2, 3, 4, 5, 6]).daily_energy_required.m, energy * 4)
+                power_W, 4, [1, 2, 3, 4, 5, 6]).daily_energy_required.m, power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                energy, 4, None).daily_energy_required.m, energy * 4)
+                power_W, 4, None).daily_energy_required.m, power_W * 4)
         with self.assertRaises(ValueError):
-            self.Mock_LoadHoursStrategy(energy, 4, [1, 2])
+            self.Mock_LoadHoursStrategy(power_W, 4, [1, 2])
 
 
 @pytest.fixture()
@@ -152,9 +152,9 @@ def market_test2():
 def load_hours_strategy_test(called):
     strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
     strategy.accept_offer = called
-    if 10 not in strategy.active_hours:
-        strategy.active_hours.pop()
-        strategy.active_hours.add(10)
+    if 10 not in strategy.hrs_of_day:
+        strategy.hrs_of_day.pop()
+        strategy.hrs_of_day.add(10)
     return strategy
 
 
