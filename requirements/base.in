@@ -13,6 +13,7 @@ numpy
 pandas
 pendulum
 pint
+pip-tools
 plotly
 python-rex
 rlp==0.4.7
