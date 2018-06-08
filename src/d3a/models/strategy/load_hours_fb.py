@@ -88,15 +88,10 @@ class LoadHoursStrategy(BaseStrategy):
                         self.accept_offer(market, acceptable_offer, energy=max_energy)
                         self.energy_requirement = 0
                         self.hrs_per_day -= self._operating_hours(max_energy)
-                        print("Changed Hours: {}".format(self._operating_hours(max_energy)))
                     else:
-                        print("self.accept_offer(market, acceptable_offer): {}"
-                              .format(self.accept_offer(market, acceptable_offer)))
                         self.accept_offer(market, acceptable_offer)
                         self.energy_requirement -= acceptable_offer.energy * 1000
                         self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
-                        print("Changed Hours: {}"
-                              .format(self._operating_hours(acceptable_offer.energy)))
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
 
