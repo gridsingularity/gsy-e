@@ -4,6 +4,7 @@ import pendulum
 from unittest.mock import MagicMock
 from datetime import timedelta
 from pendulum import Pendulum
+from pendulum.interval import Interval
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
 from d3a.models.appliance.simple import SimpleAppliance
@@ -152,9 +153,6 @@ def market_test2():
 def load_hours_strategy_test(called):
     strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
     strategy.accept_offer = called
-    if 10 not in strategy.hrs_of_day:
-        strategy.hrs_of_day.pop()
-        strategy.hrs_of_day.add(10)
     return strategy
 
 
@@ -247,3 +245,16 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
 def test_load_hours_constructor_rejects_incorrect_hrs_of_day():
     with pytest.raises(ValueError):
         LoadHoursStrategy(100, hrs_of_day=[12, 13, 24])
+
+
+def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy_test2,
+                                                             market_test2):
+    market_test2.most_affordable_energy = 0.1
+    load_hours_strategy_test2.event_activate()
+    load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
+    load_hours_strategy_test2.event_market_cycle()
+    load_hours_strategy_test2.event_tick(area=area_test2)
+    assert ((float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) * 1000 /
+             load_hours_strategy_test2.energy_per_slot_Wh.m) *
+            (load_hours_strategy_test2.area.config.slot_length / Interval(hours=1))) == \
+           (0.1/0.155)

@@ -87,18 +87,20 @@ class LoadHoursStrategy(BaseStrategy):
                     if acceptable_offer.energy > max_energy:
                         self.accept_offer(market, acceptable_offer, energy=max_energy)
                         self.energy_requirement = 0
-                        self.hrs_per_day -=\
-                            ((max_energy*1000) / self.energy_per_slot_Wh.m)\
-                            * (self.area.config.slot_length/Interval(hours=1))
+                        self.hrs_per_day -= self._operating_hours(max_energy)
+                        print("Changed Hours: {}".format(self._operating_hours(max_energy)))
                     else:
                         self.accept_offer(market, acceptable_offer)
                         self.energy_requirement -= acceptable_offer.energy * 1000
-                        self.hrs_per_day -=\
-                            ((acceptable_offer.energy*1000) / self.energy_per_slot_Wh.m)\
-                            * (self.area.config.slot_length/Interval(hours=1))
-
+                        self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
+                        print("Changed Hours: {}"
+                              .format(self._operating_hours(acceptable_offer.energy)))
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
+
+    def _operating_hours(self, energy):
+        return (((energy * 1000) / self.energy_per_slot_Wh.m)
+                * (self.area.config.slot_length / Interval(hours=1)))
 
     def _update_energy_requirement(self):
         self.energy_requirement = 0
