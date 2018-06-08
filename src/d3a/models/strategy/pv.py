@@ -54,13 +54,16 @@ class PVStrategy(BaseStrategy):
         # if risk 0-100 then energy_price less than average_market_rate
         # if risk >100 then energy_price more than average_market_rate
         risk_dependency_of_selling_rate = ((self.risk/MAX_RISK) - 1) * average_market_rate
+
         energy_rate = max(average_market_rate.m + risk_dependency_of_selling_rate.m,
                           self.min_selling_price.m)
+
         rounded_energy_rate = round(energy_rate, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
             rounded_energy_rate = MAX_ENERGY_RATE
+        assert rounded_energy_rate >= 0.0
         # Debugging print
         # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
@@ -111,8 +114,11 @@ class PVStrategy(BaseStrategy):
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
+                reduced_price = offer.price * self._calculate_price_decrease_rate()
+                if reduced_price / offer.energy < MIN_PV_SELLING_PRICE:
+                    reduced_price = offer.energy * MIN_PV_SELLING_PRICE
                 new_offer = iterated_market.offer(
-                    offer.price * self._calculate_price_decrease_rate(),
+                    reduced_price,
                     offer.energy,
                     self.owner.name
                 )
@@ -142,6 +148,7 @@ class PVStrategy(BaseStrategy):
             self.energy_production_forecast_kWh[slot_time] = self.gaussian_energy_forecast_kWh(
                 difference_to_midnight_in_minutes
             )
+            assert self.energy_production_forecast_kWh[slot_time] >= 0.0
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr
