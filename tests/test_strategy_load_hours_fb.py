@@ -1,7 +1,7 @@
 import pytest
 import unittest
 import pendulum
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 from datetime import timedelta
 from pendulum import Pendulum
 from pendulum.interval import Interval
@@ -170,6 +170,21 @@ def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
     return load_hours_strategy_test
 
 
+@pytest.fixture
+def load_hours_strategy_test4():
+    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
+    strategy.accept_offer = Mock()
+    strategy.accept_offer.call_args
+    return strategy
+
+
+@pytest.fixture
+def load_hours_strategy_test5(load_hours_strategy_test4, area_test2):
+    load_hours_strategy_test4.area = area_test2
+    load_hours_strategy_test4.owner = area_test2
+    return load_hours_strategy_test4
+
+
 # Test if daily energy requirement is calculated correctly for the device
 def test_calculate_daily_energy_req(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
@@ -239,6 +254,7 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
     requirement = load_hours_strategy_test2.energy_requirement / 1000
     load_hours_strategy_test2.event_tick(area=area_test2)
     assert load_hours_strategy_test2.energy_requirement == 0
+    print(float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']))
     assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
 
 
@@ -247,14 +263,15 @@ def test_load_hours_constructor_rejects_incorrect_hrs_of_day():
         LoadHoursStrategy(100, hrs_of_day=[12, 13, 24])
 
 
-def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy_test2,
+def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy_test5,
                                                              market_test2):
     market_test2.most_affordable_energy = 0.1
-    load_hours_strategy_test2.event_activate()
-    load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
-    load_hours_strategy_test2.event_market_cycle()
-    load_hours_strategy_test2.event_tick(area=area_test2)
-    assert ((float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) * 1000 /
-             load_hours_strategy_test2.energy_per_slot_Wh.m) *
-            (load_hours_strategy_test2.area.config.slot_length / Interval(hours=1))) == \
-           (0.1/0.155)
+    load_hours_strategy_test5.event_activate()
+    load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
+    load_hours_strategy_test5.event_market_cycle()
+    load_hours_strategy_test5.event_tick(area=area_test2)
+    print(load_hours_strategy_test5.accept_offer.call_args[0][1].energy)
+    assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
+                   1000 / load_hours_strategy_test5.energy_per_slot_Wh.m) *
+                  (load_hours_strategy_test5.area.config.slot_length / Interval(hours=1))), 2) == \
+        round(((0.1/0.155) * 0.25), 2)
