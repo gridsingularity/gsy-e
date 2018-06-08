@@ -18,6 +18,10 @@ class ECarStrategy(StorageStrategy):
     def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, initial_charge=None,
                  battery_capacity=STORAGE_CAPACITY, arrival_time=ARRIVAL_TIME,
                  depart_time=DEPART_TIME):
+        if arrival_time is None:
+            arrival_time = ARRIVAL_TIME
+        if depart_time is None:
+            depart_time = DEPART_TIME
         if not 0 <= arrival_time <= 23 or not 0 <= depart_time <= 23:
             raise ValueError("Depart_time and arrival_time should be between 0 and 23.")
         if not arrival_time < depart_time:
@@ -28,16 +32,15 @@ class ECarStrategy(StorageStrategy):
         self.connected_to_grid = False
 
     def event_tick(self, *, area):
-        if self.arrival_time is not None:
-            arrival_time = self.area.now.start_of("day").hour_(self.arrival_time)
+        current_time = self.area.now.hour
+        if not self.connected_to_grid:
             # Car arrives at charging station at
-            if self.area.now.diff(arrival_time).in_minutes() == 0:
+            if self.arrival_time == current_time:
                 self.arrive()
 
-        if self.depart_time is not None:
-            depart_time = self.area.now.start_of("day").hour_(self.depart_time)
+        if self.connected_to_grid:
             # Car departs from charging station at
-            if self.area.now.diff(depart_time).in_minutes() == 0:
+            if current_time == self.depart_time:
                 self.depart()
 
         if not self.connected_to_grid:
@@ -54,21 +57,24 @@ class ECarStrategy(StorageStrategy):
         self.sell_energy(avg_cheapest_offer_price)
 
     def arrive(self):
-        self.log.warning("E-Car arrived")
+        self.log.info("E-Car arrived")
         self.connected_to_grid = True
         self.sell_energy(self.state.used_storage)  # FIXME find the right buying price
 
     trigger_arrive = arrive
 
-    def depart(self):
+    def _remove_offers_on_depart(self):
         for offer, market in self.offers.posted.items():
             try:
                 market.delete_offer(offer.id)
                 self.state.remove_offered(offer.energy)
             except MarketException:
                 continue
+
+    def depart(self):
+        self._remove_offers_on_depart()
         self.connected_to_grid = False
-        self.log.warning("E-Car departs")
+        self.log.info("E-Car departs")
 
     trigger_depart = depart
 

@@ -256,11 +256,8 @@ class Simulation:
         results = {**{"status": "finished"},
                    **self.endpoint_buffer.generate_result_report()}
         results_string = json.dumps(results)
-        try:
-            redis_db = StrictRedis.from_url(REDIS_URL)
-            redis_db.publish(self.result_channel, results_string)
-        except ConnectionRefusedError:
-            pass
+        redis_db = StrictRedis.from_url(REDIS_URL)
+        redis_db.publish(self.result_channel, results_string)
 
     def toggle_pause(self):
         if self.finished:
