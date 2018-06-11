@@ -254,7 +254,6 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
     requirement = load_hours_strategy_test2.energy_requirement / 1000
     load_hours_strategy_test2.event_tick(area=area_test2)
     assert load_hours_strategy_test2.energy_requirement == 0
-    print(float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']))
     assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
 
 
