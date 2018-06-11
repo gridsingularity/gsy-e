@@ -1,9 +1,10 @@
 import pytest
 import unittest
 import pendulum
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 from datetime import timedelta
 from pendulum import Pendulum
+from pendulum.interval import Interval
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
 from d3a.models.appliance.simple import SimpleAppliance
@@ -105,21 +106,21 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
         return strategy
 
     def test_LoadHoursStrategy_input(self):
-        energy = 620
+        power_W = 620
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                energy, 4, [1, 2, 3, 4]).daily_energy_required.m,  energy * 4)
+                power_W, 4, [1, 2, 3, 4]).daily_energy_required.m,  power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                energy, None, [1, 2, 3, 4]).daily_energy_required.m, energy * 4)
+                power_W, None, [1, 2, 3, 4]).daily_energy_required.m, power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                energy, 4, [1, 2, 3, 4, 5, 6]).daily_energy_required.m, energy * 4)
+                power_W, 4, [1, 2, 3, 4, 5, 6]).daily_energy_required.m, power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                energy, 4, None).daily_energy_required.m, energy * 4)
+                power_W, 4, None).daily_energy_required.m, power_W * 4)
         with self.assertRaises(ValueError):
-            self.Mock_LoadHoursStrategy(energy, 4, [1, 2])
+            self.Mock_LoadHoursStrategy(power_W, 4, [1, 2])
 
 
 @pytest.fixture()
@@ -152,9 +153,6 @@ def market_test2():
 def load_hours_strategy_test(called):
     strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
     strategy.accept_offer = called
-    if 10 not in strategy.active_hours:
-        strategy.active_hours.pop()
-        strategy.active_hours.add(10)
     return strategy
 
 
@@ -170,6 +168,21 @@ def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
     load_hours_strategy_test.area = area_test2
     load_hours_strategy_test.owner = area_test2
     return load_hours_strategy_test
+
+
+@pytest.fixture
+def load_hours_strategy_test4():
+    strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
+    strategy.accept_offer = Mock()
+    strategy.accept_offer.call_args
+    return strategy
+
+
+@pytest.fixture
+def load_hours_strategy_test5(load_hours_strategy_test4, area_test2):
+    load_hours_strategy_test4.area = area_test2
+    load_hours_strategy_test4.owner = area_test2
+    return load_hours_strategy_test4
 
 
 # Test if daily energy requirement is calculated correctly for the device
@@ -247,3 +260,16 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
 def test_load_hours_constructor_rejects_incorrect_hrs_of_day():
     with pytest.raises(ValueError):
         LoadHoursStrategy(100, hrs_of_day=[12, 13, 24])
+
+
+def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy_test5,
+                                                             market_test2):
+    market_test2.most_affordable_energy = 0.1
+    load_hours_strategy_test5.event_activate()
+    load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
+    load_hours_strategy_test5.event_market_cycle()
+    load_hours_strategy_test5.event_tick(area=area_test2)
+    assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
+                   1000 / load_hours_strategy_test5.energy_per_slot_Wh.m) *
+                  (load_hours_strategy_test5.area.config.slot_length / Interval(hours=1))), 2) == \
+        round(((0.1/0.155) * 0.25), 2)

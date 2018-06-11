@@ -35,8 +35,8 @@ class LoadHoursStrategy(BaseStrategy):
         if hrs_of_day is None:
             hrs_of_day = list(range(24))
 
+        self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
-        active_hours = set()
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
@@ -44,11 +44,6 @@ class LoadHoursStrategy(BaseStrategy):
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError(
                 "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
-        else:
-            while len(active_hours) < hrs_per_day:
-                active_hours.add(random.choice(hrs_of_day))
-
-        self.active_hours = active_hours
 
     def event_activate(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
@@ -66,21 +61,22 @@ class LoadHoursStrategy(BaseStrategy):
         return random.choice(offers)
 
     def event_tick(self, *, area):
+
         if self.energy_requirement <= 0:
             return
 
         markets = []
         for time, market in self.area.markets.items():
-            if time.hour in self.active_hours:
+            if self._allowed_operating_hours(time.hour):
                 markets.append(market)
         if not markets:
             return
-
-        if self.area.now.hour in self.active_hours:
+        if self._allowed_operating_hours(self.area.now.hour):
             try:
                 market = list(self.area.markets.values())[0]
                 if len(market.sorted_offers) < 1:
                     return
+
                 acceptable_offer = self._find_acceptable_offer(market)
                 if acceptable_offer and \
                         ((acceptable_offer.price/acceptable_offer.energy) <
@@ -89,15 +85,24 @@ class LoadHoursStrategy(BaseStrategy):
                     if acceptable_offer.energy > max_energy:
                         self.accept_offer(market, acceptable_offer, energy=max_energy)
                         self.energy_requirement = 0
+                        self.hrs_per_day -= self._operating_hours(max_energy)
                     else:
                         self.accept_offer(market, acceptable_offer)
                         self.energy_requirement -= acceptable_offer.energy * 1000
+                        self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
 
+    def _allowed_operating_hours(self, time):
+        return time in self.hrs_of_day and self.hrs_per_day > 0
+
+    def _operating_hours(self, energy):
+        return (((energy * 1000) / self.energy_per_slot_Wh.m)
+                * (self.area.config.slot_length / Interval(hours=1)))
+
     def _update_energy_requirement(self):
         self.energy_requirement = 0
-        if self.area.now.hour in self.active_hours:
+        if self._allowed_operating_hours(self.area.now.hour):
             energy_per_slot = self.energy_per_slot_Wh.m
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor

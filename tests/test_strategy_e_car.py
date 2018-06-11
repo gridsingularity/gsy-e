@@ -1,5 +1,6 @@
 import pendulum
 import pytest
+
 from unittest.mock import Mock
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
