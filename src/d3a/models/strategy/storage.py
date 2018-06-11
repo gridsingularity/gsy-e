@@ -1,4 +1,3 @@
-from enum import Enum
 from d3a.models.strategy import ureg, Q_
 
 from d3a.exceptions import MarketException
@@ -6,18 +5,6 @@ from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, STORAGE_MIN_ALLOWED_SOC, \
     STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER
-
-
-class StorageMarketSelection(Enum):
-    """
-    Enum for different market selection algorithms for selling storage energy.
-    NEXT_MARKET tries to sell energy ASAP
-    (on the next market slot, greedy according to time)
-    MOST_EXPENSIVE_MARKET tries to sell energy on the most expensive next market
-    (greedy according to price)
-    """
-    NEXT_MARKET = 0
-    MOST_EXPENSIVE_MARKET = 1
 
 
 class StorageStrategy(BaseStrategy):
@@ -46,7 +33,6 @@ class StorageStrategy(BaseStrategy):
         self.max_selling_rate_cents_per_kwh = \
             Q_(max_selling_rate_cents_per_kwh, (ureg.EUR_cents / ureg.kWh))
         self.cap_price_strategy = cap_price_strategy
-        self._sell_market_selection = StorageMarketSelection.MOST_EXPENSIVE_MARKET
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
@@ -112,9 +98,10 @@ class StorageStrategy(BaseStrategy):
                     # Don't buy our own offer
                     continue
                 # Check if storage has free capacity and if the price is cheap enough
-                if (self.state.free_storage >= offer.energy
-                        and (self.state.available_energy_per_slot(market.time_slot) > offer.energy)
-                        and (offer.price / offer.energy) < (avg_cheapest_offer_rate * 0.99)):
+                if self.state.free_storage >= offer.energy \
+                        and self.state.available_energy_per_slot(market.time_slot) > offer.energy \
+                        and (offer.price / offer.energy) < avg_cheapest_offer_rate * 0.99 \
+                        and (offer.price / offer.energy) <= self.break_even.m:
                     # Try to buy the energy
                     try:
                         self.accept_offer(market, offer)
@@ -141,6 +128,7 @@ class StorageStrategy(BaseStrategy):
                 energy,
                 self.owner.name
             )
+
             self.state.update_energy_per_slot(energy, target_market.time_slot)
 
             # Update only for new offers
@@ -150,18 +138,19 @@ class StorageStrategy(BaseStrategy):
             self.offers.post(offer, target_market)
 
     def _select_market_to_sell(self):
-        if self._sell_market_selection is StorageMarketSelection.MOST_EXPENSIVE_MARKET:
+        try:
+            max_rate = 0.0
+            most_expensive_market = list(self.area.markets.values())[0]
+            for m in self.area.markets.values():
+                if len(m.sorted_offers) > 0 and \
+                        m.sorted_offers[0].price / m.sorted_offers[0].energy > max_rate:
+                    max_rate = m.sorted_offers[0].price / m.sorted_offers[0].energy
+                    most_expensive_market = m
+        except IndexError as e:
             try:
-                most_expensive_market = self.area.market_with_most_expensive_offer
-            except IndexError:
-                try:
-                    most_expensive_market = next(iter(self.area.markets.values()))
-                except StopIteration:
-                    return
-        elif self._sell_market_selection is StorageMarketSelection.NEXT_MARKET:
-            most_expensive_market = list(self.area.markets.values())[1]
-        else:
-            raise ValueError("Invalid StorageMarketSelection value.")
+                most_expensive_market = list(self.area.markets.values())[0]
+            except StopIteration:
+                return
         return most_expensive_market
 
     def _calculate_energy_to_sell(self, energy, target_market):
@@ -188,7 +177,10 @@ class StorageStrategy(BaseStrategy):
                 min_selling_rate * (1.1 - (0.1 * (self.risk / MAX_RISK)))
         )
         # Limit rate to respect max sell rate
-        return min(risk_dependent_selling_rate, self.max_selling_rate_cents_per_kwh.m)
+        return max(
+            min(risk_dependent_selling_rate, self.max_selling_rate_cents_per_kwh.m),
+            self.break_even.m
+        )
 
     def find_avg_cheapest_offers(self):
         # Taking the cheapest offers in every market currently open and building the average
@@ -206,7 +198,10 @@ class StorageStrategy(BaseStrategy):
                 max((offer.price / offer.energy) for offer in cheapest_offers))
         else:
             most_expensive_cheapest_offer = 30
-        return min(most_expensive_cheapest_offer, self.break_even.m)
+        return max(
+            min(most_expensive_cheapest_offer, self.max_selling_rate_cents_per_kwh.m),
+            self.break_even.m
+        )
 
     def capacity_dependant_sell_rate(self):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
