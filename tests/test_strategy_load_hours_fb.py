@@ -270,7 +270,6 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
     load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test5.event_market_cycle()
     load_hours_strategy_test5.event_tick(area=area_test2)
-    print(load_hours_strategy_test5.accept_offer.call_args[0][1].energy)
     assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
                    1000 / load_hours_strategy_test5.energy_per_slot_Wh.m) *
                   (load_hours_strategy_test5.area.config.slot_length / Interval(hours=1))), 2) == \
