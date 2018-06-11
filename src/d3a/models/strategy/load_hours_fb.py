@@ -106,8 +106,7 @@ class LoadHoursStrategy(BaseStrategy):
 
     def _update_energy_requirement(self):
         self.energy_requirement = 0
-        time = self.area.now.hour
-        if self._desired_hours(time):
+        if self._desired_hours(self.area.now.hour):
             energy_per_slot = self.energy_per_slot_Wh.m
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
