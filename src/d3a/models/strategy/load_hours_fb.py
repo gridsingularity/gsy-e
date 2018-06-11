@@ -94,11 +94,7 @@ class LoadHoursStrategy(BaseStrategy):
                 self.log.exception("An Error occurred while buying an offer")
 
     def _desired_hours(self, time):
-        if time in self.hrs_of_day \
-                and self.hrs_per_day > 0:
-            return True
-        else:
-            return False
+        return time in self.hrs_of_day and self.hrs_per_day > 0
 
     def _operating_hours(self, energy):
         return (((energy * 1000) / self.energy_per_slot_Wh.m)
