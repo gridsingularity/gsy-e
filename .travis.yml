@@ -22,6 +22,10 @@ jobs:
      env: TOXENV=py36,coverage
      install: .support/travis-install.sh
      script: .support/travis-run.sh
+   - python: 3.6
+     env: TOXENV=integrationtests
+     install: .support/travis-install.sh
+     script: .support/travis-run.sh
 # this is to trigger a new build of d3a-web for every push to master
    - stage: trigger downstream
      jdk: oraclejdk8

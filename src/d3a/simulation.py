@@ -7,6 +7,7 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 from redis import StrictRedis
+from redis.exceptions import ConnectionError
 import json
 import dill
 from pendulum import Pendulum
@@ -207,7 +208,10 @@ class Simulation:
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
 
-                    self.send_results()
+                    try:
+                        self.send_results()
+                    except ConnectionError as e:
+                        log.error("Running with disabled Redis, no results are transmitted.")
 
                     if not self.is_stopped:
                         log.error(
@@ -256,11 +260,8 @@ class Simulation:
         results = {**{"status": "finished"},
                    **self.endpoint_buffer.generate_result_report()}
         results_string = json.dumps(results)
-        try:
-            redis_db = StrictRedis.from_url(REDIS_URL)
-            redis_db.publish(self.result_channel, results_string)
-        except ConnectionRefusedError:
-            pass
+        redis_db = StrictRedis.from_url(REDIS_URL)
+        redis_db.publish(self.result_channel, results_string)
 
     def toggle_pause(self):
         if self.finished:
