@@ -67,11 +67,11 @@ class LoadHoursStrategy(BaseStrategy):
 
         markets = []
         for time, market in self.area.markets.items():
-            if self._desired_hours(time.hour):
+            if self._allowed_operating_hours(time.hour):
                 markets.append(market)
         if not markets:
             return
-        if self._desired_hours(self.area.now.hour):
+        if self._allowed_operating_hours(self.area.now.hour):
             try:
                 market = list(self.area.markets.values())[0]
                 if len(market.sorted_offers) < 1:
@@ -93,7 +93,7 @@ class LoadHoursStrategy(BaseStrategy):
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
 
-    def _desired_hours(self, time):
+    def _allowed_operating_hours(self, time):
         return time in self.hrs_of_day and self.hrs_per_day > 0
 
     def _operating_hours(self, energy):
@@ -102,7 +102,7 @@ class LoadHoursStrategy(BaseStrategy):
 
     def _update_energy_requirement(self):
         self.energy_requirement = 0
-        if self._desired_hours(self.area.now.hour):
+        if self._allowed_operating_hours(self.area.now.hour):
             energy_per_slot = self.energy_per_slot_Wh.m
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
