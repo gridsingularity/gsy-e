@@ -137,8 +137,14 @@ class PVStrategy(BaseStrategy):
     def _calculate_price_decrease_rate(self, offer):
         # chg = ((offer.price - MIN_PV_SELLING_PRICE * offer.energy) * (self.risk/MAX_RISK)/10)
         # print("Changed Rate: {}".format(chg/offer.energy))
-        return ((offer.price - MIN_PV_SELLING_PRICE * offer.energy) * (1 - self.risk/MAX_RISK)
-                / int(self.area.config.slot_length.seconds / self._decrease_price_every_nr_s.m))
+        price_dec_per_slot = (offer.price - MIN_PV_SELLING_PRICE * offer.energy)\
+                             * (1 - self.risk/MAX_RISK)
+        price_updates_per_slot = int(self.area.config.slot_length.seconds
+                                     / self._decrease_price_every_nr_s.m)
+        price_dec_per_update = price_dec_per_slot / price_updates_per_slot
+        return price_dec_per_update
+        # return ((offer.price - MIN_PV_SELLING_PRICE * offer.energy) * (1 - self.risk/MAX_RISK)
+        #         / int(self.area.config.slot_length.seconds / self._decrease_price_every_nr_s.m))
         # return 1.0 - PV_DECREASE_PER_SECOND_BY * self._decrease_price_every_nr_s.m
 
     def produced_energy_forecast_real_data(self):
