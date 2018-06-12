@@ -92,6 +92,7 @@ class StorageStrategy(BaseStrategy):
     def buy_energy(self, avg_cheapest_offer_rate):
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
+        max_affordable_offer_rate = min(avg_cheapest_offer_rate*0.99, self.break_even.m-0.01)
         for market in self.area.markets.values():
             for offer in market.sorted_offers:
                 if offer.seller == self.owner.name:
@@ -100,8 +101,7 @@ class StorageStrategy(BaseStrategy):
                 # Check if storage has free capacity and if the price is cheap enough
                 if self.state.free_storage >= offer.energy \
                         and self.state.available_energy_per_slot(market.time_slot) > offer.energy \
-                        and (offer.price / offer.energy) < avg_cheapest_offer_rate * 0.99 \
-                        and (offer.price / offer.energy) <= self.break_even.m:
+                        and (offer.price / offer.energy) < max_affordable_offer_rate:
                     # Try to buy the energy
                     try:
                         self.accept_offer(market, offer)
@@ -128,7 +128,6 @@ class StorageStrategy(BaseStrategy):
                 energy,
                 self.owner.name
             )
-
             self.state.update_energy_per_slot(energy, target_market.time_slot)
 
             # Update only for new offers
@@ -148,7 +147,7 @@ class StorageStrategy(BaseStrategy):
                     most_expensive_market = m
         except IndexError as e:
             try:
-                most_expensive_market = list(self.area.markets.values())[0]
+                most_expensive_market = self.area.current_market
             except StopIteration:
                 return
         return most_expensive_market

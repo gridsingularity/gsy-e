@@ -294,11 +294,15 @@ def storage_strategy_test8(area_test8):
 
 
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
+    from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC
     storage_strategy_test8.event_activate()
     storage_strategy_test8.sell_energy(buying_rate=10, energy=None)
-    assert storage_strategy_test8.state.used_storage == 0
-    assert storage_strategy_test8.state.offered_storage == 100
-    assert area_test8.current_market.created_offers[0].energy == 100
+    assert abs(storage_strategy_test8.state.used_storage -
+               storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC) < 0.0001
+    assert storage_strategy_test8.state.offered_storage == \
+        100 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
+    assert area_test8.current_market.created_offers[0].energy == \
+        100 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
 
 
@@ -310,7 +314,8 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
                                                   area_test8: FakeArea):
     storage_strategy_test8.event_activate()
     storage_strategy_test8.event_market_cycle()
-    assert storage_strategy_test8.state.offered_storage == 100.0
+    assert storage_strategy_test8.state.offered_storage == \
+        100.0 - storage_strategy_test8.state.capacity * 0.1
     assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
 
 
