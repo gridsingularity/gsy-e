@@ -115,14 +115,15 @@ class PVStrategy(BaseStrategy):
         if market not in self.offers.open.values():
             return
         for offer, iterated_market in self.offers.open.items():
-            if offer.price/offer.energy < MIN_PV_SELLING_PRICE:
-                return
+            if (offer.price/offer.energy - self.calculate_price_decrease_rate)\
+                    <= self.min_selling_price.m:
+                continue
             if iterated_market != market:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
-                    (offer.price - self._calculate_price_decrease_rate(offer)),
+                    (offer.price - (offer.energy * self.calculate_price_decrease_rate)),
                     offer.energy,
                     self.owner.name
                 )
@@ -135,10 +136,11 @@ class PVStrategy(BaseStrategy):
             except MarketException:
                 continue
 
-    def _calculate_price_decrease_rate(self, offer):
+    def _calculate_price_decrease_rate(self):
         # chg = ((offer.price - MIN_PV_SELLING_PRICE * offer.energy) * (self.risk/MAX_RISK)/10)
         # print("Changed Rate: {}".format(chg/offer.energy))
-        price_dec_per_slot = (offer.price) * (1 - self.risk/MAX_RISK)
+        print("Historical Average Price: {}".format(self.area.historical_avg_price))
+        price_dec_per_slot = (self.area.historical_avg_price) * (1 - self.risk/MAX_RISK)
         price_updates_per_slot = int(self.area.config.slot_length.seconds
                                      / self._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
@@ -190,6 +192,7 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._decrease_price_timepoint_s = 0 * ureg.seconds
+        self.calculate_price_decrease_rate = self._calculate_price_decrease_rate()
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
