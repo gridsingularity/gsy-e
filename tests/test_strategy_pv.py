@@ -172,6 +172,14 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     assert new_offer.price < old_offer.price
 
 
+def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, pv_test3):
+    for _ in range(100):
+        pv_test3.decrease_offer_price(area_test3.test_market)
+    new_offer = list(pv_test3.offers.posted.keys())[-1]
+    from d3a.models.strategy.const import MIN_PV_SELLING_PRICE
+    assert new_offer.price / new_offer.energy == MIN_PV_SELLING_PRICE
+
+
 """TEST 4"""
 
 
