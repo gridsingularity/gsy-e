@@ -12,6 +12,7 @@ flask-cors
 numpy
 pendulum
 pint
+plotly
 python-rex
 rlp==0.4.7
 tablib
