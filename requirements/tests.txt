@@ -14,6 +14,7 @@ click-default-group==1.2
 click==6.7
 colorlog==3.1.0
 coverage==4.4.2
+decorator==4.3.0
 dill==0.2.7.1
 docopt==0.6.2             # via ptpython
 et-xmlfile==1.0.1
@@ -26,13 +27,17 @@ flask==0.12.2
 future==0.16.0
 hypothesis==3.42.2
 idna==2.6
+ipython-genutils==0.2.0
 isort==4.2.15
 itsdangerous==0.24
 jdcal==1.3
 jedi==0.12.0              # via ptpython
 jinja2==2.10
+jsonschema==2.6.0
+jupyter-core==4.4.0
 markupsafe==1.0
 mccabe==0.6.1             # via flake8
+nbformat==4.4.0
 numpy==1.14.3
 odfpy==1.3.6
 openpyxl==2.4.9
@@ -43,6 +48,7 @@ parso==0.2.0              # via jedi
 pbkdf2==1.3
 pendulum==1.3.2
 pint==0.8.1
+plotly==2.7.0
 pluggy==0.6.0             # via pytest
 prompt-toolkit==1.0.15    # via ptpython
 ptpython==0.41
@@ -71,6 +77,7 @@ scrypt==0.8.0
 six==1.11.0
 tablib==0.12.1
 terminaltables==3.1.0
+traitlets==4.3.2
 tzlocal==1.5.1
 unicodecsv==0.14.1
 unidecode==0.4.21
