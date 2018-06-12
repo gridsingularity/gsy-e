@@ -44,6 +44,12 @@ class PVStrategy(BaseStrategy):
         self.produced_energy_forecast_real_data()
         self._decrease_price_every_nr_s = \
             (self.area.config.tick_length.seconds * MAX_OFFER_TRAVERSAL_LENGTH + 1) * ureg.seconds
+        print("Time Slot for reducing offer: {}".format(self._decrease_price_every_nr_s))
+        print("Slot Length: {}"
+              .format(self.area.config.slot_length.seconds))
+        print("Offer Update rate: {}"
+              .format(int(self.area.config.slot_length.seconds
+                          / self._decrease_price_every_nr_s.m)))
 
     def event_tick(self, *, area):
         average_market_rate = Q_(
@@ -56,7 +62,7 @@ class PVStrategy(BaseStrategy):
         # risk_dependency_of_selling_rate = ((self.risk/MAX_RISK) - 1) * average_market_rate
         energy_rate = max(average_market_rate.m, self.min_selling_price.m)
         rounded_energy_rate = round(energy_rate, 2)
-        print("Historical Average price: {}".format(self.area.historical_avg_price))
+        # print("Historical Average price: {}".format(self.area.historical_avg_price))
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
@@ -130,7 +136,8 @@ class PVStrategy(BaseStrategy):
     def _calculate_price_decrease_rate(self, offer):
         # chg = ((offer.price - MIN_PV_SELLING_PRICE * offer.energy) * (self.risk/MAX_RISK)/10)
         # print("Changed Rate: {}".format(chg/offer.energy))
-        return ((offer.price - MIN_PV_SELLING_PRICE * offer.energy) * (self.risk/MAX_RISK)/10)
+        return ((offer.price - MIN_PV_SELLING_PRICE * offer.energy) * (1 - self.risk/MAX_RISK)
+                / int(self.area.config.slot_length.seconds / self._decrease_price_every_nr_s.m))
         # return 1.0 - PV_DECREASE_PER_SECOND_BY * self._decrease_price_every_nr_s.m
 
     def produced_energy_forecast_real_data(self):
