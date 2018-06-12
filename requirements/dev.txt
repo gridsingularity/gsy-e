@@ -18,6 +18,7 @@ click-default-group==1.2
 click==6.7
 colorlog==3.1.0
 cryptography==2.1.4       # via paramiko
+decorator==4.3.0
 dill==0.2.7.1
 docopt==0.6.2             # via ptpython
 docutils==0.14            # via readme-renderer
@@ -32,21 +33,27 @@ future==0.16.0
 html5lib==1.0.1           # via bleach
 identify==1.0.7           # via pre-commit
 idna==2.6
+ipython-genutils==0.2.0
 itsdangerous==0.24
 jdcal==1.3
 jedi==0.12.0              # via ptpython
 jinja2==2.10
+jsonschema==2.6.0
+jupyter-core==4.4.0
 markupsafe==1.0
+nbformat==4.4.0
 nodeenv==1.2.0            # via pre-commit
 numpy==1.14.3
 odfpy==1.3.6
 openpyxl==2.4.9
+pandas==0.23.0
 paramiko==2.4.0           # via fabric3
 parso==0.2.0              # via jedi
 pbkdf2==1.3
 pendulum==1.3.2
 pint==0.8.1
 pip-tools==1.11.0
+plotly==2.7.0
 pluggy==0.6.0             # via tox
 pre-commit==1.4.1
 prompt-toolkit==1.0.15    # via ptpython
@@ -77,6 +84,7 @@ six==1.11.0
 tablib==0.12.1
 terminaltables==3.1.0
 tox==2.9.1
+traitlets==4.3.2
 tzlocal==1.5.1
 unicodecsv==0.14.1
 unidecode==0.4.21
