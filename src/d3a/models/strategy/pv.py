@@ -115,6 +115,8 @@ class PVStrategy(BaseStrategy):
         if market not in self.offers.open.values():
             return
         for offer, iterated_market in self.offers.open.items():
+            if offer.price/offer.energy < MIN_PV_SELLING_PRICE:
+                return
             if iterated_market != market:
                 continue
             try:
@@ -136,8 +138,7 @@ class PVStrategy(BaseStrategy):
     def _calculate_price_decrease_rate(self, offer):
         # chg = ((offer.price - MIN_PV_SELLING_PRICE * offer.energy) * (self.risk/MAX_RISK)/10)
         # print("Changed Rate: {}".format(chg/offer.energy))
-        price_dec_per_slot = (offer.price - MIN_PV_SELLING_PRICE * offer.energy)\
-                             * (1 - self.risk/MAX_RISK)
+        price_dec_per_slot = (offer.price) * (1 - self.risk/MAX_RISK)
         price_updates_per_slot = int(self.area.config.slot_length.seconds
                                      / self._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
