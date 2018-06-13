@@ -79,8 +79,7 @@ class StorageStrategy(BaseStrategy):
             # But self.sell_energy expects a buying price
             offer_rate = (offer.price / offer.energy)
 
-            initial_buying_rate = (offer_rate / 1.01) * \
-                                  (1 / (1.1 - (0.1 * (self.risk / MAX_RISK))))
+            initial_buying_rate = offer_rate / (1.01 * self._risk_factor)
 
             self.sell_energy(initial_buying_rate, offer.energy, open_offer=True)
             self.offers.sold_offer(offer.id, past_market)
@@ -145,7 +144,7 @@ class StorageStrategy(BaseStrategy):
                         m.sorted_offers[0].price / m.sorted_offers[0].energy > max_rate:
                     max_rate = m.sorted_offers[0].price / m.sorted_offers[0].energy
                     most_expensive_market = m
-        except IndexError as e:
+        except IndexError:
             try:
                 most_expensive_market = self.area.current_market
             except StopIteration:
@@ -173,13 +172,17 @@ class StorageStrategy(BaseStrategy):
         min_selling_rate = 1.01 * buying_rate
         # This ends up in a selling price between 101 and 105 percentage of the buying price
         risk_dependent_selling_rate = (
-                min_selling_rate * (1.1 - (0.1 * (self.risk / MAX_RISK)))
+                min_selling_rate * self._risk_factor
         )
         # Limit rate to respect max sell rate
         return max(
             min(risk_dependent_selling_rate, self.max_selling_rate_cents_per_kwh.m),
             self.break_even.m
         )
+
+    @property
+    def _risk_factor(self):
+        return 1.1 - (0.1 * (self.risk / MAX_RISK))
 
     def find_avg_cheapest_offers(self):
         # Taking the cheapest offers in every market currently open and building the average

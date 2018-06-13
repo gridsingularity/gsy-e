@@ -5,6 +5,7 @@ from d3a.models.area import DEFAULT_CONFIG
 
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC, STORAGE_BREAK_EVEN
 
 
 class FakeArea():
@@ -162,7 +163,6 @@ def storage_strategy_test_buy_energy(area_test3, called):
 
 def test_if_storage_buys_below_break_even(storage_strategy_test_buy_energy, area_test3):
     storage_strategy_test_buy_energy.event_activate()
-    from d3a.models.strategy.const import STORAGE_BREAK_EVEN
     storage_strategy_test_buy_energy.buy_energy(STORAGE_BREAK_EVEN-0.01)
     assert len(storage_strategy_test_buy_energy.accept_offer.calls) == 1
 
@@ -307,7 +307,6 @@ def test_calculate_energy_amount_to_sell_respects_max_power(storage_strategy_tes
 
 def test_calculate_energy_amount_to_sell_respects_min_allowed_soc(storage_strategy_test7,
                                                                   area_test7):
-    from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC
     storage_strategy_test7.event_activate()
     storage_strategy_test7.state.residual_energy_per_slot[area_test7.current_market.time_slot] = 20
     total_energy = storage_strategy_test7.state.used_storage + \
@@ -340,7 +339,6 @@ def storage_strategy_test8(area_test8):
 
 
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
-    from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC
     storage_strategy_test8.event_activate()
     storage_strategy_test8.sell_energy(buying_rate=10, energy=None)
     assert abs(storage_strategy_test8.state.used_storage -
@@ -361,7 +359,7 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
     storage_strategy_test8.event_activate()
     storage_strategy_test8.event_market_cycle()
     assert storage_strategy_test8.state.offered_storage == \
-        100.0 - storage_strategy_test8.state.capacity * 0.1
+        100.0 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
 
 

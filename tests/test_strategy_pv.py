@@ -6,7 +6,7 @@ from pendulum import Pendulum
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import MAX_ENERGY_RATE
+from d3a.models.strategy.const import MAX_ENERGY_RATE, MIN_PV_SELLING_PRICE
 
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
@@ -176,7 +176,6 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
     for _ in range(100):
         pv_test3.decrease_offer_price(area_test3.test_market)
     new_offer = list(pv_test3.offers.posted.keys())[-1]
-    from d3a.models.strategy.const import MIN_PV_SELLING_PRICE
     assert new_offer.price / new_offer.energy == MIN_PV_SELLING_PRICE
 
 
