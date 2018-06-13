@@ -23,11 +23,19 @@ _log = logging.getLogger(__name__)
 def export(root_area, path, subdir):
     """Export all data of the finished simulation in one CSV file per area."""
     try:
+        if not os.path.isabs(path):
+            path = os.path.abspath(path)
         directory = pathlib.Path(path or "~/d3a-simulation", subdir).expanduser()
         directory.mkdir(exist_ok=True, parents=True)
     except Exception as ex:
         _log.error("Could not open directory for csv exports: %s" % str(ex))
         return
+
+    # Create plot directory
+    plot_dir = os.path.join(directory, 'plot')
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+
     _export_area_with_children(root_area, directory)
     _export_iaa_energy(root_area, directory)
     _export_overview(root_area, directory)
@@ -262,9 +270,8 @@ class BarGraph(DataSets):
 def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
     data = list()
     key = 'deficit [kWh]'
-    os.chdir(path)
-    ct = str('grid/' + 'cell-tower.csv')
-    if (os.path.isfile(ct)):
+    ct = os.path.join(path, 'grid', 'cell-tower.csv')
+    if os.path.isfile(ct):
         hict = BarGraph(ct, key)
         hict.graph_value()
         traceict = go.Bar(x=list(hict.umHours.keys()),
@@ -272,39 +279,37 @@ def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
                           name='Cell Tower')
         data.append(traceict)
 
-    sub_file = sorted(next(os.walk('grid'))[1])
+    sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
     for i in range(len(sub_file)):
-        gl = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-general-load.csv')
-        ll = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-lighting.csv')
-        tv = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-tv.csv')
+        gl = os.path.join('grid', sub_file[i], 'h' + str(i + 1) + '-general-load.csv')
+        ll = os.path.join('grid', sub_file[i], 'h' + str(i + 1) + '-lighting.csv')
+        tv = os.path.join('grid', sub_file[i], 'h' + str(i + 1) + '-tv.csv')
 
-        if(os.path.isfile(gl)):
+        if os.path.isfile(gl):
             higl = BarGraph(gl, key)
             higl.graph_value()
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name='House{}-GL'.format(i+1))
             data.append(traceigl)
-        if(os.path.isfile(ll)):
+        if os.path.isfile(ll):
             hill = BarGraph(ll, key)
             hill.graph_value()
             traceill = go.Bar(x=list(hill.umHours.keys()),
                               y=list(hill.umHours.values()),
                               name='House{}-LL'.format(i+1))
             data.append(traceill)
-        if(os.path.isfile(tv)):
+        if os.path.isfile(tv):
             hitv = BarGraph(tv, key)
             hitv.graph_value()
             traceitv = go.Bar(x=list(hitv.umHours.keys()),
                               y=list(hitv.umHours.values()),
                               name='House{}-TV'.format(i+1))
             data.append(traceitv)
-    plot_dir = str(path) + '/plot'
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
-    os.chdir(plot_dir)
 
-    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+    output_file = os.path.join(path, 'plot', iname)
+
+    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
 
 class TradeHistory(DataSets):
@@ -312,8 +317,6 @@ class TradeHistory(DataSets):
         self.key = key
         self.trade_history = dict()
         super(TradeHistory, self).__init__(path)
-# kvalue=cell tower
-# kseller=x,y,z
 
     def arrange_data(self, kbuyer, kseller):
         try:
@@ -324,7 +327,7 @@ class TradeHistory(DataSets):
             for de in range(len(self.dataset[self.key])):
                 self.trade_history.setdefault(self.dataset[kseller][de], int(0))
             for de in range(len(self.dataset[self.key])):
-                if (self.dataset[self.key][de] == kbuyer):
+                if self.dataset[self.key][de] == kbuyer:
                     self.trade_history[self.dataset[kseller][de]] += 1
 
     def plot_pie_chart(self, title, iname):
@@ -350,74 +353,63 @@ class TradeHistory(DataSets):
 
 # Energy Trading Partner
 def _energy_trade_partner(path, key, buyer, seller, title, iname):
-    os.chdir(path)
-    gt = str('grid-trades.csv')
+    grid_trade_file = os.path.join(path, 'grid-trades.csv')
 
-    if(os.path.isfile(gt)):
-        higt = TradeHistory(gt, key)
+    if os.path.isfile(grid_trade_file):
+        higt = TradeHistory(grid_trade_file, key)
         higt.arrange_data(buyer, seller)
-
-    plot_dir = str(path) + '/plot'
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
-    os.chdir(plot_dir)
-
-    higt.plot_pie_chart(title, iname)
+        output_file = os.path.join(path, 'plot', iname)
+        higt.plot_pie_chart(title, output_file)
 
 
 # ESS Trade History
 def _ess_history(path, barmode, title, xtitle, ytitle, iname):
     data = list()
     key = 'energy traded [kWh]'
-    os.chdir(path)
-    sub_file = sorted(next(os.walk('grid'))[1])
+    sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
     for i in range(len(sub_file)):
-        ss1 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage1.csv')
-        ss2 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage2.csv')
+        ss1 = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-storage1.csv')
+        ss2 = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-storage2.csv')
 
-        if (os.path.isfile(ss1)):
+        if os.path.isfile(ss1):
             hiss1 = BarGraph(ss1, key)
             hiss1.graph_value()
             traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
             data.append(traceiss1)
-        if (os.path.isfile(ss2)):
+        if os.path.isfile(ss2):
             hiss2 = BarGraph(ss2, key)
             hiss2.graph_value()
             traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
             data.append(traceiss2)
-    plot_dir = str(path) + '/plot'
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
-    os.chdir(plot_dir)
 
     if not data:
         return
 
-    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+    output_file = os.path.join(path, 'plot', iname)
+    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
 
 # ESS SOC Trade History
 def _soc_history(path, barmode, title, xtitle, ytitle, iname):
     data = list()
     key = 'charge [%]'
-    os.chdir(path)
-    sub_file = sorted(next(os.walk('grid'))[1])
+    sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
     for i in range(len(sub_file)):
-        ss1 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage1.csv')
-        ss2 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage2.csv')
+        ss1 = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-storage1.csv')
+        ss2 = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-storage2.csv')
 
-        if (os.path.isfile(ss1)):
+        if os.path.isfile(ss1):
             chss1 = BarGraph(ss1, key)
             chss1.graph_value()
             tracechss1 = go.Scatter(x=list(chss1.umHours.keys()),
                                     y=list(chss1.umHours.values()),
                                     name='House{0}-Storage1'.format(i + 1))
             data.append(tracechss1)
-        if (os.path.isfile(ss2)):
+        if os.path.isfile(ss2):
             chss2 = BarGraph(ss2, key)
             chss2.graph_value()
             tracechss1 = go.Scatter(x=list(chss2.umHours.keys()),
@@ -425,128 +417,115 @@ def _soc_history(path, barmode, title, xtitle, ytitle, iname):
                                     name='House{0}-Storage2'.format(i + 1))
             data.append(tracechss1)
 
-    plot_dir = str(path) + '/plot'
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
-    os.chdir(plot_dir)
-
     if not data:
         return
 
-    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+    output_file = os.path.join(path, 'plot', iname)
+    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
 
 # Energy Profile of House
 def _house_energy_history(path, barmode, xtitle, ytitle):
     data = list()
     key = 'energy traded [kWh]'
-    os.chdir(path)
-    sub_file = sorted(next(os.walk('grid'))[1])
+    grid_path = os.path.join(path, 'grid')
+    sub_file = sorted(next(os.walk(grid_path))[1])
     for i in range(len(sub_file)):
-        gl = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-general-load.csv')
-        ll = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-lighting.csv')
-        tv = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-tv.csv')
-        ss1 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage1.csv')
-        ss2 = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-storage2.csv')
-        pv = str('grid/' + sub_file[i] + '/h' + str(i + 1) + '-pv.csv')
-        iname = str('Energy Profile of House{}.html'.format(i + 1))
-        title = str('Energy Profile of House{}'.format(i + 1))
-        if(os.path.isfile(gl)):
+        gl = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-general-load.csv')
+        ll = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-lighting.csv')
+        tv = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-tv.csv')
+        ss1 = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-storage1.csv')
+        ss2 = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-storage2.csv')
+        pv = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-pv.csv')
+        iname = os.path.join(path, 'plot', 'Energy Profile of House{}.html'.format(i + 1))
+        title = os.path.join(path, 'plot', 'Energy Profile of House{}'.format(i + 1))
+        if os.path.isfile(gl):
             higl = BarGraph(gl, key)
             higl.graph_value()
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name='House{}-GL'.format(i+1))
             data.append(traceigl)
-        if(os.path.isfile(ll)):
+        if os.path.isfile(ll):
             hill = BarGraph(ll, key)
             hill.graph_value()
             traceill = go.Bar(x=list(hill.umHours.keys()),
                               y=list(hill.umHours.values()),
                               name='House{}-LL'.format(i+1))
             data.append(traceill)
-        if(os.path.isfile(tv)):
+        if os.path.isfile(tv):
             hitv = BarGraph(tv, key)
             hitv.graph_value()
             traceitv = go.Bar(x=list(hitv.umHours.keys()),
                               y=list(hitv.umHours.values()),
                               name='House{}-TV'.format(i+1))
             data.append(traceitv)
-        if (os.path.isfile(ss1)):
+        if os.path.isfile(ss1):
             hiss1 = BarGraph(ss1, key)
             hiss1.graph_value()
             traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
             data.append(traceiss1)
-        if (os.path.isfile(ss2)):
+        if os.path.isfile(ss2):
             hiss2 = BarGraph(ss2, key)
             hiss2.graph_value()
             traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
             data.append(traceiss2)
-        if (os.path.isfile(pv)):
+        if os.path.isfile(pv):
             hipv = BarGraph(pv, key)
             hipv.graph_value()
             traceipv = go.Bar(x=list(hipv.umHours.keys()), y=list(hipv.umHours.values()),
                               name='House{0}-PV'.format(i + 1))
             data.append(traceipv)
-        plot_dir = str(path) + '/plot'
-        if not os.path.exists(plot_dir):
-            os.makedirs(plot_dir)
-        os.chdir(plot_dir)
 
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
-        os.chdir('..')
-        data = list()
 
 
 # Average Trade Price Graph
 def _avg_trade_price(path, barmode, xtitle, ytitle):
     data = list()
     key = 'avg trade price [EUR]'
-    os.chdir(path)
-    gap = str('grid.csv')
-    iname = str('Average Trade Price.html')
+    grid_file = os.path.join(path, 'grid', 'grid.csv')
     title = str('Average Trade Price')
-    if (os.path.isfile(gap)):
-        higap = BarGraph(gap, key)
+    if os.path.isfile(grid_file):
+        higap = BarGraph(grid_file, key)
         higap.graph_value()
         traceigap = go.Scatter(x=list(higap.umHours.keys()),
                                y=list(higap.umHours.values()),
                                name='Grid')
         data.append(traceigap)
-    sub_file = sorted(next(os.walk('grid'))[1])
+    sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
     for i in range(len(sub_file)):
-        lap = str('grid/' + sub_file[i] + '.csv')
-        if(os.path.isfile(lap)):
+        lap = os.path.join(path, 'grid', sub_file[i] + '.csv')
+        if os.path.isfile(lap):
             hilap = BarGraph(lap, key)
             hilap.graph_value()
             traceilap = go.Scatter(x=list(hilap.umHours.keys()),
                                    y=list(hilap.umHours.values()),
                                    name='House{}'.format(i+1))
             data.append(traceilap)
-    plot_dir = str(path) + '/plot'
+    plot_dir = os.path.join(path, 'plot')
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
-    os.chdir(plot_dir)
 
+    iname = os.path.join(path, 'plot', 'Average Trade Price.html')
     BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
-    os.chdir('..')
-    data = list()
 
 
 # Energy Trade Profile of House
 def _house_trade_history(path, barmode, xtitle, ytitle):
     data = list()
-    os.chdir(path)
-    sub_file = sorted(next(os.walk('grid'))[1])
+    grid_path = os.path.join(path, 'grid')
+
+    sub_file = sorted(next(os.walk(grid_path))[1])
     for i in range(len(sub_file)):
-        trade = str('grid/' + sub_file[i] + '-trades.csv')
-        iname = str('Energy Trade Profile of House{}.html'.format(i + 1))
+        trade = os.path.join(grid_path, sub_file[i] + '-trades.csv')
+        iname = os.path.join(path, 'plot', 'Energy Trade Profile of House{}.html'.format(i + 1))
         title = str('Energy Trade Profile of House{}'.format(i + 1))
-        if(os.path.isfile(trade)):
+        if os.path.isfile(trade):
             dataset = pd.read_csv(trade)
             dataset = dataset.drop(['id', 'time', 'energy [kWh]'], axis=1)
             DBkey = dataset.iloc[:, -1].values
@@ -586,11 +565,9 @@ def _house_trade_history(path, barmode, xtitle, ytitle):
                 )
             )
             fig = go.Figure(data=data, layout=layout)
-            plot_dir = str(path) + '/plot'
-            if not os.path.exists(plot_dir):
-                os.makedirs(plot_dir)
-            os.chdir(plot_dir)
-            py.offline.plot(fig, filename=iname, auto_open=False)
-
-            os.chdir('..')
-            data = list()
+            file_path = os.path.join(path, 'plot', iname)
+            try:
+                py.offline.plot(fig, filename=file_path, auto_open=False)
+            except py.exceptions.PlotlyEmptyDataError:
+                _log.error("Could not plot the house trade history, "
+                           "empty trade list on file " + str(trade))
