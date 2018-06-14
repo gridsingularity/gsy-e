@@ -10,8 +10,10 @@ flask
 flask-api
 flask-cors
 numpy
+pandas
 pendulum
 pint
+plotly
 python-rex
 rlp==0.4.7
 tablib
