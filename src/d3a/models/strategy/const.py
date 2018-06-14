@@ -24,10 +24,12 @@ FRIDGE_MIN_NEEDED_ENERGY = 10
 # Unit is kWh
 STORAGE_CAPACITY = 1.2
 # Unit is kW
-MAX_ABS_BATTERY_POWER = 0.3
+MAX_ABS_BATTERY_POWER = 5.0
 # Energy Sell/Buy Break-even
-STORAGE_BREAK_EVEN = 30
-STORAGE_MAX_SELL_RATE_c_per_Kwh = 35
+STORAGE_BREAK_EVEN = 25
+STORAGE_MAX_SELL_RATE_c_per_Kwh = MAX_ENERGY_RATE-1
+
+STORAGE_MIN_ALLOWED_SOC = 0.1
 
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent

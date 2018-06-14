@@ -62,6 +62,7 @@ class StorageState:
                  strategy=None):
         self._blocked_storage = 0.0
         self._offered_storage = 0.0
+        self._battery_energy_per_slot = 0.0
         if initial_charge is not None:
             if initial_capacity:
                 strategy.log.warning("Ignoring initial_capacity parameter since "
@@ -109,11 +110,12 @@ class StorageState:
             area.log.info("Storage reached more than 80%% Battery: %f" + str(free))
 
     def battery_energy_per_slot(self, slot_length):
-        self.battery_energy_per_slot = self.max_abs_battery_power * (slot_length/Interval(hours=1))
+        self._battery_energy_per_slot = self.max_abs_battery_power * \
+                                        (slot_length/Interval(hours=1))
 
     def available_energy_per_slot(self, slot):
         if self.residual_energy_per_slot[slot] is '-':
-            self.residual_energy_per_slot[slot] = self.battery_energy_per_slot
+            self.residual_energy_per_slot[slot] = self._battery_energy_per_slot
         return self.residual_energy_per_slot[slot]
 
     def update_energy_per_slot(self, energy, slot):
