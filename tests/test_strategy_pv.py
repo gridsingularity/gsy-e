@@ -156,7 +156,7 @@ def market_test3(area_test3):
 
 @pytest.fixture()
 def pv_test3(area_test3):
-    p = PVStrategy(1, 90)
+    p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
@@ -185,10 +185,12 @@ def testing_decrease_offer_price(area_test3, pv_test3):
 
 
 def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, pv_test3):
+    pv_test3.event_activate()
+    pv_test3.event_market_cycle()
     for _ in range(100):
         pv_test3.decrease_offer_price(area_test3.test_market)
     new_offer = list(pv_test3.offers.posted.keys())[-1]
-    assert new_offer.price / new_offer.energy == MIN_PV_SELLING_PRICE
+    assert new_offer.price / new_offer.energy >= MIN_PV_SELLING_PRICE
 
 
 """TEST 4"""
