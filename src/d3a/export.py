@@ -23,7 +23,7 @@ _log = logging.getLogger(__name__)
 def export(root_area, path, subdir):
     """Export all data of the finished simulation in one CSV file per area."""
     try:
-        if not os.path.isabs(path):
+        if path is not None:
             path = os.path.abspath(path)
         directory = pathlib.Path(path or "~/d3a-simulation", subdir).expanduser()
         directory.mkdir(exist_ok=True, parents=True)
