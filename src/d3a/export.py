@@ -237,14 +237,15 @@ class BarGraph(DataSets):
         self.umHours = dict()
         super(BarGraph, self).__init__(path)
 
-    def graph_value(self):
+    def graph_value(self, graph_name):
         try:
             self.dataset[self.key]
         except KeyError:
-            print('key not found')
+            _log.error("Error during generating plot for " + str(graph_name) +
+                       ": Key not found (" + str(self.key) + ")")
         else:
             for de in range(len(self.dataset[self.key])):
-                if (self.dataset[self.key][de] != 0):
+                if self.dataset[self.key][de] != 0:
                     self.umHours[self.dataset['slot'][de]] = round(self.dataset[self.key][de], 5)
 
     def plot_bar_graph(barmode, title, xtitle, ytitle, data, iname):
@@ -273,7 +274,7 @@ def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
     ct = os.path.join(path, 'grid', 'cell-tower.csv')
     if os.path.isfile(ct):
         hict = BarGraph(ct, key)
-        hict.graph_value()
+        hict.graph_value("Unmatched Loads")
         traceict = go.Bar(x=list(hict.umHours.keys()),
                           y=list(hict.umHours.values()),
                           name='Cell Tower')
@@ -287,21 +288,21 @@ def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
 
         if os.path.isfile(gl):
             higl = BarGraph(gl, key)
-            higl.graph_value()
+            higl.graph_value("Unmatched Loads")
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name='House{}-GL'.format(i+1))
             data.append(traceigl)
         if os.path.isfile(ll):
             hill = BarGraph(ll, key)
-            hill.graph_value()
+            hill.graph_value("Unmatched Loads")
             traceill = go.Bar(x=list(hill.umHours.keys()),
                               y=list(hill.umHours.values()),
                               name='House{}-LL'.format(i+1))
             data.append(traceill)
         if os.path.isfile(tv):
             hitv = BarGraph(tv, key)
-            hitv.graph_value()
+            hitv.graph_value("Unmatched Loads")
             traceitv = go.Bar(x=list(hitv.umHours.keys()),
                               y=list(hitv.umHours.values()),
                               name='House{}-TV'.format(i+1))
@@ -373,14 +374,14 @@ def _ess_history(path, barmode, title, xtitle, ytitle, iname):
 
         if os.path.isfile(ss1):
             hiss1 = BarGraph(ss1, key)
-            hiss1.graph_value()
+            hiss1.graph_value("ESS History")
             traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
             data.append(traceiss1)
         if os.path.isfile(ss2):
             hiss2 = BarGraph(ss2, key)
-            hiss2.graph_value()
+            hiss2.graph_value("ESS History")
             traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
@@ -404,14 +405,14 @@ def _soc_history(path, barmode, title, xtitle, ytitle, iname):
 
         if os.path.isfile(ss1):
             chss1 = BarGraph(ss1, key)
-            chss1.graph_value()
+            chss1.graph_value("SOC History")
             tracechss1 = go.Scatter(x=list(chss1.umHours.keys()),
                                     y=list(chss1.umHours.values()),
                                     name='House{0}-Storage1'.format(i + 1))
             data.append(tracechss1)
         if os.path.isfile(ss2):
             chss2 = BarGraph(ss2, key)
-            chss2.graph_value()
+            chss2.graph_value("SOC History")
             tracechss1 = go.Scatter(x=list(chss2.umHours.keys()),
                                     y=list(chss2.umHours.values()),
                                     name='House{0}-Storage2'.format(i + 1))
@@ -441,42 +442,42 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
         title = os.path.join(path, 'plot', 'Energy Profile of House{}'.format(i + 1))
         if os.path.isfile(gl):
             higl = BarGraph(gl, key)
-            higl.graph_value()
+            higl.graph_value("House Energy History")
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name='House{}-GL'.format(i+1))
             data.append(traceigl)
         if os.path.isfile(ll):
             hill = BarGraph(ll, key)
-            hill.graph_value()
+            hill.graph_value("House Energy History")
             traceill = go.Bar(x=list(hill.umHours.keys()),
                               y=list(hill.umHours.values()),
                               name='House{}-LL'.format(i+1))
             data.append(traceill)
         if os.path.isfile(tv):
             hitv = BarGraph(tv, key)
-            hitv.graph_value()
+            hitv.graph_value("House Energy History")
             traceitv = go.Bar(x=list(hitv.umHours.keys()),
                               y=list(hitv.umHours.values()),
                               name='House{}-TV'.format(i+1))
             data.append(traceitv)
         if os.path.isfile(ss1):
             hiss1 = BarGraph(ss1, key)
-            hiss1.graph_value()
+            hiss1.graph_value("House Energy History")
             traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                                y=list(hiss1.umHours.values()),
                                name='House{0}-Storage1'.format(i + 1))
             data.append(traceiss1)
         if os.path.isfile(ss2):
             hiss2 = BarGraph(ss2, key)
-            hiss2.graph_value()
+            hiss2.graph_value("House Energy History")
             traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
                                y=list(hiss2.umHours.values()),
                                name='House{0}-Storage2'.format(i + 1))
             data.append(traceiss2)
         if os.path.isfile(pv):
             hipv = BarGraph(pv, key)
-            hipv.graph_value()
+            hipv.graph_value("House Energy History")
             traceipv = go.Bar(x=list(hipv.umHours.keys()), y=list(hipv.umHours.values()),
                               name='House{0}-PV'.format(i + 1))
             data.append(traceipv)
@@ -487,12 +488,12 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
 # Average Trade Price Graph
 def _avg_trade_price(path, barmode, xtitle, ytitle):
     data = list()
-    key = 'avg trade price [EUR]'
+    key = 'avg trade rate [ct./kWh]'
     grid_file = os.path.join(path, 'grid', 'grid.csv')
     title = str('Average Trade Price')
     if os.path.isfile(grid_file):
         higap = BarGraph(grid_file, key)
-        higap.graph_value()
+        higap.graph_value("Average Trade Price")
         traceigap = go.Scatter(x=list(higap.umHours.keys()),
                                y=list(higap.umHours.values()),
                                name='Grid')
@@ -502,7 +503,7 @@ def _avg_trade_price(path, barmode, xtitle, ytitle):
         lap = os.path.join(path, 'grid', sub_file[i] + '.csv')
         if os.path.isfile(lap):
             hilap = BarGraph(lap, key)
-            hilap.graph_value()
+            hilap.graph_value("Average Trade Price")
             traceilap = go.Scatter(x=list(hilap.umHours.keys()),
                                    y=list(hilap.umHours.values()),
                                    name='House{}'.format(i+1))
