@@ -489,7 +489,7 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
 def _avg_trade_price(path, barmode, xtitle, ytitle):
     data = list()
     key = 'avg trade rate [ct./kWh]'
-    grid_file = os.path.join(path, 'grid', 'grid.csv')
+    grid_file = os.path.join(path, 'grid.csv')
     title = str('Average Trade Price')
     if os.path.isfile(grid_file):
         higap = BarGraph(grid_file, key)
