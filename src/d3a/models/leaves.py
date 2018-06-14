@@ -66,7 +66,7 @@ class PV(Leaf):
     appliance_type = PVAppliance
 
 
-class PVPredefined(Leaf):
+class PredefinedPV(Leaf):
     strategy_type = PVPredefinedStrategy
     appliance_type = PVAppliance
 

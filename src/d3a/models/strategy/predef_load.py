@@ -1,5 +1,6 @@
 import random
 import csv
+import sys
 
 from d3a.exceptions import MarketException
 from d3a.models.state import LoadState
@@ -7,7 +8,7 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class DefinedLoadStrategy(BaseStrategy):
-    def __init__(self, path, acceptable_energy_rate=10 ** 20):
+    def __init__(self, path, acceptable_energy_rate=sys.maxsize):
         super().__init__()
         self.state = LoadState()
         self.data = {}
