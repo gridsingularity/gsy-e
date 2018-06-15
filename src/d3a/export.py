@@ -486,6 +486,9 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
                               name='House{0}-PV'.format(i + 1))
             data.append(traceipv)
 
+    if not data:
+        return
+
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 
 
@@ -512,6 +515,8 @@ def _avg_trade_price(path, barmode, xtitle, ytitle):
                                    y=list(hilap.umHours.values()),
                                    name='House{}'.format(i+1))
             data.append(traceilap)
+    if not data:
+        return
     plot_dir = os.path.join(path, 'plot')
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
