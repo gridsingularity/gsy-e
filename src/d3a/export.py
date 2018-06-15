@@ -308,6 +308,10 @@ def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
                               name='House{}-TV'.format(i+1))
             data.append(traceitv)
 
+    if not data:
+        _log.info("No unmatched loads. The graph will not be generated.")
+        return
+
     output_file = os.path.join(path, 'plot', iname)
 
     BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
