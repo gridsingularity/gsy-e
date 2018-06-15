@@ -123,7 +123,6 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     assert len(pv_test3.offers.posted.items()) == 1
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
-    # old_offer = market_test3.offers['id']
     old_offer = list(pv_test3.offers.posted.keys())[0]
     pv_test3.decrease_offer_price(area_test3.test_market)
     new_offer = list(pv_test3.offers.posted.keys())[0]
