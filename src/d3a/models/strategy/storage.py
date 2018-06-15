@@ -136,20 +136,21 @@ class StorageStrategy(BaseStrategy):
             self.offers.post(offer, target_market)
 
     def _select_market_to_sell(self):
-        try:
-            max_rate = 0.0
-            most_expensive_market = list(self.area.markets.values())[0]
-            for m in self.area.markets.values():
-                if len(m.sorted_offers) > 0 and \
-                        m.sorted_offers[0].price / m.sorted_offers[0].energy > max_rate:
-                    max_rate = m.sorted_offers[0].price / m.sorted_offers[0].energy
-                    most_expensive_market = m
-        except IndexError:
-            try:
-                most_expensive_market = self.area.current_market
-            except StopIteration:
-                return
-        return most_expensive_market
+        # try:
+        #     max_rate = 0.0
+        #     most_expensive_market = list(self.area.markets.values())[0]
+        #     for m in self.area.markets.values():
+        #         if len(m.sorted_offers) > 0 and \
+        #                 m.sorted_offers[0].price / m.sorted_offers[0].energy > max_rate:
+        #             max_rate = m.sorted_offers[0].price / m.sorted_offers[0].energy
+        #             most_expensive_market = m
+        # except IndexError:
+        #     try:
+        #         most_expensive_market = self.area.current_market
+        #     except StopIteration:
+        #         return
+        # return most_expensive_market
+        return list(self.area.markets.values())[0]
 
     def _calculate_energy_to_sell(self, energy, target_market):
         # If no energy is passed, try to sell all the Energy left in the storage
