@@ -116,7 +116,7 @@ class PVStrategy(BaseStrategy):
         if market not in self.offers.open.values():
             return
         for offer, iterated_market in self.offers.open.items():
-            if (offer.price/offer.energy - self.calculate_price_decrease_rate)\
+            if (offer.price / offer.energy - self.price_decrease_rate)\
                     <= self.min_selling_price.m:
                 continue
             if iterated_market != market:
@@ -124,7 +124,7 @@ class PVStrategy(BaseStrategy):
             try:
                 iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
-                    (offer.price - (offer.energy * self.calculate_price_decrease_rate)),
+                    (offer.price - (offer.energy * self.price_decrease_rate)),
                     offer.energy,
                     self.owner.name
                 )
@@ -194,7 +194,7 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._decrease_price_timepoint_s = 0 * ureg.seconds
-        self.calculate_price_decrease_rate = self._calculate_price_decrease_rate()
+        self.price_decrease_rate = self._calculate_price_decrease_rate()
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
