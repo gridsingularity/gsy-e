@@ -90,8 +90,7 @@ def pv_test1(area_test1):
 
 def test_activation(pv_test1, area_test1):
     pv_test1.event_activate()
-    # Pendulum.today() returns pendulum object with the date of today and midnight
-    assert pv_test1.midnight == pendulum.today()
+    assert pv_test1._decrease_price_every_nr_s.m > 0
     global ENERGY_FORECAST
     ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh
 
