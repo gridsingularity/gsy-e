@@ -16,13 +16,18 @@ class ReadProfileMixin:
         return profile_data
 
     def read_power_profile_to_energy(self, profile_path, time_format, slot_length):
+        profile_data = self._readCSV(profile_path)
+        return self.interpolate_profile_data_for_market_slot(
+            profile_data, time_format, slot_length
+        )
+
+    @staticmethod
+    def interpolate_profile_data_for_market_slot(profile_data, time_format, slot_length):
         """
         Interpolates power curves onto slot times and converts it into energy (kWh)
 
         The intrinsic conversion to seconds is done in order to enable slot-lengths < 1 minute
         """
-
-        profile_data = self._readCSV(profile_path)
 
         timestr_solar_array = np.array(list(profile_data.keys()))
         solar_power_W = np.array(list(profile_data.values()))

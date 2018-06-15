@@ -4,7 +4,7 @@ from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy # NOQA
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.strategy.predef_load import DefinedLoadStrategy
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 import pathlib
