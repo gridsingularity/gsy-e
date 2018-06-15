@@ -54,13 +54,11 @@ class PVStrategy(BaseStrategy):
         # if risk >100 then energy_price more than average_market_rate
         energy_rate = max(average_market_rate.m, self.min_selling_price.m)
         rounded_energy_rate = round(energy_rate, 2)
-        # print("Historical Average price: {}".format(self.area.historical_avg_price))
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
             rounded_energy_rate = MAX_ENERGY_RATE
         assert rounded_energy_rate >= 0.0
-        # Debugging print
         # Iterate over all markets open in the future
         for (time, market) in self.area.markets.items():
             # If there is no offer for a currently open marketplace:
