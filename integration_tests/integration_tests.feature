@@ -31,11 +31,3 @@ Feature: Run integration tests
      | default_appliance |    24     |      15     |      15      |
      | default_csv |    24     |      15     |      15      |
 
-#  Scenario Outline: Run integration tests for all Scenarios
-#     Given we have a scenario named <scenario>
-#     And d3a is installed
-#     When we run the d3a simulation with <scenario> [<duration>, <slot_length>, <tick_length>]
-#     Then we test the output of the simulation of <scenario> [<duration>, <slot_length>, <tick_length>]
-#  Examples: Settings
-#     | scenario                  |   duration  | slot_length | tick_length |
-#     |         default           |    24       |      15     |      15     |
