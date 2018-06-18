@@ -151,7 +151,7 @@ class Area:
         )
 
     @property
-    def historical_avg_price(self):
+    def historical_avg_rate(self):
         price = sum(
             market.accumulated_trade_price
             for market in self.markets.values()

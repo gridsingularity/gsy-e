@@ -39,7 +39,7 @@ class FakeArea():
         )
 
     @property
-    def historical_avg_price(self):
+    def historical_avg_rate(self):
         return 30
 
     @property

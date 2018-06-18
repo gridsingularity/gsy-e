@@ -39,7 +39,7 @@ class FakeArea():
         )
 
     @property
-    def historical_avg_price(self):
+    def historical_avg_rate(self):
         return 30
 
     @property
@@ -335,7 +335,7 @@ def testing_low_risk(area_test3, pv_test7):
         old_offer = list(pv_test7.offers.posted.keys())[0]
         pv_test7.decrease_offer_price(area_test3.test_market)
         new_offer = list(pv_test7.offers.posted.keys())[0]
-        price_dec_per_slot = (area_test3.historical_avg_price) * (1 - pv_test7.risk / MAX_RISK)
+        price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test7.risk / MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
                                      / pv_test7._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
@@ -360,7 +360,7 @@ def testing_high_risk(area_test3, pv_test8):
         old_offer = list(pv_test8.offers.posted.keys())[0]
         pv_test8.decrease_offer_price(area_test3.test_market)
         new_offer = list(pv_test8.offers.posted.keys())[0]
-        price_dec_per_slot = (area_test3.historical_avg_price) * (1 - pv_test8.risk / MAX_RISK)
+        price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test8.risk / MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
                                      / pv_test8._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot

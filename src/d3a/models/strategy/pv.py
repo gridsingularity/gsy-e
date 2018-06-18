@@ -46,8 +46,8 @@ class PVStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
         average_market_rate = Q_(
-            MAX_ENERGY_RATE if self.area.historical_avg_price == 0
-            else self.area.historical_avg_price,
+            MAX_ENERGY_RATE if self.area.historical_avg_rate == 0
+            else self.area.historical_avg_rate,
             ureg.EUR_cents / ureg.kWh)
         # Needed to calculate risk_dependency_of_selling_rate
         # if risk 0-100 then energy_price less than average_market_rate
@@ -121,7 +121,7 @@ class PVStrategy(BaseStrategy):
                 continue
 
     def _calculate_price_decrease_rate(self):
-        price_dec_per_slot = (self.area.historical_avg_price) * (1 - self.risk/MAX_RISK)
+        price_dec_per_slot = (self.area.historical_avg_rate) * (1 - self.risk/MAX_RISK)
         price_updates_per_slot = int(self.area.config.slot_length.seconds
                                      / self._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
