@@ -6,7 +6,7 @@ from pendulum import Pendulum, Interval
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-from d3a.models.strategy.const import MAX_ENERGY_RATE, DEFAULT_PV_POWER_PROFILE
+from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE
 
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
@@ -39,7 +39,7 @@ class FakeArea():
         )
 
     @property
-    def historical_avg_price(self):
+    def historical_avg_rate(self):
         return 30
 
     @property
@@ -121,7 +121,9 @@ def pv_test3(area_test3):
 
 def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     assert len(pv_test3.offers.posted.items()) == 1
-    old_offer = market_test3.offers['id']
+    pv_test3.event_activate()
+    pv_test3.event_market_cycle()
+    old_offer = list(pv_test3.offers.posted.keys())[0]
     pv_test3.decrease_offer_price(area_test3.test_market)
     new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
@@ -183,23 +185,6 @@ def pv_test6(area_test3):
     p.owner = area_test3
     p.offers.posted = {}
     return p
-
-
-def testing_low_risk(pv_test6, market_test3):
-    pv_test6.risk = 20
-    pv_test6.event_activate()
-    pv_test6.event_tick(area=area_test3)
-    assert len(market_test3.created_offers) > 0
-    assert market_test3.created_offers[0].price == \
-        MAX_ENERGY_RATE * 0.2 * pv_test6.energy_production_forecast_kWh[TIME]
-
-
-def testing_high_risk(pv_test6, market_test3):
-    pv_test6.risk = 90
-    pv_test6.event_activate()
-    pv_test6.event_tick(area=area_test3)
-    assert market_test3.created_offers[0].price == \
-        MAX_ENERGY_RATE * 0.9 * pv_test6.energy_production_forecast_kWh[TIME]
 
 
 def testing_produced_energy_forecast_real_data(pv_test6):

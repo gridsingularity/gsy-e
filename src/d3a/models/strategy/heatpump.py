@@ -34,7 +34,7 @@ class HeatPumpStrategy(BaseStrategy):
         median_risk = max_risk / 2
         # The threshold buying price depends on historical market data
         min_historical_price, max_historical_price = self.area.historical_min_max_price
-        average_market_price = self.area.historical_avg_price
+        average_market_price = self.area.historical_avg_rate
         storage_temp_domain = MAX_STORAGE_TEMP - MIN_STORAGE_TEMP
         # normalized_storage_temp has a value between 1 and -1
         # If self.storage_temp = 30 the normalized_storage_temp is 1

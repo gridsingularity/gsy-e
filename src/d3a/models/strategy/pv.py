@@ -8,8 +8,7 @@ from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, MAX_ENERGY_RATE, \
-    MIN_PV_SELLING_PRICE, MAX_OFFER_TRAVERSAL_LENGTH, \
-    PV_DECREASE_PER_SECOND_BY
+    MIN_PV_SELLING_PRICE, MAX_OFFER_TRAVERSAL_LENGTH
 
 
 class PVStrategy(BaseStrategy):
@@ -47,25 +46,19 @@ class PVStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
         average_market_rate = Q_(
-            MAX_ENERGY_RATE if self.area.historical_avg_price == 0
-            else self.area.historical_avg_price,
+            MAX_ENERGY_RATE if self.area.historical_avg_rate == 0
+            else self.area.historical_avg_rate,
             ureg.EUR_cents / ureg.kWh)
         # Needed to calculate risk_dependency_of_selling_rate
         # if risk 0-100 then energy_price less than average_market_rate
         # if risk >100 then energy_price more than average_market_rate
-        risk_dependency_of_selling_rate = ((self.risk/MAX_RISK) - 1) * average_market_rate
-
-        energy_rate = max(average_market_rate.m + risk_dependency_of_selling_rate.m,
-                          self.min_selling_price.m)
-
+        energy_rate = max(average_market_rate.m, self.min_selling_price.m)
         rounded_energy_rate = round(energy_rate, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
             rounded_energy_rate = MAX_ENERGY_RATE
         assert rounded_energy_rate >= 0.0
-        # Debugging print
-        # print('rounded_energy_price is %s' % rounded_energy_price)
         # Iterate over all markets open in the future
         for (time, market) in self.area.markets.items():
             # If there is no offer for a currently open marketplace:
@@ -110,15 +103,15 @@ class PVStrategy(BaseStrategy):
         if market not in self.offers.open.values():
             return
         for offer, iterated_market in self.offers.open.items():
+            if (offer.price / offer.energy - self.price_decrease_rate)\
+                    <= self.min_selling_price.m:
+                continue
             if iterated_market != market:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
-                reduced_price = offer.price * self._calculate_price_decrease_rate()
-                if reduced_price / offer.energy < MIN_PV_SELLING_PRICE:
-                    reduced_price = offer.energy * MIN_PV_SELLING_PRICE
                 new_offer = iterated_market.offer(
-                    reduced_price,
+                    (offer.price - (offer.energy * self.price_decrease_rate)),
                     offer.energy,
                     self.owner.name
                 )
@@ -128,7 +121,11 @@ class PVStrategy(BaseStrategy):
                 continue
 
     def _calculate_price_decrease_rate(self):
-        return 1.0 - PV_DECREASE_PER_SECOND_BY * self._decrease_price_every_nr_s.m
+        price_dec_per_slot = (self.area.historical_avg_rate) * (1 - self.risk/MAX_RISK)
+        price_updates_per_slot = int(self.area.config.slot_length.seconds
+                                     / self._decrease_price_every_nr_s.m)
+        price_dec_per_update = price_dec_per_slot / price_updates_per_slot
+        return price_dec_per_update
 
     def produced_energy_forecast_real_data(self):
         # This forecast ist based on the real PV system data provided by enphase
@@ -174,6 +171,7 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._decrease_price_timepoint_s = 0 * ureg.seconds
+        self.price_decrease_rate = self._calculate_price_decrease_rate()
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)

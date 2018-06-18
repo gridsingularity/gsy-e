@@ -41,7 +41,7 @@ class FridgeStrategy(BaseStrategy):
         median_risk = MAX_RISK / 2
         # The threshold buying price depends on historical market data
         min_historical_price, max_historical_price = self.area.historical_min_max_price
-        average_market_price = self.area.historical_avg_price
+        average_market_price = self.area.historical_avg_rate
 
         # deviation_from_average is the value that determines the deviation (in percentage of
         # the average market price)
