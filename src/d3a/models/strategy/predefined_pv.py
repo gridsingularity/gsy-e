@@ -8,6 +8,8 @@ from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, \
 from d3a.models.strategy.mixins import ReadProfileMixin
 
 
+# TODO: Pypy has a different behavior about defining current module path
+# Should make this functional cross-interpreter
 d3a_path = d3a.__path__[0]
 
 
@@ -15,12 +17,12 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-    parameters = ('panel_count', 'risk', 'power_profile')
+    parameters = ('panel_count', 'risk')
 
     def __init__(self, risk=DEFAULT_RISK, panel_count=1,
-                 min_selling_price=MIN_PV_SELLING_PRICE, power_profile=None):
+                 min_selling_price=MIN_PV_SELLING_PRICE, cloud_coverage=None):
         super().__init__(panel_count=panel_count, risk=risk, min_selling_price=min_selling_price)
-        self._power_profile_index = power_profile
+        self._power_profile_index = cloud_coverage
         self._time_format = "%H:%M"
 
     def event_activate(self):
@@ -61,9 +63,9 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
             raise ValueError("Energy_profile has to be in [0,1,2]")
 
         # Populate energy production forecast data
-        return self.read_power_profile_to_energy(profile_path,
-                                                 self._time_format,
-                                                 self.area.config.slot_length)
+        return self.read_power_profile_csv_to_energy(profile_path,
+                                                     self._time_format,
+                                                     self.area.config.slot_length)
 
 
 class PVUserProfileStrategy(PVPredefinedStrategy):
@@ -79,6 +81,6 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         self._time_format = "%H:%M"
 
     def _read_predefined_profile_for_pv(self):
-        return self.interpolate_profile_data_for_market_slot(
-            self._power_profile, self._time_format, self.area.config.slot_length
+        return self.read_arbitrary_power_profile_to_energy(
+            self._power_profile, self.area.config.slot_length
         )

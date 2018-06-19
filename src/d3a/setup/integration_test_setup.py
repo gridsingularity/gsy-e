@@ -38,7 +38,7 @@ def get_setup(config):
                     Area('H2 PV', strategy=PVStrategy(4, 80),
                          appliance=PVAppliance()),
                     Area('H2 PVPredefined',
-                         strategy=PVPredefinedStrategy(power_profile=1),
+                         strategy=PVPredefinedStrategy(cloud_coverage=1),
                          appliance=PVAppliance())
 
                 ]

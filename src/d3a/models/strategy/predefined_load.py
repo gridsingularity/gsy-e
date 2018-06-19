@@ -1,5 +1,4 @@
 import sys
-import os
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.mixins import ReadProfileMixin
 
@@ -18,28 +17,16 @@ class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
         self.load_profile = {}
 
     def event_activate(self):
-        if os.path.isfile(self.daily_load_profile):
-            self.load_profile = self.read_power_profile_to_energy(
-                self.daily_load_profile,
-                "%H:%M",
-                self.area.config.slot_length
-            )
-        elif isinstance(self.daily_load_profile, dict):
-            self.load_profile = self.interpolate_profile_data_for_market_slot(
-                self.daily_load_profile,
-                "%H:%M",
-                self.area.config.slot_length
-            )
-        else:
-            raise TypeError("Unsupported type for load strategy input: " +
-                            str(self.daily_load_profile))
+        self.load_profile = self.read_arbitrary_power_profile_to_energy(
+            self.daily_load_profile, self.area.config.slot_length
+        )
         self._update_energy_requirement()
 
     def _update_energy_requirement(self):
         self.energy_requirement = 0
         if self.load_profile[self.area.next_market.time_slot.format('%H:%M')] != 0:
-            energy_per_slot = self.load_profile[self.area.next_market.time_slot.format('%H:%M')]
-            self.energy_requirement = energy_per_slot
+            self.energy_requirement = \
+                self.load_profile[self.area.next_market.time_slot.format('%H:%M')] * 1000.0
         self.state.record_desired_energy(self.area, self.energy_requirement)
 
     def _operating_hours(self, energy):

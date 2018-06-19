@@ -4,7 +4,8 @@ from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, STORAGE_MIN_ALLOWED_SOC, \
-    STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER
+    STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER, \
+    MAX_ENERGY_RATE
 
 
 class StorageStrategy(BaseStrategy):
@@ -200,7 +201,7 @@ class StorageStrategy(BaseStrategy):
             most_expensive_cheapest_offer = (
                 max((offer.price / offer.energy) for offer in cheapest_offers))
         else:
-            most_expensive_cheapest_offer = 30
+            most_expensive_cheapest_offer = MAX_ENERGY_RATE
         return max(
             min(most_expensive_cheapest_offer, self.max_selling_rate_cents_per_kwh.m),
             self.break_even.m
