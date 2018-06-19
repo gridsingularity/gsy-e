@@ -68,9 +68,9 @@ class PVStrategy(BaseStrategy):
                     if self.energy_production_forecast_kWh[time] == 0:
                         continue
                     offer = market.offer(
-                        rounded_energy_rate *
+                        rounded_energy_rate * self.panel_count *
                         self.energy_production_forecast_kWh[time],
-                        self.energy_production_forecast_kWh[time],
+                        self.energy_production_forecast_kWh[time] * self.panel_count,
                         self.owner.name
                     )
                     self.offers.post(offer, market)
@@ -142,7 +142,6 @@ class PVStrategy(BaseStrategy):
                     ]:
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
             self.energy_production_forecast_kWh[slot_time] =\
-                self.panel_count *\
                 self.gaussian_energy_forecast_kWh(difference_to_midnight_in_minutes)
             assert self.energy_production_forecast_kWh[slot_time] >= 0.0
 
