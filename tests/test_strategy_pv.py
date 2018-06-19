@@ -397,4 +397,3 @@ def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
     pv_test9.event_activate()
     pv_test9.event_tick(area=area_test9)
     assert len(market_test9.created_offers) == 1
-    assert len(pv_test9.offers.posted.items()) == 1
