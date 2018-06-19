@@ -102,7 +102,7 @@ def load_profile_scenario(context):
 
 @given('the scenario includes a predefined PV')
 def pv_profile_scenario(context):
-    predefined_load_scenario = {
+    predefined_pv_scenario = {
         "name": "Grid",
         "children": [
             {
@@ -149,7 +149,7 @@ def pv_profile_scenario(context):
                                          duration=Interval(hours=24),
                                          market_count=4,
                                          cloud_coverage=0)
-    context._settings.area = predefined_load_scenario
+    context._settings.area = predefined_pv_scenario
 
 
 @when('the simulation is running')
@@ -310,7 +310,6 @@ def check_pv_profile_csv(context):
     produced_energy = {f'{k.hour:02}:{k.minute:02}': v
                        for k, v in pv.strategy.energy_production_forecast_kWh.items()
                        }
-    print(produced_energy)
     for timepoint, energy in produced_energy.items():
         if timepoint in input_profile:
             assert energy == input_profile[timepoint] / \
