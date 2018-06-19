@@ -151,6 +151,7 @@ class StorageStrategy(BaseStrategy):
         #     except StopIteration:
         #         return
         # return most_expensive_market
+        # TODO: Consider removing the comments in the context of D3ASIM-511
         return list(self.area.markets.values())[0]
 
     def _calculate_energy_to_sell(self, energy, target_market):

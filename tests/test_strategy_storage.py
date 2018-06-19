@@ -395,3 +395,17 @@ def test_storage_constructor_rejects_incorrect_parameters():
         StorageStrategy(initial_charge=101)
     with pytest.raises(ValueError):
         StorageStrategy(initial_charge=-1)
+
+
+def test_free_storage_calculation_takes_into_account_storage_capacity(storage_strategy_test1):
+    for capacity in [50.0, 100.0, 1000.0]:
+        storage_strategy_test1.state._used_storage = 12.0
+        storage_strategy_test1.state._blocked_storage = 13.0
+        storage_strategy_test1.state._offered_storage = 14.0
+        storage_strategy_test1.state.capacity = capacity
+
+        assert storage_strategy_test1.state.free_storage == \
+            storage_strategy_test1.state.capacity \
+            - storage_strategy_test1.state._used_storage \
+            - storage_strategy_test1.state._offered_storage \
+            - storage_strategy_test1.state._blocked_storage

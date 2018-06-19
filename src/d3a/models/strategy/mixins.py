@@ -8,7 +8,8 @@ from statistics import mean
 
 class ReadProfileMixin:
 
-    def _readCSV(self, path):
+    @staticmethod
+    def _readCSV(path):
         profile_data = {}
         with open(path) as csvfile:
             next(csvfile)
@@ -17,12 +18,6 @@ class ReadProfileMixin:
                 timestr, wattstr = row
                 profile_data[timestr] = float(wattstr)
         return profile_data
-
-    def read_power_profile_csv_to_energy(self, profile_path, time_format, slot_length):
-        profile_data = self._readCSV(profile_path)
-        return self._interpolate_profile_data_for_market_slot(
-            profile_data, time_format, slot_length
-        )
 
     @staticmethod
     def _interpolate_profile_data_for_market_slot(profile_data, time_format, slot_length):
@@ -90,7 +85,13 @@ class ReadProfileMixin:
                 for ii in range(len(slot_energy_kWh))
                 }
 
-    def read_arbitrary_power_profile_to_energy(self, daily_load_profile, slot_length):
+    def read_power_profile_csv_to_energy(self, profile_path, time_format, slot_length):
+        profile_data = self._readCSV(profile_path)
+        return self._interpolate_profile_data_for_market_slot(
+            profile_data, time_format, slot_length
+        )
+
+    def read_arbitrary_power_profile_W_to_energy_kWh(self, daily_load_profile, slot_length):
         if os.path.isfile(str(daily_load_profile)):
             return self.read_power_profile_csv_to_energy(
                 daily_load_profile,
@@ -98,23 +99,24 @@ class ReadProfileMixin:
                 slot_length
             )
         elif isinstance(daily_load_profile, dict):
-            if isinstance(daily_load_profile.keys()[0], str):
+            if isinstance(list(daily_load_profile.keys())[0], str):
                 # Assume that the time fields are properly formatted.
                 return self._calculate_energy_from_power_profile(
                     daily_load_profile,
                     "%H:%M",
                     slot_length
                 )
-            elif isinstance(daily_load_profile.keys()[0], int):
+            elif isinstance(list(daily_load_profile.keys())[0], int):
                 # If it is an integer assume an hourly profile
-                daily_load_profile = {hour: 0 for hour in range(24)}.update(daily_load_profile)
-                daily_load_profile = dict(
+                input_profile = {hour: 0 for hour in range(24)}
+                input_profile.update(daily_load_profile)
+                input_profile = dict(
                     (f"{k:02}:{m:02}", v)
-                    for k, v in daily_load_profile.items()
+                    for k, v in input_profile.items()
                     for m in range(60)
                 )
                 return self._calculate_energy_from_power_profile(
-                    daily_load_profile,
+                    input_profile,
                     "%H:%M",
                     slot_length
                 )

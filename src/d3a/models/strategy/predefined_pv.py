@@ -72,15 +72,15 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ('panel_count', 'risk', 'power_profile')
+    parameters = ('power_profile', 'risk', 'panel_count')
 
     def __init__(self, power_profile, risk=DEFAULT_RISK, panel_count=1,
                  min_selling_price=MIN_PV_SELLING_PRICE):
         super().__init__(risk=risk, panel_count=panel_count, min_selling_price=min_selling_price)
-        self._power_profile = power_profile
+        self._power_profile_W = power_profile
         self._time_format = "%H:%M"
 
     def _read_predefined_profile_for_pv(self):
-        return self.read_arbitrary_power_profile_to_energy(
-            self._power_profile, self.area.config.slot_length
+        return self.read_arbitrary_power_profile_W_to_energy_kWh(
+            self._power_profile_W, self.area.config.slot_length
         )
