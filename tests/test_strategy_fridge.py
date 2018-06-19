@@ -26,7 +26,7 @@ class FakeArea():
         return 5
 
     @property
-    def historical_avg_price(self):
+    def historical_avg_rate(self):
         avg_price = [30]
         return avg_price[self.count]
 
