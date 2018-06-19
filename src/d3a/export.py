@@ -486,8 +486,8 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
                               name='House{0}-PV'.format(i + 1))
             data.append(traceipv)
 
-    if not data:
-        return
+        if not data:
+            return
 
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 

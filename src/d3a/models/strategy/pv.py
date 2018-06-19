@@ -67,14 +67,13 @@ class PVStrategy(BaseStrategy):
                 try:
                     if self.energy_production_forecast_kWh[time] == 0:
                         continue
-                    for i in range(self.panel_count):
-                        offer = market.offer(
-                            rounded_energy_rate *
-                            self.energy_production_forecast_kWh[time],
-                            self.energy_production_forecast_kWh[time],
-                            self.owner.name
-                        )
-                        self.offers.post(offer, market)
+                    offer = market.offer(
+                        rounded_energy_rate * self.panel_count *
+                        self.energy_production_forecast_kWh[time],
+                        self.energy_production_forecast_kWh[time] * self.panel_count,
+                        self.owner.name
+                    )
+                    self.offers.post(offer, market)
 
                 except KeyError:
                     self.log.warn("PV has no forecast data for this time")
@@ -142,9 +141,8 @@ class PVStrategy(BaseStrategy):
                         ) // self.area.config.slot_length)
                     ]:
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
-            self.energy_production_forecast_kWh[slot_time] = self.gaussian_energy_forecast_kWh(
-                difference_to_midnight_in_minutes
-            )
+            self.energy_production_forecast_kWh[slot_time] =\
+                self.gaussian_energy_forecast_kWh(difference_to_midnight_in_minutes)
             assert self.energy_production_forecast_kWh[slot_time] >= 0.0
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
