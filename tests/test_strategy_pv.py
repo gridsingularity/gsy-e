@@ -342,6 +342,9 @@ def testing_low_risk(area_test3, pv_test7):
         assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
 
+"""TEST8"""
+
+
 @pytest.fixture()
 def pv_test8(area_test3):
     p = PVStrategy(1, 10)
@@ -365,3 +368,33 @@ def testing_high_risk(area_test3, pv_test8):
                                      / pv_test8._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
+
+
+"""TEST9"""
+
+
+@pytest.fixture()
+def area_test9():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def market_test9(area_test9):
+    return area_test9.test_market
+
+
+@pytest.fixture()
+def pv_test9(area_test9):
+    p = PVStrategy(panel_count=3)
+    p.area = area_test9
+    p.owner = area_test9
+    p.offers.posted = {}
+    p.energy_production_forecast_kWh = ENERGY_FORECAST
+    return p
+
+
+def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
+    pv_test9.event_activate()
+    pv_test9.event_tick(area=area_test9)
+    assert len(market_test9.created_offers) == 1
+    assert len(pv_test9.offers.posted.items()) == 1
