@@ -165,6 +165,6 @@ class ReadProfileMixin:
                 )
             else:
                 raise TypeError("Unsupported type for load strategy input timestamp field: " +
-                                str(daily_load_profile.keys()[0]))
+                                str(list(daily_load_profile.keys())[0]))
         else:
             raise TypeError(f"Unsupported type for load strategy input: {str(daily_load_profile)}")

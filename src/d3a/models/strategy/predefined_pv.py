@@ -85,7 +85,7 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
             raise ValueError("Energy_profile has to be in [0,1,2]")
 
         # Populate energy production forecast data
-        return self.read_power_profile_csv_to_energy(profile_path,
+        return self.read_power_profile_csv_to_energy(str(profile_path),
                                                      self._time_format,
                                                      self.area.config.slot_length)
 

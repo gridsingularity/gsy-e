@@ -2,12 +2,13 @@
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy # NOQA
+from d3a.models.strategy.predefined_pv import d3a_path
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-import pathlib
+import os
 
 
 def get_setup(config):
@@ -19,9 +20,8 @@ def get_setup(config):
                 [
                     Area('H1 General Load',
                          strategy=DefinedLoadStrategy(
-                             daily_load_profile=pathlib.Path(
-                                 pathlib.Path.cwd(), 'src/d3a/resources/LOAD_DATA_1.csv'
-                             ).expanduser(),
+                             daily_load_profile=os.path.join(d3a_path, 'src', 'd3a',
+                                                             'resources', 'LOAD_DATA_1.csv'),
                              acceptable_energy_rate=25),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
