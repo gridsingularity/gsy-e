@@ -103,16 +103,13 @@ class StorageStrategy(BaseStrategy):
                     # Try to buy the energy
                     try:
                         if self.state.available_energy_per_slot(market.time_slot) > offer.energy:
-                            self.accept_offer(market, offer)
-                            self.state.update_energy_per_slot(offer.energy, market.time_slot)
-                            self.state.block_storage(offer.energy)
-                            return True
+                            max_energy = offer.energy
                         else:
                             max_energy = self.state.available_energy_per_slot(market.time_slot)
-                            self.accept_offer(market, offer, energy=max_energy)
-                            self.state.update_energy_per_slot(max_energy, market.time_slot)
-                            self.state.block_storage(max_energy)
-                            return True
+                        self.accept_offer(market, offer, energy=max_energy)
+                        self.state.update_energy_per_slot(max_energy, market.time_slot)
+                        self.state.block_storage(max_energy)
+                        return True
 
                     except MarketException:
                         # Offer already gone etc., try next one.
