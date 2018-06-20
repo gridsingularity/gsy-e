@@ -273,7 +273,8 @@ def pv_test_cloudy(area_test7):
     p.area = area_test7
     p.owner = area_test7
     p.area.config.slot_length = Interval(minutes=20)
-    return p
+    yield p
+    p.area.config.slot_length = Interval(minutes=15)
 
 
 def test_power_profiles(pv_test_sunny, pv_test_partial, pv_test_cloudy):
