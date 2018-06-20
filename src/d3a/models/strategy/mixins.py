@@ -1,15 +1,27 @@
+"""
+Exposes mixins that can be used from strategy classes.
+"""
 import csv
 import os
 import numpy as np
 from datetime import datetime
 from pendulum import Interval
 from statistics import mean
+from typing import Dict
 
 
 class ReadProfileMixin:
-
+    """
+    Introduces read profile functionality for a strategy class.
+    """
     @staticmethod
-    def _readCSV(path):
+    def _readCSV(path: str) -> Dict[str, float]:
+        """
+        Read a 2-column csv profile file. First column is the time, second column
+        is the value (power, energy ...)
+        :param path: path of the csv file
+        :return: key-value pairs of the time and values
+        """
         profile_data = {}
         with open(path) as csvfile:
             next(csvfile)
@@ -20,15 +32,20 @@ class ReadProfileMixin:
         return profile_data
 
     @staticmethod
-    def _interpolate_profile_data_for_market_slot(profile_data, time_format, slot_length):
+    def _interpolate_profile_data_for_market_slot(profile_data_W: Dict[str, float],
+                                                  time_format: str,
+                                                  slot_length: Interval) -> Dict[str, float]:
         """
         Interpolates power curves onto slot times and converts it into energy (kWh)
-
         The intrinsic conversion to seconds is done in order to enable slot-lengths < 1 minute
+        :param profile_data_W: Power profile in W, in the same format as the result of _readCSV
+        :param time_format: String format for time, eg. %H:%M
+        :param slot_length: slot length duration
+        :return: a mapping from time to energy values in kWh
         """
 
-        timestr_solar_array = np.array(list(profile_data.keys()))
-        solar_power_W = np.array(list(profile_data.values()))
+        timestr_solar_array = np.array(list(profile_data_W.keys()))
+        solar_power_W = np.array(list(profile_data_W.values()))
 
         time0 = datetime.utcfromtimestamp(0)
         time_solar_array = np.array([
@@ -51,14 +68,20 @@ class ReadProfileMixin:
                 }
 
     @staticmethod
-    def _calculate_energy_from_power_profile(profile_data, time_format, slot_length):
+    def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
+                                             time_format: str,
+                                             slot_length: Interval) -> Dict[str, float]:
         """
         Calculates energy from power profile. Does not use numpy, calculates avg power for each
         market slot and based on that calculates energy.
+        :param profile_data_W: Power profile in W, in the same format as the result of _readCSV
+        :param time_format: String format for time, eg. %H:%M
+        :param slot_length: slot length duration
+        :return: a mapping from time to energy values in kWh
         """
 
-        timestr_solar_array = list(profile_data.keys())
-        solar_power_input_W = list(profile_data.values())
+        timestr_solar_array = list(profile_data_W.keys())
+        solar_power_input_W = list(profile_data_W.values())
         time0 = datetime.utcfromtimestamp(0)
         time_solar_array = [
             (datetime.strptime(ti, time_format) - time0).seconds
@@ -85,13 +108,33 @@ class ReadProfileMixin:
                 for ii in range(len(slot_energy_kWh))
                 }
 
-    def read_power_profile_csv_to_energy(self, profile_path, time_format, slot_length):
+    def read_power_profile_csv_to_energy(self,
+                                         profile_path: str,
+                                         time_format: str,
+                                         slot_length: Interval) -> Dict[str, float]:
+        """
+        Reads power profile from csv and converts it to energy
+        :param profile_path: path of the csv file
+        :param time_format: String format for time, eg. %H:%M
+        :param slot_length: slot length duration
+        :return: a mapping from time to energy values in kWh
+        """
         profile_data = self._readCSV(profile_path)
         return self._interpolate_profile_data_for_market_slot(
             profile_data, time_format, slot_length
         )
 
-    def read_arbitrary_power_profile_W_to_energy_kWh(self, daily_load_profile, slot_length):
+    def read_arbitrary_power_profile_W_to_energy_kWh(self,
+                                                     daily_load_profile,
+                                                     slot_length: Interval) -> Dict[str, float]:
+        """
+        Reads arbitrary power profile and converts it to energy. Handles csv and dict input.
+        :param daily_load_profile: Can be either a csv file path,
+        or a dict with hourly data (Dict[int, float])
+        or a dict with arbitrary time data (Dict[str, float])
+        :param slot_length: slot length duration
+        :return: a mapping from time to energy values in kWh
+        """
         if os.path.isfile(str(daily_load_profile)):
             return self.read_power_profile_csv_to_energy(
                 daily_load_profile,

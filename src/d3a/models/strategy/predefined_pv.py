@@ -1,3 +1,7 @@
+"""
+Creates a PV that uses a profile as input for its power values, either predefined or provided
+by the user.
+"""
 import pathlib
 import d3a
 
@@ -6,6 +10,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, \
     MAX_OFFER_TRAVERSAL_LENGTH
 from d3a.models.strategy.mixins import ReadProfileMixin
+from typing import Dict
 
 
 # TODO: Pypy has a different behavior about defining current module path
@@ -19,13 +24,25 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
     """
     parameters = ('panel_count', 'risk')
 
-    def __init__(self, risk=DEFAULT_RISK, panel_count=1,
-                 min_selling_price=MIN_PV_SELLING_PRICE, cloud_coverage=None):
+    def __init__(self, risk: int=DEFAULT_RISK, panel_count: int=1,
+                 min_selling_price: float=MIN_PV_SELLING_PRICE, cloud_coverage: int=None):
+        """
+        Constructor of PVPredefinedStrategy
+        :param risk: PV risk parameter
+        :param panel_count: number of solar panels for this PV plant
+        :param min_selling_price: lower threshold for the PV sale price
+        :param cloud_coverage: cloud conditions. 0=sunny, 1=cloudy, 2=partially cloudy
+        """
         super().__init__(panel_count=panel_count, risk=risk, min_selling_price=min_selling_price)
         self._power_profile_index = cloud_coverage
         self._time_format = "%H:%M"
 
     def event_activate(self):
+        """
+        Runs on activate event. Reads the power profile data and calculates the required energy
+        for each slot.
+        :return: None
+        """
         # TODO: Need to have 2-stage initialization as well, because the area objects are not
         # created when the constructor is executed if we inherit from a mixin class,
         # therefore config cannot be read at that point
@@ -50,7 +67,12 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
         self._decrease_price_every_nr_s = \
             (self.area.config.tick_length.seconds * MAX_OFFER_TRAVERSAL_LENGTH + 1) * ureg.seconds
 
-    def _read_predefined_profile_for_pv(self):
+    def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
+        """
+        Reads profile data from the predefined power profiles. Reads config and constructor
+        parameters and selects the appropriate rpedefined profile.
+        :return: key value pairs of time to energy in kWh
+        """
         if self._power_profile_index is None:
             self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
@@ -74,13 +96,26 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
     parameters = ('power_profile', 'risk', 'panel_count')
 
-    def __init__(self, power_profile, risk=DEFAULT_RISK, panel_count=1,
-                 min_selling_price=MIN_PV_SELLING_PRICE):
+    def __init__(self, power_profile, risk: int=DEFAULT_RISK, panel_count: int=1,
+                 min_selling_price: float=MIN_PV_SELLING_PRICE):
+        """
+        Constructor of PVUserProfileStrategy
+        :param power_profile: input profile for a day. Can be either a csv file path,
+        or a dict with hourly data (Dict[int, float])
+        or a dict with arbitrary time data (Dict[str, float])
+        :param risk: PV risk parameter
+        :param panel_count: number of solar panels for this PV plant
+        :param min_selling_price: lower threshold for the PV sale price
+        """
         super().__init__(risk=risk, panel_count=panel_count, min_selling_price=min_selling_price)
         self._power_profile_W = power_profile
         self._time_format = "%H:%M"
 
-    def _read_predefined_profile_for_pv(self):
+    def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
+        """
+        Reads profile data from the power profile. Handles csv files and dicts.
+        :return: key value pairs of time to energy in kWh
+        """
         return self.read_arbitrary_power_profile_W_to_energy_kWh(
             self._power_profile_W, self.area.config.slot_length
         )
