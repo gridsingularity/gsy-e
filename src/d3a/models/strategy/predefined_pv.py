@@ -25,9 +25,9 @@ class PVPredefinedStrategy(PVStrategy):
             power_profile = self.owner.config.cloud_coverage
         if power_profile == 0:  # 0:sunny
             self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv'))
-        elif power_profile == 2:  # 2:partial
+        elif power_profile == 1:  # 1:partial
             self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_partial.csv'))
-        elif power_profile == 1:  # 1:cloudy
+        elif power_profile == 2:  # 2:cloudy
             self._readCSV(pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv'))
         else:
             raise ValueError("Energy_profile has to be in [0,1,2]")
