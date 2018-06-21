@@ -8,7 +8,7 @@ from d3a.models.market import Offer, Trade
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC, STORAGE_BREAK_EVEN
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE
+from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE, MAX_ENERGY_RATE
 
 
 class FakeArea():
@@ -51,7 +51,8 @@ class FakeArea():
                 market_count=4,
                 slot_length=Interval(minutes=15),
                 tick_length=Interval(seconds=1),
-                cloud_coverage=DEFAULT_PV_POWER_PROFILE
+                cloud_coverage=DEFAULT_PV_POWER_PROFILE,
+                market_maker_rate=MAX_ENERGY_RATE,
                 )
 
 
