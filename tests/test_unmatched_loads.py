@@ -6,6 +6,7 @@ from parameterized import parameterized
 from d3a.models.area import Area
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.predef_load import DefinedLoadStrategy
 from d3a.models.state import LoadState
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.config import SimulationConfig
@@ -20,11 +21,15 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.strategy1.state = MagicMock(spec=LoadState)
         self.strategy1.state.desired_energy = {}
         self.strategy2 = MagicMock(spec=PermanentLoadStrategy)
+        self.strategy3 = MagicMock(spec=DefinedLoadStrategy)
+        self.strategy3.state = MagicMock(spec=LoadState)
+        self.strategy3.state.desired_energy = {}
         self.config = MagicMock(spec=SimulationConfig)
         self.config.slot_length = Interval(minutes=15)
         self.config.tick_length = Interval(seconds=15)
         self.area1 = Area("load1", None, self.strategy1, self.appliance, self.config, None)
         self.area2 = Area("load2", None, self.strategy2, self.appliance, self.config, None)
+        self.area3 = Area("load3", None, self.strategy3, self.appliance, self.config, None)
 
     def tearDown(self):
         pass
@@ -136,4 +141,28 @@ class TestUnmatchedLoad(unittest.TestCase):
 
         unmatched_loads = export_unmatched_loads(self.grid)
         assert unmatched_loads["unmatched_load_count"] == 30
+        assert not unmatched_loads["all_loads_met"]
+
+    def test_export_unmatched_loads_is_reported_correctly_for_predefined_load_strategy(self):
+        house1 = Area("House1", [self.area1, self.area3])
+        self.grid = Area("Grid", [house1])
+        self.grid.past_markets = {}
+        for i in range(1, 11):
+            timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
+            mock_market = MagicMock(spec=Market)
+            mock_market.traded_energy = {"load1": -0.09}
+            self.strategy1.state.desired_energy[timeslot] = 100
+            self.area1.past_markets[timeslot] = mock_market
+
+            mock_market = MagicMock(spec=Market)
+            mock_market.traded_energy = {"load3": -0.07}
+            self.strategy3.state.desired_energy[timeslot] = 100
+            self.area2.past_markets[timeslot] = mock_market
+
+            mock_market3 = MagicMock(spec=Market)
+            mock_market3.traded_energy = {"load1": -0.09, "load3": -0.07}
+            house1.past_markets[timeslot] = mock_market3
+            self.grid.past_markets[timeslot] = mock_market3
+        unmatched_loads = export_unmatched_loads(self.grid)
+        assert unmatched_loads["unmatched_load_count"] == 20
         assert not unmatched_loads["all_loads_met"]
