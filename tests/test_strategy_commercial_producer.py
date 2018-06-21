@@ -76,6 +76,7 @@ def commercial_test2(area_test2):
 
 
 def test_event_trade(area_test2, commercial_test2):
+    commercial_test2.event_activate()
     commercial_test2.event_trade(market=area_test2.test_market,
                                  trade=Trade(id='id',
                                              time='time',
@@ -86,7 +87,7 @@ def test_event_trade(area_test2, commercial_test2):
                                              buyer='buyer'
                                              )
                                  )
-    assert len(area_test2.test_market.created_offers) == 1
+    assert len(area_test2.test_market.created_offers) == 21
 
 
 """TEST3"""
@@ -106,8 +107,9 @@ def commercial_test3(area_test3):
 
 
 def testing_event_market_cycle(commercial_test3, area_test3):
+    commercial_test3.event_activate()
     commercial_test3.event_market_cycle()
-    assert len(area_test3.test_market.created_offers) == COMMERCIAL_OFFERS
+    assert len(area_test3.test_market.created_offers) == 2*COMMERCIAL_OFFERS
     (min_energy, max_energy) = commercial_test3.energy_range_wh
     for i in range(COMMERCIAL_OFFERS - 1):
         assert area_test3.test_market.created_offers[i].energy <= max_energy / 1000
