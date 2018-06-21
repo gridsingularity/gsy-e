@@ -18,6 +18,7 @@ class CommercialStrategy(BaseStrategy):
         self.energy_price = energy_price
 
     def event_activate(self):
+        self.energy_price = self.area.config.market_maker_rate
         # That's usual an init function but the markets aren't open during the init call
         for market in self.area.markets.values():
             for i in range(COMMERCIAL_OFFERS):

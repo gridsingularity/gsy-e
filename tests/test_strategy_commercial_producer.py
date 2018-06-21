@@ -3,6 +3,7 @@ import pytest
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.const import COMMERCIAL_OFFERS
+from d3a.models.area import DEFAULT_CONFIG
 
 
 class FakeArea():
@@ -15,6 +16,10 @@ class FakeArea():
     @property
     def markets(self):
         return {"now": self.test_market}
+
+    @property
+    def config(self):
+        return DEFAULT_CONFIG
 
 
 class FakeMarket:

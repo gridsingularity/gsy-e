@@ -188,6 +188,7 @@ def storage_strategy_test4(area_test4, called):
 
 
 def test_if_storage_pays_respect_to_capacity_limits(storage_strategy_test4, area_test4):
+    storage_strategy_test4.event_activate()
     storage_strategy_test4.event_tick(area=area_test4)
     assert len(storage_strategy_test4.accept_offer.calls) == 0
 
@@ -223,6 +224,7 @@ def storage_strategy_test5(area_test5, called):
 
 
 def test_if_storage_handles_capacity_correctly(storage_strategy_test5, area_test5):
+    storage_strategy_test5.event_activate()
     storage_strategy_test5.event_market_cycle()
     assert storage_strategy_test5.state.blocked_storage == 0
     assert storage_strategy_test5.state.used_storage == 1
@@ -293,6 +295,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
 
 
 def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
+    storage_strategy_test7.event_activate()
     assert storage_strategy_test7._calculate_selling_rate_from_buying_rate(1000.0) == \
         storage_strategy_test7.max_selling_rate_cents_per_kwh.m
     assert storage_strategy_test7._calculate_selling_rate_from_buying_rate(10.0) == \
