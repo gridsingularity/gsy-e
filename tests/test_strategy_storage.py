@@ -18,10 +18,12 @@ class FakeArea():
         self.count = count
         self.past_market = FakeMarket(4)
         self.current_market = FakeMarket(0)
+        self.next_market = FakeMarket(1)
+        self._markets_return = {"Fake Market": FakeMarket(self.count)}
 
     @property
     def markets(self):
-        return {"Fake Market": FakeMarket(self.count)}
+        return self._markets_return
 
     @property
     def cheapest_offers(self):
@@ -298,8 +300,10 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     storage_strategy_test7.sell_energy(buying_rate=10, energy=energy)
     assert storage_strategy_test7.state.used_storage == 1.7
     assert storage_strategy_test7.state.offered_storage == 1.3
-    assert area_test7.current_market.created_offers[0].energy == 1.3
-    assert len(storage_strategy_test7.offers.posted_in_market(area_test7.current_market)) > 0
+    assert area_test7._markets_return["Fake Market"].created_offers[0].energy == 1.3
+    assert len(storage_strategy_test7.offers.posted_in_market(
+        area_test7._markets_return["Fake Market"])
+    ) > 0
 
 
 def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
@@ -355,9 +359,11 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
                storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC) < 0.0001
     assert storage_strategy_test8.state.offered_storage == \
         100 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
-    assert area_test8.current_market.created_offers[0].energy == \
+    assert area_test8._markets_return["Fake Market"].created_offers[0].energy == \
         100 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
-    assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
+    assert len(storage_strategy_test8.offers.posted_in_market(
+        area_test8._markets_return["Fake Market"])
+    ) > 0
 
 
 """TEST9"""
@@ -370,7 +376,9 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
     storage_strategy_test8.event_market_cycle()
     assert storage_strategy_test8.state.offered_storage == \
         100.0 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
-    assert len(storage_strategy_test8.offers.posted_in_market(area_test8.current_market)) > 0
+    assert len(storage_strategy_test8.offers.posted_in_market(
+        area_test8._markets_return["Fake Market"])
+    ) > 0
 
 
 """TEST10"""
@@ -397,6 +405,20 @@ def test_storage_constructor_rejects_incorrect_parameters():
         StorageStrategy(initial_charge=101)
     with pytest.raises(ValueError):
         StorageStrategy(initial_charge=-1)
+
+
+def test_free_storage_calculation_takes_into_account_storage_capacity(storage_strategy_test1):
+    for capacity in [50.0, 100.0, 1000.0]:
+        storage_strategy_test1.state._used_storage = 12.0
+        storage_strategy_test1.state._blocked_storage = 13.0
+        storage_strategy_test1.state._offered_storage = 14.0
+        storage_strategy_test1.state.capacity = capacity
+
+        assert storage_strategy_test1.state.free_storage == \
+            storage_strategy_test1.state.capacity \
+            - storage_strategy_test1.state._used_storage \
+            - storage_strategy_test1.state._offered_storage \
+            - storage_strategy_test1.state._blocked_storage
 
 
 """TEST11"""
