@@ -20,7 +20,7 @@ def get_setup(config):
                 [
                     Area('H1 General Load',
                          strategy=DefinedLoadStrategy(
-                             daily_load_profile=os.path.join(d3a_path, 'src', 'd3a',
+                             daily_load_profile=os.path.join(d3a_path,
                                                              'resources', 'LOAD_DATA_1.csv'),
                              acceptable_energy_rate=25),
                          appliance=SwitchableAppliance()),

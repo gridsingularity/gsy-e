@@ -4,7 +4,8 @@ by the user.
 """
 import pathlib
 import d3a
-
+import inspect
+import os
 from d3a.models.strategy import ureg
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, \
@@ -13,9 +14,7 @@ from d3a.models.strategy.mixins import ReadProfileMixin
 from typing import Dict
 
 
-# TODO: Pypy has a different behavior about defining current module path
-# Should make this functional cross-interpreter
-d3a_path = d3a.__path__[0]
+d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 
 class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
