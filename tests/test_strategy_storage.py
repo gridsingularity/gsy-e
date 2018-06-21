@@ -1,11 +1,14 @@
 import pytest
 import logging
+from pendulum.interval import Interval
 
-from d3a.models.area import DEFAULT_CONFIG
-
+# from d3a.models.area import DEFAULT_CONFIG
+from d3a.models.strategy import ureg, Q_
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC, STORAGE_BREAK_EVEN
+from d3a.models.config import SimulationConfig
+from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE
 
 
 class FakeArea():
@@ -41,7 +44,13 @@ class FakeArea():
 
     @property
     def config(self):
-        return DEFAULT_CONFIG
+        return SimulationConfig(
+                duration=Interval(hours=24),
+                market_count=4,
+                slot_length=Interval(minutes=15),
+                tick_length=Interval(seconds=1),
+                cloud_coverage=DEFAULT_PV_POWER_PROFILE
+                )
 
 
 class FakeMarket:
@@ -147,6 +156,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
+    storage_strategy_test3.break_even = Q_(20, (ureg.EUR_cents / ureg.kWh))
     storage_strategy_test3.event_activate()
     storage_strategy_test3.event_tick(area=area_test3)
     assert len(storage_strategy_test3.accept_offer.calls) == 0
@@ -387,3 +397,26 @@ def test_storage_constructor_rejects_incorrect_parameters():
         StorageStrategy(initial_charge=101)
     with pytest.raises(ValueError):
         StorageStrategy(initial_charge=-1)
+
+
+"""TEST11"""
+
+
+@pytest.fixture()
+def area_test11():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def storage_strategy_test11(area_test11, called):
+    s = StorageStrategy(battery_capacity=100, initial_capacity=50, max_abs_battery_power=25)
+    s.owner = area_test11
+    s.area = area_test11
+    s.accept_offer = called
+    return s
+
+
+def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strategy_test11):
+    storage_strategy_test11.event_activate()
+    storage_strategy_test11.buy_energy(25)
+    assert len(storage_strategy_test11.accept_offer.calls) >= 1
