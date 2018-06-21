@@ -93,7 +93,7 @@ class StorageState:
     @property
     def free_storage(self):
         in_use = self._blocked_storage + self._offered_storage + self._used_storage
-        return STORAGE_CAPACITY - in_use
+        return self.capacity - in_use
 
     def market_cycle(self, area):
         self.used_history[area.current_market.time_slot] = self._used_storage

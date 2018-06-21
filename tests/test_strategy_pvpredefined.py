@@ -82,7 +82,7 @@ def area_test1():
 
 @pytest.fixture()
 def pv_test1(area_test1):
-    p = PVPredefinedStrategy(power_profile=DEFAULT_PV_POWER_PROFILE)
+    p = PVPredefinedStrategy(cloud_coverage=DEFAULT_PV_POWER_PROFILE)
     p.area = area_test1
     p.owner = area_test1
     return p
@@ -90,8 +90,7 @@ def pv_test1(area_test1):
 
 def test_activation(pv_test1, area_test1):
     pv_test1.event_activate()
-    # Pendulum.today() returns pendulum object with the date of today and midnight
-    assert pv_test1.midnight == pendulum.today()
+    assert pv_test1._decrease_price_every_nr_s.m > 0
     global ENERGY_FORECAST
     ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh
 
@@ -111,7 +110,7 @@ def market_test3(area_test3):
 
 @pytest.fixture()
 def pv_test3(area_test3):
-    p = PVPredefinedStrategy(power_profile=DEFAULT_PV_POWER_PROFILE)
+    p = PVPredefinedStrategy(cloud_coverage=DEFAULT_PV_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
@@ -134,7 +133,7 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
 
 @pytest.fixture()
 def pv_test4(area_test3, called):
-    p = PVPredefinedStrategy(power_profile=DEFAULT_PV_POWER_PROFILE)
+    p = PVPredefinedStrategy(cloud_coverage=DEFAULT_PV_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
@@ -158,7 +157,7 @@ def testing_event_trade(area_test3, pv_test4):
 
 @pytest.fixture()
 def pv_test5(area_test3, called):
-    p = PVPredefinedStrategy(power_profile=0)
+    p = PVPredefinedStrategy(cloud_coverage=0)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {'id': area_test3.test_market}
@@ -180,7 +179,7 @@ def testing_trigger_risk(pv_test5):
 
 @pytest.fixture()
 def pv_test6(area_test3):
-    p = PVPredefinedStrategy(power_profile=DEFAULT_PV_POWER_PROFILE)
+    p = PVPredefinedStrategy(cloud_coverage=DEFAULT_PV_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {}
@@ -253,7 +252,7 @@ def area_test7():
 
 @pytest.fixture()
 def pv_test_sunny(area_test3):
-    p = PVPredefinedStrategy(power_profile=0)
+    p = PVPredefinedStrategy(cloud_coverage=0)
     p.area = area_test3
     p.owner = area_test3
     return p
@@ -261,7 +260,7 @@ def pv_test_sunny(area_test3):
 
 @pytest.fixture()
 def pv_test_partial(area_test7):
-    p = PVPredefinedStrategy(power_profile=2)
+    p = PVPredefinedStrategy(cloud_coverage=2)
     p.area = area_test7
     p.owner = area_test7
     return p
@@ -269,7 +268,7 @@ def pv_test_partial(area_test7):
 
 @pytest.fixture()
 def pv_test_cloudy(area_test7):
-    p = PVPredefinedStrategy(power_profile=1)
+    p = PVPredefinedStrategy(cloud_coverage=1)
     p.area = area_test7
     p.owner = area_test7
     p.area.config.slot_length = Interval(minutes=20)

@@ -98,14 +98,18 @@ class StorageStrategy(BaseStrategy):
                     continue
                 # Check if storage has free capacity and if the price is cheap enough
                 if self.state.free_storage >= offer.energy \
-                        and self.state.available_energy_per_slot(market.time_slot) > offer.energy \
                         and (offer.price / offer.energy) < max_affordable_offer_rate:
                     # Try to buy the energy
                     try:
-                        self.accept_offer(market, offer)
-                        self.state.update_energy_per_slot(offer.energy, market.time_slot)
-                        self.state.block_storage(offer.energy)
+                        if self.state.available_energy_per_slot(market.time_slot) > offer.energy:
+                            max_energy = offer.energy
+                        else:
+                            max_energy = self.state.available_energy_per_slot(market.time_slot)
+                        self.accept_offer(market, offer, energy=max_energy)
+                        self.state.update_energy_per_slot(max_energy, market.time_slot)
+                        self.state.block_storage(max_energy)
                         return True
+
                     except MarketException:
                         # Offer already gone etc., try next one.
                         return False
@@ -135,20 +139,22 @@ class StorageStrategy(BaseStrategy):
             self.offers.post(offer, target_market)
 
     def _select_market_to_sell(self):
-        try:
-            max_rate = 0.0
-            most_expensive_market = list(self.area.markets.values())[0]
-            for m in self.area.markets.values():
-                if len(m.sorted_offers) > 0 and \
-                        m.sorted_offers[0].price / m.sorted_offers[0].energy > max_rate:
-                    max_rate = m.sorted_offers[0].price / m.sorted_offers[0].energy
-                    most_expensive_market = m
-        except IndexError:
-            try:
-                most_expensive_market = self.area.current_market
-            except StopIteration:
-                return
-        return most_expensive_market
+        # try:
+        #     max_rate = 0.0
+        #     most_expensive_market = list(self.area.markets.values())[0]
+        #     for m in self.area.markets.values():
+        #         if len(m.sorted_offers) > 0 and \
+        #                 m.sorted_offers[0].price / m.sorted_offers[0].energy > max_rate:
+        #             max_rate = m.sorted_offers[0].price / m.sorted_offers[0].energy
+        #             most_expensive_market = m
+        # except IndexError:
+        #     try:
+        #         most_expensive_market = self.area.current_market
+        #     except StopIteration:
+        #         return
+        # return most_expensive_market
+        # TODO: Consider removing the comments in the context of D3ASIM-511
+        return list(self.area.markets.values())[0]
 
     def _calculate_energy_to_sell(self, energy, target_market):
         # If no energy is passed, try to sell all the Energy left in the storage
@@ -198,7 +204,7 @@ class StorageStrategy(BaseStrategy):
             most_expensive_cheapest_offer = (
                 max((offer.price / offer.energy) for offer in cheapest_offers))
         else:
-            most_expensive_cheapest_offer = 30
+            most_expensive_cheapest_offer = self.area.config.market_maker_rate
         return max(
             min(most_expensive_cheapest_offer, self.max_selling_rate_cents_per_kwh.m),
             self.break_even.m

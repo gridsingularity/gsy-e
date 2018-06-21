@@ -42,8 +42,7 @@ class LoadHoursStrategy(BaseStrategy):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
 
         if len(hrs_of_day) < hrs_per_day:
-            raise ValueError(
-                "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
+            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
     def event_activate(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
