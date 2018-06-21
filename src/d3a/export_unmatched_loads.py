@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.predef_load import DefinedLoadStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.area_statistics import get_area_type_string
 
@@ -9,7 +10,8 @@ DEFICIT_THRESHOLD_Wh = 0.0001
 
 
 def _calculate_stats_for_single_device(hour_data, area, current_slot):
-    if isinstance(area.strategy, LoadHoursStrategy):
+    if isinstance(area.strategy, LoadHoursStrategy) or \
+       isinstance(area.strategy, DefinedLoadStrategy):
         desired_energy_Wh = area.strategy.state.desired_energy[current_slot]
     elif isinstance(area.strategy, PermanentLoadStrategy):
         desired_energy_Wh = area.strategy.energy
@@ -81,7 +83,8 @@ def _is_house_node(area):
     # further filtered out to contain at least one load
     return all(grandkid.children == [] for grandkid in area.children) and \
            (any(isinstance(grandkid.strategy, LoadHoursStrategy) or
-                isinstance(grandkid.strategy, PermanentLoadStrategy)
+                isinstance(grandkid.strategy, PermanentLoadStrategy) or
+                isinstance(grandkid.strategy, DefinedLoadStrategy)
                 for grandkid in area.children))
 
 
