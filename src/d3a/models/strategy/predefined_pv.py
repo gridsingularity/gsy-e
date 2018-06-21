@@ -76,10 +76,10 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
             self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
             profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv')
-        elif self._power_profile_index == 1:  # 1:cloudy
-            profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv')
-        elif self._power_profile_index == 2:  # 2:partial
+        elif self._power_profile_index == 1:  # 1:partial
             profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_partial.csv')
+        elif self._power_profile_index == 2:  # 2:cloudy
+            profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_cloudy.csv')
         else:
             raise ValueError("Energy_profile has to be in [0,1,2]")
 
