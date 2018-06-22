@@ -282,9 +282,9 @@ def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
 
     sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
     for i in range(len(sub_file)):
-        gl = os.path.join('grid', sub_file[i], 'h' + str(i + 1) + '-general-load.csv')
-        ll = os.path.join('grid', sub_file[i], 'h' + str(i + 1) + '-lighting.csv')
-        tv = os.path.join('grid', sub_file[i], 'h' + str(i + 1) + '-tv.csv')
+        gl = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-general-load.csv')
+        ll = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-lighting.csv')
+        tv = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-tv.csv')
 
         if os.path.isfile(gl):
             higl = BarGraph(gl, key)
