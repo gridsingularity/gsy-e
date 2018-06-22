@@ -7,7 +7,7 @@ from d3a.models.strategy import ureg, Q_
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, MAX_ENERGY_RATE, \
+from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, \
     MIN_PV_SELLING_PRICE, MAX_OFFER_TRAVERSAL_LENGTH
 
 
@@ -46,7 +46,7 @@ class PVStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
         average_market_rate = Q_(
-            MAX_ENERGY_RATE if self.area.historical_avg_rate == 0
+            self.area.config.market_maker_rate if self.area.historical_avg_rate == 0
             else self.area.historical_avg_rate,
             ureg.EUR_cents / ureg.kWh)
         # Needed to calculate risk_dependency_of_selling_rate
@@ -57,7 +57,7 @@ class PVStrategy(BaseStrategy):
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
-            rounded_energy_rate = MAX_ENERGY_RATE
+            rounded_energy_rate = self.area.config.market_maker_rate
         assert rounded_energy_rate >= 0.0
         # Iterate over all markets open in the future
         for (time, market) in self.area.markets.items():
