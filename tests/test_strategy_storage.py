@@ -206,6 +206,13 @@ def test_if_storage_pays_respect_to_capacity_limits(storage_strategy_test4, area
     assert len(storage_strategy_test4.accept_offer.calls) == 0
 
 
+def test_if_storage_max_sell_rate_is_one_unit_less_than_market_maker_rate(storage_strategy_test4,
+                                                                          area_test4):
+    storage_strategy_test4.event_activate()
+    assert storage_strategy_test4.max_selling_rate_cents_per_kwh.m \
+        == (area_test4.config.market_maker_rate - 1)
+
+
 """TEST5"""
 
 
