@@ -6,7 +6,7 @@ from d3a.util import format_interval
 
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
-                 market_count: int, cloud_coverage: int, market_maker_rate: float):
+                 market_count: int, cloud_coverage: int, market_maker_rate: int):
         self.duration = duration
         self.slot_length = slot_length
         self.tick_length = tick_length

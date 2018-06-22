@@ -50,7 +50,7 @@ _setup_modules = available_simulation_scenarios
 @click.option('-c', '--cloud_coverage', type=int,
               default=DEFAULT_PV_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
-@click.option('-r', '--market_maker_rate', type=float,
+@click.option('-r', '--market_maker_rate', type=int,
               default=MAX_ENERGY_RATE, show_default=True,
               help="Market maker rate")
 @click.option('-m', '--market-count', type=int, default=5, show_default=True,
