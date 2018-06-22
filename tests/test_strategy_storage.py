@@ -8,7 +8,7 @@ from d3a.models.market import Offer, Trade
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC, STORAGE_BREAK_EVEN
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE
+from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE, MAX_ENERGY_RATE
 
 
 class FakeArea():
@@ -51,7 +51,8 @@ class FakeArea():
                 market_count=4,
                 slot_length=Interval(minutes=15),
                 tick_length=Interval(seconds=1),
-                cloud_coverage=DEFAULT_PV_POWER_PROFILE
+                cloud_coverage=DEFAULT_PV_POWER_PROFILE,
+                market_maker_rate=MAX_ENERGY_RATE,
                 )
 
 
@@ -200,8 +201,16 @@ def storage_strategy_test4(area_test4, called):
 
 
 def test_if_storage_pays_respect_to_capacity_limits(storage_strategy_test4, area_test4):
+    storage_strategy_test4.event_activate()
     storage_strategy_test4.event_tick(area=area_test4)
     assert len(storage_strategy_test4.accept_offer.calls) == 0
+
+
+def test_if_storage_max_sell_rate_is_one_unit_less_than_market_maker_rate(storage_strategy_test4,
+                                                                          area_test4):
+    storage_strategy_test4.event_activate()
+    assert storage_strategy_test4.max_selling_rate_cents_per_kwh.m \
+        == (area_test4.config.market_maker_rate - 1)
 
 
 """TEST5"""
@@ -235,6 +244,7 @@ def storage_strategy_test5(area_test5, called):
 
 
 def test_if_storage_handles_capacity_correctly(storage_strategy_test5, area_test5):
+    storage_strategy_test5.event_activate()
     storage_strategy_test5.event_market_cycle()
     assert storage_strategy_test5.state.blocked_storage == 0
     assert storage_strategy_test5.state.used_storage == 1
@@ -307,6 +317,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
 
 
 def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
+    storage_strategy_test7.event_activate()
     assert storage_strategy_test7._calculate_selling_rate_from_buying_rate(1000.0) == \
         storage_strategy_test7.max_selling_rate_cents_per_kwh.m
     assert storage_strategy_test7._calculate_selling_rate_from_buying_rate(10.0) == \

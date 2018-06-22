@@ -4,8 +4,7 @@ from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, STORAGE_MIN_ALLOWED_SOC, \
-    STORAGE_BREAK_EVEN, STORAGE_MAX_SELL_RATE_c_per_Kwh, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER, \
-    MAX_ENERGY_RATE
+    STORAGE_BREAK_EVEN, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER
 
 
 class StorageStrategy(BaseStrategy):
@@ -18,7 +17,6 @@ class StorageStrategy(BaseStrategy):
                  battery_capacity=STORAGE_CAPACITY,
                  max_abs_battery_power=MAX_ABS_BATTERY_POWER,
                  break_even=STORAGE_BREAK_EVEN,
-                 max_selling_rate_cents_per_kwh=STORAGE_MAX_SELL_RATE_c_per_Kwh,
                  cap_price_strategy=False):
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity)
@@ -31,12 +29,12 @@ class StorageStrategy(BaseStrategy):
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.break_even = Q_(break_even, (ureg.EUR_cents / ureg.kWh))
-        self.max_selling_rate_cents_per_kwh = \
-            Q_(max_selling_rate_cents_per_kwh, (ureg.EUR_cents / ureg.kWh))
         self.cap_price_strategy = cap_price_strategy
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
+        self.max_selling_rate_cents_per_kwh = \
+            Q_((self.area.config.market_maker_rate-1), (ureg.EUR_cents / ureg.kWh))
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity, initial_charge, battery_capacity):
@@ -206,7 +204,7 @@ class StorageStrategy(BaseStrategy):
             most_expensive_cheapest_offer = (
                 max((offer.price / offer.energy) for offer in cheapest_offers))
         else:
-            most_expensive_cheapest_offer = MAX_ENERGY_RATE
+            most_expensive_cheapest_offer = self.area.config.market_maker_rate
         return max(
             min(most_expensive_cheapest_offer, self.max_selling_rate_cents_per_kwh.m),
             self.break_even.m
