@@ -206,7 +206,6 @@ class Simulation:
                     paused_duration = Interval(seconds=self.paused_time)
 
                     self.redis_connection.publish_results(self.endpoint_buffer)
-                    self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
 
                     if not self.is_stopped:
                         log.error(
