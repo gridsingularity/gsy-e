@@ -25,6 +25,8 @@ def before_scenario(context, scenario):
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
 
+    context.ctrl_callback_call_count = 0
+
 
 def after_scenario(context, scenario):
     shutil.rmtree(context.simdir)
