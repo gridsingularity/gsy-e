@@ -1,14 +1,10 @@
 import random
 from importlib import import_module
 from logging import getLogger
-import os
 import time
 from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
-from redis import StrictRedis
-from redis.exceptions import ConnectionError
-import json
 import dill
 from pendulum import Pendulum
 from pendulum.interval import Interval
@@ -23,13 +19,12 @@ from d3a.models.config import SimulationConfig
 from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
+from d3a.redis_communication import RedisSimulationCommunication
 
 log = getLogger(__name__)
 
 
 page_lock = Lock()
-
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
 
 class _SimulationInterruped(Exception):
@@ -63,9 +58,8 @@ class Simulation:
         self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.is_stopped = False
-        self.result_channel = "d3a-results"
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
-
+        self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(
                 "Can only specify one of '--reset-on-finish', '--exit-on-finish' and '--use-repl' "
@@ -203,15 +197,16 @@ class Simulation:
                                 self._handle_input(console, diff_slowdown)
 
                         with page_lock:
-                            self.endpoint_buffer.update(self.area)
+                            self.endpoint_buffer.update(self.area, self.status)
+                            self.redis_connection.publish_intermediate_results(
+                                self.endpoint_buffer
+                            )
 
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
 
-                    try:
-                        self.send_results()
-                    except ConnectionError as e:
-                        log.error("Running with disabled Redis, no results are transmitted.")
+                    self.redis_connection.publish_results(self.endpoint_buffer)
+                    self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
 
                     if not self.is_stopped:
                         log.error(
@@ -255,13 +250,6 @@ class Simulation:
             except KeyboardInterrupt:
                 print("Exiting")
                 break
-
-    def send_results(self):
-        results = {**{"status": "finished"},
-                   **self.endpoint_buffer.generate_result_report()}
-        results_string = json.dumps(results)
-        redis_db = StrictRedis.from_url(REDIS_URL)
-        redis_db.publish(self.result_channel, results_string)
 
     def toggle_pause(self):
         if self.finished:
@@ -331,6 +319,8 @@ class Simulation:
         if self.paused:
             start = time.monotonic()
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
+            self.endpoint_buffer.update(self.area, self.status)
+            self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
             while self.paused and not self.interrupt.is_set():
                 self._handle_input(console, 0.1)
             log.critical("Simulation resumed")
