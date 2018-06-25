@@ -96,7 +96,8 @@ def load_profile_scenario(context):
                                          slot_length=Interval(minutes=15),
                                          duration=Interval(hours=24),
                                          market_count=4,
-                                         cloud_coverage=0)
+                                         cloud_coverage=0,
+                                         market_maker_rate=30)
     context._settings.area = predefined_load_scenario
 
 
@@ -148,7 +149,8 @@ def pv_profile_scenario(context):
                                          slot_length=Interval(minutes=15),
                                          duration=Interval(hours=24),
                                          market_count=4,
-                                         cloud_coverage=0)
+                                         cloud_coverage=0,
+                                         market_maker_rate=30)
     context._settings.area = predefined_pv_scenario
 
 
@@ -213,7 +215,8 @@ def create_sim_object(context, scenario):
                                          Interval(minutes=int(15)),
                                          Interval(seconds=int(30)),
                                          market_count=5,
-                                         cloud_coverage=0)
+                                         cloud_coverage=0,
+                                         market_maker_rate=30)
 
     context.simulation = Simulation(
         scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
@@ -284,7 +287,8 @@ def run_sim(context, scenario, duration, slot_length, tick_length):
                                          Interval(minutes=int(slot_length)),
                                          Interval(seconds=int(tick_length)),
                                          market_count=5,
-                                         cloud_coverage=0)
+                                         cloud_coverage=0,
+                                         market_maker_rate=30)
 
     slowdown = 0
     seed = 0

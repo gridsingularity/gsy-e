@@ -6,7 +6,7 @@ from d3a.util import format_interval
 
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
-                 market_count: int, cloud_coverage: int):
+                 market_count: int, cloud_coverage: int, market_maker_rate: int):
         self.duration = duration
         self.slot_length = slot_length
         self.tick_length = tick_length
@@ -28,6 +28,10 @@ class SimulationConfig:
             self.cloud_coverage = cloud_coverage
         else:
             raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
+        if market_maker_rate > 0:
+            self.market_maker_rate = market_maker_rate
+        else:
+            raise D3AException("Invalid market_maker_rate value ({}).".format(market_maker_rate))
 
     def __repr__(self):
         return (
@@ -37,7 +41,8 @@ class SimulationConfig:
             "tick_length='{s.tick_length}', "
             "market_count='{s.market_count}', "
             "ticks_per_slot='{s.ticks_per_slot}', "
-            "cloud_coverage='{s.cloud_coverage}'"
+            "cloud_coverage='{s.cloud_coverage}', "
+            "market_maker_rate='{s.market_maker_rate}', "
             ")>"
         ).format(s=self)
 
