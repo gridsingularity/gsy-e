@@ -5,7 +5,7 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class CommercialStrategy(BaseStrategy):
-    parameters = ['energy_rate']
+    parameters = ('energy_rate',)
 
     def __init__(self, energy_rate=None):
         if energy_rate is not None and energy_rate < 0:
