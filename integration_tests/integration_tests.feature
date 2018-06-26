@@ -54,3 +54,26 @@ Feature: Run integration tests
      And the scenario includes a predefined load that will not be unmatched
      When the simulation is running
      Then the predefined load follows the load profile
+
+  Scenario Outline: Simulation subscribes on the appropriate channels
+     Given d3a is installed
+     When a simulation is created for scenario <scenario>
+     And the method <method> is registered
+     And the configured simulation is running
+     And a message is sent on <channel>
+     Then <method> is called
+  Examples: Incoming events
+     | scenario   | channel    | method       |
+     | default_2a | 1234/stop  | stop         |
+     | default_2a | 1234/pause | toggle_pause |
+     | default_2a | 1234/reset | reset        |
+
+  Scenario: Simulation publishes intermediate and final results
+     Given d3a is installed
+     When a simulation is created for scenario default_2a
+     And the simulation is able to transmit intermediate results
+     And the simulation is able to transmit final results
+     And the configured simulation is running
+     Then intermediate results are transmitted on every slot
+     And final results are transmitted once
+

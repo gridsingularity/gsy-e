@@ -20,6 +20,7 @@ class SimulationEndpointBuffer:
     def __init__(self, job_id, initial_params):
         self.job_id = job_id
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
+        self.status = {}
         self.unmatched_loads = {}
         self.cumulative_loads = {}
         self.price_energy_day = {}
@@ -40,10 +41,12 @@ class SimulationEndpointBuffer:
             "price_energy_day": self.price_energy_day,
             "cumulative_grid_trades": self.cumulative_grid_trades,
             "bills": self.bills,
-            "tree_summary": self.tree_summary
+            "tree_summary": self.tree_summary,
+            "status": self.status
         }
 
-    def update(self, area):
+    def update(self, area, simulation_status):
+        self.status = simulation_status
         self.unmatched_loads = {"unmatched_loads": export_unmatched_loads(area)}
         self.cumulative_loads = {
             "price-currency": "Euros",
@@ -78,12 +81,13 @@ class SimulationEndpointBuffer:
             "max_trade_price": calculate_prices("max_price", max),
             "avg_trade_price": calculate_prices("av_price", mean),
         }
-        [self._update_tree_summary(child) for child in area.children]
+        for child in area.children:
+            if child.children != []:
+                self._update_tree_summary(child)
 
     def _update_bills(self, area):
-        result = energy_bills(area, None, None)
-        self.bills[area.slug] = OrderedDict(sorted(result.items())) if result else {}
-        [self._update_bills(child) for child in area.children]
+        result = energy_bills(area)
+        self.bills = OrderedDict(sorted(result.items()))
 
     def _update_results(self, area):
         market = area.current_market
@@ -110,7 +114,7 @@ class SimulationEndpointBuffer:
                 for slot_market in area.past_markets.values()
             ]
         }
-        [self._update_results(child) for child in area.children]
+        [self._update_results(child) for child in area.children if child.children != []]
 
     @staticmethod
     def _get_child_traded_energy(market, child):
