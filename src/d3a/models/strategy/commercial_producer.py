@@ -1,4 +1,5 @@
 import sys
+from d3a.models.strategy import ureg, Q_
 
 from d3a.models.strategy.base import BaseStrategy
 
@@ -10,17 +11,20 @@ class CommercialStrategy(BaseStrategy):
         if energy_rate is not None and energy_rate < 0:
             raise ValueError("Energy price should be positive.")
         super().__init__()
-        self.energy_rate = energy_rate
-        self.energy = sys.maxsize
+        if energy_rate is None:
+            self.energy_rate = Q_(0, (ureg.EUR_cents / ureg.kWh))
+        else:
+            self.energy_rate = Q_(energy_rate, (ureg.EUR_cents / ureg.kWh))
+        self.energy = Q_(int(sys.maxsize), ureg.kWh)
 
     def event_activate(self):
-        if self.energy_rate is None:
-            self.energy_rate = self.area.config.market_maker_rate
+        if self.energy_rate.m is None:
+            self.energy_rate.m = self.area.config.market_maker_rate
         # That's usual an init function but the markets aren't open during the init call
         for market in self.area.markets.values():
             market.offer(
-                self.energy * self.energy_rate,
-                self.energy,
+                self.energy.m * self.energy_rate.m,
+                self.energy.m,
                 self.owner.name
             )
 
@@ -28,8 +32,8 @@ class CommercialStrategy(BaseStrategy):
         # If trade happened: remember it in variable
         if self.owner.name == trade.seller:
             market.offer(
-                self.energy * self.energy_rate,
-                self.energy,
+                self.energy.m * self.energy_rate.m,
+                self.energy.m,
                 self.owner.name
             )
 
@@ -37,7 +41,7 @@ class CommercialStrategy(BaseStrategy):
         # Post new offers
         market = list(self.area.markets.values())[-1]
         market.offer(
-            self.energy * self.energy_rate,
-            self.energy,
+            self.energy.m * self.energy_rate.m,
+            self.energy.m,
             self.owner.name
         )
