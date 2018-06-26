@@ -47,20 +47,16 @@ class ECarStrategy(StorageStrategy):
             # This means the car is driving around some where
             self.state.lose(0.0001)
             return
-        # Taking the cheapest offers in every market currently open and building the average
-        # Same process as storage
-        avg_cheapest_offer_price = self.find_avg_cheapest_offers()
         # Check if there are cheap offers to buy
-        self.buy_energy(avg_cheapest_offer_price)
+        self.buy_energy()
         # Check if any energy from the Car can be sold
         # Same process as Storage
-        self.sell_energy(avg_cheapest_offer_price)
+        self.sell_energy()
 
     def arrive(self):
         self.log.info("E-Car arrived")
         self.connected_to_grid = True
-        self.sell_energy(buying_rate=self.break_even.m,
-                         energy=self.state.used_storage)  # FIXME find the right buying price
+        self.sell_energy(energy=self.state.used_storage)  # FIXME find the right buying price
 
     trigger_arrive = arrive
 
