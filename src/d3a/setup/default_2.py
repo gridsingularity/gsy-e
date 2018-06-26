@@ -114,7 +114,7 @@ def get_setup(config):
             ),
 
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
+                 strategy=CommercialStrategy(energy_rate=30),
                  appliance=SimpleAppliance()),
 
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,

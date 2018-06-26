@@ -4,13 +4,13 @@ from d3a.models.strategy.base import BaseStrategy
 
 
 class CommercialStrategy(BaseStrategy):
-    parameters = ('energy_price')
+    parameters = ['energy_rate']
 
-    def __init__(self, *, energy_price=None):
-        if energy_price is not None and energy_price < 0:
+    def __init__(self, energy_rate=None):
+        if energy_rate is not None and energy_rate < 0:
             raise ValueError("Energy price should be positive.")
         super().__init__()
-        self.energy_rate = energy_price
+        self.energy_rate = energy_rate
         self.energy = sys.maxsize
 
     def event_activate(self):

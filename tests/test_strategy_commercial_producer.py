@@ -2,7 +2,6 @@ import pytest
 
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.const import COMMERCIAL_OFFERS
 from d3a.models.area import DEFAULT_CONFIG
 
 
@@ -52,11 +51,7 @@ def commercial_test1(area_test1):
 
 def testing_event_activate(commercial_test1, area_test1):
     commercial_test1.event_activate()
-    assert len(area_test1.test_market.created_offers) == COMMERCIAL_OFFERS
-    (min_energy, max_energy) = commercial_test1.energy_range_wh
-    for i in range(COMMERCIAL_OFFERS - 1):
-        assert area_test1.test_market.created_offers[i].energy <= max_energy / 1000
-        assert area_test1.test_market.created_offers[i].energy >= min_energy / 1000
+    assert len(area_test1.test_market.created_offers) == 1
 
 
 """TEST2"""
@@ -87,7 +82,7 @@ def test_event_trade(area_test2, commercial_test2):
                                              buyer='buyer'
                                              )
                                  )
-    assert len(area_test2.test_market.created_offers) == 21
+    assert len(area_test2.test_market.created_offers) == 2
 
 
 """TEST3"""
@@ -109,21 +104,9 @@ def commercial_test3(area_test3):
 def testing_event_market_cycle(commercial_test3, area_test3):
     commercial_test3.event_activate()
     commercial_test3.event_market_cycle()
-    assert len(area_test3.test_market.created_offers) == 2*COMMERCIAL_OFFERS
-    (min_energy, max_energy) = commercial_test3.energy_range_wh
-    for i in range(COMMERCIAL_OFFERS - 1):
-        assert area_test3.test_market.created_offers[i].energy <= max_energy / 1000
-        assert area_test3.test_market.created_offers[i].energy >= min_energy / 1000
+    assert len(area_test3.test_market.created_offers) == 2
 
 
 def test_commercial_producer_constructor_rejects_invalid_parameters():
-    with pytest.raises(TypeError):
-        CommercialStrategy(energy_range_wh=-1)
     with pytest.raises(ValueError):
-        CommercialStrategy(energy_range_wh=(150, 20))
-    with pytest.raises(ValueError):
-        CommercialStrategy(energy_range_wh=[150, 20])
-    with pytest.raises(ValueError):
-        CommercialStrategy(energy_range_wh=[20, 150, 200])
-    with pytest.raises(ValueError):
-        CommercialStrategy(energy_price=-1)
+        CommercialStrategy(energy_rate=-1)
