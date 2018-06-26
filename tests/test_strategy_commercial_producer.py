@@ -1,4 +1,5 @@
 import pytest
+import sys
 
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.commercial_producer import CommercialStrategy
@@ -52,6 +53,7 @@ def commercial_test1(area_test1):
 def testing_event_activate(commercial_test1, area_test1):
     commercial_test1.event_activate()
     assert len(area_test1.test_market.created_offers) == 1
+    assert area_test1.test_market.created_offers[0].energy == sys.maxsize
 
 
 """TEST2"""
@@ -83,6 +85,7 @@ def test_event_trade(area_test2, commercial_test2):
                                              )
                                  )
     assert len(area_test2.test_market.created_offers) == 2
+    assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
 
 
 """TEST3"""
@@ -105,6 +108,7 @@ def testing_event_market_cycle(commercial_test3, area_test3):
     commercial_test3.event_activate()
     commercial_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 2
+    assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
 
 
 def test_commercial_producer_constructor_rejects_invalid_parameters():
