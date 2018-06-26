@@ -209,6 +209,77 @@ def test_export_data_csv(context, scenario):
                                                                     file=data_fn))
 
 
+@when('a simulation is created for scenario {scenario}')
+def create_sim_object(context, scenario):
+    simulation_config = SimulationConfig(Interval(hours=int(24)),
+                                         Interval(minutes=int(15)),
+                                         Interval(seconds=int(30)),
+                                         market_count=5,
+                                         cloud_coverage=0,
+                                         market_maker_rate=30)
+
+    context.simulation = Simulation(
+        scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
+        Interval(), True, Interval(), None, None, "1234"
+    )
+
+
+@when('the method {method} is registered')
+def monkeypatch_ctrl_callback(context, method):
+    context.ctrl_callback_call_count = 0
+
+    def method_callback():
+        context.ctrl_callback_call_count += 1
+    setattr(context.simulation, method, method_callback)
+
+
+@when('the configured simulation is running')
+def configd_sim_run(context):
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.CRITICAL)
+    context.simulation.run()
+
+
+@when('a message is sent on {channel}')
+def message_on_channel(context, channel):
+    print(context.simulation.redis_connection._sub_callback_dict)
+    context.simulation.redis_connection._sub_callback_dict[channel](None)
+
+
+@when('the simulation is able to transmit intermediate results')
+def interm_results(context):
+    context.interm_results_count = 0
+
+    def interm_res_count(_):
+        context.interm_results_count += 1
+    context.simulation.redis_connection.publish_intermediate_results = interm_res_count
+
+
+@when('the simulation is able to transmit final results')
+def final_results(context):
+    context.final_results_count = 0
+
+    def final_res_count(_):
+        context.final_results_count += 1
+    context.simulation.redis_connection.publish_results = final_res_count
+
+
+@then('intermediate results are transmitted on every slot')
+def interm_res_report(context):
+    print(context.interm_results_count)
+    assert context.interm_results_count == 97
+
+
+@then('final results are transmitted once')
+def final_res_report(context):
+    assert context.final_results_count == 1
+
+
+@then('{method} is called')
+def method_called(context, method):
+    assert context.ctrl_callback_call_count == 1
+
+
 @when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
 def run_sim(context, scenario, duration, slot_length, tick_length):
 
