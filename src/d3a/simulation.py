@@ -99,10 +99,6 @@ class Simulation:
         log.info("Starting simulation with config %s", self.simulation_config)
         self.area.activate()
 
-        # TODO: Disable overview websocket for now, implement proper intermediary data reporting
-        # if self.message_url is not None:
-        #     Overview(self, self.message_url).start()
-
     @property
     def finished(self):
         return self.area.current_tick == self.area.config.total_ticks
