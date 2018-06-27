@@ -2,11 +2,13 @@ from pendulum.interval import Interval
 
 from d3a.exceptions import D3AException
 from d3a.util import format_interval
+from d3a.models.strategy.const import INTER_AREA_AGENT_FEE_PERCENTAGE
 
 
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
-                 market_count: int, cloud_coverage: int, market_maker_rate: int):
+                 market_count: int, cloud_coverage: int,
+                 market_maker_rate: int, iaa_fee: int=None):
         self.duration = duration
         self.slot_length = slot_length
         self.tick_length = tick_length
@@ -32,6 +34,10 @@ class SimulationConfig:
             self.market_maker_rate = market_maker_rate
         else:
             raise D3AException("Invalid market_maker_rate value ({}).".format(market_maker_rate))
+        if iaa_fee is None:
+            self.iaa_fee = INTER_AREA_AGENT_FEE_PERCENTAGE
+        else:
+            self.iaa_fee = iaa_fee
 
     def __repr__(self):
         return (
