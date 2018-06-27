@@ -39,7 +39,7 @@ class Simulation:
                  reset_on_finish_wait: Interval = Interval(minutes=1),
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: Interval = Interval(seconds=1),
-                 api_url=None, message_url=None, redis_job_id=None):
+                 api_url=None, redis_job_id=None):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -55,7 +55,6 @@ class Simulation:
         self.exit_on_finish = exit_on_finish
         self.exit_on_finish_wait = exit_on_finish_wait
         self.api_url = api_url
-        self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.is_stopped = False
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
