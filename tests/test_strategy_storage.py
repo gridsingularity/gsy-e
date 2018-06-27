@@ -322,10 +322,10 @@ def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
                new_callable=PropertyMock) \
             as mock_risk:
         mock_risk.return_value = 200.0
-        assert storage_strategy_test7._calculate_selling_rate_from_buying_rate() == \
+        assert storage_strategy_test7._calculate_selling_rate() == \
             storage_strategy_test7.max_selling_rate_cents_per_kwh.m
         mock_risk.return_value = 0.00001
-        assert storage_strategy_test7._calculate_selling_rate_from_buying_rate() == \
+        assert storage_strategy_test7._calculate_selling_rate() == \
             storage_strategy_test7.break_even.m
 
 

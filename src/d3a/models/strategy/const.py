@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 # GENERAL SETTINGS
 # Unit is percentage
 MAX_RISK = 100
@@ -26,7 +28,8 @@ STORAGE_CAPACITY = 1.2
 # Unit is kW
 MAX_ABS_BATTERY_POWER = 1.2
 # Energy Sell/Buy Break-even
-STORAGE_BREAK_EVEN = 25
+BreakEvenPoint = namedtuple("BreakEvenPoint", ["sell", "buy"])
+STORAGE_BREAK_EVEN = BreakEvenPoint(buy=25, sell=25)
 STORAGE_MAX_SELL_RATE_c_per_Kwh = MAX_ENERGY_RATE-1
 STORAGE_MIN_ALLOWED_SOC = 0.1
 STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
