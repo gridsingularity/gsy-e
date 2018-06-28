@@ -139,6 +139,21 @@ def test_if_storage_doesnt_buy_30ct(storage_strategy_test2, area_test2):
     assert len(storage_strategy_test2.accept_offer.calls) == 0
 
 
+def test_if_storage_doesnt_buy_above_break_even_point(storage_strategy_test2, area_test2):
+    storage_strategy_test2.event_activate()
+    storage_strategy_test2.break_even_buy = Q_(10.0, (ureg.EUR_cents / ureg.kWh))
+    area_test2.current_market.offers = {'id': Offer('id', 10.1, 1,
+                                                    'FakeArea',
+                                                    area_test2.current_market)}
+    storage_strategy_test2.event_tick(area=area_test2)
+    assert len(storage_strategy_test2.accept_offer.calls) == 0
+    area_test2.current_market.offers = {'id': Offer('id', 9.9, 1,
+                                                    'FakeArea',
+                                                    area_test2.current_market)}
+    storage_strategy_test2.event_tick(area=area_test2)
+    assert len(storage_strategy_test2.accept_offer.calls) == 0
+
+
 """TEST3"""
 
 
@@ -321,6 +336,24 @@ def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
     assert storage_strategy_test7._calculate_selling_rate() == \
         storage_strategy_test7.max_selling_rate_cents_per_kwh.m
     storage_strategy_test7._risk_factor = lambda x: -200.0
+    assert storage_strategy_test7._calculate_selling_rate() == \
+        storage_strategy_test7.break_even_sell.m
+
+
+def test_calculate_risk_factor(storage_strategy_test7):
+    storage_strategy_test7.event_activate()
+    rate_range = storage_strategy_test7.max_selling_rate_cents_per_kwh.m - \
+        storage_strategy_test7.break_even_sell.m
+    storage_strategy_test7.risk = 50.0
+    assert storage_strategy_test7._calculate_selling_rate() == \
+        storage_strategy_test7.break_even_sell.m + rate_range / 2.0
+    storage_strategy_test7.risk = 25.0
+    assert storage_strategy_test7._calculate_selling_rate() == \
+        storage_strategy_test7.break_even_sell.m + rate_range / 4.0
+    storage_strategy_test7.risk = 100.0
+    assert storage_strategy_test7._calculate_selling_rate() == \
+        storage_strategy_test7.max_selling_rate_cents_per_kwh.m
+    storage_strategy_test7.risk = 0.0
     assert storage_strategy_test7._calculate_selling_rate() == \
         storage_strategy_test7.break_even_sell.m
 
