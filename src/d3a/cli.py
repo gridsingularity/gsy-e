@@ -9,7 +9,8 @@ from colorlog.colorlog import ColoredFormatter
 
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE, MAX_ENERGY_RATE
+from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE,\
+    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE
 from d3a.simulation import Simulation
 from d3a.util import IntervalType, available_simulation_scenarios
 from d3a.web import start_web
@@ -52,6 +53,9 @@ _setup_modules = available_simulation_scenarios
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
 @click.option('-r', '--market_maker_rate', type=int,
               default=MAX_ENERGY_RATE, show_default=True,
+              help="Market maker rate")
+@click.option('-f', '--iaa_fee', type=int,
+              default=INTER_AREA_AGENT_FEE_PERCENTAGE, show_default=True,
               help="Market maker rate")
 @click.option('-m', '--market-count', type=int, default=5, show_default=True,
               help="Number of tradable market slots into the future")
