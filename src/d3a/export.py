@@ -327,7 +327,7 @@ class TradeHistory(DataSets):
         try:
             self.dataset[self.key]
         except KeyError:
-            _log.error("Error during generating plot for trade historyf" +
+            _log.error("Error during generating plot for trade history" +
                        ": Key not found (" + str(self.key) + ")")
         else:
             for de in range(len(self.dataset[self.key])):

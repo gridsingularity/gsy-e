@@ -56,7 +56,7 @@ class ECarStrategy(StorageStrategy):
     def arrive(self):
         self.log.info("E-Car arrived")
         self.connected_to_grid = True
-        self.sell_energy(energy=self.state.used_storage)  # FIXME find the right buying price
+        self.sell_energy(energy=self.state.used_storage)
 
     trigger_arrive = arrive
 
