@@ -70,7 +70,7 @@ def test_iaa_forwarded_offers_complied_to_transfer_fee_percentage(iaa):
     iaa_per_fee = ((iaa.higher_market.forwarded_offer.price -
                     iaa.lower_market.sorted_offers[-1].price) /
                    iaa.lower_market.sorted_offers[-1].price)
-    assert round(iaa_per_fee, 2) == (5/100)
+    assert round(iaa_per_fee, 2) == iaa.transfer_fee_pct/100
 
 
 def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
