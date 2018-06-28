@@ -56,7 +56,7 @@ _setup_modules = available_simulation_scenarios
               help="Market maker rate")
 @click.option('-f', '--iaa_fee', type=int,
               default=INTER_AREA_AGENT_FEE_PERCENTAGE, show_default=True,
-              help="Market maker rate")
+              help="Inter-Area-Agent Fee in percentage")
 @click.option('-m', '--market-count', type=int, default=5, show_default=True,
               help="Number of tradable market slots into the future")
 @click.option('-i', '--interface', default="0.0.0.0", show_default=True,
