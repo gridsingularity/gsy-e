@@ -88,6 +88,7 @@ class StorageStrategy(BaseStrategy):
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
         max_affordable_offer_rate = self.break_even_buy.m
+  
         for market in self.area.markets.values():
             for offer in market.sorted_offers:
                 if offer.seller == self.owner.name:
