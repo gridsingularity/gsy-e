@@ -159,7 +159,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
-    storage_strategy_test3.break_even = Q_(20, (ureg.EUR_cents / ureg.kWh))
+    storage_strategy_test3.break_even_buy = Q_(20, (ureg.EUR_cents / ureg.kWh))
     storage_strategy_test3.event_activate()
     storage_strategy_test3.event_tick(area=area_test3)
     assert len(storage_strategy_test3.accept_offer.calls) == 0
@@ -317,16 +317,12 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
 
 def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
     storage_strategy_test7.event_activate()
-    from unittest.mock import PropertyMock, patch
-    with patch('test_strategy_storage.StorageStrategy._risk_factor',
-               new_callable=PropertyMock) \
-            as mock_risk:
-        mock_risk.return_value = 200.0
-        assert storage_strategy_test7._calculate_selling_rate() == \
-            storage_strategy_test7.max_selling_rate_cents_per_kwh.m
-        mock_risk.return_value = 0.00001
-        assert storage_strategy_test7._calculate_selling_rate() == \
-            storage_strategy_test7.break_even.m
+    storage_strategy_test7._risk_factor = lambda x: 200.0
+    assert storage_strategy_test7._calculate_selling_rate() == \
+        storage_strategy_test7.max_selling_rate_cents_per_kwh.m
+    storage_strategy_test7._risk_factor = lambda x: -200.0
+    assert storage_strategy_test7._calculate_selling_rate() == \
+        storage_strategy_test7.break_even_sell.m
 
 
 def test_calculate_energy_amount_to_sell_respects_max_power(storage_strategy_test7, area_test7):

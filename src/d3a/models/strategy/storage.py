@@ -174,7 +174,9 @@ class StorageStrategy(BaseStrategy):
             return self.capacity_dependant_sell_rate()
         min_selling_rate = self.break_even_sell.m
         risk_dependent_selling_rate = (
-                min_selling_rate * self._risk_factor
+            min_selling_rate + self._risk_factor(
+                self.max_selling_rate_cents_per_kwh.m - self.break_even_sell.m
+            )
         )
         # Limit rate to respect max sell rate
         return max(
@@ -182,9 +184,13 @@ class StorageStrategy(BaseStrategy):
             self.break_even_sell.m
         )
 
-    @property
-    def _risk_factor(self):
-        return 1.1 - (0.1 * (self.risk / MAX_RISK))
+    def _risk_factor(self, range):
+        '''
+        Returns a value between 0 and range according to the risk parameter.
+        :param range: the range of output values of the function
+        :return: the value in the range according to the risk factor
+        '''
+        return range * self.risk / MAX_RISK
 
     def capacity_dependant_sell_rate(self):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
@@ -195,8 +201,9 @@ class StorageStrategy(BaseStrategy):
             # TODO: max_selling_rate_cents_per_kwh is never mutating and is valid
             # TODO: only in capacity depending strategy
             # TODO: Should remain const or be abstracted from this class
-            rate = self.max_selling_rate_cents_per_kwh - \
-                ((self.max_selling_rate_cents_per_kwh - self.break_even) * (charge_per / 100))
+            rate = self.max_selling_rate_cents_per_kwh.m - \
+                ((self.max_selling_rate_cents_per_kwh.m - self.break_even_sell) *
+                 (charge_per / 100))
             return rate.m
         else:
             return self.max_selling_rate_cents_per_kwh.m

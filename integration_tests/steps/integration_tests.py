@@ -242,7 +242,6 @@ def configd_sim_run(context):
 
 @when('a message is sent on {channel}')
 def message_on_channel(context, channel):
-    print(context.simulation.redis_connection._sub_callback_dict)
     context.simulation.redis_connection._sub_callback_dict[channel](None)
 
 
@@ -266,7 +265,6 @@ def final_results(context):
 
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
-    print(context.interm_results_count)
     assert context.interm_results_count == 97
 
 
@@ -303,7 +301,7 @@ def run_sim(context, scenario, duration, slot_length, tick_length):
     exit_on_finish_wait = Interval()
 
     api_url = "http://localhost:5000/api"
-    simulation = Simulation(
+    context.simulation = Simulation(
         scenario,
         simulation_config,
         slowdown,
@@ -319,9 +317,7 @@ def run_sim(context, scenario, duration, slot_length, tick_length):
         exit_on_finish_wait,
         api_url
     )
-    simulation.run()
-
-    context.simulation = simulation
+    context.simulation.run()
 
 
 @then('we test the output of the simulation of '
@@ -390,3 +386,20 @@ def check_pv_profile_csv(context):
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
         else:
             assert False
+
+
+@then('the storage devices buy and sell energy respecting the break even prices')
+def check_storage_prices(context):
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    trades_sold = []
+    trades_bought = []
+    for slot, market in house1.past_markets.items():
+        for trade in market.trades:
+            if trade.seller in ["H1 Storage1", "H1 Storage2"]:
+                trades_sold.append(trade)
+            elif trade.buyer in ["H1 Storage1", "H1 Storage2"]:
+                trades_bought.append(trade)
+    assert all([trade.offer.price / trade.offer.energy > 25.01 for trade in trades_sold])
+    assert all([trade.offer.price / trade.offer.energy < 24.99 for trade in trades_bought])
+    assert len(trades_sold) > 0
+    assert len(trades_bought) > 0
