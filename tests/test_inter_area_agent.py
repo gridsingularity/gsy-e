@@ -51,7 +51,10 @@ def iaa():
     lower_market = FakeMarket([Offer('id', 1, 1, 'other')])
     higher_market = FakeMarket([Offer('id2', 3, 3, 'owner'), Offer('id3', 0.5, 1, 'owner')])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner, higher_market=higher_market, lower_market=lower_market)
+    iaa = InterAreaAgent(owner=owner,
+                         higher_market=higher_market,
+                         lower_market=lower_market,
+                         transfer_fee_pct=5)
     iaa.event_tick(area=iaa.owner)
     iaa.owner.current_tick = 14
     iaa.event_tick(area=iaa.owner)
@@ -61,6 +64,13 @@ def iaa():
 def test_iaa_forwards_offers(iaa):
     assert iaa.lower_market.offer_count == 2
     assert iaa.higher_market.offer_count == 1
+
+
+def test_iaa_forwarded_offers_complied_to_transfer_fee_percentage(iaa):
+    iaa_per_fee = ((iaa.higher_market.forwarded_offer.price -
+                    iaa.lower_market.sorted_offers[-1].price) /
+                   iaa.lower_market.sorted_offers[-1].price)
+    assert round(iaa_per_fee, 2) == round(iaa.transfer_fee_pct/100, 2)
 
 
 def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):

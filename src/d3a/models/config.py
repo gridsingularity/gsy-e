@@ -6,7 +6,8 @@ from d3a.util import format_interval
 
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
-                 market_count: int, cloud_coverage: int, market_maker_rate: int):
+                 market_count: int, cloud_coverage: int,
+                 market_maker_rate: int, iaa_fee: int):
         self.duration = duration
         self.slot_length = slot_length
         self.tick_length = tick_length
@@ -32,6 +33,7 @@ class SimulationConfig:
             self.market_maker_rate = market_maker_rate
         else:
             raise D3AException("Invalid market_maker_rate value ({}).".format(market_maker_rate))
+        self.iaa_fee = iaa_fee
 
     def __repr__(self):
         return (
