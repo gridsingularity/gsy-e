@@ -2,7 +2,7 @@ import pytest
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
-from d3a.models.strategy.const import FRIDGE_MIN_NEEDED_ENERGY
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.fridge import FridgeStrategy
 
 
@@ -47,23 +47,23 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', (10 * (FRIDGE_MIN_NEEDED_ENERGY / 1000)),
-                   (FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (10 * (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [Offer('id', 100000000,
-                   (FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
-            [Offer('id', (30 * (FRIDGE_MIN_NEEDED_ENERGY / 1000)),
-                   (FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (30 * (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [
 
              ],
-            [Offer('id', 10 * 50 * FRIDGE_MIN_NEEDED_ENERGY,
-                   50 * FRIDGE_MIN_NEEDED_ENERGY, 'A', self)]
+            [Offer('id', 10 * 50 * ConstSettings.FRIDGE_MIN_NEEDED_ENERGY,
+                   50 * ConstSettings.FRIDGE_MIN_NEEDED_ENERGY, 'A', self)]
         ]
         return offers[self.count]
 

@@ -2,7 +2,7 @@ from pendulum.interval import Interval
 
 from d3a.exceptions import D3AException
 from d3a.util import format_interval
-from d3a.models.strategy.const import INTER_AREA_AGENT_FEE_PERCENTAGE
+from d3a.models.strategy.const import ConstSettings
 
 
 class SimulationConfig:
@@ -35,7 +35,7 @@ class SimulationConfig:
         else:
             raise D3AException("Invalid market_maker_rate value ({}).".format(market_maker_rate))
         if iaa_fee is None:
-            self.iaa_fee = INTER_AREA_AGENT_FEE_PERCENTAGE
+            self.iaa_fee = ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
         else:
             self.iaa_fee = iaa_fee
 

@@ -2,7 +2,7 @@ import pytest
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
-from d3a.models.strategy.const import PUMP_MIN_NEEDED_ENERGY
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.heatpump import HeatPumpStrategy
 
 
@@ -43,12 +43,12 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', (10 * (PUMP_MIN_NEEDED_ENERGY / 1000)),
-                   (PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (10 * (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [Offer('id', 100000000,
-                   (PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
+                   (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ]
         ]

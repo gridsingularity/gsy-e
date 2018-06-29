@@ -18,8 +18,7 @@ from d3a.models.market import Market
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.util import TaggedLogWrapper
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE,\
-    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE
+from d3a.models.strategy.const import ConstSettings
 
 
 log = getLogger(__name__)
@@ -30,9 +29,9 @@ DEFAULT_CONFIG = SimulationConfig(
     market_count=4,
     slot_length=Interval(minutes=15),
     tick_length=Interval(seconds=1),
-    cloud_coverage=DEFAULT_PV_POWER_PROFILE,
-    market_maker_rate=MAX_ENERGY_RATE,
-    iaa_fee=INTER_AREA_AGENT_FEE_PERCENTAGE
+    cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
+    market_maker_rate=ConstSettings.MAX_ENERGY_RATE,
+    iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
 )
 
 

@@ -6,6 +6,8 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
+import json
+import os
 from pendulum import Pendulum
 from pendulum.interval import Interval
 from pendulum.period import Period
@@ -20,6 +22,7 @@ from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
+from d3a.models.strategy.const import ConstSettings
 
 log = getLogger(__name__)
 
@@ -39,14 +42,21 @@ class Simulation:
                  reset_on_finish_wait: Interval = Interval(minutes=1),
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: Interval = Interval(seconds=1),
-                 api_url=None, message_url=None, redis_job_id=None):
+                 api_url=None, settings_file=None, message_url=None, redis_job_id=None):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
             paused=paused,
             pause_after=pause_after
         )
-        self.simulation_config = simulation_config
+
+        print(simulation_config)
+        if settings_file is not None:
+            self.settings_file = settings_file
+            self._read_settings_from_file()
+            self._update_advanced_settings()
+        else:
+            self.simulation_config = simulation_config
         self.use_repl = use_repl
         self.export_on_finish = export
         self.export_path = export_path
@@ -72,6 +82,26 @@ class Simulation:
         self._load_setup_module()
         self._init(**self.initial_params)
         self._init_events()
+
+    def _read_settings_from_file(self):
+        if os.path.isfile(self.settings_file):
+            with open(self.settings_file, "r") as sf:
+                settings = json.load(sf)
+                print(settings["basic_settings"])
+                self.simulation_config = SimulationConfig(**settings["basic_settings"])
+                self.advanced_settings = settings["advanced_settings"]
+        else:
+            raise FileExistsError("Please provide a valid settings_file path")
+
+    def _update_advanced_settings(self):
+        for set_var, set_val in self.advanced_settings.items():
+            try:
+                getattr(ConstSettings, set_var)
+                setattr(ConstSettings, set_var, set_val)
+                log.error(str(set_var))
+            except AttributeError as er:
+                SimulationException("{set_var} Is not configurable. ".format(set_var=set_var)
+                                    + str(er))
 
     def _load_setup_module(self):
         try:
