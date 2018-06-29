@@ -35,7 +35,7 @@ class StorageStrategy(BaseStrategy):
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
         self.max_selling_rate_cents_per_kwh = \
-            Q_((self.area.config.market_maker_rate-1), (ureg.EUR_cents / ureg.kWh))
+            Q_((self.area.config.market_maker_rate[0]-1), (ureg.EUR_cents / ureg.kWh))
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity, initial_charge, battery_capacity):

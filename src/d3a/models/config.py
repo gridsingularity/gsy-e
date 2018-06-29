@@ -1,3 +1,4 @@
+import ast
 from pendulum.interval import Interval
 
 from d3a.exceptions import D3AException
@@ -6,8 +7,7 @@ from d3a.util import format_interval
 
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
-                 market_count: int, cloud_coverage: int,
-                 market_maker_rate: int, iaa_fee: int):
+                 market_count: int, cloud_coverage: int, market_maker_rate, iaa_fee: int):
         self.duration = duration
         self.slot_length = slot_length
         self.tick_length = tick_length
@@ -29,10 +29,15 @@ class SimulationConfig:
             self.cloud_coverage = cloud_coverage
         else:
             raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
-        if market_maker_rate > 0:
+        self.market_maker_rate = dict()
+        if type(market_maker_rate) == int:
+            for i in range(24):
+                self.market_maker_rate[i] = market_maker_rate
+        elif type(market_maker_rate) == dict:
+            mm = ast.literal_eval(market_maker_rate)
+            if sorted(mm.keys()) != list(range(24)):
+                raise TypeError('Incomplete hour dict')
             self.market_maker_rate = market_maker_rate
-        else:
-            raise D3AException("Invalid market_maker_rate value ({}).".format(market_maker_rate))
         self.iaa_fee = iaa_fee
 
     def __repr__(self):
