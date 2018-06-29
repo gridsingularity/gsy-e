@@ -132,8 +132,8 @@ def e_car_strategy_test2(area_test2, called):
     e.owner = area_test2
     e.area = area_test2
     e._remove_offers_on_depart = called
-    e.buy_energy = lambda a: None
-    e.sell_energy = lambda a: None
+    e.buy_energy = lambda: None
+    e.sell_energy = lambda: None
     e.depart_times_not_reached = list(range(24))
     e.depart_times_not_reached.remove(DEPART_TIME)
     e.depart_times_not_reached.remove(ARRIVAL_TIME)
@@ -180,7 +180,7 @@ def e_car_strategy_test4(area_test1, called):
     e.owner = area_test1
     e.area = area_test1
     e.sell_energy = Mock(return_value=None)
-    e.buy_energy = lambda x: None
+    e.buy_energy = lambda: None
     e.depart = called
     return e
 

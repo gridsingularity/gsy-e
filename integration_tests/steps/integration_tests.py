@@ -223,7 +223,7 @@ def create_sim_object(context, scenario):
 
     context.simulation = Simulation(
         scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
-        Interval(), True, Interval(), None, None, "1234"
+        Interval(), True, Interval(), None, "1234"
     )
 
 
