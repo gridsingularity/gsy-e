@@ -18,7 +18,8 @@ from d3a.models.market import Market
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.util import TaggedLogWrapper
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE, MAX_ENERGY_RATE
+from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE,\
+    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE
 
 
 log = getLogger(__name__)
@@ -31,6 +32,7 @@ DEFAULT_CONFIG = SimulationConfig(
     tick_length=Interval(seconds=1),
     cloud_coverage=DEFAULT_PV_POWER_PROFILE,
     market_maker_rate=MAX_ENERGY_RATE,
+    iaa_fee=INTER_AREA_AGENT_FEE_PERCENTAGE
 )
 
 
@@ -268,7 +270,8 @@ class Area:
                         iaa = InterAreaAgent(
                             owner=self,
                             higher_market=self.parent.markets[timeframe],
-                            lower_market=market
+                            lower_market=market,
+                            transfer_fee_pct=self.config.iaa_fee
                         )
                         # Attach agent to own IAA list
                         self.inter_area_agents[market].append(iaa)
