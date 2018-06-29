@@ -1,12 +1,11 @@
-from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import BreakEvenPoint
 
 
 def get_setup(config):
@@ -22,16 +21,12 @@ def get_setup(config):
                                                                            range(12, 18)),
                                                                        acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6,
-                                                                 break_even=BreakEvenPoint(
-                                                                     sell=25.01,
-                                                                     buy=24.99),
+                    Area('H1 Storage1', strategy=StorageStrategy(risk=10, initial_capacity=0.6,
+                                                                 break_even=(26.99, 27.01),
                                                                  max_abs_battery_power=5.0),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_capacity=0.6,
-                                                                 break_even=BreakEvenPoint(
-                                                                     sell=25.01,
-                                                                     buy=24.99),
+                    Area('H1 Storage2', strategy=StorageStrategy(risk=10, initial_capacity=0.6,
+                                                                 break_even=(26.99, 27.01),
                                                                  max_abs_battery_power=5.0),
                          appliance=SwitchableAppliance()),
                 ]

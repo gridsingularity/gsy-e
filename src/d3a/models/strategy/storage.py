@@ -4,7 +4,7 @@ from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, STORAGE_MIN_ALLOWED_SOC, \
-    STORAGE_BREAK_EVEN, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER, \
+    STORAGE_BREAK_EVEN_BUY, STORAGE_BREAK_EVEN_SELL, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER, \
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET
 
 
@@ -17,7 +17,7 @@ class StorageStrategy(BaseStrategy):
                  initial_charge=None,
                  battery_capacity=STORAGE_CAPACITY,
                  max_abs_battery_power=MAX_ABS_BATTERY_POWER,
-                 break_even=STORAGE_BREAK_EVEN,
+                 break_even=(STORAGE_BREAK_EVEN_BUY, STORAGE_BREAK_EVEN_SELL),
                  cap_price_strategy=False):
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity, break_even)
@@ -29,8 +29,8 @@ class StorageStrategy(BaseStrategy):
                                   max_abs_battery_power=max_abs_battery_power,
                                   loss_per_hour=0.0,
                                   strategy=self)
-        self.break_even_sell = Q_(break_even.sell, (ureg.EUR_cents / ureg.kWh))
-        self.break_even_buy = Q_(break_even.buy, (ureg.EUR_cents / ureg.kWh))
+        self.break_even_buy = Q_(break_even[0], (ureg.EUR_cents / ureg.kWh))
+        self.break_even_sell = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
         self.cap_price_strategy = cap_price_strategy
 
     def event_activate(self):
@@ -50,9 +50,9 @@ class StorageStrategy(BaseStrategy):
         if initial_capacity and not 0 <= initial_capacity <= battery_capacity:
             raise ValueError("Initial capacity should be between 0 and "
                              "battery_capacity parameter.")
-        if break_even.sell < break_even.buy:
+        if break_even[1] < break_even[0]:
             raise ValueError("Break even point for sell energy is lower than buy energy.")
-        if break_even.sell < 0 or break_even.buy < 0:
+        if any(break_even_point < 0 for break_even_point in break_even):
             raise ValueError("Break even point should be positive energy rate values.")
 
     def event_tick(self, *, area):
@@ -88,7 +88,6 @@ class StorageStrategy(BaseStrategy):
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
         max_affordable_offer_rate = self.break_even_buy.m
-  
         for market in self.area.markets.values():
             for offer in market.sorted_offers:
                 if offer.seller == self.owner.name:
@@ -185,13 +184,13 @@ class StorageStrategy(BaseStrategy):
             self.break_even_sell.m
         )
 
-    def _risk_factor(self, range):
+    def _risk_factor(self, output_range):
         '''
         Returns a value between 0 and range according to the risk parameter.
-        :param range: the range of output values of the function
+        :param output_range: the range of output values of the function
         :return: the value in the range according to the risk factor
         '''
-        return range * self.risk / MAX_RISK
+        return output_range * self.risk / MAX_RISK
 
     def capacity_dependant_sell_rate(self):
         most_recent_past_ts = sorted(self.area.past_markets.keys())

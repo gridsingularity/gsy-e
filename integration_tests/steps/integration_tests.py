@@ -403,7 +403,7 @@ def check_storage_prices(context):
                 trades_sold.append(trade)
             elif trade.buyer in ["H1 Storage1", "H1 Storage2"]:
                 trades_bought.append(trade)
-    assert all([trade.offer.price / trade.offer.energy > 25.01 for trade in trades_sold])
-    assert all([trade.offer.price / trade.offer.energy < 24.99 for trade in trades_bought])
+    assert all([trade.offer.price / trade.offer.energy >= 27.01 for trade in trades_sold])
+    assert all([trade.offer.price / trade.offer.energy <= 26.99 for trade in trades_bought])
     assert len(trades_sold) > 0
     assert len(trades_bought) > 0
