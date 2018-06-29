@@ -28,9 +28,8 @@ MAX_ABS_BATTERY_POWER = 1.2
 # Energy Sell/Buy Break-even
 STORAGE_BREAK_EVEN = 25
 STORAGE_MAX_SELL_RATE_c_per_Kwh = MAX_ENERGY_RATE-1
-
 STORAGE_MIN_ALLOWED_SOC = 0.1
-
+STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
 # PV SETTINGS
 # This price should be just above the marginal costs for a PV system - unit is cent
 MIN_PV_SELLING_PRICE = 0
