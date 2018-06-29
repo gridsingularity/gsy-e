@@ -20,9 +20,9 @@ def test_fridge_leaf_default_risk():
 def test_commercial_producer_leaf():
     leaf = CommercialProducer(name="cep", energy_rate=23)
     assert isinstance(leaf.strategy, CommercialStrategy)
-    assert leaf.strategy.energy_rate.m == 23
+    assert leaf.strategy.energy_rate == 23
 
 
 def test_leaf_parameters():
     leaf = CommercialProducer(name="cep", energy_rate=33)
-    assert leaf.parameters['energy_rate'].m == 33
+    assert leaf.parameters['energy_rate'] == 33
