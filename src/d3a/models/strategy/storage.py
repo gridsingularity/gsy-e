@@ -3,21 +3,19 @@ from d3a.models.strategy import ureg, Q_
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, STORAGE_MIN_ALLOWED_SOC, \
-    STORAGE_BREAK_EVEN, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER, \
-    STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET
+from d3a.models.strategy.const import ConstSettings
 
 
 class StorageStrategy(BaseStrategy):
     parameters = ('risk', 'initial_capacity', 'initial_charge',
                   'battery_capacity', 'max_abs_battery_power')
 
-    def __init__(self, risk=DEFAULT_RISK,
+    def __init__(self, risk=ConstSettings.DEFAULT_RISK,
                  initial_capacity=0.0,
                  initial_charge=None,
-                 battery_capacity=STORAGE_CAPACITY,
-                 max_abs_battery_power=MAX_ABS_BATTERY_POWER,
-                 break_even=STORAGE_BREAK_EVEN,
+                 battery_capacity=ConstSettings.STORAGE_CAPACITY,
+                 max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
+                 break_even=ConstSettings.STORAGE_BREAK_EVEN,
                  cap_price_strategy=False):
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity)
@@ -158,9 +156,9 @@ class StorageStrategy(BaseStrategy):
         # Limit energy to respect minimum allowed battery SOC
         target_soc = (self.state.used_storage + self.state.offered_storage - energy) / \
             self.state.capacity
-        if STORAGE_MIN_ALLOWED_SOC > target_soc:
+        if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
             energy = self.state.used_storage + self.state.offered_storage - \
-                     self.state.capacity * STORAGE_MIN_ALLOWED_SOC
+                     self.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
         return energy
 
     def _calculate_selling_rate_from_buying_rate(self):
@@ -179,7 +177,7 @@ class StorageStrategy(BaseStrategy):
 
     @property
     def _risk_factor(self):
-        return 1.1 - (0.1 * (self.risk / MAX_RISK))
+        return 1.1 - (0.1 * (self.risk / ConstSettings.MAX_RISK))
 
     def capacity_dependant_sell_rate(self):
         most_recent_past_ts = sorted(self.area.past_markets.keys())

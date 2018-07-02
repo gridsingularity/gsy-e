@@ -6,10 +6,8 @@ from pendulum.interval import Interval
 from d3a.models.strategy import ureg, Q_
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE,\
-    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE
 
 
 class FakeArea():
@@ -52,9 +50,9 @@ class FakeArea():
                 market_count=4,
                 slot_length=Interval(minutes=15),
                 tick_length=Interval(seconds=1),
-                cloud_coverage=DEFAULT_PV_POWER_PROFILE,
-                market_maker_rate=MAX_ENERGY_RATE,
-                iaa_fee=INTER_AREA_AGENT_FEE_PERCENTAGE
+                cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
+                market_maker_rate=ConstSettings.MAX_ENERGY_RATE,
+                iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
                 )
 
 
@@ -179,6 +177,7 @@ def storage_strategy_test_buy_energy(area_test3, called):
 def test_if_storage_buys_below_break_even(storage_strategy_test_buy_energy, area_test3):
     storage_strategy_test_buy_energy.event_activate()
     storage_strategy_test_buy_energy.buy_energy()
+
     assert len(storage_strategy_test_buy_energy.accept_offer.calls) == 1
 
 
@@ -350,7 +349,7 @@ def test_calculate_energy_amount_to_sell_respects_min_allowed_soc(storage_strate
                                                             area_test7.current_market) == \
         storage_strategy_test7.state.used_storage + \
         storage_strategy_test7.state.offered_storage - \
-        storage_strategy_test7.state.capacity * STORAGE_MIN_ALLOWED_SOC
+        storage_strategy_test7.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
 
 
 """TEST8"""
@@ -374,11 +373,12 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
     storage_strategy_test8.event_activate()
     storage_strategy_test8.sell_energy(energy=None)
     assert abs(storage_strategy_test8.state.used_storage -
-               storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC) < 0.0001
+               storage_strategy_test8.state.capacity *
+               ConstSettings.STORAGE_MIN_ALLOWED_SOC) < 0.0001
     assert storage_strategy_test8.state.offered_storage == \
-        100 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
+        100 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
     assert area_test8._markets_return["Fake Market"].created_offers[0].energy == \
-        100 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
+        100 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(
         area_test8._markets_return["Fake Market"])
     ) > 0
@@ -393,7 +393,7 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
     storage_strategy_test8.event_activate()
     storage_strategy_test8.event_market_cycle()
     assert storage_strategy_test8.state.offered_storage == \
-        100.0 - storage_strategy_test8.state.capacity * STORAGE_MIN_ALLOWED_SOC
+        100.0 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(
         area_test8._markets_return["Fake Market"])
     ) > 0

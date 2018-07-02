@@ -6,11 +6,14 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
+import json
+import os
 from pendulum import Pendulum
 from pendulum.interval import Interval
 from pendulum.period import Period
 from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
+from datetime import timedelta
 
 from d3a.exceptions import SimulationException, D3AException
 from d3a.export import export
@@ -20,6 +23,8 @@ from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
+from d3a.models.strategy.const import ConstSettings
+from d3a.util import IntervalType
 
 log = getLogger(__name__)
 
@@ -32,21 +37,28 @@ class _SimulationInterruped(Exception):
 
 
 class Simulation:
-    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
+    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
                  use_repl: bool = False, export: bool = False, export_path: str = None,
                  reset_on_finish: bool = False,
                  reset_on_finish_wait: Interval = Interval(minutes=1),
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: Interval = Interval(seconds=1),
-                 api_url=None, redis_job_id=None):
+                 api_url=None, redis_job_id=None, settings_file=None):
+
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
             paused=paused,
             pause_after=pause_after
         )
-        self.simulation_config = simulation_config
+
+        if settings_file is not None:
+            self.settings_file = settings_file
+            self._read_settings_from_file()
+            self._update_advanced_settings()
+        else:
+            self.simulation_config = simulation_config
         self.use_repl = use_repl
         self.export_on_finish = export
         self.export_path = export_path
@@ -71,6 +83,40 @@ class Simulation:
         self._load_setup_module()
         self._init(**self.initial_params)
         self._init_events()
+
+    def _read_settings_from_file(self):
+        """
+        Reads basic and advanced settings from a settings file (json format)
+        """
+        if os.path.isfile(self.settings_file):
+            with open(self.settings_file, "r") as sf:
+                settings = json.load(sf)
+                self.advanced_settings = settings["advanced_settings"]
+                basic_settings = settings["basic_settings"]
+                self.simulation_config = SimulationConfig(
+                    duration=IntervalType('H:M')(basic_settings.get('duration',
+                                                                    timedelta(hours=24))),
+                    slot_length=IntervalType('M:S')(basic_settings.get('slot_length',
+                                                                       timedelta(minutes=15))),
+                    tick_length=IntervalType('M:S')(basic_settings.get('tick_length',
+                                                                       timedelta(seconds=15))),
+                    market_count=basic_settings.get('market_count', 4),
+                    cloud_coverage=basic_settings.get(
+                        'cloud_coverage', self.advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
+                    market_maker_rate=basic_settings.get(
+                        'market_maker_rate', self.advanced_settings["MAX_ENERGY_RATE"]))
+
+        else:
+            raise FileExistsError("Please provide a valid settings_file path")
+
+    def _update_advanced_settings(self):
+        for set_var, set_val in self.advanced_settings.items():
+            try:
+                getattr(ConstSettings, set_var)
+                setattr(ConstSettings, set_var, set_val)
+            except AttributeError as er:
+                SimulationException("{set_var} Is not configurable. ".format(set_var=set_var)
+                                    + str(er))
 
     def _load_setup_module(self):
         try:

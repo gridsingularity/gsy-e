@@ -2,7 +2,7 @@ import pytest
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
-from d3a.models.strategy.const import MAX_RISK, STORAGE_CAPACITY
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 
 
@@ -193,7 +193,7 @@ def test_event_market_cycle(storage_strategy_test2, area_test2, bought_energy=0,
                 # The complex price calculation is needed to get initial buying price of the energy
                 ) == str(((offer.price / 1.002) *
                           (1 /
-                           (1.05 - (0.5 * (storage_strategy_test2.risk / MAX_RISK))
+                           (1.05 - (0.5 * (storage_strategy_test2.risk / ConstSettings.MAX_RISK))
                             )
                            )
                           ))
@@ -279,7 +279,7 @@ def test_energy_buying_possible(storage_strategy_test4, area_test4, market_test4
         storage_strategy_test4.accept_offer.calls[4][0][1]
 
     # Checking if storage respects it's current load and doesn't buy more than it has capacity
-    storage_strategy_test4.used_storage = (STORAGE_CAPACITY * 2) + 1
+    storage_strategy_test4.used_storage = (ConstSettings.STORAGE_CAPACITY * 2) + 1
     assert not storage_strategy_test4.energy_buying_possible(max_buying_price=30)
 
 

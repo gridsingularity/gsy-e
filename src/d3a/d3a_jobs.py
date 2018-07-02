@@ -9,8 +9,7 @@ from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE,\
-    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE
+from d3a.models.strategy.const import ConstSettings
 from d3a.simulation import Simulation
 from d3a.web import start_web
 from d3a.util import available_simulation_scenarios
@@ -36,9 +35,9 @@ def start(scenario, settings):
         slot_length=interval.instance(settings.get('slot_length', timedelta(minutes=15))),
         tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=15))),
         market_count=settings.get('market_count', 4),
-        cloud_coverage=settings.get('cloud_coverage', DEFAULT_PV_POWER_PROFILE),
-        market_maker_rate=settings.get('market_maker_rate', MAX_ENERGY_RATE),
-        iaa_fee=settings.get('iaa_fee', INTER_AREA_AGENT_FEE_PERCENTAGE)
+        cloud_coverage=settings.get('cloud_coverage', ConstSettings.DEFAULT_PV_POWER_PROFILE),
+        market_maker_rate=settings.get('market_maker_rate', ConstSettings.MAX_ENERGY_RATE)
+        iaa_fee=settings.get('iaa_fee', ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
     )
 
     if scenario is None:

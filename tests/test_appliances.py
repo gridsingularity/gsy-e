@@ -8,7 +8,7 @@ from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.strategy.const import MAX_FRIDGE_TEMP, FRIDGE_TEMPERATURE
+from d3a.models.strategy.const import ConstSettings
 
 
 class FakeSwitchableStrategy:
@@ -26,8 +26,8 @@ class FakePVStrategy:
 
 class FakeFridgeState:
     def __init__(self):
-        self.temperature = FRIDGE_TEMPERATURE
-        self.max_temperature = MAX_FRIDGE_TEMP
+        self.temperature = ConstSettings.FRIDGE_TEMPERATURE
+        self.max_temperature = ConstSettings.MAX_FRIDGE_TEMP
 
 
 class FakeFridgeStrategy:
@@ -167,7 +167,7 @@ def test_fridge_appliance_heats_up_when_open(fridge_fixture):
 # always buys energy if we have none and upper temperature constraint is violated
 
 def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
-    fridge_fixture.state.temperature = MAX_FRIDGE_TEMP + 1
+    fridge_fixture.state.temperature = ConstSettings.MAX_FRIDGE_TEMP + 1
     fridge_fixture.report_energy(0)
     assert fridge_fixture.area.reported_value < 0
 

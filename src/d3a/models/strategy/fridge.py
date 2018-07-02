@@ -1,7 +1,7 @@
 from d3a.exceptions import MarketException
 from d3a.models.state import FridgeState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_MIN_NEEDED_ENERGY, MAX_RISK
+from d3a.models.strategy.const import ConstSettings
 
 
 # TODO Find realistic values for consumption as well as temperature changes
@@ -9,7 +9,7 @@ from d3a.models.strategy.const import DEFAULT_RISK, FRIDGE_MIN_NEEDED_ENERGY, MA
 class FridgeStrategy(BaseStrategy):
     parameters = ('risk',)
 
-    def __init__(self, risk=DEFAULT_RISK):
+    def __init__(self, risk=ConstSettings.DEFAULT_RISK):
         if not 0 <= risk <= 100:
             raise ValueError("Risk is a percentage value, should be between 0 and 100.")
         super().__init__()
@@ -38,7 +38,7 @@ class FridgeStrategy(BaseStrategy):
             return
 
         # Assuming a linear correlation between accepted price and risk
-        median_risk = MAX_RISK / 2
+        median_risk = ConstSettings.MAX_RISK / 2
         # The threshold buying price depends on historical market data
         min_historical_price, max_historical_price = self.area.historical_min_max_price
         average_market_price = self.area.historical_avg_rate
@@ -57,7 +57,7 @@ class FridgeStrategy(BaseStrategy):
         risk_price_slope = (
             (
                 average_market_price - accepted_price_at_highest_risk
-            ) / (MAX_RISK - median_risk)
+            ) / (ConstSettings.MAX_RISK - median_risk)
         )
 
         # risk_dependency_of_threshold_price calculates a threshold price
@@ -66,7 +66,8 @@ class FridgeStrategy(BaseStrategy):
         # This is of course the point of highest possible risk.
         # Then we add the slope times the risk (lower risk needs to result in a higher price)
         risk_dependency_of_threshold_price = (accepted_price_at_highest_risk +
-                                              ((MAX_RISK - self.risk) / 100) * risk_price_slope
+                                              ((ConstSettings.MAX_RISK - self.risk) / 100) *
+                                              risk_price_slope
                                               )
 
         # temperature_dependency_of_threshold_price calculates the Y intercept that results
@@ -99,9 +100,10 @@ class FridgeStrategy(BaseStrategy):
                 #  of the temperature (see event_market_cycle) as well
                 if self.state.temperature <= self.state.min_temperature + 0.05:
                     return
-                if offer.energy * 1000 < FRIDGE_MIN_NEEDED_ENERGY:
+                if offer.energy * 1000 < ConstSettings.FRIDGE_MIN_NEEDED_ENERGY:
                     continue
-                cooling_temperature = (((offer.energy * 1000) / FRIDGE_MIN_NEEDED_ENERGY)
+                cooling_temperature = (((offer.energy * 1000) /
+                                        ConstSettings.FRIDGE_MIN_NEEDED_ENERGY)
                                        * 0.05 * 2)
                 if (
                             ((offer.price / offer.energy) <= threshold_price
@@ -110,7 +112,8 @@ class FridgeStrategy(BaseStrategy):
                 ):
                     if self.state.temperature - cooling_temperature < self.state.min_temperature:
                         cooling_temperature = self.state.temperature - self.state.min_temperature
-                        partial = cooling_temperature * FRIDGE_MIN_NEEDED_ENERGY / (.05 * 2 * 1000)
+                        partial = cooling_temperature * ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / (
+                                .05 * 2 * 1000)
                     else:
                         partial = None
                     try:
