@@ -95,21 +95,23 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
         simulation_config = SimulationConfig(**config_params)
         api_url = "http://{}:{}/api".format(interface, port)
         simulation = Simulation(
-            setup_module_name,
-            simulation_config,
-            slowdown,
-            seed,
-            paused,
-            pause_after,
-            repl,
-            export,
-            export_path,
-            reset_on_finish,
-            reset_on_finish_wait,
-            exit_on_finish,
-            exit_on_finish_wait,
-            api_url,
-            settings_file
+            setup_module_name=setup_module_name,
+            simulation_config=simulation_config,
+            slowdown=slowdown,
+            seed=seed,
+            paused=paused,
+            pause_after=pause_after,
+            use_repl=repl,
+            export=export,
+            export_path=export_path,
+            reset_on_finish=reset_on_finish,
+            reset_on_finish_wait=reset_on_finish_wait,
+            exit_on_finish=exit_on_finish,
+            exit_on_finish_wait=exit_on_finish_wait,
+            api_url=api_url,
+            message_url=None,
+            redis_job_id=None,
+            settings_file=settings_file
         )
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])

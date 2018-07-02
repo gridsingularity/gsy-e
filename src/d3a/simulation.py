@@ -13,6 +13,7 @@ from pendulum.interval import Interval
 from pendulum.period import Period
 from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
+from datetime import timedelta
 
 from d3a.exceptions import SimulationException, D3AException
 from d3a.export import export
@@ -23,6 +24,7 @@ from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
 from d3a.models.strategy.const import ConstSettings
+from d3a.util import IntervalType
 
 log = getLogger(__name__)
 
@@ -35,14 +37,14 @@ class _SimulationInterruped(Exception):
 
 
 class Simulation:
-    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
+    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
                  use_repl: bool = False, export: bool = False, export_path: str = None,
                  reset_on_finish: bool = False,
                  reset_on_finish_wait: Interval = Interval(minutes=1),
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: Interval = Interval(seconds=1),
-                 api_url=None, settings_file=None, message_url=None, redis_job_id=None):
+                 api_url=None, message_url=None, redis_job_id=None, settings_file=None):
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -50,7 +52,6 @@ class Simulation:
             pause_after=pause_after
         )
 
-        print(simulation_config)
         if settings_file is not None:
             self.settings_file = settings_file
             self._read_settings_from_file()
@@ -84,12 +85,27 @@ class Simulation:
         self._init_events()
 
     def _read_settings_from_file(self):
+        """
+        Reads basic and advanced settings from a settings file (json format)
+        """
         if os.path.isfile(self.settings_file):
             with open(self.settings_file, "r") as sf:
                 settings = json.load(sf)
-                print(settings["basic_settings"])
-                self.simulation_config = SimulationConfig(**settings["basic_settings"])
                 self.advanced_settings = settings["advanced_settings"]
+                basic_settings = settings["basic_settings"]
+                self.simulation_config = SimulationConfig(
+                    duration=IntervalType('H:M')(basic_settings.get('duration',
+                                                                    timedelta(hours=24))),
+                    slot_length=IntervalType('M:S')(basic_settings.get('slot_length',
+                                                                       timedelta(minutes=15))),
+                    tick_length=IntervalType('M:S')(basic_settings.get('tick_length',
+                                                                       timedelta(seconds=15))),
+                    market_count=basic_settings.get('market_count', 4),
+                    cloud_coverage=basic_settings.get(
+                        'cloud_coverage', self.advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
+                    market_maker_rate=basic_settings.get(
+                        'market_maker_rate', self.advanced_settings["MAX_ENERGY_RATE"]))
+
         else:
             raise FileExistsError("Please provide a valid settings_file path")
 
@@ -98,7 +114,6 @@ class Simulation:
             try:
                 getattr(ConstSettings, set_var)
                 setattr(ConstSettings, set_var, set_val)
-                log.error(str(set_var))
             except AttributeError as er:
                 SimulationException("{set_var} Is not configurable. ".format(set_var=set_var)
                                     + str(er))

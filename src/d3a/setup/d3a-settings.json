@@ -1,8 +1,8 @@
 {
   "basic_settings": {
     "duration": "24h",
-    "slot_length": "15m",
-    "tick_length": "15s",
+    "slot_length": "60m",
+    "tick_length": "60s",
     "market_count": 4,
     "cloud_coverage": 0,
     "market_maker_rate": 30
