@@ -36,7 +36,7 @@ def start(scenario, settings):
         tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=15))),
         market_count=settings.get('market_count', 4),
         cloud_coverage=settings.get('cloud_coverage', ConstSettings.DEFAULT_PV_POWER_PROFILE),
-        market_maker_rate=settings.get('market_maker_rate', ConstSettings.MAX_ENERGY_RATE)
+        market_maker_rate=settings.get('market_maker_rate', ConstSettings.MAX_ENERGY_RATE),
         iaa_fee=settings.get('iaa_fee', ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
     )
 

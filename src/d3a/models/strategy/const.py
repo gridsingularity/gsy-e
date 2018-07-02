@@ -16,6 +16,12 @@ class ConstSettings():
     # Unit is degree celsius
     FRIDGE_TEMPERATURE = 6.0
 
+    # MARKET RELATED LIMITATIONS
+    # Unit is cent
+    MIN_AVERAGE_PRICE = 15
+    # Unit is in Wh
+    FRIDGE_MIN_NEEDED_ENERGY = 10
+
     # ENERGY STORAGE SETTINGS
     # Unit is kWh
     STORAGE_CAPACITY = 1.2
@@ -23,14 +29,9 @@ class ConstSettings():
     MAX_ABS_BATTERY_POWER = 1.2
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN = 25
-    STORAGE_MAX_SELL_RATE_c_per_Kwh = MAX_ENERGY_RATE-1
+    STORAGE_MAX_SELL_RATE_c_per_Kwh = MAX_ENERGY_RATE - 1
     STORAGE_MIN_ALLOWED_SOC = 0.1
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
-    # PV SETTINGS
-    # This price should be just above the marginal costs for a PV system - unit is cent
-    MIN_PV_SELLING_PRICE = 0
-
-
     # PV SETTINGS
     # This price should be just above the marginal costs for a PV system - unit is cent
     MIN_PV_SELLING_PRICE = 0

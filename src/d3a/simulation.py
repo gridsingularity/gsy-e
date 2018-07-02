@@ -104,7 +104,11 @@ class Simulation:
                     cloud_coverage=basic_settings.get(
                         'cloud_coverage', self.advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
                     market_maker_rate=basic_settings.get(
-                        'market_maker_rate', self.advanced_settings["MAX_ENERGY_RATE"]))
+                        'market_maker_rate', self.advanced_settings["MAX_ENERGY_RATE"]),
+                    iaa_fee=basic_settings.get(
+                        'INTER_AREA_AGENT_FEE_PERCENTAGE',
+                        self.advanced_settings["INTER_AREA_AGENT_FEE_PERCENTAGE"])
+                )
 
         else:
             raise FileExistsError("Please provide a valid settings_file path")

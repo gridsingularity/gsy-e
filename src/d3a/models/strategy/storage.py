@@ -126,7 +126,7 @@ class StorageStrategy(BaseStrategy):
             self.offers.post(offer, target_market)
 
     def _select_market_to_sell(self):
-        if STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:
+        if ConstSettings.STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:
             # Sell on the most expensive market
             try:
                 max_rate = 0.0

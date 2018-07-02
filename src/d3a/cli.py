@@ -109,7 +109,6 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
             exit_on_finish=exit_on_finish,
             exit_on_finish_wait=exit_on_finish_wait,
             api_url=api_url,
-            message_url=None,
             redis_job_id=None,
             settings_file=settings_file
         )
