@@ -32,6 +32,10 @@ log = getLogger(__name__)
 page_lock = Lock()
 
 
+def parseboolstring(thestring):
+    return thestring[0].upper() == 'T'
+
+
 class _SimulationInterruped(Exception):
     pass
 
@@ -86,7 +90,7 @@ class Simulation:
 
     def _read_settings_from_file(self):
         """
-        Reads basic and advanced settings from a settings file (json format)
+        Reads basic and advanced settings from a settings file (json format).
         """
         if os.path.isfile(self.settings_file):
             with open(self.settings_file, "r") as sf:
@@ -114,13 +118,15 @@ class Simulation:
             raise FileExistsError("Please provide a valid settings_file path")
 
     def _update_advanced_settings(self):
+        """
+        Updates ConstStettings class variables with advanced_settings.
+        If variable is not part of ConstStettings, an Exception is raised.
+        """
         for set_var, set_val in self.advanced_settings.items():
-            try:
-                getattr(ConstSettings, set_var)
+            if isinstance(set_val, str):
+                setattr(ConstSettings, set_var, parseboolstring(set_val))
+            else:
                 setattr(ConstSettings, set_var, set_val)
-            except AttributeError as er:
-                SimulationException("{set_var} Is not configurable. ".format(set_var=set_var)
-                                    + str(er))
 
     def _load_setup_module(self):
         try:

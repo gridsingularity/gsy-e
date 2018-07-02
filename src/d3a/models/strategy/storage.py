@@ -15,7 +15,8 @@ class StorageStrategy(BaseStrategy):
                  initial_charge=None,
                  battery_capacity=ConstSettings.STORAGE_CAPACITY,
                  max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
-                 break_even=ConstSettings.STORAGE_BREAK_EVEN,
+                 break_even=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
+                             ConstSettings.STORAGE_BREAK_EVEN_SELL),
                  cap_price_strategy=False):
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity, break_even)
@@ -183,13 +184,12 @@ class StorageStrategy(BaseStrategy):
         )
 
     def _risk_factor(self, output_range):
-        '''
+        """
         Returns a value between 0 and range according to the risk parameter.
         :param output_range: the range of output values of the function
         :return: the value in the range according to the risk factor
-        '''
+        """
         return output_range * self.risk / ConstSettings.MAX_RISK
-
 
     def capacity_dependant_sell_rate(self):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
