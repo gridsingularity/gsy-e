@@ -34,8 +34,8 @@ class SimulationConfig:
             for i in range(24):
                 self.market_maker_rate[i] = market_maker_rate
         elif type(market_maker_rate) == dict:
-            mm = ast.literal_eval(market_maker_rate)
-            if sorted(mm.keys()) != list(range(24)):
+            m_m_r = ast.literal_eval(market_maker_rate)
+            if sorted(m_m_r.keys()) != list(range(24)):
                 raise TypeError('Incomplete hour dict')
             self.market_maker_rate = market_maker_rate
         self.iaa_fee = iaa_fee
