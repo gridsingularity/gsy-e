@@ -4,7 +4,7 @@ from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, STORAGE_MIN_ALLOWED_SOC, \
-    STORAGE_BREAK_EVEN, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER, \
+    STORAGE_BREAK_EVEN_BUY, STORAGE_BREAK_EVEN_SELL, STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER, \
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET
 
 
@@ -17,10 +17,10 @@ class StorageStrategy(BaseStrategy):
                  initial_charge=None,
                  battery_capacity=STORAGE_CAPACITY,
                  max_abs_battery_power=MAX_ABS_BATTERY_POWER,
-                 break_even=STORAGE_BREAK_EVEN,
+                 break_even=(STORAGE_BREAK_EVEN_BUY, STORAGE_BREAK_EVEN_SELL),
                  cap_price_strategy=False):
         self._validate_constructor_arguments(risk, initial_capacity,
-                                             initial_charge, battery_capacity)
+                                             initial_charge, battery_capacity, break_even)
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
@@ -29,7 +29,8 @@ class StorageStrategy(BaseStrategy):
                                   max_abs_battery_power=max_abs_battery_power,
                                   loss_per_hour=0.0,
                                   strategy=self)
-        self.break_even = Q_(break_even, (ureg.EUR_cents / ureg.kWh))
+        self.break_even_buy = Q_(break_even[0], (ureg.EUR_cents / ureg.kWh))
+        self.break_even_sell = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
         self.cap_price_strategy = cap_price_strategy
 
     def event_activate(self):
@@ -38,7 +39,8 @@ class StorageStrategy(BaseStrategy):
             Q_((self.area.config.market_maker_rate-1), (ureg.EUR_cents / ureg.kWh))
 
     @staticmethod
-    def _validate_constructor_arguments(risk, initial_capacity, initial_charge, battery_capacity):
+    def _validate_constructor_arguments(risk, initial_capacity, initial_charge,
+                                        battery_capacity, break_even):
         if battery_capacity < 0:
             raise ValueError("Battery capacity should be a positive integer")
         if initial_charge and not 0 <= initial_charge <= 100:
@@ -48,6 +50,10 @@ class StorageStrategy(BaseStrategy):
         if initial_capacity and not 0 <= initial_capacity <= battery_capacity:
             raise ValueError("Initial capacity should be between 0 and "
                              "battery_capacity parameter.")
+        if break_even[1] < break_even[0]:
+            raise ValueError("Break even point for sell energy is lower than buy energy.")
+        if any(break_even_point < 0 for break_even_point in break_even):
+            raise ValueError("Break even point should be positive energy rate values.")
 
     def event_tick(self, *, area):
         # Check if there are cheap offers to buy
@@ -81,7 +87,7 @@ class StorageStrategy(BaseStrategy):
     def buy_energy(self):
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
-        max_affordable_offer_rate = self.break_even.m-0.01
+        max_affordable_offer_rate = self.break_even_buy.m
         for market in self.area.markets.values():
             for offer in market.sorted_offers:
                 if offer.seller == self.owner.name:
@@ -108,7 +114,7 @@ class StorageStrategy(BaseStrategy):
                     return False
 
     def sell_energy(self, energy=None, open_offer=False):
-        selling_rate = self._calculate_selling_rate_from_buying_rate()
+        selling_rate = self._calculate_selling_rate()
 
         target_market = self._select_market_to_sell()
         energy = self._calculate_energy_to_sell(energy, target_market)
@@ -163,23 +169,28 @@ class StorageStrategy(BaseStrategy):
                      self.state.capacity * STORAGE_MIN_ALLOWED_SOC
         return energy
 
-    def _calculate_selling_rate_from_buying_rate(self):
+    def _calculate_selling_rate(self):
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate()
-        min_selling_rate = self.break_even.m+0.01
-        # This ends up in a selling price between 101 and 105 percentage of the buying price
+        min_selling_rate = self.break_even_sell.m
         risk_dependent_selling_rate = (
-                min_selling_rate * self._risk_factor
+            min_selling_rate + self._risk_factor(
+                self.max_selling_rate_cents_per_kwh.m - self.break_even_sell.m
+            )
         )
         # Limit rate to respect max sell rate
         return max(
             min(risk_dependent_selling_rate, self.max_selling_rate_cents_per_kwh.m),
-            self.break_even.m
+            self.break_even_sell.m
         )
 
-    @property
-    def _risk_factor(self):
-        return 1.1 - (0.1 * (self.risk / MAX_RISK))
+    def _risk_factor(self, output_range):
+        '''
+        Returns a value between 0 and range according to the risk parameter.
+        :param output_range: the range of output values of the function
+        :return: the value in the range according to the risk factor
+        '''
+        return output_range * self.risk / MAX_RISK
 
     def capacity_dependant_sell_rate(self):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
@@ -190,8 +201,9 @@ class StorageStrategy(BaseStrategy):
             # TODO: max_selling_rate_cents_per_kwh is never mutating and is valid
             # TODO: only in capacity depending strategy
             # TODO: Should remain const or be abstracted from this class
-            rate = self.max_selling_rate_cents_per_kwh - \
-                ((self.max_selling_rate_cents_per_kwh - self.break_even) * (charge_per / 100))
+            rate = self.max_selling_rate_cents_per_kwh.m - \
+                ((self.max_selling_rate_cents_per_kwh.m - self.break_even_sell) *
+                 (charge_per / 100))
             return rate.m
         else:
             return self.max_selling_rate_cents_per_kwh.m
