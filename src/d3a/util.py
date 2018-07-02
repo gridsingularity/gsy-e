@@ -8,7 +8,7 @@ from logging import LoggerAdapter
 from click.types import ParamType
 from pendulum.interval import Interval
 from rex import rex
-from pkgutil import iter_modules
+from pkgutil import walk_packages
 
 from d3a import get_project_root
 from d3a import setup as d3a_setup
@@ -19,9 +19,6 @@ INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2
 IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
 
 _CONTRACT_CACHE = {}
-
-
-available_simulation_scenarios = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
 
 
 class TaggedLogWrapper(LoggerAdapter):
@@ -172,3 +169,16 @@ def get_contract_source(contract_name):
     if contract_path not in _CONTRACT_CACHE:
         _CONTRACT_CACHE[contract_path] = ContractJoiner().join(contract_path)
     return _CONTRACT_CACHE[contract_path]
+
+
+def iterate_over_all_d3a_setup():
+    module_list = []
+    for loader, module_name, is_pkg in walk_packages(d3a_setup.__path__):
+        if is_pkg:
+            loader.find_module(module_name).load_module(module_name)
+        else:
+            module_list.append(module_name)
+    return module_list
+
+
+available_simulation_scenarios = iterate_over_all_d3a_setup()
