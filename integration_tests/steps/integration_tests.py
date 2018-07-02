@@ -97,7 +97,8 @@ def load_profile_scenario(context):
                                          duration=Interval(hours=24),
                                          market_count=4,
                                          cloud_coverage=0,
-                                         market_maker_rate=30)
+                                         market_maker_rate=30,
+                                         iaa_fee=5)
     context._settings.area = predefined_load_scenario
 
 
@@ -150,7 +151,8 @@ def pv_profile_scenario(context):
                                          duration=Interval(hours=24),
                                          market_count=4,
                                          cloud_coverage=0,
-                                         market_maker_rate=30)
+                                         market_maker_rate=30,
+                                         iaa_fee=5)
     context._settings.area = predefined_pv_scenario
 
 
@@ -226,11 +228,12 @@ def create_sim_object(context, scenario):
                                          Interval(seconds=int(30)),
                                          market_count=5,
                                          cloud_coverage=0,
-                                         market_maker_rate=30)
+                                         market_maker_rate=30,
+                                         iaa_fee=5)
 
     context.simulation = Simulation(
         scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
-        Interval(), True, Interval(), None, None, "1234"
+        Interval(), True, Interval(), None, "1234"
     )
 
 
@@ -298,7 +301,8 @@ def run_sim(context, scenario, duration, slot_length, tick_length):
                                          Interval(seconds=int(tick_length)),
                                          market_count=5,
                                          cloud_coverage=0,
-                                         market_maker_rate=30)
+                                         market_maker_rate=30,
+                                         iaa_fee=5)
 
     slowdown = 0
     seed = 0

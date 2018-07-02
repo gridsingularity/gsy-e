@@ -8,7 +8,7 @@ from d3a.models.strategy.const import ConstSettings
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
                  market_count: int, cloud_coverage: int,
-                 market_maker_rate: int, iaa_fee: int=None):
+                 market_maker_rate: int, iaa_fee: int):
         self.duration = duration
         self.slot_length = slot_length
         self.tick_length = tick_length

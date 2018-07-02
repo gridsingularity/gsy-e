@@ -16,7 +16,7 @@ from d3a.util import available_simulation_scenarios
 
 
 @job('d3a')
-def start(scenario, settings, message_url_format):
+def start(scenario, settings):
     logging.getLogger().setLevel(logging.ERROR)
     interface = environ.get('WORKER_INTERFACE', "0.0.0.0")
     port = int(environ.get('WORKER_PORT', 5000))
@@ -37,6 +37,7 @@ def start(scenario, settings, message_url_format):
         market_count=settings.get('market_count', 4),
         cloud_coverage=settings.get('cloud_coverage', ConstSettings.DEFAULT_PV_POWER_PROFILE),
         market_maker_rate=settings.get('market_maker_rate', ConstSettings.MAX_ENERGY_RATE)
+        iaa_fee=settings.get('iaa_fee', ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
     )
 
     if scenario is None:
@@ -53,7 +54,6 @@ def start(scenario, settings, message_url_format):
                             exit_on_finish=True,
                             exit_on_finish_wait=interval.instance(timedelta(seconds=10)),
                             api_url=api_url,
-                            message_url=message_url_format.format(job.id),
                             redis_job_id=job.id)
 
     start_web(interface, port, simulation)
