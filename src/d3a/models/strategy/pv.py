@@ -7,8 +7,7 @@ from d3a.models.strategy import ureg, Q_
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MAX_RISK, \
-    MIN_PV_SELLING_PRICE, MAX_OFFER_TRAVERSAL_LENGTH
+from d3a.models.strategy.const import ConstSettings
 
 
 class PVStrategy(BaseStrategy):
@@ -19,7 +18,8 @@ class PVStrategy(BaseStrategy):
 
     parameters = ('panel_count', 'risk')
 
-    def __init__(self, panel_count=1, risk=DEFAULT_RISK, min_selling_price=MIN_PV_SELLING_PRICE):
+    def __init__(self, panel_count=1, risk=ConstSettings.DEFAULT_RISK,
+                 min_selling_price=ConstSettings.MIN_PV_SELLING_PRICE):
         self._validate_constructor_arguments(panel_count, risk)
         super().__init__()
         self.risk = risk
@@ -42,7 +42,8 @@ class PVStrategy(BaseStrategy):
         # Calculating the produced energy
         self.produced_energy_forecast_real_data()
         self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds * MAX_OFFER_TRAVERSAL_LENGTH + 1) * ureg.seconds
+            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)\
+            * ureg.seconds
 
     def event_tick(self, *, area):
         average_market_rate = Q_(
@@ -91,7 +92,7 @@ class PVStrategy(BaseStrategy):
                 # FIXME: Make sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
                 # FIXME: InterAreaAgent min_offer_age
-                current_tick_number > MAX_OFFER_TRAVERSAL_LENGTH
+                current_tick_number > ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH
                 and elapsed_seconds > self._decrease_price_timepoint_s
         ):
             self._decrease_price_timepoint_s += self._decrease_price_every_nr_s
@@ -120,7 +121,8 @@ class PVStrategy(BaseStrategy):
                 continue
 
     def _calculate_price_decrease_rate(self):
-        price_dec_per_slot = (self.area.historical_avg_rate) * (1 - self.risk/MAX_RISK)
+        price_dec_per_slot = (self.area.historical_avg_rate) * \
+                             (1 - self.risk/ConstSettings.MAX_RISK)
         price_updates_per_slot = int(self.area.config.slot_length.seconds
                                      / self._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot

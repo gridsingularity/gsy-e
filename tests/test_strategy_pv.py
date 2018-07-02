@@ -6,7 +6,7 @@ from pendulum import Pendulum
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import MAX_RISK, MIN_PV_SELLING_PRICE
+from d3a.models.strategy.const import ConstSettings
 
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
@@ -181,7 +181,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
     for _ in range(100):
         pv_test3.decrease_offer_price(area_test3.test_market)
     new_offer = list(pv_test3.offers.posted.keys())[-1]
-    assert new_offer.price / new_offer.energy >= MIN_PV_SELLING_PRICE
+    assert new_offer.price / new_offer.energy >= ConstSettings.MIN_PV_SELLING_PRICE
 
 
 """TEST 4"""
@@ -335,7 +335,8 @@ def testing_low_risk(area_test3, pv_test7):
         old_offer = list(pv_test7.offers.posted.keys())[0]
         pv_test7.decrease_offer_price(area_test3.test_market)
         new_offer = list(pv_test7.offers.posted.keys())[0]
-        price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test7.risk / MAX_RISK)
+        price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test7.risk
+                                                                 / ConstSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
                                      / pv_test7._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
@@ -363,7 +364,8 @@ def testing_high_risk(area_test3, pv_test8):
         old_offer = list(pv_test8.offers.posted.keys())[0]
         pv_test8.decrease_offer_price(area_test3.test_market)
         new_offer = list(pv_test8.offers.posted.keys())[0]
-        price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test8.risk / MAX_RISK)
+        price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test8.risk /
+                                                                 ConstSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
                                      / pv_test8._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
