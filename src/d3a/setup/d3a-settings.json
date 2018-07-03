@@ -5,7 +5,8 @@
     "tick_length": "60s",
     "market_count": 4,
     "cloud_coverage": 0,
-    "market_maker_rate": 30
+    "market_maker_rate": 30,
+    "iaa_fee": 1
   },
   "advanced_settings": {
     "MAX_RISK": 100,

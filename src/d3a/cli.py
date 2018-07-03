@@ -7,13 +7,15 @@ from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 
+
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.models.strategy.const import ConstSettings
 from d3a.simulation import Simulation
 from d3a.util import IntervalType, available_simulation_scenarios
 from d3a.web import start_web
-
+from d3a.util import read_settings_from_file
+from d3a.util import update_advanced_settings
 
 log = getLogger(__name__)
 
@@ -92,7 +94,13 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
         repl, export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
         exit_on_finish_wait, **config_params):
     try:
-        simulation_config = SimulationConfig(**config_params)
+        if settings_file is not None:
+            simulation_settings, advanced_settings = read_settings_from_file(settings_file)
+            update_advanced_settings(advanced_settings)
+            simulation_config = SimulationConfig(**simulation_settings)
+        else:
+            simulation_config = SimulationConfig(**config_params)
+
         api_url = "http://{}:{}/api".format(interface, port)
         simulation = Simulation(
             setup_module_name=setup_module_name,
@@ -109,8 +117,7 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
             exit_on_finish=exit_on_finish,
             exit_on_finish_wait=exit_on_finish_wait,
             api_url=api_url,
-            redis_job_id=None,
-            settings_file=settings_file
+            redis_job_id=None
         )
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
