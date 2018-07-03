@@ -34,8 +34,10 @@ class StorageStrategy(BaseStrategy):
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
-        self.max_selling_rate_cents_per_kwh = \
-            Q_((self.area.config.market_maker_rate[0]-1), (ureg.EUR_cents / ureg.kWh))
+        print(len(self.area.config.market_maker_rate))
+        self.max_selling_rate_cents_per_kwh =\
+            {k: Q_((self.area.config.market_maker_rate[k] - 1), (ureg.EUR_cents / ureg.kWh))
+             for k in range(len(self.area.config.market_maker_rate))}
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity, initial_charge,
@@ -113,9 +115,9 @@ class StorageStrategy(BaseStrategy):
                     return False
 
     def sell_energy(self, energy=None, open_offer=False):
-        selling_rate = self._calculate_selling_rate()
-
         target_market = self._select_market_to_sell()
+
+        selling_rate = self._calculate_selling_rate(target_market.time_slot.hour)
         energy = self._calculate_energy_to_sell(energy, target_market)
 
         if energy > 0.0:
@@ -150,6 +152,7 @@ class StorageStrategy(BaseStrategy):
                     return
             return most_expensive_market
         else:
+            print("most recent future market: " + str(list(self.area.markets.values())[0]))
             # Sell on the most recent future market
             return list(self.area.markets.values())[0]
 
@@ -168,18 +171,18 @@ class StorageStrategy(BaseStrategy):
                      self.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
         return energy
 
-    def _calculate_selling_rate(self):
+    def _calculate_selling_rate(self, time):
         if self.cap_price_strategy is True:
-            return self.capacity_dependant_sell_rate()
+            return self.capacity_dependant_sell_rate(time)
         min_selling_rate = self.break_even_sell.m
         risk_dependent_selling_rate = (
             min_selling_rate + self._risk_factor(
-                self.max_selling_rate_cents_per_kwh.m - self.break_even_sell.m
+                self.max_selling_rate_cents_per_kwh[time].m - self.break_even_sell.m
             )
         )
         # Limit rate to respect max sell rate
         return max(
-            min(risk_dependent_selling_rate, self.max_selling_rate_cents_per_kwh.m),
+            min(risk_dependent_selling_rate, self.max_selling_rate_cents_per_kwh[time].m),
             self.break_even_sell.m
         )
 
@@ -191,7 +194,7 @@ class StorageStrategy(BaseStrategy):
         """
         return output_range * self.risk / ConstSettings.MAX_RISK
 
-    def capacity_dependant_sell_rate(self):
+    def capacity_dependant_sell_rate(self, time):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
 
         if len(self.area.past_markets.keys()) > 1:
@@ -200,9 +203,9 @@ class StorageStrategy(BaseStrategy):
             # TODO: max_selling_rate_cents_per_kwh is never mutating and is valid
             # TODO: only in capacity depending strategy
             # TODO: Should remain const or be abstracted from this class
-            rate = self.max_selling_rate_cents_per_kwh.m - \
-                ((self.max_selling_rate_cents_per_kwh.m - self.break_even_sell) *
+            rate = self.max_selling_rate_cents_per_kwh[time].m - \
+                ((self.max_selling_rate_cents_per_kwh[time].m - self.break_even_sell) *
                  (charge_per / 100))
             return rate.m
         else:
-            return self.max_selling_rate_cents_per_kwh.m
+            return self.max_selling_rate_cents_per_kwh[time].m

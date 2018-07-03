@@ -32,12 +32,12 @@ class SimulationConfig:
             raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
         self.market_maker_rate = dict()
         if type(market_maker_rate) == int:
-            for i in range(24):
-                self.market_maker_rate[i] = market_maker_rate
+            self.market_maker_rate = {k: market_maker_rate for k in range(24)}
         elif type(market_maker_rate) == dict:
-            m_m_r = ast.literal_eval(market_maker_rate)
-            if sorted(m_m_r.keys()) != list(range(24)):
-                raise TypeError('Incomplete hour dict')
+            market_maker_rate_profile = ast.literal_eval(market_maker_rate)
+            if sorted(market_maker_rate_profile .keys()) != list(range(24)):
+                raise TypeError('Market maker rate profile failed to be parsed.'
+                                ' Incomplete hour mapping.')
             self.market_maker_rate = market_maker_rate
         else:
             raise D3AException("Invalid market_maker_rate value ({}).".format(market_maker_rate))

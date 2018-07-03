@@ -1,6 +1,7 @@
 import pytest
 import logging
 from pendulum.interval import Interval
+from pendulum import Pendulum
 
 # from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.strategy import ureg, Q_
@@ -80,7 +81,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return 'time_slot'
+        return Pendulum.now().start_of('day')
 
     def offer(self, price, energy, seller, market=None):
         offer = Offer('id', price, energy, seller, market)
@@ -225,8 +226,9 @@ def test_if_storage_pays_respect_to_capacity_limits(storage_strategy_test4, area
 def test_if_storage_max_sell_rate_is_one_unit_less_than_market_maker_rate(storage_strategy_test4,
                                                                           area_test4):
     storage_strategy_test4.event_activate()
-    assert storage_strategy_test4.max_selling_rate_cents_per_kwh.m \
-        == (area_test4.config.market_maker_rate[0] - 1)
+    for k in range(len(area_test4.config.market_maker_rate)):
+        assert storage_strategy_test4.max_selling_rate_cents_per_kwh[k].m \
+            == (area_test4.config.market_maker_rate[k] - 1)
 
 
 """TEST5"""
@@ -334,28 +336,28 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
 def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     storage_strategy_test7._risk_factor = lambda x: 200.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
-        storage_strategy_test7.max_selling_rate_cents_per_kwh.m
+    assert storage_strategy_test7._calculate_selling_rate(10) == \
+        storage_strategy_test7.max_selling_rate_cents_per_kwh[10].m
     storage_strategy_test7._risk_factor = lambda x: -200.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
+    assert storage_strategy_test7._calculate_selling_rate(10) == \
         storage_strategy_test7.break_even_sell.m
 
 
 def test_calculate_risk_factor(storage_strategy_test7):
     storage_strategy_test7.event_activate()
-    rate_range = storage_strategy_test7.max_selling_rate_cents_per_kwh.m - \
+    rate_range = storage_strategy_test7.max_selling_rate_cents_per_kwh[10].m - \
         storage_strategy_test7.break_even_sell.m
     storage_strategy_test7.risk = 50.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
+    assert storage_strategy_test7._calculate_selling_rate(10) == \
         storage_strategy_test7.break_even_sell.m + rate_range / 2.0
     storage_strategy_test7.risk = 25.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
+    assert storage_strategy_test7._calculate_selling_rate(10) == \
         storage_strategy_test7.break_even_sell.m + rate_range / 4.0
     storage_strategy_test7.risk = 100.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
-        storage_strategy_test7.max_selling_rate_cents_per_kwh.m
+    assert storage_strategy_test7._calculate_selling_rate(10) == \
+        storage_strategy_test7.max_selling_rate_cents_per_kwh[10].m
     storage_strategy_test7.risk = 0.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
+    assert storage_strategy_test7._calculate_selling_rate(10) == \
         storage_strategy_test7.break_even_sell.m
 
 
