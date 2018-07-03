@@ -1,16 +1,16 @@
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, STORAGE_CAPACITY, MAX_RISK
+from d3a.models.strategy.const import ConstSettings
 
 
 class NightStorageStrategy(BaseStrategy):
     parameters = ('risk',)
 
-    def __init__(self, risk=DEFAULT_RISK):
+    def __init__(self, risk=ConstSettings.DEFAULT_RISK):
         super().__init__()
         self.risk = risk
-        self.state = StorageState(capacity=2 * STORAGE_CAPACITY)
+        self.state = StorageState(capacity=2 * ConstSettings.STORAGE_CAPACITY)
         self.selling_price = 30
 
     def event_tick(self, *, area):
@@ -44,7 +44,7 @@ class NightStorageStrategy(BaseStrategy):
             # But self.sell_energy expects a buying price
             initial_buying_price = ((offer.price / 1.002) *
                                     (1 /
-                                     (1.05 - (0.5 * (self.risk / MAX_RISK))
+                                     (1.05 - (0.5 * (self.risk / ConstSettings.MAX_RISK))
                                       )
                                      )
                                     )
@@ -61,7 +61,7 @@ class NightStorageStrategy(BaseStrategy):
                     continue
                 # Check if storage has free capacity and if the price is cheap enough
                 if (
-                        offer.energy <= self.state.free_storage + STORAGE_CAPACITY
+                        offer.energy <= self.state.free_storage + ConstSettings.STORAGE_CAPACITY
                         # Now the storage buys everything cheaper than 29
                         # He will be able to sell this energy during the night
                         and (offer.price / offer.energy) < max(max_buying_price, 29)
@@ -82,7 +82,7 @@ class NightStorageStrategy(BaseStrategy):
         min_selling_price = 1.05 * buying_price
         # This ends up in a selling price between 101 and 105 percentage of the buying price
         risk_dependent_selling_price = (
-            min_selling_price * (1.05 - (0.05 * (self.risk / MAX_RISK)))
+            min_selling_price * (1.05 - (0.05 * (self.risk / ConstSettings.MAX_RISK)))
         )
         # Find the most expensive offer out of the list of cheapest offers
         # in currently open markets

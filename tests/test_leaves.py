@@ -2,7 +2,8 @@ from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.area import Area
 from d3a.models.leaves import Fridge, CommercialProducer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.fridge import FridgeStrategy, DEFAULT_RISK
+from d3a.models.strategy.fridge import FridgeStrategy
+from d3a.models.strategy.const import ConstSettings
 
 
 def test_fridge_leaf():
@@ -14,7 +15,7 @@ def test_fridge_leaf():
 
 def test_fridge_leaf_default_risk():
     leaf = Fridge(name="fridge")
-    assert leaf.strategy.risk == DEFAULT_RISK
+    assert leaf.strategy.risk == ConstSettings.DEFAULT_RISK
 
 
 def test_commercial_producer_leaf():

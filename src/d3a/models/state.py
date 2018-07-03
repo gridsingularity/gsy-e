@@ -1,8 +1,7 @@
 from collections import defaultdict
 from pendulum.interval import Interval
 
-from d3a.models.strategy.const import FRIDGE_TEMPERATURE, MAX_FRIDGE_TEMP, MIN_FRIDGE_TEMP, \
-    STORAGE_CAPACITY, MAX_ABS_BATTERY_POWER
+from d3a.models.strategy.const import ConstSettings
 
 
 # Complex device models should be split in three classes each:
@@ -31,10 +30,10 @@ class LoadState:
 
 class FridgeState:
     def __init__(self):
-        self.temperature = FRIDGE_TEMPERATURE
+        self.temperature = ConstSettings.FRIDGE_TEMPERATURE
         self.temp_history = defaultdict(lambda: '-')
-        self.min_temperature = MIN_FRIDGE_TEMP
-        self.max_temperature = MAX_FRIDGE_TEMP
+        self.min_temperature = ConstSettings.MIN_FRIDGE_TEMP
+        self.max_temperature = ConstSettings.MAX_FRIDGE_TEMP
 
     @property
     def normalized_temperature(self):
@@ -56,8 +55,8 @@ class StorageState:
     def __init__(self,
                  initial_capacity=0.0,
                  initial_charge=None,
-                 capacity=STORAGE_CAPACITY,
-                 max_abs_battery_power=MAX_ABS_BATTERY_POWER,
+                 capacity=ConstSettings.STORAGE_CAPACITY,
+                 max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
                  loss_per_hour=0.01,
                  strategy=None):
         self._blocked_storage = 0.0

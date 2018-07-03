@@ -1,6 +1,6 @@
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
-from d3a.models.strategy.const import DEFAULT_RISK, ARRIVAL_TIME, DEPART_TIME, STORAGE_CAPACITY
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.storage import StorageStrategy
 
 
@@ -15,13 +15,13 @@ class ECarStrategy(StorageStrategy):
     parameters = ('risk', 'arrival_time', 'depart_time', 'initial_capacity',
                   'initial_charge', 'battery_capacity')
 
-    def __init__(self, risk=DEFAULT_RISK, initial_capacity=0.0, initial_charge=None,
-                 battery_capacity=STORAGE_CAPACITY, arrival_time=ARRIVAL_TIME,
-                 depart_time=DEPART_TIME):
+    def __init__(self, risk=ConstSettings.DEFAULT_RISK, initial_capacity=0.0, initial_charge=None,
+                 battery_capacity=ConstSettings.STORAGE_CAPACITY,
+                 arrival_time=ConstSettings.ARRIVAL_TIME, depart_time=ConstSettings.DEPART_TIME):
         if arrival_time is None:
-            arrival_time = ARRIVAL_TIME
+            arrival_time = ConstSettings.ARRIVAL_TIME
         if depart_time is None:
-            depart_time = DEPART_TIME
+            depart_time = ConstSettings.DEPART_TIME
         if not 0 <= arrival_time <= 23 or not 0 <= depart_time <= 23:
             raise ValueError("Depart_time and arrival_time should be between 0 and 23.")
         if not arrival_time < depart_time:
