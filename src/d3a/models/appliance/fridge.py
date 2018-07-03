@@ -1,7 +1,7 @@
 from d3a.models.appliance.mixins import SwitchableMixin
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.events import Trigger
-from d3a.models.strategy.const import FRIDGE_MIN_NEEDED_ENERGY
+from d3a.models.strategy.const import ConstSettings
 
 
 class FridgeAppliance(SwitchableMixin, SimpleAppliance):
@@ -15,7 +15,7 @@ class FridgeAppliance(SwitchableMixin, SimpleAppliance):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.state = None
-        self.force_cool_energy = - FRIDGE_MIN_NEEDED_ENERGY
+        self.force_cool_energy = - ConstSettings.FRIDGE_MIN_NEEDED_ENERGY
         self.cooling_gain = 0
         self.door_open_loss = 0
         self.temp_change = 0

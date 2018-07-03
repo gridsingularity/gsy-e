@@ -7,14 +7,15 @@ from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 
+
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE,\
-    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE
+from d3a.models.strategy.const import ConstSettings
 from d3a.simulation import Simulation
 from d3a.util import IntervalType, available_simulation_scenarios
 from d3a.web import start_web
-
+from d3a.util import read_settings_from_file
+from d3a.util import update_advanced_settings
 
 log = getLogger(__name__)
 
@@ -49,13 +50,13 @@ _setup_modules = available_simulation_scenarios
 @click.option('-s', '--slot-length', type=IntervalType('M:S'), default="15m", show_default=True,
               help="Length of a market slot")
 @click.option('-c', '--cloud_coverage', type=int,
-              default=DEFAULT_PV_POWER_PROFILE, show_default=True,
+              default=ConstSettings.DEFAULT_PV_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
 @click.option('-r', '--market_maker_rate', type=int,
-              default=MAX_ENERGY_RATE, show_default=True,
+              default=ConstSettings.MAX_ENERGY_RATE, show_default=True,
               help="Market maker rate")
 @click.option('-f', '--iaa_fee', type=int,
-              default=INTER_AREA_AGENT_FEE_PERCENTAGE, show_default=True,
+              default=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE, show_default=True,
               help="Inter-Area-Agent Fee in percentage")
 @click.option('-m', '--market-count', type=int, default=5, show_default=True,
               help="Number of tradable market slots into the future")
@@ -66,6 +67,8 @@ _setup_modules = available_simulation_scenarios
 @click.option('--setup', 'setup_module_name', default="default",
               help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
+@click.option('-g', '--settings_file', default=None,
+              help="Settings file path")
 @click.option('--slowdown', type=int, default=0,
               help="Slowdown factor [0 - 10,000]. "
                    "Where 0 means: no slowdown, ticks are simulated as fast as possible; "
@@ -87,28 +90,34 @@ _setup_modules = available_simulation_scenarios
 @click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
-def run(interface, port, setup_module_name, slowdown, seed, paused, pause_after, repl,
-        export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
+def run(interface, port, setup_module_name, settings_file, slowdown, seed, paused, pause_after,
+        repl, export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
         exit_on_finish_wait, **config_params):
     try:
-        simulation_config = SimulationConfig(**config_params)
+        if settings_file is not None:
+            simulation_settings, advanced_settings = read_settings_from_file(settings_file)
+            update_advanced_settings(advanced_settings)
+            simulation_config = SimulationConfig(**simulation_settings)
+        else:
+            simulation_config = SimulationConfig(**config_params)
 
         api_url = "http://{}:{}/api".format(interface, port)
         simulation = Simulation(
-            setup_module_name,
-            simulation_config,
-            slowdown,
-            seed,
-            paused,
-            pause_after,
-            repl,
-            export,
-            export_path,
-            reset_on_finish,
-            reset_on_finish_wait,
-            exit_on_finish,
-            exit_on_finish_wait,
-            api_url
+            setup_module_name=setup_module_name,
+            simulation_config=simulation_config,
+            slowdown=slowdown,
+            seed=seed,
+            paused=paused,
+            pause_after=pause_after,
+            use_repl=repl,
+            export=export,
+            export_path=export_path,
+            reset_on_finish=reset_on_finish,
+            reset_on_finish_wait=reset_on_finish_wait,
+            exit_on_finish=exit_on_finish,
+            exit_on_finish_wait=exit_on_finish_wait,
+            api_url=api_url,
+            redis_job_id=None
         )
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
