@@ -1,4 +1,4 @@
-class ConstSettings():
+class ConstSettings:
 
     # GENERAL SETTINGS
     # Unit is percentage
