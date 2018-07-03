@@ -41,7 +41,8 @@ class StorageStrategy(BaseStrategy):
         if isinstance(break_even, tuple) or isinstance(break_even, list):
             return {i: (break_even[0], break_even[1]) for i in range(24)}
         if isinstance(break_even, dict):
-            latest_entry = (STORAGE_BREAK_EVEN_BUY, STORAGE_BREAK_EVEN_SELL)
+            latest_entry = (ConstSettings.STORAGE_BREAK_EVEN_BUY,
+                            ConstSettings.STORAGE_BREAK_EVEN_SELL)
             for i in range(24):
                 if i not in break_even:
                     break_even[i] = latest_entry
@@ -215,8 +216,9 @@ class StorageStrategy(BaseStrategy):
             # TODO: max_selling_rate_cents_per_kwh is never mutating and is valid
             # TODO: only in capacity depending strategy
             # TODO: Should remain const or be abstracted from this class
+            break_even_sell = self.break_even[most_recent_past_ts.hour][1]
             rate = self.max_selling_rate_cents_per_kwh.m - \
-                ((self.max_selling_rate_cents_per_kwh.m - self.break_even_sell) *
+                ((self.max_selling_rate_cents_per_kwh.m - break_even_sell) *
                  (charge_per / 100))
             return rate.m
         else:

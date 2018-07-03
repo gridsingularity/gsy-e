@@ -9,8 +9,6 @@ from d3a.models.market import Offer, Trade
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE,\
-    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE, STORAGE_BREAK_EVEN_SELL
 
 
 class FakeArea():
@@ -343,26 +341,26 @@ def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
         storage_strategy_test7.max_selling_rate_cents_per_kwh.m
     storage_strategy_test7._risk_factor = lambda x: -200.0
     assert storage_strategy_test7._calculate_selling_rate(market) == \
-        STORAGE_BREAK_EVEN_SELL
+        ConstSettings.STORAGE_BREAK_EVEN_SELL
 
 
 def test_calculate_risk_factor(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
     rate_range = storage_strategy_test7.max_selling_rate_cents_per_kwh.m - \
-        STORAGE_BREAK_EVEN_SELL
+        ConstSettings.STORAGE_BREAK_EVEN_SELL
     storage_strategy_test7.risk = 50.0
     assert storage_strategy_test7._calculate_selling_rate(market) == \
-        STORAGE_BREAK_EVEN_SELL + rate_range / 2.0
+        ConstSettings.STORAGE_BREAK_EVEN_SELL + rate_range / 2.0
     storage_strategy_test7.risk = 25.0
     assert storage_strategy_test7._calculate_selling_rate(market) == \
-        STORAGE_BREAK_EVEN_SELL + rate_range / 4.0
+        ConstSettings.STORAGE_BREAK_EVEN_SELL + rate_range / 4.0
     storage_strategy_test7.risk = 100.0
     assert storage_strategy_test7._calculate_selling_rate(market) == \
         storage_strategy_test7.max_selling_rate_cents_per_kwh.m
     storage_strategy_test7.risk = 0.0
     assert storage_strategy_test7._calculate_selling_rate(market) == \
-        STORAGE_BREAK_EVEN_SELL
+        ConstSettings.STORAGE_BREAK_EVEN_SELL
 
 
 def test_calculate_energy_amount_to_sell_respects_max_power(storage_strategy_test7, area_test7):
