@@ -1,6 +1,7 @@
 import pytest
 import logging
 from pendulum.interval import Interval
+from pendulum import Pendulum
 
 # from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.strategy import ureg, Q_
@@ -9,7 +10,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.const import STORAGE_MIN_ALLOWED_SOC
 from d3a.models.config import SimulationConfig
 from d3a.models.strategy.const import DEFAULT_PV_POWER_PROFILE,\
-    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE
+    MAX_ENERGY_RATE, INTER_AREA_AGENT_FEE_PERCENTAGE, STORAGE_BREAK_EVEN_SELL
 
 
 class FakeArea():
@@ -82,7 +83,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return 'time_slot'
+        return Pendulum.now().start_of('day')
 
     def offer(self, price, energy, seller, market=None):
         offer = Offer('id', price, energy, seller, market)
@@ -106,6 +107,7 @@ def storage_strategy_test1(area_test1, called):
     s.owner = area_test1
     s.area = area_test1
     s.accept_offer = called
+    s.state.residual_energy_per_slot[s.area.current_market.time_slot] = 0.0
     return s
 
 
@@ -176,7 +178,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
-    storage_strategy_test3.break_even_buy = Q_(20, (ureg.EUR_cents / ureg.kWh))
+    storage_strategy_test3.break_even = {0: (20, 25)}
     storage_strategy_test3.event_activate()
     storage_strategy_test3.event_tick(area=area_test3)
     assert len(storage_strategy_test3.accept_offer.calls) == 0
@@ -334,30 +336,32 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
 
 def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
     storage_strategy_test7.event_activate()
+    market = storage_strategy_test7.area.current_market
     storage_strategy_test7._risk_factor = lambda x: 200.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
+    assert storage_strategy_test7._calculate_selling_rate(market) == \
         storage_strategy_test7.max_selling_rate_cents_per_kwh.m
     storage_strategy_test7._risk_factor = lambda x: -200.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
-        storage_strategy_test7.break_even_sell.m
+    assert storage_strategy_test7._calculate_selling_rate(market) == \
+        STORAGE_BREAK_EVEN_SELL
 
 
 def test_calculate_risk_factor(storage_strategy_test7):
     storage_strategy_test7.event_activate()
+    market = storage_strategy_test7.area.current_market
     rate_range = storage_strategy_test7.max_selling_rate_cents_per_kwh.m - \
-        storage_strategy_test7.break_even_sell.m
+        STORAGE_BREAK_EVEN_SELL
     storage_strategy_test7.risk = 50.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
-        storage_strategy_test7.break_even_sell.m + rate_range / 2.0
+    assert storage_strategy_test7._calculate_selling_rate(market) == \
+        STORAGE_BREAK_EVEN_SELL + rate_range / 2.0
     storage_strategy_test7.risk = 25.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
-        storage_strategy_test7.break_even_sell.m + rate_range / 4.0
+    assert storage_strategy_test7._calculate_selling_rate(market) == \
+        STORAGE_BREAK_EVEN_SELL + rate_range / 4.0
     storage_strategy_test7.risk = 100.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
+    assert storage_strategy_test7._calculate_selling_rate(market) == \
         storage_strategy_test7.max_selling_rate_cents_per_kwh.m
     storage_strategy_test7.risk = 0.0
-    assert storage_strategy_test7._calculate_selling_rate() == \
-        storage_strategy_test7.break_even_sell.m
+    assert storage_strategy_test7._calculate_selling_rate(market) == \
+        STORAGE_BREAK_EVEN_SELL
 
 
 def test_calculate_energy_amount_to_sell_respects_max_power(storage_strategy_test7, area_test7):
@@ -452,6 +456,16 @@ def test_storage_constructor_rejects_incorrect_parameters():
         StorageStrategy(initial_charge=101)
     with pytest.raises(ValueError):
         StorageStrategy(initial_charge=-1)
+    with pytest.raises(ValueError):
+        StorageStrategy(break_even=(1, .99))
+    with pytest.raises(ValueError):
+        StorageStrategy(break_even=(-1, 2))
+    with pytest.raises(ValueError):
+        StorageStrategy(break_even="asdsadsad")
+    with pytest.raises(ValueError):
+        StorageStrategy(break_even={0: (1, .99), 12: (.99, 1)})
+    with pytest.raises(ValueError):
+        StorageStrategy(break_even={0: (-1, 2), 12: (.99, 1)})
 
 
 def test_free_storage_calculation_takes_into_account_storage_capacity(storage_strategy_test1):
@@ -489,3 +503,15 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
     storage_strategy_test11.event_activate()
     storage_strategy_test11.buy_energy()
     assert len(storage_strategy_test11.accept_offer.calls) >= 1
+
+
+def test_storage_populates_break_even_profile_correctly():
+    s = StorageStrategy(break_even=(22, 23))
+    assert all([be[0] == 22 and be[1] == 23 for _, be in s.break_even.items()])
+    assert set(s.break_even.keys()) == set(range(24))
+
+    s = StorageStrategy(break_even={0: (22, 23), 10: (24, 25), 20: (27, 28)})
+    assert set(s.break_even.keys()) == set(range(24))
+    assert all([s.break_even[i] == (22, 23) for i in range(10)])
+    assert all([s.break_even[i] == (24, 25) for i in range(10, 20)])
+    assert all([s.break_even[i] == (27, 28) for i in range(20, 24)])
