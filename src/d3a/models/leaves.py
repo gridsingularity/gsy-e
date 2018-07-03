@@ -99,3 +99,13 @@ class LoadHours(Leaf):
 class CellTower(Leaf):
     strategy_type = CellTowerLoadHoursStrategy
     appliance_type = SwitchableAppliance
+
+
+class Light(Leaf):
+    strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance
+
+
+class TV(Leaf):
+    strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance
