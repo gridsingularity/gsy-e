@@ -222,9 +222,10 @@ def read_settings_from_file(settings_file):
 def update_advanced_settings(advanced_settings):
     """
     Updates ConstStettings class variables with advanced_settings.
-    If variable is not part of ConstStettings, an Exception is raised.
+    If variable is not part of ConstSettings, an Exception is raised.
     """
     for set_var, set_val in advanced_settings.items():
+        getattr(ConstSettings, set_var)
         if isinstance(set_val, str):
             setattr(ConstSettings, set_var, parseboolstring(set_val))
         else:
