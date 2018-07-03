@@ -6,6 +6,7 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
+
 from pendulum import Pendulum
 from pendulum.interval import Interval
 from pendulum.period import Period
@@ -21,6 +22,7 @@ from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
 
+
 log = getLogger(__name__)
 
 
@@ -32,7 +34,7 @@ class _SimulationInterruped(Exception):
 
 
 class Simulation:
-    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
+    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
                  use_repl: bool = False, export: bool = False, export_path: str = None,
                  reset_on_finish: bool = False,
@@ -40,12 +42,14 @@ class Simulation:
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: Interval = Interval(seconds=1),
                  api_url=None, redis_job_id=None):
+
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
             paused=paused,
             pause_after=pause_after
         )
+
         self.simulation_config = simulation_config
         self.use_repl = use_repl
         self.export_on_finish = export

@@ -1,14 +1,14 @@
 import math
 
 from d3a.exceptions import MarketException
-from d3a.models.strategy.const import DEFAULT_RISK, MIN_HOUSEHOLD_CONSUMPTION
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.storage import StorageStrategy
 
 
 class PredefLoadHouseholdStrategy(StorageStrategy):
     parameters = ('risk',)
 
-    def __init__(self, risk=DEFAULT_RISK):
+    def __init__(self, risk=ConstSettings.DEFAULT_RISK):
         super().__init__()
         self.risk = risk
         self.bought_in_market = set()
@@ -45,12 +45,12 @@ class PredefLoadHouseholdStrategy(StorageStrategy):
         # Used as reverence: https://nelsonslog.wordpress.com/2012/01/31/energy-usage-notes/
         if time <= (6 * 60):
             # needed energy equals 0.7 wKH
-            needed_energy = MIN_HOUSEHOLD_CONSUMPTION
+            needed_energy = ConstSettings.MIN_HOUSEHOLD_CONSUMPTION
             self.buy_energy(needed_energy)
 
         if (6 * 60) < time <= (11.5 * 60):
             # needed energy is a gaussian with x_0= 10:30hr and sigma = 1hr
-            needed_energy = MIN_HOUSEHOLD_CONSUMPTION * (
+            needed_energy = ConstSettings.MIN_HOUSEHOLD_CONSUMPTION * (
                 math.exp(- ((time - (10.5 * 60)) ** 2) / 2 * ((1 * 60) ** 2))
             )
             self.buy_energy(needed_energy)
@@ -58,11 +58,12 @@ class PredefLoadHouseholdStrategy(StorageStrategy):
         if (11.5 * 60) < time <= (18 * 60):
             # Needed energy is minimum load plus a linear growing factor over elapsed time,
             # that ends at 18hr with a total additional consumption of 50 Wh
-            needed_energy = MIN_HOUSEHOLD_CONSUMPTION + (time - (12 * 60)) * (50 / (6 * 60))
+            needed_energy = ConstSettings.MIN_HOUSEHOLD_CONSUMPTION + (time - (12 * 60)) * \
+                            (50 / (6 * 60))
             self.buy_energy(needed_energy)
 
         if (18 * 60) < time <= ((23 * 60) + 59):
-            needed_energy = MIN_HOUSEHOLD_CONSUMPTION * (
+            needed_energy = ConstSettings.MIN_HOUSEHOLD_CONSUMPTION * (
                 math.exp(- ((time - (21 * 60)) ** 2) / 2 * ((1.5 * 60) ** 2))
             )
             self.buy_energy(needed_energy)
