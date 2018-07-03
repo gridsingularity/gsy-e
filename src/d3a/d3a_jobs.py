@@ -13,6 +13,7 @@ from d3a.models.strategy.const import ConstSettings
 from d3a.simulation import Simulation
 from d3a.web import start_web
 from d3a.util import available_simulation_scenarios
+from d3a.util import update_advanced_settings
 
 
 @job('d3a')
@@ -30,6 +31,10 @@ def start(scenario, settings):
     if settings is None:
         settings = {}
 
+    advanced_settings = settings.get('advanced_settings', None)
+    if advanced_settings is not None:
+        update_advanced_settings(advanced_settings)
+
     config = SimulationConfig(
         duration=interval.instance(settings.get('duration', timedelta(days=1))),
         slot_length=interval.instance(settings.get('slot_length', timedelta(minutes=15))),
@@ -37,7 +42,7 @@ def start(scenario, settings):
         market_count=settings.get('market_count', 4),
         cloud_coverage=settings.get('cloud_coverage', ConstSettings.DEFAULT_PV_POWER_PROFILE),
         market_maker_rate=settings.get('market_maker_rate', ConstSettings.MAX_ENERGY_RATE),
-        iaa_fee=settings.get('iaa_fee', ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
+        iaa_fee=settings.get('iaa_fee', ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE),
     )
 
     if scenario is None:
