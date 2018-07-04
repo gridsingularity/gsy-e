@@ -105,3 +105,13 @@ class CellTower(Leaf):
 class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
     appliance_type = SwitchableAppliance
+
+
+class Light(Leaf):
+    strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance
+
+
+class TV(Leaf):
+    strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance

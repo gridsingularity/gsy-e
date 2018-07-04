@@ -1,7 +1,7 @@
 import random
 
 from d3a.exceptions import MarketException
-from d3a.models.strategy.const import DEFAULT_RISK, MIN_HOUSEHOLD_CONSUMPTION
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.storage import StorageStrategy
 
 
@@ -9,7 +9,7 @@ class PredefLoadProbStrategy(StorageStrategy):
     parameters = ('risk', 'max_consumption')
 
     # max_consumption is the maximal possible consumption of the load
-    def __init__(self, risk=DEFAULT_RISK, max_consumption=200):
+    def __init__(self, risk=ConstSettings.DEFAULT_RISK, max_consumption=200):
         super().__init__()
         self.risk = risk
         self.bought_in_market = set()
@@ -34,13 +34,12 @@ class PredefLoadProbStrategy(StorageStrategy):
     def not_home(self):
         # Buy permanently X amount of energy: heating costs, standby devices etc
         # This equals the households consumption when no one is awake
-        self.buy_energy(MIN_HOUSEHOLD_CONSUMPTION)
+        self.buy_energy(ConstSettings.MIN_HOUSEHOLD_CONSUMPTION)
 
     def home(self):
         # we pick the Minimal consumption plus some random additional energy
-        needed_energy = MIN_HOUSEHOLD_CONSUMPTION + (self.max_consumption
-                                                     * (random.randint(20, 100) / 100)
-                                                     )
+        needed_energy = ConstSettings.MIN_HOUSEHOLD_CONSUMPTION + (self.max_consumption *
+                                                                   (random.randint(20, 100) / 100))
         self.buy_energy(needed_energy)
 
     def buy_energy(self, energy):

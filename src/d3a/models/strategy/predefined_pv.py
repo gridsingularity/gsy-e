@@ -8,8 +8,7 @@ import inspect
 import os
 from d3a.models.strategy import ureg
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.const import DEFAULT_RISK, MIN_PV_SELLING_PRICE, \
-    MAX_OFFER_TRAVERSAL_LENGTH
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.mixins import ReadProfileMixin
 from typing import Dict
 
@@ -23,8 +22,9 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
     """
     parameters = ('panel_count', 'risk')
 
-    def __init__(self, risk: int=DEFAULT_RISK, panel_count: int=1,
-                 min_selling_price: float=MIN_PV_SELLING_PRICE, cloud_coverage: int=None):
+    def __init__(self, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
+                 min_selling_price: float=ConstSettings.MIN_PV_SELLING_PRICE,
+                 cloud_coverage: int=None):
         """
         Constructor of PVPredefinedStrategy
         :param risk: PV risk parameter
@@ -64,7 +64,8 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
         # Need to refactor once we convert the config object to a singleton that is shared globally
         # in the simulation
         self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds * MAX_OFFER_TRAVERSAL_LENGTH + 1) * ureg.seconds
+            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1) \
+            * ureg.seconds
 
     def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
         """
@@ -95,8 +96,8 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
     parameters = ('power_profile', 'risk', 'panel_count')
 
-    def __init__(self, power_profile, risk: int=DEFAULT_RISK, panel_count: int=1,
-                 min_selling_price: float=MIN_PV_SELLING_PRICE):
+    def __init__(self, power_profile, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
+                 min_selling_price: float=ConstSettings.MIN_PV_SELLING_PRICE):
         """
         Constructor of PVUserProfileStrategy
         :param power_profile: input profile for a day. Can be either a csv file path,

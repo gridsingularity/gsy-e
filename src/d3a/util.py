@@ -3,16 +3,18 @@ import select
 import sys
 import termios
 import tty
+import json
 from logging import LoggerAdapter
 
 from click.types import ParamType
 from pendulum.interval import Interval
 from rex import rex
 from pkgutil import walk_packages
+from datetime import timedelta
 
 from d3a import get_project_root
 from d3a import setup as d3a_setup
-
+from d3a.models.strategy.const import ConstSettings
 
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
 INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2})s?)?$/")
@@ -182,3 +184,49 @@ def iterate_over_all_d3a_setup():
 
 
 available_simulation_scenarios = iterate_over_all_d3a_setup()
+
+
+def parseboolstring(thestring):
+    return thestring[0].upper() == 'T'
+
+
+def read_settings_from_file(settings_file):
+    """
+    Reads basic and advanced settings from a settings file (json format).
+    """
+    if os.path.isfile(settings_file):
+        with open(settings_file, "r") as sf:
+            settings = json.load(sf)
+        advanced_settings = settings["advanced_settings"]
+        simulation_settings = {
+            "duration": IntervalType('H:M')(
+                settings["basic_settings"].get('duration', timedelta(hours=24))),
+            "slot_length": IntervalType('M:S')(
+                settings["basic_settings"].get('slot_length', timedelta(minutes=15))),
+            "tick_length": IntervalType('M:S')(
+                settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
+            "market_count": settings["basic_settings"].get('market_count', 4),
+            "cloud_coverage": settings["basic_settings"].get(
+                'cloud_coverage', advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
+            "market_maker_rate": settings["basic_settings"].get(
+                'market_maker_rate', advanced_settings["MAX_ENERGY_RATE"]),
+            "iaa_fee": settings["basic_settings"].get(
+                'INTER_AREA_AGENT_FEE_PERCENTAGE',
+                advanced_settings["INTER_AREA_AGENT_FEE_PERCENTAGE"])
+        }
+        return simulation_settings, advanced_settings
+    else:
+        raise FileExistsError("Please provide a valid settings_file path")
+
+
+def update_advanced_settings(advanced_settings):
+    """
+    Updates ConstStettings class variables with advanced_settings.
+    If variable is not part of ConstSettings, an Exception is raised.
+    """
+    for set_var, set_val in advanced_settings.items():
+        getattr(ConstSettings, set_var)
+        if isinstance(set_val, str):
+            setattr(ConstSettings, set_var, parseboolstring(set_val))
+        else:
+            setattr(ConstSettings, set_var, set_val)
