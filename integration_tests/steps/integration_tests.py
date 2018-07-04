@@ -2,6 +2,7 @@ import os
 import importlib
 import logging
 import glob
+from math import isclose
 from pendulum.interval import Interval
 from behave import given, when, then
 
@@ -284,6 +285,9 @@ def method_called(context, method):
 @when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
 def run_sim(context, scenario, duration, slot_length, tick_length):
 
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.CRITICAL)
+
     simulation_config = SimulationConfig(Interval(hours=int(duration)),
                                          Interval(minutes=int(slot_length)),
                                          Interval(seconds=int(tick_length)),
@@ -407,3 +411,36 @@ def check_storage_prices(context):
     assert all([trade.offer.price / trade.offer.energy <= 26.99 for trade in trades_bought])
     assert len(trades_sold) > 0
     assert len(trades_bought) > 0
+
+
+@then('the {plant_name} always sells energy at the defined energy rate')
+def test_finite_plant_energy_rate(context, plant_name):
+    grid = context.simulation.area
+    finite = list(filter(lambda x: x.name == plant_name,
+                         context.simulation.area.children))[0]
+    trades_sold = []
+    for slot, market in grid.past_markets.items():
+        for trade in market.trades:
+            assert trade.buyer is not finite.name
+            if trade.seller == finite.name:
+                trades_sold.append(trade)
+        assert all([isclose(trade.offer.price / trade.offer.energy, finite.strategy.energy_rate.m)
+                    for trade in trades_sold])
+        assert len(trades_sold) > 0
+
+
+@then('the {plant_name} never produces more power than its max available power')
+def test_finite_plant_max_power(context, plant_name):
+    grid = context.simulation.area
+    finite = list(filter(lambda x: x.name == plant_name,
+                         grid.children))[0]
+
+    for slot, market in grid.past_markets.items():
+        trades_sold = []
+        for trade in market.trades:
+            assert trade.buyer is not finite.name
+            if trade.seller == finite.name:
+                trades_sold.append(trade)
+        assert sum([trade.offer.energy for trade in trades_sold]) <= \
+            finite.strategy.max_available_power[market.time_slot.hour] / \
+            (Interval(hours=1) / finite.config.slot_length)

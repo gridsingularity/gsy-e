@@ -14,6 +14,7 @@ from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHo
 from d3a.models.strategy.heatpump import HeatPumpStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 
 
 class Leaf(Area):
@@ -98,4 +99,9 @@ class LoadHours(Leaf):
 
 class CellTower(Leaf):
     strategy_type = CellTowerLoadHoursStrategy
+    appliance_type = SwitchableAppliance
+
+
+class FiniteDieselGenerator(Leaf):
+    strategy_type = FinitePowerPlant
     appliance_type = SwitchableAppliance
