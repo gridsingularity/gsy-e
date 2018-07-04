@@ -31,9 +31,9 @@ class SimulationConfig:
         else:
             raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
         self.market_maker_rate = dict()
-        if type(market_maker_rate) == int:
+        if type(ast.literal_eval(market_maker_rate)) == int:
             self.market_maker_rate = {k: market_maker_rate for k in range(24)}
-        elif type(market_maker_rate) == dict:
+        elif type(ast.literal_eval(market_maker_rate)) == dict:
             market_maker_rate_profile = ast.literal_eval(market_maker_rate)
             if sorted(market_maker_rate_profile .keys()) != list(range(24)):
                 raise TypeError('Market maker rate profile failed to be parsed.'
