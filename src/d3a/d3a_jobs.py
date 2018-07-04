@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 from os import environ, getpid
+import ast
 
 import pendulum
 import pendulum.interval as interval
@@ -33,7 +34,7 @@ def start(scenario, settings):
 
     advanced_settings = settings.get('advanced_settings', None)
     if advanced_settings is not None:
-        update_advanced_settings(advanced_settings)
+        update_advanced_settings(ast.literal_eval(advanced_settings))
 
     config = SimulationConfig(
         duration=interval.instance(settings.get('duration', timedelta(days=1))),
