@@ -34,10 +34,9 @@ class StorageStrategy(BaseStrategy):
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
-        print(len(self.area.config.market_maker_rate))
         self.max_selling_rate_cents_per_kwh =\
             {k: Q_((self.area.config.market_maker_rate[k] - 1), (ureg.EUR_cents / ureg.kWh))
-             for k in range(len(self.area.config.market_maker_rate))}
+             for k in range(24)}
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity, initial_charge,
@@ -152,7 +151,6 @@ class StorageStrategy(BaseStrategy):
                     return
             return most_expensive_market
         else:
-            print("most recent future market: " + str(list(self.area.markets.values())[0]))
             # Sell on the most recent future market
             return list(self.area.markets.values())[0]
 
