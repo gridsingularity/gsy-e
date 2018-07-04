@@ -1,3 +1,7 @@
+"""
+Setup file for displaying the finite power plant strategy using a power profile.
+"""
+
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
@@ -6,7 +10,10 @@ from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHo
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 
-
+"""
+Power profile for the finite power plant. It will produce 0.01 kW from 00:00-07:45, 0.0015 kW
+from 8:00-11:45 and so forth.
+"""
 diesel_power_profile = {
     0: 0.01,
     8: 0.015,
