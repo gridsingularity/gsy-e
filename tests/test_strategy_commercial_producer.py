@@ -44,7 +44,7 @@ def area_test1():
 
 @pytest.fixture()
 def commercial_test1(area_test1):
-    c = CommercialStrategy()
+    c = CommercialStrategy(energy_rate=30)
     c.area = area_test1
     c.owner = area_test1
     return c
@@ -66,7 +66,7 @@ def area_test2():
 
 @pytest.fixture()
 def commercial_test2(area_test2):
-    c = CommercialStrategy()
+    c = CommercialStrategy(energy_rate=30)
     c.area = area_test2
     c.owner = area_test2
     return c
@@ -98,7 +98,7 @@ def area_test3():
 
 @pytest.fixture()
 def commercial_test3(area_test3):
-    c = CommercialStrategy()
+    c = CommercialStrategy(energy_rate=30)
     c.area = area_test3
     c.owner = area_test3
     return c
