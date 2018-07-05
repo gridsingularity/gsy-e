@@ -202,6 +202,26 @@ def run_sim_console(context, scenario):
               "--exit-on-finish".format(export_path=context.export_path, scenario=scenario))
 
 
+@when('we run the d3a simulation with config parameters'
+      ' [{cloud_coverage}, {market_maker_rate}, {iaa_fee}] and {scenario}')
+def run_sim_console_with_config_setting(context, cloud_coverage,
+                                        market_maker_rate, iaa_fee,
+                                        scenario):
+    context.export_path = os.path.join(context.simdir, scenario)
+    simulation_config = SimulationConfig(Interval(hours=int(4)),
+                                         Interval(minutes=int(60)),
+                                         Interval(seconds=int(60)),
+                                         market_count=5,
+                                         cloud_coverage=int(cloud_coverage),
+                                         market_maker_rate=market_maker_rate,
+                                         iaa_fee=int(iaa_fee))
+
+    context.simulation = Simulation(
+        scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
+        Interval(), True, Interval(), None, "1234"
+    )
+
+
 @when('we run simulation on console with default settings file')
 def run_d3a_with_settings_file(context):
     context.export_path = os.path.join(context.simdir, "default")
@@ -219,6 +239,17 @@ def test_export_data_csv(context, scenario):
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}: {file} ".format(path=context.export_path,
                                                                     file=data_fn))
+
+
+@then('we test that config parameters are correctly parsed for {scenario}'
+      ' [{cloud_coverage}, {market_maker_rate}, {iaa_fee}]')
+def test_simulation_config_parameters(context, scenario,
+                                      cloud_coverage, market_maker_rate,
+                                      iaa_fee):
+    assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
+    for i in range(len(context.simulation.simulation_config.market_maker_rate)):
+        assert context.simulation.simulation_config.market_maker_rate[i] == int(market_maker_rate)
+    assert context.simulation.simulation_config.iaa_fee == int(iaa_fee)
 
 
 @when('a simulation is created for scenario {scenario}')
