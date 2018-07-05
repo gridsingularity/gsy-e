@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 from os import environ, getpid
+import ast
 
 import pendulum
 import pendulum.interval as interval
@@ -13,6 +14,7 @@ from d3a.models.strategy.const import ConstSettings
 from d3a.simulation import Simulation
 from d3a.web import start_web
 from d3a.util import available_simulation_scenarios
+from d3a.util import update_advanced_settings
 
 
 @job('d3a')
@@ -29,6 +31,10 @@ def start(scenario, settings):
 
     if settings is None:
         settings = {}
+
+    advanced_settings = settings.get('advanced_settings', None)
+    if advanced_settings is not None:
+        update_advanced_settings(ast.literal_eval(advanced_settings))
 
     config = SimulationConfig(
         duration=interval.instance(settings.get('duration', timedelta(days=1))),
