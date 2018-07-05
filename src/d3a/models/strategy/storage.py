@@ -34,8 +34,9 @@ class StorageStrategy(BaseStrategy):
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
-        self.max_selling_rate_cents_per_kwh = \
-            Q_((self.area.config.market_maker_rate-1), (ureg.EUR_cents / ureg.kWh))
+        self.max_selling_rate_cents_per_kwh =\
+            {k: Q_((self.area.config.market_maker_rate[k] - 1), (ureg.EUR_cents / ureg.kWh))
+             for k in range(24)}
 
     def _update_break_even_points(self, break_even):
         if isinstance(break_even, tuple) or isinstance(break_even, list):
@@ -186,16 +187,18 @@ class StorageStrategy(BaseStrategy):
 
     def _calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:
-            return self.capacity_dependant_sell_rate()
+            return self.capacity_dependant_sell_rate(market)
         break_even_sell = self.break_even[market.time_slot.hour][1]
+        max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
         risk_dependent_selling_rate = (
             break_even_sell + self._risk_factor(
-                self.max_selling_rate_cents_per_kwh.m - break_even_sell
+                max_selling_rate - break_even_sell
             )
         )
         # Limit rate to respect max sell rate
         return max(
-            min(risk_dependent_selling_rate, self.max_selling_rate_cents_per_kwh.m),
+            min(risk_dependent_selling_rate,
+                max_selling_rate),
             break_even_sell
         )
 
@@ -207,19 +210,18 @@ class StorageStrategy(BaseStrategy):
         """
         return output_range * self.risk / ConstSettings.MAX_RISK
 
-    def capacity_dependant_sell_rate(self):
+    def capacity_dependant_sell_rate(self, market):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
-
+        break_even_sell = self.break_even[market.time_slot.hour][1]
+        max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
         if len(self.area.past_markets.keys()) > 1:
             # TODO: Why the -2 here?
             charge_per = self.state.charge_history[most_recent_past_ts[-2]]
             # TODO: max_selling_rate_cents_per_kwh is never mutating and is valid
             # TODO: only in capacity depending strategy
             # TODO: Should remain const or be abstracted from this class
-            break_even_sell = self.break_even[most_recent_past_ts.hour][1]
-            rate = self.max_selling_rate_cents_per_kwh.m - \
-                ((self.max_selling_rate_cents_per_kwh.m - break_even_sell) *
-                 (charge_per / 100))
+            rate = max_selling_rate - ((max_selling_rate - break_even_sell) *
+                                       (charge_per / 100))
             return rate.m
         else:
-            return self.max_selling_rate_cents_per_kwh.m
+            return max_selling_rate
