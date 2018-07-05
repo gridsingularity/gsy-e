@@ -220,7 +220,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
                                          Interval(seconds=int(60)),
                                          market_count=5,
                                          cloud_coverage=int(cloud_coverage),
-                                         market_maker_rate=str(context._market_maker_rate),
+                                         market_maker_rate=context._market_maker_rate,
                                          iaa_fee=int(iaa_fee))
 
     context.simulation = Simulation(
