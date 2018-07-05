@@ -93,8 +93,9 @@ Feature: Run integration tests
   Scenario Outline: Run integration tests for config parameters
      Given we have a scenario named <scenario>
      And d3a is installed
-     When we run the d3a simulation with config parameters [<cloud_coverage>, <market_maker_rate>, <iaa_fee>] and <scenario>
-     Then we test that config parameters are correctly parsed for <scenario> [<cloud_coverage>, <market_maker_rate>, <iaa_fee>]
+     And we have a profile of market_maker_rate for <scenario>
+     When we run the d3a simulation with config parameters [<cloud_coverage>, <iaa_fee>] and <scenario>
+     Then we test that config parameters are correctly parsed for <scenario> [<cloud_coverage>, <iaa_fee>]
   Examples: Settings
-     |      scenario               | cloud_coverage  |  market_maker_rate   |    iaa_fee    |
-     |      default_2a             |        1        |          30          |       5       |
+     |      scenario               | cloud_coverage  |    iaa_fee    |
+     |      default_2a             |        1        |       5       |
