@@ -348,7 +348,7 @@ def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
 def test_calculate_risk_factor(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
-    rate_range = storage_strategy_test7.max_selling_rate_cents_per_kwh.m - \
+    rate_range = storage_strategy_test7.max_selling_rate_cents_per_kwh[market.time_slot.hour].m - \
         ConstSettings.STORAGE_BREAK_EVEN_SELL
     storage_strategy_test7.risk = 50.0
     assert storage_strategy_test7._calculate_selling_rate(market) == \
