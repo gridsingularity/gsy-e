@@ -204,9 +204,9 @@ def run_sim_console(context, scenario):
 
 @when('we run the d3a simulation with config parameters'
       ' [{cloud_coverage}, {market_maker_rate}, {iaa_fee}] and {scenario}')
-def run_sim_console_with_config_setting(context, cloud_coverage,
-                                        market_maker_rate, iaa_fee,
-                                        scenario):
+def run_sim_with_config_setting(context, cloud_coverage,
+                                market_maker_rate, iaa_fee,
+                                scenario):
     context.export_path = os.path.join(context.simdir, scenario)
     simulation_config = SimulationConfig(Interval(hours=int(4)),
                                          Interval(minutes=int(60)),
