@@ -46,10 +46,13 @@ class PVStrategy(BaseStrategy):
             * ureg.seconds
 
     def event_tick(self, *, area):
-        average_market_rate = Q_(
-            self.area.config.market_maker_rate if self.area.historical_avg_rate == 0
-            else self.area.historical_avg_rate,
-            ureg.EUR_cents / ureg.kWh)
+        if self.area.historical_avg_rate == 0:
+            average_market_rate =\
+                Q_(self.area.config.market_maker_rate[list(area.markets.keys())[0].hour],
+                   ureg.EUR_cents / ureg.kWh)
+        else:
+            average_market_rate = Q_(self.area.historical_avg_rate, ureg.EUR_cents / ureg.kWh)
+
         # Needed to calculate risk_dependency_of_selling_rate
         # if risk 0-100 then energy_price less than average_market_rate
         # if risk >100 then energy_price more than average_market_rate
@@ -58,7 +61,8 @@ class PVStrategy(BaseStrategy):
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
-            rounded_energy_rate = self.area.config.market_maker_rate
+            rounded_energy_rate =\
+                self.area.config.market_maker_rate[list(area.markets.keys())[0].hour]
         assert rounded_energy_rate >= 0.0
         # Iterate over all markets open in the future
         for (time, market) in self.area.markets.items():
