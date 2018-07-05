@@ -14,9 +14,12 @@ class CommercialStrategy(BaseStrategy):
         self.energy_per_slot_wh = Q_(int(sys.maxsize), ureg.kWh)
         self.energy_rate = energy_rate
 
+    def _markets_to_offer_on_activate(self):
+        return self.area.markets.values()
+
     def event_activate(self):
         # That's usually an init function but the markets aren't open during the init call
-        for market in self.area.markets.values():
+        for market in self._markets_to_offer_on_activate():
             self.offer_energy(market)
 
     def event_trade(self, *, market, trade):

@@ -434,7 +434,7 @@ def test_finite_plant_energy_rate(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
-        assert all([isclose(trade.offer.price / trade.offer.energy, finite.strategy.energy_rate.m)
+        assert all([isclose(trade.offer.price / trade.offer.energy, finite.strategy.energy_rate)
                     for trade in trades_sold])
         assert len(trades_sold) > 0
 
