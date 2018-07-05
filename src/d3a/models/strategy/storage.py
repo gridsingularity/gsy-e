@@ -18,8 +18,10 @@ class StorageStrategy(BaseStrategy):
                  break_even=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
                  cap_price_strategy=False):
+        break_even = self._update_break_even_points(break_even)
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity, break_even)
+        self.break_even = break_even
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
@@ -28,8 +30,6 @@ class StorageStrategy(BaseStrategy):
                                   max_abs_battery_power=max_abs_battery_power,
                                   loss_per_hour=0.0,
                                   strategy=self)
-        self.break_even_buy = Q_(break_even[0], (ureg.EUR_cents / ureg.kWh))
-        self.break_even_sell = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
         self.cap_price_strategy = cap_price_strategy
 
     def event_activate(self):
@@ -37,6 +37,22 @@ class StorageStrategy(BaseStrategy):
         self.max_selling_rate_cents_per_kwh =\
             {k: Q_((self.area.config.market_maker_rate[k] - 1), (ureg.EUR_cents / ureg.kWh))
              for k in range(24)}
+
+    def _update_break_even_points(self, break_even):
+        if isinstance(break_even, tuple) or isinstance(break_even, list):
+            return {i: (break_even[0], break_even[1]) for i in range(24)}
+        if isinstance(break_even, dict):
+            latest_entry = (ConstSettings.STORAGE_BREAK_EVEN_BUY,
+                            ConstSettings.STORAGE_BREAK_EVEN_SELL)
+            for i in range(24):
+                if i not in break_even:
+                    break_even[i] = latest_entry
+                else:
+                    latest_entry = break_even[i]
+            return break_even
+        else:
+            raise ValueError("Break even point should be either a tuple for the buy/sell rate, "
+                             "or an hourly dict of tuples.")
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity, initial_charge,
@@ -50,9 +66,10 @@ class StorageStrategy(BaseStrategy):
         if initial_capacity and not 0 <= initial_capacity <= battery_capacity:
             raise ValueError("Initial capacity should be between 0 and "
                              "battery_capacity parameter.")
-        if break_even[1] < break_even[0]:
+        if any(be[1] < be[0] for _, be in break_even.items()):
             raise ValueError("Break even point for sell energy is lower than buy energy.")
-        if any(break_even_point < 0 for break_even_point in break_even):
+        if any(break_even_point[0] < 0 or break_even_point[1] < 0
+               for _, break_even_point in break_even.items()):
             raise ValueError("Break even point should be positive energy rate values.")
 
     def event_tick(self, *, area):
@@ -87,8 +104,8 @@ class StorageStrategy(BaseStrategy):
     def buy_energy(self):
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
-        max_affordable_offer_rate = self.break_even_buy.m
         for market in self.area.markets.values():
+            max_affordable_offer_rate = self.break_even[market.time_slot.hour][0]
             for offer in market.sorted_offers:
                 if offer.seller == self.owner.name:
                     # Don't buy our own offer
@@ -115,8 +132,7 @@ class StorageStrategy(BaseStrategy):
 
     def sell_energy(self, energy=None, open_offer=False):
         target_market = self._select_market_to_sell()
-
-        selling_rate = self._calculate_selling_rate(target_market.time_slot.hour)
+        selling_rate = self._calculate_selling_rate(target_market)
         energy = self._calculate_energy_to_sell(energy, target_market)
 
         if energy > 0.0:
@@ -169,19 +185,21 @@ class StorageStrategy(BaseStrategy):
                      self.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
         return energy
 
-    def _calculate_selling_rate(self, time):
+    def _calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:
-            return self.capacity_dependant_sell_rate(time)
-        min_selling_rate = self.break_even_sell.m
+            return self.capacity_dependant_sell_rate(market)
+        break_even_sell = self.break_even[market.time_slot.hour][1]
+        max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
         risk_dependent_selling_rate = (
-            min_selling_rate + self._risk_factor(
-                self.max_selling_rate_cents_per_kwh[time].m - self.break_even_sell.m
+            break_even_sell + self._risk_factor(
+                max_selling_rate - break_even_sell
             )
         )
         # Limit rate to respect max sell rate
         return max(
-            min(risk_dependent_selling_rate, self.max_selling_rate_cents_per_kwh[time].m),
-            self.break_even_sell.m
+            min(risk_dependent_selling_rate,
+                max_selling_rate),
+            break_even_sell
         )
 
     def _risk_factor(self, output_range):
@@ -192,18 +210,18 @@ class StorageStrategy(BaseStrategy):
         """
         return output_range * self.risk / ConstSettings.MAX_RISK
 
-    def capacity_dependant_sell_rate(self, time):
+    def capacity_dependant_sell_rate(self, market):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
-
+        break_even_sell = self.break_even[market.time_slot.hour][1]
+        max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
         if len(self.area.past_markets.keys()) > 1:
             # TODO: Why the -2 here?
             charge_per = self.state.charge_history[most_recent_past_ts[-2]]
             # TODO: max_selling_rate_cents_per_kwh is never mutating and is valid
             # TODO: only in capacity depending strategy
             # TODO: Should remain const or be abstracted from this class
-            rate = self.max_selling_rate_cents_per_kwh[time].m - \
-                ((self.max_selling_rate_cents_per_kwh[time].m - self.break_even_sell) *
-                 (charge_per / 100))
+            rate = max_selling_rate - ((max_selling_rate - break_even_sell) *
+                                       (charge_per / 100))
             return rate.m
         else:
-            return self.max_selling_rate_cents_per_kwh[time].m
+            return max_selling_rate

@@ -2,6 +2,7 @@ import os
 import importlib
 import logging
 import glob
+from math import isclose
 from pendulum.interval import Interval
 from behave import given, when, then
 
@@ -333,6 +334,9 @@ def method_called(context, method):
 @when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
 def run_sim(context, scenario, duration, slot_length, tick_length):
 
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.CRITICAL)
+
     simulation_config = SimulationConfig(Interval(hours=int(duration)),
                                          Interval(minutes=int(slot_length)),
                                          Interval(seconds=int(tick_length)),
@@ -456,3 +460,59 @@ def check_storage_prices(context):
     assert all([trade.offer.price / trade.offer.energy <= 26.99 for trade in trades_bought])
     assert len(trades_sold) > 0
     assert len(trades_bought) > 0
+
+
+@then('the storage devices buy and sell energy respecting the hourly break even prices')
+def step_impl(context):
+    from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import \
+        break_even_profile, break_even_profile_2
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    for name, profile in [("H1 Storage1", break_even_profile),
+                          ("H1 Storage2", break_even_profile_2)]:
+        trades_sold = []
+        trades_bought = []
+        for slot, market in house1.past_markets.items():
+            for trade in market.trades:
+                if trade.seller == name:
+                    trades_sold.append(trade)
+                elif trade.buyer == name:
+                    trades_bought.append(trade)
+        assert all([trade.offer.price / trade.offer.energy >= profile[trade.time.hour][1]
+                    for trade in trades_sold])
+        assert all([trade.offer.price / trade.offer.energy <= profile[trade.time.hour][0]
+                    for trade in trades_bought])
+        assert len(trades_sold) > 0
+        assert len(trades_bought) > 0
+
+
+@then('the {plant_name} always sells energy at the defined energy rate')
+def test_finite_plant_energy_rate(context, plant_name):
+    grid = context.simulation.area
+    finite = list(filter(lambda x: x.name == plant_name,
+                         context.simulation.area.children))[0]
+    trades_sold = []
+    for slot, market in grid.past_markets.items():
+        for trade in market.trades:
+            assert trade.buyer is not finite.name
+            if trade.seller == finite.name:
+                trades_sold.append(trade)
+        assert all([isclose(trade.offer.price / trade.offer.energy, finite.strategy.energy_rate)
+                    for trade in trades_sold])
+        assert len(trades_sold) > 0
+
+
+@then('the {plant_name} never produces more power than its max available power')
+def test_finite_plant_max_power(context, plant_name):
+    grid = context.simulation.area
+    finite = list(filter(lambda x: x.name == plant_name,
+                         grid.children))[0]
+
+    for slot, market in grid.past_markets.items():
+        trades_sold = []
+        for trade in market.trades:
+            assert trade.buyer is not finite.name
+            if trade.seller == finite.name:
+                trades_sold.append(trade)
+        assert sum([trade.offer.energy for trade in trades_sold]) <= \
+            finite.strategy.max_available_power[market.time_slot.hour] / \
+            (Interval(hours=1) / finite.config.slot_length)
