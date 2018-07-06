@@ -90,6 +90,17 @@ Feature: Run integration tests
      When we run the d3a simulation with strategy_tests.storage_strategy_break_even_range [24, 15, 15]
      Then the storage devices buy and sell energy respecting the break even prices
 
+  Scenario Outline: Run integration tests for config parameters
+     Given we have a scenario named <scenario>
+     And d3a is installed
+     And we have a profile of market_maker_rate for <scenario>
+     When we run the d3a simulation with config parameters [<cloud_coverage>, <iaa_fee>] and <scenario>
+     Then we test that config parameters are correctly parsed for <scenario> [<cloud_coverage>, <iaa_fee>]
+  Examples: Settings
+     |      scenario               | cloud_coverage  |    iaa_fee    |
+     |      default_2a             |        1        |       5       |
+
+
   Scenario: Storage break even profile
      Given we have a scenario named strategy_tests/storage_strategy_break_even_hourly
      And d3a is installed
