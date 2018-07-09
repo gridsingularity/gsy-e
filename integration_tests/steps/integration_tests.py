@@ -318,7 +318,7 @@ def final_results(context):
 
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
-    assert context.interm_results_count == 97
+    assert context.interm_results_count == 96
 
 
 @then('final results are transmitted once')
