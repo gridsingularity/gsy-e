@@ -104,7 +104,7 @@ class Simulation:
 
     @property
     def finished(self):
-        return self.area.current_tick == self.area.config.total_ticks
+        return self.area.current_tick >= self.area.config.total_ticks
 
     @property
     def time_since_start(self):
@@ -152,7 +152,7 @@ class Simulation:
 
             try:
                 with NonBlockingConsole() as console:
-                    for slot_no in range(slot_resume, slot_count):
+                    for slot_no in range(slot_resume, slot_count-1):
                         run_duration = (
                             Pendulum.now() - self.run_start - Interval(seconds=self.paused_time)
                         )
