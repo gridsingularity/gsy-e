@@ -1,5 +1,5 @@
 """
-Setup file for displaying the finite power plant strategy.
+Setup file for displaying the in-finite power plant strategy.
 """
 
 from d3a.models.appliance.switchable import SwitchableAppliance
@@ -12,10 +12,9 @@ from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 
 """
-Finite power plant strategy requires an energy rate value, which will be used for the lifetime
-of this strategy. The second parameter is the maximum available power that this power plant
-can produce. In this setup file a constant power production of 0.01 kW is assumed, and it is
-configured so low in order to validate that the strategy works as expected.
+In-Finite power plant strategy follows the market_maker_rate being passed as
+global config parameters. In this setup file, it is intended to validate if
+In-Finite power plant trade energy at the pre-defined market_maker_rate.
 """
 
 
