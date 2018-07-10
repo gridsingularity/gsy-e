@@ -215,8 +215,11 @@ def run_sim_console(context, scenario):
       ' [{cloud_coverage}, {iaa_fee}] and {scenario}')
 def run_sim_with_config_setting(context, cloud_coverage,
                                 iaa_fee, scenario):
-    context.export_path = os.path.join(context.simdir, scenario)
-    simulation_config = SimulationConfig(Interval(hours=int(4)),
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.CRITICAL)
+
+    simulation_config = SimulationConfig(Interval(hours=int(24)),
                                          Interval(minutes=int(60)),
                                          Interval(seconds=int(60)),
                                          market_count=5,
@@ -224,10 +227,36 @@ def run_sim_with_config_setting(context, cloud_coverage,
                                          market_maker_rate=context._market_maker_rate,
                                          iaa_fee=int(iaa_fee))
 
+    slowdown = 0
+    seed = 0
+    paused = False
+    pause_after = Interval()
+    repl = False
+    export = False
+    export_path = None
+    reset_on_finish = False
+    reset_on_finish_wait = Interval()
+    exit_on_finish = True
+    exit_on_finish_wait = Interval()
+
+    api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
-        scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
-        Interval(), True, Interval(), None, "1234"
+        scenario,
+        simulation_config,
+        slowdown,
+        seed,
+        paused,
+        pause_after,
+        repl,
+        export,
+        export_path,
+        reset_on_finish,
+        reset_on_finish_wait,
+        exit_on_finish,
+        exit_on_finish_wait,
+        api_url
     )
+    context.simulation.run()
 
 
 @when('we run simulation on console with default settings file')
@@ -489,7 +518,7 @@ def step_impl(context):
 def test_finite_plant_energy_rate(context, plant_name):
     grid = context.simulation.area
     finite = list(filter(lambda x: x.name == plant_name,
-                         context.simulation.area.children))[0]
+                         grid.children))[0]
     trades_sold = []
     for slot, market in grid.past_markets.items():
         for trade in market.trades:

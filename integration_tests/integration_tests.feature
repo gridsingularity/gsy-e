@@ -90,15 +90,12 @@ Feature: Run integration tests
      When we run the d3a simulation with strategy_tests.storage_strategy_break_even_range [24, 15, 15]
      Then the storage devices buy and sell energy respecting the break even prices
 
-  Scenario Outline: Run integration tests for config parameters
-     Given we have a scenario named <scenario>
+  Scenario: Run integration tests for config parameters
+     Given we have a scenario named strategy_tests/config_parameters_validation
      And d3a is installed
-     And we have a profile of market_maker_rate for <scenario>
-     When we run the d3a simulation with config parameters [<cloud_coverage>, <iaa_fee>] and <scenario>
-     Then we test that config parameters are correctly parsed for <scenario> [<cloud_coverage>, <iaa_fee>]
-  Examples: Settings
-     |      scenario               | cloud_coverage  |    iaa_fee    |
-     |      default_2a             |        1        |       5       |
+     And we have a profile of market_maker_rate for strategy_tests.config_parameters_validation
+     When we run the d3a simulation with config parameters [1, 5] and strategy_tests.config_parameters_validation
+     Then we test that config parameters are correctly parsed for strategy_tests.config_parameters_validation [1, 5]
 
 
   Scenario: Storage break even profile
@@ -120,3 +117,10 @@ Feature: Run integration tests
      When we run the d3a simulation with strategy_tests.finite_power_plant_profile [24, 15, 15]
      Then the Finite Commercial Producer Profile always sells energy at the defined energy rate
      And the Finite Commercial Producer Profile never produces more power than its max available power
+
+  Scenario: Infinite power plant energy rate profile
+     Given we have a scenario named strategy_tests/in_finite_power_plant
+     And d3a is installed
+     And we have a profile of market_maker_rate for strategy_tests.in_finite_power_plant
+     When we run the d3a simulation with config parameters [1, 5] and strategy_tests.in_finite_power_plant
+     Then the Commercial Energy Producer always sells energy at the defined market maker rate
