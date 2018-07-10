@@ -531,7 +531,7 @@ def test_finite_plant_energy_rate(context, plant_name):
 
 
 @then('the {plant_name} always sells energy at the defined market maker rate')
-def test_infinite_plant_energy_rate(context, plant_name):
+def test_finite_plant_energy_rate(context, plant_name):
     grid = context.simulation.area
     finite = list(filter(lambda x: x.name == plant_name,
                          grid.children))[0]
