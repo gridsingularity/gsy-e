@@ -530,6 +530,23 @@ def test_finite_plant_energy_rate(context, plant_name):
         assert len(trades_sold) > 0
 
 
+@then('the {plant_name} always sells energy at the defined market maker rate')
+def test_infinite_plant_energy_rate(context, plant_name):
+    grid = context.simulation.area
+    finite = list(filter(lambda x: x.name == plant_name,
+                         grid.children))[0]
+    trades_sold = []
+    for slot, market in grid.past_markets.items():
+        for trade in market.trades:
+            assert trade.buyer is not finite.name
+            if trade.seller == finite.name:
+                trades_sold.append(trade)
+        assert all([isclose(trade.offer.price / trade.offer.energy,
+                            context._market_maker_rate[trade.time.hour])
+                    for trade in trades_sold])
+        assert len(trades_sold) > 0
+
+
 @then('the {plant_name} never produces more power than its max available power')
 def test_finite_plant_max_power(context, plant_name):
     grid = context.simulation.area
