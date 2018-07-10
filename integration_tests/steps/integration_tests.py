@@ -318,7 +318,7 @@ def final_results(context):
 
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
-    assert context.interm_results_count == 97
+    assert context.interm_results_count == 96
 
 
 @then('final results are transmitted once')
@@ -383,7 +383,7 @@ def test_output(context, scenario, duration, slot_length, tick_length):
 
     # Check if simulation ran through
     # (check if number of last slot is the maximal number of slots):
-    no_of_slots = (int(duration) * 60 / int(slot_length)) + 1
+    no_of_slots = (int(duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
     # TODO: Implement more sophisticated tests for success of simulation
 
