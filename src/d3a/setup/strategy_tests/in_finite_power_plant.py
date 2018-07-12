@@ -33,10 +33,6 @@ def get_setup(config):
                                                                  break_even=(26.99, 27.01),
                                                                  max_abs_battery_power=5.0),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_capacity=0.6,
-                                                                 break_even=(26.99, 27.01),
-                                                                 max_abs_battery_power=5.0),
-                         appliance=SwitchableAppliance()),
                 ]
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
