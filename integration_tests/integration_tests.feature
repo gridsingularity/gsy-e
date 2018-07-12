@@ -90,12 +90,6 @@ Feature: Run integration tests
      When we run the d3a simulation with strategy_tests.storage_strategy_break_even_range [24, 15, 15]
      Then the storage devices buy and sell energy respecting the break even prices
 
-  Scenario: Run integration tests for config parameters
-     Given we have a scenario named strategy_tests/config_parameters_validation
-     And d3a is installed
-     And we have a profile of market_maker_rate for strategy_tests.config_parameters_validation
-     When we run the d3a simulation with config parameters [1, 5] and strategy_tests.config_parameters_validation
-     Then we test that config parameters are correctly parsed for strategy_tests.config_parameters_validation [1, 5]
 
 
   Scenario: Storage break even profile
@@ -118,9 +112,10 @@ Feature: Run integration tests
      Then the Finite Commercial Producer Profile always sells energy at the defined energy rate
      And the Finite Commercial Producer Profile never produces more power than its max available power
 
-  Scenario: Infinite power plant energy rate profile
+  Scenario: Infinite power plant
      Given we have a scenario named strategy_tests/in_finite_power_plant
      And d3a is installed
      And we have a profile of market_maker_rate for strategy_tests.in_finite_power_plant
      When we run the d3a simulation with config parameters [1, 5] and strategy_tests.in_finite_power_plant
-     Then the Commercial Energy Producer always sells energy at the defined market maker rate
+     Then we test that config parameters are correctly parsed for strategy_tests.in_finite_power_plant [1, 5]
+     And the Commercial Energy Producer always sells energy at the defined market maker rate
