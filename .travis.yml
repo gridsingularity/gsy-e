@@ -5,8 +5,6 @@ branches:
   only:
   - master
 
-before_script:
-  - echo 'Europe/Berlin' | sudo tee /etc/timezone
 
 jobs:
  include:
