@@ -39,6 +39,14 @@ def hour_profile(context, device):
     }
 
 
+@given('we have a profile of market_maker_rate for {scenario}')
+def hour_profile_of_market_maker_rate(context, scenario):
+    context._market_maker_rate = {
+        0: 30, 1: 31, 2: 32, 3: 33, 4: 34, 5: 35, 6: 36, 7: 37, 8: 38,
+        9: 37, 10: 38, 11: 39, 12: 36, 13: 35, 14: 34, 15: 33, 16: 32,
+        17: 31, 18: 30, 19: 31, 20: 31, 21: 31, 22: 29, 23: 31}
+
+
 @given('a load profile csv as input to predefined load')
 def load_csv_profile(context):
     context._device_profile = os.path.join(d3a_path, 'resources', 'LOAD_DATA_1.csv')
@@ -203,6 +211,25 @@ def run_sim_console(context, scenario):
               "--exit-on-finish".format(export_path=context.export_path, scenario=scenario))
 
 
+@when('we run the d3a simulation with config parameters'
+      ' [{cloud_coverage}, {iaa_fee}] and {scenario}')
+def run_sim_with_config_setting(context, cloud_coverage,
+                                iaa_fee, scenario):
+    context.export_path = os.path.join(context.simdir, scenario)
+    simulation_config = SimulationConfig(Interval(hours=int(4)),
+                                         Interval(minutes=int(60)),
+                                         Interval(seconds=int(60)),
+                                         market_count=5,
+                                         cloud_coverage=int(cloud_coverage),
+                                         market_maker_rate=context._market_maker_rate,
+                                         iaa_fee=int(iaa_fee))
+
+    context.simulation = Simulation(
+        scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
+        Interval(), True, Interval(), None, "1234"
+    )
+
+
 @when('we run simulation on console with default settings file')
 def run_d3a_with_settings_file(context):
     context.export_path = os.path.join(context.simdir, "default")
@@ -220,6 +247,18 @@ def test_export_data_csv(context, scenario):
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}: {file} ".format(path=context.export_path,
                                                                     file=data_fn))
+
+
+@then('we test that config parameters are correctly parsed for {scenario}'
+      ' [{cloud_coverage}, {iaa_fee}]')
+def test_simulation_config_parameters(context, scenario,
+                                      cloud_coverage, iaa_fee):
+    assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
+    assert len(context.simulation.simulation_config.market_maker_rate) == 24
+    for i in range(len(context.simulation.simulation_config.market_maker_rate)):
+        assert context.simulation.simulation_config.market_maker_rate[i] ==\
+               context._market_maker_rate[i]
+    assert context.simulation.simulation_config.iaa_fee == int(iaa_fee)
 
 
 @when('a simulation is created for scenario {scenario}')
@@ -279,7 +318,7 @@ def final_results(context):
 
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
-    assert context.interm_results_count == 97
+    assert context.interm_results_count == 96
 
 
 @then('final results are transmitted once')
@@ -344,7 +383,7 @@ def test_output(context, scenario, duration, slot_length, tick_length):
 
     # Check if simulation ran through
     # (check if number of last slot is the maximal number of slots):
-    no_of_slots = (int(duration) * 60 / int(slot_length)) + 1
+    no_of_slots = (int(duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
     # TODO: Implement more sophisticated tests for success of simulation
 
