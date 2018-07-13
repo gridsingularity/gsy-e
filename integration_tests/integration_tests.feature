@@ -43,10 +43,16 @@ Feature: Run integration tests
      When the simulation is running
      Then the predefined load follows the load profile from the csv
 
-  Scenario: Predefined PV follows the profile provided by the user
+  Scenario: UserProfile PV follows the profile provided by the user
      Given a PV profile hourly dict as input to predefined load
      And the scenario includes a predefined PV
      When the simulation is running
+     Then the predefined PV follows the PV profile
+
+  Scenario: Predefined PV follows the profile provided by the user
+     Given we have a scenario named strategy_tests/predefined_pv
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.predefined_pv [24, 15, 15]
      Then the predefined PV follows the PV profile
 
   Scenario: Predefined load follows the profile provided by the user
