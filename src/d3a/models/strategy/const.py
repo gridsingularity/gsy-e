@@ -26,7 +26,7 @@ class ConstSettings:
     # Unit is kWh
     STORAGE_CAPACITY = 1.2
     # Unit is kW
-    MAX_ABS_BATTERY_POWER = 1.2
+    MAX_ABS_BATTERY_POWER = 5
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
     STORAGE_BREAK_EVEN_BUY = 25
