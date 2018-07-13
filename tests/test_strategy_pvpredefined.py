@@ -59,6 +59,10 @@ class FakeMarket:
         self.offers[offer.id] = offer
         return offer
 
+    @property
+    def time_slot(self):
+        return Pendulum.now().start_of('day')
+
     def delete_offer(self, offer_id):
         return
 
