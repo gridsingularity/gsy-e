@@ -37,6 +37,11 @@ class ConstSettings:
     # This price should be just above the marginal costs for a PV system - unit is cent
     MIN_PV_SELLING_PRICE = 0
 
+    # Initial PV rate calculation for every market slot, before rate reduction per tick
+    # Default value 1, use the historical market average
+    # Option 2 stands for market maker rate
+    INITIAL_PV_RATE_OPTION = 1
+
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
 
     # HEATPUMP SETTINGS
