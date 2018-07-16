@@ -2,12 +2,18 @@ from typing import Dict  # noqa
 from pendulum import Time # noqa
 import math
 from pendulum import Interval
+from enum import Enum
 
 from d3a.models.strategy import ureg, Q_
 from d3a.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
+
+
+class InitialPVRateOptions(Enum):
+    HISTORICAL_AVG_RATE = 1
+    MARKET_MAKER_RATE = 2
 
 
 class PVStrategy(BaseStrategy):
@@ -19,8 +25,10 @@ class PVStrategy(BaseStrategy):
     parameters = ('panel_count', 'risk')
 
     def __init__(self, panel_count=1, risk=ConstSettings.DEFAULT_RISK,
-                 min_selling_price=ConstSettings.MIN_PV_SELLING_PRICE):
+                 min_selling_price=ConstSettings.MIN_PV_SELLING_PRICE,
+                 initial_pv_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION):
         self._validate_constructor_arguments(panel_count, risk)
+        self.initial_pv_rate_option = InitialPVRateOptions(initial_pv_rate_option)
         super().__init__()
         self.risk = risk
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
@@ -45,29 +53,42 @@ class PVStrategy(BaseStrategy):
             (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)\
             * ureg.seconds
 
-    def event_tick(self, *, area):
-        if self.area.historical_avg_rate == 0:
-            average_market_rate =\
-                Q_(self.area.config.market_maker_rate[list(area.markets.keys())[0].hour],
-                   ureg.EUR_cents / ureg.kWh)
+    def calculate_initial_sell_rate(self, current_time_h):
+        if self.initial_pv_rate_option is InitialPVRateOptions.HISTORICAL_AVG_RATE:
+            if self.area.historical_avg_rate == 0:
+                return Q_(self.area.config.market_maker_rate[current_time_h],
+                          ureg.EUR_cents / ureg.kWh)
+            else:
+                return Q_(self.area.historical_avg_rate, ureg.EUR_cents / ureg.kWh)
+        elif self.initial_pv_rate_option is InitialPVRateOptions.MARKET_MAKER_RATE:
+            return Q_(self.area.config.market_maker_rate[current_time_h],
+                      ureg.EUR_cents / ureg.kWh)
         else:
-            average_market_rate = Q_(self.area.historical_avg_rate, ureg.EUR_cents / ureg.kWh)
+            raise ValueError("Initial PV rate option should be one of the InitialPVRateOptions.")
 
+    def _incorporate_rate_restrictions(self, initial_sell_rate, current_time_h):
         # Needed to calculate risk_dependency_of_selling_rate
-        # if risk 0-100 then energy_price less than average_market_rate
-        # if risk >100 then energy_price more than average_market_rate
-        energy_rate = max(average_market_rate.m, self.min_selling_price.m)
+        # if risk 0-100 then energy_price less than initial_sell_rate
+        # if risk >100 then energy_price more than initial_sell_rate
+        energy_rate = max(initial_sell_rate.m, self.min_selling_price.m)
         rounded_energy_rate = round(energy_rate, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
             rounded_energy_rate =\
-                self.area.config.market_maker_rate[list(area.markets.keys())[0].hour]
+                self.area.config.market_maker_rate[current_time_h]
         assert rounded_energy_rate >= 0.0
+        return rounded_energy_rate
+
+    def event_tick(self, *, area):
         # Iterate over all markets open in the future
         for (time, market) in self.area.markets.items():
             # If there is no offer for a currently open marketplace:
             if market not in self.offers.posted.values():
+                market_time_h = market.time_slot.hour
+                initial_sell_rate = self.calculate_initial_sell_rate(market_time_h)
+                rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
+                                                                          market_time_h)
                 # Sell energy and save that an offer was posted into a list
                 try:
                     if self.energy_production_forecast_kWh[time] == 0:
@@ -83,7 +104,6 @@ class PVStrategy(BaseStrategy):
                 except KeyError:
                     self.log.warn("PV has no forecast data for this time")
                     continue
-
             else:
                 pass
         self._decrease_energy_price_over_ticks()
