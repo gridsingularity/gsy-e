@@ -9,6 +9,7 @@ from behave import given, when, then
 from d3a.models.config import SimulationConfig
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
+from d3a.setup.strategy_tests.commercial_producer_market_maker_rate import market_maker_rate
 
 
 @given('we have a scenario named {scenario}')
@@ -41,10 +42,8 @@ def hour_profile(context, device):
 
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
-    context._market_maker_rate = {
-        0: 30, 1: 31, 2: 32, 3: 33, 4: 34, 5: 35, 6: 36, 7: 37, 8: 38,
-        9: 37, 10: 38, 11: 39, 12: 36, 13: 35, 14: 34, 15: 33, 16: 32,
-        17: 31, 18: 30, 19: 31, 20: 31, 21: 31, 22: 29, 23: 31}
+    assert market_maker_rate is not None
+    context._market_maker_rate = market_maker_rate
 
 
 @given('a load profile csv as input to predefined load')

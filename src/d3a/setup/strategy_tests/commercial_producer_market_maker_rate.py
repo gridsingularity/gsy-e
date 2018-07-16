@@ -15,6 +15,11 @@ global config parameters. In this setup file, it is intended to validate if
 In-Finite power plant trade energy at the pre-defined market_maker_rate.
 """
 
+market_maker_rate = {
+    0: 30, 1: 31, 2: 32, 3: 33, 4: 34, 5: 35, 6: 36, 7: 37, 8: 38,
+    9: 37, 10: 38, 11: 39, 12: 36, 13: 35, 14: 34, 15: 33, 16: 32,
+    17: 31, 18: 30, 19: 31, 20: 31, 21: 31, 22: 29, 23: 31}
+
 
 def get_setup(config):
     area = Area(
