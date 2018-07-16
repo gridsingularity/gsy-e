@@ -406,11 +406,11 @@ def check_pv_profile(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
     if pv.strategy._power_profile_index == 0:
-        path = os.path.join(os.getcwd(), "src/d3a/resources/Solar_Curve_W_sunny.csv")
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
     if pv.strategy._power_profile_index == 1:
-        path = os.path.join(os.getcwd(), "src/d3a/resources/Solar_Curve_W_partial.csv")
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_partial.csv")
     if pv.strategy._power_profile_index == 2:
-        path = os.path.join(os.getcwd(), "src/d3a/resources/Solar_Curve_W_cloudy.csv")
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
     profile_data = ReadProfileMixin._readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
         time = str(timepoint.format("%H:%M"))
