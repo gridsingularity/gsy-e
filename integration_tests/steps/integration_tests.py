@@ -7,6 +7,7 @@ from pendulum.interval import Interval
 from behave import given, when, then
 
 from d3a.models.config import SimulationConfig
+from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
 
@@ -41,10 +42,9 @@ def hour_profile(context, device):
 
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
-    context._market_maker_rate = {
-        0: 30, 1: 31, 2: 32, 3: 33, 4: 34, 5: 35, 6: 36, 7: 37, 8: 38,
-        9: 37, 10: 38, 11: 39, 12: 36, 13: 35, 14: 34, 15: 33, 16: 32,
-        17: 31, 18: 30, 19: 31, 20: 31, 21: 31, 22: 29, 23: 31}
+    from d3a.setup.strategy_tests.commercial_producer_market_maker_rate import market_maker_rate
+    assert market_maker_rate is not None
+    context._market_maker_rate = market_maker_rate
 
 
 @given('a load profile csv as input to predefined load')
@@ -215,8 +215,11 @@ def run_sim_console(context, scenario):
       ' [{cloud_coverage}, {iaa_fee}] and {scenario}')
 def run_sim_with_config_setting(context, cloud_coverage,
                                 iaa_fee, scenario):
-    context.export_path = os.path.join(context.simdir, scenario)
-    simulation_config = SimulationConfig(Interval(hours=int(4)),
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.CRITICAL)
+
+    simulation_config = SimulationConfig(Interval(hours=int(24)),
                                          Interval(minutes=int(60)),
                                          Interval(seconds=int(60)),
                                          market_count=5,
@@ -224,10 +227,36 @@ def run_sim_with_config_setting(context, cloud_coverage,
                                          market_maker_rate=context._market_maker_rate,
                                          iaa_fee=int(iaa_fee))
 
+    slowdown = 0
+    seed = 0
+    paused = False
+    pause_after = Interval()
+    repl = False
+    export = False
+    export_path = None
+    reset_on_finish = False
+    reset_on_finish_wait = Interval()
+    exit_on_finish = True
+    exit_on_finish_wait = Interval()
+
+    api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
-        scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
-        Interval(), True, Interval(), None, "1234"
+        scenario,
+        simulation_config,
+        slowdown,
+        seed,
+        paused,
+        pause_after,
+        repl,
+        export,
+        export_path,
+        reset_on_finish,
+        reset_on_finish_wait,
+        exit_on_finish,
+        exit_on_finish_wait,
+        api_url
     )
+    context.simulation.run()
 
 
 @when('we run simulation on console with default settings file')
@@ -404,9 +433,46 @@ def check_load_profile(context):
 def check_pv_profile(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
+    if pv.strategy._power_profile_index == 0:
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    if pv.strategy._power_profile_index == 1:
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_partial.csv")
+    if pv.strategy._power_profile_index == 2:
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
+    profile_data = ReadProfileMixin._readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        if timepoint.hour in context._device_profile:
-            assert energy == context._device_profile[timepoint.hour] / \
+        time = str(timepoint.format("%H:%M"))
+        if time in profile_data.keys():
+            assert energy == profile_data[time] / \
+                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+        else:
+            assert energy == 0
+
+
+@then('the UserProfile PV follows the PV profile as dict')
+def check_user_pv_dict_profile(context):
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
+    from d3a.setup.strategy_tests.user_profile_pv_dict import user_profile
+    profile_data = user_profile
+    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+        if timepoint.hour in profile_data.keys():
+            assert energy == profile_data[timepoint.hour] / \
+                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+        else:
+            assert energy == 0
+
+
+@then('the UserProfile PV follows the PV profile of csv')
+def check_pv_csv_profile(context):
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
+    from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
+    profile_data = ReadProfileMixin._readCSV(user_profile_path)
+    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+        time = str(timepoint.format("%H:%M"))
+        if time in profile_data.keys():
+            assert energy == profile_data[time] / \
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
         else:
             assert energy == 0
@@ -489,7 +555,7 @@ def step_impl(context):
 def test_finite_plant_energy_rate(context, plant_name):
     grid = context.simulation.area
     finite = list(filter(lambda x: x.name == plant_name,
-                         context.simulation.area.children))[0]
+                         grid.children))[0]
     trades_sold = []
     for slot, market in grid.past_markets.items():
         for trade in market.trades:
@@ -497,6 +563,23 @@ def test_finite_plant_energy_rate(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert all([isclose(trade.offer.price / trade.offer.energy, finite.strategy.energy_rate)
+                    for trade in trades_sold])
+        assert len(trades_sold) > 0
+
+
+@then('the {plant_name} always sells energy at the defined market maker rate')
+def test_infinite_plant_energy_rate(context, plant_name):
+    grid = context.simulation.area
+    finite = list(filter(lambda x: x.name == plant_name,
+                         grid.children))[0]
+    trades_sold = []
+    for slot, market in grid.past_markets.items():
+        for trade in market.trades:
+            assert trade.buyer is not finite.name
+            if trade.seller == finite.name:
+                trades_sold.append(trade)
+        assert all([isclose(trade.offer.price / trade.offer.energy,
+                            context._market_maker_rate[trade.time.hour])
                     for trade in trades_sold])
         assert len(trades_sold) > 0
 
@@ -516,3 +599,14 @@ def test_finite_plant_max_power(context, plant_name):
         assert sum([trade.offer.energy for trade in trades_sold]) <= \
             finite.strategy.max_available_power[market.time_slot.hour] / \
             (Interval(hours=1) / finite.config.slot_length)
+
+
+@then('the PV sells energy ar the market maker rate for every market slot')
+def test_pv_initial_rate_options(context):
+    grid = context.simulation.area
+    house = list(filter(lambda x: x.name == "House", grid.children))[0]
+
+    for slot, market in house.past_markets.items():
+        for trade in market.trades:
+            assert isclose(trade.offer.price / trade.offer.energy,
+                           grid.config.market_maker_rate[market.time_slot.hour])

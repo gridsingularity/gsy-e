@@ -43,10 +43,22 @@ Feature: Run integration tests
      When the simulation is running
      Then the predefined load follows the load profile from the csv
 
+  Scenario: UserProfile PV follows the profile provided by the user as dict
+     Given we have a scenario named strategy_tests/user_profile_pv_dict
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.user_profile_pv_dict [24, 15, 15]
+     Then the UserProfile PV follows the PV profile as dict
+
+  Scenario: Predefined PV follows the profile provided by the user as csv
+     Given we have a scenario named strategy_tests/user_profile_pv_csv
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.user_profile_pv_csv [24, 15, 15]
+     Then the UserProfile PV follows the PV profile of csv
+
   Scenario: Predefined PV follows the profile provided by the user
-     Given a PV profile hourly dict as input to predefined load
-     And the scenario includes a predefined PV
-     When the simulation is running
+     Given we have a scenario named strategy_tests/predefined_pv
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.predefined_pv [24, 15, 15]
      Then the predefined PV follows the PV profile
 
   Scenario: Predefined load follows the profile provided by the user
@@ -90,17 +102,6 @@ Feature: Run integration tests
      When we run the d3a simulation with strategy_tests.storage_strategy_break_even_range [24, 15, 15]
      Then the storage devices buy and sell energy respecting the break even prices
 
-  Scenario Outline: Run integration tests for config parameters
-     Given we have a scenario named <scenario>
-     And d3a is installed
-     And we have a profile of market_maker_rate for <scenario>
-     When we run the d3a simulation with config parameters [<cloud_coverage>, <iaa_fee>] and <scenario>
-     Then we test that config parameters are correctly parsed for <scenario> [<cloud_coverage>, <iaa_fee>]
-  Examples: Settings
-     |      scenario               | cloud_coverage  |    iaa_fee    |
-     |      default_2a             |        1        |       5       |
-
-
   Scenario: Storage break even profile
      Given we have a scenario named strategy_tests/storage_strategy_break_even_hourly
      And d3a is installed
@@ -120,3 +121,17 @@ Feature: Run integration tests
      When we run the d3a simulation with strategy_tests.finite_power_plant_profile [24, 15, 15]
      Then the Finite Commercial Producer Profile always sells energy at the defined energy rate
      And the Finite Commercial Producer Profile never produces more power than its max available power
+
+  Scenario: Commercial Producer Market Maker Rate
+     Given we have a scenario named strategy_tests/commercial_producer_market_maker_rate
+     And d3a is installed
+     And we have a profile of market_maker_rate for strategy_tests.commercial_producer_market_maker_rate
+     When we run the d3a simulation with config parameters [1, 5] and strategy_tests.commercial_producer_market_maker_rate
+     Then we test that config parameters are correctly parsed for strategy_tests.commercial_producer_market_maker_rate [1, 5]
+     And the Commercial Energy Producer always sells energy at the defined market maker rate
+
+  Scenario: PV can use the market maker rate as the initial rate for every market slot
+     Given we have a scenario named strategy_tests/pv_initial_rate
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.pv_initial_rate [24, 15, 15]
+     Then the PV sells energy ar the market maker rate for every market slot
