@@ -22,6 +22,7 @@ market_maker_rate = {
 
 
 def get_setup(config):
+    config.market_maker_rate = market_maker_rate
     area = Area(
         'Grid',
         [
