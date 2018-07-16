@@ -9,7 +9,6 @@ from behave import given, when, then
 from d3a.models.config import SimulationConfig
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
-from d3a.setup.strategy_tests.commercial_producer_market_maker_rate import market_maker_rate
 
 
 @given('we have a scenario named {scenario}')
@@ -42,6 +41,7 @@ def hour_profile(context, device):
 
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
+    from d3a.setup.strategy_tests.commercial_producer_market_maker_rate import market_maker_rate
     assert market_maker_rate is not None
     context._market_maker_rate = market_maker_rate
 
