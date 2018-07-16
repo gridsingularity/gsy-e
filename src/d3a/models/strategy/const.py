@@ -26,7 +26,7 @@ class ConstSettings:
     # Unit is kWh
     STORAGE_CAPACITY = 1.2
     # Unit is kW
-    MAX_ABS_BATTERY_POWER = 1.2
+    MAX_ABS_BATTERY_POWER = 5
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
     STORAGE_BREAK_EVEN_BUY = 25
@@ -36,6 +36,11 @@ class ConstSettings:
     # PV SETTINGS
     # This price should be just above the marginal costs for a PV system - unit is cent
     MIN_PV_SELLING_PRICE = 0
+
+    # Initial PV rate calculation for every market slot, before rate reduction per tick
+    # Default value 1, use the historical market average
+    # Option 2 stands for market maker rate
+    INITIAL_PV_RATE_OPTION = 1
 
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
 

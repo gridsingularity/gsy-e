@@ -117,3 +117,9 @@ Feature: Run integration tests
      When we run the d3a simulation with config parameters [1, 5] and strategy_tests.commercial_producer_market_maker_rate
      Then we test that config parameters are correctly parsed for strategy_tests.commercial_producer_market_maker_rate [1, 5]
      And the Commercial Energy Producer always sells energy at the defined market maker rate
+
+  Scenario: PV can use the market maker rate as the initial rate for every market slot
+     Given we have a scenario named strategy_tests/pv_initial_rate
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.pv_initial_rate [24, 15, 15]
+     Then the PV sells energy ar the market maker rate for every market slot

@@ -24,7 +24,8 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
 
     def __init__(self, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
                  min_selling_price: float=ConstSettings.MIN_PV_SELLING_PRICE,
-                 cloud_coverage: int=None):
+                 cloud_coverage: int=None,
+                 initial_pv_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION):
         """
         Constructor of PVPredefinedStrategy
         :param risk: PV risk parameter
@@ -32,7 +33,9 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
         :param min_selling_price: lower threshold for the PV sale price
         :param cloud_coverage: cloud conditions. 0=sunny, 1=cloudy, 2=partially cloudy
         """
-        super().__init__(panel_count=panel_count, risk=risk, min_selling_price=min_selling_price)
+        super().__init__(panel_count=panel_count, risk=risk,
+                         min_selling_price=min_selling_price,
+                         initial_pv_rate_option=initial_pv_rate_option)
         self._power_profile_index = cloud_coverage
         self._time_format = "%H:%M"
 
@@ -97,7 +100,8 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     parameters = ('power_profile', 'risk', 'panel_count')
 
     def __init__(self, power_profile, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
-                 min_selling_price: float=ConstSettings.MIN_PV_SELLING_PRICE):
+                 min_selling_price: float=ConstSettings.MIN_PV_SELLING_PRICE,
+                 initial_pv_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION):
         """
         Constructor of PVUserProfileStrategy
         :param power_profile: input profile for a day. Can be either a csv file path,
@@ -107,7 +111,9 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         :param panel_count: number of solar panels for this PV plant
         :param min_selling_price: lower threshold for the PV sale price
         """
-        super().__init__(risk=risk, panel_count=panel_count, min_selling_price=min_selling_price)
+        super().__init__(risk=risk, panel_count=panel_count,
+                         min_selling_price=min_selling_price,
+                         initial_pv_rate_option=initial_pv_rate_option)
         self._power_profile_W = power_profile
         self._time_format = "%H:%M"
 
