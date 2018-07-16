@@ -132,3 +132,9 @@ Feature: Run integration tests
      When we run the d3a simulation with strategy_tests.finite_power_plant_profile [24, 15, 15]
      Then the Finite Commercial Producer Profile always sells energy at the defined energy rate
      And the Finite Commercial Producer Profile never produces more power than its max available power
+
+  Scenario: PV can use the market maker rate as the initial rate for every market slot
+     Given we have a scenario named strategy_tests/pv_initial_rate
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.pv_initial_rate [24, 15, 15]
+     Then the PV sells energy ar the market maker rate for every market slot
