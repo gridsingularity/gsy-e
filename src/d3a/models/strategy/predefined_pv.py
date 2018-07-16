@@ -31,7 +31,7 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
         :param risk: PV risk parameter
         :param panel_count: number of solar panels for this PV plant
         :param min_selling_price: lower threshold for the PV sale price
-        :param cloud_coverage: cloud conditions. 0=sunny, 1=cloudy, 2=partially cloudy
+        :param cloud_coverage: cloud conditions. 0=sunny, 1=partially cloudy, 2=cloudy
         """
         super().__init__(panel_count=panel_count, risk=risk,
                          min_selling_price=min_selling_price,

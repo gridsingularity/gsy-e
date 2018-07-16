@@ -7,6 +7,7 @@ from pendulum.interval import Interval
 from behave import given, when, then
 
 from d3a.models.config import SimulationConfig
+from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
 
@@ -404,9 +405,46 @@ def check_load_profile(context):
 def check_pv_profile(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
+    if pv.strategy._power_profile_index == 0:
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    if pv.strategy._power_profile_index == 1:
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_partial.csv")
+    if pv.strategy._power_profile_index == 2:
+        path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
+    profile_data = ReadProfileMixin._readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        if timepoint.hour in context._device_profile:
-            assert energy == context._device_profile[timepoint.hour] / \
+        time = str(timepoint.format("%H:%M"))
+        if time in profile_data.keys():
+            assert energy == profile_data[time] / \
+                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+        else:
+            assert energy == 0
+
+
+@then('the UserProfile PV follows the PV profile as dict')
+def check_user_pv_dict_profile(context):
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
+    from d3a.setup.strategy_tests.user_profile_pv_dict import user_profile
+    profile_data = user_profile
+    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+        if timepoint.hour in profile_data.keys():
+            assert energy == profile_data[timepoint.hour] / \
+                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+        else:
+            assert energy == 0
+
+
+@then('the UserProfile PV follows the PV profile of csv')
+def check_pv_csv_profile(context):
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
+    from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
+    profile_data = ReadProfileMixin._readCSV(user_profile_path)
+    for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
+        time = str(timepoint.format("%H:%M"))
+        if time in profile_data.keys():
+            assert energy == profile_data[time] / \
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
         else:
             assert energy == 0
