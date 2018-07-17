@@ -89,7 +89,6 @@ Feature: Run integration tests
      Then intermediate results are transmitted on every slot
      And final results are transmitted once
 
-
   Scenario Outline: Run integration tests with settings file
      Given we have a scenario named default
      And d3a is installed
@@ -102,7 +101,7 @@ Feature: Run integration tests
      When we run the d3a simulation with strategy_tests.storage_strategy_break_even_range [24, 15, 15]
      Then the storage devices buy and sell energy respecting the break even prices
 
-  Scenario: Storage break even profile
+  Scenario: Storage break even hourly profile
      Given we have a scenario named strategy_tests/storage_strategy_break_even_hourly
      And d3a is installed
      When we run the d3a simulation with strategy_tests.storage_strategy_break_even_hourly [24, 15, 15]
