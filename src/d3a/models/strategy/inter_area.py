@@ -67,7 +67,8 @@ class IAAEngine:
             # Should never reach this point.
             # This means that the IAA is forwarding offers with the same seller and buyer name.
             # If we ever again reach a situation like this, we should get immediately notified
-            assert offer.seller != self.owner.name
+            if self.owner.name == offer.seller:
+                continue
 
             forwarded_offer = self._forward_offer(offer, offer_id)
             self.owner.log.info("Offering %s", forwarded_offer)
@@ -165,21 +166,6 @@ class IAAEngine:
             assert existing_offer.id not in self.trade_residual, \
                    "Offer should only change once before each trade."
             self.trade_residual[existing_offer.id] = new_offer
-
-            # Update offered_offers dict to the new offer. The existing offer entries should be
-            # purged from the dict and replaced with the new ones, that point to the same offer as
-            # the existing offer entries.
-            target_offerinfo = self.offered_offers.pop(existing_offer.id, None)
-            if target_offerinfo and target_offerinfo.target_offer == existing_offer.id:
-                source_offerinfo = self.offered_offers.pop(target_offerinfo.source_offer.id, None)
-                assert source_offerinfo is not None
-                updated_offerinfo = OfferInfo(
-                    source_offer=source_offerinfo.source_offer,
-                    target_offer=new_offer
-                )
-                self.offered_offers[source_offerinfo.source_offer.id] = updated_offerinfo
-                self.offered_offers[new_offer] = updated_offerinfo
-
         elif market == self.markets.source and existing_offer.id in self.offered_offers:
             # an offer in the source market was split - delete the corresponding offer
             # in the target market and forward the new residual offer
