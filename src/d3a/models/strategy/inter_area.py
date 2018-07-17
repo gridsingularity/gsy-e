@@ -66,7 +66,7 @@ class IAAEngine:
 
             # Should never reach this point.
             # This means that the IAA is forwarding offers with the same seller and buyer name.
-            # If we ever again reach a situation like this, we should get immediately notified
+            # If we ever again reach a situation like this, we should never forward the offer.
             if self.owner.name == offer.seller:
                 continue
 
@@ -229,7 +229,7 @@ class InterAreaAgent(BaseStrategy):
 
     def usable_offer(self, offer):
         """Prevent IAAEngines from trading their counterpart's offers"""
-        return all(offer.id not in engine.offered_offers for engine in self.engines)
+        return all(offer.id not in engine.offered_offers.keys() for engine in self.engines)
 
     def event_tick(self, *, area):
         if area != self.owner:
