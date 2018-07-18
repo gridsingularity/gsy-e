@@ -25,7 +25,7 @@ class PVStrategy(BaseStrategy):
     parameters = ('panel_count', 'risk')
 
     def __init__(self, panel_count=1, risk=ConstSettings.DEFAULT_RISK,
-                 min_selling_price=ConstSettings.MIN_PV_SELLING_PRICE,
+                 min_selling_rate=ConstSettings.MIN_PV_SELLING_PRICE,
                  initial_pv_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION):
         self._validate_constructor_arguments(panel_count, risk)
         self.initial_pv_rate_option = InitialPVRateOptions(initial_pv_rate_option)
@@ -34,7 +34,7 @@ class PVStrategy(BaseStrategy):
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
-        self.min_selling_price = Q_(min_selling_price, (ureg.EUR_cents/ureg.kWh))
+        self.min_selling_price = Q_(min_selling_rate, (ureg.EUR_cents / ureg.kWh))
         self._decrease_price_timepoint_s = 0 * ureg.seconds
         self._decrease_price_every_nr_s = 0 * ureg.seconds
 
@@ -126,8 +126,9 @@ class PVStrategy(BaseStrategy):
     def decrease_offer_price(self, market):
         if market not in self.offers.open.values():
             return
+
         for offer, iterated_market in self.offers.open.items():
-            if (offer.price / offer.energy - self.price_decrease_rate)\
+            if (offer.price / offer.energy - self._calculate_price_decrease_rate(iterated_market))\
                     <= self.min_selling_price.m:
                 continue
             if iterated_market != market:
@@ -135,7 +136,8 @@ class PVStrategy(BaseStrategy):
             try:
                 iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
-                    (offer.price - (offer.energy * self.price_decrease_rate)),
+                    (offer.price - (offer.energy *
+                                    self._calculate_price_decrease_rate(iterated_market))),
                     offer.energy,
                     self.owner.name
                 )
@@ -144,8 +146,8 @@ class PVStrategy(BaseStrategy):
             except MarketException:
                 continue
 
-    def _calculate_price_decrease_rate(self):
-        price_dec_per_slot = (self.area.historical_avg_rate) * \
+    def _calculate_price_decrease_rate(self, market):
+        price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
                              (1 - self.risk/ConstSettings.MAX_RISK)
         price_updates_per_slot = int(self.area.config.slot_length.seconds
                                      / self._decrease_price_every_nr_s.m)
@@ -195,7 +197,6 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._decrease_price_timepoint_s = 0 * ureg.seconds
-        self.price_decrease_rate = self._calculate_price_decrease_rate()
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
