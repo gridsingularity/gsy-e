@@ -29,6 +29,9 @@ def before_scenario(context, scenario):
 def after_scenario(context, scenario):
     shutil.rmtree(context.simdir)
     context.resource_manager.close()
+    if 'PV limits the minimum selling rate' in scenario.name:
+        from d3a.models.strategy.const import ConstSettings
+        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 
 def before_all(context):
