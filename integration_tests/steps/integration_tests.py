@@ -601,7 +601,7 @@ def test_finite_plant_max_power(context, plant_name):
             (Interval(hours=1) / finite.config.slot_length)
 
 
-@then('the PV sells energy ar the market maker rate for every market slot')
+@then('the PV sells energy at the market maker rate for every market slot')
 def test_pv_initial_rate_options(context):
     grid = context.simulation.area
     house = list(filter(lambda x: x.name == "House", grid.children))[0]
