@@ -23,7 +23,7 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
     parameters = ('panel_count', 'risk')
 
     def __init__(self, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
-                 min_selling_rate: float=ConstSettings.MIN_PV_SELLING_PRICE,
+                 min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
                  cloud_coverage: int=None,
                  initial_pv_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION):
         """
@@ -100,7 +100,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     parameters = ('power_profile', 'risk', 'panel_count')
 
     def __init__(self, power_profile, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
-                 min_selling_rate: float=ConstSettings.MIN_PV_SELLING_PRICE,
+                 min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
                  initial_pv_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION):
         """
         Constructor of PVUserProfileStrategy

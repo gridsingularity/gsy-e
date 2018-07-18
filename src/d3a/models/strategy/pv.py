@@ -25,7 +25,7 @@ class PVStrategy(BaseStrategy):
     parameters = ('panel_count', 'risk')
 
     def __init__(self, panel_count=1, risk=ConstSettings.DEFAULT_RISK,
-                 min_selling_rate=ConstSettings.MIN_PV_SELLING_PRICE,
+                 min_selling_rate=ConstSettings.MIN_PV_SELLING_RATE,
                  initial_pv_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION):
         self._validate_constructor_arguments(panel_count, risk)
         self.initial_pv_rate_option = InitialPVRateOptions(initial_pv_rate_option)
