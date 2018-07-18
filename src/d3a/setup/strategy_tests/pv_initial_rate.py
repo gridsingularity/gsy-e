@@ -29,11 +29,13 @@ def get_setup(config):
             Area(
                 'House',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=500,
-                                                                       hrs_per_day=6,
-                                                                       hrs_of_day=list(
-                                                                           range(6, 22)),
-                                                                       acceptable_energy_rate=35),
+                    Area('H1 General Load', strategy=LoadHoursStrategy(
+                            avg_power_W=500,
+                            hrs_per_day=6,
+                            hrs_of_day=list(
+                                range(6, 22)),
+                            acceptable_energy_rate=35.01
+                        ),
                          appliance=SwitchableAppliance()),
                     # The default value is 1, for historical average price
                     # Here a value of 2 is used, which is using the market maker price
