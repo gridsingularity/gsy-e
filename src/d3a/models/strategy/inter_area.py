@@ -63,6 +63,13 @@ class IAAEngine:
             if not self.owner.usable_offer(offer):
                 # Forbidden offer (i.e. our counterpart's)
                 continue
+
+            # Should never reach this point.
+            # This means that the IAA is forwarding offers with the same seller and buyer name.
+            # If we ever again reach a situation like this, we should never forward the offer.
+            if self.owner.name == offer.seller:
+                continue
+
             forwarded_offer = self._forward_offer(offer, offer_id)
             self.owner.log.info("Offering %s", forwarded_offer)
 
@@ -71,6 +78,7 @@ class IAAEngine:
         if not offer_info:
             # Trade doesn't concern us
             return
+
         if trade.offer.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
             residual_info = None
@@ -143,7 +151,7 @@ class IAAEngine:
             # Deletion doesn't concern us
             return
 
-        if offer_info.source_offer == offer:
+        if offer_info.source_offer.id == offer.id:
             # Offer in source market of an offer we're already offering in the target market
             # was deleted - also delete in target market
             try:
@@ -221,7 +229,7 @@ class InterAreaAgent(BaseStrategy):
 
     def usable_offer(self, offer):
         """Prevent IAAEngines from trading their counterpart's offers"""
-        return all(offer.id not in engine.offered_offers for engine in self.engines)
+        return all(offer.id not in engine.offered_offers.keys() for engine in self.engines)
 
     def event_tick(self, *, area):
         if area != self.owner:
