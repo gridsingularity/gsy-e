@@ -21,7 +21,8 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(5, 20))),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1, risk=80),
+                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1, risk=80,
+                                                                initial_pv_rate_option=2),
                          appliance=PVAppliance()),
 
                 ]
@@ -29,7 +30,8 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    Area('H2 PV', strategy=PVPredefinedStrategy(panel_count=1, risk=80),
+                    Area('H2 PV', strategy=PVPredefinedStrategy(panel_count=1, risk=80,
+                                                                initial_pv_rate_option=2),
                          appliance=PVAppliance()),
 
                 ]
