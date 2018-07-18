@@ -31,42 +31,6 @@ Feature: Run integration tests
      |    default_appliance   |    24    |      60     |      60     |
      |        default_csv     |    24    |      60     |      60     |
 
-  Scenario: Predefined PV follows the csv profile provided by the user
-     Given a PV profile csv as input to predefined PV
-     And the scenario includes a predefined PV
-     When the simulation is running
-     Then the predefined PV follows the PV profile from the csv
-
-  Scenario: Predefined load follows the csv profile provided by the user
-     Given a load profile csv as input to predefined load
-     And the scenario includes a predefined load that will not be unmatched
-     When the simulation is running
-     Then the predefined load follows the load profile from the csv
-
-  Scenario: UserProfile PV follows the profile provided by the user as dict
-     Given we have a scenario named strategy_tests/user_profile_pv_dict
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.user_profile_pv_dict [24, 15, 15]
-     Then the UserProfile PV follows the PV profile as dict
-
-  Scenario: Predefined PV follows the profile provided by the user as csv
-     Given we have a scenario named strategy_tests/user_profile_pv_csv
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.user_profile_pv_csv [24, 15, 15]
-     Then the UserProfile PV follows the PV profile of csv
-
-  Scenario: Predefined PV follows the profile provided by the user
-     Given we have a scenario named strategy_tests/predefined_pv
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.predefined_pv [24, 15, 15]
-     Then the predefined PV follows the PV profile
-
-  Scenario: Predefined load follows the profile provided by the user
-     Given a load profile hourly dict as input to predefined load
-     And the scenario includes a predefined load that will not be unmatched
-     When the simulation is running
-     Then the predefined load follows the load profile
-
   Scenario Outline: Simulation subscribes on the appropriate channels
      Given d3a is installed
      When a simulation is created for scenario <scenario>
@@ -94,43 +58,3 @@ Feature: Run integration tests
      And d3a is installed
      When we run simulation on console with default settings file
      Then we test the export functionality of default
-
-  Scenario: Storage break even range profile
-     Given we have a scenario named strategy_tests/storage_strategy_break_even_range
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.storage_strategy_break_even_range [24, 15, 15]
-     Then the storage devices buy and sell energy respecting the break even prices
-
-  Scenario: Storage break even hourly profile
-     Given we have a scenario named strategy_tests/storage_strategy_break_even_hourly
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.storage_strategy_break_even_hourly [24, 15, 15]
-     Then the storage devices buy and sell energy respecting the hourly break even prices
-
-  Scenario: Finite power plant
-     Given we have a scenario named strategy_tests/finite_power_plant
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.finite_power_plant [24, 15, 15]
-     Then the Finite Commercial Producer always sells energy at the defined energy rate
-     And the Finite Commercial Producer never produces more power than its max available power
-
-  Scenario: Finite power plant profile
-     Given we have a scenario named strategy_tests/finite_power_plant_profile
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.finite_power_plant_profile [24, 15, 15]
-     Then the Finite Commercial Producer Profile always sells energy at the defined energy rate
-     And the Finite Commercial Producer Profile never produces more power than its max available power
-
-  Scenario: Commercial Producer Market Maker Rate
-     Given we have a scenario named strategy_tests/commercial_producer_market_maker_rate
-     And d3a is installed
-     And we have a profile of market_maker_rate for strategy_tests.commercial_producer_market_maker_rate
-     When we run the d3a simulation with config parameters [1, 5] and strategy_tests.commercial_producer_market_maker_rate
-     Then we test that config parameters are correctly parsed for strategy_tests.commercial_producer_market_maker_rate [1, 5]
-     And the Commercial Energy Producer always sells energy at the defined market maker rate
-
-  Scenario: PV can use the market maker rate as the initial rate for every market slot
-     Given we have a scenario named strategy_tests/pv_initial_rate
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.pv_initial_rate [24, 15, 15]
-     Then the PV sells energy ar the market maker rate for every market slot
