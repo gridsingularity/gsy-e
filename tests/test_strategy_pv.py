@@ -2,6 +2,7 @@ import pytest
 import pendulum
 import uuid
 from pendulum import Pendulum
+from math import isclose
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
@@ -403,3 +404,40 @@ def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
     pv_test9.event_activate()
     pv_test9.event_tick(area=area_test9)
     assert len(market_test9.created_offers) == 1
+
+
+"""TEST10"""
+
+
+@pytest.fixture()
+def area_test10():
+    return FakeArea(0)
+
+
+@pytest.fixture()
+def market_test10(area_test10):
+    return area_test10.test_market
+
+
+@pytest.fixture()
+def pv_test10(area_test10):
+    p = PVStrategy(risk=80)
+    p.area = area_test10
+    p.owner = area_test10
+    p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test10.test_market):
+                       area_test10.test_market}
+    return p
+
+
+def testing_risk_based_decrease_offer_price(area_test10, pv_test10):
+    assert len(pv_test10.offers.posted.items()) == 1
+    pv_test10.event_activate()
+    pv_test10.event_market_cycle()
+    old_offer = list(pv_test10.offers.posted.keys())[0]
+    print("OLD OFFER: " + str(old_offer))
+    for i in range(90):
+        pv_test10.decrease_offer_price(area_test10.test_market)
+        new_offer = list(pv_test10.offers.posted.keys())[0]
+        print("NEW OFFER: " + str(new_offer))
+        # print(((old_offer.price - new_offer.price) / (old_offer.price/old_offer.energy)))
+    assert isclose(((old_offer.price - new_offer.price) / (old_offer.price/old_offer.energy)), 0.2)
