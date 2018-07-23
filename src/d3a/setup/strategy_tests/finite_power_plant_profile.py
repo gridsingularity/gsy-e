@@ -11,12 +11,12 @@ from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 Power profile for the finite power plant. It will produce 0.01 kW from 00:00-07:45, 0.0015 kW
 from 8:00-11:45 and so forth.
 """
-diesel_power_profile = {
-    0: 100,
-    8: 150,
-    12: 200,
-    19: 150,
-    22: 100
+diesel_power_profile_kW = {
+    0: 0.1,
+    8: 0.15,
+    12: 0.2,
+    19: 0.15,
+    22: 0.1
 }
 
 
@@ -37,7 +37,7 @@ def get_setup(config):
             ),
             Area('Finite Commercial Producer Profile',
                  strategy=FinitePowerPlant(energy_rate=31.3,
-                                           max_available_power=diesel_power_profile),
+                                           max_available_power_kW=diesel_power_profile_kW),
                  appliance=SwitchableAppliance()
                  ),
 

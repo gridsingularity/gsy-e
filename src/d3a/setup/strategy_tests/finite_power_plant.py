@@ -31,7 +31,7 @@ def get_setup(config):
                 ]
             ),
             Area('Finite Commercial Producer',
-                 strategy=FinitePowerPlant(energy_rate=31.3, max_available_power=100),
+                 strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=0.1),
                  appliance=SwitchableAppliance()
                  ),
 

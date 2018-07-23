@@ -538,7 +538,6 @@ def step_impl(context):
         trades_sold = []
         trades_bought = []
         for slot, market in house1.past_markets.items():
-            print("Market: " + str(market))
             for trade in market.trades:
                 if trade.seller == name:
                     trades_sold.append(trade)
@@ -598,7 +597,7 @@ def test_finite_plant_max_power(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert sum([trade.offer.energy for trade in trades_sold]) <= \
-            finite.strategy.max_available_power[market.time_slot.hour] / \
+            finite.strategy.max_available_power_kW[market.time_slot.hour].m / \
             (Interval(hours=1) / finite.config.slot_length)
 
 
