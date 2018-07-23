@@ -42,9 +42,10 @@ def hour_profile(context, device):
 
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
-    from d3a.setup.strategy_tests.commercial_producer_market_maker_rate import market_maker_rate
-    assert market_maker_rate is not None
-    context._market_maker_rate = market_maker_rate
+    import importlib
+    setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
+    context._market_maker_rate = setup_file_module.market_maker_rate
+    assert context._market_maker_rate is not None
 
 
 @given('a load profile csv as input to predefined load')
