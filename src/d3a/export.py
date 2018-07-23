@@ -438,7 +438,7 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
     sub_file = sorted(next(os.walk(grid_path))[1])
     for j in range(len(sub_file)):
         """
-        TODO: Make it possible for arbitrary number of hierarchies in  D3ASIM-611
+        TODO: Make it possible for arbitrary number of hierarchies in  D3ASIM-306
         """
         sub_sub_file = str(os.path.join(str(grid_path), str(sub_file[j])))
         sub_sub_file_csv = sorted(next(os.walk(sub_sub_file))[2])
