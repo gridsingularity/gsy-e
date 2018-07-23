@@ -436,12 +436,14 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
     key = 'energy traded [kWh]'
     grid_path = os.path.join(path, 'grid')
     sub_file = sorted(next(os.walk(grid_path))[1])
-    sub_sub_file = str(os.path.join(str(grid_path), str(sub_file[0])))
-    sub_sub_file_csv = sorted(next(os.walk(sub_sub_file))[2])
     for j in range(len(sub_file)):
+        """
+        TODO: Make it possible for arbitrary number of hierarchies in  D3ASIM-611
+        """
+        sub_sub_file = str(os.path.join(str(grid_path), str(sub_file[j])))
+        sub_sub_file_csv = sorted(next(os.walk(sub_sub_file))[2])
         iname = os.path.join(path, 'plot', 'Energy Profile of House{}.html'.format(j+1))
         title = os.path.join(path, 'plot', 'Energy Profile of House{}'.format(j+1))
-
         for i in range(len(sub_sub_file_csv)):
             sub_sub_file_csv_path = os.path.join(sub_sub_file, sub_sub_file_csv[i])
             ls = str(sub_sub_file_csv[i]).split(".")[0]
@@ -453,7 +455,6 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
             data.append(traceigl)
         if not data:
             return
-
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
 
 
