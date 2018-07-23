@@ -147,26 +147,12 @@ class PVStrategy(BaseStrategy):
                 continue
 
     def _calculate_price_decrease_rate(self, market):
-        if self.initial_pv_rate_option.value == 1:
-            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
-                                 (1 - self.risk/ConstSettings.MAX_RISK)
-            price_updates_per_slot = int(self.area.config.slot_length.seconds
-                                         / self._decrease_price_every_nr_s.m)
-            price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-            return price_dec_per_update
-
-        elif self.initial_pv_rate_option.value == 2:
-            price_dec_per_slot = (self.area.config.market_maker_rate[market.time_slot.hour]) *\
-                                 (1 - self.risk / ConstSettings.MAX_RISK)
-            price_updates_per_slot = int(self.area.config.slot_length.seconds /
-                                         self._decrease_price_every_nr_s.m)
-            price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-            print("market_maker_rate")
-            print("price_dec_per_update: " + str(price_dec_per_update))
-            print("Percentage Decrease over the slot: " +
-                  str(price_dec_per_slot /
-                      self.area.config.market_maker_rate[market.time_slot.hour]))
-            return price_dec_per_update
+        price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
+                             (1 - self.risk/ConstSettings.MAX_RISK)
+        price_updates_per_slot = int(self.area.config.slot_length.seconds
+                                     / self._decrease_price_every_nr_s.m)
+        price_dec_per_update = price_dec_per_slot / price_updates_per_slot
+        return price_dec_per_update
 
     def produced_energy_forecast_real_data(self):
         # This forecast ist based on the real PV system data provided by enphase
