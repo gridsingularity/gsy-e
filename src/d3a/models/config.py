@@ -5,6 +5,9 @@ from d3a.exceptions import D3AException
 from d3a.util import format_interval
 from d3a.models.strategy.const import ConstSettings
 
+from logging import getLogger
+log = getLogger(__name__)
+
 
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
@@ -30,17 +33,9 @@ class SimulationConfig:
             self.cloud_coverage = cloud_coverage
         else:
             raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
-        market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
-        if type(market_maker_rate_parsed) == int:
-            self.market_maker_rate = {k: market_maker_rate_parsed for k in range(24)}
-        elif type(market_maker_rate_parsed) == dict:
-            market_maker_rate_profile = market_maker_rate_parsed
-            if sorted(market_maker_rate_profile.keys()) != list(range(24)):
-                raise TypeError('Market maker rate profile failed to be parsed.'
-                                ' Incomplete hour mapping.')
-            self.market_maker_rate = market_maker_rate_profile
-        else:
-            raise D3AException("Invalid market_maker_rate value ({}).".format(market_maker_rate))
+
+        self.market_maker_rate = {}
+        self.read_market_maker_rate(market_maker_rate)
         if iaa_fee is None:
             self.iaa_fee = ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
         else:
@@ -67,3 +62,33 @@ class SimulationConfig:
             for k, v in self.__dict__.items()
             if k in fields
         }
+
+    def read_market_maker_rate(self, market_maker_rate):
+        """
+        Creates dictionary that contains the market_maker_rate for 24h
+        If market_maker_rate is an int, a constant market_maker_rate is applied for each
+        hourly time step.
+        If market_maker_rate is a dict, the dict is interpolated for possible gaps.
+        Here, for the time steps without MMR value, the previous one is used.
+        :param market_maker_rate: dict
+        """
+        market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
+        if type(market_maker_rate_parsed) == int:
+            self.market_maker_rate = {k: market_maker_rate_parsed for k in range(24)}
+        elif type(market_maker_rate_parsed) == dict:
+            market_maker_rate_profile = market_maker_rate_parsed
+
+            current_mmr = market_maker_rate_parsed[next(iter(market_maker_rate_parsed))]
+            for ti in range(24):
+                if not (ti in market_maker_rate_parsed.keys()):
+                    market_maker_rate_profile[ti] = current_mmr
+                else:
+                    current_mmr = market_maker_rate_parsed[ti]
+
+            if sorted(market_maker_rate_profile.keys()) != list(range(24)):
+                raise TypeError('Market maker rate profile failed to be parsed.'
+                                ' Incomplete hour mapping.')
+            self.market_maker_rate = market_maker_rate_profile
+        else:
+            raise D3AException("Invalid market_maker_rate value ({}).".
+                               format(market_maker_rate_parsed))
