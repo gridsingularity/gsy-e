@@ -87,7 +87,7 @@ def get_setup(config):
                                                                            range(12, 16)),
                                                                        acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4, 80),
+                    Area('H2 PV', strategy=PVStrategy(4, 80, initial_pv_rate_option=1),
                          appliance=PVAppliance()),
 
                 ]

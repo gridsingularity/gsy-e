@@ -538,6 +538,7 @@ def step_impl(context):
         trades_sold = []
         trades_bought = []
         for slot, market in house1.past_markets.items():
+            print("Market: " + str(market))
             for trade in market.trades:
                 if trade.seller == name:
                     trades_sold.append(trade)
@@ -564,7 +565,7 @@ def test_finite_plant_energy_rate(context, plant_name):
                 trades_sold.append(trade)
         assert all([isclose(trade.offer.price / trade.offer.energy, finite.strategy.energy_rate)
                     for trade in trades_sold])
-        assert len(trades_sold) > 0
+    assert len(trades_sold) > 0
 
 
 @then('the {plant_name} always sells energy at the defined market maker rate')
