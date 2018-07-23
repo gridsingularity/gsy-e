@@ -456,6 +456,7 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
         if not data:
             return
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+        data = []
 
 
 # Average Trade Price Graph
