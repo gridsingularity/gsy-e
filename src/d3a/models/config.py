@@ -5,9 +5,6 @@ from d3a.exceptions import D3AException
 from d3a.util import format_interval
 from d3a.models.strategy.const import ConstSettings
 
-from logging import getLogger
-log = getLogger(__name__)
-
 
 class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
