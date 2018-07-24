@@ -6,13 +6,8 @@ from d3a.models.strategy.pv import PVStrategy
 
 
 """
-This setup file tests the initial market rate options for the PV power plant strategy.
-There are 2 available options. 1 stands for using the historical average price as
-and initial rate for the PV rates on every market slot. 2 stands for using the market maker rate
-for every market slot.
-Note: this does not affect the price reduction algorithm that takes place during the market slot.
-This option affects the base rate from which the price reduction algorithm will start.
-Also note that the market maker rate is used here as an hourly profile.
+This setup file test the PV energy rate decrease i.e. 5 cents_per_slot
+In this case, initial PV offer would be based on market maker rate i.e. 35 cents/kWh
 """
 
 
@@ -37,7 +32,7 @@ def get_setup(config):
                             hrs_per_day=24,
                             hrs_of_day=list(
                                 range(0, 24)),
-                            acceptable_energy_rate=28.01
+                            acceptable_energy_rate=30.01
                         ),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVStrategy(panel_count=1,

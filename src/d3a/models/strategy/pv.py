@@ -122,6 +122,7 @@ class PVStrategy(BaseStrategy):
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds * ureg.seconds
+
         if (
                 # FIXME: Make sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
@@ -152,7 +153,6 @@ class PVStrategy(BaseStrategy):
                     self.owner.name
                 )
                 self.offers.replace(offer, new_offer, iterated_market)
-                print("New Offer Rate: " + str(new_offer.price/new_offer.energy))
 
             except MarketException:
                 continue
@@ -163,18 +163,15 @@ class PVStrategy(BaseStrategy):
             price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
                                  (1 - self.risk/ConstSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
-                                         / self._decrease_price_every_nr_s.m)
+                                         / (self._decrease_price_every_nr_s.m - 1))
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
             return price_dec_per_update
         elif self.energy_rate_decrease_option is\
                 PVPriceDecreaseOption.CONST_ENERGY_RATE_DECREASE:
             price_dec_per_slot = self.energy_rate_decrease
             price_updates_per_slot = int(self.area.config.slot_length.seconds
-                                         / self._decrease_price_every_nr_s.m)
+                                         / (self._decrease_price_every_nr_s.m - 1))
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-            # print("price_dec_per_slot: " + str(price_dec_per_slot))
-            # print("price_updates_per_slot: " + str(price_updates_per_slot))
-            # print("price_dec_per_update: " + str(price_dec_per_update))
             return price_dec_per_update
 
     def produced_energy_forecast_real_data(self):
