@@ -34,7 +34,7 @@ class PVStrategy(BaseStrategy):
                  initial_pv_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.ENERGY_RATE_DECREASE_OPTION,
                  energy_rate_decrease=ConstSettings.ENERGY_RATE_DECREASE):
-        self._validate_constructor_arguments(panel_count, risk, energy_rate_decrease_option)
+        self._validate_constructor_arguments(panel_count, risk)
         self.initial_pv_rate_option = InitialPVRateOptions(initial_pv_rate_option)
         self.energy_rate_decrease_option = PVPriceDecreaseOption(energy_rate_decrease_option)
 
@@ -152,6 +152,7 @@ class PVStrategy(BaseStrategy):
                     self.owner.name
                 )
                 self.offers.replace(offer, new_offer, iterated_market)
+                print("New Offer Rate: " + str(new_offer.price/new_offer.energy))
 
             except MarketException:
                 continue
@@ -167,10 +168,13 @@ class PVStrategy(BaseStrategy):
             return price_dec_per_update
         elif self.energy_rate_decrease_option is\
                 PVPriceDecreaseOption.CONST_ENERGY_RATE_DECREASE:
-            price_dec_per_slot = self.energy_rate_decrease_option
+            price_dec_per_slot = self.energy_rate_decrease
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s.m)
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
+            # print("price_dec_per_slot: " + str(price_dec_per_slot))
+            # print("price_updates_per_slot: " + str(price_updates_per_slot))
+            # print("price_dec_per_update: " + str(price_dec_per_update))
             return price_dec_per_update
 
     def produced_energy_forecast_real_data(self):
