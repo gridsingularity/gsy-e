@@ -42,6 +42,13 @@ class ConstSettings:
     # Default value 2 stands for market maker rate
     INITIAL_PV_RATE_OPTION = 2
 
+    # Energy rate decrease option for unsold PV offers
+    # Default value 1 stands for percentage/RISK based energy rate decrease
+    # Option 2, use the constant energy rate decrease
+    ENERGY_RATE_DECREASE_OPTION = 1
+
+    ENERGY_RATE_DECREASE = 1  # rate decrease in cents_per_slot
+
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
 
     # HEATPUMP SETTINGS
