@@ -559,13 +559,14 @@ def test_finite_plant_energy_rate(context, plant_name):
                          grid.children))[0]
     trades_sold = []
     for slot, market in grid.past_markets.items():
+        print("Market: " + str(market))
         for trade in market.trades:
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert all([isclose(trade.offer.price / trade.offer.energy, finite.strategy.energy_rate)
                     for trade in trades_sold])
-    assert len(trades_sold) > 0
+        assert len(trades_sold) > 0
 
 
 @then('the {plant_name} always sells energy at the defined market maker rate')

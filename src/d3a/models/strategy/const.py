@@ -38,8 +38,8 @@ class ConstSettings:
     MIN_PV_SELLING_RATE = 0
 
     # Initial PV rate calculation for every market slot, before rate reduction per tick
-    # Default value 1, use the historical market average
-    # Option 2 stands for market maker rate
+    # Option 1, use the historical market average
+    # Default value 2 stands for market maker rate
     INITIAL_PV_RATE_OPTION = 2
 
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
