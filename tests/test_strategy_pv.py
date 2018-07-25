@@ -342,7 +342,7 @@ def testing_low_risk(area_test3, pv_test7):
         price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test7.risk
                                                                  / ConstSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
-                                     / (pv_test7._decrease_price_every_nr_s.m - 1))
+                                     / pv_test7._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
@@ -371,7 +371,7 @@ def testing_high_risk(area_test3, pv_test8):
         price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test8.risk /
                                                                  ConstSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
-                                     / (pv_test8._decrease_price_every_nr_s.m - 1))
+                                     / pv_test8._decrease_price_every_nr_s.m)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
