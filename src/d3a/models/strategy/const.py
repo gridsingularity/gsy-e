@@ -47,7 +47,7 @@ class ConstSettings:
     # Option 2, use the constant energy rate decrease
     ENERGY_RATE_DECREASE_OPTION = 1
 
-    ENERGY_RATE_DECREASE = 1  # rate decrease in cents_per_slot
+    ENERGY_RATE_DECREASE_PER_SLOT = 1  # rate decrease in cents_per_slot
 
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
 

@@ -18,7 +18,7 @@ class InitialPVRateOptions(Enum):
 
 class PVPriceDecreaseOption(Enum):
     PERCENTAGE_BASED_ENERGY_RATE_DECREASE = 1
-    CONST_ENERGY_RATE_DECREASE = 2
+    CONST_ENERGY_RATE_DECREASE_PER_SLOT = 2
 
 
 class PVStrategy(BaseStrategy):
@@ -33,7 +33,7 @@ class PVStrategy(BaseStrategy):
                  min_selling_rate=ConstSettings.MIN_PV_SELLING_RATE,
                  initial_pv_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.ENERGY_RATE_DECREASE_OPTION,
-                 energy_rate_decrease=ConstSettings.ENERGY_RATE_DECREASE):
+                 energy_rate_decrease_per_slot=ConstSettings.ENERGY_RATE_DECREASE_PER_SLOT):
         self._validate_constructor_arguments(panel_count, risk)
         self.initial_pv_rate_option = InitialPVRateOptions(initial_pv_rate_option)
         self.energy_rate_decrease_option = PVPriceDecreaseOption(energy_rate_decrease_option)
@@ -43,7 +43,8 @@ class PVStrategy(BaseStrategy):
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
-        self.energy_rate_decrease = energy_rate_decrease  # rate decrease in cents_per_slot
+        self.energy_rate_decrease_per_slot =\
+            energy_rate_decrease_per_slot  # rate decrease in cents_per_slot
         self.min_selling_price = Q_(min_selling_rate, (ureg.EUR_cents / ureg.kWh))
         self._decrease_price_timepoint_s = 0 * ureg.seconds
         self._decrease_price_every_nr_s = 0 * ureg.seconds
@@ -168,8 +169,8 @@ class PVStrategy(BaseStrategy):
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
             return price_dec_per_update
         elif self.energy_rate_decrease_option is\
-                PVPriceDecreaseOption.CONST_ENERGY_RATE_DECREASE:
-            price_dec_per_slot = self.energy_rate_decrease
+                PVPriceDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_SLOT:
+            price_dec_per_slot = self.energy_rate_decrease_per_slot
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / (self._decrease_price_every_nr_s.m - 1))
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
