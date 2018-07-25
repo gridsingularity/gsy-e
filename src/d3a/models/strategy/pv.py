@@ -27,12 +27,12 @@ class PVStrategy(BaseStrategy):
                 help="Change the risk parameter. Valid values are between 1 and 100.")
     ]
 
-    parameters = ('panel_count', 'risk',)
+    parameters = ('panel_count', 'risk')
 
     def __init__(self, panel_count=1, risk=ConstSettings.DEFAULT_RISK,
                  min_selling_rate=ConstSettings.MIN_PV_SELLING_RATE,
                  initial_pv_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION,
-                 energy_rate_decrease_option=ConstSettings.ENERGY_RATE_DECREASE_OPTION,
+                 energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE):
         self._validate_constructor_arguments(panel_count, risk)
         self.initial_pv_rate_option = InitialPVRateOptions(initial_pv_rate_option)

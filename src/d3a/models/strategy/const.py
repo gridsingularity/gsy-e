@@ -45,7 +45,7 @@ class ConstSettings:
     # Energy rate decrease option for unsold PV offers
     # Default value 1 stands for percentage/RISK based energy rate decrease
     # Option 2, use the constant energy rate decrease
-    ENERGY_RATE_DECREASE_OPTION = 1
+    PV_RATE_DECREASE_OPTION = 1
 
     ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_slot
 
