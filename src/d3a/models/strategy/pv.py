@@ -61,7 +61,7 @@ class PVStrategy(BaseStrategy):
         # Calculating the produced energy
         self.produced_energy_forecast_real_data()
         self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)\
+            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH)\
             * ureg.seconds
 
     def calculate_initial_sell_rate(self, current_time_h):
@@ -166,7 +166,7 @@ class PVStrategy(BaseStrategy):
             price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
                                  (1 - self.risk/ConstSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
-                                         / (self._decrease_price_every_nr_s.m - 1))
+                                         / self._decrease_price_every_nr_s.m)
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
             return price_dec_per_update
         elif self.energy_rate_decrease_option is\
