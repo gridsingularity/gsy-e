@@ -6,7 +6,7 @@ from d3a.models.strategy.pv import PVStrategy
 
 
 """
-This setup file test the PV energy rate decrease i.e. 5 cents_per_slot
+This setup file test the PV energy_rate_decrease_per_update i.e. 1 cents/update
 In this case, initial PV offer would be based on market maker rate i.e. 35 cents/kWh
 """
 
