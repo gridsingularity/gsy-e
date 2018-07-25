@@ -281,13 +281,17 @@ def test_export_data_csv(context, scenario):
 
 @then('we test that config parameters are correctly parsed for {scenario}'
       ' [{cloud_coverage}, {iaa_fee}]')
-def test_simulation_config_parameters(context, scenario,
-                                      cloud_coverage, iaa_fee):
+def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
     assert len(context.simulation.simulation_config.market_maker_rate) == 24
-    for i in range(len(context.simulation.simulation_config.market_maker_rate)):
-        assert context.simulation.simulation_config.market_maker_rate[i] ==\
-               context._market_maker_rate[i]
+    for ti in range(24):
+        assert ti in context.simulation.simulation_config.market_maker_rate.keys()
+    assert context.simulation.simulation_config.market_maker_rate[1] == \
+        context._market_maker_rate[2]
+    assert context.simulation.simulation_config.market_maker_rate[12] == \
+        context._market_maker_rate[11]
+    assert context.simulation.simulation_config.market_maker_rate[23] == \
+        context._market_maker_rate[22]
     assert context.simulation.simulation_config.iaa_fee == int(iaa_fee)
 
 
@@ -580,7 +584,7 @@ def test_infinite_plant_energy_rate(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert all([isclose(trade.offer.price / trade.offer.energy,
-                            context._market_maker_rate[trade.time.hour])
+                    context.simulation.simulation_config.market_maker_rate[trade.time.hour])
                     for trade in trades_sold])
         assert len(trades_sold) > 0
 
