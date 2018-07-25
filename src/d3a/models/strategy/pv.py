@@ -153,6 +153,7 @@ class PVStrategy(BaseStrategy):
                     self.owner.name
                 )
                 self.offers.replace(offer, new_offer, iterated_market)
+                print("PV updated Offer rate: " + str(new_offer.price/new_offer.energy))
 
             except MarketException:
                 continue
