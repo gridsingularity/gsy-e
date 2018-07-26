@@ -22,7 +22,7 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=500,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
