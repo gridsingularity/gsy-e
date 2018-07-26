@@ -215,7 +215,7 @@ class PVStrategy(BaseStrategy):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self._decrease_price_timepoint_s = 0 * ureg.seconds
+        self._decrease_price_timepoint_s = self._decrease_price_every_nr_s
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
