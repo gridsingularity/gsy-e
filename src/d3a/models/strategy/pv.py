@@ -131,6 +131,8 @@ class PVStrategy(BaseStrategy):
                 current_tick_number > ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH
                 and elapsed_seconds > self._decrease_price_timepoint_s
         ):
+            # print("current_tick_number: " + str(current_tick_number))
+            # print("_decrease_price_every_nr_s: " + str(self._decrease_price_every_nr_s))
             self._decrease_price_timepoint_s += self._decrease_price_every_nr_s
             next_market = list(self.area.markets.values())[0]
             self.decrease_offer_price(next_market)
@@ -154,6 +156,7 @@ class PVStrategy(BaseStrategy):
                     self.owner.name
                 )
                 self.offers.replace(offer, new_offer, iterated_market)
+
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
                               " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))
 
@@ -167,6 +170,7 @@ class PVStrategy(BaseStrategy):
                                  (1 - self.risk/ConstSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s.m)
+            # print("price_updates_per_slot: " + str(price_updates_per_slot))
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
             return price_dec_per_update
         elif self.energy_rate_decrease_option is\
@@ -215,7 +219,7 @@ class PVStrategy(BaseStrategy):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self._decrease_price_timepoint_s = self._decrease_price_every_nr_s
+        self._decrease_price_timepoint_s = 0 * ureg.seconds
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)

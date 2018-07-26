@@ -30,11 +30,16 @@ def pv_risk_based_price_decrease(context):
     house = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: "H1 PV" in x.name, house.children))[0]
     mmr = context.simulation.simulation_config.market_maker_rate
+
     risk = pv.strategy.risk
 
     for slot, market in house.past_markets.items():
         for id, offer in market.offers.items():
-            print("House Market Offers: " + str(offer.price/offer.energy))
+            print("Slot: " + str(slot))
+            print("Seller: " + str(offer.seller))
+            print("Unsold Offered Rate: " + str(offer.price/offer.energy))
+            print("Market Maker Rate: " + str(mmr[slot.hour]))
+            print("Risk based Rate: " + str(mmr[slot.hour] * risk / 100))
             assert isclose((offer.price/offer.energy),
                            mmr[slot.hour] * risk / 100)
 

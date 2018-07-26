@@ -588,7 +588,6 @@ def test_infinite_plant_energy_rate(context, plant_name):
                     context.simulation.simulation_config.market_maker_rate[trade.time.hour])
                     for trade in trades_sold])
         assert len(trades_sold) > 0
-    assert False
 
 
 @then('the {plant_name} never produces more power than its max available power')
