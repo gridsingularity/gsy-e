@@ -6,6 +6,12 @@ Feature: PV Tests
      When we run the d3a simulation with strategy_tests.pv_min_selling_rate [24, 15, 15]
      Then the storages buy energy for no more than the min PV selling rate
 
+  Scenario: PV RISK based price decrease
+     Given we have a scenario named strategy_tests/pv_risk_based_price_decrease
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.pv_risk_based_price_decrease [24, 15, 15]
+     Then the PV risk based strategy decrease its unsold offers price as expected
+
   Scenario: PV can use the market maker rate as the initial rate for every market slot
      Given we have a scenario named strategy_tests/pv_initial_rate
      And d3a is installed

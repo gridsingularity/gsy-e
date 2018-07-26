@@ -579,6 +579,7 @@ def test_infinite_plant_energy_rate(context, plant_name):
                          grid.children))[0]
     trades_sold = []
     for slot, market in grid.past_markets.items():
+        print("Market offers: " + str(market.offers))
         for trade in market.trades:
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
@@ -587,6 +588,7 @@ def test_infinite_plant_energy_rate(context, plant_name):
                     context.simulation.simulation_config.market_maker_rate[trade.time.hour])
                     for trade in trades_sold])
         assert len(trades_sold) > 0
+    assert False
 
 
 @then('the {plant_name} never produces more power than its max available power')
