@@ -8,9 +8,9 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 
 """
-Finite power plant strategy requires an energy rate value, which will be used for the lifetime
+The finite power plant strategy requires an energy rate value, which will be used for the lifetime
 of this strategy. The second parameter is the maximum available power that this power plant
-can produce. In this setup file a constant power production of 0.01 kW is assumed, and it is
+can produce. In this setup file a constant power production of 0.1 kW is assumed, and it is
 configured so low in order to validate that the strategy works as expected.
 """
 
@@ -22,7 +22,7 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=500,
+                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
