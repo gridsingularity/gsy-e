@@ -61,7 +61,7 @@ class PVStrategy(BaseStrategy):
         # Calculating the produced energy
         self.produced_energy_forecast_real_data()
         self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH)\
+            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)\
             * ureg.seconds
 
     def calculate_initial_sell_rate(self, current_time_h):
@@ -219,7 +219,7 @@ class PVStrategy(BaseStrategy):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self._decrease_price_timepoint_s = 0 * ureg.seconds
+        self._decrease_price_timepoint_s = self._decrease_price_every_nr_s
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
