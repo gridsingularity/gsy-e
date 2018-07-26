@@ -25,7 +25,7 @@ def get_setup(config):
         'Grid',
         [
             Area(
-                'House',
+                'House 1',
                 [
                     Area('H1 General Load', strategy=LoadHoursStrategy(
                             avg_power_W=500,
