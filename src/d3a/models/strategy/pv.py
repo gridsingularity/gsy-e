@@ -142,9 +142,6 @@ class PVStrategy(BaseStrategy):
             return
 
         for offer, iterated_market in self.offers.open.items():
-            if (offer.price / offer.energy - self._calculate_price_decrease_rate(iterated_market))\
-                    <= self.min_selling_price.m:
-                continue
             if iterated_market != market:
                 continue
             try:
@@ -155,6 +152,8 @@ class PVStrategy(BaseStrategy):
                     offer.energy,
                     self.owner.name
                 )
+                if (new_offer.price/new_offer.energy) < self.min_selling_price.m:
+                    new_offer.price = self.min_selling_price.m * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
 
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
