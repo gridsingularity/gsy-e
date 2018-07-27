@@ -15,17 +15,24 @@ Considering tick_length = 15s, and max_offer_traversal_length = 10 (in order to 
 offer from one end to the other extreme end). So, the minimum waiting time for offer update
 would be offer_update_wait_time = tick_length * max_offer_traversal_length (15 * 10 = 150s)
 Considering, time_slot =  15m -> 900s
-The max_possible_offer_update_per_slot = time_slot / offer_update_wait_time (900/150=6)
+The max_possible_offer_update_per_slot = time_slot / offer_update_wait_time (900/150=6).
+However, due to some reason, max_possible_offer_update_per_slot is made one unit less,
+implemented by Spyros. Once he is back, it has to be discussed.
 
-PV's initial sell offer would 35. To consider max_offer_traversal_length, PV's unsold offer
-would be updated 6 time per market slot such that the its final offer would be (35*0.2=7)
+PV's initial sell offer would be based on market_maker_rate. To consider
+max_offer_traversal_length, PV's unsold offer would be updated 5 time per market slot such
+that the its final offer would be (35*0.2=7).
 
 Since, the PV can only decrease its unsold offer only 6 times per market slot. And based on risk
 its unsold offer final rate should be 7. So, after every update its unsold offer would be decrease
-by (35 - 7) / 6 = 4.67
+by (35 - 7) / 5 = 5.6
 
 
 When the the PV offer rate goes as low as 7; only then load will purchase PV's energy.
+
+At hr:13, mmr is deliberately configured to 40. After, updates of unsold offers at this hour.
+Its final price would be 40*0.2=8 i.e. greater than Load's acceptable rate. It has been checked in
+integration test to confirm these PV offers are not bought at these instances. Same for hr:14
 """
 
 

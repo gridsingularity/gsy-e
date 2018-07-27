@@ -15,7 +15,6 @@ This option affects the base rate from which the price reduction algorithm will 
 Also note that the market maker rate is used here as an hourly profile.
 """
 
-
 market_maker_rate = {
     0: 35, 1: 35, 2: 35, 3: 35, 4: 35, 5: 35, 6: 35, 7: 35,
     8: 35, 9: 34, 10: 33, 11: 32, 12: 31, 13: 30, 14: 31,
