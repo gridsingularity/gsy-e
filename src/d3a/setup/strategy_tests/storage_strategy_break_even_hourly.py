@@ -2,6 +2,8 @@
 To validate the break even hourly profile the backend plot Energy Trade Profile Of House 1
 is required. The energy rates for the storages are displayed in this plot, and these rates
 should adhere to the break even hourly profiles that are defined in this module.
+Tip: It's interesting to see the change in results from changing the initial_pv_rate_option
+between 1(historical average prices) and 2(market maker price).
 """
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
