@@ -10,6 +10,7 @@ import os
 
 
 def get_setup(config):
+
     area = Area(
         'Grid',
         [
@@ -25,7 +26,7 @@ def get_setup(config):
                     Area('H1 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources', 'SAM_MF2_Summer.csv'),
+                                                             'resources', 'SAM_MF2_Summer_realistic.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
@@ -35,14 +36,14 @@ def get_setup(config):
                 [
                     Area('H2 PV', strategy=PVStrategy(30, 80),
                          appliance=PVAppliance()),
-                    Area('H2 Storage2', strategy=StorageStrategy(battery_capacity=6*1.2,
+                    Area('H2 Storage1', strategy=StorageStrategy(battery_capacity=6*1.2,
                                                                  max_abs_battery_power=6*1.2,
                                                                  initial_capacity=0.6*6*1.2),
                          appliance=SwitchableAppliance()),
                     Area('H2 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources', 'SAM_SF_Summer.csv'),
+                                                             'resources', 'SAM_SF_Summer_realistic.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -56,7 +57,7 @@ def get_setup(config):
                     Area('H3 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources', 'SAM_MF2_Summer.csv'),
+                                                             'resources', 'SAM_MF2_Summer_realistic.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -70,23 +71,22 @@ def get_setup(config):
                     Area('H4 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources', 'SAM_SF_Summer.csv'),
+                                                             'resources', 'SAM_SF_Summer_realistic.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
-
                 ]
             ),
             Area(
                 'House 5',
                 [
-                    Area('H5 Storage', strategy=StorageStrategy(battery_capacity=12*1.2,
-                                                                max_abs_battery_power=12*1.2,
-                                                                initial_capacity=0.6*12*1.2),
+                    Area('H5 Storage1', strategy=StorageStrategy(battery_capacity=12*1.2,
+                                                                 max_abs_battery_power=12*1.2,
+                                                                 initial_capacity=0.6*12*1.2),
                          appliance=SwitchableAppliance()),
                     Area('H5 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources', 'SAM_MF2_Summer.csv'),
+                                                             'resources', 'SAM_MF2_Summer_realistic.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
@@ -94,14 +94,14 @@ def get_setup(config):
             Area(
                 'House 6',
                 [
-                    Area('H6 Storage', strategy=StorageStrategy(battery_capacity=6*1.2,
+                    Area('H6 Storage1', strategy=StorageStrategy(battery_capacity=6*1.2,
                                                                 max_abs_battery_power=6*1.2,
                                                                 initial_capacity=0.6*6*1.2),
                          appliance=SwitchableAppliance()),
                     Area('H6 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources', 'SAM_SF_Summer.csv'),
+                                                             'resources', 'SAM_SF_Summer_realistic.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -113,7 +113,7 @@ def get_setup(config):
                     Area('H7 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources', 'SAM_MF2_Summer.csv'),
+                                                             'resources', 'SAM_MF2_Summer_realistic.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -125,13 +125,12 @@ def get_setup(config):
                     Area('H8 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources', 'SAM_SF_Summer.csv'),
+                                                             'resources', 'SAM_SF_Summer_realistic.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
             ),
-
         ],
         config=config
     )
