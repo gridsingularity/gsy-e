@@ -131,8 +131,6 @@ class PVStrategy(BaseStrategy):
                 current_tick_number > ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH
                 and elapsed_seconds > self._decrease_price_timepoint_s
         ):
-            # print("current_tick_number: " + str(current_tick_number))
-            # print("_decrease_price_every_nr_s: " + str(self._decrease_price_every_nr_s))
             self._decrease_price_timepoint_s += self._decrease_price_every_nr_s
             next_market = list(self.area.markets.values())[0]
             self.decrease_offer_price(next_market)

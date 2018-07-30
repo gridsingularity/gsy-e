@@ -579,7 +579,6 @@ def test_infinite_plant_energy_rate(context, plant_name):
                          grid.children))[0]
     trades_sold = []
     for slot, market in grid.past_markets.items():
-        print("Market offers: " + str(market.offers))
         for trade in market.trades:
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:

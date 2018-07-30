@@ -323,7 +323,7 @@ def test_pv_constructor_rejects_incorrect_parameters():
 
 @pytest.fixture()
 def pv_test7(area_test3):
-    p = PVStrategy(1, 95, initial_pv_rate_option=1)
+    p = PVStrategy(1, 95)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
@@ -352,7 +352,7 @@ def testing_low_risk(area_test3, pv_test7):
 
 @pytest.fixture()
 def pv_test8(area_test3):
-    p = PVStrategy(1, 10, initial_pv_rate_option=1)
+    p = PVStrategy(1, 10)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):

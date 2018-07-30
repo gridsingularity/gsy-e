@@ -16,8 +16,8 @@ offer from one end to the other extreme end). So, the minimum waiting time for o
 would be offer_update_wait_time = tick_length * max_offer_traversal_length (15 * 10 = 150s)
 Considering, time_slot =  15m -> 900s
 The max_possible_offer_update_per_slot = time_slot / offer_update_wait_time (900/150=6).
-However, due to some reason, max_possible_offer_update_per_slot is made one unit less,
-implemented by Spyros. Once he is back, it has to be discussed.
+However, due to some reason, max_possible_offer_update_per_slot is made one unit less.
+Once Spyros is back, it has to be discussed.
 
 PV's initial sell offer would be based on market_maker_rate. To consider
 max_offer_traversal_length, PV's unsold offer would be updated 5 time per market slot such
