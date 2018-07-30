@@ -73,7 +73,6 @@ class StorageStrategy(BaseStrategy):
             raise ValueError("Break even point should be positive energy rate values.")
 
     def event_tick(self, *, area):
-        # print("Now event tick: " + str(self.area.now))
         # Check if there are cheap offers to buy
         self.buy_energy()
         self.state.tick(area)  # To incorporate battery energy loss over time

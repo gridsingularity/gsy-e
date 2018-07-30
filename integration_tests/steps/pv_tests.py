@@ -26,58 +26,46 @@ def storages_pv_min_selling_rate(context):
                    for trade in market.trades)
 
 
-@then('the PV risk based strategy decrease its sold/unsold offers price as expected')
-def pv_risk_based_price_decrease(context):
+@then('the PV strategy decrease its sold/unsold offers price as expected')
+def pv_price_decrease(context):
     house = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: "H1 PV" in x.name, house.children))[0]
     market_maker_rate = context.simulation.simulation_config.market_maker_rate
 
-    if pv.strategy.energy_rate_decrease_option.value == 2:
-        assert False
-
-    for slot, market in house.past_markets.items():
-        price_dec_per_slot = market_maker_rate[slot.hour] * (1 - pv.strategy.risk / 100)
-        price_dec_per_update = price_dec_per_slot / _number_of_updates_per_slot(context)
-        minimum_rate = max((market_maker_rate[slot.hour] * pv.strategy.risk / 100),
-                           pv.strategy.min_selling_price.m)
-        for id, offer in market.offers.items():
-            print("PV final offers: " + str(market_maker_rate[slot.hour] * pv.strategy.risk / 100))
-            assert isclose((offer.price/offer.energy), minimum_rate)
-        for trade in market.trades:
-            print("Trade Rate: " + str(trade.offer.price/trade.offer.energy))
-            if trade.seller == pv.name:
-                assert any([isclose(trade.offer.price / trade.offer.energy,
-                                    max((market_maker_rate[slot.hour] - i * price_dec_per_update),
-                                        pv.strategy.min_selling_price.m))
-                            for i in range(_number_of_updates_per_slot(context) + 1)])
-
-
-@then('the PV constant based strategy decrease its sold/unsold offers price as expected')
-def pv_const_based_price_decrease(context):
-    house = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    pv = list(filter(lambda x: "H1 PV" in x.name, house.children))[0]
-    market_maker_rate = context.simulation.simulation_config.market_maker_rate
-
-    if pv.strategy.energy_rate_decrease_option.value == 1:
-        assert False
-
-    for slot, market in house.past_markets.items():
-        price_dec_per_slot = _number_of_updates_per_slot(context)\
-                             * pv.strategy.energy_rate_decrease_per_update
-        for id, offer in market.offers.items():
-            assert isclose((offer.price/offer.energy),
-                           market_maker_rate[slot.hour] - price_dec_per_slot)
-        for trade in market.trades:
-            if trade.seller == pv.name:
-                assert any([isclose(trade.offer.price / trade.offer.energy,
-                                    (market_maker_rate[slot.hour] -
-                                     i * pv.strategy.energy_rate_decrease_per_update))
-                            for i in range(_number_of_updates_per_slot(context) + 1)])
-
-
-def _number_of_updates_per_slot(context):
     slot_length = context.simulation.simulation_config.slot_length.seconds
     tick_length = context.simulation.simulation_config.tick_length.seconds
     wait_time = tick_length * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
     number_of_updates_per_slot = int(slot_length/wait_time)
-    return number_of_updates_per_slot
+
+    if pv.strategy.energy_rate_decrease_option.value == 1:
+        for slot, market in house.past_markets.items():
+            price_dec_per_slot =\
+                market_maker_rate[slot.hour] * (1 - pv.strategy.risk / 100)
+            price_dec_per_update = price_dec_per_slot / number_of_updates_per_slot
+            minimum_rate = max((market_maker_rate[slot.hour] * pv.strategy.risk / 100),
+                               pv.strategy.min_selling_price.m)
+            for id, offer in market.offers.items():
+                assert isclose((offer.price/offer.energy), minimum_rate)
+            for trade in market.trades:
+                if trade.seller == pv.name:
+                    assert any([isclose(trade.offer.price / trade.offer.energy,
+                                        max((market_maker_rate[slot.hour] -
+                                             i * price_dec_per_update),
+                                            pv.strategy.min_selling_price.m))
+                                for i in range(number_of_updates_per_slot + 1)])
+
+    elif pv.strategy.energy_rate_decrease_option.value == 2:
+        for slot, market in house.past_markets.items():
+            price_dec_per_slot = number_of_updates_per_slot \
+                                 * pv.strategy.energy_rate_decrease_per_update
+            for id, offer in market.offers.items():
+                assert isclose((offer.price / offer.energy),
+                               market_maker_rate[slot.hour] - price_dec_per_slot)
+            for trade in market.trades:
+                if trade.seller == pv.name:
+                    assert any([isclose(trade.offer.price / trade.offer.energy,
+                                        (market_maker_rate[slot.hour] -
+                                         i * pv.strategy.energy_rate_decrease_per_update))
+                                for i in range(number_of_updates_per_slot + 1)])
+    else:
+        assert False
