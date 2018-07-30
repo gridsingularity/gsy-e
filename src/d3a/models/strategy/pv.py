@@ -16,6 +16,11 @@ class InitialPVRateOptions(Enum):
     MARKET_MAKER_RATE = 2
 
 
+class PVPriceDecreaseOption(Enum):
+    PERCENTAGE_BASED_ENERGY_RATE_DECREASE = 1
+    CONST_ENERGY_RATE_DECREASE_PER_UPDATE = 2
+
+
 class PVStrategy(BaseStrategy):
     available_triggers = [
         Trigger('risk', {'new_risk': int},
@@ -26,14 +31,20 @@ class PVStrategy(BaseStrategy):
 
     def __init__(self, panel_count=1, risk=ConstSettings.DEFAULT_RISK,
                  min_selling_rate=ConstSettings.MIN_PV_SELLING_RATE,
-                 initial_pv_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION):
+                 initial_pv_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION,
+                 energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE):
         self._validate_constructor_arguments(panel_count, risk)
         self.initial_pv_rate_option = InitialPVRateOptions(initial_pv_rate_option)
+        self.energy_rate_decrease_option = PVPriceDecreaseOption(energy_rate_decrease_option)
+
         super().__init__()
         self.risk = risk
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
+        self.energy_rate_decrease_per_update = \
+            energy_rate_decrease_per_update  # rate decrease in cents_per_slot
         self.min_selling_price = Q_(min_selling_rate, (ureg.EUR_cents / ureg.kWh))
         self._decrease_price_timepoint_s = 0 * ureg.seconds
         self._decrease_price_every_nr_s = 0 * ureg.seconds
@@ -112,6 +123,7 @@ class PVStrategy(BaseStrategy):
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds * ureg.seconds
+
         if (
                 # FIXME: Make sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
@@ -128,9 +140,6 @@ class PVStrategy(BaseStrategy):
             return
 
         for offer, iterated_market in self.offers.open.items():
-            if (offer.price / offer.energy - self._calculate_price_decrease_rate(iterated_market))\
-                    <= self.min_selling_price.m:
-                continue
             if iterated_market != market:
                 continue
             try:
@@ -141,18 +150,29 @@ class PVStrategy(BaseStrategy):
                     offer.energy,
                     self.owner.name
                 )
+                if (new_offer.price/new_offer.energy) < self.min_selling_price.m:
+                    new_offer.price = self.min_selling_price.m * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
+
+                self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
+                              " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))
 
             except MarketException:
                 continue
 
     def _calculate_price_decrease_rate(self, market):
-        price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
-                             (1 - self.risk/ConstSettings.MAX_RISK)
-        price_updates_per_slot = int(self.area.config.slot_length.seconds
-                                     / self._decrease_price_every_nr_s.m)
-        price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-        return price_dec_per_update
+        if self.energy_rate_decrease_option is\
+                PVPriceDecreaseOption.PERCENTAGE_BASED_ENERGY_RATE_DECREASE:
+            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
+                                 (1 - self.risk/ConstSettings.MAX_RISK)
+            price_updates_per_slot = int(self.area.config.slot_length.seconds
+                                         / self._decrease_price_every_nr_s.m)
+            # print("price_updates_per_slot: " + str(price_updates_per_slot))
+            price_dec_per_update = price_dec_per_slot / price_updates_per_slot
+            return price_dec_per_update
+        elif self.energy_rate_decrease_option is\
+                PVPriceDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
+            return self.energy_rate_decrease_per_update
 
     def produced_energy_forecast_real_data(self):
         # This forecast ist based on the real PV system data provided by enphase

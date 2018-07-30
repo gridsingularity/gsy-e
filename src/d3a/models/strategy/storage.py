@@ -75,9 +75,10 @@ class StorageStrategy(BaseStrategy):
     def event_tick(self, *, area):
         # Check if there are cheap offers to buy
         self.buy_energy()
-        self.state.tick(area)
+        self.state.tick(area)  # To incorporate battery energy loss over time
 
     def event_market_cycle(self):
+
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
