@@ -64,7 +64,8 @@ def get_setup(config):
                     # Here a value of 2 is used, which is using the market maker price
                     Area('H1 PV', strategy=PVStrategy(1, 20,
                                                       initial_pv_rate_option=2,
-                                                      min_selling_rate=5),
+                                                      min_selling_rate=5,
+                                                      energy_rate_decrease_option=1),
                          appliance=PVAppliance()),
                 ]
             ),
