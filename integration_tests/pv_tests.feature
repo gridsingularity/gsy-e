@@ -19,9 +19,9 @@ Feature: PV Tests
      Then the PV strategy decrease its sold/unsold offers price as expected
 
   Scenario: PV can use the market maker rate as the initial rate for every market slot
-     Given we have a scenario named strategy_tests/pv_variable_market_maker_rate
+     Given we have a scenario named strategy_tests/pv_initial_pv_rate_option
      And d3a is installed
-     When we run the d3a simulation with strategy_tests.pv_variable_market_maker_rate [24, 15, 15]
+     When we run the d3a simulation with strategy_tests.pv_initial_pv_rate_option [24, 15, 15]
      Then the PV sells energy at the market maker rate for every market slot
 
   Scenario: UserProfile PV follows the profile provided by the user as dict
