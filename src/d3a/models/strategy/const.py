@@ -27,6 +27,10 @@ class ConstSettings:
     STORAGE_CAPACITY = 1.2
     # Unit is kW
     MAX_ABS_BATTERY_POWER = 5
+    # Initial ESS rate calculation for every market slot, before rate reduction per tick
+    # Option 1, use the historical market average
+    # Default value 2 stands for market maker rate
+    INITIAL_ESS_RATE_OPTION = 2
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
     STORAGE_BREAK_EVEN_BUY = 25

@@ -111,6 +111,7 @@ class PVStrategy(BaseStrategy):
                         self.owner.name
                     )
                     self.offers.post(offer, market)
+                    print("PV offered Rate: " + str(offer.price/offer.energy))
 
                 except KeyError:
                     self.log.warn("PV has no forecast data for this time")
@@ -153,6 +154,7 @@ class PVStrategy(BaseStrategy):
                 if (new_offer.price/new_offer.energy) < self.min_selling_price.m:
                     new_offer.price = self.min_selling_price.m * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
+                print("PV new offered Rate: " + str(new_offer.price / new_offer.energy))
 
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
                               " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))
@@ -217,6 +219,17 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._decrease_price_timepoint_s = self._decrease_price_every_nr_s
+        # Iterate over all markets open in the future
+        a = self.area.markets.items()
+        print("Next Market: " + str(a[-1]))
+        for (time, market) in self.area.markets.items():
+            print("Time: " + str(time) + " & Market: " + str(market))
+            print("Offers: " + str(market.offers.items()))
+            for id, offer in market.offers.items():
+                print("Seller: " + str(offer.seller))
+                if offer.seller == self.owner.name:
+                    print("H1 PV")
+                # print("Self Name: " + str(self.area.child_by_slug))
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
