@@ -607,7 +607,7 @@ def test_finite_plant_max_power(context, plant_name):
 
 
 @then('the PV sells energy at the market maker rate for every market slot')
-def test_pv_variable_market_maker_rate_options(context):
+def test_pv_initial_pv_rate_option(context):
     grid = context.simulation.area
     house = list(filter(lambda x: x.name == "House", grid.children))[0]
 
