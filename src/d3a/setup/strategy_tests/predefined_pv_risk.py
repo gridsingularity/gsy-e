@@ -13,6 +13,9 @@ from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 """
 PredefinedPV Strategy requires risk, panel count, lower selling rate threshold &
 cloud_coverage parameters.
+Because the risk parameter is required, this is the risk or percentage based PV strategy
+There is another setup file in which Faizan has detailed how the risk based strategy works
+which will be added
 """
 
 
