@@ -50,19 +50,56 @@ class ExportAndPlot:
         self.export_area_with_children(self.area, self.directory)
         # _export_iaa_energy(root_area, directory)
 
-        self.plot_all_avg_trade_price(self.area)
+        self.plot_all_soc_history()
         self.plot_all_unmatched_loads()
-
-    def plot_all_unmatched_loads(self):
-
-        unmatched_str = 'deficit [kWh]'
-        load_list = [key for key, value in self.rates.items() if unmatched_str in value]
-        for ll in load_list:
-            self._plot_unmatched_loads(ll)
+        self.plot_all_avg_trade_price(self.area)
 
     def _file_path(self, directory, slug):
         file_name = ("%s.csv" % slug).replace(' ', '_')
         return directory.joinpath(file_name).as_posix()
+
+    def plot_all_unmatched_loads(self):
+
+        unmatched_key = 'deficit [kWh]'
+        load_list = [key for key, value in self.rates.items() if unmatched_key in value]
+        data = list()
+        title = 'Devices Un-matched Loads'
+        xtitle = 'Time'
+        ytitle = 'Energy (kWh)'
+        barmode = 'bar'
+
+        for li in load_list:
+            hict = BarGraph(self.rates[li], unmatched_key)
+            print(li, sum(hict.dataset[unmatched_key]))
+            if sum(hict.dataset[unmatched_key]) < 1e-10:
+                continue
+            hict.graph_value("Unmatched Loads")
+            traceict = go.Bar(x=list(range(0, 24)),
+                              y=list(hict.umHours.values()),
+                              name=li)
+            data.append(traceict)
+            output_file = os.path.join(self.plot_dir, 'unmatched_loads_all.html')
+            BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def plot_all_soc_history(self):
+
+        storage_key = 'charge [%]'
+        storage_list = [key for key, value in self.rates.items() if storage_key in value]
+        data = list()
+        barmode = "relative"
+        title = 'ESS SOC'
+        xtitle = 'Time'
+        ytitle = 'charge [%]'
+
+        for si in storage_list:
+            chss1 = BarGraph(self.rates[si], storage_key)
+            chss1.graph_value("SOC History")
+            tracechss1 = go.Scatter(x=list(range(0, 24)),
+                                    y=list(chss1.umHours.values()),
+                                    name=si)
+            data.append(tracechss1)
+        output_file = os.path.join(self.plot_dir, 'ESS_SOC_all_history.html')
+        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def plot_all_avg_trade_price(self, area):
         for child in area.children:
@@ -165,25 +202,6 @@ class ExportAndPlot:
                                name='Grid')
         data.append(traceigap)
         output_file = os.path.join(self.plot_dir, 'average_trade_price_{}.html'.format(area_name))
-        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
-
-    def _plot_unmatched_loads(self, load_name):
-        data = list()
-        title = 'Devices Un-matched Loads {})'.format(load_name)
-        xtitle = 'Time'
-        ytitle = 'Energy (kWh)'
-        barmode = 'bar'
-        key = 'deficit [kWh]'
-
-        hict = BarGraph(self.rates[load_name], key)
-        if sum(hict.dataset[key]) < 1e-10:
-            return
-        hict.graph_value("Unmatched Loads")
-        traceict = go.Bar(x=list(range(0, 24)),
-                          y=list(hict.umHours.values()),
-                          name=load_name)
-        data.append(traceict)
-        output_file = os.path.join(self.plot_dir, 'unmatched_loads__{}.html'.format(load_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
 
