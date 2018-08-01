@@ -9,6 +9,16 @@ from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 """
 This setup file test the PV energy_rate_decrease_per_update i.e. 1 cents/kWh/update
 In this case, initial PV offer would be based on market maker rate i.e. 35 cents/kWh
+
+You can expect 5 to 6 updates per market slot (with 15 sec ticks). See below:
+
+Considering tick_length = 15s, and max_offer_traversal_length = 10 (in order to propagate
+offer from one end to the other extreme end). So, the minimum waiting time for offer update
+would be offer_update_wait_time = tick_length * max_offer_traversal_length (15 * 10 = 150s)
+Considering, time_slot =  15m -> 900s
+The max_possible_offer_update_per_slot = time_slot / offer_update_wait_time (900/150=6).
+However, due to some reason, max_possible_offer_update_per_slot is made one unit less.
+Once Spyros is back, it has to be discussed.
 """
 
 
@@ -33,12 +43,12 @@ def get_setup(config):
                             hrs_per_day=24,
                             hrs_of_day=list(
                                 range(0, 24)),
-                            acceptable_energy_rate=30.01
+                            acceptable_energy_rate=30.1
                         ),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1,
                                                                 initial_pv_rate_option=2,
-                                                                energy_rate_decrease_per_update=1,
+                                                                energy_rate_decrease_per_update=4,
                                                                 energy_rate_decrease_option=2,
                                                                 cloud_coverage=2),
                          appliance=PVAppliance()),
