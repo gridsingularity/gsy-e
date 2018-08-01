@@ -158,7 +158,8 @@ class StorageStrategy(BaseStrategy):
             if not open_offer:
                 self.state.offer_storage(energy)
             self.offers.post(offer, target_market)
-            print("ESS offer: " + str(offer) + " @Target Market: " + str(target_market))
+            print("ESS offer: " + str(offer.price/offer.energy) +
+                  " @Target Market: " + str(target_market))
 
     def _select_market_to_sell(self):
         if ConstSettings.STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:
@@ -207,7 +208,7 @@ class StorageStrategy(BaseStrategy):
             max_selling_rate = max(self.break_even[market.time_slot.hour][1],
                                    (self.area.config.market_maker_rate[market.time_slot.hour]))
         # print("ESS sell rate: " + str(max_selling_rate * 0.95))
-        return max_selling_rate * 0.95
+        return max_selling_rate
         # max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
         # risk_dependent_selling_rate = (
         #     break_even_sell + self._risk_factor(

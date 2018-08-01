@@ -57,6 +57,7 @@ class LoadHoursStrategy(BaseStrategy):
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers
+        # print("Offers available to LoadHours: " + str(offers))
         return random.choice(offers)
 
     def event_tick(self, *, area):

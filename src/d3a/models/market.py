@@ -273,6 +273,7 @@ class Market:
     @property
     def most_affordable_offers(self):
         cheapest_offer = self.sorted_offers[0]
+        print("Sorted Offers: " + str(self.sorted_offers))
         rate = cheapest_offer.price / cheapest_offer.energy
         return [o for o in self.sorted_offers if
                 abs(o.price / o.energy - rate) < OFFER_PRICE_THRESHOLD]
