@@ -1,5 +1,5 @@
 """
-Setup file for displaying the in-finite power plant strategy.
+Setup file for displaying the infinite power plant strategy.
 """
 
 from d3a.models.appliance.switchable import SwitchableAppliance
@@ -10,9 +10,9 @@ from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.config import SimulationConfig
 
 """
-In-Finite power plant strategy follows the market_maker_rate being passed as
-global config parameters. In this setup file, it is intended to validate if
-In-Finite power plant trade energy at the pre-defined market_maker_rate.
+The infinite power plant strategy follows the market_maker_rate being passed as a
+global config parameter. In this setup file, it is intended to validate if
+the infinite power plant trades energy at the pre-defined market_maker_rate listed in the file.
 """
 
 market_maker_rate = {
