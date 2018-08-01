@@ -91,7 +91,7 @@ class PVStrategy(BaseStrategy):
         assert rounded_energy_rate >= 0.0
         '''
         NOTE: PV's initial sell offer would be 99% of market_maker_rate.
-        It's done deliberately to prefer PV trade over ESS.
+        It's done deliberately to prefer PV trade over ESS & CEP.
         '''
         return rounded_energy_rate * 0.99
 
