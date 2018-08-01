@@ -87,7 +87,6 @@ class StorageStrategy(BaseStrategy):
         self.state.tick(area)  # To incorporate battery energy loss over time
 
     def event_market_cycle(self):
-        # print("ESS event_market_cycle")
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
@@ -158,8 +157,6 @@ class StorageStrategy(BaseStrategy):
             if not open_offer:
                 self.state.offer_storage(energy)
             self.offers.post(offer, target_market)
-            # print("ESS offer: " + str(offer.price/offer.energy) +
-            #       " @Target Market: " + str(target_market))
 
     def _select_market_to_sell(self):
         if ConstSettings.STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:
