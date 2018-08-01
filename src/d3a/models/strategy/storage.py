@@ -158,8 +158,8 @@ class StorageStrategy(BaseStrategy):
             if not open_offer:
                 self.state.offer_storage(energy)
             self.offers.post(offer, target_market)
-            print("ESS offer: " + str(offer.price/offer.energy) +
-                  " @Target Market: " + str(target_market))
+            # print("ESS offer: " + str(offer.price/offer.energy) +
+            #       " @Target Market: " + str(target_market))
 
     def _select_market_to_sell(self):
         if ConstSettings.STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:
@@ -200,27 +200,24 @@ class StorageStrategy(BaseStrategy):
     def _calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
-        # break_even_sell = self.break_even[market.time_slot.hour][1]
-        if self.initial_ess_rate_option == 1:
-            max_selling_rate = max(self.break_even[market.time_slot.hour][1],
-                                   self.area.historical_avg_rate)
+        break_even_sell = self.break_even[market.time_slot.hour][1]
+        if self.initial_ess_rate_option == 1 and self.area.historical_avg_rate != 0:
+            max_selling_rate = self.area.historical_avg_rate
         else:
-            max_selling_rate = max(self.break_even[market.time_slot.hour][1],
-                                   (self.area.config.market_maker_rate[market.time_slot.hour]))
-        # print("ESS sell rate: " + str(max_selling_rate * 0.95))
-        return max_selling_rate
-        # max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
-        # risk_dependent_selling_rate = (
-        #     break_even_sell + self._risk_factor(
-        #         max_selling_rate - break_even_sell
-        #     )
-        # )
+            max_selling_rate = self.area.config.market_maker_rate[market.time_slot.hour]
+        risk_dependent_selling_rate = (
+            break_even_sell + self._risk_factor(
+                max_selling_rate - break_even_sell
+            )
+        )
         # Limit rate to respect max sell rate
-        # return max(
-        #     min(risk_dependent_selling_rate,
-        #         max_selling_rate),
-        #     break_even_sell
-        # )
+        rate = max(
+            min(risk_dependent_selling_rate,
+                max_selling_rate),
+            break_even_sell
+        )
+        print("Rate: " + str(rate))
+        return rate
 
     def _risk_factor(self, output_range):
         """

@@ -96,32 +96,6 @@ class PVStrategy(BaseStrategy):
         return rounded_energy_rate * 0.99
 
     def event_tick(self, *, area):
-        # Iterate over all markets open in the future
-        # for (time, market) in self.area.markets.items():
-        #     # If there is no offer for a currently open marketplace:
-        #     if market not in self.offers.posted.values():
-        #         market_time_h = market.time_slot.hour
-        #         initial_sell_rate = self.calculate_initial_sell_rate(market_time_h)
-        #         rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
-        #                                                                   market_time_h)
-        #         # Sell energy and save that an offer was posted into a list
-        #         try:
-        #             if self.energy_production_forecast_kWh[time] == 0:
-        #                 continue
-        #             offer = market.offer(
-        #                 rounded_energy_rate * self.panel_count *
-        #                 self.energy_production_forecast_kWh[time],
-        #                 self.energy_production_forecast_kWh[time] * self.panel_count,
-        #                 self.owner.name
-        #             )
-        #             self.offers.post(offer, market)
-        #             print("PV offered Rate: " + str(offer.price/offer.energy))
-        #
-        #         except KeyError:
-        #             self.log.warn("PV has no forecast data for this time")
-        #             continue
-        #     else:
-        #         pass
         self._decrease_energy_price_over_ticks()
 
     def _decrease_energy_price_over_ticks(self):
@@ -173,7 +147,6 @@ class PVStrategy(BaseStrategy):
                                  (1 - self.risk/ConstSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s.m)
-            # print("price_updates_per_slot: " + str(price_updates_per_slot))
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
             return price_dec_per_update
         elif self.energy_rate_decrease_option is\

@@ -300,7 +300,7 @@ def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
 
 def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     pv_test6.event_activate()
-    pv_test6.event_tick(area=area_test3)
+    pv_test6.event_market_cycle()
     assert market_test3.created_offers[0].energy == pv_test6.energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     pv_test6.event_trade(market=market_test3, trade=fake_trade)
@@ -401,5 +401,5 @@ def pv_test9(area_test9):
 
 def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
     pv_test9.event_activate()
-    pv_test9.event_tick(area=area_test9)
+    pv_test9.event_market_cycle()
     assert len(market_test9.created_offers) == 1
