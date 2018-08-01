@@ -12,6 +12,12 @@ from d3a.models.strategy.pv import PVStrategy
 This setup file is being modified to mimic a typical modern household having a hybrid
 PV-ESS system.'''
 
+'''
+TO BE DISCUSS: ESS Trade updates are taking place at event_market_cycle due to which when ESS
+SOC reaches 100%. At that instance ESS energy is preferred over PV (IMO it should be unfavourabele)
+Possible solution could be to have PVInitialsellOffer to be competitive compared to ESS
+'''
+
 
 def get_setup(config):
     area = Area(
