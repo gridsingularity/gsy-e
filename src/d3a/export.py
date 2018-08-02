@@ -9,7 +9,6 @@ from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
@@ -211,7 +210,7 @@ class ExportAndPlot:
         key = 'energy traded [kWh]'
 
         hiss1 = BarGraph(self.stats[area_name], key)
-        hiss1.graph_value("ESS History")
+        hiss1.graph_value()
         traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
                            y=list(hiss1.umHours.values()),
                            name=area_name)
@@ -249,7 +248,7 @@ class ExportAndPlot:
         title = 'Energy Profile Level {}'.format(area_name)
 
         higl = BarGraph(self.stats[area_name.lower()], key)
-        higl.graph_value("Energy Profile")
+        higl.graph_value()
         traceigl = go.Bar(x=list(higl.umHours.keys()),
                           y=list(higl.umHours.values()),
                           name=area_name)
@@ -276,7 +275,7 @@ class ExportAndPlot:
         for area_name in self.level_dict[level]:
 
             higl = BarGraph(self.stats[area_name.lower()], key)
-            higl.graph_value("Energy Profile")
+            higl.graph_value()
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
                               name=area_name)
@@ -346,7 +345,7 @@ class ExportAndPlot:
             hict = BarGraph(self.stats[li], unmatched_key)
             if sum(hict.dataset[unmatched_key]) < 1e-10:
                 continue
-            hict.graph_value("Unmatched Loads")
+            hict.graph_value()
             traceict = go.Bar(x=list(hict.umHours.keys()),
                               y=list(hict.umHours.values()),
                               name=li)
@@ -369,7 +368,7 @@ class ExportAndPlot:
 
         for si in storage_list:
             chss1 = BarGraph(self.stats[si], storage_key)
-            chss1.graph_value("SOC History")
+            chss1.graph_value()
             tracechss1 = go.Scatter(x=list(chss1.umHours.keys()),
                                     y=list(chss1.umHours.values()),
                                     name=si)
@@ -389,7 +388,7 @@ class ExportAndPlot:
         title = 'Average Trade Price Level {}'.format(level)
         for area_name in self.level_dict[level]:
             higap = BarGraph(self.stats[area_name.lower()], key)
-            higap.graph_value("Average Trade Price")
+            higap.graph_value()
             traceigap = go.Scatter(x=list(higap.umHours.keys()),
                                    y=list(higap.umHours.values()),
                                    name=area_name.lower())
@@ -451,8 +450,7 @@ class ExportLeafData(ExportData):
             return ['bought [kWh]', 'sold [kWh]', 'energy balance [kWh]', 'offered [kWh]',
                     'used [kWh]', 'charge [%]', 'stored [kWh]']
         elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
-                                             DefinedLoadStrategy, PermanentLoadStrategy,
-                                             CellTowerLoadHoursStrategy)):
+                                             DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
             return ['desired energy [kWh]', 'deficit [kWh]']
         elif isinstance(self.area.strategy, (PVStrategy, PVPredefinedStrategy,
                                              PVUserProfileStrategy)):
@@ -484,8 +482,7 @@ class ExportLeafData(ExportData):
                     charge,
                     stored]
         elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
-                                             DefinedLoadStrategy, PermanentLoadStrategy,
-                                             CellTowerLoadHoursStrategy)):
+                                             DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
             desired = self.area.strategy.state.desired_energy[slot] / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
@@ -504,7 +501,7 @@ class BarGraph:
         self.dataset = dataset
         self.umHours = dict()
 
-    def graph_value(self, graph_name):
+    def graph_value(self):
         try:
             self.dataset[self.key]
         except KeyError:
@@ -512,7 +509,11 @@ class BarGraph:
         else:
             for de in range(len(self.dataset[self.key])):
                 if self.dataset[self.key][de] != 0:
-                    self.umHours[self.dataset['slot'][de]] = round(self.dataset[self.key][de], 5)
+                    if self.dataset[self.key][de] == "-":
+                        self.umHours[self.dataset['slot'][de]] = 0.0
+                    else:
+                        self.umHours[self.dataset['slot'][de]] = \
+                            round(self.dataset[self.key][de], 5)
 
     @staticmethod
     def plot_bar_graph(barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
