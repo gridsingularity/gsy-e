@@ -33,6 +33,12 @@ def get_slug(inp_str: str):
     return inp_str.replace(" ", "-").lower()
 
 
+def mkdir(directory: str):
+    out_dir = pathlib.Path(directory)
+    out_dir.mkdir(exist_ok=True, parents=True)
+    return out_dir
+
+
 class ExportAndPlot:
 
     def __init__(self, root_area: Area, path: str, subdir: str):
@@ -73,17 +79,13 @@ class ExportAndPlot:
         self._get_iaa_bought_energy(self.area)
         self._export_iaa_bought_energy(self.directory)
 
+        self.plot_traded_energy_history(self.area, self.plot_dir + "/grid/")
+
+        self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_profile(self.area)
         self.plot_all_soc_history()
         self.plot_all_unmatched_loads()
-        self.plot_traded_energy_history_all_knots(self.area)
-
-        level_list = list(self.level_dict.keys())
-        level_list.sort()
-        for level in level_list[:-1]:
-            self._plot_avg_trade_price(level)
-        for level in level_list:
-            self._plot_traded_energy_history_level(level)
+        # self.plot_traded_energy_history_all_knots(self.area)
 
     def _export_area_with_children(self, area: Area, directory: dir):
         """
@@ -247,7 +249,7 @@ class ExportAndPlot:
         key = 'total energy traded [kWh]'
         title = 'Energy Profile Level {}'.format(area_name)
 
-        higl = BarGraph(self.stats[area_name.lower()], key)
+        higl = BarGraph(self.stats[get_slug(area_name)], key)
         higl.graph_value()
         traceigl = go.Bar(x=list(higl.umHours.keys()),
                           y=list(higl.umHours.values()),
@@ -262,7 +264,16 @@ class ExportAndPlot:
                                    'traded_energy_profile_{}.html'.format(area_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
-    def _plot_traded_energy_history_level(self, level: int):
+    def plot_traded_energy_history(self, area, subdir):
+
+        for child in area.children:
+            if child.children:
+                leaf_list = [ci.slug for ci in child.children]
+                new_subdir = os.path.join(subdir, child.slug)
+                self._plot_traded_energy_history(leaf_list, new_subdir, child.slug)
+                self.plot_traded_energy_history(child, new_subdir)
+
+    def _plot_traded_energy_history(self, leaf_list: list, subdir: str, root_name: str):
         """
         Plots traded energy history for the specified level of the hierarchy
         """
@@ -271,8 +282,8 @@ class ExportAndPlot:
         xtitle = 'Time'
         ytitle = 'Energy (kWh)'
         key = 'energy traded [kWh]'
-        title = 'Energy Profile Level {}'.format(level)
-        for area_name in self.level_dict[level]:
+        title = 'Energy Profile {}'.format(root_name)
+        for area_name in leaf_list:
 
             higl = BarGraph(self.stats[area_name.lower()], key)
             higl.graph_value()
@@ -285,8 +296,11 @@ class ExportAndPlot:
             return
         if all([len(da.y) == 0 for da in data]):
             return
-        output_file = os.path.join(self.plot_dir,
-                                   'traded_energy_profile_level{}.html'.format(level))
+
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir(plot_dir)
+        output_file = os.path.join(plot_dir,
+                                   'traded_energy_profile_{}.html'.format(root_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def _prepare_hierarchy(self, area: Area, address: str):
@@ -317,10 +331,10 @@ class ExportAndPlot:
         Determines the hierarchy and the levels of the configuration
         """
 
-        self._prepare_hierarchy(self.area, self.area.name)
+        self._prepare_hierarchy(self.area, get_slug(self.area.name))
         self.hierarchy_list.sort(key=len)
         self._get_levels()
-        self.hierarchy[self.area.name] = {}
+        self.hierarchy[get_slug(self.area.name)] = {}
         for node in self.hierarchy_list:
             address = node.split("/")
             try:
@@ -376,7 +390,19 @@ class ExportAndPlot:
         output_file = os.path.join(self.plot_dir, 'ess_soc_all_history.html')
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
-    def _plot_avg_trade_price(self, level: int):
+    def plot_avg_trade_price(self, area, subdir):
+        """
+        Wrapper for _plot_avg_trade_price
+        """
+        if area.children:
+            area_list = [area.slug]
+            area_list += [ci.slug for ci in area.children]
+            new_subdir = os.path.join(subdir, area.slug)
+            self._plot_avg_trade_price(area_list, new_subdir)
+            for child in area.children:
+                self.plot_avg_trade_price(child, new_subdir)
+
+    def _plot_avg_trade_price(self, area_list: list, subdir: str):
         """
         Plots average trade price for the specified level of the hierarchy
         """
@@ -385,8 +411,8 @@ class ExportAndPlot:
         xtitle = "Time"
         ytitle = "Price [ct./kWh]"
         key = 'avg trade rate [ct./kWh]'
-        title = 'Average Trade Price Level {}'.format(level)
-        for area_name in self.level_dict[level]:
+        title = 'Average Trade Price {}'.format(area_list[0])
+        for area_name in area_list:
             higap = BarGraph(self.stats[area_name.lower()], key)
             higap.graph_value()
             traceigap = go.Scatter(x=list(higap.umHours.keys()),
@@ -395,7 +421,9 @@ class ExportAndPlot:
             data.append(traceigap)
         if all([len(da.y) == 0 for da in data]):
             return
-        output_file = os.path.join(self.plot_dir, 'average_trade_price_level{}.html'.format(level))
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir(plot_dir)
+        output_file = os.path.join(plot_dir, 'average_trade_price_{}.html'.format(area_list[0]))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
 
