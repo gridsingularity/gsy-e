@@ -8,7 +8,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 
 """
-Power profile for the finite power plant. It will produce 0.01 kW from 00:00-07:45, 0.0015 kW
+Power profile for the finite power plant. It will produce 0.1 kW from 00:00-07:45, 0.15 kW
 from 8:00-11:45 and so forth.
 """
 diesel_power_profile_kW = {
@@ -27,7 +27,7 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=2000,
+                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),

@@ -6,10 +6,22 @@ Feature: PV Tests
      When we run the d3a simulation with strategy_tests.pv_min_selling_rate [24, 15, 15]
      Then the storages buy energy for no more than the min PV selling rate
 
-  Scenario: PV can use the market maker rate as the initial rate for every market slot
-     Given we have a scenario named strategy_tests/pv_initial_rate
+  Scenario: PV RISK based price decrease
+     Given we have a scenario named strategy_tests/pv_risk_based_price_decrease
      And d3a is installed
-     When we run the d3a simulation with strategy_tests.pv_initial_rate [24, 15, 15]
+     When we run the d3a simulation with strategy_tests.pv_risk_based_price_decrease [24, 15, 15]
+     Then the PV strategy decrease its sold/unsold offers price as expected
+
+  Scenario: PV CONSTANT based price decrease
+     Given we have a scenario named strategy_tests/pv_const_price_decrease
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.pv_const_price_decrease [24, 15, 15]
+     Then the PV strategy decrease its sold/unsold offers price as expected
+
+  Scenario: PV can use the market maker rate as the initial rate for every market slot
+     Given we have a scenario named strategy_tests/pv_initial_pv_rate_option
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.pv_initial_pv_rate_option [24, 15, 15]
      Then the PV sells energy at the market maker rate for every market slot
 
   Scenario: UserProfile PV follows the profile provided by the user as dict
@@ -25,9 +37,9 @@ Feature: PV Tests
      Then the UserProfile PV follows the PV profile of csv
 
   Scenario: Predefined PV follows the profile provided by the user
-     Given we have a scenario named strategy_tests/predefined_pv
+     Given we have a scenario named strategy_tests/predefined_pv_risk
      And d3a is installed
-     When we run the d3a simulation with strategy_tests.predefined_pv [24, 15, 15]
+     When we run the d3a simulation with strategy_tests.predefined_pv_risk [24, 15, 15]
      Then the predefined PV follows the PV profile
 
   Scenario: Predefined PV follows the csv profile provided by the user
