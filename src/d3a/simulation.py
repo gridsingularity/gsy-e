@@ -14,7 +14,7 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.exceptions import SimulationException, D3AException
-from d3a.export import export
+from d3a.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
@@ -216,9 +216,8 @@ class Simulation:
                     if not self.exit_on_finish:
                         log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
-                        export(self.area,
-                               self.export_path,
-                               Pendulum.now().format("%Y-%m-%d_%X"))
+                        ExportAndPlot(self.area, self.export_path,
+                                      Pendulum.now().format("%Y-%m-%d_%X"))
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
