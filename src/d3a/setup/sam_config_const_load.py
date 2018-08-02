@@ -10,7 +10,7 @@ import os
 
 
 def get_setup(config):
-
+    config_file = "SAM_MF2_Summer_constant_6000W.csv"
     area = Area(
         'Grid',
         [
@@ -26,8 +26,7 @@ def get_setup(config):
                     Area('H1 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_MF2_Summer_realistic.csv'),
+                                                             'resources', config_file),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
@@ -44,8 +43,7 @@ def get_setup(config):
                     Area('H2 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_SF_Summer_realistic.csv'),
+                                                             'resources', config_file),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -59,8 +57,7 @@ def get_setup(config):
                     Area('H3 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_MF2_Summer_realistic.csv'),
+                                                             'resources', config_file),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -74,8 +71,7 @@ def get_setup(config):
                     Area('H4 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_SF_Summer_realistic.csv'),
+                                                             'resources', config_file),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
@@ -90,8 +86,7 @@ def get_setup(config):
                     Area('H5 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_MF2_Summer_realistic.csv'),
+                                                             'resources', config_file),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
@@ -106,8 +101,7 @@ def get_setup(config):
                     Area('H6 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_SF_Summer_realistic.csv'),
+                                                             'resources', config_file),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -119,8 +113,7 @@ def get_setup(config):
                     Area('H7 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_MF2_Summer_realistic.csv'),
+                                                             'resources', config_file),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -132,8 +125,7 @@ def get_setup(config):
                     Area('H8 General Load',
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
-                                                             'resources',
-                                                             'SAM_SF_Summer_realistic.csv'),
+                                                             'resources', config_file),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
