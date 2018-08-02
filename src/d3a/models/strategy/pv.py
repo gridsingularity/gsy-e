@@ -89,11 +89,8 @@ class PVStrategy(BaseStrategy):
             rounded_energy_rate =\
                 self.area.config.market_maker_rate[current_time_h]
         assert rounded_energy_rate >= 0.0
-        '''
-        NOTE: PV's initial sell offer would be 99% of market_maker_rate.
-        It's done deliberately to prefer PV trade over ESS & CEP.
-        '''
-        return rounded_energy_rate * 0.99
+
+        return rounded_energy_rate
 
     def event_tick(self, *, area):
         self._decrease_energy_price_over_ticks()

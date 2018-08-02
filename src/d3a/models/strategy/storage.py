@@ -1,4 +1,3 @@
-from d3a.models.strategy import ureg, Q_
 from enum import Enum
 
 from d3a.exceptions import MarketException
@@ -43,9 +42,9 @@ class StorageStrategy(BaseStrategy):
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
-        self.max_selling_rate_cents_per_kwh =\
-            {k: Q_((self.area.config.market_maker_rate[k] - 1), (ureg.EUR_cents / ureg.kWh))
-             for k in range(24)}
+        # self.max_selling_rate_cents_per_kwh =\
+        #     {k: Q_((self.area.config.market_maker_rate[k] - 1), (ureg.EUR_cents / ureg.kWh))
+        #      for k in range(24)}
 
     def _update_break_even_points(self, break_even):
         if isinstance(break_even, tuple) or isinstance(break_even, list):
@@ -198,23 +197,24 @@ class StorageStrategy(BaseStrategy):
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
         break_even_sell = self.break_even[market.time_slot.hour][1]
-        if self.initial_ess_rate_option == 1 and self.area.historical_avg_rate != 0:
-            max_selling_rate = self.area.historical_avg_rate
-        else:
-            max_selling_rate = self.area.config.market_maker_rate[market.time_slot.hour]
         risk_dependent_selling_rate = (
             break_even_sell + self._risk_factor(
-                max_selling_rate - break_even_sell
+                self._max_selling_rate(market) - break_even_sell
             )
         )
         # Limit rate to respect max sell rate
         rate = max(
             min(risk_dependent_selling_rate,
-                max_selling_rate),
+                self._max_selling_rate(market)),
             break_even_sell
         )
-        print("Rate: " + str(rate))
         return rate
+
+    def _max_selling_rate(self, market):
+        if self.initial_ess_rate_option == 1 and self.area.historical_avg_rate != 0:
+            return self.area.historical_avg_rate
+        else:
+            return self.area.config.market_maker_rate[market.time_slot.hour] - 1
 
     def _risk_factor(self, output_range):
         """
