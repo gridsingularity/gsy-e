@@ -165,43 +165,43 @@ def pv_profile_scenario(context):
                                          iaa_fee=5)
     context._settings.area = predefined_pv_scenario
 
-#
-# @when('the simulation is running')
-# def running_the_simulation(context):
-#
-#     root_logger = logging.getLogger()
-#     root_logger.setLevel(logging.CRITICAL)
-#
-#     slowdown = 0
-#     seed = 0
-#     paused = False
-#     pause_after = Interval()
-#     repl = False
-#     export = False
-#     export_path = None
-#     reset_on_finish = False
-#     reset_on_finish_wait = Interval()
-#     exit_on_finish = True
-#     exit_on_finish_wait = Interval()
-#
-#     api_url = "http://localhost:5000/api"
-#     context.simulation = Simulation(
-#         'json_arg',
-#         context._settings,
-#         slowdown,
-#         seed,
-#         paused,
-#         pause_after,
-#         repl,
-#         export,
-#         export_path,
-#         reset_on_finish,
-#         reset_on_finish_wait,
-#         exit_on_finish,
-#         exit_on_finish_wait,
-#         api_url
-#     )
-#     context.simulation.run()
+
+@when('the simulation is running')
+def running_the_simulation(context):
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.CRITICAL)
+
+    slowdown = 0
+    seed = 0
+    paused = False
+    pause_after = Interval()
+    repl = False
+    export = False
+    export_path = None
+    reset_on_finish = False
+    reset_on_finish_wait = Interval()
+    exit_on_finish = True
+    exit_on_finish_wait = Interval()
+
+    api_url = "http://localhost:5000/api"
+    context.simulation = Simulation(
+        'json_arg',
+        context._settings,
+        slowdown,
+        seed,
+        paused,
+        pause_after,
+        repl,
+        export,
+        export_path,
+        reset_on_finish,
+        reset_on_finish_wait,
+        exit_on_finish,
+        exit_on_finish_wait,
+        api_url
+    )
+    context.simulation.run()
 
 
 @when('we run the d3a simulation on console with {scenario}')
