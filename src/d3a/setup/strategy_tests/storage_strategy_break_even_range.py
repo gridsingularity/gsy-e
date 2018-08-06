@@ -9,8 +9,8 @@ from d3a.models.strategy.pv import PVStrategy
 
 
 '''
-This setup file is being modified to mimic a typical modern household having a hybrid
-PV-ESS system.'''
+This setup file is being modified to mimic a typical
+modern household having a hybrid PV-ESS system.'''
 
 '''
 TO BE DISCUSS: ESS Trade updates are taking place at event_market_cycle due to which when ESS

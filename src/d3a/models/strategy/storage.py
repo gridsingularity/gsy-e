@@ -196,18 +196,12 @@ class StorageStrategy(BaseStrategy):
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
         break_even_sell = self.break_even[market.time_slot.hour][1]
-        risk_dependent_selling_rate = (
-            break_even_sell + self._risk_factor(
-                self._max_selling_rate(market) - break_even_sell
-            )
-        )
+        max_selling_rate = self._max_selling_rate(market)
+        risk_dependent_selling_rate = (break_even_sell + self._risk_factor(
+            max_selling_rate - break_even_sell))
         # Limit rate to respect max sell rate
-        rate = max(
-            min(risk_dependent_selling_rate,
-                self._max_selling_rate(market)),
-            break_even_sell
-        )
-        return rate
+        return max(
+            min(risk_dependent_selling_rate, max_selling_rate), break_even_sell)
 
     def _max_selling_rate(self, market):
         if self.initial_ess_rate_option == 1 and self.area.historical_avg_rate != 0:
