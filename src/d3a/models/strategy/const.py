@@ -6,7 +6,7 @@ class ConstSettings:
     # Unit is percentage
     DEFAULT_RISK = 50
     # Max energy price in ct / kWh
-    MAX_ENERGY_RATE = 30  # 0.3 Eur
+    DEFAULT_MARKET_MAKER_RATE = 30  # 0.3 Eur
 
     # FRIDGE SETTINGS
     # Unit is degree celsius
@@ -17,8 +17,6 @@ class ConstSettings:
     FRIDGE_TEMPERATURE = 6.0
 
     # MARKET RELATED LIMITATIONS
-    # Unit is cent
-    MIN_AVERAGE_PRICE = 15
     # Unit is in Wh
     FRIDGE_MIN_NEEDED_ENERGY = 10
 
@@ -30,7 +28,7 @@ class ConstSettings:
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
     STORAGE_BREAK_EVEN_BUY = 25
-    STORAGE_MAX_SELL_RATE_c_per_Kwh = MAX_ENERGY_RATE - 1
+    STORAGE_MAX_SELL_RATE_c_per_Kwh = DEFAULT_MARKET_MAKER_RATE - 1
     STORAGE_MIN_ALLOWED_SOC = 0.1
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
     # PV SETTINGS
@@ -83,6 +81,5 @@ class ConstSettings:
     COMMERCIAL_OFFERS = 20
 
     MAX_OFFER_TRAVERSAL_LENGTH = 10
-    PV_DECREASE_PER_SECOND_BY = 0.01
 
     INTER_AREA_AGENT_FEE_PERCENTAGE = 1
