@@ -35,12 +35,23 @@ class ConstSettings:
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
     # PV SETTINGS
     # This price should be just above the marginal costs for a PV system - unit is cent
-    MIN_PV_SELLING_PRICE = 0
+    MIN_PV_SELLING_RATE = 0
 
     # Initial PV rate calculation for every market slot, before rate reduction per tick
     # Default value 1, use the historical market average
     # Option 2 stands for market maker rate
     INITIAL_PV_RATE_OPTION = 1
+    # Option 1, use the historical market average
+    # Default value 2 stands for market maker rate
+    INITIAL_PV_RATE_OPTION = 2
+
+    # Energy rate decrease option for unsold PV offers
+    # Default value 1 stands for percentage/RISK based energy rate decrease
+    # Option 2, use the constant energy rate decrease
+    PV_RATE_DECREASE_OPTION = 1
+
+    ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_slot
+
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
     MAX_PV_OUTPUT = 160
 
