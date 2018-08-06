@@ -46,6 +46,8 @@ class ExportAndPlot:
         self.stats = {}
         self.iaa_trades = {}
         self.iaa_trades_list = {}
+        self.buyer_trades = {}
+        self.seller_trades = {}
         self.area = root_area
         self.hierarchy_list = []
         self.hierarchy = {}
@@ -74,17 +76,18 @@ class ExportAndPlot:
     def export(self):
         """Wrapping function, executes all export and plotting functions"""
 
-        self._get_hierarchy()
+        # self._get_hierarchy()
         self._export_area_with_children(self.area, self.directory)
         self._get_iaa_bought_energy(self.area)
         self._export_iaa_bought_energy(self.directory)
-
+        self._get_buyer_seller_trades(self.area)
+        self.plot_house_trade_rate_history(self.area, self.plot_dir + "/grid/")
         self.plot_traded_energy_history(self.area, self.plot_dir + "/grid/")
 
-        self.plot_avg_trade_price(self.area, self.plot_dir)
-        self.plot_ess_profile(self.area)
-        self.plot_all_soc_history()
-        self.plot_all_unmatched_loads()
+        self.plot_avg_trade_rate(self.area, self.plot_dir)
+        # self.plot_ess_profile(self.area)
+        self.plot_soc_and_unmatched_history(self.area, self.plot_dir)
+        # self.plot_all_unmatched_loads()
         # self.plot_traded_energy_history_all_knots(self.area)
 
     def _export_area_with_children(self, area: Area, directory: dir):
@@ -120,6 +123,30 @@ class ExportAndPlot:
             return out_dict
         except OSError:
             _log.exception("Could not export area trades")
+
+    def _get_buyer_seller_trades(self, area: Area):
+        """
+        Determines the buy and sell rate of each leaf node
+        """
+        labels = ("slot", "rate [ct./kWh]", "energy [kWh]")
+        for i, child in enumerate(area.children):
+            for slot, market in area.past_markets.items():
+                for trade in market.trades:
+                    buyer_slug = get_slug(trade.buyer)
+                    seller_slug = get_slug(trade.seller)
+                    if buyer_slug not in self.buyer_trades:
+                        self.buyer_trades[buyer_slug] = dict((key, []) for key in labels)
+                    if seller_slug not in self.seller_trades:
+                        self.seller_trades[seller_slug] = dict((key, []) for key in labels)
+                    else:
+                        values = (slot, ) + \
+                                  (round(trade.offer.price/trade.offer.energy, 4),
+                                   (trade.offer.energy * -1))
+                        for ii, ri in enumerate(labels):
+                            self.buyer_trades[buyer_slug][ri].append(values[ii])
+                            self.seller_trades[seller_slug][ri].append(values[ii])
+            if child.children:
+                self._get_buyer_seller_trades(child)
 
     def _get_iaa_bought_energy(self, area: Area):
         """
@@ -184,6 +211,55 @@ class ExportAndPlot:
                 return out_dict
             except Exception as ex:
                 _log.error("Could not export area data: %s" % str(ex))
+
+    def plot_house_trade_rate_history(self, area: Area, subdir: str):
+
+        for child in area.children:
+            if child.children:
+                leaf_list = [ci.slug for ci in child.children if not ci.children]
+                new_subdir = os.path.join(subdir, child.slug)
+                self._plot_house_trade_rate_history(leaf_list, new_subdir, child.slug)
+                self.plot_house_trade_rate_history(child, new_subdir)
+
+    def _plot_house_trade_rate_history(self, leaf_list: list, subdir: str, root_name: str):
+        """
+        Plots history of trade rates on house level for the specified level of the hierarchy
+        """
+        data = list()
+        barmode = "bar"
+        xtitle = 'Time'
+        ytitle = 'Energy Rate [ct./kWh]'
+        key = 'rate [ct./kWh]'
+        title = 'Energy Trade Profile of '.format(root_name)
+        for leaf_name in leaf_list:
+            if leaf_name not in self.seller_trades:
+                continue
+            higl = BarGraph(self.seller_trades[leaf_name], key)
+            higl.graph_value()
+            traceigl = go.Bar(x=list(higl.umHours.keys()),
+                              y=list(higl.umHours.values()),
+                              name=leaf_name)
+
+            data.append(traceigl)
+        for leaf_name in leaf_list:
+            if leaf_name not in self.buyer_trades:
+                continue
+            higl = BarGraph(self.buyer_trades[leaf_name], key)
+            higl.graph_value(scale_value=-1)
+            traceigl = go.Bar(x=list(higl.umHours.keys()),
+                              y=list(higl.umHours.values()),
+                              name=leaf_name)
+
+            data.append(traceigl)
+
+        if len(data) == 0:
+            return
+
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir(plot_dir)
+        output_file = os.path.join(plot_dir,
+                                   'trade_rates_{}.html'.format(root_name))
+        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def plot_ess_profile(self, area: Area):
         """
@@ -283,6 +359,7 @@ class ExportAndPlot:
         ytitle = 'Energy (kWh)'
         key = 'energy traded [kWh]'
         title = 'Energy Profile {}'.format(root_name)
+
         for area_name in leaf_list:
 
             higl = BarGraph(self.stats[area_name.lower()], key)
@@ -342,15 +419,13 @@ class ExportAndPlot:
             except KeyError:
                 setindict(self.hierarchy, address, {"adress": node})
 
-    def plot_all_unmatched_loads(self):
+    def plot_all_unmatched_loads(self, load_list: list, subdir: str, root_name: str):
         """
         Plot unmatched loads of all loads in the configuration into one plot
         """
-
         unmatched_key = 'deficit [kWh]'
-        load_list = [key for key, value in self.stats.items() if unmatched_key in value]
         data = list()
-        title = 'Devices Un-matched Loads'
+        title = 'Devices Un-matched Loads {}'.format(root_name)
         xtitle = 'Time'
         ytitle = 'Energy (kWh)'
         barmode = 'bar'
@@ -364,19 +439,42 @@ class ExportAndPlot:
                               y=list(hict.umHours.values()),
                               name=li)
             data.append(traceict)
-            output_file = os.path.join(self.plot_dir, 'unmatched_loads_all.html')
-            BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        if len(data) == 0:
+            return
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir(plot_dir)
+        output_file = os.path.join(plot_dir, 'unmatched_loads_{}.html'.format(root_name))
+        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
-    def plot_all_soc_history(self):
+    def plot_soc_and_unmatched_history(self, area, subdir):
         """
-        Plots SOC history of all storages into one plot
+        Wrapper for _plot_ess_soc_history.
         """
 
         storage_key = 'charge [%]'
-        storage_list = [key for key, value in self.stats.items() if storage_key in value]
+        unmatched_key = 'deficit [kWh]'
+        new_subdir = os.path.join(subdir, area.slug)
+        storage_list = [child.slug for child in area.children
+                        if storage_key in self.stats[child.slug].keys()]
+        unm_loads_list = [child.slug for child in area.children
+                          if unmatched_key in self.stats[child.slug].keys()]
+        if storage_list is not []:
+            self._plot_ess_soc_history(storage_list, new_subdir, area.slug)
+        if unm_loads_list is not []:
+            self.plot_all_unmatched_loads(unm_loads_list, new_subdir, area.slug)
+        for child in area.children:
+            if child.children:
+                self.plot_soc_and_unmatched_history(child, new_subdir)
+
+    def _plot_ess_soc_history(self, storage_list: list, subdir: str, root_name: str):
+        """
+        Plots ess soc for each knot in the hierarchy
+        """
+
+        storage_key = 'charge [%]'
         data = list()
         barmode = "relative"
-        title = 'ESS SOC'
+        title = 'ESS SOC ({})'.format(root_name)
         xtitle = 'Time'
         ytitle = 'charge [%]'
 
@@ -387,31 +485,35 @@ class ExportAndPlot:
                                     y=list(chss1.umHours.values()),
                                     name=si)
             data.append(tracechss1)
-        output_file = os.path.join(self.plot_dir, 'ess_soc_all_history.html')
+        if len(data) == 0:
+            return
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir(plot_dir)
+        output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
-    def plot_avg_trade_price(self, area, subdir):
+    def plot_avg_trade_rate(self, area, subdir):
         """
-        Wrapper for _plot_avg_trade_price
+        Wrapper for _plot_avg_trade_rate
         """
         if area.children:
             area_list = [area.slug]
             area_list += [ci.slug for ci in area.children]
             new_subdir = os.path.join(subdir, area.slug)
-            self._plot_avg_trade_price(area_list, new_subdir)
+            self._plot_avg_trade_rate(area_list, new_subdir)
             for child in area.children:
-                self.plot_avg_trade_price(child, new_subdir)
+                self.plot_avg_trade_rate(child, new_subdir)
 
-    def _plot_avg_trade_price(self, area_list: list, subdir: str):
+    def _plot_avg_trade_rate(self, area_list: list, subdir: str):
         """
-        Plots average trade price for the specified level of the hierarchy
+        Plots average trade for the specified level of the hierarchy
         """
         data = list()
         barmode = 'bar'
         xtitle = "Time"
-        ytitle = "Price [ct./kWh]"
+        ytitle = "Rate [ct./kWh]"
         key = 'avg trade rate [ct./kWh]'
-        title = 'Average Trade Price {}'.format(area_list[0])
+        title = 'Average Trade Rate {}'.format(area_list[0])
         for area_name in area_list:
             higap = BarGraph(self.stats[area_name.lower()], key)
             higap.graph_value()
@@ -423,7 +525,7 @@ class ExportAndPlot:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir(plot_dir)
-        output_file = os.path.join(plot_dir, 'average_trade_price_{}.html'.format(area_list[0]))
+        output_file = os.path.join(plot_dir, 'average_trade_rate_{}.html'.format(area_list[0]))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
 
@@ -468,7 +570,11 @@ class ExportLeafData(ExportData):
         super(ExportLeafData, self).__init__(area)
 
     def labels(self):
-        return ['slot', 'energy traded [kWh]'] + self._specific_labels()
+        return ['slot',
+                'energy traded [kWh]',
+                'avg trade rate [ct./kWh]',
+                'total energy traded [kWh]'
+                ] + self._specific_labels()
 
     def _specific_labels(self):
         # TODO: review the strategies
@@ -493,7 +599,12 @@ class ExportLeafData(ExportData):
         return market.traded_energy[self.area.name]
 
     def _row(self, slot, market):
-        return [slot, self._traded(market)] + self._specific_row(slot, market)
+        # _ = [print(mi.seller, mi.buyer) for mi in market.trades]
+        return [slot,
+                self._traded(market),
+                market.avg_trade_price,
+                sum(trade.offer.energy for trade in market.trades)
+                ] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
@@ -529,7 +640,7 @@ class BarGraph:
         self.dataset = dataset
         self.umHours = dict()
 
-    def graph_value(self):
+    def graph_value(self, scale_value=1):
         try:
             self.dataset[self.key]
         except KeyError:
@@ -541,7 +652,7 @@ class BarGraph:
                         self.umHours[self.dataset['slot'][de]] = 0.0
                     else:
                         self.umHours[self.dataset['slot'][de]] = \
-                            round(self.dataset[self.key][de], 5)
+                            round(self.dataset[self.key][de], 5) * scale_value
 
     @staticmethod
     def plot_bar_graph(barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
@@ -556,7 +667,8 @@ class BarGraph:
             ),
             font=dict(
                 size=16
-            )
+            ),
+            showlegend=True
         )
 
         fig = go.Figure(data=data, layout=layout)
