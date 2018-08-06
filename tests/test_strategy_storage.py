@@ -344,24 +344,16 @@ def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
         ConstSettings.STORAGE_BREAK_EVEN_SELL
 
 
-def test_calculate_risk_factor(storage_strategy_test7):
+@pytest.mark.parametrize("risk", [0.0, 25.0, 100.0, 0.0])
+def test_calculate_risk_factor(storage_strategy_test7, risk):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
     rate_range = \
         storage_strategy_test7.area.config.market_maker_rate[market.time_slot.hour] - \
         ConstSettings.STORAGE_BREAK_EVEN_SELL - 1
-    storage_strategy_test7.risk = 80.0
+    storage_strategy_test7.risk = risk
     assert storage_strategy_test7._calculate_selling_rate(market) == \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL + (storage_strategy_test7.risk / 100) * rate_range
-    storage_strategy_test7.risk = 25.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL + (storage_strategy_test7.risk / 100) * rate_range
-    storage_strategy_test7.risk = 100.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL + (storage_strategy_test7.risk / 100) * rate_range
-    storage_strategy_test7.risk = 0.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL + (storage_strategy_test7.risk / 100) * rate_range
+        ConstSettings.STORAGE_BREAK_EVEN_SELL + (risk / 100) * rate_range
 
 
 def test_calculate_energy_amount_to_sell_respects_max_power(storage_strategy_test7, area_test7):
