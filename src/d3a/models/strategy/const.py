@@ -76,10 +76,6 @@ class ConstSettings:
     # Minimal consumption per household in Wh
     MIN_HOUSEHOLD_CONSUMPTION = 70
 
-    # COMMERCIAL PRODUCER SETTINGS
-    # Amount of posted offers per market
-    COMMERCIAL_OFFERS = 20
-
     MAX_OFFER_TRAVERSAL_LENGTH = 10
 
     INTER_AREA_AGENT_FEE_PERCENTAGE = 1
