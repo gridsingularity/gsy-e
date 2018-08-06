@@ -19,7 +19,6 @@ def check_load_profile_csv(context):
                    (Interval(hours=1) / load.config.slot_length)
         else:
             assert False
-    # assert False
 
 
 @then('load only accepted offers lower than acceptable_energy_rate')
@@ -39,11 +38,10 @@ def check_user_pv_dict_profile(context):
     house = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 DefinedLoad", house.children))[0]
     from d3a.setup.strategy_tests.user_profile_load_dict import user_profile
-    profile_data = user_profile
 
     for slot, market in house.past_markets.items():
-        if slot.hour in profile_data.keys():
-            assert load.strategy.state.desired_energy[slot] == profile_data[slot.hour] / \
+        if slot.hour in user_profile.keys():
+            assert load.strategy.state.desired_energy[slot] == user_profile[slot.hour] / \
                    (Interval(hours=1) / house.config.slot_length)
         else:
             assert load.strategy.state.desired_energy[slot] == 0

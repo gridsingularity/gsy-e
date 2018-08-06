@@ -47,69 +47,10 @@ def hour_profile_of_market_maker_rate(context, scenario):
     context._market_maker_rate = setup_file_module.market_maker_rate
     assert context._market_maker_rate is not None
 
-#
-# @given('a load profile csv as input to predefined load')
-# def load_csv_profile(context):
-#     context._device_profile = os.path.join(d3a_path, 'resources', 'LOAD_DATA_1.csv')
-
 
 @given('a PV profile csv as input to predefined PV')
 def pv_csv_profile(context):
     context._device_profile = os.path.join(d3a_path, 'resources', 'Solar_Curve_W_cloudy.csv')
-
-#
-# @given('the scenario includes a predefined load that will not be unmatched')
-# def load_profile_scenario(context):
-#     predefined_load_scenario = {
-#       "name": "Grid",
-#       "children": [
-#         {
-#           "name": "Commercial Energy Producer",
-#           "type": "CommercialProducer",
-#           "energy_price": 15.5,
-#           "energy_range_wh": [40, 120]
-#         },
-#         {
-#           "name": "House 1",
-#           "children": [
-#             {
-#               "name": "H1 Load",
-#               "type": "LoadProfile",
-#               "daily_load_profile": context._device_profile
-#             },
-#             {
-#               "name": "H1 PV",
-#               "type": "PV",
-#               "panel_count": 3,
-#               "risk": 80
-#             }
-#           ]
-#         },
-#         {
-#           "name": "House 2",
-#           "children": [
-#             {
-#               "name": "H2 Storage",
-#               "type": "Storage",
-#               "capacity": 5,
-#               "initial_charge": 40
-#             },
-#             {
-#               "name": "H2 Fridge 1",
-#               "type": "Fridge"
-#             },
-#           ]
-#         }
-#       ]
-#     }
-#     context._settings = SimulationConfig(tick_length=Interval(seconds=15),
-#                                          slot_length=Interval(minutes=15),
-#                                          duration=Interval(hours=24),
-#                                          market_count=4,
-#                                          cloud_coverage=0,
-#                                          market_maker_rate=30,
-#                                          iaa_fee=5)
-#     context._settings.area = predefined_load_scenario
 
 
 @given('the scenario includes a predefined PV')
