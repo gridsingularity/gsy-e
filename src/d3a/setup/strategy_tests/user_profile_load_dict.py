@@ -1,5 +1,5 @@
 """
-Setup file for displaying PVPredefinedStrategy.
+Setup file for displaying DefinedLoadStrategy.
 """
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.appliance.simple import SimpleAppliance
