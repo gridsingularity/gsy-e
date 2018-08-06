@@ -30,7 +30,7 @@ def check_traded_energy_rate(context):
     for slot, market in house.past_markets.items():
         for trade in market.trades:
             if trade.buyer == load.name:
-                assert (trade.offer.price / trade.offer.energy) <=\
+                assert (trade.offer.price / trade.offer.energy) <\
                        load.strategy.acceptable_energy_rate.m
 
 

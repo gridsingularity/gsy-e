@@ -35,7 +35,7 @@ def get_setup(config):
                 [
                     Area('H1 DefinedLoad',
                          strategy=DefinedLoadStrategy(daily_load_profile=profile_path,
-                                                      acceptable_energy_rate=40),
+                                                      acceptable_energy_rate=36),
                          appliance=SwitchableAppliance()),
                 ]
             ),
