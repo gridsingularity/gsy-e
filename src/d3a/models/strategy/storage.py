@@ -23,8 +23,7 @@ class StorageStrategy(BaseStrategy):
                  max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
                  break_even=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
-                 cap_price_strategy=False,
-                 ):
+                 cap_price_strategy=False):
         break_even = self._update_break_even_points(break_even)
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity, break_even)
