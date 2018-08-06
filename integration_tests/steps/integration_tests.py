@@ -360,6 +360,12 @@ def test_output(context, scenario, duration, slot_length, tick_length):
     # (check if number of last slot is the maximal number of slots):
     no_of_slots = (int(duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
+    if scenario == "default":
+        street1 = list(filter(lambda x: x.name == "Street 1", context.simulation.area.children))[0]
+        house1 = list(filter(lambda x: x.name == "S1 House 1", street1.children))[0]
+        permanent_load = list(filter(lambda x: x.name == "S1 H1 Load", house1.children))[0]
+        energy_profile = [ki for ki in permanent_load.strategy.state.desired_energy.values()]
+        assert all([permanent_load.strategy.energy == ei for ei in energy_profile])
     # TODO: Implement more sophisticated tests for success of simulation
 
 
