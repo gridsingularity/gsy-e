@@ -228,7 +228,7 @@ def test_if_storage_max_sell_rate_is_one_unit_less_than_market_maker_rate(storag
                                                                           area_test4):
     storage_strategy_test4.event_activate()
     assert storage_strategy_test4._max_selling_rate(area_test4.current_market) \
-        == (area_test4.config.market_maker_rate[area_test4.current_market.time_slot.hour] - 1)
+        == (area_test4.config.market_maker_rate[area_test4.current_market.time_slot.hour])
 
 
 """TEST5"""
@@ -336,7 +336,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
 def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
-    max_rate = storage_strategy_test7.area.config.market_maker_rate[market.time_slot.hour] - 1
+    max_rate = storage_strategy_test7.area.config.market_maker_rate[market.time_slot.hour]
     storage_strategy_test7._risk_factor = lambda x: 200.0
     assert storage_strategy_test7._calculate_selling_rate(market) == max_rate
     storage_strategy_test7._risk_factor = lambda x: -200.0
@@ -350,7 +350,7 @@ def test_calculate_risk_factor(storage_strategy_test7, risk):
     market = storage_strategy_test7.area.current_market
     rate_range = \
         storage_strategy_test7.area.config.market_maker_rate[market.time_slot.hour] - \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL - 1
+        ConstSettings.STORAGE_BREAK_EVEN_SELL
     storage_strategy_test7.risk = risk
     assert storage_strategy_test7._calculate_selling_rate(market) == \
         ConstSettings.STORAGE_BREAK_EVEN_SELL + (risk / 100) * rate_range

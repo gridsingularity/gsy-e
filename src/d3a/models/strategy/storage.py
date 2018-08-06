@@ -207,7 +207,7 @@ class StorageStrategy(BaseStrategy):
         if self.initial_ess_rate_option == 1 and self.area.historical_avg_rate != 0:
             return self.area.historical_avg_rate
         else:
-            return self.area.config.market_maker_rate[market.time_slot.hour] - 1
+            return self.area.config.market_maker_rate[market.time_slot.hour]
 
     def _risk_factor(self, output_range):
         """
