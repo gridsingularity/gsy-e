@@ -344,7 +344,7 @@ def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
         ConstSettings.STORAGE_BREAK_EVEN_SELL
 
 
-@pytest.mark.parametrize("risk", [0.0, 25.0, 100.0, 0.0])
+@pytest.mark.parametrize("risk", [0.0, 25.0, 100.0])
 def test_calculate_risk_factor(storage_strategy_test7, risk):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
