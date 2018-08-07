@@ -69,7 +69,7 @@ class OfferUpdateFrequencyMixin:
                 if (new_offer.price/new_offer.energy) < self.min_selling_rate.m:
                     new_offer.price = self.min_selling_rate.m * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
-                # print("ESS Updated Rate: " + str(new_offer.price/new_offer.energy))
+                print("ESS Updated Rate: " + str(new_offer.price/new_offer.energy))
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
                               " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))
 

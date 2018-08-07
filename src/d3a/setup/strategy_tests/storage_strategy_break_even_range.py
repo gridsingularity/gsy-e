@@ -33,10 +33,10 @@ def get_setup(config):
                                                                        acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(risk=10, initial_capacity=0.6,
-                                                                 break_even=(26.99, 27.01),
+                                                                 break_even=(16.99, 17.01),
                                                                  max_abs_battery_power=5.0),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(4, 80),
+                    Area('H1 PV', strategy=PVStrategy(4, 10),
                          appliance=PVAppliance()),
 
                 ]
