@@ -3,6 +3,7 @@ Exposes mixins that can be used from strategy classes.
 """
 import csv
 import os
+import ast
 import numpy as np
 from datetime import datetime
 from pendulum import Interval
@@ -141,7 +142,10 @@ class ReadProfileMixin:
                 "%H:%M",
                 slot_length
             )
-        elif isinstance(daily_load_profile, dict):
+        elif isinstance(daily_load_profile, dict) or isinstance(daily_load_profile, str):
+            if isinstance(daily_load_profile, str):
+                daily_load_profile = ast.literal_eval(daily_load_profile)
+                daily_load_profile = {k: float(v) for k, v in daily_load_profile.items()}
             if isinstance(list(daily_load_profile.keys())[0], str):
                 # Assume that the time fields are properly formatted.
                 return self._calculate_energy_from_power_profile(
