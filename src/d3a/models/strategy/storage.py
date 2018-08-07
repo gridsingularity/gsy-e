@@ -5,7 +5,7 @@ from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, \
-    InitialRateOptions, PriceDecreaseOption
+    InitialRateOptions, RateDecreaseOption
 
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
@@ -30,7 +30,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.break_even = break_even
         self.min_selling_price = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
         self.initial_rate_option = InitialRateOptions(initial_rate_option)
-        self.energy_rate_decrease_option = PriceDecreaseOption(energy_rate_decrease_option)
+        self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,

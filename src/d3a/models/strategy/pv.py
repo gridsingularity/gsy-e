@@ -129,6 +129,7 @@ class PVStrategy(BaseStrategy):
                 if (new_offer.price/new_offer.energy) < self.min_selling_price.m:
                     new_offer.price = self.min_selling_price.m * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
+                print("PV new Rate: " + str(new_offer.price/new_offer.energy))
 
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
                               " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))

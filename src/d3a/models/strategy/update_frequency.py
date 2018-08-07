@@ -10,7 +10,7 @@ class InitialRateOptions(Enum):
     MARKET_MAKER_RATE = 2
 
 
-class PriceDecreaseOption(Enum):
+class RateDecreaseOption(Enum):
     PERCENTAGE_BASED_ENERGY_RATE_DECREASE = 1
     CONST_ENERGY_RATE_DECREASE_PER_UPDATE = 2
 
@@ -70,6 +70,8 @@ class OfferUpdateFrequencyMixin:
                     new_offer.price = self.min_selling_rate.m * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
                 print("ESS Updated Rate: " + str(new_offer.price/new_offer.energy))
+                print("Now: " + str(self.area.now))
+
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
                               " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))
 
@@ -78,7 +80,7 @@ class OfferUpdateFrequencyMixin:
 
     def _calculate_price_decrease_rate(self, market):
         if self.energy_rate_decrease_option is \
-                PriceDecreaseOption.PERCENTAGE_BASED_ENERGY_RATE_DECREASE:
+                RateDecreaseOption.PERCENTAGE_BASED_ENERGY_RATE_DECREASE:
             price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
                                  (1 - self.risk/ConstSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
@@ -87,5 +89,5 @@ class OfferUpdateFrequencyMixin:
             # print("ESS price_dec_per_update: " + str(price_dec_per_update))
             return price_dec_per_update
         elif self.energy_rate_decrease_option is \
-                PriceDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
+                RateDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
             return self.energy_rate_decrease_per_update
