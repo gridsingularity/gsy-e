@@ -16,6 +16,7 @@ class ECarStrategy(StorageStrategy):
                   'initial_charge', 'battery_capacity')
 
     def __init__(self, risk=ConstSettings.DEFAULT_RISK, initial_capacity=0.0, initial_charge=None,
+                 initial_ess_rate_option=ConstSettings.INITIAL_ESS_RATE_OPTION,
                  battery_capacity=ConstSettings.STORAGE_CAPACITY,
                  arrival_time=ConstSettings.ARRIVAL_TIME, depart_time=ConstSettings.DEPART_TIME):
         if arrival_time is None:
@@ -26,7 +27,8 @@ class ECarStrategy(StorageStrategy):
             raise ValueError("Depart_time and arrival_time should be between 0 and 23.")
         if not arrival_time < depart_time:
             raise ValueError("Arrival time should be less than depart time.")
-        super().__init__(risk, initial_capacity, initial_charge, battery_capacity)
+        super().__init__(risk, initial_capacity, initial_charge,
+                         initial_ess_rate_option, battery_capacity)
         self.arrival_time = arrival_time
         self.depart_time = depart_time
         self.connected_to_grid = False
