@@ -219,13 +219,13 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         else:
             return self.area.config.market_maker_rate[market.time_slot.hour]
 
-    def _risk_factor(self, output_range):
-        """
-        Returns a value between 0 and range according to the risk parameter.
-        :param output_range: the range of output values of the function
-        :return: the value in the range according to the risk factor
-        """
-        return output_range * self.risk / ConstSettings.MAX_RISK
+    # def _risk_factor(self, output_range):
+    #     """
+    #     Returns a value between 0 and range according to the risk parameter.
+    #     :param output_range: the range of output values of the function
+    #     :return: the value in the range according to the risk factor
+    #     """
+    #     return output_range * self.risk / ConstSettings.MAX_RISK
 
     def capacity_dependant_sell_rate(self, market):
         most_recent_past_ts = sorted(self.area.past_markets.keys())
