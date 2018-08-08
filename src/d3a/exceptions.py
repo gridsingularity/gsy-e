@@ -26,5 +26,9 @@ class InvalidOffer(MarketException):
     pass
 
 
+class InvalidBid(MarketException):
+    pass
+
+
 class AreaException(D3AException):
     pass

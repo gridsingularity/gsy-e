@@ -11,7 +11,7 @@ from pendulum.pendulum import Pendulum
 from terminaltables.other_tables import SingleTable
 
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade
+    InvalidTrade, InvalidBid
 from d3a.models.events import MarketEvent, OfferEvent
 
 
@@ -59,6 +59,18 @@ class Offer:
         self._call_listeners(OfferEvent.ACCEPTED, market=market, trade=trade)
 
 
+class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'market'))):
+    def __new__(cls, id, price, energy, buyer, market):
+        # overridden to give the residual field a default value
+        return super(Bid, cls).__new__(cls, id, price, energy, buyer, market)
+
+    def __str__(self):
+        return (
+            "{{{s.id!s:.6s}}} [{s.buyer}] "
+            "{s.energy} kWh @ {s.price}".format(s=self)
+        )
+
+
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None):
         # overridden to give the residual field a default value
@@ -89,6 +101,7 @@ class Market:
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
+        self.bids = {}  # type: Dict[str, Bid]
         self.notification_listeners = []
         self.trades = []  # type: List[Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
@@ -133,6 +146,14 @@ class Market:
             self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
+
+    def bid(self, price: float, energy: float, buyer: str) -> Bid:
+        if energy <= 0:
+            raise InvalidBid()
+        bid = Bid(str(uuid.uuid4()), price, energy, buyer, self)
+        with self.offer_lock:
+            self.bids[bid.id] = bid
+        return bid
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
         if self.readonly:
