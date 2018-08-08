@@ -10,12 +10,7 @@ from d3a.models.strategy.pv import PVStrategy
 
 '''
 This setup file is being modified to mimic a typical
-modern household having a hybrid PV-ESS system.'''
-
-'''
-TO BE DISCUSS: ESS Trade updates are taking place at event_market_cycle due to which when ESS
-SOC reaches 100%. At that instance ESS energy is preferred over PV (IMO it should be unfavourabele)
-Possible solution could be to have PVInitialsellOffer to be competitive compared to ESS
+modern household having a hybrid PV-ESS system.
 '''
 
 
@@ -30,13 +25,23 @@ def get_setup(config):
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       acceptable_energy_rate=35),
+                                                                       acceptable_energy_rate=25),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(risk=10, initial_capacity=0.6,
-                                                                 break_even=(16.99, 17.01),
-                                                                 max_abs_battery_power=5.0),
+                    Area('H1 Storage1', strategy=StorageStrategy(risk=10,
+                                                                 initial_capacity=0.6,
+                                                                 initial_rate_option=2,
+                                                                 energy_rate_decrease_option=1,
+                                                                 energy_rate_decrease_per_update=3,
+                                                                 battery_capacity=1.2,
+                                                                 max_abs_battery_power=5,
+                                                                 break_even=(16.99, 17.01)),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(4, 10),
+                    Area('H1 PV', strategy=PVStrategy(panel_count=4,
+                                                      risk=10,
+                                                      min_selling_rate=5,
+                                                      initial_pv_rate_option=2,
+                                                      energy_rate_decrease_option=1,
+                                                      energy_rate_decrease_per_update=3),
                          appliance=PVAppliance()),
 
                 ]

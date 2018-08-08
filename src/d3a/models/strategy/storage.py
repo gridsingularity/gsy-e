@@ -17,6 +17,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                  initial_charge=None,
                  initial_rate_option=ConstSettings.INITIAL_ESS_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
                  battery_capacity=ConstSettings.STORAGE_CAPACITY,
                  max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
                  break_even=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
@@ -24,12 +25,13 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
                  cap_price_strategy=False):
         break_even = self._update_break_even_points(break_even)
-        print("break_even: " + str(break_even))
+        # print("break_even: " + str(break_even))
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity, break_even)
         self.break_even = break_even
         self.min_selling_price = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
         self.initial_rate_option = InitialRateOptions(initial_rate_option)
+        self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
         self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
         super().__init__()
         self.risk = risk
@@ -165,7 +167,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             if not open_offer:
                 self.state.offer_storage(energy)
             self.offers.post(offer, target_market)
-            print("ESS Sell rate: " + str(offer.price/offer.energy))
+            # print("ESS Sell rate: " + str(offer.price/offer.energy))
 
     def _select_market_to_sell(self):
         if ConstSettings.STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:

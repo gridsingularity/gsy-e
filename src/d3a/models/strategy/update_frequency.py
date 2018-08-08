@@ -56,7 +56,7 @@ class OfferUpdateFrequencyMixin:
             if iterated_market != market:
                 continue
             # print("iterated_market: " + str(iterated_market))
-            # print("iterated_market_hour: " + str(iterated_market.time_slot.hour))
+            # print("iterated_market: " + str(iterated_market.time_slot))
             # print("Offers: " + str(offer))
             try:
                 iterated_market.delete_offer(offer.id)
@@ -70,7 +70,7 @@ class OfferUpdateFrequencyMixin:
                     new_offer.price = self.min_selling_rate.m * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
                 print("ESS Updated Rate: " + str(new_offer.price/new_offer.energy))
-                print("Now: " + str(self.area.now))
+                # print("Now: " + str(self.area.now))
 
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
                               " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))
