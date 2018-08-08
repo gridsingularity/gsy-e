@@ -62,7 +62,7 @@ class Offer:
 class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'market'))):
     def __new__(cls, id, price, energy, buyer, market):
         # overridden to give the residual field a default value
-        return super(Bid, cls).__new__(cls, id, price, energy, buyer, market)
+        return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, market)
 
     def __str__(self):
         return (
