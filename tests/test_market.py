@@ -10,7 +10,7 @@ from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade, InvalidBid
+    InvalidTrade, InvalidBid, BidNotFound
 from d3a.models.market import Market
 
 
@@ -78,6 +78,27 @@ def test_market_offer_delete_readonly(market: Market):
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
         market.delete_offer("no such offer")
+
+
+def test_market_bid_delete(market: Market):
+    bid = market.bid(20, 10, 'someone')
+    assert bid.id in market.bids
+
+    market.delete_bid(bid)
+    assert bid.id not in market.bids
+
+
+def test_market_bid_delete_id(market: Market):
+    bid = market.bid(20, 10, 'someone')
+    assert bid.id in market.bids
+
+    market.delete_bid(bid.id)
+    assert bid.id not in market.bids
+
+
+def test_market_bid_delete_missing(market: Market):
+    with pytest.raises(BidNotFound):
+        market.delete_bid("no such offer")
 
 
 def test_market_trade(market: Market):

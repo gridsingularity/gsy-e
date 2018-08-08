@@ -18,6 +18,10 @@ class OfferNotFoundException(MarketException):
     pass
 
 
+class BidNotFound(MarketException):
+    pass
+
+
 class InvalidTrade(MarketException):
     pass
 

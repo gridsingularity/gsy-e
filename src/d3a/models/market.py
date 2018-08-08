@@ -11,7 +11,7 @@ from pendulum.pendulum import Pendulum
 from terminaltables.other_tables import SingleTable
 
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade, InvalidBid
+    InvalidTrade, InvalidBid, BidNotFound
 from d3a.models.events import MarketEvent, OfferEvent
 
 
@@ -153,6 +153,7 @@ class Market:
         bid = Bid(str(uuid.uuid4()), price, energy, buyer, self)
         with self.offer_lock:
             self.bids[bid.id] = bid
+            log.info("[BID][NEW] %s", bid)
         return bid
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
@@ -168,6 +169,15 @@ class Market:
                 raise OfferNotFoundException()
             log.info("[OFFER][DEL] %s", offer)
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
+
+    def delete_bid(self, bid_or_id: Union[str, Bid]):
+        if isinstance(bid_or_id, Bid):
+            bid_or_id = bid_or_id.id
+        with self.offer_lock:
+            bid = self.bids.pop(bid_or_id, None)
+            if not bid:
+                raise BidNotFound()
+            log.info("[BID][DEL] %s", bid)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: Pendulum = None) -> Trade:
