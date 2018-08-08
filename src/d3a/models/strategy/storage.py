@@ -4,8 +4,7 @@ from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
-from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, \
-    InitialRateOptions, RateDecreaseOption
+from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
 
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
@@ -16,7 +15,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                  initial_capacity=0.0,
                  initial_charge=None,
                  initial_rate_option=ConstSettings.INITIAL_ESS_RATE_OPTION,
-                 energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
+                 energy_rate_decrease_option=ConstSettings.ESS_RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
                  battery_capacity=ConstSettings.STORAGE_CAPACITY,
                  max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
@@ -30,10 +29,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                                              initial_charge, battery_capacity, break_even)
         self.break_even = break_even
         self.min_selling_price = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
-        self.initial_rate_option = InitialRateOptions(initial_rate_option)
-        self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
-        self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
-        super().__init__()
+        BaseStrategy.__init__(self)
+        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
+                                           energy_rate_decrease_option,
+                                           energy_rate_decrease_per_update)
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
                                   initial_charge=initial_charge,

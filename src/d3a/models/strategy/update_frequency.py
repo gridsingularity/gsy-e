@@ -17,6 +17,15 @@ class RateDecreaseOption(Enum):
 
 class OfferUpdateFrequencyMixin:
 
+    def __init__(self,
+                 initial_rate_option,
+                 energy_rate_decrease_option,
+                 energy_rate_decrease_per_update
+                 ):
+        self.initial_rate_option = InitialRateOptions(initial_rate_option)
+        self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
+        self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
+
     def calculate_initial_sell_rate(self, current_time_h):
         if self.initial_rate_option is InitialRateOptions.HISTORICAL_AVG_RATE:
             if self.area.historical_avg_rate == 0:
