@@ -87,7 +87,8 @@ class NightStorageStrategy(BaseStrategy):
         # Find the most expensive offer out of the list of cheapest offers
         # in currently open markets
         try:
-            expensive_offers = list(self.area.cheapest_offers)[-1]
+            expensive_offers = sorted(self.area.cheapest_offers,
+                                      key=lambda o: o.price / o.energy)[-1]
         except IndexError:
             return
         most_expensive_market = expensive_offers.market
