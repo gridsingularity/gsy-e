@@ -129,10 +129,12 @@ class ReadProfileMixin:
                                                      daily_load_profile,
                                                      slot_length: Interval) -> Dict[str, float]:
         """
-        Reads arbitrary power profile and converts it to energy. Handles csv and dict input.
+        Reads arbitrary power profile and converts it to energy. Handles csv, dict and string
+        input.
         :param daily_load_profile: Can be either a csv file path,
         or a dict with hourly data (Dict[int, float])
         or a dict with arbitrary time data (Dict[str, float])
+        or a string containing a serialized dict of the aforementioned structure
         :param slot_length: slot length duration
         :return: a mapping from time to energy values in kWh
         """

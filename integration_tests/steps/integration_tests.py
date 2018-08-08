@@ -40,6 +40,24 @@ def hour_profile(context, device):
     }
 
 
+@given('a {device} profile string as input to predefined load')
+def json_string_profile(context, device):
+    context._device_profile_dict = {i: 100 for i in range(10)}
+    context._device_profile_dict.update({i: 50 for i in range(10, 20)})
+    context._device_profile_dict.update({i: 25 for i in range(20, 24)})
+    profile = "{"
+    for i in range(24):
+        for j in ["00", "15", "30", "45"]:
+            if i < 10:
+                profile += f"\"{i}:{j}\": 100, "
+            elif 10 <= i < 20:
+                profile += f"\"{i}:{j}\": 50, "
+            else:
+                profile += f"\"{i}:{j}\": 25, "
+    profile += "}"
+    context._device_profile = profile
+
+
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
@@ -424,6 +442,9 @@ def test_output(context, scenario, duration, slot_length, tick_length):
 
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
+    if isinstance(context._device_profile, str):
+        context._device_profile = context._device_profile_dict
+
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
     for timepoint, energy in load.strategy.state.desired_energy.items():

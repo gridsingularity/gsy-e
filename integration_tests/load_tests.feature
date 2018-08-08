@@ -11,3 +11,9 @@ Feature: Load Tests
      And the scenario includes a predefined load that will not be unmatched
      When the simulation is running
      Then the predefined load follows the load profile
+
+  Scenario: Predefined load follows the string profile provided by the user
+     Given a load profile string as input to predefined load
+     And the scenario includes a predefined load that will not be unmatched
+     When the simulation is running
+     Then the predefined load follows the load profile
