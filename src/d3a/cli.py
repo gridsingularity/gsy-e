@@ -53,7 +53,7 @@ _setup_modules = available_simulation_scenarios
               default=ConstSettings.DEFAULT_PV_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
 @click.option('-r', '--market_maker_rate', type=str,
-              default=str(ConstSettings.MAX_ENERGY_RATE), show_default=True,
+              default=str(ConstSettings.DEFAULT_MARKET_MAKER_RATE), show_default=True,
               help="Market maker rate")
 @click.option('-f', '--iaa_fee', type=int,
               default=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE, show_default=True,
