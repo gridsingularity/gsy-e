@@ -1,9 +1,7 @@
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
-from d3a.models.appliance.simple import SimpleAppliance
 
 
 '''
@@ -38,9 +36,6 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                 ]
             ),
-            Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_rate=30),
-                 appliance=SimpleAppliance()),
         ],
         config=config
     )

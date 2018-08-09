@@ -28,7 +28,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity, break_even)
         self.break_even = break_even
-        self.min_selling_rate = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
+        self.min_selling_rate = Q_(break_even[1][0], (ureg.EUR_cents / ureg.kWh))
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
@@ -91,7 +91,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.decrease_energy_price_over_ticks()
 
     def event_market_cycle(self):
-        self._decrease_price_timepoint_s = self._decrease_price_every_nr_s
+        self.reset_wait_time()
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
