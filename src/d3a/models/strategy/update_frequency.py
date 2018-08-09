@@ -23,8 +23,15 @@ class OfferUpdateFrequencyMixin:
                  energy_rate_decrease_per_update
                  ):
         self.initial_rate_option = InitialRateOptions(initial_rate_option)
-        self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
         self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
+        self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
+        self._decrease_price_timepoint_s = 0 * ureg.seconds
+        self._decrease_price_every_nr_s = 0 * ureg.seconds
+
+    def update_wait_time(self):
+        self._decrease_price_every_nr_s = \
+            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)\
+            * ureg.seconds
 
     def calculate_initial_sell_rate(self, current_time_h):
         if self.initial_rate_option is InitialRateOptions.HISTORICAL_AVG_RATE:
@@ -55,9 +62,9 @@ class OfferUpdateFrequencyMixin:
             # print("Updating")
             next_market = list(self.area.markets.values())[0]
             # print("next_market: " + str(next_market))
-            self.decrease_offer_price(next_market)
+            self._decrease_offer_price(next_market)
 
-    def decrease_offer_price(self, market):
+    def _decrease_offer_price(self, market):
         if market not in self.offers.open.values():
             return
 

@@ -39,7 +39,7 @@ def get_setup(config):
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
                                                       risk=10,
                                                       min_selling_rate=5,
-                                                      initial_pv_rate_option=2,
+                                                      initial_rate_option=2,
                                                       energy_rate_decrease_option=1,
                                                       energy_rate_decrease_per_update=3),
                          appliance=PVAppliance()),

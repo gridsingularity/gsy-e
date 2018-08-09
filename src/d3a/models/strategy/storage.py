@@ -28,7 +28,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity, break_even)
         self.break_even = break_even
-        self.min_selling_price = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
+        self.min_selling_rate = Q_(break_even[1], (ureg.EUR_cents / ureg.kWh))
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
@@ -41,14 +41,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.cap_price_strategy = cap_price_strategy
-        self._decrease_price_timepoint_s = 0 * ureg.seconds
-        self._decrease_price_every_nr_s = 0 * ureg.seconds
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
-        self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)\
-            * ureg.seconds
+        self.update_wait_time()
 
     def _update_break_even_points(self, break_even):
         if isinstance(break_even, tuple) or isinstance(break_even, list):
