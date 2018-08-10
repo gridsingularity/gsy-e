@@ -134,6 +134,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                             max_energy = offer.energy
                         else:
                             max_energy = self.state.available_energy_per_slot(market.time_slot)
+                        print("ESS looking for offer")
                         self.accept_offer(market, offer, energy=max_energy)
                         self.state.update_energy_per_slot(max_energy, market.time_slot)
                         self.state.block_storage(max_energy)
@@ -204,12 +205,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def _calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
-        break_even_sell = self.break_even[market.time_slot.hour][1]
-        max_selling_rate = self._max_selling_rate(market)
-        # risk_dependent_selling_rate = (break_even_sell + self._risk_factor(
-        #     max_selling_rate - break_even_sell))
-        # Limit rate to respect max sell rate
-        return max(max_selling_rate, break_even_sell)
+        else:
+            break_even_sell = self.break_even[market.time_slot.hour][1]
+            max_selling_rate = self._max_selling_rate(market)
+            return max(max_selling_rate, break_even_sell)
 
     def _max_selling_rate(self, market):
         if self.initial_rate_option == 1 and self.area.historical_avg_rate != 0:
@@ -217,23 +216,19 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         else:
             return self.area.config.market_maker_rate[market.time_slot.hour]
 
-    # def _risk_factor(self, output_range):
-    #     """
-    #     Returns a value between 0 and range according to the risk parameter.
-    #     :param output_range: the range of output values of the function
-    #     :return: the value in the range according to the risk factor
-    #     """
-    #     return output_range * self.risk / ConstSettings.MAX_RISK
-
     def capacity_dependant_sell_rate(self, market):
-        soc = self.state.used_storage / self.state.capacity
-        print("SOC: " + str(soc))
+        if self.state.charge_history[market.time_slot] is '-':
+            soc = self.state.used_storage / self.state.capacity
+        else:
+            soc = self.state.charge_history[market.time_slot]
+
+        # print("SOC: " + str(soc))
         max_selling_rate = self._max_selling_rate(market)
         break_even_sell = self.break_even[market.time_slot.hour][1]
         if max_selling_rate < break_even_sell:
-            print("Rate: " + str(break_even_sell))
+            # print("Rate: " + str(break_even_sell))
             return break_even_sell
         else:
             rate = (max_selling_rate - (max_selling_rate - break_even_sell) * soc)
-            print("Rate: " + str(rate))
+            # print("Rate: " + str(rate))
             return rate

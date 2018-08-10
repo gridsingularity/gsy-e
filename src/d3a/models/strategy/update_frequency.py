@@ -87,7 +87,7 @@ class OfferUpdateFrequencyMixin:
                 self.offers.replace(offer, new_offer, iterated_market)
                 # print("new_offer: " + str(new_offer))
                 # print("old_offer: " + str(offer))
-                # print("ESS Updated Rate: " + str(new_offer.price/new_offer.energy))
+                print("Updated Rate: " + str(new_offer.price/new_offer.energy))
                 # print("Now: " + str(self.area.now))
 
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +

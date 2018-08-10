@@ -43,3 +43,21 @@ def step_impl(context):
                     round(profile[trade.time.hour][0], 2) for trade in trades_bought])
         assert len(trades_sold) > 0
         assert len(trades_bought) > 0
+
+
+@then('the storage devices sell offer rate is based on it SOC')
+def check_capacity_dependant_sell_rate(context):
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    storage = list(filter(lambda x: x.name == "H1 Storage1", house1.children))[0]
+    trades_sold = []
+    for slot, market in house1.past_markets.items():
+        for trade in market.trades:
+            if trade.seller in ["H1 Storage1"]:
+                trades_sold.append(trade)
+                trade_rate = round((trade.offer.price / trade.offer.energy), 2)
+                break_even_sell = round(storage.strategy.break_even[slot.hour][1], 2)
+                market_maker_rate = \
+                    round(context.simulation.area.config.market_maker_rate[slot.hour], 2)
+                assert trade_rate >= break_even_sell
+                assert trade_rate <= market_maker_rate
+    assert len(trades_sold) > 0

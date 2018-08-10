@@ -552,3 +552,34 @@ def test_storage_populates_break_even_profile_correctly():
     assert all([s.break_even[i] == (22, 23) for i in range(10)])
     assert all([s.break_even[i] == (24, 25) for i in range(10, 20)])
     assert all([s.break_even[i] == (27, 28) for i in range(20, 24)])
+
+
+"""TEST12"""
+
+
+@pytest.fixture()
+def area_test12():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def market_test7():
+    return FakeMarket(0)
+
+
+@pytest.fixture()
+def storage_strategy_test12(area_test12):
+    s = StorageStrategy(battery_capacity=5, initial_capacity=2.5,
+                        max_abs_battery_power=5,
+                        break_even=(16.99, 17.01),
+                        cap_price_strategy=True)
+    s.owner = area_test12
+    s.area = area_test12
+    return s
+
+
+def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_test7):
+    storage_strategy_test12.event_activate()
+    actual_rate = storage_strategy_test12._calculate_selling_rate(market_test7)
+    expected_rate = 30 - (30 - 17.01) * 0.5
+    assert actual_rate == expected_rate
