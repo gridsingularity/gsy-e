@@ -8,12 +8,12 @@ from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
 
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
-    parameters = ('risk', 'initial_capacity', 'initial_charge',
+    parameters = ('risk', 'initial_capacity', 'initial_soc',
                   'battery_capacity', 'max_abs_battery_power')
 
     def __init__(self, risk=ConstSettings.DEFAULT_RISK,
                  initial_capacity=0.0,
-                 initial_charge=None,
+                 initial_soc=None,
                  initial_rate_option=ConstSettings.INITIAL_ESS_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.ESS_RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
@@ -26,7 +26,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         break_even = self._update_break_even_points(break_even)
         # print("break_even: " + str(break_even))
         self._validate_constructor_arguments(risk, initial_capacity,
-                                             initial_charge, battery_capacity, break_even)
+                                             initial_soc, battery_capacity, break_even)
         self.break_even = break_even
         self.min_selling_rate = Q_(break_even[1][0], (ureg.EUR_cents / ureg.kWh))
         BaseStrategy.__init__(self)
@@ -35,7 +35,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                                            energy_rate_decrease_per_update)
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
-                                  initial_charge=initial_charge,
+                                  initial_soc=initial_soc,
                                   capacity=battery_capacity,
                                   max_abs_battery_power=max_abs_battery_power,
                                   loss_per_hour=0.0,
@@ -63,11 +63,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                              "or an hourly dict of tuples.")
 
     @staticmethod
-    def _validate_constructor_arguments(risk, initial_capacity, initial_charge,
+    def _validate_constructor_arguments(risk, initial_capacity, initial_soc,
                                         battery_capacity, break_even):
         if battery_capacity < 0:
             raise ValueError("Battery capacity should be a positive integer")
-        if initial_charge and not 0 <= initial_charge <= 100:
+        if initial_soc and not 0 <= initial_soc <= 100:
             raise ValueError("Initial charge is a percentage value, should be between 0 and 100.")
         if not 0 <= risk <= 100:
             raise ValueError("Risk is a percentage value, should be between 0 and 100.")
