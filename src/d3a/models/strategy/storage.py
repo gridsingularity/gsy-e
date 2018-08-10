@@ -88,7 +88,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.min_selling_rate = Q_(self.break_even[self.area.now.hour][1],
                                    (ureg.EUR_cents / ureg.kWh))
         # print("self.min_selling_rate: " + str(self.min_selling_rate))
-        self.decrease_energy_price_over_ticks()
+        if self.cap_price_strategy is False:
+            self.decrease_energy_price_over_ticks()
 
     def event_market_cycle(self):
         self.reset_wait_time()
@@ -225,17 +226,14 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     #     return output_range * self.risk / ConstSettings.MAX_RISK
 
     def capacity_dependant_sell_rate(self, market):
-        most_recent_past_ts = sorted(self.area.past_markets.keys())
+        soc = self.state.used_storage / self.state.capacity
+        print("SOC: " + str(soc))
+        max_selling_rate = self._max_selling_rate(market)
         break_even_sell = self.break_even[market.time_slot.hour][1]
-        max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
-        if len(self.area.past_markets.keys()) > 1:
-            # TODO: Why the -2 here?
-            charge_per = self.state.charge_history[most_recent_past_ts[-2]]
-            # TODO: max_selling_rate_cents_per_kwh is never mutating and is valid
-            # TODO: only in capacity depending strategy
-            # TODO: Should remain const or be abstracted from this class
-            rate = max_selling_rate - ((max_selling_rate - break_even_sell) *
-                                       (charge_per / 100))
-            return rate.m
+        if max_selling_rate < break_even_sell:
+            print("Rate: " + str(break_even_sell))
+            return break_even_sell
         else:
-            return max_selling_rate
+            rate = (max_selling_rate - (max_selling_rate - break_even_sell) * soc)
+            print("Rate: " + str(rate))
+            return rate
