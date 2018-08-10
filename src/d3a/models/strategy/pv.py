@@ -89,34 +89,10 @@ class PVStrategy(BaseStrategy):
             rounded_energy_rate =\
                 self.area.config.market_maker_rate[current_time_h]
         assert rounded_energy_rate >= 0.0
+
         return rounded_energy_rate
 
     def event_tick(self, *, area):
-        # Iterate over all markets open in the future
-        for (time, market) in self.area.markets.items():
-            # If there is no offer for a currently open marketplace:
-            if market not in self.offers.posted.values():
-                market_time_h = market.time_slot.hour
-                initial_sell_rate = self.calculate_initial_sell_rate(market_time_h)
-                rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
-                                                                          market_time_h)
-                # Sell energy and save that an offer was posted into a list
-                try:
-                    if self.energy_production_forecast_kWh[time] == 0:
-                        continue
-                    offer = market.offer(
-                        rounded_energy_rate * self.panel_count *
-                        self.energy_production_forecast_kWh[time],
-                        self.energy_production_forecast_kWh[time] * self.panel_count,
-                        self.owner.name
-                    )
-                    self.offers.post(offer, market)
-
-                except KeyError:
-                    self.log.warn("PV has no forecast data for this time")
-                    continue
-            else:
-                pass
         self._decrease_energy_price_over_ticks()
 
     def _decrease_energy_price_over_ticks(self):
@@ -167,7 +143,6 @@ class PVStrategy(BaseStrategy):
                                  (1 - self.risk/ConstSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s.m)
-            # print("price_updates_per_slot: " + str(price_updates_per_slot))
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
             return price_dec_per_update
         elif self.energy_rate_decrease_option is\
@@ -218,6 +193,25 @@ class PVStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._decrease_price_timepoint_s = self._decrease_price_every_nr_s
+        # Iterate over all markets open in the future
+        time = list(self.area.markets.keys())[0]
+        market = list(self.area.markets.values())[0]
+        market_time_h = market.time_slot.hour
+        initial_sell_rate = self.calculate_initial_sell_rate(market_time_h)
+        rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
+                                                                  market_time_h)
+        # Sell energy and save that an offer was posted into a list
+        if self.energy_production_forecast_kWh[time] != 0:
+            offer = market.offer(
+                rounded_energy_rate * self.panel_count *
+                self.energy_production_forecast_kWh[time],
+                self.energy_production_forecast_kWh[time] * self.panel_count,
+                self.owner.name
+            )
+            self.offers.post(offer, market)
+
+        else:
+            self.log.warn("PV has no forecast data for this time")
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)

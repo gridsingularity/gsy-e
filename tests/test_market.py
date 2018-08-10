@@ -10,7 +10,7 @@ from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade
+    InvalidTrade, InvalidBid, BidNotFound
 from d3a.models.market import Market
 
 
@@ -29,9 +29,24 @@ def test_market_offer(market: Market):
     assert len(offer.id) == 36
 
 
+def test_market_bid(market: Market):
+    bid = market.bid(1, 2, 'bidder')
+    assert market.bids[bid.id] == bid
+    assert bid.price == 1
+    assert bid.energy == 2
+    assert bid.buyer == 'bidder'
+    assert len(bid.id) == 36
+    assert bid.market == market
+
+
 def test_market_offer_invalid(market: Market):
     with pytest.raises(InvalidOffer):
         market.offer(10, -1, 'someone')
+
+
+def test_market_bid_invalid(market: Market):
+    with pytest.raises(InvalidBid):
+        market.bid(10, -1, 'someone')
 
 
 def test_market_offer_readonly(market: Market):
@@ -63,6 +78,27 @@ def test_market_offer_delete_readonly(market: Market):
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
         market.delete_offer("no such offer")
+
+
+def test_market_bid_delete(market: Market):
+    bid = market.bid(20, 10, 'someone')
+    assert bid.id in market.bids
+
+    market.delete_bid(bid)
+    assert bid.id not in market.bids
+
+
+def test_market_bid_delete_id(market: Market):
+    bid = market.bid(20, 10, 'someone')
+    assert bid.id in market.bids
+
+    market.delete_bid(bid.id)
+    assert bid.id not in market.bids
+
+
+def test_market_bid_delete_missing(market: Market):
+    with pytest.raises(BidNotFound):
+        market.delete_bid("no such offer")
 
 
 def test_market_trade(market: Market):
