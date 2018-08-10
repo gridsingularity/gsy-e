@@ -475,7 +475,7 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
 # Handling of initial_charge parameter
 def test_initial_charge(caplog):
     with caplog.at_level(logging.WARNING):
-        storage = StorageStrategy(initial_capacity=1, initial_charge=60)
+        storage = StorageStrategy(initial_capacity=1, initial_soc=60)
     assert any('initial_capacity' in record.msg for record in caplog.records)
     assert storage.state.used_storage == 0.6 * storage.state.capacity
 
@@ -490,9 +490,9 @@ def test_storage_constructor_rejects_incorrect_parameters():
     with pytest.raises(ValueError):
         StorageStrategy(battery_capacity=100, initial_capacity=101)
     with pytest.raises(ValueError):
-        StorageStrategy(initial_charge=101)
+        StorageStrategy(initial_soc=101)
     with pytest.raises(ValueError):
-        StorageStrategy(initial_charge=-1)
+        StorageStrategy(initial_soc=-1)
     with pytest.raises(ValueError):
         StorageStrategy(break_even=(1, .99))
     with pytest.raises(ValueError):
