@@ -27,7 +27,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
-                                                             'SAM_MF2_Summer_realistic.csv'),
+                                                             'SAM_MF2_Summer.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
@@ -45,7 +45,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
-                                                             'SAM_SF_Summer_realistic.csv'),
+                                                             'SAM_SF_Summer.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -60,7 +60,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
-                                                             'SAM_MF2_Summer_realistic.csv'),
+                                                             'SAM_MF2_Summer.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -75,7 +75,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
-                                                             'SAM_SF_Summer_realistic.csv'),
+                                                             'SAM_SF_Summer.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
@@ -91,7 +91,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
-                                                             'SAM_MF2_Summer_realistic.csv'),
+                                                             'SAM_MF2_Summer.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
@@ -107,7 +107,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
-                                                             'SAM_SF_Summer_realistic.csv'),
+                                                             'SAM_SF_Summer.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -120,7 +120,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
-                                                             'SAM_MF2_Summer_realistic.csv'),
+                                                             'SAM_MF2_Summer.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
@@ -133,7 +133,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
-                                                             'SAM_SF_Summer_realistic.csv'),
+                                                             'SAM_SF_Summer.csv'),
                              acceptable_energy_rate=35),
                          appliance=SwitchableAppliance()),
 

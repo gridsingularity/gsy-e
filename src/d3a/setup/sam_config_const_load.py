@@ -10,7 +10,7 @@ import os
 
 
 def get_setup(config):
-    config_file = "SAM_MF2_Summer_constant_6000W.csv"
+    config_file = "SAM_MF2_Summer_constant_6kw.csv"
     area = Area(
         'Grid',
         [
