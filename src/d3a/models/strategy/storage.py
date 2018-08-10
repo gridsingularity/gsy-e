@@ -1,9 +1,14 @@
-from d3a.models.strategy import ureg, Q_
+from enum import Enum
 
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
+
+
+class InitialESSRateOptions(Enum):
+    HISTORICAL_AVG_RATE = 1
+    MARKET_MAKER_RATE = 2
 
 
 class StorageStrategy(BaseStrategy):
@@ -13,6 +18,7 @@ class StorageStrategy(BaseStrategy):
     def __init__(self, risk=ConstSettings.DEFAULT_RISK,
                  initial_capacity=0.0,
                  initial_charge=None,
+                 initial_ess_rate_option=ConstSettings.INITIAL_ESS_RATE_OPTION,
                  battery_capacity=ConstSettings.STORAGE_CAPACITY,
                  max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
                  break_even=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
@@ -22,6 +28,7 @@ class StorageStrategy(BaseStrategy):
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_charge, battery_capacity, break_even)
         self.break_even = break_even
+        self.initial_ess_rate_option = InitialESSRateOptions(initial_ess_rate_option)
         super().__init__()
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
@@ -34,9 +41,6 @@ class StorageStrategy(BaseStrategy):
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
-        self.max_selling_rate_cents_per_kwh =\
-            {k: Q_((self.area.config.market_maker_rate[k] - 1), (ureg.EUR_cents / ureg.kWh))
-             for k in range(24)}
 
     def _update_break_even_points(self, break_even):
         if isinstance(break_even, tuple) or isinstance(break_even, list):
@@ -75,7 +79,7 @@ class StorageStrategy(BaseStrategy):
     def event_tick(self, *, area):
         # Check if there are cheap offers to buy
         self.buy_energy()
-        self.state.tick(area)
+        self.state.tick(area)  # To incorporate battery energy loss over time
 
     def event_market_cycle(self):
         if self.area.past_markets:
@@ -189,18 +193,18 @@ class StorageStrategy(BaseStrategy):
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
         break_even_sell = self.break_even[market.time_slot.hour][1]
-        max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
-        risk_dependent_selling_rate = (
-            break_even_sell + self._risk_factor(
-                max_selling_rate - break_even_sell
-            )
-        )
+        max_selling_rate = self._max_selling_rate(market)
+        risk_dependent_selling_rate = (break_even_sell + self._risk_factor(
+            max_selling_rate - break_even_sell))
         # Limit rate to respect max sell rate
         return max(
-            min(risk_dependent_selling_rate,
-                max_selling_rate),
-            break_even_sell
-        )
+            min(risk_dependent_selling_rate, max_selling_rate), break_even_sell)
+
+    def _max_selling_rate(self, market):
+        if self.initial_ess_rate_option == 1 and self.area.historical_avg_rate != 0:
+            return self.area.historical_avg_rate
+        else:
+            return self.area.config.market_maker_rate[market.time_slot.hour]
 
     def _risk_factor(self, output_range):
         """

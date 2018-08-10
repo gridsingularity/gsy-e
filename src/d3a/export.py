@@ -436,61 +436,27 @@ def _house_energy_history(path, barmode, xtitle, ytitle):
     key = 'energy traded [kWh]'
     grid_path = os.path.join(path, 'grid')
     sub_file = sorted(next(os.walk(grid_path))[1])
-    for i in range(len(sub_file)):
-        gl = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-general-load.csv')
-        ll = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-lighting.csv')
-        tv = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-tv.csv')
-        ss1 = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-storage1.csv')
-        ss2 = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-storage2.csv')
-        pv = os.path.join(grid_path, sub_file[i], 'h' + str(i + 1) + '-pv.csv')
-        iname = os.path.join(path, 'plot', 'Energy Profile of House{}.html'.format(i + 1))
-        title = os.path.join(path, 'plot', 'Energy Profile of House{}'.format(i + 1))
-        if os.path.isfile(gl):
-            higl = BarGraph(gl, key)
+    for j in range(len(sub_file)):
+        """
+        TODO: Make it possible for arbitrary number of hierarchies in  D3ASIM-306
+        """
+        sub_sub_file = str(os.path.join(str(grid_path), str(sub_file[j])))
+        sub_sub_file_csv = sorted(next(os.walk(sub_sub_file))[2])
+        iname = os.path.join(path, 'plot', 'Energy Profile of House{}.html'.format(j+1))
+        title = os.path.join(path, 'plot', 'Energy Profile of House{}'.format(j+1))
+        for i in range(len(sub_sub_file_csv)):
+            sub_sub_file_csv_path = os.path.join(sub_sub_file, sub_sub_file_csv[i])
+            ls = str(sub_sub_file_csv[i]).split(".")[0]
+            higl = BarGraph(sub_sub_file_csv_path, key)
             higl.graph_value("House Energy History")
             traceigl = go.Bar(x=list(higl.umHours.keys()),
                               y=list(higl.umHours.values()),
-                              name='House{}-GL'.format(i+1))
+                              name=ls)
             data.append(traceigl)
-        if os.path.isfile(ll):
-            hill = BarGraph(ll, key)
-            hill.graph_value("House Energy History")
-            traceill = go.Bar(x=list(hill.umHours.keys()),
-                              y=list(hill.umHours.values()),
-                              name='House{}-LL'.format(i+1))
-            data.append(traceill)
-        if os.path.isfile(tv):
-            hitv = BarGraph(tv, key)
-            hitv.graph_value("House Energy History")
-            traceitv = go.Bar(x=list(hitv.umHours.keys()),
-                              y=list(hitv.umHours.values()),
-                              name='House{}-TV'.format(i+1))
-            data.append(traceitv)
-        if os.path.isfile(ss1):
-            hiss1 = BarGraph(ss1, key)
-            hiss1.graph_value("House Energy History")
-            traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
-                               y=list(hiss1.umHours.values()),
-                               name='House{0}-Storage1'.format(i + 1))
-            data.append(traceiss1)
-        if os.path.isfile(ss2):
-            hiss2 = BarGraph(ss2, key)
-            hiss2.graph_value("House Energy History")
-            traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
-                               y=list(hiss2.umHours.values()),
-                               name='House{0}-Storage2'.format(i + 1))
-            data.append(traceiss2)
-        if os.path.isfile(pv):
-            hipv = BarGraph(pv, key)
-            hipv.graph_value("House Energy History")
-            traceipv = go.Bar(x=list(hipv.umHours.keys()), y=list(hipv.umHours.values()),
-                              name='House{0}-PV'.format(i + 1))
-            data.append(traceipv)
-
         if not data:
             return
-
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
+        data = []
 
 
 # Average Trade Price Graph

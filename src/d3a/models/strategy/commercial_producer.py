@@ -11,7 +11,7 @@ class CommercialStrategy(BaseStrategy):
         if energy_rate is not None and energy_rate < 0:
             raise ValueError("Energy rate should be positive.")
         super().__init__()
-        self.energy_per_slot_wh = Q_(int(sys.maxsize), ureg.kWh)
+        self.energy_per_slot_kWh = Q_(int(sys.maxsize), ureg.kWh)
         self.energy_rate = energy_rate
 
     def _markets_to_offer_on_activate(self):
@@ -35,14 +35,14 @@ class CommercialStrategy(BaseStrategy):
     def offer_energy(self, market):
         if self.energy_rate is None:
             market.offer(
-                self.energy_per_slot_wh.m *
+                self.energy_per_slot_kWh.m *
                 self.area.config.market_maker_rate[market.time_slot.hour],
-                self.energy_per_slot_wh.m,
+                self.energy_per_slot_kWh.m,
                 self.owner.name
             )
         else:
             market.offer(
-                self.energy_per_slot_wh.m * self.energy_rate,
-                self.energy_per_slot_wh.m,
+                self.energy_per_slot_kWh.m * self.energy_rate,
+                self.energy_per_slot_kWh.m,
                 self.owner.name
             )
