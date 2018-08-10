@@ -90,12 +90,13 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
         # Clamp to day range
         time_in_minutes %= 60 * 24
+        peak_pv_output = ConstSettings.MAX_PV_OUTPUT
 
         if (8 * 60) > time_in_minutes or time_in_minutes > (16.5 * 60):
             gauss_forecast = 0
 
         else:
-            gauss_forecast = 166.54 * math.exp(
+            gauss_forecast = peak_pv_output * math.exp(
                 # time/5 is needed because we only have one data set per 5 minutes
 
                 (- (((round(time_in_minutes / 5, 0)) - 147.2)

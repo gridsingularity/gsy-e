@@ -43,6 +43,9 @@ class ConstSettings:
     MIN_PV_SELLING_RATE = 0
 
     # Initial PV rate calculation for every market slot, before rate reduction per tick
+    # Default value 1, use the historical market average
+    # Option 2 stands for market maker rate
+    INITIAL_PV_RATE_OPTION = 1
     # Option 1, use the historical market average
     # Default value 2 stands for market maker rate
     INITIAL_PV_RATE_OPTION = 2
@@ -55,6 +58,7 @@ class ConstSettings:
     ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_slot
 
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
+    MAX_PV_OUTPUT = 160
 
     # HEATPUMP SETTINGS
     # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)
