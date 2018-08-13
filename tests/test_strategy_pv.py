@@ -174,7 +174,7 @@ def testing_decrease_offer_price(area_test3, pv_test3):
     pv_test3.event_market_cycle()
     for i in range(3):
         old_offer = list(pv_test3.offers.posted.keys())[0]
-        pv_test3.decrease_offer_price(area_test3.test_market)
+        pv_test3._decrease_offer_price(area_test3.test_market)
         new_offer = list(pv_test3.offers.posted.keys())[0]
         assert new_offer.price < old_offer.price
 
@@ -183,7 +183,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
     for _ in range(100):
-        pv_test3.decrease_offer_price(area_test3.test_market)
+        pv_test3._decrease_offer_price(area_test3.test_market)
     new_offer = list(pv_test3.offers.posted.keys())[-1]
     assert new_offer.price / new_offer.energy >= ConstSettings.MIN_PV_SELLING_RATE
 
@@ -337,7 +337,7 @@ def testing_low_risk(area_test3, pv_test7):
     pv_test7.event_market_cycle()
     for i in range(3):
         old_offer = list(pv_test7.offers.posted.keys())[0]
-        pv_test7.decrease_offer_price(area_test3.test_market)
+        pv_test7._decrease_offer_price(area_test3.test_market)
         new_offer = list(pv_test7.offers.posted.keys())[0]
         price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test7.risk
                                                                  / ConstSettings.MAX_RISK)
@@ -366,7 +366,7 @@ def testing_high_risk(area_test3, pv_test8):
     pv_test8.event_market_cycle()
     for i in range(3):
         old_offer = list(pv_test8.offers.posted.keys())[0]
-        pv_test8.decrease_offer_price(area_test3.test_market)
+        pv_test8._decrease_offer_price(area_test3.test_market)
         new_offer = list(pv_test8.offers.posted.keys())[0]
         price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test8.risk /
                                                                  ConstSettings.MAX_RISK)

@@ -29,6 +29,10 @@ class ConstSettings:
     # Option 1, use the historical market average
     # Default value 2 stands for market maker rate
     INITIAL_ESS_RATE_OPTION = 2
+    # Energy rate decrease option for unsold ESS offers
+    # Default value 1 stands for percentage/RISK based energy rate decrease
+    # Option 2, use the constant energy rate decrease
+    ESS_RATE_DECREASE_OPTION = 1
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
     STORAGE_BREAK_EVEN_BUY = 25
@@ -51,7 +55,7 @@ class ConstSettings:
     # Option 2, use the constant energy rate decrease
     PV_RATE_DECREASE_OPTION = 1
 
-    ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_slot
+    ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
 
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
     MAX_PV_OUTPUT = 160

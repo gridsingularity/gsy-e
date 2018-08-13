@@ -1,38 +1,41 @@
-from enum import Enum
+from d3a.models.strategy import ureg, Q_
+from typing import Union
 
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
+from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
 
 
-class InitialESSRateOptions(Enum):
-    HISTORICAL_AVG_RATE = 1
-    MARKET_MAKER_RATE = 2
-
-
-class StorageStrategy(BaseStrategy):
-    parameters = ('risk', 'initial_capacity', 'initial_charge',
+class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
+    parameters = ('risk', 'initial_capacity', 'initial_soc',
                   'battery_capacity', 'max_abs_battery_power')
 
-    def __init__(self, risk=ConstSettings.DEFAULT_RISK,
-                 initial_capacity=0.0,
-                 initial_charge=None,
-                 initial_ess_rate_option=ConstSettings.INITIAL_ESS_RATE_OPTION,
-                 battery_capacity=ConstSettings.STORAGE_CAPACITY,
-                 max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
-                 break_even=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
+    def __init__(self, risk: int=ConstSettings.DEFAULT_RISK,
+                 initial_capacity: float=0.0,
+                 initial_soc: float=None,
+                 initial_rate_option: int=ConstSettings.INITIAL_ESS_RATE_OPTION,
+                 energy_rate_decrease_option: int=ConstSettings.ESS_RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update: float=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
+                 battery_capacity: float=ConstSettings.STORAGE_CAPACITY,
+                 max_abs_battery_power: float=ConstSettings.MAX_ABS_BATTERY_POWER,
+                 break_even: Union[tuple, dict]=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
-                 cap_price_strategy=False):
+
+                 cap_price_strategy: bool=False):
         break_even = self._update_break_even_points(break_even)
         self._validate_constructor_arguments(risk, initial_capacity,
-                                             initial_charge, battery_capacity, break_even)
+                                             initial_soc, battery_capacity, break_even)
         self.break_even = break_even
-        self.initial_ess_rate_option = InitialESSRateOptions(initial_ess_rate_option)
-        super().__init__()
+        self.min_selling_rate = Q_(break_even[0][1], (ureg.EUR_cents / ureg.kWh))
+        BaseStrategy.__init__(self)
+        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
+                                           energy_rate_decrease_option,
+                                           energy_rate_decrease_per_update)
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
-                                  initial_charge=initial_charge,
+                                  initial_soc=initial_soc,
                                   capacity=battery_capacity,
                                   max_abs_battery_power=max_abs_battery_power,
                                   loss_per_hour=0.0,
@@ -41,6 +44,7 @@ class StorageStrategy(BaseStrategy):
 
     def event_activate(self):
         self.state.battery_energy_per_slot(self.area.config.slot_length)
+        self.update_on_activate()
 
     def _update_break_even_points(self, break_even):
         if isinstance(break_even, tuple) or isinstance(break_even, list):
@@ -59,11 +63,11 @@ class StorageStrategy(BaseStrategy):
                              "or an hourly dict of tuples.")
 
     @staticmethod
-    def _validate_constructor_arguments(risk, initial_capacity, initial_charge,
+    def _validate_constructor_arguments(risk, initial_capacity, initial_soc,
                                         battery_capacity, break_even):
         if battery_capacity < 0:
             raise ValueError("Battery capacity should be a positive integer")
-        if initial_charge and not 0 <= initial_charge <= 100:
+        if initial_soc and not 0 <= initial_soc <= 100:
             raise ValueError("Initial charge is a percentage value, should be between 0 and 100.")
         if not 0 <= risk <= 100:
             raise ValueError("Risk is a percentage value, should be between 0 and 100.")
@@ -80,8 +84,11 @@ class StorageStrategy(BaseStrategy):
         # Check if there are cheap offers to buy
         self.buy_energy()
         self.state.tick(area)  # To incorporate battery energy loss over time
+        if self.cap_price_strategy is False:
+            self.decrease_energy_price_over_ticks()
 
     def event_market_cycle(self):
+        self.update_market_cycle(self.break_even[self.area.now.hour][1])
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
@@ -192,40 +199,26 @@ class StorageStrategy(BaseStrategy):
     def _calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
-        break_even_sell = self.break_even[market.time_slot.hour][1]
-        max_selling_rate = self._max_selling_rate(market)
-        risk_dependent_selling_rate = (break_even_sell + self._risk_factor(
-            max_selling_rate - break_even_sell))
-        # Limit rate to respect max sell rate
-        return max(
-            min(risk_dependent_selling_rate, max_selling_rate), break_even_sell)
+        else:
+            break_even_sell = self.break_even[market.time_slot.hour][1]
+            max_selling_rate = self._max_selling_rate(market)
+            return max(max_selling_rate, break_even_sell)
 
     def _max_selling_rate(self, market):
-        if self.initial_ess_rate_option == 1 and self.area.historical_avg_rate != 0:
+        if self.initial_rate_option == 1 and self.area.historical_avg_rate != 0:
             return self.area.historical_avg_rate
         else:
             return self.area.config.market_maker_rate[market.time_slot.hour]
 
-    def _risk_factor(self, output_range):
-        """
-        Returns a value between 0 and range according to the risk parameter.
-        :param output_range: the range of output values of the function
-        :return: the value in the range according to the risk factor
-        """
-        return output_range * self.risk / ConstSettings.MAX_RISK
-
     def capacity_dependant_sell_rate(self, market):
-        most_recent_past_ts = sorted(self.area.past_markets.keys())
-        break_even_sell = self.break_even[market.time_slot.hour][1]
-        max_selling_rate = self.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
-        if len(self.area.past_markets.keys()) > 1:
-            # TODO: Why the -2 here?
-            charge_per = self.state.charge_history[most_recent_past_ts[-2]]
-            # TODO: max_selling_rate_cents_per_kwh is never mutating and is valid
-            # TODO: only in capacity depending strategy
-            # TODO: Should remain const or be abstracted from this class
-            rate = max_selling_rate - ((max_selling_rate - break_even_sell) *
-                                       (charge_per / 100))
-            return rate.m
+        if self.state.charge_history[market.time_slot] is '-':
+            soc = self.state.used_storage / self.state.capacity
         else:
-            return max_selling_rate
+            soc = self.state.charge_history[market.time_slot]
+
+        max_selling_rate = self._max_selling_rate(market)
+        break_even_sell = self.break_even[market.time_slot.hour][1]
+        if max_selling_rate < break_even_sell:
+            return break_even_sell
+        else:
+            return (max_selling_rate - (max_selling_rate - break_even_sell) * soc)
