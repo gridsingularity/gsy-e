@@ -65,7 +65,7 @@ class StorageState:
         if initial_soc is not None:
             if initial_capacity:
                 strategy.log.warning("Ignoring initial_capacity parameter since "
-                                     "initial_charge has also been given.")
+                                     "initial_soc has also been given.")
             initial_capacity = capacity * initial_soc / 100
         self._used_storage = initial_capacity
         self.capacity = capacity

@@ -18,11 +18,11 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
     parameters = ('panel_count', 'risk')
 
-    def __init__(self, panel_count=1, risk=ConstSettings.DEFAULT_RISK,
-                 min_selling_rate=ConstSettings.MIN_PV_SELLING_RATE,
-                 initial_rate_option=ConstSettings.INITIAL_PV_RATE_OPTION,
-                 energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE):
+    def __init__(self, panel_count: int=1, risk: float=ConstSettings.DEFAULT_RISK,
+                 min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
+                 initial_rate_option: float=ConstSettings.INITIAL_PV_RATE_OPTION,
+                 energy_rate_decrease_option: int=ConstSettings.PV_RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update: float=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE):  # NOQA
         self._validate_constructor_arguments(panel_count, risk)
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
@@ -45,7 +45,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.midnight = self.area.now.start_of("day").hour_(0)
         # Calculating the produced energy
         self.produced_energy_forecast_real_data()
-        self.update_wait_time()
+        self.update_on_activate()
 
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time_h):
         # Needed to calculate risk_dependency_of_selling_rate
@@ -108,7 +108,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self.reset_wait_time()
+        self.update_market_cycle(self.min_selling_rate.m)
         # Iterate over all markets open in the future
         time = list(self.area.markets.keys())[0]
         market = list(self.area.markets.values())[0]

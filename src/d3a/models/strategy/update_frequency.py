@@ -27,8 +27,9 @@ class OfferUpdateFrequencyMixin:
         self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
         self._decrease_price_timepoint_s = 0 * ureg.seconds
         self._decrease_price_every_nr_s = 0 * ureg.seconds
+        self.min_selling_rate = Q_(0, (ureg.EUR_cents / ureg.kWh))
 
-    def update_wait_time(self):
+    def update_on_activate(self):
         self._decrease_price_every_nr_s = \
             (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)\
             * ureg.seconds
@@ -59,9 +60,7 @@ class OfferUpdateFrequencyMixin:
                 and elapsed_seconds > self._decrease_price_timepoint_s
         ):
             self._decrease_price_timepoint_s += self._decrease_price_every_nr_s
-            # print("Updating")
             next_market = list(self.area.markets.values())[0]
-            # print("next_market: " + str(next_market))
             self._decrease_offer_price(next_market)
 
     def _decrease_offer_price(self, market):
@@ -71,9 +70,6 @@ class OfferUpdateFrequencyMixin:
         for offer, iterated_market in self.offers.open.items():
             if iterated_market != market:
                 continue
-            # print("iterated_market: " + str(iterated_market))
-            # print("iterated_market: " + str(iterated_market.time_slot))
-            # print("Offers: " + str(offer))
             try:
                 iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
@@ -85,10 +81,6 @@ class OfferUpdateFrequencyMixin:
                 if (new_offer.price/new_offer.energy) < self.min_selling_rate.m:
                     new_offer.price = self.min_selling_rate.m * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
-                # print("new_offer: " + str(new_offer))
-                # print("old_offer: " + str(offer))
-                print("Updated Rate: " + str(new_offer.price/new_offer.energy))
-                # print("Now: " + str(self.area.now))
 
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
                               " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))
@@ -104,11 +96,11 @@ class OfferUpdateFrequencyMixin:
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s.m)
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-            # print("ESS price_dec_per_update: " + str(price_dec_per_update))
             return price_dec_per_update
         elif self.energy_rate_decrease_option is \
                 RateDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
             return self.energy_rate_decrease_per_update
 
-    def reset_wait_time(self):
+    def update_market_cycle(self, min_selling_rate):
+        self.min_selling_rate = Q_(min_selling_rate, (ureg.EUR_cents / ureg.kWh))
         self._decrease_price_timepoint_s = self._decrease_price_every_nr_s

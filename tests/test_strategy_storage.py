@@ -387,11 +387,9 @@ def storage_strategy_test7_2(area_test7):
 def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
     storage_strategy_test7_2.risk = risk
     storage_strategy_test7_2.event_activate()
-    # storage_strategy_test7_2.event_market_cycle()
     old_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
     storage_strategy_test7_2._decrease_offer_price(area_test7.current_market)
     new_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
-    print("offers: " + str(list(storage_strategy_test7_2.offers.posted.keys())))
     price_dec_per_slot = (area_test7.historical_avg_rate) * (1 - storage_strategy_test7_2.risk /
                                                              ConstSettings.MAX_RISK)
     price_updates_per_slot = int(area_test7.config.slot_length.seconds
@@ -580,6 +578,11 @@ def storage_strategy_test12(area_test12):
 
 def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_test7):
     storage_strategy_test12.event_activate()
+    market_maker_rate = storage_strategy_test12.area.config.market_maker_rate[0]
+    BE_sell = storage_strategy_test12.break_even[0][1]
+    used_storage = storage_strategy_test12.state.used_storage
+    battery_capacity = storage_strategy_test12.state.capacity
+    soc = used_storage / battery_capacity
     actual_rate = storage_strategy_test12._calculate_selling_rate(market_test7)
-    expected_rate = 30 - (30 - 17.01) * 0.5
+    expected_rate = market_maker_rate - (market_maker_rate - BE_sell) * soc
     assert actual_rate == expected_rate

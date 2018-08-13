@@ -40,6 +40,24 @@ def hour_profile(context, device):
     }
 
 
+@given('a {device} profile string as input to predefined load')
+def json_string_profile(context, device):
+    context._device_profile_dict = {i: 100 for i in range(10)}
+    context._device_profile_dict.update({i: 50 for i in range(10, 20)})
+    context._device_profile_dict.update({i: 25 for i in range(20, 24)})
+    profile = "{"
+    for i in range(24):
+        for j in ["00", "15", "30", "45"]:
+            if i < 10:
+                profile += f"\"{i}:{j}\": 100, "
+            elif 10 <= i < 20:
+                profile += f"\"{i}:{j}\": 50, "
+            else:
+                profile += f"\"{i}:{j}\": 25, "
+    profile += "}"
+    context._device_profile = profile
+
+
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
@@ -105,6 +123,60 @@ def pv_profile_scenario(context):
                                          market_maker_rate=30,
                                          iaa_fee=5)
     context._settings.area = predefined_pv_scenario
+
+
+@given('the scenario includes a predefined load that will not be unmatched')
+def load_profile_scenario(context):
+    predefined_load_scenario = {
+      "name": "Grid",
+      "children": [
+        {
+          "name": "Commercial Energy Producer",
+          "type": "CommercialProducer",
+          "energy_price": 15.5,
+          "energy_range_wh": [40, 120]
+        },
+        {
+          "name": "House 1",
+          "children": [
+            {
+              "name": "H1 Load",
+              "type": "LoadProfile",
+              "daily_load_profile": context._device_profile
+            },
+            {
+              "name": "H1 PV",
+              "type": "PV",
+              "panel_count": 3,
+              "risk": 80
+            }
+          ]
+        },
+        {
+          "name": "House 2",
+          "children": [
+            {
+              "name": "H2 Storage",
+              "type": "Storage",
+              "capacity": 5,
+              "initial_charge": 40
+            },
+            {
+              "name": "H2 Fridge 1",
+              "type": "Fridge"
+            },
+          ]
+        }
+      ]
+    }
+    context._settings = SimulationConfig(tick_length=Interval(seconds=15),
+                                         slot_length=Interval(minutes=15),
+                                         duration=Interval(hours=24),
+                                         market_count=4,
+                                         cloud_coverage=0,
+                                         market_maker_rate=30,
+                                         iaa_fee=5)
+    context._settings.area = predefined_load_scenario
 
 
 @when('the simulation is running')
@@ -371,6 +443,9 @@ def test_output(context, scenario, duration, slot_length, tick_length):
 
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
+    if isinstance(context._device_profile, str):
+        context._device_profile = context._device_profile_dict
+
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
     for timepoint, energy in load.strategy.state.desired_energy.items():
