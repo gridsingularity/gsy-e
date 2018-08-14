@@ -59,14 +59,14 @@ class Offer:
         self._call_listeners(OfferEvent.ACCEPTED, market=market, trade=trade)
 
 
-class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'market'))):
-    def __new__(cls, id, price, energy, buyer, market):
+class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market'))):
+    def __new__(cls, id, price, energy, buyer, seller, market):
         # overridden to give the residual field a default value
-        return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, market)
+        return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller, market)
 
     def __str__(self):
         return (
-            "{{{s.id!s:.6s}}} [{s.buyer}] "
+            "{{{s.id!s:.6s}}} [{s.buyer}] [{s.seller}] "
             "{s.energy} kWh @ {s.price}".format(s=self)
         )
 
@@ -147,10 +147,10 @@ class Market:
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
 
-    def bid(self, price: float, energy: float, buyer: str) -> Bid:
+    def bid(self, price: float, energy: float, buyer: str, seller: str) -> Bid:
         if energy <= 0:
             raise InvalidBid()
-        bid = Bid(str(uuid.uuid4()), price, energy, buyer, self)
+        bid = Bid(str(uuid.uuid4()), price, energy, buyer, seller, self)
         with self.offer_lock:
             self.bids[bid.id] = bid
             log.info("[BID][NEW] %s", bid)
@@ -173,11 +173,50 @@ class Market:
     def delete_bid(self, bid_or_id: Union[str, Bid]):
         if isinstance(bid_or_id, Bid):
             bid_or_id = bid_or_id.id
-        with self.offer_lock:
-            bid = self.bids.pop(bid_or_id, None)
-            if not bid:
-                raise BidNotFound()
-            log.info("[BID][DEL] %s", bid)
+        bid = self.bids.pop(bid_or_id, None)
+        if not bid:
+            raise BidNotFound()
+        log.info("[BID][DEL] %s", bid)
+        self._notify_listeners(MarketEvent.BID_DELETED, bid=bid_or_id)
+
+    def accept_bid(self, bid: Bid, energy: float = None, seller: str = None):
+        with self.offer_lock, self.trade_lock:
+            market_bid = self.bids.pop(bid.id, None)
+            seller = bid.seller if seller is None else seller
+            if market_bid is None:
+                raise BidNotFound("During accept bid: " + str(bid))
+            if energy is None or energy == bid.energy:
+                trade = Trade(str(uuid.uuid4()), self._now, bid, seller, bid.buyer, None)
+                self.trades.append(trade)
+                self._update_accumulated_trade_price_energy(trade)
+                log.warning("[TRADE][BID] %s", trade)
+                self.traded_energy[bid.seller] += bid.energy
+                self.traded_energy[bid.buyer] -= bid.energy
+                self._update_min_max_avg_trade_prices(bid.price / bid.energy)
+                # Recalculate offer min/max price since offer was removed
+                self._update_min_max_avg_offer_prices()
+                self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
+            elif energy == 0:
+                raise InvalidTrade("Energy cannot be zero.")
+            elif energy > bid.energy:
+                raise InvalidTrade("Traded energy cannot be more than the bid energy.")
+            elif energy < bid.energy:
+                # Partial bidding
+                updated_bid = Bid(bid.id, bid.price, energy, bid.buyer, bid.seller, self)
+                trade = Trade(str(uuid.uuid4()), self._now, updated_bid, seller, bid.buyer, None)
+                self.trades.append(trade)
+                self._update_accumulated_trade_price_energy(trade)
+                log.warning("[TRADE][BID] %s", trade)
+                self.traded_energy[bid.seller] += bid.energy
+                self.traded_energy[bid.buyer] -= bid.energy
+                self._update_min_max_avg_trade_prices(bid.price / bid.energy)
+                # Recalculate offer min/max price since offer was removed
+                self._update_min_max_avg_offer_prices()
+                self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
+                pass
+            else:
+                raise Exception("Undefined state or conditions. Should never reach this place.")
+            self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: Pendulum = None) -> Trade:
