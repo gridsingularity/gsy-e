@@ -64,6 +64,12 @@ class LoadHoursStrategy(BaseStrategy):
         if self.energy_requirement <= 0:
             return
 
+        if self.current_bid is None:
+            self.current_bid = self.area.next_market.bid(
+                self.energy_requirement * self.acceptable_energy_rate.m / 1000.0,
+                self.energy_requirement / 1000.0,
+                self.owner.name, self.area.next_market.area.name)
+
         markets = []
         for time, market in self.area.markets.items():
             if self._allowed_operating_hours(time.hour):
@@ -75,20 +81,19 @@ class LoadHoursStrategy(BaseStrategy):
                 market = list(self.area.markets.values())[0]
                 if len(market.sorted_offers) < 1:
                     return
-
-                acceptable_offer = self._find_acceptable_offer(market)
-                if acceptable_offer and \
-                        ((acceptable_offer.price/acceptable_offer.energy) <
-                         self.acceptable_energy_rate.m):
-                    max_energy = self.energy_requirement / 1000
-                    if acceptable_offer.energy > max_energy:
-                        self.accept_offer(market, acceptable_offer, energy=max_energy)
-                        self.energy_requirement = 0
-                        self.hrs_per_day -= self._operating_hours(max_energy)
-                    else:
-                        self.accept_offer(market, acceptable_offer)
-                        self.energy_requirement -= acceptable_offer.energy * 1000
-                        self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
+                # acceptable_offer = self._find_acceptable_offer(market)
+                # if acceptable_offer and \
+                #         ((acceptable_offer.price/acceptable_offer.energy) <
+                #          self.acceptable_energy_rate.m):
+                #     max_energy = self.energy_requirement / 1000
+                #     if acceptable_offer.energy > max_energy:
+                #         self.accept_offer(market, acceptable_offer, energy=max_energy)
+                #         self.energy_requirement = 0
+                #         self.hrs_per_day -= self._operating_hours(max_energy)
+                #     else:
+                #         self.accept_offer(market, acceptable_offer)
+                #         self.energy_requirement -= acceptable_offer.energy * 1000
+                #         self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
 
@@ -110,6 +115,31 @@ class LoadHoursStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._update_energy_requirement()
+        if self.energy_requirement > 0:
+            self.current_bid = self.area.next_market.bid(
+                self.energy_requirement * self.acceptable_energy_rate.m / 1000.0,
+                self.energy_requirement / 1000.0,
+                self.owner.name, self.area.name)
+
+    def event_bid_traded(self, *, market, bid_trade):
+
+        if bid_trade.offer.buyer != self.owner.name:
+            print(bid_trade.offer.buyer)
+            print(self.owner.name)
+            return
+        print("BID TRADED: " + str(bid_trade) + " | " + str(self.current_bid.buyer))
+
+        assert hasattr(self, "current_bid") and \
+            self.current_bid is not None and \
+            "Load must have posted a bid."
+
+        if hasattr(self, "current_bid") and \
+            self.current_bid and \
+                bid_trade.offer.buyer == self.current_bid.buyer:
+            self.energy_requirement -= bid_trade.offer.energy * 1000.0
+            self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)
+            print(self.energy_requirement)
+            self.current_bid = None
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):
