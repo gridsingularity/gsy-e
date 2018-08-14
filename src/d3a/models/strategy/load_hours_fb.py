@@ -62,44 +62,49 @@ class LoadHoursStrategy(BaseStrategy):
         offers = market.most_affordable_offers
         return random.choice(offers)
 
-    def event_tick(self, *, area):
+    def _one_sided_market_event_tick(self):
+        markets = []
+        for time, market in self.area.markets.items():
+            if self._allowed_operating_hours(time.hour):
+                markets.append(market)
+        if not markets:
+            return
+        if self._allowed_operating_hours(self.area.now.hour):
+            try:
+                market = list(self.area.markets.values())[0]
+                if len(market.sorted_offers) < 1:
+                    return
+                acceptable_offer = self._find_acceptable_offer(market)
+                if acceptable_offer and \
+                        ((acceptable_offer.price / acceptable_offer.energy) <
+                         self.acceptable_energy_rate.m):
+                    max_energy = self.energy_requirement / 1000
+                    if acceptable_offer.energy > max_energy:
+                        self.accept_offer(market, acceptable_offer, energy=max_energy)
+                        self.energy_requirement = 0
+                        self.hrs_per_day -= self._operating_hours(max_energy)
+                    else:
+                        self.accept_offer(market, acceptable_offer)
+                        self.energy_requirement -= acceptable_offer.energy * 1000
+                        self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
+            except MarketException:
+                self.log.exception("An Error occurred while buying an offer")
 
+    def _double_sided_market_event_tick(self):
+        if self._current_bid_buffer is None:
+            self._current_bid_buffer = self.area.next_market.bid(
+                self.energy_requirement * self.acceptable_energy_rate.m / 1000.0,
+                self.energy_requirement / 1000.0,
+                self.owner.name, self.area.next_market.area.name)
+
+    def event_tick(self, *, area):
         if self.energy_requirement <= 0:
             return
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            if self._current_bid_buffer is None:
-                self._current_bid_buffer = self.area.next_market.bid(
-                    self.energy_requirement * self.acceptable_energy_rate.m / 1000.0,
-                    self.energy_requirement / 1000.0,
-                    self.owner.name, self.area.next_market.area.name)
+            self._double_sided_market_event_tick()
         elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
-            markets = []
-            for time, market in self.area.markets.items():
-                if self._allowed_operating_hours(time.hour):
-                    markets.append(market)
-            if not markets:
-                return
-            if self._allowed_operating_hours(self.area.now.hour):
-                try:
-                    market = list(self.area.markets.values())[0]
-                    if len(market.sorted_offers) < 1:
-                        return
-                    acceptable_offer = self._find_acceptable_offer(market)
-                    if acceptable_offer and \
-                            ((acceptable_offer.price/acceptable_offer.energy) <
-                             self.acceptable_energy_rate.m):
-                        max_energy = self.energy_requirement / 1000
-                        if acceptable_offer.energy > max_energy:
-                            self.accept_offer(market, acceptable_offer, energy=max_energy)
-                            self.energy_requirement = 0
-                            self.hrs_per_day -= self._operating_hours(max_energy)
-                        else:
-                            self.accept_offer(market, acceptable_offer)
-                            self.energy_requirement -= acceptable_offer.energy * 1000
-                            self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
-                except MarketException:
-                    self.log.exception("An Error occurred while buying an offer")
+            self._one_sided_market_event_tick()
 
     def _allowed_operating_hours(self, time):
         return time in self.hrs_of_day and self.hrs_per_day > 0

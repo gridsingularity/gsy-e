@@ -126,9 +126,6 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             )
             self.offers.post(offer, market)
 
-        else:
-            self.log.warn("PV has no forecast data for this time")
-
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
         if not (-1 < new_risk < 101):
