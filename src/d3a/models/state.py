@@ -54,7 +54,7 @@ class FridgeState:
 class StorageState:
     def __init__(self,
                  initial_capacity=0.0,
-                 initial_charge=None,
+                 initial_soc=None,
                  capacity=ConstSettings.STORAGE_CAPACITY,
                  max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
                  loss_per_hour=0.01,
@@ -62,11 +62,11 @@ class StorageState:
         self._blocked_storage = 0.0
         self._offered_storage = 0.0
         self._battery_energy_per_slot = 0.0
-        if initial_charge is not None:
+        if initial_soc is not None:
             if initial_capacity:
                 strategy.log.warning("Ignoring initial_capacity parameter since "
-                                     "initial_charge has also been given.")
-            initial_capacity = capacity * initial_charge / 100
+                                     "initial_soc has also been given.")
+            initial_capacity = capacity * initial_soc / 100
         self._used_storage = initial_capacity
         self.capacity = capacity
         self.max_abs_battery_power = max_abs_battery_power

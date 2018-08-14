@@ -16,6 +16,7 @@ class FakeArea():
         self.appliance = None
         self.name = 'FakeArea'
         self.count = count
+        self.current_tick = 0
         self.past_market = FakeMarket(4)
         self.current_market = FakeMarket(0)
         self.next_market = FakeMarket(1)
@@ -45,14 +46,24 @@ class FakeArea():
         return {"past market": self.past_market}
 
     @property
+    def now(self):
+        return Pendulum.now().start_of('day').add_timedelta(
+            self.config.tick_length * self.current_tick
+        )
+
+    @property
+    def historical_avg_rate(self):
+        return 30
+
+    @property
     def config(self):
         return SimulationConfig(
                 duration=Interval(hours=24),
                 market_count=4,
                 slot_length=Interval(minutes=15),
-                tick_length=Interval(seconds=1),
+                tick_length=Interval(seconds=15),
                 cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
-                market_maker_rate=ConstSettings.MAX_ENERGY_RATE,
+                market_maker_rate=ConstSettings.DEFAULT_MARKET_MAKER_RATE,
                 iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
                 )
 
@@ -82,6 +93,9 @@ class FakeMarket:
     @property
     def time_slot(self):
         return Pendulum.now().start_of('day')
+
+    def delete_offer(self, offer_id):
+        return
 
     def offer(self, price, energy, seller, market=None):
         offer = Offer('id', price, energy, seller, market)
@@ -211,7 +225,7 @@ def area_test4():
 
 @pytest.fixture()
 def storage_strategy_test4(area_test4, called):
-    s = StorageStrategy()
+    s = StorageStrategy(initial_rate_option=2)
     s.owner = area_test4
     s.area = area_test4
     s.accept_offer = called
@@ -227,9 +241,8 @@ def test_if_storage_pays_respect_to_capacity_limits(storage_strategy_test4, area
 def test_if_storage_max_sell_rate_is_one_unit_less_than_market_maker_rate(storage_strategy_test4,
                                                                           area_test4):
     storage_strategy_test4.event_activate()
-    for k in range(len(area_test4.config.market_maker_rate)):
-        assert storage_strategy_test4.max_selling_rate_cents_per_kwh[k].m \
-            == (area_test4.config.market_maker_rate[k] - 1)
+    assert storage_strategy_test4._max_selling_rate(area_test4.current_market) \
+        == (area_test4.config.market_maker_rate[area_test4.current_market.time_slot.hour])
 
 
 """TEST5"""
@@ -316,7 +329,8 @@ def area_test7():
 
 @pytest.fixture()
 def storage_strategy_test7(area_test7):
-    s = StorageStrategy(initial_capacity=3.0, battery_capacity=3.01, max_abs_battery_power=5.21)
+    s = StorageStrategy(initial_capacity=3.0, battery_capacity=3.01, max_abs_battery_power=5.21,
+                        initial_rate_option=2, break_even=(31, 32))
     s.owner = area_test7
     s.area = area_test7
     return s
@@ -334,34 +348,54 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     ) > 0
 
 
-def test_calculate_sell_energy_rate_calculation(storage_strategy_test7):
+def test_calculate_initial_sell_energy_rate_lower_bound(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
-    storage_strategy_test7._risk_factor = lambda x: 200.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        storage_strategy_test7.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
-    storage_strategy_test7._risk_factor = lambda x: -200.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL
+    break_even_sell = storage_strategy_test7.break_even[market.time_slot.hour][1]
+    assert storage_strategy_test7._calculate_selling_rate(market) == break_even_sell
 
 
-def test_calculate_risk_factor(storage_strategy_test7):
-    storage_strategy_test7.event_activate()
-    market = storage_strategy_test7.area.current_market
-    rate_range = storage_strategy_test7.max_selling_rate_cents_per_kwh[market.time_slot.hour].m - \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL
-    storage_strategy_test7.risk = 50.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL + rate_range / 2.0
-    storage_strategy_test7.risk = 25.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL + rate_range / 4.0
-    storage_strategy_test7.risk = 100.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        storage_strategy_test7.max_selling_rate_cents_per_kwh[market.time_slot.hour].m
-    storage_strategy_test7.risk = 0.0
-    assert storage_strategy_test7._calculate_selling_rate(market) == \
-        ConstSettings.STORAGE_BREAK_EVEN_SELL
+@pytest.fixture()
+def storage_strategy_test7_1(area_test7):
+    s = StorageStrategy(initial_capacity=3.0, battery_capacity=3.01, max_abs_battery_power=5.21,
+                        initial_rate_option=2, break_even=(26, 27))
+    s.owner = area_test7
+    s.area = area_test7
+    return s
+
+
+def test_calculate_initial_sell_energy_rate_upper_bound(storage_strategy_test7_1):
+    storage_strategy_test7_1.event_activate()
+    market = storage_strategy_test7_1.area.current_market
+    market_maker_rate = \
+        storage_strategy_test7_1.area.config.market_maker_rate[market.time_slot.hour]
+    assert storage_strategy_test7_1._calculate_selling_rate(market) == market_maker_rate
+
+
+@pytest.fixture()
+def storage_strategy_test7_2(area_test7):
+    s = StorageStrategy(initial_capacity=3.0, battery_capacity=3.01, max_abs_battery_power=5.21,
+                        initial_rate_option=1, break_even=(16, 17))
+    s.owner = area_test7
+    s.area = area_test7
+    s.offers.posted = {Offer('id', 30, 1, 'FakeArea',
+                             market=area_test7.current_market): area_test7.current_market}
+    return s
+
+
+@pytest.mark.parametrize("risk", [10.0, 25.0, 95.0])
+def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
+    storage_strategy_test7_2.risk = risk
+    storage_strategy_test7_2.event_activate()
+    old_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
+    storage_strategy_test7_2._decrease_offer_price(area_test7.current_market)
+    new_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
+    price_dec_per_slot = (area_test7.historical_avg_rate) * (1 - storage_strategy_test7_2.risk /
+                                                             ConstSettings.MAX_RISK)
+    price_updates_per_slot = int(area_test7.config.slot_length.seconds
+                                 / storage_strategy_test7_2._decrease_price_every_nr_s.m)
+    price_dec_per_update = price_dec_per_slot / price_updates_per_slot
+    assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
 
 def test_calculate_energy_amount_to_sell_respects_max_power(storage_strategy_test7, area_test7):
@@ -439,7 +473,7 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
 # Handling of initial_charge parameter
 def test_initial_charge(caplog):
     with caplog.at_level(logging.WARNING):
-        storage = StorageStrategy(initial_capacity=1, initial_charge=60)
+        storage = StorageStrategy(initial_capacity=1, initial_soc=60)
     assert any('initial_capacity' in record.msg for record in caplog.records)
     assert storage.state.used_storage == 0.6 * storage.state.capacity
 
@@ -454,9 +488,9 @@ def test_storage_constructor_rejects_incorrect_parameters():
     with pytest.raises(ValueError):
         StorageStrategy(battery_capacity=100, initial_capacity=101)
     with pytest.raises(ValueError):
-        StorageStrategy(initial_charge=101)
+        StorageStrategy(initial_soc=101)
     with pytest.raises(ValueError):
-        StorageStrategy(initial_charge=-1)
+        StorageStrategy(initial_soc=-1)
     with pytest.raises(ValueError):
         StorageStrategy(break_even=(1, .99))
     with pytest.raises(ValueError):
@@ -516,3 +550,39 @@ def test_storage_populates_break_even_profile_correctly():
     assert all([s.break_even[i] == (22, 23) for i in range(10)])
     assert all([s.break_even[i] == (24, 25) for i in range(10, 20)])
     assert all([s.break_even[i] == (27, 28) for i in range(20, 24)])
+
+
+"""TEST12"""
+
+
+@pytest.fixture()
+def area_test12():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def market_test7():
+    return FakeMarket(0)
+
+
+@pytest.fixture()
+def storage_strategy_test12(area_test12):
+    s = StorageStrategy(battery_capacity=5, initial_capacity=2.5,
+                        max_abs_battery_power=5,
+                        break_even=(16.99, 17.01),
+                        cap_price_strategy=True)
+    s.owner = area_test12
+    s.area = area_test12
+    return s
+
+
+def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_test7):
+    storage_strategy_test12.event_activate()
+    market_maker_rate = storage_strategy_test12.area.config.market_maker_rate[0]
+    BE_sell = storage_strategy_test12.break_even[0][1]
+    used_storage = storage_strategy_test12.state.used_storage
+    battery_capacity = storage_strategy_test12.state.capacity
+    soc = used_storage / battery_capacity
+    actual_rate = storage_strategy_test12._calculate_selling_rate(market_test7)
+    expected_rate = market_maker_rate - (market_maker_rate - BE_sell) * soc
+    assert actual_rate == expected_rate

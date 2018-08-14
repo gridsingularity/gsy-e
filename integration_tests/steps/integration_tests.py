@@ -40,6 +40,24 @@ def hour_profile(context, device):
     }
 
 
+@given('a {device} profile string as input to predefined load')
+def json_string_profile(context, device):
+    context._device_profile_dict = {i: 100 for i in range(10)}
+    context._device_profile_dict.update({i: 50 for i in range(10, 20)})
+    context._device_profile_dict.update({i: 25 for i in range(20, 24)})
+    profile = "{"
+    for i in range(24):
+        for j in ["00", "15", "30", "45"]:
+            if i < 10:
+                profile += f"\"{i}:{j}\": 100, "
+            elif 10 <= i < 20:
+                profile += f"\"{i}:{j}\": 50, "
+            else:
+                profile += f"\"{i}:{j}\": 25, "
+    profile += "}"
+    context._device_profile = profile
+
+
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
@@ -48,68 +66,9 @@ def hour_profile_of_market_maker_rate(context, scenario):
     assert context._market_maker_rate is not None
 
 
-@given('a load profile csv as input to predefined load')
-def load_csv_profile(context):
-    context._device_profile = os.path.join(d3a_path, 'resources', 'LOAD_DATA_1.csv')
-
-
 @given('a PV profile csv as input to predefined PV')
 def pv_csv_profile(context):
     context._device_profile = os.path.join(d3a_path, 'resources', 'Solar_Curve_W_cloudy.csv')
-
-
-@given('the scenario includes a predefined load that will not be unmatched')
-def load_profile_scenario(context):
-    predefined_load_scenario = {
-      "name": "Grid",
-      "children": [
-        {
-          "name": "Commercial Energy Producer",
-          "type": "CommercialProducer",
-          "energy_price": 15.5,
-          "energy_range_wh": [40, 120]
-        },
-        {
-          "name": "House 1",
-          "children": [
-            {
-              "name": "H1 Load",
-              "type": "LoadProfile",
-              "daily_load_profile": context._device_profile
-            },
-            {
-              "name": "H1 PV",
-              "type": "PV",
-              "panel_count": 3,
-              "risk": 80
-            }
-          ]
-        },
-        {
-          "name": "House 2",
-          "children": [
-            {
-              "name": "H2 Storage",
-              "type": "Storage",
-              "capacity": 5,
-              "initial_charge": 40
-            },
-            {
-              "name": "H2 Fridge 1",
-              "type": "Fridge"
-            },
-          ]
-        }
-      ]
-    }
-    context._settings = SimulationConfig(tick_length=Interval(seconds=15),
-                                         slot_length=Interval(minutes=15),
-                                         duration=Interval(hours=24),
-                                         market_count=4,
-                                         cloud_coverage=0,
-                                         market_maker_rate=30,
-                                         iaa_fee=5)
-    context._settings.area = predefined_load_scenario
 
 
 @given('the scenario includes a predefined PV')
@@ -164,6 +123,60 @@ def pv_profile_scenario(context):
                                          market_maker_rate=30,
                                          iaa_fee=5)
     context._settings.area = predefined_pv_scenario
+
+
+@given('the scenario includes a predefined load that will not be unmatched')
+def load_profile_scenario(context):
+    predefined_load_scenario = {
+      "name": "Grid",
+      "children": [
+        {
+          "name": "Commercial Energy Producer",
+          "type": "CommercialProducer",
+          "energy_price": 15.5,
+          "energy_range_wh": [40, 120]
+        },
+        {
+          "name": "House 1",
+          "children": [
+            {
+              "name": "H1 Load",
+              "type": "LoadProfile",
+              "daily_load_profile": context._device_profile
+            },
+            {
+              "name": "H1 PV",
+              "type": "PV",
+              "panel_count": 3,
+              "risk": 80
+            }
+          ]
+        },
+        {
+          "name": "House 2",
+          "children": [
+            {
+              "name": "H2 Storage",
+              "type": "Storage",
+              "capacity": 5,
+              "initial_charge": 40
+            },
+            {
+              "name": "H2 Fridge 1",
+              "type": "Fridge"
+            },
+          ]
+        }
+      ]
+    }
+    context._settings = SimulationConfig(tick_length=Interval(seconds=15),
+                                         slot_length=Interval(minutes=15),
+                                         duration=Interval(hours=24),
+                                         market_count=4,
+                                         cloud_coverage=0,
+                                         market_maker_rate=30,
+                                         iaa_fee=5)
+    context._settings.area = predefined_load_scenario
 
 
 @when('the simulation is running')
@@ -419,11 +432,20 @@ def test_output(context, scenario, duration, slot_length, tick_length):
     # (check if number of last slot is the maximal number of slots):
     no_of_slots = (int(duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
+    if scenario == "default":
+        street1 = list(filter(lambda x: x.name == "Street 1", context.simulation.area.children))[0]
+        house1 = list(filter(lambda x: x.name == "S1 House 1", street1.children))[0]
+        permanent_load = list(filter(lambda x: x.name == "S1 H1 Load", house1.children))[0]
+        energy_profile = [ki for ki in permanent_load.strategy.state.desired_energy.values()]
+        assert all([permanent_load.strategy.energy == ei for ei in energy_profile])
     # TODO: Implement more sophisticated tests for success of simulation
 
 
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
+    if isinstance(context._device_profile, str):
+        context._device_profile = context._device_profile_dict
+
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
     for timepoint, energy in load.strategy.state.desired_energy.items():
@@ -483,23 +505,6 @@ def check_pv_csv_profile(context):
             assert energy == 0
 
 
-@then('the predefined load follows the load profile from the csv')
-def check_load_profile_csv(context):
-    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
-    input_profile = load.strategy._readCSV(context._device_profile)
-    desired_energy = {f'{k.hour:02}:{k.minute:02}': v
-                      for k, v in load.strategy.state.desired_energy.items()
-                      }
-
-    for timepoint, energy in desired_energy.items():
-        if timepoint in input_profile:
-            assert energy == input_profile[timepoint] / \
-                   (Interval(hours=1) / load.config.slot_length)
-        else:
-            assert False
-
-
 @then('the predefined PV follows the PV profile from the csv')
 def check_pv_profile_csv(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
@@ -514,46 +519,6 @@ def check_pv_profile_csv(context):
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
         else:
             assert False
-
-
-@then('the storage devices buy and sell energy respecting the break even prices')
-def check_storage_prices(context):
-    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    trades_sold = []
-    trades_bought = []
-    for slot, market in house1.past_markets.items():
-        for trade in market.trades:
-            if trade.seller in ["H1 Storage1", "H1 Storage2"]:
-                trades_sold.append(trade)
-            elif trade.buyer in ["H1 Storage1", "H1 Storage2"]:
-                trades_bought.append(trade)
-    assert all([trade.offer.price / trade.offer.energy >= 27.01 for trade in trades_sold])
-    assert all([trade.offer.price / trade.offer.energy <= 26.99 for trade in trades_bought])
-    assert len(trades_sold) > 0
-    assert len(trades_bought) > 0
-
-
-@then('the storage devices buy and sell energy respecting the hourly break even prices')
-def step_impl(context):
-    from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import \
-        break_even_profile, break_even_profile_2
-    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    for name, profile in [("H1 Storage1", break_even_profile),
-                          ("H1 Storage2", break_even_profile_2)]:
-        trades_sold = []
-        trades_bought = []
-        for slot, market in house1.past_markets.items():
-            for trade in market.trades:
-                if trade.seller == name:
-                    trades_sold.append(trade)
-                elif trade.buyer == name:
-                    trades_bought.append(trade)
-        assert all([trade.offer.price / trade.offer.energy >= profile[trade.time.hour][1]
-                    for trade in trades_sold])
-        assert all([trade.offer.price / trade.offer.energy <= profile[trade.time.hour][0]
-                    for trade in trades_bought])
-        assert len(trades_sold) > 0
-        assert len(trades_bought) > 0
 
 
 @then('the {plant_name} always sells energy at the defined energy rate')

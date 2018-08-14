@@ -9,7 +9,8 @@ from d3a.models.strategy.pv import PVStrategy
 
 
 '''
-This setup file test the correct parsing of ESS break_even range.
+This setup file is being modified to mimic a typical
+modern household having a hybrid PV-ESS system.
 '''
 
 

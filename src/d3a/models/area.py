@@ -30,7 +30,7 @@ DEFAULT_CONFIG = SimulationConfig(
     slot_length=Interval(minutes=15),
     tick_length=Interval(seconds=1),
     cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
-    market_maker_rate=str(ConstSettings.MAX_ENERGY_RATE),
+    market_maker_rate=str(ConstSettings.DEFAULT_MARKET_MAKER_RATE),
     iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
 )
 
