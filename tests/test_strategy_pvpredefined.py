@@ -127,7 +127,7 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
     old_offer = list(pv_test3.offers.posted.keys())[0]
-    pv_test3.decrease_offer_price(area_test3.test_market)
+    pv_test3._decrease_offer_price(area_test3.test_market)
     new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
 
@@ -236,7 +236,7 @@ def testing_produced_energy_forecast_real_data(pv_test6):
 # Make sure that it doesnt offer it again after selling.
 def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     pv_test6.event_activate()
-    pv_test6.event_tick(area=area_test3)
+    pv_test6.event_market_cycle()
     assert market_test3.created_offers[0].energy == pv_test6.energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
     pv_test6.event_trade(market=market_test3, trade=fake_trade)

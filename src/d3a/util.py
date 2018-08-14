@@ -209,7 +209,7 @@ def read_settings_from_file(settings_file):
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
             "market_maker_rate": settings["basic_settings"].get(
-                'market_maker_rate', advanced_settings["MAX_ENERGY_RATE"]),
+                'market_maker_rate', advanced_settings["DEFAULT_MARKET_MAKER_RATE"]),
             "iaa_fee": settings["basic_settings"].get(
                 'INTER_AREA_AGENT_FEE_PERCENTAGE',
                 advanced_settings["INTER_AREA_AGENT_FEE_PERCENTAGE"])

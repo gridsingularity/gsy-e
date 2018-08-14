@@ -6,7 +6,7 @@ class ConstSettings:
     # Unit is percentage
     DEFAULT_RISK = 50
     # Max energy price in ct / kWh
-    MAX_ENERGY_RATE = 30  # 0.3 Eur
+    DEFAULT_MARKET_MAKER_RATE = 30  # 0.3 Eur
 
     # FRIDGE SETTINGS
     # Unit is degree celsius
@@ -17,8 +17,6 @@ class ConstSettings:
     FRIDGE_TEMPERATURE = 6.0
 
     # MARKET RELATED LIMITATIONS
-    # Unit is cent
-    MIN_AVERAGE_PRICE = 15
     # Unit is in Wh
     FRIDGE_MIN_NEEDED_ENERGY = 10
 
@@ -27,10 +25,17 @@ class ConstSettings:
     STORAGE_CAPACITY = 1.2
     # Unit is kW
     MAX_ABS_BATTERY_POWER = 5
+    # Initial ESS rate calculation for every market slot, before rate reduction per tick
+    # Option 1, use the historical market average
+    # Default value 2 stands for market maker rate
+    INITIAL_ESS_RATE_OPTION = 2
+    # Energy rate decrease option for unsold ESS offers
+    # Default value 1 stands for percentage/RISK based energy rate decrease
+    # Option 2, use the constant energy rate decrease
+    ESS_RATE_DECREASE_OPTION = 1
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
     STORAGE_BREAK_EVEN_BUY = 25
-    STORAGE_MAX_SELL_RATE_c_per_Kwh = MAX_ENERGY_RATE - 1
     STORAGE_MIN_ALLOWED_SOC = 0.1
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
     # PV SETTINGS
@@ -38,6 +43,9 @@ class ConstSettings:
     MIN_PV_SELLING_RATE = 0
 
     # Initial PV rate calculation for every market slot, before rate reduction per tick
+    # Default value 1, use the historical market average
+    # Option 2 stands for market maker rate
+    INITIAL_PV_RATE_OPTION = 1
     # Option 1, use the historical market average
     # Default value 2 stands for market maker rate
     INITIAL_PV_RATE_OPTION = 2
@@ -47,9 +55,10 @@ class ConstSettings:
     # Option 2, use the constant energy rate decrease
     PV_RATE_DECREASE_OPTION = 1
 
-    ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_slot
+    ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
 
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
+    MAX_PV_OUTPUT = 160
 
     # HEATPUMP SETTINGS
     # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)
@@ -78,11 +87,6 @@ class ConstSettings:
     # Minimal consumption per household in Wh
     MIN_HOUSEHOLD_CONSUMPTION = 70
 
-    # COMMERCIAL PRODUCER SETTINGS
-    # Amount of posted offers per market
-    COMMERCIAL_OFFERS = 20
-
     MAX_OFFER_TRAVERSAL_LENGTH = 10
-    PV_DECREASE_PER_SECOND_BY = 0.01
 
     INTER_AREA_AGENT_FEE_PERCENTAGE = 1

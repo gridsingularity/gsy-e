@@ -3,6 +3,7 @@ Exposes mixins that can be used from strategy classes.
 """
 import csv
 import os
+import ast
 import numpy as np
 from datetime import datetime
 from pendulum import Interval
@@ -128,10 +129,12 @@ class ReadProfileMixin:
                                                      daily_load_profile,
                                                      slot_length: Interval) -> Dict[str, float]:
         """
-        Reads arbitrary power profile and converts it to energy. Handles csv and dict input.
+        Reads arbitrary power profile and converts it to energy. Handles csv, dict and string
+        input.
         :param daily_load_profile: Can be either a csv file path,
         or a dict with hourly data (Dict[int, float])
         or a dict with arbitrary time data (Dict[str, float])
+        or a string containing a serialized dict of the aforementioned structure
         :param slot_length: slot length duration
         :return: a mapping from time to energy values in kWh
         """
@@ -141,7 +144,10 @@ class ReadProfileMixin:
                 "%H:%M",
                 slot_length
             )
-        elif isinstance(daily_load_profile, dict):
+        elif isinstance(daily_load_profile, dict) or isinstance(daily_load_profile, str):
+            if isinstance(daily_load_profile, str):
+                daily_load_profile = ast.literal_eval(daily_load_profile)
+                daily_load_profile = {k: float(v) for k, v in daily_load_profile.items()}
             if isinstance(list(daily_load_profile.keys())[0], str):
                 # Assume that the time fields are properly formatted.
                 return self._calculate_energy_from_power_profile(

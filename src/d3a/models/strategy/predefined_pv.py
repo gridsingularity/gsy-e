@@ -25,7 +25,7 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
     def __init__(self, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
                  min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
                  cloud_coverage: int=None,
-                 initial_pv_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION,
+                 initial_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE):
         """
@@ -37,7 +37,7 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
         """
         super().__init__(panel_count=panel_count, risk=risk,
                          min_selling_rate=min_selling_rate,
-                         initial_pv_rate_option=initial_pv_rate_option,
+                         initial_rate_option=initial_rate_option,
                          energy_rate_decrease_option=energy_rate_decrease_option,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update
                          )
@@ -106,7 +106,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
 
     def __init__(self, power_profile, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
                  min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
-                 initial_pv_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION,
+                 initial_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE
                  ):
@@ -121,7 +121,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         """
         super().__init__(risk=risk, panel_count=panel_count,
                          min_selling_rate=min_selling_rate,
-                         initial_pv_rate_option=initial_pv_rate_option,
+                         initial_rate_option=initial_rate_option,
                          energy_rate_decrease_option=energy_rate_decrease_option,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update
                          )
