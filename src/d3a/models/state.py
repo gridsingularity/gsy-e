@@ -75,7 +75,7 @@ class StorageState:
         self.used_history = defaultdict(lambda: '-')
         self.charge_history = defaultdict(lambda: '-')
         self.charge_history_kWh = defaultdict(lambda: '-')
-        self.residual_energy_per_slot = defaultdict(lambda: '-')  # type: Dict[Pendulum, float]
+        self._traded_energy_per_slot = defaultdict(lambda: 0.0)  # type: Dict[Pendulum, float]
 
     @property
     def blocked_storage(self):
@@ -112,13 +112,12 @@ class StorageState:
         self._battery_energy_per_slot = self.max_abs_battery_power * \
                                         (slot_length/Interval(hours=1))
 
-    def available_energy_per_slot(self, slot):
-        if self.residual_energy_per_slot[slot] is '-':
-            self.residual_energy_per_slot[slot] = self._battery_energy_per_slot
-        return self.residual_energy_per_slot[slot]
+    def traded_energy_per_slot(self, slot):
+        return self._traded_energy_per_slot[slot]
 
+    # it increase positively while charging and negatively while discharging
     def update_energy_per_slot(self, energy, slot):
-        self.residual_energy_per_slot[slot] -= energy
+        self._traded_energy_per_slot[slot] += energy
 
     def block_storage(self, energy):
         self._blocked_storage += energy
