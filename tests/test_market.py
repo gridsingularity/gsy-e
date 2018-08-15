@@ -116,6 +116,18 @@ def test_market_trade(market: Market):
     assert trade.buyer == 'B'
 
 
+def test_market_bid_trade(market: Market):
+    bid = market.bid(20, 10, 'A', 'B')
+
+    trade = market.accept_bid(bid, energy=10, seller='B')
+    assert trade
+    assert trade == market.trades[0]
+    assert trade.id
+    assert trade.offer is bid
+    assert trade.seller == 'B'
+    assert trade.buyer == 'A'
+
+
 def test_market_trade_by_id(market: Market):
     offer = market.offer(20, 10, 'A')
 
@@ -136,6 +148,15 @@ def test_market_trade_not_found(market: Market):
     assert market.accept_offer(offer, 'B')
     with pytest.raises(OfferNotFoundException):
         market.accept_offer(offer, 'B')
+
+
+def test_market_trade_bid_not_found(market: Market):
+    bid = market.bid(20, 10, 'A', 'B')
+
+    assert market.accept_bid(bid, 10, 'B')
+
+    with pytest.raises(BidNotFound):
+        market.accept_bid(bid, 10, 'B')
 
 
 def test_market_trade_partial(market: Market):
@@ -160,12 +181,42 @@ def test_market_trade_partial(market: Market):
     assert new_offer.id != offer.id
 
 
+def test_market_trade_bid_partial(market: Market):
+    bid = market.bid(20, 20, 'A', 'B')
+
+    trade = market.accept_bid(bid, energy=5, seller='B')
+    assert trade
+    assert trade == market.trades[0]
+    assert trade.id
+    assert trade.offer is not bid
+    assert trade.offer.energy == 5
+    assert trade.offer.price == 5
+    assert trade.offer.seller == 'B'
+    assert trade.seller == 'B'
+    assert trade.buyer == 'A'
+    assert len(market.bids) == 1
+    new_bid = list(market.bids.values())[0]
+    assert new_bid is not bid
+    assert new_bid.energy == 15
+    assert new_bid.price == 15
+    assert new_bid.seller == 'B'
+    assert new_bid.id != bid.id
+
+
 @pytest.mark.parametrize('energy', (0, 21))
 def test_market_trade_partial_invalid(market: Market, energy):
     offer = market.offer(20, 20, 'A')
 
     with pytest.raises(InvalidTrade):
         market.accept_offer(offer, 'B', energy=energy)
+
+
+@pytest.mark.parametrize('energy', (0, 21, 100, -20))
+def test_market_trade_partial_bid_invalid(market: Market, energy):
+    bid = market.bid(20, 20, 'A', 'B')
+
+    with pytest.raises(InvalidTrade):
+        market.accept_bid(bid, energy=energy, seller='A')
 
 
 def test_market_acct_simple(market: Market):
@@ -308,6 +359,12 @@ def test_market_accept_offer_yields_partial_trade(market: Market):
     offer = market.offer(2.0, 4, 'seller')
     trade = market.accept_offer(offer, 'buyer', energy=1)
     assert trade.offer.id == offer.id and trade.offer.energy == 1 and trade.residual.energy == 3
+
+
+def test_market_accept_bid_yields_partial_bid_trade(market: Market):
+    bid = market.bid(2.0, 4, 'buyer', 'seller')
+    trade = market.accept_bid(bid, energy=1, seller='seller')
+    assert trade.offer.id == bid.id and trade.offer.energy == 1
 
 
 class MarketStateMachine(RuleBasedStateMachine):
