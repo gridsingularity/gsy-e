@@ -140,12 +140,10 @@ class LoadHoursStrategy(BaseStrategy):
         if bid_trade.offer.buyer != self.owner.name:
             return
 
-        assert hasattr(self, "current_bid") and \
-            self._current_bid_buffer is not None and \
+        assert self._current_bid_buffer is not None and \
             "Load must have posted a bid."
 
-        if hasattr(self, "current_bid") and \
-            self._current_bid_buffer and \
+        if self._current_bid_buffer and \
                 bid_trade.offer.buyer == self._current_bid_buffer.buyer:
             self.energy_requirement -= bid_trade.offer.energy * 1000.0
             self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)

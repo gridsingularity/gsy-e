@@ -92,16 +92,14 @@ class IAAEngine:
                     self.markets.source.accept_offer(offer,
                                                      buyer=self.owner.name,
                                                      energy=selected_energy)
-
-                    self.markets.source.accept_bid(bid, selected_energy, seller=self.owner.name)
                     deleted_offerinfo = self.offered_offers.pop(offer.id)
                     self.offered_offers.pop(deleted_offerinfo.target_offer.id)
 
+                    self.markets.source.accept_bid(bid, selected_energy, seller=self.owner.name)
                     bid_to_remove = bid
                     bid_info = self.offered_bids.pop(bid_to_remove.id, None)
                     if not bid_info:
                         continue
-                        # raise Exception("Not found bid " + str(bid_to_remove.id))
                     if bid_info.target_bid.id in self.offered_bids:
                         self.markets.target.delete_bid(bid_info.target_bid.id)
                         self.offered_bids.pop(bid_info.target_bid.id, None)
