@@ -30,11 +30,12 @@ def test_market_offer(market: Market):
 
 
 def test_market_bid(market: Market):
-    bid = market.bid(1, 2, 'bidder')
+    bid = market.bid(1, 2, 'bidder', 'seller')
     assert market.bids[bid.id] == bid
     assert bid.price == 1
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
+    assert bid.seller == 'seller'
     assert len(bid.id) == 36
     assert bid.market == market
 
@@ -46,7 +47,7 @@ def test_market_offer_invalid(market: Market):
 
 def test_market_bid_invalid(market: Market):
     with pytest.raises(InvalidBid):
-        market.bid(10, -1, 'someone')
+        market.bid(10, -1, 'someone', 'noone')
 
 
 def test_market_offer_readonly(market: Market):
@@ -81,7 +82,7 @@ def test_market_offer_delete_readonly(market: Market):
 
 
 def test_market_bid_delete(market: Market):
-    bid = market.bid(20, 10, 'someone')
+    bid = market.bid(20, 10, 'someone', 'noone')
     assert bid.id in market.bids
 
     market.delete_bid(bid)
@@ -89,7 +90,7 @@ def test_market_bid_delete(market: Market):
 
 
 def test_market_bid_delete_id(market: Market):
-    bid = market.bid(20, 10, 'someone')
+    bid = market.bid(20, 10, 'someone', 'noone')
     assert bid.id in market.bids
 
     market.delete_bid(bid.id)

@@ -3,6 +3,7 @@ from typing import Dict, Set  # noqa
 
 from d3a.exceptions import MarketException, OfferNotFoundException, BidNotFound
 from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
+from d3a.models.strategy.const import ConstSettings
 from d3a.util import make_iaa_name
 
 
@@ -137,11 +138,12 @@ class IAAEngine:
             forwarded_offer = self._forward_offer(offer, offer_id)
             self.owner.log.info("Offering %s", forwarded_offer)
 
-        self._match_offers_bids()
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            self._match_offers_bids()
 
-        for bid_id, bid in self.markets.source.bids.items():
-            if bid_id not in self.offered_bids:
-                self._forward_bid(bid)
+            for bid_id, bid in self.markets.source.bids.items():
+                if bid_id not in self.offered_bids:
+                    self._forward_bid(bid)
 
     def event_bid_traded(self, *, traded_bid):
         bid_info = self.offered_bids.get(traded_bid.id)
