@@ -146,12 +146,12 @@ class IAAEngine:
                     self._forward_bid(bid)
 
     def event_bid_traded(self, *, traded_bid):
-        bid_info = self.offered_bids.get(traded_bid.id)
+        bid_info = self.offered_bids.get(traded_bid.offer.id)
         if not bid_info:
             return
 
         # Bid was traded in target market, buy in source
-        if traded_bid.id == bid_info.target_bid.id:
+        if traded_bid.offer.id == bid_info.target_bid.id:
             self.markets.source.accept_bid(
                 bid_info.source_bid,
                 energy=traded_bid.offer.energy,
@@ -164,7 +164,7 @@ class IAAEngine:
             self.offered_bids.pop(bid_info.target_bid.id, None)
 
         # Bid was traded in the source market by someone else
-        elif traded_bid.id == bid_info.source_bid.id:
+        elif traded_bid.offer.id == bid_info.source_bid.id:
             # Delete target bid
             try:
                 self.markets.target.delete_bid(bid_info.target_bid)
@@ -374,6 +374,10 @@ class InterAreaAgent(BaseStrategy):
     def event_trade(self, *, market, trade, offer=None):
         for engine in self.engines:
             engine.event_trade(trade=trade)
+
+    def event_bid_traded(self, *, market, traded_bid):
+        for engine in self.engines:
+            engine.event_bid_traded(traded_bid=traded_bid)
 
     def event_bid_deleted(self, *, market, bid):
         for engine in self.engines:
