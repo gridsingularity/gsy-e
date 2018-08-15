@@ -108,9 +108,33 @@ class StorageState:
         if free < 0.2:
             area.log.info("Storage reached more than 80%% Battery: %f" + str(free))
 
-    def battery_energy_per_slot(self, slot_length):
+    def reset_battery_energy_per_slot(self, slot_length):
         self._battery_energy_per_slot = self.max_abs_battery_power * \
                                         (slot_length/Interval(hours=1))
+
+    def has_battery_reached_max_power(self, time_slot):
+        return abs(self.traded_energy_per_slot(time_slot)) >= \
+               self._battery_energy_per_slot
+
+    def clamp_energy_to_buy(self, energy):
+        return min(self._battery_energy_per_slot, self.free_storage, energy)
+
+    def clamp_energy_to_sell(self, energy, time_slot):
+
+        # If no energy is passed, try to sell all the Energy left in the storage
+        if energy is None:
+            energy = self.used_storage
+
+        # Limit energy according to the maximum battery power
+        energy = min(energy,
+                     (self._battery_energy_per_slot -
+                      self.traded_energy_per_slot(time_slot)))
+        # Limit energy to respect minimum allowed battery SOC
+        target_soc = (self.used_storage + self.offered_storage - energy) / self.capacity
+        if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
+            energy = self.used_storage + self.offered_storage - \
+                     self.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+        return energy
 
     def traded_energy_per_slot(self, slot):
         return self._traded_energy_per_slot[slot]

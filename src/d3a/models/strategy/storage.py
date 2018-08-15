@@ -43,7 +43,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.cap_price_strategy = cap_price_strategy
 
     def event_activate(self):
-        self.state.battery_energy_per_slot(self.area.config.slot_length)
+        self.state.reset_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
     def _update_break_even_points(self, break_even):
@@ -126,10 +126,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                         and (offer.price / offer.energy) < max_affordable_offer_rate:
                     # Try to buy the energy
                     try:
-                        if abs(self.state.traded_energy_per_slot(market.time_slot)) < \
-                                self.state._battery_energy_per_slot:
-                            max_energy = min(self.state._battery_energy_per_slot,
-                                             self.state.free_storage, offer.energy)
+                        if not self.state.has_battery_reached_max_power(market.time_slot):
+                            max_energy = self.state.clamp_energy_to_buy(offer.energy)
                             self.accept_offer(market, offer, energy=max_energy)
                             self.state.update_energy_per_slot(-max_energy, market.time_slot)
                             self.state.block_storage(max_energy)
@@ -182,25 +180,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             return list(self.area.markets.values())[0]
 
     def _calculate_energy_to_sell(self, energy, target_market):
-        if abs(self.state.traded_energy_per_slot(target_market.time_slot)) >= \
-                self.state._battery_energy_per_slot:
-            energy = 0
-            return energy
-        # If no energy is passed, try to sell all the Energy left in the storage
-        if energy is None:
-            energy = self.state.used_storage
+        # If there is not enough available energy for this timeslot, then return 0 energy
+        if self.state.has_battery_reached_max_power(target_market.time_slot):
+            return 0.0
 
-        # Limit energy according to the maximum battery power
-        energy = min(energy,
-                     (self.state._battery_energy_per_slot -
-                      self.state.traded_energy_per_slot(target_market.time_slot)))
-        # Limit energy to respect minimum allowed battery SOC
-        target_soc = (self.state.used_storage + self.state.offered_storage - energy) / \
-            self.state.capacity
-        if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
-            energy = self.state.used_storage + self.state.offered_storage - \
-                     self.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
-        self.state.update_energy_per_slot(energy, target_market.time_slot)
+        energy = self.state.clamp_energy_to_sell(energy, target_market.time_slot)
         return energy
 
     def _calculate_selling_rate(self, market):
@@ -228,4 +212,4 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if max_selling_rate < break_even_sell:
             return break_even_sell
         else:
-            return (max_selling_rate - (max_selling_rate - break_even_sell) * soc)
+            return max_selling_rate - (max_selling_rate - break_even_sell) * soc
