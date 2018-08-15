@@ -128,21 +128,21 @@ class LoadHoursStrategy(BaseStrategy):
                 self.energy_requirement / 1000.0,
                 self.owner.name, self.area.name)
 
-    def event_bid_traded(self, *, market, bid_trade):
+    def event_bid_traded(self, *, market, traded_bid):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             # Do not handle bid trades on double sided markets
             return
 
-        if bid_trade.offer.buyer != self.owner.name:
+        if traded_bid.offer.buyer != self.owner.name:
             return
 
         assert self._current_bid_buffer is not None and \
             "Load must have posted a bid."
 
         if self._current_bid_buffer and \
-                bid_trade.offer.buyer == self._current_bid_buffer.buyer:
-            self.energy_requirement -= bid_trade.offer.energy * 1000.0
-            self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)
+                traded_bid.offer.buyer == self._current_bid_buffer.buyer:
+            self.energy_requirement -= traded_bid.offer.energy * 1000.0
+            self.hrs_per_day -= self._operating_hours(traded_bid.offer.energy)
             self._current_bid_buffer = None
 
 

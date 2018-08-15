@@ -72,7 +72,7 @@ class EventMixin:
     def event_trade(self, *, market, trade):
         pass
 
-    def event_bid_traded(self, *, market, bid_trade):
+    def event_bid_traded(self, *, market, traded_bid):
         pass
 
     def event_bid_deleted(self, *, market, bid):
