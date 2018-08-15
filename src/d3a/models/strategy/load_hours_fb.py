@@ -91,11 +91,7 @@ class LoadHoursStrategy(BaseStrategy):
                 self.log.exception("An Error occurred while buying an offer")
 
     def _double_sided_market_event_tick(self):
-        if self._current_bid_buffer is None:
-            self._current_bid_buffer = self.area.next_market.bid(
-                self.energy_requirement * self.acceptable_energy_rate.m / 1000.0,
-                self.energy_requirement / 1000.0,
-                self.owner.name, self.area.next_market.area.name)
+        pass
 
     def event_tick(self, *, area):
         if self.energy_requirement <= 0:
