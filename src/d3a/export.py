@@ -214,7 +214,7 @@ class ExportAndPlot:
         Plots history of energy trades
         """
         data = list()
-        barmode = "bar"
+        barmode = "relative"
         xtitle = 'Time'
         ytitle = 'Energy [kWh]'
         key = 'energy [kWh]'
