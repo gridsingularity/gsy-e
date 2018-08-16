@@ -126,15 +126,15 @@ class StorageState:
             energy = self.used_storage
 
         # Limit energy according to the maximum battery power
-        energy = min(energy,
-                     (self._battery_energy_per_slot -
-                      self.traded_energy_per_slot(time_slot)))
+        clamped_energy = min(energy,
+                             (self._battery_energy_per_slot -
+                              self.traded_energy_per_slot(time_slot)))
         # Limit energy to respect minimum allowed battery SOC
-        target_soc = (self.used_storage + self.offered_storage - energy) / self.capacity
+        target_soc = (self.used_storage + self.offered_storage - clamped_energy) / self.capacity
         if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
-            energy = self.used_storage + self.offered_storage - \
-                     self.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
-        return energy
+            clamped_energy = self.used_storage + self.offered_storage - \
+                             self.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+        return clamped_energy
 
     def traded_energy_per_slot(self, slot):
         return self._traded_energy_per_slot[slot]
