@@ -351,6 +351,9 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     assert len(storage_strategy_test7.offers.posted_in_market(
         area_test7._markets_return["Fake Market"])
     ) > 0
+    assert storage_strategy_test7.state.traded_energy_per_slot(
+        area_test7.current_market.time_slot
+    ) == energy
 
 
 def test_calculate_initial_sell_energy_rate_lower_bound(storage_strategy_test7):
@@ -549,9 +552,12 @@ def storage_strategy_test11(area_test11, called):
     return s
 
 
-def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strategy_test11):
+def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strategy_test11,
+                                                                 area_test11):
     storage_strategy_test11.event_activate()
     storage_strategy_test11.buy_energy()
+    te = storage_strategy_test11.state.traded_energy_per_slot(area_test11.current_market.time_slot)
+    assert te == -float(storage_strategy_test11.accept_offer.calls[0][1]['energy'])
     assert len(storage_strategy_test11.accept_offer.calls) >= 1
 
 

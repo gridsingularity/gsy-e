@@ -108,7 +108,7 @@ class StorageState:
         if free < 0.2:
             area.log.info("Storage reached more than 80%% Battery: %f" + str(free))
 
-    def reset_battery_energy_per_slot(self, slot_length):
+    def set_battery_energy_per_slot(self, slot_length):
         self._battery_energy_per_slot = self.max_abs_battery_power * \
                                         (slot_length/Interval(hours=1))
 

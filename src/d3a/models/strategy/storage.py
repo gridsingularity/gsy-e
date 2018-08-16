@@ -43,7 +43,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.cap_price_strategy = cap_price_strategy
 
     def event_activate(self):
-        self.state.reset_battery_energy_per_slot(self.area.config.slot_length)
+        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
     def _update_break_even_points(self, break_even):
