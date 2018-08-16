@@ -35,7 +35,7 @@ class ConstSettings:
     ESS_RATE_DECREASE_OPTION = 1
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
-    STORAGE_BREAK_EVEN_BUY = 25
+    STORAGE_BREAK_EVEN_BUY = 24.9
     STORAGE_MIN_ALLOWED_SOC = 0.1
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
     # PV SETTINGS
@@ -90,4 +90,4 @@ class ConstSettings:
     # Market type option
     # Default value 1 stands for single sided market
     # Option 2 stands for double sided pay as bid market
-    INTER_AREA_AGENT_MARKET_TYPE = 1
+    INTER_AREA_AGENT_MARKET_TYPE = 2

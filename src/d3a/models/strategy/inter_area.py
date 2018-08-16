@@ -82,6 +82,7 @@ class IAAEngine:
             get_list_from_offered_dict(self.offered_offers, "source_offer"),
             key=lambda o: o.price / o.energy))
         )
+
         for offer in sorted_offers:
             for bid in sorted_bids:
                 if bid.id in self.offered_bids and offer.id in self.offered_offers and \
@@ -90,11 +91,27 @@ class IAAEngine:
                     if self.offered_bids[bid.id].target_bid.id == bid.id:
                         continue
 
-                    self.markets.source.accept_offer(offer,
-                                                     buyer=self.owner.name,
-                                                     energy=selected_energy)
-                    deleted_offerinfo = self.offered_offers.pop(offer.id)
-                    self.offered_offers.pop(deleted_offerinfo.target_offer.id)
+                    offer.price = offer.energy * (bid.price / bid.energy)
+
+                    # self.markets.source.accept_offer(offer,
+                    #                                  buyer=bid.buyer,
+                    #                                  energy=selected_energy)
+                    # if offer.id in self.offered_offers:
+                    # deleted_offerinfo = self.offered_offers.pop(offer.id)
+                    # self.offered_offers.pop(deleted_offerinfo.target_offer.id)
+                    # if offer.id in self.offered_offers:
+                    #     deleted_offerinfo = self.offered_offers.pop(offer.id)
+                    #     if deleted_offerinfo.source_offer.id in self.offered_offers:
+                    #         self.offered_offers.pop(deleted_offerinfo.source_offer.id)
+                    #     if deleted_offerinfo.target_offer.id in self.offered_offers:
+                    #         self.offered_offers.pop(deleted_offerinfo.target_offer.id)
+                    self.owner.accept_offer(market=self.markets.source,
+                                            offer=offer,
+                                            buyer=self.owner.name,
+                                            energy=selected_energy)
+                    if offer.id in self.offered_offers:
+                        deleted_offerinfo = self.offered_offers.pop(offer.id)
+                        self.offered_offers.pop(deleted_offerinfo.target_offer.id)
 
                     self.markets.source.accept_bid(bid, selected_energy, seller=self.owner.name)
                     bid_to_remove = bid
@@ -196,6 +213,9 @@ class IAAEngine:
                                          "{} (Forwarded offer not found)".format(trade.offer))
 
             try:
+
+                offer_info.source_offer.price = \
+                    (trade.offer.price / trade.offer.energy) * offer_info.source_offer.energy
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,

@@ -26,7 +26,7 @@ class LoadHoursStrategy(BaseStrategy):
         self.daily_budget = daily_budget * 100 if daily_budget is not None else None
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
-        self.energy_requirement = 0
+        self.energy_requirement_Wh = 0
         self.max_acceptable_energy_price = 10**20
         # In ct. / kWh
         self.acceptable_energy_rate = Q_(acceptable_energy_rate, (ureg.EUR_cents/ureg.kWh))
@@ -78,23 +78,35 @@ class LoadHoursStrategy(BaseStrategy):
                 if acceptable_offer and \
                         ((acceptable_offer.price / acceptable_offer.energy) <
                          self.acceptable_energy_rate.m):
-                    max_energy = self.energy_requirement / 1000
+                    max_energy = self.energy_requirement_Wh / 1000
                     if acceptable_offer.energy > max_energy:
                         self.accept_offer(market, acceptable_offer, energy=max_energy)
-                        self.energy_requirement = 0
+                        self.energy_requirement_Wh = 0
                         self.hrs_per_day -= self._operating_hours(max_energy)
                     else:
                         self.accept_offer(market, acceptable_offer)
-                        self.energy_requirement -= acceptable_offer.energy * 1000
+                        self.energy_requirement_Wh -= acceptable_offer.energy * 1000
                         self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
 
     def _double_sided_market_event_tick(self):
-        pass
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            assert False and "Cannot call this method using a single sided market."
+
+        if self.energy_requirement_Wh <= 0:
+            return
+
+        if self._current_bid_buffer is not None:
+            return
+
+        # self._current_bid_buffer = self.area.next_market.bid(
+        #     self.energy_requirement_Wh * self.acceptable_energy_rate.m / 1000.0,
+        #     self.energy_requirement_Wh / 1000.0,
+        #     self.owner.name, self.area.name)
 
     def event_tick(self, *, area):
-        if self.energy_requirement <= 0:
+        if self.energy_requirement_Wh <= 0:
             return
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
@@ -110,28 +122,29 @@ class LoadHoursStrategy(BaseStrategy):
                 * (self.area.config.slot_length / Interval(hours=1)))
 
     def _update_energy_requirement(self):
-        self.energy_requirement = 0
+        self.energy_requirement_Wh = 0
         if self._allowed_operating_hours(self.area.now.hour):
             energy_per_slot = self.energy_per_slot_Wh.m
             if self.random_factor:
                 energy_per_slot += energy_per_slot * random.random() * self.random_factor
-            self.energy_requirement += energy_per_slot
-        self.state.record_desired_energy(self.area, self.energy_requirement)
+            self.energy_requirement_Wh += energy_per_slot
+        self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
 
     def event_market_cycle(self):
         self._update_energy_requirement()
 
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE != 1 and \
-                self.energy_requirement > 0:
+        if self.energy_requirement_Wh > 0:
             self._current_bid_buffer = self.area.next_market.bid(
-                self.energy_requirement * self.acceptable_energy_rate.m / 1000.0,
-                self.energy_requirement / 1000.0,
+                self.energy_requirement_Wh * self.acceptable_energy_rate.m / 1000.0,
+                self.energy_requirement_Wh / 1000.0,
                 self.owner.name, self.area.name)
+            self.log.info(f"Cell tower placing bid: {self._current_bid_buffer}")
 
     def event_bid_traded(self, *, market, traded_bid):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
-            # Do not handle bid trades on double sided markets
-            return
+            # Do not handle bid trades on single sided markets
+            assert False and "Invalid state, cannot receive a bid if single sided market" \
+                             " is globally configured."
 
         if traded_bid.offer.buyer != self.owner.name:
             return
@@ -141,7 +154,8 @@ class LoadHoursStrategy(BaseStrategy):
 
         if self._current_bid_buffer and \
                 traded_bid.offer.buyer == self._current_bid_buffer.buyer:
-            self.energy_requirement -= traded_bid.offer.energy * 1000.0
+            # Update energy requirement and clean up the pending bid buffer
+            self.energy_requirement_Wh -= traded_bid.offer.energy * 1000.0
             self.hrs_per_day -= self._operating_hours(traded_bid.offer.energy)
             self._current_bid_buffer = None
 
