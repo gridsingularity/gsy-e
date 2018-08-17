@@ -71,16 +71,20 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market
         )
 
 
-class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual'))):
-    def __new__(cls, id, time, offer, seller, buyer, residual=None):
+class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
+                                 'buyer', 'residual', 'from_bid'))):
+    def __new__(cls, id, time, offer, seller, buyer, residual=None, from_bid=False):
         # overridden to give the residual field a default value
-        return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual)
+        return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual, from_bid)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
+        mark_bid = "(bid)" if self.from_bid else ""
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh {p} @ {s.offer.price}".format(s=self, p=mark_partial)
+            "{s.offer.energy} kWh {p} @ {s.offer.price} {b}".format(s=self,
+                                                                    p=mark_partial,
+                                                                    b=mark_bid)
         )
 
     @classmethod

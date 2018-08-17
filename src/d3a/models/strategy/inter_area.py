@@ -210,8 +210,11 @@ class IAAEngine:
 
             try:
 
-                offer_info.source_offer.price = \
-                    (trade.offer.price / trade.offer.energy) * offer_info.source_offer.energy
+                if trade.from_bid:
+                    offer_info.source_offer.price = \
+                        (trade.offer.price / trade.offer.energy) * offer_info.source_offer.energy
+                    offer_info.source_offer.price = \
+                        offer_info.source_offer.price * ((1 - self.transfer_fee_pct) / 100)
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,
