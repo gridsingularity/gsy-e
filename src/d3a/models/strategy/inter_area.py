@@ -58,7 +58,7 @@ class IAAEngine:
         self.offered_bids[bid.id] = bid_coupling
         return forwarded_bid
 
-    def _match_offers_bids(self):
+    def _perform_pay_as_bid_matching(self):
         # Pay as bid first
         # There are 2 simplistic approaches to the problem
         # 1. Match the cheapest offer with the most expensive bid. This will favor the sellers
@@ -83,32 +83,43 @@ class IAAEngine:
             key=lambda o: o.price / o.energy))
         )
 
+        def are_bid_and_offer_in_source_market(bid, offer):
+            return bid.id in self.offered_bids and \
+                   offer.id in self.offered_offers and \
+                   self.offered_bids[bid.id].source_bid.id == bid.id and \
+                   self.offered_offers[offer.id].source_offer.id == offer.id
+
+        already_selected_bids = set()
         for offer in sorted_offers:
             for bid in sorted_bids:
-                if bid.id in self.offered_bids and offer.id in self.offered_offers and \
-                        offer.price / offer.energy <= bid.price / bid.energy:
-                    selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-                    if self.offered_bids[bid.id].target_bid.id == bid.id:
-                        continue
+                if bid.id not in already_selected_bids and \
+                   are_bid_and_offer_in_source_market(bid, offer) and \
+                   offer.price / offer.energy <= bid.price / bid.energy:
+                    already_selected_bids.add(bid.id)
+                    yield bid, offer
+                    break
 
-                    offer.price = offer.energy * (bid.price / bid.energy)
-                    self.owner.accept_offer(market=self.markets.source,
-                                            offer=offer,
-                                            buyer=bid.buyer,
-                                            energy=selected_energy)
-                    if offer.id in self.offered_offers:
-                        deleted_offerinfo = self.offered_offers.pop(offer.id)
-                        self.offered_offers.pop(deleted_offerinfo.target_offer.id)
+    def _match_offers_bids(self):
+        for bid, offer in self._perform_pay_as_bid_matching():
+            selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+            offer.price = offer.energy * (bid.price / bid.energy)
+            self.owner.accept_offer(market=self.markets.source,
+                                    offer=offer,
+                                    buyer=bid.buyer,
+                                    energy=selected_energy)
+            if offer.id in self.offered_offers:
+                deleted_offerinfo = self.offered_offers.pop(offer.id)
+                self.offered_offers.pop(deleted_offerinfo.target_offer.id)
 
-                    self.markets.source.accept_bid(bid, selected_energy, seller=offer.seller)
-                    bid_to_remove = bid
-                    bid_info = self.offered_bids.pop(bid_to_remove.id, None)
-                    if not bid_info:
-                        continue
-                    if bid_info.target_bid.id in self.offered_bids:
-                        self.offered_bids.pop(bid_info.target_bid.id, None)
-                    if bid_info.source_bid.id in self.offered_bids:
-                        self.offered_bids.pop(bid_info.source_bid.id, None)
+            self.markets.source.accept_bid(bid, selected_energy, seller=offer.seller)
+            bid_to_remove = bid
+            bid_info = self.offered_bids.pop(bid_to_remove.id, None)
+            if not bid_info:
+                continue
+            if bid_info.target_bid.id in self.offered_bids:
+                self.offered_bids.pop(bid_info.target_bid.id, None)
+            if bid_info.source_bid.id in self.offered_bids:
+                self.offered_bids.pop(bid_info.source_bid.id, None)
 
     def tick(self, *, area):
         # Store age of offer
