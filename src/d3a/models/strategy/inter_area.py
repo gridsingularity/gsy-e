@@ -92,37 +92,22 @@ class IAAEngine:
                         continue
 
                     offer.price = offer.energy * (bid.price / bid.energy)
-
-                    # self.markets.source.accept_offer(offer,
-                    #                                  buyer=bid.buyer,
-                    #                                  energy=selected_energy)
-                    # if offer.id in self.offered_offers:
-                    # deleted_offerinfo = self.offered_offers.pop(offer.id)
-                    # self.offered_offers.pop(deleted_offerinfo.target_offer.id)
-                    # if offer.id in self.offered_offers:
-                    #     deleted_offerinfo = self.offered_offers.pop(offer.id)
-                    #     if deleted_offerinfo.source_offer.id in self.offered_offers:
-                    #         self.offered_offers.pop(deleted_offerinfo.source_offer.id)
-                    #     if deleted_offerinfo.target_offer.id in self.offered_offers:
-                    #         self.offered_offers.pop(deleted_offerinfo.target_offer.id)
                     self.owner.accept_offer(market=self.markets.source,
                                             offer=offer,
-                                            buyer=self.owner.name,
+                                            buyer=bid.buyer,
                                             energy=selected_energy)
                     if offer.id in self.offered_offers:
                         deleted_offerinfo = self.offered_offers.pop(offer.id)
                         self.offered_offers.pop(deleted_offerinfo.target_offer.id)
 
-                    self.markets.source.accept_bid(bid, selected_energy, seller=self.owner.name)
+                    self.markets.source.accept_bid(bid, selected_energy, seller=offer.seller)
                     bid_to_remove = bid
                     bid_info = self.offered_bids.pop(bid_to_remove.id, None)
                     if not bid_info:
                         continue
                     if bid_info.target_bid.id in self.offered_bids:
-                        self.markets.target.delete_bid(bid_info.target_bid.id)
                         self.offered_bids.pop(bid_info.target_bid.id, None)
                     if bid_info.source_bid.id in self.offered_bids:
-                        self.markets.source.delete_bid(bid_info.source_bid.id)
                         self.offered_bids.pop(bid_info.source_bid.id, None)
 
     def tick(self, *, area):
