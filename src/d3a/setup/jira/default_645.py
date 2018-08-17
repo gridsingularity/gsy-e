@@ -20,7 +20,7 @@ def get_setup(config):
                 [
 
                     Area('H1 Storage1', strategy=StorageStrategy(
-                                                                 initial_capacity=2.5,
+                                                                 initial_capacity=2,
                                                                  initial_rate_option=2,
                                                                  energy_rate_decrease_option=2,
                                                                  energy_rate_decrease_per_update=3,
