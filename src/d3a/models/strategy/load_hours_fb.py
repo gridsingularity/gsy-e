@@ -100,10 +100,10 @@ class LoadHoursStrategy(BaseStrategy):
         if self._current_bid_buffer is not None:
             return
 
-        # self._current_bid_buffer = self.area.next_market.bid(
-        #     self.energy_requirement_Wh * self.acceptable_energy_rate.m / 1000.0,
-        #     self.energy_requirement_Wh / 1000.0,
-        #     self.owner.name, self.area.name)
+        self._current_bid_buffer = self.area.next_market.bid(
+            self.energy_requirement_Wh * self.acceptable_energy_rate.m / 1000.0,
+            self.energy_requirement_Wh / 1000.0,
+            self.owner.name, self.area.name)
 
     def event_tick(self, *, area):
         if self.energy_requirement_Wh <= 0:

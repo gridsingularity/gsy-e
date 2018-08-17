@@ -194,13 +194,13 @@ class Market:
             elif energy > bid.energy:
                 raise InvalidTrade("Traded energy cannot be more than the bid energy.")
             elif energy is None or energy <= bid.energy:
-                if energy < bid.energy:
-                    # Partial bidding
-                    remaining_energy = bid.energy - energy
-                    remaining_price = bid.price * (remaining_energy / bid.energy)
-                    bid = Bid(bid.id, bid.price - remaining_price, energy,
-                              bid.buyer, bid.seller, self)
-                    self.bid(remaining_price, remaining_price, bid.buyer, bid.seller)
+                # if energy < bid.energy:
+                #     # Partial bidding
+                #     remaining_energy = bid.energy - energy
+                #     remaining_price = bid.price * (remaining_energy / bid.energy)
+                #     bid = Bid(bid.id, bid.price - remaining_price, energy,
+                #               bid.buyer, bid.seller, self)
+                #     self.bid(remaining_price, remaining_price, bid.buyer, bid.seller)
 
                 trade = Trade(str(uuid.uuid4()), self._now,
                               bid, seller, bid.buyer, None)
