@@ -6,6 +6,7 @@ import plotly as py
 import plotly.graph_objs as go
 import pendulum
 import shutil
+from slugify import slugify
 
 from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
@@ -13,31 +14,18 @@ from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.area import Area
 
-from functools import reduce
-import operator
-
 _log = logging.getLogger(__name__)
 
-
-def getfromdict(dataDict: dict, mapList: list):
-    return reduce(operator.getitem, mapList, dataDict)
-
-
-def setindict(dataDict: dict, mapList: list, value):
-    getfromdict(dataDict, mapList[:-1])[mapList[-1]] = value
+ENERGY_BUYER_SIGN_PLOTS = 1
+ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
 
 
-def get_slug(inp_str: str):
-    return inp_str.replace(" ", "-").lower()
-
-
-def mkdir(directory: str):
+def mkdir_from_str(directory: str, exist_ok=True, parents=True):
     out_dir = pathlib.Path(directory)
-    out_dir.mkdir(exist_ok=True, parents=True)
+    out_dir.mkdir(exist_ok=exist_ok, parents=parents)
     return out_dir
 
 
@@ -54,7 +42,7 @@ class ExportAndPlot:
             if path is not None:
                 path = os.path.abspath(path)
             self.directory = pathlib.Path(path or "~/d3a-simulation", subdir).expanduser()
-            self.directory.mkdir(exist_ok=True, parents=True)
+            mkdir_from_str(str(self.directory.mkdir))
         except Exception as ex:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
@@ -112,18 +100,32 @@ class ExportAndPlot:
         """
         Exports files containing individual trades  (*-trades.csv  files)
         """
+
+        out_keys = ("sold_energy", "bought_energy")
+        out_keys_ids = (5, 6)
         try:
             with open(self._file_path(directory, "{}-trades".format(area.slug)), 'w') as csv_file:
                 writer = csv.writer(csv_file)
                 labels = ("slot",) + Trade._csv_fields()
                 writer.writerow(labels)
-                out_dict = dict((key, []) for key in labels)
+                out_dict = dict((key, {}) for key in out_keys)
                 for slot, market in area.past_markets.items():
                     for trade in market.trades:
                         row = (slot, ) + trade._to_csv()
                         writer.writerow(row)
-                        for ii, lab in enumerate(("slot",) + Trade._csv_fields()):
-                            out_dict[lab].append(row[ii])
+                        for ii, ks in enumerate(out_keys):
+                            node = slugify(row[out_keys_ids[ii]], to_lower=True)
+                            if node not in out_dict[ks]:
+                                out_dict[ks][node] = dict(
+                                    (key, 0) for key in area.past_markets.keys())
+                            out_dict[ks][node][slot] += row[4]
+
+            for ks in out_keys:
+                out_dict[ks + "_lists"] = dict((ki, {}) for ki in out_dict[ks].keys())
+                for node in out_dict[ks].keys():
+                    out_dict[ks + "_lists"][node]["slot"] = list(out_dict[ks][node].keys())
+                    out_dict[ks + "_lists"][node]["energy"] = list(out_dict[ks][node].values())
+
             return out_dict
         except OSError:
             _log.exception("Could not export area trades")
@@ -136,8 +138,8 @@ class ExportAndPlot:
         for i, child in enumerate(area.children):
             for slot, market in area.past_markets.items():
                 for trade in market.trades:
-                    buyer_slug = get_slug(trade.buyer)
-                    seller_slug = get_slug(trade.seller)
+                    buyer_slug = slugify(trade.buyer, to_lower=True)
+                    seller_slug = slugify(trade.seller, to_lower=True)
                     if buyer_slug not in self.buyer_trades:
                         self.buyer_trades[buyer_slug] = dict((key, []) for key in labels)
                     if seller_slug not in self.seller_trades:
@@ -146,7 +148,7 @@ class ExportAndPlot:
                         values = (slot, ) + \
                                  (round(trade.offer.price/trade.offer.energy, 4),
                                   (trade.offer.energy * -1),) + \
-                                 (get_slug(trade.seller),)
+                                 (slugify(trade.seller, to_lower=True),)
                         for ii, ri in enumerate(labels):
                             self.buyer_trades[buyer_slug][ri].append(values[ii])
                             self.seller_trades[seller_slug][ri].append(values[ii])
@@ -192,7 +194,7 @@ class ExportAndPlot:
         """
         higt = TradeHistory(self.buyer_trades, load)
         higt.arrange_data()
-        mkdir(plot_dir)
+        mkdir_from_str(plot_dir)
         higt.plot_pie_chart("Energy Trade Partners for {}".format(load),
                             os.path.join(plot_dir, "energy_trade_partner_{}.html".format(load)))
 
@@ -200,16 +202,14 @@ class ExportAndPlot:
         """
         Wrapper for _plot_energy_profile
         """
-        leaf_list = ["iaa-"+ci.slug if ci.children else ci.slug for ci in area.children]
-        if area.parent:
-            leaf_list.append("iaa-"+area.parent.slug)
+
         new_subdir = os.path.join(subdir, area.slug)
-        self._plot_energy_profile(leaf_list, new_subdir, area.slug)
+        self._plot_energy_profile(new_subdir, area.slug)
         for child in area.children:
             if child.children:
                 self.plot_energy_profile(child, new_subdir)
 
-    def _plot_energy_profile(self, leaf_list: list, subdir: str, root_name: str):
+    def _plot_energy_profile(self, subdir: str, market_name: str):
         """
         Plots history of energy trades
         """
@@ -217,28 +217,24 @@ class ExportAndPlot:
         barmode = "relative"
         xtitle = 'Time'
         ytitle = 'Energy [kWh]'
-        key = 'energy [kWh]'
-        title = 'Energy Trade Profile of {}'.format(root_name)
-        for leaf_name in leaf_list:
-            if leaf_name not in self.seller_trades:
-                continue
-            graph_obj = BarGraph(self.seller_trades[leaf_name], key)
-            graph_obj.graph_value()
+        key = 'energy'
+        title = 'Energy Trade Profile of {}'.format(market_name)
+        for seller in self.trades[market_name]["sold_energy_lists"].keys():
+
+            graph_obj = BarGraph(self.trades[market_name]["sold_energy_lists"][seller], key)
+            graph_obj.graph_value(scale_value=ENERGY_SELLER_SIGN_PLOTS)
             data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
                               y=list(graph_obj.umHours.values()),
-                              name=leaf_name + " (seller)")
-
+                              name=seller + " (seller)")
             data.append(data_obj)
-        for leaf_name in leaf_list:
-            if leaf_name not in self.buyer_trades:
-                continue
-            graph_obj = BarGraph(self.buyer_trades[leaf_name], key)
-            graph_obj.graph_value(scale_value=-1)
-            traceigl = go.Bar(x=list(graph_obj.umHours.keys()),
-                              y=list(graph_obj.umHours.values()),
-                              name=leaf_name + " (buyer)")
+        for buyer in self.trades[market_name]["bought_energy_lists"].keys():
 
-            data.append(traceigl)
+            graph_obj = BarGraph(self.trades[market_name]["bought_energy_lists"][buyer], key)
+            graph_obj.graph_value(scale_value=ENERGY_BUYER_SIGN_PLOTS)
+            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
+                              y=list(graph_obj.umHours.values()),
+                              name=buyer + " (buyer)")
+            data.append(data_obj)
 
         if len(data) == 0:
             return
@@ -246,9 +242,9 @@ class ExportAndPlot:
             return
 
         plot_dir = os.path.join(self.plot_dir, subdir)
-        mkdir(plot_dir)
+        mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir,
-                                   'energy_profile_{}.html'.format(root_name))
+                                   'energy_profile_{}.html'.format(market_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def plot_all_unmatched_loads(self):
@@ -277,7 +273,7 @@ class ExportAndPlot:
         if len(data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir)
-        mkdir(plot_dir)
+        mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'unmatched_loads_{}.html'.format(root_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
@@ -318,7 +314,7 @@ class ExportAndPlot:
         if len(data) == 0:
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
-        mkdir(plot_dir)
+        mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
@@ -356,7 +352,7 @@ class ExportAndPlot:
         if all([len(da.y) == 0 for da in data]):
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
-        mkdir(plot_dir)
+        mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'average_trade_price_{}.html'.format(area_list[0]))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
@@ -404,21 +400,17 @@ class ExportLeafData(ExportData):
     def labels(self):
         return ['slot',
                 'energy traded [kWh]',
-                'total energy traded [kWh]'
                 ] + self._specific_labels()
 
     def _specific_labels(self):
-        # TODO: review the strategies
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
-        elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
+        elif isinstance(self.area.strategy, StorageStrategy):
             return ['bought [kWh]', 'sold [kWh]', 'energy balance [kWh]', 'offered [kWh]',
                     'used [kWh]', 'charge [%]', 'stored [kWh]']
-        elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
-                                             DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
+        elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
-        elif isinstance(self.area.strategy, (PVStrategy, PVPredefinedStrategy,
-                                             PVUserProfileStrategy)):
+        elif isinstance(self.area.strategy, PVStrategy):
             return ['produced to trade [kWh]', 'not sold [kWh]', 'forecast / generation [kWh]']
         return []
 
@@ -430,10 +422,8 @@ class ExportLeafData(ExportData):
         return market.traded_energy[self.area.name]
 
     def _row(self, slot, market):
-        # _ = [print(mi.seller, mi.buyer) for mi in market.trades]
         return [slot,
                 self._traded(market),
-                sum(trade.offer.energy for trade in market.trades)
                 ] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
@@ -510,9 +500,9 @@ class BarGraph:
 
         return [start_time, end_time], data
 
-    @staticmethod
-    def plot_bar_graph(barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
-        xrange, data = BarGraph.modify_time_axis(data, title)
+    @classmethod
+    def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
+        xrange, data = cls.modify_time_axis(data, title)
         layout = go.Layout(
             barmode=barmode,
             title=title,
