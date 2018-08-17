@@ -38,3 +38,49 @@ def same_seller_buyer_name_check(context):
     ]
 
     assert all(trade.buyer != trade.seller for trade in trades)
+
+
+@then('storage buys energy from the commercial producer')
+def storage_commercial_trades(context):
+    house1 = [child for child in context.simulation.area.children
+              if child.name == "House 1"][0]
+
+    storage_trades = [
+        trade
+        for slot, market in house1.past_markets.items()
+        for trade in market.trades
+        if trade.buyer == "H1 Storage1"
+    ]
+
+    commercial_trades = [
+        trade
+        for slot, market in context.simulation.area.past_markets.items()
+        for trade in market.trades
+        if trade.seller == "Commercial Energy Producer"
+    ]
+
+    assert len(storage_trades) > 0
+    assert len(commercial_trades) > 0
+    assert len(storage_trades) == len(commercial_trades)
+
+
+@then('storage final SOC is 100%')
+def storage_final_soc(context):
+    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
+    storage = [child for child in house1.children if child.name == "H1 Storage1"][0]
+    assert isclose(list(storage.strategy.state.charge_history.values())[-1], 100.0)
+
+
+@then('storage buys energy respecting the break even buy threshold')
+def step_impl(context):
+    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
+    storage = [child for child in house1.children if child.name == "H1 Storage1"][0]
+
+    storage_trades = [
+        trade
+        for slot, market in storage.past_markets.items()
+        for trade in market.trades
+        if trade.buyer == "H1 Storage1"
+    ]
+
+    assert all([trade.offer.price / trade.offer.energy < 16.99 for trade in storage_trades])
