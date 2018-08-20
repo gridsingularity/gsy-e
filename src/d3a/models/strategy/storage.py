@@ -43,7 +43,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.cap_price_strategy = cap_price_strategy
 
     def event_activate(self):
-        self.state.battery_energy_per_slot(self.area.config.slot_length)
+        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
     def _update_break_even_points(self, break_even):
@@ -74,7 +74,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if initial_capacity and not 0 <= initial_capacity <= battery_capacity:
             raise ValueError("Initial capacity should be between 0 and "
                              "battery_capacity parameter.")
-        if any(be[1] < be[0] for _, be in break_even.items()):
+        if any(be[1] <= be[0] for _, be in break_even.items()):
             raise ValueError("Break even point for sell energy is lower than buy energy.")
         if any(break_even_point[0] < 0 or break_even_point[1] < 0
                for _, break_even_point in break_even.items()):
@@ -122,18 +122,16 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                     # Don't buy our own offer
                     continue
                 # Check if storage has free capacity and if the price is cheap enough
-                if self.state.free_storage >= offer.energy \
+                if self.state.free_storage > 0.0 \
                         and (offer.price / offer.energy) < max_affordable_offer_rate:
                     # Try to buy the energy
                     try:
-                        if self.state.available_energy_per_slot(market.time_slot) > offer.energy:
-                            max_energy = offer.energy
-                        else:
-                            max_energy = self.state.available_energy_per_slot(market.time_slot)
-                        self.accept_offer(market, offer, energy=max_energy)
-                        self.state.update_energy_per_slot(max_energy, market.time_slot)
-                        self.state.block_storage(max_energy)
-                        return True
+                        if not self.state.has_battery_reached_max_power(market.time_slot):
+                            max_energy = self.state.clamp_energy_to_buy(offer.energy)
+                            self.accept_offer(market, offer, energy=max_energy)
+                            self.state.update_energy_per_slot(-max_energy, market.time_slot)
+                            self.state.block_storage(max_energy)
+                            return True
 
                     except MarketException:
                         # Offer already gone etc., try next one.
@@ -182,18 +180,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             return list(self.area.markets.values())[0]
 
     def _calculate_energy_to_sell(self, energy, target_market):
-        # If no energy is passed, try to sell all the Energy left in the storage
-        if energy is None:
-            energy = self.state.used_storage
+        # If there is not enough available energy for this timeslot, then return 0 energy
+        if self.state.has_battery_reached_max_power(target_market.time_slot):
+            return 0.0
 
-        # Limit energy according to the maximum battery power
-        energy = min(energy, self.state.available_energy_per_slot(target_market.time_slot))
-        # Limit energy to respect minimum allowed battery SOC
-        target_soc = (self.state.used_storage + self.state.offered_storage - energy) / \
-            self.state.capacity
-        if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
-            energy = self.state.used_storage + self.state.offered_storage - \
-                     self.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+        energy = self.state.clamp_energy_to_sell(energy, target_market.time_slot)
         return energy
 
     def _calculate_selling_rate(self, market):
@@ -221,4 +212,4 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if max_selling_rate < break_even_sell:
             return break_even_sell
         else:
-            return (max_selling_rate - (max_selling_rate - break_even_sell) * soc)
+            return max_selling_rate - (max_selling_rate - break_even_sell) * soc

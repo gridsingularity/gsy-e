@@ -75,7 +75,7 @@ class StorageState:
         self.used_history = defaultdict(lambda: '-')
         self.charge_history = defaultdict(lambda: '-')
         self.charge_history_kWh = defaultdict(lambda: '-')
-        self.residual_energy_per_slot = defaultdict(lambda: '-')  # type: Dict[Pendulum, float]
+        self._traded_energy_per_slot = defaultdict(lambda: 0.0)  # type: Dict[Pendulum, float]
 
     @property
     def blocked_storage(self):
@@ -108,17 +108,40 @@ class StorageState:
         if free < 0.2:
             area.log.info("Storage reached more than 80%% Battery: %f" + str(free))
 
-    def battery_energy_per_slot(self, slot_length):
+    def set_battery_energy_per_slot(self, slot_length):
         self._battery_energy_per_slot = self.max_abs_battery_power * \
                                         (slot_length/Interval(hours=1))
 
-    def available_energy_per_slot(self, slot):
-        if self.residual_energy_per_slot[slot] is '-':
-            self.residual_energy_per_slot[slot] = self._battery_energy_per_slot
-        return self.residual_energy_per_slot[slot]
+    def has_battery_reached_max_power(self, time_slot):
+        return abs(self.traded_energy_per_slot(time_slot)) >= \
+               self._battery_energy_per_slot
 
+    def clamp_energy_to_buy(self, energy):
+        return min(self._battery_energy_per_slot, self.free_storage, energy)
+
+    def clamp_energy_to_sell(self, energy, time_slot):
+
+        # If no energy is passed, try to sell all the Energy left in the storage
+        if energy is None:
+            energy = self.used_storage
+
+        # Limit energy according to the maximum battery power
+        clamped_energy = min(energy,
+                             (self._battery_energy_per_slot -
+                              self.traded_energy_per_slot(time_slot)))
+        # Limit energy to respect minimum allowed battery SOC
+        target_soc = (self.used_storage + self.offered_storage - clamped_energy) / self.capacity
+        if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
+            clamped_energy = self.used_storage + self.offered_storage - \
+                             self.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+        return clamped_energy
+
+    def traded_energy_per_slot(self, slot):
+        return self._traded_energy_per_slot[slot]
+
+    # it increase positively while charging and negatively while discharging
     def update_energy_per_slot(self, energy, slot):
-        self.residual_energy_per_slot[slot] -= energy
+        self._traded_energy_per_slot[slot] += energy
 
     def block_storage(self, energy):
         self._blocked_storage += energy
