@@ -3,10 +3,11 @@ from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
-from d3a.models.strategy.custom_pv import CustomPvStrategy
+from d3a.setup.jira.test_strategy_custom_pv import CustomPvStrategy
 
 """
-For testing CustomPvStrategy, equal to default_2a
+For testing CustomPvStrategy
+Apart from the PV in House 2, this setup is equal to setup default_2a
 """
 
 
