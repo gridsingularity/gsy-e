@@ -35,17 +35,13 @@ class ConstSettings:
     ESS_RATE_DECREASE_OPTION = 1
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
-    STORAGE_BREAK_EVEN_BUY = 25
+    STORAGE_BREAK_EVEN_BUY = 24.9
     STORAGE_MIN_ALLOWED_SOC = 0.1
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
     # PV SETTINGS
     # This price should be just above the marginal costs for a PV system - unit is cent
     MIN_PV_SELLING_RATE = 0
 
-    # Initial PV rate calculation for every market slot, before rate reduction per tick
-    # Default value 1, use the historical market average
-    # Option 2 stands for market maker rate
-    INITIAL_PV_RATE_OPTION = 1
     # Option 1, use the historical market average
     # Default value 2 stands for market maker rate
     INITIAL_PV_RATE_OPTION = 2
