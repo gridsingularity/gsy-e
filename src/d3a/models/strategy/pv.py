@@ -3,7 +3,6 @@ from pendulum import Time # noqa
 import math
 from pendulum import Interval
 
-from d3a.models.strategy import ureg, Q_
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
@@ -29,10 +28,10 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
         self.risk = risk
-        self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.panel_count = panel_count
         self.midnight = None
-        self.min_selling_rate = Q_(min_selling_rate, (ureg.EUR_cents / ureg.kWh))
+        self.min_selling_rate = min_selling_rate
+        self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
 
     @staticmethod
     def _validate_constructor_arguments(panel_count, risk):
@@ -44,14 +43,25 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         # This gives us a pendulum object with today 0 o'clock
         self.midnight = self.area.now.start_of("day").hour_(0)
         # Calculating the produced energy
-        self.produced_energy_forecast_real_data()
         self.update_on_activate()
+        for slot_time in [
+                    self.area.now + (self.area.config.slot_length * i)
+                    for i in range(
+                        (
+                                    self.area.config.duration
+                                    + (
+                                            self.area.config.market_count *
+                                            self.area.config.slot_length)
+                        ) // self.area.config.slot_length)
+                    ]:
+            self.energy_production_forecast_kWh[slot_time] = 0
+        self.produced_energy_forecast_kWh()
 
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time_h):
         # Needed to calculate risk_dependency_of_selling_rate
         # if risk 0-100 then energy_price less than initial_sell_rate
         # if risk >100 then energy_price more than initial_sell_rate
-        energy_rate = max(initial_sell_rate.m, self.min_selling_rate.m)
+        energy_rate = max(initial_sell_rate, self.min_selling_rate)
         rounded_energy_rate = round(energy_rate, 2)
         # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
@@ -65,20 +75,11 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def event_tick(self, *, area):
         self.decrease_energy_price_over_ticks()
 
-    def produced_energy_forecast_real_data(self):
+    def produced_energy_forecast_kWh(self):
         # This forecast ist based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        for slot_time in [
-                    self.area.now + (self.area.config.slot_length * i)
-                    for i in range(
-                        (
-                                    self.area.config.duration
-                                    + (
-                                            self.area.config.market_count *
-                                            self.area.config.slot_length)
-                        ) // self.area.config.slot_length)
-                    ]:
+        for slot_time in self.energy_production_forecast_kWh.keys():
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
             self.energy_production_forecast_kWh[slot_time] =\
                 self.gaussian_energy_forecast_kWh(difference_to_midnight_in_minutes)
@@ -108,7 +109,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self.update_market_cycle(self.min_selling_rate.m)
+        self.update_market_cycle(self.min_selling_rate)
         # Iterate over all markets open in the future
         time = list(self.area.markets.keys())[0]
         market = list(self.area.markets.values())[0]

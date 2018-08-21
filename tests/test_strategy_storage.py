@@ -2,6 +2,7 @@ import pytest
 import logging
 from pendulum.interval import Interval
 from pendulum import Pendulum
+from logging import getLogger
 
 # from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.strategy import ureg, Q_
@@ -21,6 +22,8 @@ class FakeArea():
         self.current_market = FakeMarket(0)
         self.next_market = FakeMarket(1)
         self._markets_return = {"Fake Market": FakeMarket(self.count)}
+
+    log = getLogger(__name__)
 
     @property
     def markets(self):
@@ -119,7 +122,6 @@ def storage_strategy_test1(area_test1, called):
     s.owner = area_test1
     s.area = area_test1
     s.accept_offer = called
-    s.state.residual_energy_per_slot[s.area.current_market.time_slot] = 0.0
     return s
 
 
@@ -225,7 +227,9 @@ def area_test4():
 
 @pytest.fixture()
 def storage_strategy_test4(area_test4, called):
-    s = StorageStrategy(initial_rate_option=2)
+    s = StorageStrategy(initial_capacity=2.1,
+                        initial_rate_option=2,
+                        battery_capacity=2.1)
     s.owner = area_test4
     s.area = area_test4
     s.accept_offer = called
@@ -339,6 +343,7 @@ def storage_strategy_test7(area_test7):
 def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     storage_strategy_test7.event_activate()
     energy = 1.3
+    storage_strategy_test7.state.traded_energy_per_slot(area_test7.now)
     storage_strategy_test7.sell_energy(energy=energy)
     assert storage_strategy_test7.state.used_storage == 1.7
     assert storage_strategy_test7.state.offered_storage == 1.3
@@ -346,6 +351,9 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     assert len(storage_strategy_test7.offers.posted_in_market(
         area_test7._markets_return["Fake Market"])
     ) > 0
+    assert storage_strategy_test7.state.traded_energy_per_slot(
+        area_test7.current_market.time_slot
+    ) == energy
 
 
 def test_calculate_initial_sell_energy_rate_lower_bound(storage_strategy_test7):
@@ -388,7 +396,9 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
     storage_strategy_test7_2.risk = risk
     storage_strategy_test7_2.event_activate()
     old_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
-    storage_strategy_test7_2._decrease_offer_price(area_test7.current_market)
+    storage_strategy_test7_2._decrease_offer_price(
+        area_test7.current_market,
+        storage_strategy_test7_2._calculate_price_decrease_rate(area_test7.current_market))
     new_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
     price_dec_per_slot = (area_test7.historical_avg_rate) * (1 - storage_strategy_test7_2.risk /
                                                              ConstSettings.MAX_RISK)
@@ -400,24 +410,34 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
 
 def test_calculate_energy_amount_to_sell_respects_max_power(storage_strategy_test7, area_test7):
     storage_strategy_test7.event_activate()
-    storage_strategy_test7.state.residual_energy_per_slot[area_test7.current_market.time_slot] = 2
-    assert storage_strategy_test7._calculate_energy_to_sell(2.1, area_test7.current_market) == 2
+    max_energy = storage_strategy_test7.state._battery_energy_per_slot
+    expected_energy = storage_strategy_test7._calculate_energy_to_sell((max_energy+1),
+                                                                       area_test7.current_market)
+    assert expected_energy == max_energy
 
 
-def test_calculate_energy_amount_to_sell_respects_min_allowed_soc(storage_strategy_test7,
+@pytest.fixture()
+def storage_strategy_test7_3(area_test7):
+    s = StorageStrategy(initial_capacity=1.0, battery_capacity=5.01, max_abs_battery_power=5.21,
+                        initial_rate_option=1, break_even=(16, 17))
+    s.owner = area_test7
+    s.area = area_test7
+    s.offers.posted = {Offer('id', 30, 1, 'FakeArea',
+                             market=area_test7.current_market): area_test7.current_market}
+    return s
+
+
+def test_calculate_energy_amount_to_sell_respects_min_allowed_soc(storage_strategy_test7_3,
                                                                   area_test7):
-    storage_strategy_test7.event_activate()
-    storage_strategy_test7.state.residual_energy_per_slot[area_test7.current_market.time_slot] = 20
-    total_energy = storage_strategy_test7.state.used_storage + \
-        storage_strategy_test7.state.offered_storage
-    assert storage_strategy_test7._calculate_energy_to_sell(total_energy,
-                                                            area_test7.current_market) \
-        != total_energy
-    assert storage_strategy_test7._calculate_energy_to_sell(total_energy,
-                                                            area_test7.current_market) == \
-        storage_strategy_test7.state.used_storage + \
-        storage_strategy_test7.state.offered_storage - \
-        storage_strategy_test7.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+    storage_strategy_test7_3.event_activate()
+    energy = \
+        storage_strategy_test7_3._calculate_energy_to_sell(energy=0.6,
+                                                           target_market=area_test7.current_market)
+    target_energy = \
+        storage_strategy_test7_3.state.used_storage + \
+        storage_strategy_test7_3.state.offered_storage -\
+        storage_strategy_test7_3.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+    assert energy == target_energy
 
 
 """TEST8"""
@@ -534,9 +554,12 @@ def storage_strategy_test11(area_test11, called):
     return s
 
 
-def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strategy_test11):
+def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strategy_test11,
+                                                                 area_test11):
     storage_strategy_test11.event_activate()
     storage_strategy_test11.buy_energy()
+    te = storage_strategy_test11.state.traded_energy_per_slot(area_test11.current_market.time_slot)
+    assert te == -float(storage_strategy_test11.accept_offer.calls[0][1]['energy'])
     assert len(storage_strategy_test11.accept_offer.calls) >= 1
 
 

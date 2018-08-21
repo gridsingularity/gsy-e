@@ -47,3 +47,8 @@ Feature: PV Tests
      And the scenario includes a predefined PV
      When the simulation is running
      Then the predefined PV follows the PV profile from the csv
+
+  Scenario: Custom PV strategy works as expected
+    Given we have a scenario named jira/d3asim_640_custom_pv
+    When we run the d3a simulation with jira.d3asim_640_custom_pv [24, 15, 30]
+    Then the PV offers energy as expected at an expected price
