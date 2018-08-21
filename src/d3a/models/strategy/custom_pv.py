@@ -5,7 +5,7 @@ class CustomPvStrategy(PVStrategy):
 
     def produced_energy_forecast_kWh(self):
         """
-        Overwrites d3a.models.strategy.pv.produced_energy_forecast_real_data
+        Overwrites d3a.models.strategy.pv.produced_energy_forecast_kWh
         and returns the energy production of the custom PV for each market slot.
         Function is called on every ACTIVATE event.
         :return: dictionary that describes Energy production in kWh for each market slot:
