@@ -1,4 +1,3 @@
-from d3a.models.strategy import ureg, Q_
 from typing import Union
 
 from d3a.exceptions import MarketException
@@ -28,7 +27,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_soc, battery_capacity, break_even)
         self.break_even = break_even
-        self.min_selling_rate = Q_(break_even[0][1], (ureg.EUR_cents / ureg.kWh))
+        self.min_selling_rate = break_even[0][1]
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,

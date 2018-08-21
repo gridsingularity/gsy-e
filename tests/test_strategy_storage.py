@@ -396,7 +396,9 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
     storage_strategy_test7_2.risk = risk
     storage_strategy_test7_2.event_activate()
     old_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
-    storage_strategy_test7_2._decrease_offer_price(area_test7.current_market)
+    storage_strategy_test7_2._decrease_offer_price(
+        area_test7.current_market,
+        storage_strategy_test7_2._calculate_price_decrease_rate(area_test7.current_market))
     new_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
     price_dec_per_slot = (area_test7.historical_avg_rate) * (1 - storage_strategy_test7_2.risk /
                                                              ConstSettings.MAX_RISK)

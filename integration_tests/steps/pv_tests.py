@@ -18,11 +18,11 @@ def storages_pv_min_selling_rate(context):
             assert trade.buyer != storage2.name
             if trade.buyer == storage1.name:
                 # Storage 1 should buy energy offers with rate more than the PV min sell rate
-                assert trade.offer.price / trade.offer.energy >= pv.min_selling_rate.m
+                assert trade.offer.price / trade.offer.energy >= pv.min_selling_rate
 
     for slot, market in house2.past_markets.items():
         assert all(trade.seller == pv.name for trade in market.trades)
-        assert all(trade.offer.price / trade.offer.energy >= pv.min_selling_rate.m
+        assert all(trade.offer.price / trade.offer.energy >= pv.min_selling_rate
                    for trade in market.trades)
 
 
@@ -43,7 +43,7 @@ def pv_price_decrease(context):
                 market_maker_rate[slot.hour] * (1 - pv.strategy.risk / 100)
             price_dec_per_update = price_dec_per_slot / number_of_updates_per_slot
             minimum_rate = max((market_maker_rate[slot.hour] * pv.strategy.risk / 100),
-                               pv.strategy.min_selling_rate.m)
+                               pv.strategy.min_selling_rate)
             for id, offer in market.offers.items():
                 assert isclose((offer.price/offer.energy), minimum_rate)
             for trade in market.trades:
@@ -51,7 +51,7 @@ def pv_price_decrease(context):
                     assert any([isclose(trade.offer.price / trade.offer.energy,
                                         max((market_maker_rate[slot.hour] -
                                              i * price_dec_per_update),
-                                            pv.strategy.min_selling_rate.m))
+                                            pv.strategy.min_selling_rate))
                                 for i in range(number_of_updates_per_slot + 1)])
 
     elif pv.strategy.energy_rate_decrease_option.value == 2:

@@ -3,7 +3,7 @@ from d3a.models.strategy.pv import PVStrategy
 
 class CustomPvStrategy(PVStrategy):
 
-    def produced_energy_forecast_real_data(self):
+    def produced_energy_forecast_kWh(self):
         """
         Overwrites d3a.models.strategy.pv.produced_energy_forecast_real_data
         and returns the energy production of the custom PV for each market slot.
@@ -18,12 +18,11 @@ class CustomPvStrategy(PVStrategy):
     def calculate_initial_sell_rate(self, current_time_h):
         """
         Overrides d3a.models.strategy.update_frequency.calculate_initial_sell_rate
-        and returns the initial value of the sell energy rate.
+        and returns the initial value of the sell energy rate for each hour of the simulation
         Function is called on every MARKET_CYCLE event.
         :param current_time_h: slot time in hours (e.g. market.time_slot.hour)
-        :return: energy rate [ct/kWh]
-                 e.g.: Q_(self.area.config.market_maker_rate[current_time_h],
-                          ureg.EUR_cents / ureg.kWh)
+        :return: energy rate
+                 e.g.: self.area.config.market_maker_rate[current_time_h]
         """
 
         pass
