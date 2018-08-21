@@ -1,6 +1,6 @@
 from enum import Enum
 
-from d3a.models.strategy import ureg, Q_
+from d3a.models.strategy import ureg
 from d3a.exceptions import MarketException
 from d3a.models.strategy.const import ConstSettings
 
@@ -27,7 +27,7 @@ class OfferUpdateFrequencyMixin:
         self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
         self._decrease_price_timepoint_s = 0 * ureg.seconds
         self._decrease_price_every_nr_s = 0 * ureg.seconds
-        self.min_selling_rate = Q_(0, (ureg.EUR_cents / ureg.kWh))
+        self.min_selling_rate = 0
 
     def update_on_activate(self):
         self._decrease_price_every_nr_s = \
@@ -37,13 +37,11 @@ class OfferUpdateFrequencyMixin:
     def calculate_initial_sell_rate(self, current_time_h):
         if self.initial_rate_option is InitialRateOptions.HISTORICAL_AVG_RATE:
             if self.area.historical_avg_rate == 0:
-                return Q_(self.area.config.market_maker_rate[current_time_h],
-                          ureg.EUR_cents / ureg.kWh)
+                return self.area.config.market_maker_rate[current_time_h]
             else:
-                return Q_(self.area.historical_avg_rate, ureg.EUR_cents / ureg.kWh)
+                return self.area.historical_avg_rate
         elif self.initial_rate_option is InitialRateOptions.MARKET_MAKER_RATE:
-            return Q_(self.area.config.market_maker_rate[current_time_h],
-                      ureg.EUR_cents / ureg.kWh)
+            return self.area.config.market_maker_rate[current_time_h]
         else:
             raise ValueError("Initial rate option should be one of the InitialRateOptions.")
 
@@ -61,9 +59,10 @@ class OfferUpdateFrequencyMixin:
         ):
             self._decrease_price_timepoint_s += self._decrease_price_every_nr_s
             next_market = list(self.area.markets.values())[0]
-            self._decrease_offer_price(next_market)
+            self._decrease_offer_price(next_market,
+                                       self._calculate_price_decrease_rate(next_market))
 
-    def _decrease_offer_price(self, market):
+    def _decrease_offer_price(self, market, decrease_rate_per_tick):
         if market not in self.offers.open.values():
             return
 
@@ -74,12 +73,12 @@ class OfferUpdateFrequencyMixin:
                 iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
                     (offer.price - (offer.energy *
-                                    self._calculate_price_decrease_rate(iterated_market))),
+                                    decrease_rate_per_tick)),
                     offer.energy,
                     self.owner.name
                 )
-                if (new_offer.price/new_offer.energy) < self.min_selling_rate.m:
-                    new_offer.price = self.min_selling_rate.m * new_offer.energy
+                if (new_offer.price/new_offer.energy) < self.min_selling_rate:
+                    new_offer.price = self.min_selling_rate * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
 
                 self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
@@ -91,7 +90,7 @@ class OfferUpdateFrequencyMixin:
     def _calculate_price_decrease_rate(self, market):
         if self.energy_rate_decrease_option is \
                 RateDecreaseOption.PERCENTAGE_BASED_ENERGY_RATE_DECREASE:
-            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour).m * \
+            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour) * \
                                  (1 - self.risk/ConstSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s.m)
@@ -102,5 +101,5 @@ class OfferUpdateFrequencyMixin:
             return self.energy_rate_decrease_per_update
 
     def update_market_cycle(self, min_selling_rate):
-        self.min_selling_rate = Q_(min_selling_rate, (ureg.EUR_cents / ureg.kWh))
+        self.min_selling_rate = min_selling_rate
         self._decrease_price_timepoint_s = self._decrease_price_every_nr_s
