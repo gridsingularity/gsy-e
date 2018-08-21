@@ -64,7 +64,7 @@ class ExportAndPlot:
         self._export_area_with_children(self.area, self.directory)
         self._get_buyer_seller_trades(self.area)
 
-        self.plot_trade_partner_cell_tover(self.area, self.plot_dir)
+        self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
         self.plot_energy_profile(self.area, self.plot_dir)
         self.plot_all_unmatched_loads()
         self.plot_avg_trade_price(self.area, self.plot_dir)
@@ -176,19 +176,19 @@ class ExportAndPlot:
             except Exception as ex:
                 _log.error("Could not export area data: %s" % str(ex))
 
-    def plot_trade_partner_cell_tover(self, area: Area, subdir: str):
+    def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
         """
-        Wrapper for _plot_trade_partner_cell_tover
+        Wrapper for _plot_trade_partner_cell_tower
         """
         key = "cell-tower"
         new_subdir = os.path.join(subdir, area.slug)
         for child in area.children:
             if child.slug == key:
-                self._plot_trade_partner_cell_tover(child.slug, subdir)
+                self._plot_trade_partner_cell_tower(child.slug, subdir)
             if child.children:
-                self.plot_trade_partner_cell_tover(child, new_subdir)
+                self.plot_trade_partner_cell_tower(child, new_subdir)
 
-    def _plot_trade_partner_cell_tover(self, load: str, plot_dir: str):
+    def _plot_trade_partner_cell_tower(self, load: str, plot_dir: str):
         """
         Plots trade partner pie graph for the sell tower.
         """
