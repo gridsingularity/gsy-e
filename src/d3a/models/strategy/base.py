@@ -119,6 +119,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         super(BaseStrategy, self).__init__()
         self.offers = Offers(self)
         self.enabled = True
+        self._bids = {}
+        self._traded_bids = {}
 
     parameters = None
 
@@ -153,6 +155,41 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         trade = market.accept_offer(offer, buyer, energy=energy)
         self.offers.bought_offer(trade.offer, market)
         return trade
+
+    def post_bid(self, market, price, energy):
+        bid = market.bid(
+            price,
+            energy,
+            self.owner.name, self.area.name)
+        if market not in self._bids.keys():
+            self._bids[market] = []
+        self._bids[market].append(bid)
+        return bid
+
+    def remove_bid_from_pending(self, bid_id, market):
+        self._bids[market] = [bid for bid in self._bids[market] if bid.id != bid_id]
+
+    def add_bid_to_bought(self, bid, market):
+        if market not in self._traded_bids:
+            self._traded_bids[market] = []
+        self._traded_bids[market].append(bid)
+        self.remove_bid_from_pending(bid.id, market)
+
+    def get_traded_bids_from_market(self, market):
+        if market not in self._traded_bids:
+            return []
+        else:
+            return self._traded_bids[market]
+
+    def are_bids_posted(self, market):
+        if market not in self._bids:
+            return False
+        return len(self._bids[market]) > 0
+
+    def get_posted_bids(self, market):
+        if market not in self._bids:
+            return {}
+        return self._bids[market]
 
     def post(self, **data):
         self.event_data_received(data)
