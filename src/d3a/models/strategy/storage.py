@@ -4,10 +4,10 @@ from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
-from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
+from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin
 
 
-class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
+class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
     parameters = ('risk', 'initial_capacity', 'initial_soc',
                   'battery_capacity', 'max_abs_battery_power')
 
@@ -32,6 +32,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
+        # TODO: Likewise to the load strategy, make the bid rates configurable
+        BidUpdateFrequencyMixin.__init__(self, initial_rate=ConstSettings.STORAGE_BREAK_EVEN_BUY-1,
+                                         final_rate=ConstSettings.STORAGE_BREAK_EVEN_BUY)
+
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
                                   initial_soc=initial_soc,
@@ -81,10 +85,50 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
     def event_tick(self, *, area):
         # Check if there are cheap offers to buy
-        self.buy_energy()
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            self.buy_energy()
+        elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            # TODO: Refactor to expose this directly via the state object.
+            if self.state.clamp_energy_to_buy(self.state.free_storage) <= 0:
+                return
+            if self.are_bids_posted(self.area.next_market):
+                self.update_posted_bids(self.area.next_market)
+            else:
+                # TODO: Refactor this to reuse all markets
+                self.post_first_bid(
+                    self.area.next_market,
+                    self.state.clamp_energy_to_buy(self.state.free_storage) * 1000.0
+                )
+
         self.state.tick(area)  # To incorporate battery energy loss over time
         if self.cap_price_strategy is False:
             self.decrease_energy_price_over_ticks()
+
+    def event_bid_deleted(self, *, market, bid):
+        if market != self.area.next_market:
+            return
+        if bid.buyer != self.owner.name:
+            return
+        self.remove_bid_from_pending(bid.id, self.area.next_market)
+
+    def event_bid_traded(self, *, market, traded_bid):
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            # Do not handle bid trades on single sided markets
+            assert False and "Invalid state, cannot receive a bid if single sided market" \
+                             " is globally configured."
+
+        if traded_bid.offer.buyer != self.owner.name:
+            return
+
+        buffered_bid = next(filter(
+            lambda b: b.id == traded_bid.offer.id, self.get_posted_bids(market)
+        ))
+
+        if traded_bid.offer.buyer == buffered_bid.buyer:
+            # Update energy requirement and clean up the pending bid buffer
+            self.state.update_energy_per_slot(-traded_bid.offer.energy, market.time_slot)
+            self.state.block_storage(traded_bid.offer.energy)
+            self.add_bid_to_bought(traded_bid.offer, market)
 
     def event_market_cycle(self):
         self.update_market_cycle(self.break_even[self.area.now.hour][1])
@@ -98,6 +142,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         for bought in self.offers.bought_in_market(past_market):
             self.state.fill_blocked_storage(bought.energy)
             self.sell_energy(energy=bought.energy)
+        for traded in self.get_traded_bids_from_market(past_market):
+            self.state.fill_blocked_storage(traded.energy)
         # if energy in this slot was sold: update the storage
         for sold in self.offers.sold_in_market(past_market):
             self.state.sold_offered_storage(sold.energy)
@@ -110,6 +156,13 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if self.state.used_storage > 0:
             self.sell_energy()
         self.state.market_cycle(self.area)
+
+        self.update_on_market_cycle()
+        if self.state.clamp_energy_to_buy(self.state.free_storage) > 0:
+            self.post_first_bid(
+                self.area.next_market,
+                self.state.clamp_energy_to_buy(self.state.free_storage) * 1000.0
+            )
 
     def buy_energy(self):
         # Here starts the logic if energy should be bought
