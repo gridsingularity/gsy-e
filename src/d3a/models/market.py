@@ -31,10 +31,12 @@ class Offer:
         self._listeners = defaultdict(set)  # type: Dict[OfferEvent, Set[callable]]
 
     def __repr__(self):
-        return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller}'>".format(s=self)
+        return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
+            .format(s=self, rate=self.price / self.energy)
 
     def __str__(self):
-        return "{{{s.id!s:.6s}}} [{s.seller}]: {s.energy} kWh @ {s.price}".format(s=self)
+        return "{{{s.id!s:.6s}}} [{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
+            .format(s=self, rate=self.price / self.energy)
 
     def add_listener(self, event: Union[OfferEvent, List[OfferEvent]], listener):
         if isinstance(event, (tuple, list)):
@@ -64,10 +66,16 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market
         # overridden to give the residual field a default value
         return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller, market)
 
+    def __repr__(self):
+        return (
+            "{{{s.id!s:.6s}}} [{s.buyer}] [{s.seller}] "
+            "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.price / self.energy)
+        )
+
     def __str__(self):
         return (
             "{{{s.id!s:.6s}}} [{s.buyer}] [{s.seller}] "
-            "{s.energy} kWh @ {s.price}".format(s=self)
+            "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.price / self.energy)
         )
 
 
@@ -79,12 +87,10 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
-        mark_bid = "(bid)" if self.from_bid else ""
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh {p} @ {s.offer.price} {b}".format(s=self,
-                                                                    p=mark_partial,
-                                                                    b=mark_bid)
+            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate}".
+            format(s=self, p=mark_partial, rate=self.offer.price / self.offer.energy)
         )
 
     @classmethod
@@ -179,14 +185,16 @@ class Market:
             bid_or_id = bid_or_id.id
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
-            raise BidNotFound()
+            raise BidNotFound(bid_or_id)
         log.info("[BID][DEL] %s", bid)
-        self._notify_listeners(MarketEvent.BID_DELETED, bid=bid_or_id)
+        self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
-    def accept_bid(self, bid: Bid, energy: float = None, seller: str = None):
+    def accept_bid(self, bid: Bid, energy: float = None,
+                   seller: str = None, buyer: str = None, track_bid: bool = True):
         with self.trade_lock:
             market_bid = self.bids.pop(bid.id, None)
             seller = bid.seller if seller is None else seller
+            buyer = bid.buyer if buyer is None else buyer
             if market_bid is None:
                 raise BidNotFound("During accept bid: " + str(bid))
             if energy <= 0:
@@ -194,24 +202,24 @@ class Market:
             elif energy > bid.energy:
                 raise InvalidTrade("Traded energy cannot be more than the bid energy.")
             elif energy is None or energy <= bid.energy:
-                # if energy < bid.energy:
-                #     # Partial bidding
-                #     remaining_energy = bid.energy - energy
-                #     remaining_price = bid.price * (remaining_energy / bid.energy)
-                #     bid = Bid(bid.id, bid.price - remaining_price, energy,
-                #               bid.buyer, bid.seller, self)
-                #     self.bid(remaining_price, remaining_price, bid.buyer, bid.seller)
+                if energy < bid.energy:
+                    # Partial bidding
+                    energy_rate = bid.price / bid.energy
+                    final_price = energy * energy_rate
+                    bid = Bid(bid.id, final_price, energy,
+                              buyer, seller, self)
 
                 trade = Trade(str(uuid.uuid4()), self._now,
-                              bid, seller, bid.buyer, None)
-                self.trades.append(trade)
-                self._update_accumulated_trade_price_energy(trade)
-                log.warning("[TRADE][BID] %s", trade)
-                self.traded_energy[bid.seller] += bid.energy
-                self.traded_energy[bid.buyer] -= bid.energy
-                self._update_min_max_avg_trade_prices(bid.price / bid.energy)
-                # Recalculate offer min/max price since offer was removed
-                self._update_min_max_avg_offer_prices()
+                              bid, seller, buyer, None)
+
+                if track_bid:
+                    self.trades.append(trade)
+                    self._update_accumulated_trade_price_energy(trade)
+                    log.warning("[TRADE][BID] %s", trade)
+                    self.traded_energy[bid.seller] += bid.energy
+                    self.traded_energy[bid.buyer] -= bid.energy
+                    self._update_min_max_avg_trade_prices(bid.price / bid.energy)
+                    # Recalculate offer min/max price since offer was removed
                 self._notify_listeners(MarketEvent.BID_TRADED, traded_bid=trade)
                 self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
                 return trade
