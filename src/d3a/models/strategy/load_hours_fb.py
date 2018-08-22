@@ -1,5 +1,4 @@
 import random
-import sys
 from d3a.models.strategy import ureg, Q_
 from pendulum.interval import Interval
 
@@ -7,14 +6,18 @@ from d3a.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
+from d3a.models.strategy.update_frequency import BidUpdateFrequencyMixin
 
 
-class LoadHoursStrategy(BaseStrategy):
+class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'acceptable_energy_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, random_factor=0,
-                 daily_budget=None, acceptable_energy_rate=sys.maxsize):
-        super().__init__()
+                 daily_budget=None, acceptable_energy_rate=35):
+        BaseStrategy.__init__(self)
+        # TODO: Refactor to make these hardcoded parameters configurable
+        BidUpdateFrequencyMixin.__init__(self, initial_rate=20,
+                                         final_rate=acceptable_energy_rate)
         self.state = LoadState()
         self.avg_power_W = Q_(avg_power_W, ureg.W)
 
@@ -27,7 +30,6 @@ class LoadHoursStrategy(BaseStrategy):
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
         self.energy_requirement_Wh = 0
-        self.max_acceptable_energy_price = 10**20
         # In ct. / kWh
         self.acceptable_energy_rate = Q_(acceptable_energy_rate, (ureg.EUR_cents/ureg.kWh))
         # be a parameter on the constructor or if we want to deal in percentages
@@ -44,8 +46,6 @@ class LoadHoursStrategy(BaseStrategy):
 
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
-
-        self._current_bid_buffer = None
 
     def event_activate(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
@@ -97,13 +97,10 @@ class LoadHoursStrategy(BaseStrategy):
         if self.energy_requirement_Wh <= 0:
             return
 
-        if self._current_bid_buffer is not None:
-            return
-
-        self._current_bid_buffer = self.area.next_market.bid(
-            self.energy_requirement_Wh * self.acceptable_energy_rate.m / 1000.0,
-            self.energy_requirement_Wh / 1000.0,
-            self.owner.name, self.area.name)
+        if self.are_bids_posted(self.area.next_market):
+            self.update_posted_bids(self.area.next_market)
+        else:
+            self.post_first_bid(self.area.next_market, self.energy_requirement_Wh)
 
     def event_tick(self, *, area):
         if self.energy_requirement_Wh <= 0:
@@ -132,13 +129,19 @@ class LoadHoursStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._update_energy_requirement()
-
+        self.update_on_market_cycle()
         if self.energy_requirement_Wh > 0:
-            self._current_bid_buffer = self.area.next_market.bid(
-                self.energy_requirement_Wh * self.acceptable_energy_rate.m / 1000.0,
-                self.energy_requirement_Wh / 1000.0,
-                self.owner.name, self.area.name)
-            self.log.info(f"Cell tower placing bid: {self._current_bid_buffer}")
+            self.post_first_bid(
+                self.area.next_market,
+                self.energy_requirement_Wh
+            )
+
+    def event_bid_deleted(self, *, market, bid):
+        if market != self.area.next_market:
+            return
+        if bid.buyer != self.owner.name:
+            return
+        self.remove_bid_from_pending(bid.id, self.area.next_market)
 
     def event_bid_traded(self, *, market, traded_bid):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
@@ -149,15 +152,17 @@ class LoadHoursStrategy(BaseStrategy):
         if traded_bid.offer.buyer != self.owner.name:
             return
 
-        assert self._current_bid_buffer is not None and \
-            "Load must have posted a bid."
+        buffered_bid = next(filter(
+            lambda b: b.id == traded_bid.offer.id,
+            self.get_posted_bids(market)
+        ))
 
-        if self._current_bid_buffer and \
-                traded_bid.offer.buyer == self._current_bid_buffer.buyer:
+        if traded_bid.offer.buyer == buffered_bid.buyer:
             # Update energy requirement and clean up the pending bid buffer
             self.energy_requirement_Wh -= traded_bid.offer.energy * 1000.0
             self.hrs_per_day -= self._operating_hours(traded_bid.offer.energy)
-            self._current_bid_buffer = None
+            self.remove_bid_from_pending(traded_bid.offer, market)
+            assert self.energy_requirement_Wh >= -0.000001
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):
