@@ -1,4 +1,5 @@
 from enum import Enum
+from cached_property import cached_property
 
 from d3a.models.strategy import ureg
 from d3a.exceptions import MarketException
@@ -13,6 +14,53 @@ class InitialRateOptions(Enum):
 class RateDecreaseOption(Enum):
     PERCENTAGE_BASED_ENERGY_RATE_DECREASE = 1
     CONST_ENERGY_RATE_DECREASE_PER_UPDATE = 2
+
+
+class BidUpdateFrequencyMixin:
+    def __init__(self,
+                 initial_rate,
+                 final_rate):
+        self._initial_rate = initial_rate
+        self._final_rate = final_rate
+        self._increase_rate_timepoint_s = 0
+
+    @cached_property
+    def _increase_frequency_s(self):
+        return self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
+
+    def post_first_bid(self, market, energy_Wh):
+        return self.post_bid(
+            market,
+            energy_Wh * self._initial_rate / 1000.0,
+            energy_Wh / 1000.0
+        )
+
+    def update_on_market_cycle(self):
+        self._increase_rate_timepoint_s = 0
+
+    def update_posted_bids(self, market):
+        # Decrease the selling price over the ticks in a slot
+        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
+        elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
+        if (
+                # FIXME: Make sure that the offer reached every system participant.
+                # FIXME: Therefore it can only be update (depending on number of niveau and
+                # FIXME: InterAreaAgent min_offer_age
+                current_tick_number > ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH
+                and elapsed_seconds > self._increase_rate_timepoint_s
+        ):
+            self._increase_rate_timepoint_s += self._increase_frequency_s
+            existing_bids = list(self.get_posted_bids(market))
+            for bid in existing_bids:
+                market.delete_bid(bid.id)
+                self.remove_bid_from_pending(bid.id, market)
+                self.post_bid(market,
+                              bid.energy * self._get_current_energy_rate(current_tick_number),
+                              bid.energy)
+
+    def _get_current_energy_rate(self, current_tick):
+        percentage_of_rate = current_tick / self.area.config.ticks_per_slot
+        return (self._final_rate - self._initial_rate) * percentage_of_rate + self._initial_rate
 
 
 class OfferUpdateFrequencyMixin:
@@ -80,10 +128,6 @@ class OfferUpdateFrequencyMixin:
                 if (new_offer.price/new_offer.energy) < self.min_selling_rate:
                     new_offer.price = self.min_selling_rate * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
-
-                self.log.info("[OLD RATE]: " + str(offer.price/offer.energy) +
-                              " -> [NEW RATE]: " + str(new_offer.price/new_offer.energy))
-
             except MarketException:
                 continue
 
