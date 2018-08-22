@@ -44,6 +44,7 @@ class IAAEngine:
         offer_info = OfferInfo(offer, forwarded_offer)
         self.offered_offers[forwarded_offer.id] = offer_info
         self.offered_offers[offer_id] = offer_info
+        self.owner.log.debug(f"Forwarding offer {offer} to {forwarded_offer}")
         return forwarded_offer
 
     def _forward_bid(self, bid):
@@ -65,36 +66,24 @@ class IAAEngine:
         # 2. Match the cheapest offer with the cheapest bid. This will favor the buyers,
         #    since the most affordable offers will be allocated for the most aggressive buyers.
 
-        def get_list_from_offered_dict(offered, source):
-            return list(
-                map(lambda x: getattr(x, source),
-                    list(offered.values())
-                    )
-            )
-
         # Sorted bids in descending order
         sorted_bids = list(reversed(sorted(
-            get_list_from_offered_dict(self.offered_bids, "source_bid"),
+            self.markets.source.bids.values(),
             key=lambda b: b.price / b.energy))
         )
+
         # Sorted offers in ascending order
-        sorted_offers = list((sorted(
-            get_list_from_offered_dict(self.offered_offers, "source_offer"),
+        sorted_offers = list(reversed(sorted(
+            self.markets.source.offers.values(),
             key=lambda o: o.price / o.energy))
         )
-
-        def are_bid_and_offer_in_source_market(bid, offer):
-            return bid.id in self.offered_bids and \
-                   offer.id in self.offered_offers and \
-                   self.offered_bids[bid.id].source_bid.id == bid.id and \
-                   self.offered_offers[offer.id].source_offer.id == offer.id
 
         already_selected_bids = set()
         for offer in sorted_offers:
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
-                   are_bid_and_offer_in_source_market(bid, offer) and \
-                   offer.price / offer.energy <= bid.price / bid.energy:
+                   offer.price / offer.energy <= bid.price / bid.energy and \
+                   offer.seller != self.owner.name:
                     already_selected_bids.add(bid.id)
                     yield bid, offer
                     break
@@ -105,13 +94,17 @@ class IAAEngine:
             offer.price = offer.energy * (bid.price / bid.energy)
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
-                                    buyer=bid.buyer,
+                                    buyer=self.owner.name,
                                     energy=selected_energy)
             if offer.id in self.offered_offers:
                 deleted_offerinfo = self.offered_offers.pop(offer.id)
                 self.offered_offers.pop(deleted_offerinfo.target_offer.id)
 
-            self.markets.source.accept_bid(bid, selected_energy, seller=offer.seller)
+            self.markets.source.accept_bid(bid,
+                                           selected_energy,
+                                           seller=offer.seller,
+                                           buyer=self.owner.name,
+                                           track_bid=False)
             bid_to_remove = bid
             bid_info = self.offered_bids.pop(bid_to_remove.id, None)
             if not bid_info:
@@ -152,11 +145,13 @@ class IAAEngine:
             self.owner.log.info("Offering %s", forwarded_offer)
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            self._match_offers_bids()
-
             for bid_id, bid in self.markets.source.bids.items():
-                if bid_id not in self.offered_bids:
+                if bid_id not in self.offered_bids and \
+                        self.owner.usable_bid(bid) and \
+                        self.owner.name != bid.seller:
                     self._forward_bid(bid)
+
+            self._match_offers_bids()
 
     def event_bid_traded(self, *, traded_bid):
         bid_info = self.offered_bids.get(traded_bid.offer.id)
@@ -171,9 +166,7 @@ class IAAEngine:
                 seller=self.owner.name
             )
 
-            current_bid_info = self.offered_bids.pop(bid_info.source_bid.id, None)
-            if current_bid_info is not None:
-                self.offered_bids.pop(current_bid_info.target_bid.id, None)
+            self.offered_bids.pop(bid_info.source_bid.id, None)
             self.offered_bids.pop(bid_info.target_bid.id, None)
 
         # Bid was traded in the source market by someone else
@@ -299,6 +292,8 @@ class IAAEngine:
             # was deleted - also delete in target market
             try:
                 self.markets.target.delete_offer(offer_info.target_offer)
+                self.offered_offers.pop(offer_info.source_offer.id, None)
+                self.offered_offers.pop(offer_info.target_offer.id, None)
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
 
