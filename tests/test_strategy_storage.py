@@ -20,8 +20,8 @@ class FakeArea():
         self.current_tick = 0
         self.past_market = FakeMarket(4)
         self.current_market = FakeMarket(0)
-        self.next_market = FakeMarket(1)
         self._markets_return = {"Fake Market": FakeMarket(self.count)}
+        self.next_market = list(self.markets.values())[0]
 
     log = getLogger(__name__)
 
@@ -360,7 +360,7 @@ def test_calculate_initial_sell_energy_rate_lower_bound(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
     break_even_sell = storage_strategy_test7.break_even[market.time_slot.hour][1]
-    assert storage_strategy_test7._calculate_selling_rate(market) == break_even_sell
+    assert storage_strategy_test7.calculate_selling_rate(market) == break_even_sell
 
 
 @pytest.fixture()
@@ -377,7 +377,7 @@ def test_calculate_initial_sell_energy_rate_upper_bound(storage_strategy_test7_1
     market = storage_strategy_test7_1.area.current_market
     market_maker_rate = \
         storage_strategy_test7_1.area.config.market_maker_rate[market.time_slot.hour]
-    assert storage_strategy_test7_1._calculate_selling_rate(market) == market_maker_rate
+    assert storage_strategy_test7_1.calculate_selling_rate(market) == market_maker_rate
 
 
 @pytest.fixture()
@@ -411,8 +411,8 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
 def test_calculate_energy_amount_to_sell_respects_max_power(storage_strategy_test7, area_test7):
     storage_strategy_test7.event_activate()
     max_energy = storage_strategy_test7.state._battery_energy_per_slot
-    expected_energy = storage_strategy_test7._calculate_energy_to_sell((max_energy+1),
-                                                                       area_test7.current_market)
+    expected_energy = storage_strategy_test7.calculate_energy_to_sell((max_energy + 1),
+                                                                      area_test7.current_market)
     assert expected_energy == max_energy
 
 
@@ -431,8 +431,8 @@ def test_calculate_energy_amount_to_sell_respects_min_allowed_soc(storage_strate
                                                                   area_test7):
     storage_strategy_test7_3.event_activate()
     energy = \
-        storage_strategy_test7_3._calculate_energy_to_sell(energy=0.6,
-                                                           target_market=area_test7.current_market)
+        storage_strategy_test7_3.calculate_energy_to_sell(energy=0.6,
+                                                          target_market=area_test7.current_market)
     target_energy = \
         storage_strategy_test7_3.state.used_storage + \
         storage_strategy_test7_3.state.offered_storage -\
@@ -460,11 +460,13 @@ def storage_strategy_test8(area_test8):
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
     storage_strategy_test8.event_activate()
     storage_strategy_test8.sell_energy(energy=None)
+    print(area_test8._markets_return["Fake Market"].created_offers)
     assert abs(storage_strategy_test8.state.used_storage -
                storage_strategy_test8.state.capacity *
                ConstSettings.STORAGE_MIN_ALLOWED_SOC) < 0.0001
     assert storage_strategy_test8.state.offered_storage == \
         100 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+    print(area_test8._markets_return["Fake Market"].created_offers)
     assert area_test8._markets_return["Fake Market"].created_offers[0].energy == \
         100 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(
@@ -606,6 +608,6 @@ def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_te
     used_storage = storage_strategy_test12.state.used_storage
     battery_capacity = storage_strategy_test12.state.capacity
     soc = used_storage / battery_capacity
-    actual_rate = storage_strategy_test12._calculate_selling_rate(market_test7)
+    actual_rate = storage_strategy_test12.calculate_selling_rate(market_test7)
     expected_rate = market_maker_rate - (market_maker_rate - BE_sell) * soc
     assert actual_rate == expected_rate
