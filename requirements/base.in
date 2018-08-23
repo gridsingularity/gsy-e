@@ -10,7 +10,6 @@ flask
 flask-api
 flask-cors
 numpy
-pandas
 pendulum
 pint
 pip-tools

@@ -1,74 +1,360 @@
 import csv
-import json
 import logging
 import pathlib
-
-import pandas as pd
 import os
 import plotly as py
 import plotly.graph_objs as go
+import pendulum
+import shutil
+from slugify import slugify
 
 from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-
+from d3a.models.area import Area
 
 _log = logging.getLogger(__name__)
 
-
-def export(root_area, path, subdir):
-    """Export all data of the finished simulation in one CSV file per area."""
-    try:
-        if path is not None:
-            path = os.path.abspath(path)
-        directory = pathlib.Path(path or "~/d3a-simulation", subdir).expanduser()
-        directory.mkdir(exist_ok=True, parents=True)
-    except Exception as ex:
-        _log.error("Could not open directory for csv exports: %s" % str(ex))
-        return
-
-    # Create plot directory
-    plot_dir = os.path.join(directory, 'plot')
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
-
-    _export_area_with_children(root_area, directory)
-    _export_iaa_energy(root_area, directory)
-    _export_overview(root_area, directory)
-
-    _unmatch_loads(directory, 'relative', 'Devices Un-matched Loads', 'Time',
-                   'Energy (kWh)', 'Devices_unmatch_loads.html')
-
-    _energy_trade_partner(directory, 'buyer', 'Cell Tower', 'seller',
-                          'Cell Tower Energy Suppliers', 'Cell_Tower_Energy_Suppliers.html')
-    _ess_history(directory, 'relative', 'ESS Energy Trade', 'Time',
-                 'Energy (kWh)', 'ESS_Trade.html')
-    _soc_history(directory, 'relative', 'ESS SOC', 'Time',
-                 'charge [%]', 'ESS_SOC_history.html')
-    _house_energy_history(directory, 'relative', 'Time',
-                          'Energy (kWh)')
-    _house_trade_history(directory, 'bar', 'Time', 'price [ct./kWh]')
-    _avg_trade_price(directory, 'bar', 'Time', 'price [ct./kWh]')
+ENERGY_BUYER_SIGN_PLOTS = 1
+ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
 
 
-def _export_area_with_children(area, directory):
-    if area.children:
-        subdirectory = pathlib.Path(directory, area.slug.replace(' ', '_'))
-        subdirectory.mkdir(exist_ok=True, parents=True)
+def mkdir_from_str(directory: str, exist_ok=True, parents=True):
+    out_dir = pathlib.Path(directory)
+    out_dir.mkdir(exist_ok=exist_ok, parents=parents)
+    return out_dir
+
+
+class ExportAndPlot:
+
+    def __init__(self, root_area: Area, path: str, subdir: str):
+        self.trades = {}
+        self.stats = {}
+        self.buyer_trades = {}
+        self.seller_trades = {}
+        self.area = root_area
+
+        try:
+            if path is not None:
+                path = os.path.abspath(path)
+            self.directory = pathlib.Path(path or "~/d3a-simulation", subdir).expanduser()
+            mkdir_from_str(str(self.directory.mkdir))
+        except Exception as ex:
+            _log.error("Could not open directory for csv exports: %s" % str(ex))
+            return
+
+        self.plot_dir = os.path.join(self.directory, 'plot')
+        if not os.path.exists(self.plot_dir):
+            os.makedirs(self.plot_dir)
+
+        self.export()
+
+    @staticmethod
+    def _file_path(directory: dir, slug: str):
+        file_name = ("%s.csv" % slug).replace(' ', '_')
+        return directory.joinpath(file_name).as_posix()
+
+    def export(self):
+        """Wrapping function, executes all export and plotting functions"""
+
+        self._export_area_with_children(self.area, self.directory)
+        self._get_buyer_seller_trades(self.area)
+
+        self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
+        self.plot_energy_profile(self.area, self.plot_dir)
+        self.plot_all_unmatched_loads()
+        self.plot_avg_trade_price(self.area, self.plot_dir)
+        self.plot_ess_soc_history(self.area, self.plot_dir)
+
+        self.move_root_plot_folder()
+
+    def move_root_plot_folder(self):
+        """
+        Removes "grid" folder in self.plot_dir
+        """
+        old_dir = os.path.join(self.plot_dir, self.area.slug)
+        source = os.listdir(old_dir)
+        for si in source:
+            shutil.move(os.path.join(old_dir, si), self.plot_dir)
+        shutil.rmtree(old_dir)
+
+    def _export_area_with_children(self, area: Area, directory: dir):
+        """
+        Gets a self.stats and self.trades and writes them to csv files
+        Runs _export_area_energy and _export_area_flat
+        """
+        if area.children:
+            subdirectory = pathlib.Path(directory, area.slug.replace(' ', '_'))
+            subdirectory.mkdir(exist_ok=True, parents=True)
+            for child in area.children:
+                self._export_area_with_children(child, subdirectory)
+        self.stats[area.slug.replace(' ', '_')] = self._export_area_flat(area, directory)
+        if area.children:
+            self.trades[area.slug.replace(' ', '_')] = self._export_area_energy(area, directory)
+
+    def _export_area_energy(self, area: Area, directory: dir):
+        """
+        Exports files containing individual trades  (*-trades.csv  files)
+        """
+
+        out_keys = ("sold_energy", "bought_energy")
+        out_keys_ids = (5, 6)
+        try:
+            with open(self._file_path(directory, "{}-trades".format(area.slug)), 'w') as csv_file:
+                writer = csv.writer(csv_file)
+                labels = ("slot",) + Trade._csv_fields()
+                writer.writerow(labels)
+                out_dict = dict((key, {}) for key in out_keys)
+                for slot, market in area.past_markets.items():
+                    for trade in market.trades:
+                        row = (slot, ) + trade._to_csv()
+                        writer.writerow(row)
+                        for ii, ks in enumerate(out_keys):
+                            node = slugify(row[out_keys_ids[ii]], to_lower=True)
+                            if node not in out_dict[ks]:
+                                out_dict[ks][node] = dict(
+                                    (key, 0) for key in area.past_markets.keys())
+                            out_dict[ks][node][slot] += row[4]
+
+            for ks in out_keys:
+                out_dict[ks + "_lists"] = dict((ki, {}) for ki in out_dict[ks].keys())
+                for node in out_dict[ks].keys():
+                    out_dict[ks + "_lists"][node]["slot"] = list(out_dict[ks][node].keys())
+                    out_dict[ks + "_lists"][node]["energy"] = list(out_dict[ks][node].values())
+
+            return out_dict
+        except OSError:
+            _log.exception("Could not export area trades")
+
+    def _get_buyer_seller_trades(self, area: Area):
+        """
+        Determines the buy and sell rate of each leaf node
+        """
+        labels = ("slot", "rate [ct./kWh]", "energy [kWh]", "seller")
+        for i, child in enumerate(area.children):
+            for slot, market in area.past_markets.items():
+                for trade in market.trades:
+                    buyer_slug = slugify(trade.buyer, to_lower=True)
+                    seller_slug = slugify(trade.seller, to_lower=True)
+                    if buyer_slug not in self.buyer_trades:
+                        self.buyer_trades[buyer_slug] = dict((key, []) for key in labels)
+                    if seller_slug not in self.seller_trades:
+                        self.seller_trades[seller_slug] = dict((key, []) for key in labels)
+                    else:
+                        values = (slot, ) + \
+                                 (round(trade.offer.price/trade.offer.energy, 4),
+                                  (trade.offer.energy * -1),) + \
+                                 (slugify(trade.seller, to_lower=True),)
+                        for ii, ri in enumerate(labels):
+                            self.buyer_trades[buyer_slug][ri].append(values[ii])
+                            self.seller_trades[seller_slug][ri].append(values[ii])
+            if child.children:
+                self._get_buyer_seller_trades(child)
+
+    def _export_area_flat(self, area: Area, directory: dir):
+        """
+        Exports stats (*.csv files)
+        """
+        data = ExportData.create(area)
+        rows = data.rows()
+        if rows:
+            try:
+                with open(self._file_path(directory, area.slug), 'w') as csv_file:
+                    writer = csv.writer(csv_file)
+                    labels = data.labels()
+                    writer.writerow(labels)
+                    out_dict = dict((key, []) for key in labels)
+                    for row in rows:
+                        writer.writerow(row)
+                        for ii, ri in enumerate(labels):
+                            out_dict[ri].append(row[ii])
+                return out_dict
+            except Exception as ex:
+                _log.error("Could not export area data: %s" % str(ex))
+
+    def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
+        """
+        Wrapper for _plot_trade_partner_cell_tower
+        """
+        key = "cell-tower"
+        new_subdir = os.path.join(subdir, area.slug)
         for child in area.children:
-            _export_area_with_children(child, subdirectory)
-    _export_area_flat(area, directory)
-    if (area.children):
-        _export_area_energy(area, directory)
+            if child.slug == key:
+                self._plot_trade_partner_cell_tower(child.slug, subdir)
+            if child.children:
+                self.plot_trade_partner_cell_tower(child, new_subdir)
 
+    def _plot_trade_partner_cell_tower(self, load: str, plot_dir: str):
+        """
+        Plots trade partner pie graph for the sell tower.
+        """
+        higt = TradeHistory(self.buyer_trades, load)
+        higt.arrange_data()
+        mkdir_from_str(plot_dir)
+        higt.plot_pie_chart("Energy Trade Partners for {}".format(load),
+                            os.path.join(plot_dir, "energy_trade_partner_{}.html".format(load)))
 
-def _file_path(directory, slug):
-    file_name = ("%s.csv" % slug).replace(' ', '_')
-    return directory.joinpath(file_name).as_posix()
+    def plot_energy_profile(self, area: Area, subdir: str):
+        """
+        Wrapper for _plot_energy_profile
+        """
+
+        new_subdir = os.path.join(subdir, area.slug)
+        self._plot_energy_profile(new_subdir, area.slug)
+        for child in area.children:
+            if child.children:
+                self.plot_energy_profile(child, new_subdir)
+
+    def _plot_energy_profile(self, subdir: str, market_name: str):
+        """
+        Plots history of energy trades
+        """
+        data = list()
+        barmode = "relative"
+        xtitle = 'Time'
+        ytitle = 'Energy [kWh]'
+        key = 'energy'
+        title = 'Energy Trade Profile of {}'.format(market_name)
+        for seller in self.trades[market_name]["sold_energy_lists"].keys():
+
+            graph_obj = BarGraph(self.trades[market_name]["sold_energy_lists"][seller], key)
+            graph_obj.graph_value(scale_value=ENERGY_SELLER_SIGN_PLOTS)
+            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
+                              y=list(graph_obj.umHours.values()),
+                              name=seller + " (seller)")
+            data.append(data_obj)
+        for buyer in self.trades[market_name]["bought_energy_lists"].keys():
+
+            graph_obj = BarGraph(self.trades[market_name]["bought_energy_lists"][buyer], key)
+            graph_obj.graph_value(scale_value=ENERGY_BUYER_SIGN_PLOTS)
+            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
+                              y=list(graph_obj.umHours.values()),
+                              name=buyer + " (buyer)")
+            data.append(data_obj)
+
+        if len(data) == 0:
+            return
+        if all([len(da.y) == 0 for da in data]):
+            return
+
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir_from_str(plot_dir)
+        output_file = os.path.join(plot_dir,
+                                   'energy_profile_{}.html'.format(market_name))
+        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def plot_all_unmatched_loads(self):
+        """
+        Plot unmatched loads of all loads in the configuration into one plot
+        """
+        unmatched_key = 'deficit [kWh]'
+        data = list()
+        root_name = self.area.slug
+        title = 'Unmatched Loads for all devices in {}'.format(root_name)
+        xtitle = 'Time'
+        ytitle = 'Energy (kWh)'
+        barmode = 'bar'
+        load_list = [child_key for child_key in self.stats.keys()
+                     if unmatched_key in self.stats[child_key].keys()]
+
+        for li in load_list:
+            graph_obj = BarGraph(self.stats[li], unmatched_key)
+            if sum(graph_obj.dataset[unmatched_key]) < 1e-10:
+                continue
+            graph_obj.graph_value()
+            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
+                              y=list(graph_obj.umHours.values()),
+                              name=li)
+            data.append(data_obj)
+        if len(data) == 0:
+            return
+        plot_dir = os.path.join(self.plot_dir)
+        mkdir_from_str(plot_dir)
+        output_file = os.path.join(plot_dir, 'unmatched_loads_{}.html'.format(root_name))
+        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def plot_ess_soc_history(self, area, subdir):
+        """
+        Wrapper for _plot_ess_soc_history.
+        """
+
+        storage_key = 'charge [%]'
+        new_subdir = os.path.join(subdir, area.slug)
+        storage_list = [child.slug for child in area.children
+                        if storage_key in self.stats[child.slug].keys()]
+        if storage_list is not []:
+            self._plot_ess_soc_history(storage_list, new_subdir, area.slug)
+        for child in area.children:
+            if child.children:
+                self.plot_ess_soc_history(child, new_subdir)
+
+    def _plot_ess_soc_history(self, storage_list: list, subdir: str, root_name: str):
+        """
+        Plots ess soc for each knot in the hierarchy
+        """
+
+        storage_key = 'charge [%]'
+        data = list()
+        barmode = "relative"
+        title = 'ESS SOC ({})'.format(root_name)
+        xtitle = 'Time'
+        ytitle = 'Charge [%]'
+
+        for si in storage_list:
+            graph_obj = BarGraph(self.stats[si], storage_key)
+            graph_obj.graph_value()
+            data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
+                                  y=list(graph_obj.umHours.values()),
+                                  name=si)
+            data.append(data_obj)
+        if len(data) == 0:
+            return
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir_from_str(plot_dir)
+        output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
+        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def plot_avg_trade_price(self, area, subdir):
+        """
+        Wrapper for _plot_avg_trade_rate
+        """
+        if area.children:
+            area_list = [area.slug]
+            if area.parent:
+                area_list.append(area.parent.slug)
+            area_list += [ci.slug for ci in area.children]
+            new_subdir = os.path.join(subdir, area.slug)
+            self._plot_avg_trade_price(area_list, new_subdir)
+            for child in area.children:
+                self.plot_avg_trade_price(child, new_subdir)
+
+    def _plot_avg_trade_price(self, area_list: list, subdir: str):
+        """
+        Plots average trade for the specified level of the hierarchy
+        """
+        data = list()
+        barmode = 'bar'
+        xtitle = "Time"
+        ytitle = "Rate [ct./kWh]"
+        key = 'avg trade rate [ct./kWh]'
+        title = 'Average Trade Price {}'.format(area_list[0])
+        for area_name in area_list:
+            graph_obj = BarGraph(self.stats[area_name.lower()], key)
+            graph_obj.graph_value()
+            data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
+                                  y=list(graph_obj.umHours.values()),
+                                  name=area_name.lower())
+            data.append(data_obj)
+        if all([len(da.y) == 0 for da in data]):
+            return
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir_from_str(plot_dir)
+        output_file = os.path.join(plot_dir, 'average_trade_price_{}.html'.format(area_list[0]))
+        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
 
 class ExportData:
@@ -77,7 +363,7 @@ class ExportData:
 
     @staticmethod
     def create(area):
-        return ExportUpperLevelData(area) if area.children else ExportLeafData(area)
+        return ExportUpperLevelData(area) if len(area.children) > 0 else ExportLeafData(area)
 
 
 class ExportUpperLevelData(ExportData):
@@ -112,15 +398,17 @@ class ExportLeafData(ExportData):
         super(ExportLeafData, self).__init__(area)
 
     def labels(self):
-        return ['slot', 'energy traded [kWh]'] + self._specific_labels()
+        return ['slot',
+                'energy traded [kWh]',
+                ] + self._specific_labels()
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, FridgeStrategy):
             return ['temperature [°C]']
-        elif isinstance(self.area.strategy, (StorageStrategy, NightStorageStrategy)):
+        elif isinstance(self.area.strategy, StorageStrategy):
             return ['bought [kWh]', 'sold [kWh]', 'energy balance [kWh]', 'offered [kWh]',
                     'used [kWh]', 'charge [%]', 'stored [kWh]']
-        elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy)):
+        elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
         elif isinstance(self.area.strategy, PVStrategy):
             return ['produced to trade [kWh]', 'not sold [kWh]', 'forecast / generation [kWh]']
@@ -134,7 +422,9 @@ class ExportLeafData(ExportData):
         return market.traded_energy[self.area.name]
 
     def _row(self, slot, market):
-        return [slot, self._traded(market)] + self._specific_row(slot, market)
+        return [slot,
+                self._traded(market),
+                ] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, FridgeStrategy):
@@ -150,7 +440,8 @@ class ExportLeafData(ExportData):
                     s.used_history[slot],
                     charge,
                     stored]
-        elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy)):
+        elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
+                                             DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
             desired = self.area.strategy.state.desired_energy[slot] / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
@@ -163,92 +454,55 @@ class ExportLeafData(ExportData):
         return []
 
 
-def _export_area_flat(area, directory):
-    data = ExportData.create(area)
-    rows = data.rows()
-    if rows:
-        try:
-            with open(_file_path(directory, area.slug), 'w') as csv_file:
-                writer = csv.writer(csv_file)
-                writer.writerow(data.labels())
-                for row in rows:
-                    writer.writerow(row)
-        except Exception as ex:
-            _log.error("Could not export area data: %s" % str(ex))
-
-
-def _export_area_energy(area, directory):
-    try:
-        with open(_file_path(directory, "{}-trades".format(area.slug)), 'w') as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow(("slot",) + Trade._csv_fields())
-            for slot, market in area.past_markets.items():
-                for trade in market.trades:
-                    writer.writerow((slot, ) + trade._to_csv())
-    except OSError:
-        _log.exception("Could not export area trades")
-
-
-def _export_iaa_energy(area, directory):
-    try:
-        for i, child in enumerate(area.children, 1):
-            if child.children:
-                with open(_file_path(directory, "{}-external-trades".format(child.slug)), 'w')\
-                        as csv_file:
-                    writer = csv.writer(csv_file)
-                    writer.writerow(("slot", "rate [ct./kWh]", "energy [kWh]"))
-                    for slot, market in area.past_markets.items():
-                        for trade in market.trades:
-                            if trade.buyer == 'IAA House {}'.format(i):
-                                writer.writerow((slot, ) +
-                                                (round(trade.offer.price/trade.offer.energy, 4),
-                                                 (trade.offer.energy*(-1))))
-                            elif trade.seller == 'IAA House {}'.format(i):
-                                writer.writerow((slot, ) +
-                                                (round(trade.offer.price/trade.offer.energy, 4),
-                                                 trade.offer.energy))
-                            else:
-                                pass
-
-    except OSError:
-        _log.exception("Could not export area trades")
-
-
-def _export_overview(root_area, directory):
-    markets = root_area.past_markets
-    overview = {
-        'avg_trade_price_history': [markets[slot].avg_trade_price for slot in markets]
-    }
-    try:
-        directory.joinpath("overview.json").write_text(json.dumps(overview, indent=2))
-    except Exception as ex:
-        _log.error("Error when writing overview file: %s" % str(ex))
-
-
-class DataSets:
-    def __init__(self, path):
-        self.path = path
-        self.dataset = pd.read_csv(path)
-
-
-class BarGraph(DataSets):
-    def __init__(self, path, key):
+class BarGraph:
+    def __init__(self, dataset: dict, key: str):
         self.key = key
+        self.dataset = dataset
         self.umHours = dict()
-        super(BarGraph, self).__init__(path)
 
-    def graph_value(self, graph_name):
+    def graph_value(self, scale_value=1):
         try:
             self.dataset[self.key]
         except KeyError:
-            _log.error("Error during generating plot for " + str(graph_name) +
-                       ": Key not found (" + str(self.key) + ")")
+            pass
         else:
             for de in range(len(self.dataset[self.key])):
                 if self.dataset[self.key][de] != 0:
-                    self.umHours[self.dataset['slot'][de]] = round(self.dataset[self.key][de], 5)
+                    if self.dataset[self.key][de] == "-":
+                        self.umHours[self.dataset['slot'][de]] = 0.0
+                    else:
+                        self.umHours[self.dataset['slot'][de]] = \
+                            round(self.dataset[self.key][de], 5) * scale_value
 
-    def plot_bar_graph(barmode, title, xtitle, ytitle, data, iname):
+    @staticmethod
+    def modify_time_axis(data: dict, title: str):
+        """
+        Changes timezone of pendulum x-values to 'UTC' and determines the list of days
+        in order to return the xrange for the plot
+        """
+        day_set = set()
+        for di in range(len(data)):
+            out_time_list = []
+            time_list = data[di]["x"]
+            for ti in time_list:
+                out_time_list.append(ti.timezone_("UTC"))
+                day_set.add(pendulum.datetime(ti.year, ti.month, ti.day))
+            data[di]["x"] = out_time_list
+
+        day_list = sorted(list(day_set))
+        if len(day_list) == 0:
+            raise ValueError("There is no time information in plot {}".format(title))
+
+        start_time = pendulum.datetime(day_list[0].year, day_list[0].month, day_list[0].day,
+                                       0, 0, 0, tzinfo="UTC")
+        end_time = pendulum.datetime(day_list[-1].year, day_list[-1].month, day_list[-1].day,
+                                     23, 59, 59, tzinfo="UTC")
+
+        return [start_time, end_time], data
+
+    @classmethod
+    def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
+        xrange, data = cls.modify_time_axis(data, title)
         layout = go.Layout(
             barmode=barmode,
             title=title,
@@ -256,87 +510,38 @@ class BarGraph(DataSets):
                 title=ytitle
             ),
             xaxis=dict(
-                title=xtitle
+                title=xtitle,
+                range=xrange
             ),
             font=dict(
                 size=16
-            )
+            ),
+            showlegend=True
         )
 
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
 
-# Un-met Loads
-def _unmatch_loads(path, barmode, title, xtitle, ytitle, iname):
-    data = list()
-    key = 'deficit [kWh]'
-    ct = os.path.join(path, 'grid', 'cell-tower.csv')
-    if os.path.isfile(ct):
-        hict = BarGraph(ct, key)
-        hict.graph_value("Unmatched Loads")
-        traceict = go.Bar(x=list(hict.umHours.keys()),
-                          y=list(hict.umHours.values()),
-                          name='Cell Tower')
-        data.append(traceict)
-
-    sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
-    for i in range(len(sub_file)):
-        gl = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-general-load.csv')
-        ll = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-lighting.csv')
-        tv = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-tv.csv')
-
-        if os.path.isfile(gl):
-            higl = BarGraph(gl, key)
-            higl.graph_value("Unmatched Loads")
-            traceigl = go.Bar(x=list(higl.umHours.keys()),
-                              y=list(higl.umHours.values()),
-                              name='House{}-GL'.format(i+1))
-            data.append(traceigl)
-        if os.path.isfile(ll):
-            hill = BarGraph(ll, key)
-            hill.graph_value("Unmatched Loads")
-            traceill = go.Bar(x=list(hill.umHours.keys()),
-                              y=list(hill.umHours.values()),
-                              name='House{}-LL'.format(i+1))
-            data.append(traceill)
-        if os.path.isfile(tv):
-            hitv = BarGraph(tv, key)
-            hitv.graph_value("Unmatched Loads")
-            traceitv = go.Bar(x=list(hitv.umHours.keys()),
-                              y=list(hitv.umHours.values()),
-                              name='House{}-TV'.format(i+1))
-            data.append(traceitv)
-
-    if not data:
-        _log.info("No unmatched loads. The graph will not be generated.")
-        return
-
-    output_file = os.path.join(path, 'plot', iname)
-
-    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
-
-
-class TradeHistory(DataSets):
-    def __init__(self, path, key):
+class TradeHistory:
+    def __init__(self, dataset: dict, key: str):
         self.key = key
+        self.dataset = dataset
         self.trade_history = dict()
-        super(TradeHistory, self).__init__(path)
 
-    def arrange_data(self, kbuyer, kseller):
+    def arrange_data(self):
         try:
             self.dataset[self.key]
         except KeyError:
-            _log.error("Error during generating plot for trade history" +
-                       ": Key not found (" + str(self.key) + ")")
+            pass
         else:
-            for de in range(len(self.dataset[self.key])):
-                self.trade_history.setdefault(self.dataset[kseller][de], int(0))
-            for de in range(len(self.dataset[self.key])):
-                if self.dataset[self.key][de] == kbuyer:
-                    self.trade_history[self.dataset[kseller][de]] += 1
+            for ii, ki in enumerate(self.dataset[self.key]["seller"]):
+                if ki in self.trade_history.keys():
+                    self.trade_history[ki] += abs(self.dataset[self.key]["energy [kWh]"][ii])
+                else:
+                    self.trade_history[ki] = abs(self.dataset[self.key]["energy [kWh]"][ii])
 
-    def plot_pie_chart(self, title, iname):
+    def plot_pie_chart(self, title, filename):
         fig = {
             "data": [
                 {
@@ -354,197 +559,4 @@ class TradeHistory(DataSets):
             fig["data"][0]["values"].append(value)
             fig["data"][0]["labels"].append(key)
 
-        py.offline.plot(fig, filename=iname, auto_open=False)
-
-
-# Energy Trading Partner
-def _energy_trade_partner(path, key, buyer, seller, title, iname):
-    grid_trade_file = os.path.join(path, 'grid-trades.csv')
-
-    if os.path.isfile(grid_trade_file):
-        higt = TradeHistory(grid_trade_file, key)
-        higt.arrange_data(buyer, seller)
-        output_file = os.path.join(path, 'plot', iname)
-        higt.plot_pie_chart(title, output_file)
-
-
-# ESS Trade History
-def _ess_history(path, barmode, title, xtitle, ytitle, iname):
-    data = list()
-    key = 'energy traded [kWh]'
-    sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
-    for i in range(len(sub_file)):
-        ss1 = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-storage1.csv')
-        ss2 = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-storage2.csv')
-
-        if os.path.isfile(ss1):
-            hiss1 = BarGraph(ss1, key)
-            hiss1.graph_value("ESS History")
-            traceiss1 = go.Bar(x=list(hiss1.umHours.keys()),
-                               y=list(hiss1.umHours.values()),
-                               name='House{0}-Storage1'.format(i + 1))
-            data.append(traceiss1)
-        if os.path.isfile(ss2):
-            hiss2 = BarGraph(ss2, key)
-            hiss2.graph_value("ESS History")
-            traceiss2 = go.Bar(x=list(hiss2.umHours.keys()),
-                               y=list(hiss2.umHours.values()),
-                               name='House{0}-Storage2'.format(i + 1))
-            data.append(traceiss2)
-
-    if not data:
-        return
-
-    output_file = os.path.join(path, 'plot', iname)
-    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
-
-
-# ESS SOC Trade History
-def _soc_history(path, barmode, title, xtitle, ytitle, iname):
-    data = list()
-    key = 'charge [%]'
-    sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
-    for i in range(len(sub_file)):
-        ss1 = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-storage1.csv')
-        ss2 = os.path.join(path, 'grid', sub_file[i], 'h' + str(i + 1) + '-storage2.csv')
-
-        if os.path.isfile(ss1):
-            chss1 = BarGraph(ss1, key)
-            chss1.graph_value("SOC History")
-            tracechss1 = go.Scatter(x=list(chss1.umHours.keys()),
-                                    y=list(chss1.umHours.values()),
-                                    name='House{0}-Storage1'.format(i + 1))
-            data.append(tracechss1)
-        if os.path.isfile(ss2):
-            chss2 = BarGraph(ss2, key)
-            chss2.graph_value("SOC History")
-            tracechss1 = go.Scatter(x=list(chss2.umHours.keys()),
-                                    y=list(chss2.umHours.values()),
-                                    name='House{0}-Storage2'.format(i + 1))
-            data.append(tracechss1)
-
-    if not data:
-        return
-
-    output_file = os.path.join(path, 'plot', iname)
-    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
-
-
-# Energy Profile of House
-def _house_energy_history(path, barmode, xtitle, ytitle):
-    data = list()
-    key = 'energy traded [kWh]'
-    grid_path = os.path.join(path, 'grid')
-    sub_file = sorted(next(os.walk(grid_path))[1])
-    for j in range(len(sub_file)):
-        """
-        TODO: Make it possible for arbitrary number of hierarchies in  D3ASIM-306
-        """
-        sub_sub_file = str(os.path.join(str(grid_path), str(sub_file[j])))
-        sub_sub_file_csv = sorted(next(os.walk(sub_sub_file))[2])
-        iname = os.path.join(path, 'plot', 'Energy Profile of House{}.html'.format(j+1))
-        title = os.path.join(path, 'plot', 'Energy Profile of House{}'.format(j+1))
-        for i in range(len(sub_sub_file_csv)):
-            sub_sub_file_csv_path = os.path.join(sub_sub_file, sub_sub_file_csv[i])
-            ls = str(sub_sub_file_csv[i]).split(".")[0]
-            higl = BarGraph(sub_sub_file_csv_path, key)
-            higl.graph_value("House Energy History")
-            traceigl = go.Bar(x=list(higl.umHours.keys()),
-                              y=list(higl.umHours.values()),
-                              name=ls)
-            data.append(traceigl)
-        if not data:
-            return
-        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
-        data = []
-
-
-# Average Trade Price Graph
-def _avg_trade_price(path, barmode, xtitle, ytitle):
-    data = list()
-    key = 'avg trade rate [ct./kWh]'
-    grid_file = os.path.join(path, 'grid.csv')
-    title = str('Average Trade Price')
-    if os.path.isfile(grid_file):
-        higap = BarGraph(grid_file, key)
-        higap.graph_value("Average Trade Price")
-        traceigap = go.Scatter(x=list(higap.umHours.keys()),
-                               y=list(higap.umHours.values()),
-                               name='Grid')
-        data.append(traceigap)
-    sub_file = sorted(next(os.walk(os.path.join(path, 'grid')))[1])
-    for i in range(len(sub_file)):
-        lap = os.path.join(path, 'grid', sub_file[i] + '.csv')
-        if os.path.isfile(lap):
-            hilap = BarGraph(lap, key)
-            hilap.graph_value("Average Trade Price")
-            traceilap = go.Scatter(x=list(hilap.umHours.keys()),
-                                   y=list(hilap.umHours.values()),
-                                   name='House{}'.format(i+1))
-            data.append(traceilap)
-    if not data:
-        return
-    plot_dir = os.path.join(path, 'plot')
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
-
-    iname = os.path.join(path, 'plot', 'Average Trade Price.html')
-    BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, iname)
-
-
-# Energy Trade Profile of House
-def _house_trade_history(path, barmode, xtitle, ytitle):
-    data = list()
-    grid_path = os.path.join(path, 'grid')
-
-    sub_file = sorted(next(os.walk(grid_path))[1])
-    for i in range(len(sub_file)):
-        trade = os.path.join(grid_path, sub_file[i] + '-trades.csv')
-        iname = os.path.join(path, 'plot', 'Energy Trade Profile of House{}.html'.format(i + 1))
-        title = str('Energy Trade Profile of House{}'.format(i + 1))
-        if os.path.isfile(trade):
-            dataset = pd.read_csv(trade)
-            dataset = dataset.drop(['id', 'time', 'energy [kWh]'], axis=1)
-            DBkey = dataset.iloc[:, -1].values
-            DBkey = set(DBkey)
-            DSKey = dataset.iloc[:, -2].values
-            DSkey = set(DSKey)
-
-            for key in DSkey:
-                dataset_Sk = dataset[dataset.seller == key]
-                DX = dataset_Sk.iloc[:, 0].values
-                Dy = dataset_Sk.iloc[:, 1].values
-                traceit = go.Bar(x=DX, y=Dy, name=key)
-                data.append(traceit)
-                del DX
-                del Dy
-
-            for key in DBkey:
-                dataset_k = dataset[dataset.buyer == key]
-                DX = dataset_k.iloc[:, 0].values
-                Dy = dataset_k.iloc[:, 1].values
-                traceit = go.Bar(x=DX, y=-1.0*Dy, name=key)
-                data.append(traceit)
-                del DX
-                del Dy
-            layout = go.Layout(
-                barmode=barmode,
-                title=title,
-                yaxis=dict(
-                    title=ytitle,
-                    range=[-35, 35]
-                ),
-                xaxis=dict(
-                    title=xtitle
-                ),
-                font=dict(
-                    size=16
-                )
-            )
-            fig = go.Figure(data=data, layout=layout)
-            file_path = os.path.join(path, 'plot', iname)
-            try:
-                py.offline.plot(fig, filename=file_path, auto_open=False)
-            except py.exceptions.PlotlyEmptyDataError:
-                _log.error("Could not plot the house trade history, "
-                           "empty trade list on file " + str(trade))
+        py.offline.plot(fig, filename=filename, auto_open=False)
