@@ -16,7 +16,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                  daily_budget=None, min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
                  max_energy_rate=ConstSettings.LOAD_MAX_ENERGY_RATE):
         BaseStrategy.__init__(self)
-        # TODO: Refactor to make these hardcoded parameters configurable
         BidUpdateFrequencyMixin.__init__(self,
                                          initial_rate=min_energy_rate,
                                          final_rate=max_energy_rate)
@@ -166,7 +165,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             self.energy_requirement_Wh -= traded_bid.offer.energy * 1000.0
             self.hrs_per_day -= self._operating_hours(traded_bid.offer.energy)
             self.remove_bid_from_pending(traded_bid.offer, market)
-            assert self.energy_requirement_Wh >= -0.000001
+            assert self.energy_requirement_Wh >= -0.0001
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):

@@ -105,7 +105,7 @@ class IAAEngine:
                                            selected_energy,
                                            seller=offer.seller,
                                            buyer=self.owner.name,
-                                           track_bid=False)
+                                           track_bid=True)
             bid_to_remove = bid
             bid_info = self.offered_bids.pop(bid_to_remove.id, None)
             if not bid_info:

@@ -160,7 +160,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         bid = market.bid(
             price,
             energy,
-            self.owner.name, self.area.name)
+            self.owner.name,
+            self.area.name)
         if market not in self._bids.keys():
             self._bids[market] = []
         self._bids[market].append(bid)

@@ -88,8 +88,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         # Check if there are cheap offers to buy
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             self.buy_energy()
-            if self.cap_price_strategy is False:
-                self.decrease_energy_price_over_ticks()
         elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
             if self.state.clamp_energy_to_buy_kWh() <= 0:
                 return
@@ -103,6 +101,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 )
 
         self.state.tick(area)  # To incorporate battery energy loss over time
+        if self.cap_price_strategy is False:
+            self.decrease_energy_price_over_ticks()
 
     def event_bid_deleted(self, *, market, bid):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:

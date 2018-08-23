@@ -5,8 +5,8 @@ from d3a.setup.strategy_tests import user_profile_load_csv, user_profile_load_di
 
 @then('the DefinedLoadStrategy follows the Load profile provided as csv')
 def check_load_profile_csv(context):
-    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    load = list(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))[0]
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    load = next(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))
     input_profile = load.strategy._readCSV(user_profile_load_csv.profile_path)
 
     desired_energy = {f'{k.hour:02}:{k.minute:02}': v
@@ -23,8 +23,8 @@ def check_load_profile_csv(context):
 
 @then('load only accepted offers lower than max_energy_rate')
 def check_traded_energy_rate(context):
-    house = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    load = list(filter(lambda x: "H1 DefinedLoad" in x.name, house.children))[0]
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    load = next(filter(lambda x: "H1 DefinedLoad" in x.name, house.children))
 
     for slot, market in house.past_markets.items():
         for trade in market.trades:
@@ -35,8 +35,8 @@ def check_traded_energy_rate(context):
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')
 def check_user_pv_dict_profile(context):
-    house = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
-    load = list(filter(lambda x: x.name == "H1 DefinedLoad", house.children))[0]
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    load = next(filter(lambda x: x.name == "H1 DefinedLoad", house.children))
     from d3a.setup.strategy_tests.user_profile_load_dict import user_profile
 
     for slot, market in house.past_markets.items():
