@@ -17,6 +17,8 @@ class MarketEvent(Enum):
     OFFER_CHANGED = 4
     OFFER_DELETED = 2
     TRADE = 3
+    BID_TRADED = 5
+    BID_DELETED = 6
 
 
 class AreaEvent(Enum):
@@ -39,7 +41,9 @@ class EventMixin:
                 MarketEvent.OFFER: self.event_offer,
                 MarketEvent.OFFER_CHANGED: self.event_offer_changed,
                 MarketEvent.OFFER_DELETED: self.event_offer_deleted,
-                MarketEvent.TRADE: self.event_trade
+                MarketEvent.TRADE: self.event_trade,
+                MarketEvent.BID_TRADED: self.event_bid_traded,
+                MarketEvent.BID_DELETED: self.event_bid_deleted
             }
             return self._event_map
 
@@ -66,6 +70,12 @@ class EventMixin:
         pass
 
     def event_trade(self, *, market, trade):
+        pass
+
+    def event_bid_traded(self, *, market, traded_bid):
+        pass
+
+    def event_bid_deleted(self, *, market, bid):
         pass
 
 

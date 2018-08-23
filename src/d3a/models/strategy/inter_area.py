@@ -1,12 +1,14 @@
 from collections import namedtuple
 from typing import Dict, Set  # noqa
 
-from d3a.exceptions import MarketException, OfferNotFoundException
+from d3a.exceptions import MarketException, OfferNotFoundException, BidNotFound
 from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
+from d3a.models.strategy.const import ConstSettings
 from d3a.util import make_iaa_name
 
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
+BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 Markets = namedtuple('Markets', ('source', 'target'))
 ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
@@ -23,9 +25,10 @@ class IAAEngine:
         self.offer_age = {}  # type: Dict[str, int]
         # Offer.id -> OfferInfo
         self.offered_offers = {}  # type: Dict[str, OfferInfo]
-        self.traded_offers = set()  # type: Set[str]
         self.trade_residual = {}  # type Dict[str, Offer]
         self.ignored_offers = set()  # type: Set[str]
+
+        self.offered_bids = {}  # type: Dict[str, BidInfo]
 
     def __repr__(self):
         return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
@@ -42,6 +45,68 @@ class IAAEngine:
         self.offered_offers[forwarded_offer.id] = offer_info
         self.offered_offers[offer_id] = offer_info
         return forwarded_offer
+
+    def _forward_bid(self, bid):
+        if bid.buyer == self.markets.target.area.name and \
+                bid.seller == self.markets.source.area.name:
+            return
+        forwarded_bid = self.markets.target.bid(bid.price, bid.energy,
+                                                self.markets.source.area.name,
+                                                self.markets.target.area.name)
+        bid_coupling = BidInfo(bid, forwarded_bid)
+        self.offered_bids[forwarded_bid.id] = bid_coupling
+        self.offered_bids[bid.id] = bid_coupling
+        return forwarded_bid
+
+    def _match_offers_bids(self):
+        # Pay as bid first
+        # There are 2 simplistic approaches to the problem
+        # 1. Match the cheapest offer with the most expensive bid. This will favor the sellers
+        # 2. Match the cheapest offer with the cheapest bid. This will favor the buyers,
+        #    since the most affordable offers will be allocated for the most aggressive buyers.
+
+        def get_list_from_offered_dict(offered, source):
+            return list(
+                map(lambda x: getattr(x, source),
+                    list(offered.values())
+                    )
+            )
+
+        # Sorted bids in descending order
+        sorted_bids = list(reversed(sorted(
+            get_list_from_offered_dict(self.offered_bids, "source_bid"),
+            key=lambda b: b.price / b.energy))
+        )
+        # Sorted offers in ascending order
+        sorted_offers = list((sorted(
+            get_list_from_offered_dict(self.offered_offers, "source_offer"),
+            key=lambda o: o.price / o.energy))
+        )
+        for offer in sorted_offers:
+            for bid in sorted_bids:
+                if bid.id in self.offered_bids and offer.id in self.offered_offers and \
+                        offer.price / offer.energy <= bid.price / bid.energy:
+                    selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+                    if self.offered_bids[bid.id].target_bid.id == bid.id:
+                        continue
+
+                    self.markets.source.accept_offer(offer,
+                                                     buyer=self.owner.name,
+                                                     energy=selected_energy)
+                    deleted_offerinfo = self.offered_offers.pop(offer.id)
+                    self.offered_offers.pop(deleted_offerinfo.target_offer.id)
+
+                    self.markets.source.accept_bid(bid, selected_energy, seller=self.owner.name)
+                    bid_to_remove = bid
+                    bid_info = self.offered_bids.pop(bid_to_remove.id, None)
+                    if not bid_info:
+                        continue
+                    if bid_info.target_bid.id in self.offered_bids:
+                        self.markets.target.delete_bid(bid_info.target_bid.id)
+                        self.offered_bids.pop(bid_info.target_bid.id, None)
+                    if bid_info.source_bid.id in self.offered_bids:
+                        self.markets.source.delete_bid(bid_info.source_bid.id)
+                        self.offered_bids.pop(bid_info.source_bid.id, None)
 
     def tick(self, *, area):
         # Store age of offer
@@ -73,6 +138,44 @@ class IAAEngine:
             forwarded_offer = self._forward_offer(offer, offer_id)
             self.owner.log.info("Offering %s", forwarded_offer)
 
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            self._match_offers_bids()
+
+            for bid_id, bid in self.markets.source.bids.items():
+                if bid_id not in self.offered_bids:
+                    self._forward_bid(bid)
+
+    def event_bid_traded(self, *, traded_bid):
+        bid_info = self.offered_bids.get(traded_bid.offer.id)
+        if not bid_info:
+            return
+
+        # Bid was traded in target market, buy in source
+        if traded_bid.offer.id == bid_info.target_bid.id:
+            self.markets.source.accept_bid(
+                bid_info.source_bid,
+                energy=traded_bid.offer.energy,
+                seller=self.owner.name
+            )
+
+            current_bid_info = self.offered_bids.pop(bid_info.source_bid.id, None)
+            if current_bid_info is not None:
+                self.offered_bids.pop(current_bid_info.target_bid.id, None)
+            self.offered_bids.pop(bid_info.target_bid.id, None)
+
+        # Bid was traded in the source market by someone else
+        elif traded_bid.offer.id == bid_info.source_bid.id:
+            # Delete target bid
+            try:
+                self.markets.target.delete_bid(bid_info.target_bid)
+            except BidNotFound:
+                pass
+            self.offered_bids.pop(bid_info.source_bid.id, None)
+            self.offered_bids.pop(bid_info.target_bid.id, None)
+        else:
+            raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
+                            f"traded bid {traded_bid} was not in offered bids tuple {bid_info}")
+
     def event_trade(self, *, trade):
         offer_info = self.offered_offers.get(trade.offer.id)
         if not offer_info:
@@ -92,12 +195,15 @@ class IAAEngine:
                     self.owner.log.error("Not forwarding residual offer for "
                                          "{} (Forwarded offer not found)".format(trade.offer))
 
-            trade_source = self.owner.accept_offer(
-                self.markets.source,
-                offer_info.source_offer,
-                energy=trade.offer.energy,
-                buyer=self.owner.name
-            )
+            try:
+                trade_source = self.owner.accept_offer(
+                    self.markets.source,
+                    offer_info.source_offer,
+                    energy=trade.offer.energy,
+                    buyer=self.owner.name
+                )
+            except OfferNotFoundException:
+                raise OfferNotFoundException()
             self.owner.log.info("Offer accepted %s", trade_source)
 
             if residual_info is not None:
@@ -120,9 +226,8 @@ class IAAEngine:
             if current_offer_info is not None:
                 self.offered_offers.pop(current_offer_info.target_offer.id, None)
             self.offered_offers.pop(offer_info.target_offer.id, None)
+            self.offered_offers.pop(trade.offer.id, None)
             self.offer_age.pop(offer_info.source_offer.id, None)
-            self.traded_offers.add(offer_info.source_offer.id)
-            self.traded_offers.add(offer_info.target_offer.id)
 
         elif trade.offer.id == offer_info.source_offer.id and trade.buyer == self.owner.name:
             # Flip side of the event from above buying action - do nothing
@@ -140,6 +245,25 @@ class IAAEngine:
             self.offer_age.pop(offer_info.source_offer.id, None)
         else:
             raise RuntimeError("Unknown state. Can't happen")
+
+    def event_bid_deleted(self, *, bid):
+        from d3a.models.market import Bid
+        bid_id = bid.id if isinstance(bid, Bid) else bid
+        bid_info = self.offered_bids.get(bid_id)
+
+        if not bid_info:
+            # Deletion doesn't concern us
+            return
+
+        self.offered_bids.pop(bid_id)
+        if bid_info.source_bid.id == bid_id:
+            # Offer in source market of an offer we're already offering in the target market
+            # was deleted - also delete in target market
+            try:
+                self.markets.target.delete_bid(bid_info.target_bid.id)
+                self.offered_bids.pop(bid_info.target_bid.id, None)
+            except MarketException:
+                self.owner.log.exception("Error deleting InterAreaAgent offer")
 
     def event_offer_deleted(self, *, offer):
         if offer.id in self.offer_age:
@@ -166,6 +290,7 @@ class IAAEngine:
             assert existing_offer.id not in self.trade_residual, \
                    "Offer should only change once before each trade."
             self.trade_residual[existing_offer.id] = new_offer
+
         elif market == self.markets.source and existing_offer.id in self.offered_offers:
             # an offer in the source market was split - delete the corresponding offer
             # in the target market and forward the new residual offer
@@ -175,6 +300,7 @@ class IAAEngine:
             self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
             offer_info = self.offered_offers[existing_offer.id]
             forwarded = self._forward_offer(new_offer, new_offer.id)
+
             self.owner.log.info("Offer %s changed to residual offer %s",
                                 offer_info.target_offer,
                                 forwarded)
@@ -231,6 +357,10 @@ class InterAreaAgent(BaseStrategy):
         """Prevent IAAEngines from trading their counterpart's offers"""
         return all(offer.id not in engine.offered_offers.keys() for engine in self.engines)
 
+    def usable_bid(self, bid):
+        """Prevent IAAEngines from trading their counterpart's bids"""
+        return all(bid.id not in engine.offered_bids.keys() for engine in self.engines)
+
     def event_tick(self, *, area):
         if area != self.owner:
             # We're connected to both areas but only want tick events from our owner
@@ -244,6 +374,14 @@ class InterAreaAgent(BaseStrategy):
     def event_trade(self, *, market, trade, offer=None):
         for engine in self.engines:
             engine.event_trade(trade=trade)
+
+    def event_bid_traded(self, *, market, traded_bid):
+        for engine in self.engines:
+            engine.event_bid_traded(traded_bid=traded_bid)
+
+    def event_bid_deleted(self, *, market, bid):
+        for engine in self.engines:
+            engine.event_bid_deleted(bid=bid)
 
     def event_offer_deleted(self, *, market, offer):
         for engine in self.engines:

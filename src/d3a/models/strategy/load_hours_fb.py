@@ -6,6 +6,7 @@ from pendulum.interval import Interval
 from d3a.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy.const import ConstSettings
 
 
 class LoadHoursStrategy(BaseStrategy):
@@ -44,6 +45,8 @@ class LoadHoursStrategy(BaseStrategy):
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
+        self._current_bid_buffer = None
+
     def event_activate(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
                                    (Interval(hours=1)/self.area.config.slot_length))
@@ -59,11 +62,7 @@ class LoadHoursStrategy(BaseStrategy):
         offers = market.most_affordable_offers
         return random.choice(offers)
 
-    def event_tick(self, *, area):
-
-        if self.energy_requirement <= 0:
-            return
-
+    def _one_sided_market_event_tick(self):
         markets = []
         for time, market in self.area.markets.items():
             if self._allowed_operating_hours(time.hour):
@@ -75,10 +74,9 @@ class LoadHoursStrategy(BaseStrategy):
                 market = list(self.area.markets.values())[0]
                 if len(market.sorted_offers) < 1:
                     return
-
                 acceptable_offer = self._find_acceptable_offer(market)
                 if acceptable_offer and \
-                        ((acceptable_offer.price/acceptable_offer.energy) <
+                        ((acceptable_offer.price / acceptable_offer.energy) <
                          self.acceptable_energy_rate.m):
                     max_energy = self.energy_requirement / 1000
                     if acceptable_offer.energy > max_energy:
@@ -91,6 +89,18 @@ class LoadHoursStrategy(BaseStrategy):
                         self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
             except MarketException:
                 self.log.exception("An Error occurred while buying an offer")
+
+    def _double_sided_market_event_tick(self):
+        pass
+
+    def event_tick(self, *, area):
+        if self.energy_requirement <= 0:
+            return
+
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            self._double_sided_market_event_tick()
+        elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            self._one_sided_market_event_tick()
 
     def _allowed_operating_hours(self, time):
         return time in self.hrs_of_day and self.hrs_per_day > 0
@@ -110,6 +120,30 @@ class LoadHoursStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._update_energy_requirement()
+
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE != 1 and \
+                self.energy_requirement > 0:
+            self._current_bid_buffer = self.area.next_market.bid(
+                self.energy_requirement * self.acceptable_energy_rate.m / 1000.0,
+                self.energy_requirement / 1000.0,
+                self.owner.name, self.area.name)
+
+    def event_bid_traded(self, *, market, traded_bid):
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            # Do not handle bid trades on double sided markets
+            return
+
+        if traded_bid.offer.buyer != self.owner.name:
+            return
+
+        assert self._current_bid_buffer is not None and \
+            "Load must have posted a bid."
+
+        if self._current_bid_buffer and \
+                traded_bid.offer.buyer == self._current_bid_buffer.buyer:
+            self.energy_requirement -= traded_bid.offer.energy * 1000.0
+            self.hrs_per_day -= self._operating_hours(traded_bid.offer.energy)
+            self._current_bid_buffer = None
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):
