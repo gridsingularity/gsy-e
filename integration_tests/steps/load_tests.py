@@ -21,7 +21,7 @@ def check_load_profile_csv(context):
             assert False
 
 
-@then('load only accepted offers lower than acceptable_energy_rate')
+@then('load only accepted offers lower than max_energy_rate')
 def check_traded_energy_rate(context):
     house = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: "H1 DefinedLoad" in x.name, house.children))[0]
@@ -30,7 +30,7 @@ def check_traded_energy_rate(context):
         for trade in market.trades:
             if trade.buyer == load.name:
                 assert (trade.offer.price / trade.offer.energy) <\
-                       load.strategy.acceptable_energy_rate.m
+                       load.strategy.max_energy_rate.m
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')

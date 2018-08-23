@@ -35,7 +35,9 @@ class BidUpdateFrequencyMixin:
             energy_Wh / 1000.0
         )
 
-    def update_on_market_cycle(self):
+    def update_on_market_cycle(self, final_rate=None):
+        if final_rate is not None:
+            self._final_rate = final_rate
         self._increase_rate_timepoint_s = 0
 
     def update_posted_bids(self, market):

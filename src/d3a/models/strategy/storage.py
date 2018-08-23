@@ -33,7 +33,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
         # TODO: Likewise to the load strategy, make the bid rates configurable
-        BidUpdateFrequencyMixin.__init__(self, initial_rate=ConstSettings.STORAGE_BREAK_EVEN_BUY-1,
+        BidUpdateFrequencyMixin.__init__(self,
+                                         initial_rate=ConstSettings.STORAGE_MIN_BUYING_RATE,
                                          final_rate=ConstSettings.STORAGE_BREAK_EVEN_BUY)
 
         self.risk = risk
@@ -87,6 +88,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         # Check if there are cheap offers to buy
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             self.buy_energy()
+            if self.cap_price_strategy is False:
+                self.decrease_energy_price_over_ticks()
         elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
             if self.state.clamp_energy_to_buy_kWh() <= 0:
                 return
@@ -100,10 +103,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 )
 
         self.state.tick(area)  # To incorporate battery energy loss over time
-        if self.cap_price_strategy is False:
-            self.decrease_energy_price_over_ticks()
 
     def event_bid_deleted(self, *, market, bid):
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            # Do not handle bid deletes on single sided markets
+            return
         if market != self.area.next_market:
             return
         if bid.buyer != self.owner.name:
@@ -156,12 +160,13 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.sell_energy()
         self.state.market_cycle(self.area)
 
-        self.update_on_market_cycle()
-        if self.state.clamp_energy_to_buy_kWh() > 0:
-            self.post_first_bid(
-                self.area.next_market,
-                self.state.clamp_energy_to_buy_kWh() * 1000.0
-            )
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            self.update_on_market_cycle(self.break_even[self.area.now.hour][1])
+            if self.state.clamp_energy_to_buy_kWh() > 0:
+                self.post_first_bid(
+                    self.area.next_market,
+                    self.state.clamp_energy_to_buy_kWh() * 1000.0
+                )
 
     def buy_energy(self):
         # Here starts the logic if energy should be bought

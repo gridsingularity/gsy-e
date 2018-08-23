@@ -24,7 +24,7 @@ def get_setup(config):
             #         #      strategy=DefinedLoadStrategy(
             #         #          path=pathlib.Path(pathlib.Path.cwd(),
             #         #                     'src/d3a/resources/LOAD_DATA_1.csv').expanduser()),
-            #         #      # acceptable_energy_rate=35),
+            #         #      # max_energy_rate=35),
             #         #      appliance=SwitchableAppliance()),
             #         # Area('H1 Storage1', strategy=StorageStrategy(battery_capacity=1.2,
             #         #                                              initial_charge=40,
@@ -40,7 +40,7 @@ def get_setup(config):
                                                                        hrs_per_day=18,
                                                                        hrs_of_day=list(
                                                                            range(5, 23))),
-                         # acceptable_energy_rate=35),
+                         # max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1,
                                                                 power_profile=1,
@@ -54,7 +54,7 @@ def get_setup(config):
             # Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
             #                                                hrs_per_day=24,
             #                                               hrs_of_day=list(range(0, 24)),
-            #                                             acceptable_energy_rate=35),
+            #                                             max_energy_rate=35),
             #  appliance=SwitchableAppliance())
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),

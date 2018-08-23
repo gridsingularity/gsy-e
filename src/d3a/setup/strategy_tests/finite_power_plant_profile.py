@@ -31,7 +31,7 @@ def get_setup(config):
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       acceptable_energy_rate=35),
+                                                                       max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
             ),
