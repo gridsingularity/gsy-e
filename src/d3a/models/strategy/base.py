@@ -147,12 +147,12 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             for t in self.trades[market]
         )
 
-    def accept_offer(self, market: Market, offer, *, buyer=None, energy=None):
+    def accept_offer(self, market: Market, offer, *, buyer=None, energy=None, from_bid=False):
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market.offers[offer]
-        trade = market.accept_offer(offer, buyer, energy=energy)
+        trade = market.accept_offer(offer, buyer, energy=energy, from_bid=from_bid)
         self.offers.bought_offer(trade.offer, market)
         return trade
 

@@ -95,7 +95,8 @@ class IAAEngine:
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
                                     buyer=self.owner.name,
-                                    energy=selected_energy)
+                                    energy=selected_energy,
+                                    from_bid=True)
             if offer.id in self.offered_offers:
                 deleted_offerinfo = self.offered_offers.pop(offer.id)
                 self.offered_offers.pop(deleted_offerinfo.target_offer.id)

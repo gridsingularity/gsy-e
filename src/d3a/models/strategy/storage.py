@@ -88,8 +88,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             self.buy_energy()
         elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            # TODO: Refactor to expose this directly via the state object.
-            if self.state.clamp_energy_to_buy(self.state.free_storage) <= 0:
+            if self.state.clamp_energy_to_buy_kWh() <= 0:
                 return
             if self.are_bids_posted(self.area.next_market):
                 self.update_posted_bids(self.area.next_market)
@@ -97,7 +96,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 # TODO: Refactor this to reuse all markets
                 self.post_first_bid(
                     self.area.next_market,
-                    self.state.clamp_energy_to_buy(self.state.free_storage) * 1000.0
+                    self.state.clamp_energy_to_buy_kWh() * 1000.0
                 )
 
         self.state.tick(area)  # To incorporate battery energy loss over time
@@ -158,10 +157,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.state.market_cycle(self.area)
 
         self.update_on_market_cycle()
-        if self.state.clamp_energy_to_buy(self.state.free_storage) > 0:
+        if self.state.clamp_energy_to_buy_kWh() > 0:
             self.post_first_bid(
                 self.area.next_market,
-                self.state.clamp_energy_to_buy(self.state.free_storage) * 1000.0
+                self.state.clamp_energy_to_buy_kWh() * 1000.0
             )
 
     def buy_energy(self):
@@ -179,7 +178,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                     # Try to buy the energy
                     try:
                         if not self.state.has_battery_reached_max_power(market.time_slot):
-                            max_energy = self.state.clamp_energy_to_buy(offer.energy)
+                            max_energy = self.state.clamp_energy_to_buy_kWh(offer.energy)
                             self.accept_offer(market, offer, energy=max_energy)
                             self.state.update_energy_per_slot(-max_energy, market.time_slot)
                             self.state.block_storage(max_energy)
@@ -236,7 +235,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.state.has_battery_reached_max_power(target_market.time_slot):
             return 0.0
 
-        energy = self.state.clamp_energy_to_sell(energy, target_market.time_slot)
+        energy = self.state.clamp_energy_to_sell_kWh(energy, target_market.time_slot)
         return energy
 
     def _calculate_selling_rate(self, market):

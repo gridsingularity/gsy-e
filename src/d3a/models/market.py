@@ -219,7 +219,7 @@ class Market:
                     self.traded_energy[bid.seller] += bid.energy
                     self.traded_energy[bid.buyer] -= bid.energy
                     self._update_min_max_avg_trade_prices(bid.price / bid.energy)
-                    # Recalculate offer min/max price since offer was removed
+
                 self._notify_listeners(MarketEvent.BID_TRADED, traded_bid=trade)
                 self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
                 return trade
@@ -227,7 +227,7 @@ class Market:
                 raise Exception("Undefined state or conditions. Should never reach this place.")
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: Pendulum = None) -> Trade:
+                     time: Pendulum = None, from_bid: bool = False) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -284,7 +284,8 @@ class Market:
                                              key=lambda o: o.price / o.energy)
                 raise
 
-            trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer, residual_offer)
+            trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer,
+                          residual_offer, from_bid)
             self.trades.append(trade)
             self._update_accumulated_trade_price_energy(trade)
             log.warning("[TRADE] %s", trade)
