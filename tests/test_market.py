@@ -197,6 +197,18 @@ def test_market_trade_bid_partial(market: Market):
     assert len(market.bids) == 0
 
 
+@pytest.mark.parametrize('market_method', ('_update_accumulated_trade_price_energy',
+                                           '_update_min_max_avg_trade_price'))
+def test_market_accept_bid_respects_track_bid_by_not_updating_trade_stats(
+        market: Market, called, market_method):
+    setattr(market, market_method, called)
+
+    bid = market.bid(20, 20, 'A', 'B')
+    trade = market.accept_bid(bid, energy=5, seller='B', track_bid=False)
+    assert trade
+    assert len(getattr(market, market_method).calls) == 0
+
+
 @pytest.mark.parametrize('energy', (0, 21))
 def test_market_trade_partial_invalid(market: Market, energy):
     offer = market.offer(20, 20, 'A')

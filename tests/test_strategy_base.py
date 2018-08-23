@@ -4,7 +4,7 @@ from datetime import datetime
 
 from d3a.exceptions import MarketException
 from d3a.models.strategy.base import BaseStrategy, Offers
-from d3a.models.market import Offer, Trade
+from d3a.models.market import Offer, Trade, Bid
 
 
 class FakeLog:
@@ -19,6 +19,12 @@ class FakeOwner:
     @property
     def name(self):
         return 'FakeOwner'
+
+
+class FakeArea:
+    @property
+    def name(self):
+        return 'FakeArea'
 
 
 class FakeStrategy:
@@ -40,12 +46,15 @@ class FakeMarket:
     def __init__(self, *, raises):
         self.raises = raises
 
-    def accept_offer(self, offer, id, *, energy=None, time=None):
+    def accept_offer(self, offer, id, *, energy=None, time=None, from_bid=False):
         if self.raises:
             raise MarketException
         else:
             offer.energy = energy
             return Trade('trade', 0, offer, offer.seller, 'FakeOwner')
+
+    def bid(self, price, energy, buyer, seller):
+        return Bid(123, price, energy, buyer, seller, self)
 
 
 @pytest.fixture
@@ -128,7 +137,7 @@ def offer_to_accept():
 def base():
     base = BaseStrategy()
     base.owner = FakeOwner()
-    base.area = 'area'
+    base.area = FakeArea()
     return base
 
 
@@ -151,3 +160,38 @@ def test_accept_offer_handles_market_exception(base, offer_to_accept):
     except MarketException:
         pass
     assert len(base.offers.bought_in_market(market)) == 0
+
+
+def test_accept_post_bid(base):
+    market = FakeMarket(raises=True)
+
+    bid = base.post_bid(market, 10, 5)
+    assert base.are_bids_posted(market)
+    assert len(base.get_posted_bids(market)) == 1
+    assert base.get_posted_bids(market)[0] == bid
+    assert bid.energy == 5
+    assert bid.price == 10
+    assert bid.seller == 'FakeArea'
+    assert bid.buyer == 'FakeOwner'
+
+
+def test_remove_bid_from_pending(base):
+    market = FakeMarket(raises=True)
+
+    bid = base.post_bid(market, 10, 5)
+    assert base.are_bids_posted(market)
+
+    base.remove_bid_from_pending(bid.id, market)
+    assert not base.are_bids_posted(market)
+
+
+def test_add_bid_to_bought(base):
+    market = FakeMarket(raises=True)
+
+    bid = base.post_bid(market, 10, 5)
+    assert base.are_bids_posted(market)
+
+    base.add_bid_to_bought(bid, market)
+    assert not base.are_bids_posted(market)
+    assert len(base.get_traded_bids_from_market(market)) == 1
+    assert base.get_traded_bids_from_market(market) == [bid]

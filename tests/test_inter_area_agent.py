@@ -22,6 +22,8 @@ class FakeMarket:
         self.forwarded_bid_id = 'fwd_bid_id'
         self.calls_energy = []
         self.calls_energy_bids = []
+        self.calls_offers = []
+        self.calls_bids = []
         self.area = FakeArea("fake_area")
 
     @property
@@ -36,8 +38,9 @@ class FakeMarket:
     def time_slot(self):
         return datetime.now()
 
-    def accept_offer(self, offer, buyer, *, energy=None, time=None):
+    def accept_offer(self, offer, buyer, *, energy=None, time=None, from_bid=False):
         self.calls_energy.append(energy)
+        self.calls_offers.append(offer)
         if energy < offer.energy:
             residual_energy = offer.energy - energy
             residual = Offer('res', offer.price, residual_energy, offer.seller, offer.market)
@@ -48,6 +51,7 @@ class FakeMarket:
 
     def accept_bid(self, bid, energy, seller, buyer=None, track_bid=True, *, time=None):
         self.calls_energy_bids.append(energy)
+        self.calls_bids.append(bid)
         if energy < bid.energy:
             residual_energy = bid.energy - energy
             residual = Bid('res', bid.price, residual_energy, bid.buyer, seller, bid.market)
@@ -236,6 +240,68 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
                              existing_offer=full_offer,
                              new_offer=residual_offer)
     assert iaa2.higher_market.forwarded_offer.energy == 1.4
+
+
+@pytest.fixture
+def iaa_double_sided_2():
+    from d3a.models.strategy.const import ConstSettings
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
+                              bids=[Bid('bid_id', 10, 10, 'B', 'S')])
+    higher_market = FakeMarket([], [])
+    owner = FakeArea('owner')
+    iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    iaa.event_tick(area=iaa.owner)
+    yield iaa
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+
+
+def test_iaa_double_sided_performs_pay_as_bid_matching(iaa_double_sided_2):
+    low_high_engine = next(filter(lambda e: e.name == "Low -> High", iaa_double_sided_2.engines))
+
+    iaa_double_sided_2.lower_market._bids = [Bid('bid_id', 9, 10, 'B', 'S')]
+    matched = list(low_high_engine._perform_pay_as_bid_matching())
+    assert len(matched) == 0
+
+    iaa_double_sided_2.lower_market._bids = [Bid('bid_id', 10, 10, 'B', 'S')]
+    matched = list(low_high_engine._perform_pay_as_bid_matching())
+    assert len(matched) == 1
+    bid, offer = matched[0]
+    assert bid == list(iaa_double_sided_2.lower_market.bids.values())[0]
+    assert offer == list(iaa_double_sided_2.lower_market.offers.values())[0]
+
+    iaa_double_sided_2.lower_market._bids = [Bid('bid_id1', 11, 10, 'B', 'S'),
+                                             Bid('bid_id2', 9, 10, 'B', 'S'),
+                                             Bid('bid_id3', 12, 10, 'B', 'S')]
+    matched = list(low_high_engine._perform_pay_as_bid_matching())
+    assert len(matched) == 1
+    bid, offer = matched[0]
+    assert bid.id == 'bid_id3'
+    assert bid.price == 12
+    assert bid.energy == 10
+    assert offer == list(iaa_double_sided_2.lower_market.offers.values())[0]
+
+
+def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
+    iaa_double_sided_2.lower_market.calls_offers = []
+    iaa_double_sided_2.lower_market.calls_bids = []
+    low_high_engine = next(filter(lambda e: e.name == "Low -> High",
+                                  iaa_double_sided_2.engines))
+    iaa_double_sided_2.lower_market._bids = [Bid('bid_id1', 11, 10, 'B', 'S'),
+                                             Bid('bid_id2', 9, 10, 'B', 'S'),
+                                             Bid('bid_id3', 12, 10, 'B', 'S')]
+    low_high_engine._match_offers_bids()
+    assert len(iaa_double_sided_2.lower_market.calls_offers) == 1
+    offer = iaa_double_sided_2.lower_market.calls_offers[0]
+    assert offer.id == 'id'
+    assert offer.energy == 2
+    assert offer.price == 2.4
+
+    assert len(iaa_double_sided_2.lower_market.calls_bids) == 1
+    bid = iaa_double_sided_2.lower_market.calls_bids[0]
+    assert bid.id == 'bid_id3'
+    assert bid.energy == 10
+    assert bid.price == 12
 
 
 @pytest.fixture
