@@ -105,6 +105,9 @@ class FakeMarket:
         self.created_offers.append(offer)
         return offer
 
+    def bid(self, price, energy, buyer, seller):
+        pass
+
 
 """TEST1"""
 

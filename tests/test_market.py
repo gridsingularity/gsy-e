@@ -194,13 +194,7 @@ def test_market_trade_bid_partial(market: Market):
     assert trade.offer.seller == 'B'
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
-    assert len(market.bids) == 1
-    new_bid = list(market.bids.values())[0]
-    assert new_bid is not bid
-    assert new_bid.energy == 15
-    assert new_bid.price == 15
-    assert new_bid.seller == 'B'
-    assert new_bid.id != bid.id
+    assert len(market.bids) == 0
 
 
 @pytest.mark.parametrize('energy', (0, 21))

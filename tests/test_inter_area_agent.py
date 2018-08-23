@@ -46,7 +46,7 @@ class FakeMarket:
         else:
             return Trade('trade_id', time, offer, offer.seller, buyer)
 
-    def accept_bid(self, bid, energy, seller, *, time=None):
+    def accept_bid(self, bid, energy, seller, buyer=None, track_bid=True, *, time=None):
         self.calls_energy_bids.append(energy)
         if energy < bid.energy:
             residual_energy = bid.energy - energy
@@ -174,6 +174,8 @@ def iaa_double_sided():
     higher_market = FakeMarket([], [])
     owner = FakeArea('owner')
     iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    iaa.engines[0]._match_offers_bids = lambda: None
+    iaa.engines[1]._match_offers_bids = lambda: None
     iaa.event_tick(area=iaa.owner)
     yield iaa
     ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1

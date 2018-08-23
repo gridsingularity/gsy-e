@@ -52,6 +52,9 @@ class FakeMarket:
         self.count = count
         self.most_affordable_energy = 0.1551
 
+    def bid(self, price: float, energy: float, buyer: str, seller: str):
+        pass
+
     @property
     def sorted_offers(self):
         offers = [
@@ -194,18 +197,18 @@ def test_calculate_daily_energy_req(load_hours_strategy_test1):
 # Test if daily energy requirement is calculated correctly for the device
 def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
-    assert load_hours_strategy_test1.energy_requirement == \
+    assert load_hours_strategy_test1.energy_requirement_Wh == \
         load_hours_strategy_test1.energy_per_slot_Wh.m
     ts = load_hours_strategy_test1.area.next_market.time_slot
     assert load_hours_strategy_test1.state.desired_energy[ts] == \
-        load_hours_strategy_test1.energy_requirement
+        load_hours_strategy_test1.energy_requirement_Wh
 
 
 # Test if device accepts the most affordable offer
 def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
     cheapest_offer = market_test1.most_affordable_offers[0]
-    load_hours_strategy_test1.energy_requirement = cheapest_offer.energy * 1000 + 1
+    load_hours_strategy_test1.energy_requirement_Wh = cheapest_offer.energy * 1000 + 1
     load_hours_strategy_test1.event_tick(area=area_test1)
     assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == repr(cheapest_offer)
 
@@ -214,20 +217,20 @@ def test_event_market_cycle(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
-    assert load_hours_strategy_test1.energy_requirement == \
+    assert load_hours_strategy_test1.energy_requirement_Wh == \
         load_hours_strategy_test1.energy_per_slot_Wh.m
 
 
 def test_event_market_cycle_resets_energy_requirement(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
-    load_hours_strategy_test1.energy_requirement = 150.0
+    load_hours_strategy_test1.energy_requirement_Wh = 150.0
     load_hours_strategy_test1.event_market_cycle()
-    assert load_hours_strategy_test1.energy_requirement == \
+    assert load_hours_strategy_test1.energy_requirement_Wh == \
         load_hours_strategy_test1.energy_per_slot_Wh.m
-    load_hours_strategy_test1.energy_requirement += 1000000.0
+    load_hours_strategy_test1.energy_requirement_Wh += 1000000.0
     load_hours_strategy_test1.event_market_cycle()
-    assert load_hours_strategy_test1.energy_requirement == \
+    assert load_hours_strategy_test1.energy_requirement_Wh == \
         load_hours_strategy_test1.energy_per_slot_Wh.m
 
 
@@ -237,13 +240,13 @@ def test_event_tick(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
     load_hours_strategy_test1.event_tick(area=area_test1)
-    assert load_hours_strategy_test1.energy_requirement == 0
+    assert load_hours_strategy_test1.energy_requirement_Wh == 0
     market_test1.most_affordable_energy = 0.154
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
     load_hours_strategy_test1.event_tick(area=area_test1)
-    assert load_hours_strategy_test1.energy_requirement == 0.001 * 1000.0
+    assert load_hours_strategy_test1.energy_requirement_Wh == 0.001 * 1000.0
 
 
 def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
@@ -251,9 +254,9 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
     load_hours_strategy_test2.event_activate()
     load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test2.event_market_cycle()
-    requirement = load_hours_strategy_test2.energy_requirement / 1000
+    requirement = load_hours_strategy_test2.energy_requirement_Wh / 1000
     load_hours_strategy_test2.event_tick(area=area_test2)
-    assert load_hours_strategy_test2.energy_requirement == 0
+    assert load_hours_strategy_test2.energy_requirement_Wh == 0
     assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
 
 
