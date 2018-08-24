@@ -126,7 +126,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                     # Try to buy the energy
                     try:
                         if not self.state.has_battery_reached_max_power(market.time_slot):
-                            max_energy = self.state.clamp_energy_to_buy(offer.energy)
+                            max_energy = self.calculate_energy_to_buy(offer.energy)
                             self.accept_offer(market, offer, energy=max_energy)
                             self.state.update_energy_per_slot(-max_energy, market.time_slot)
                             self.state.block_storage(max_energy)
@@ -139,9 +139,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                     return False
 
     def sell_energy(self, energy=None, open_offer=False):
-        target_market = self._select_market_to_sell()
-        selling_rate = self._calculate_selling_rate(target_market)
-        energy = self._calculate_energy_to_sell(energy, target_market)
+        target_market = self.select_market_to_sell()
+        selling_rate = self.calculate_selling_rate(target_market)
+        # If there is not enough available energy for this timeslot, then return 0 energy
+        if self.state.has_battery_reached_max_power(target_market.time_slot):
+            energy = 0.0
+        energy = self.calculate_energy_to_sell(energy, target_market)
 
         if energy > 0.0:
             offer = target_market.offer(
@@ -157,7 +160,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                 self.state.offer_storage(energy)
             self.offers.post(offer, target_market)
 
-    def _select_market_to_sell(self):
+    def select_market_to_sell(self):
         if ConstSettings.STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:
             # Sell on the most expensive market
             try:
@@ -176,17 +179,16 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             return most_expensive_market
         else:
             # Sell on the most recent future market
-            return list(self.area.markets.values())[0]
+            return self.area.next_market
 
-    def _calculate_energy_to_sell(self, energy, target_market):
-        # If there is not enough available energy for this timeslot, then return 0 energy
-        if self.state.has_battery_reached_max_power(target_market.time_slot):
-            return 0.0
+    def calculate_energy_to_buy(self, energy):
+        return self.state.clamp_energy_to_buy(energy)
 
+    def calculate_energy_to_sell(self, energy, target_market):
         energy = self.state.clamp_energy_to_sell(energy, target_market.time_slot)
         return energy
 
-    def _calculate_selling_rate(self, market):
+    def calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
         else:

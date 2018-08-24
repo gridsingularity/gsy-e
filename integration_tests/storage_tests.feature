@@ -23,3 +23,10 @@ Feature: Storage tests
    And d3a is installed
    When we run the d3a simulation with strategy_tests.ess_capacity_based_sell_offer [24, 15, 15]
    Then the storage devices sell offer rate is based on it SOC
+
+  Scenario: Custom storage works as expected
+   Given we have a scenario named jira/d3asim_639_custom_storage
+   And d3a is installed
+   When we run the d3a simulation with jira.d3asim_639_custom_storage [24, 15, 30]
+   Then the storage offers and buys energy as expected at expected prices
+
