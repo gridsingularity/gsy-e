@@ -141,6 +141,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def sell_energy(self, energy=None, open_offer=False):
         target_market = self.select_market_to_sell()
         selling_rate = self.calculate_selling_rate(target_market)
+        # If there is not enough available energy for this timeslot, then return 0 energy
+        if self.state.has_battery_reached_max_power(target_market.time_slot):
+            energy = 0.0
         energy = self.calculate_energy_to_sell(energy, target_market)
 
         if energy > 0.0:
@@ -182,10 +185,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         return self.state.clamp_energy_to_buy(energy)
 
     def calculate_energy_to_sell(self, energy, target_market):
-        # If there is not enough available energy for this timeslot, then return 0 energy
-        if self.state.has_battery_reached_max_power(target_market.time_slot):
-            return 0.0
-
         energy = self.state.clamp_energy_to_sell(energy, target_market.time_slot)
         return energy
 
