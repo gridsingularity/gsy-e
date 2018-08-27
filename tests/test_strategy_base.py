@@ -46,7 +46,7 @@ class FakeMarket:
     def __init__(self, *, raises):
         self.raises = raises
 
-    def accept_offer(self, offer, id, *, energy=None, time=None, from_bid=False):
+    def accept_offer(self, offer, id, *, energy=None, time=None, price_drop=False):
         if self.raises:
             raise MarketException
         else:

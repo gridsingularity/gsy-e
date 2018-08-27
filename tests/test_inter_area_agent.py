@@ -38,7 +38,7 @@ class FakeMarket:
     def time_slot(self):
         return datetime.now()
 
-    def accept_offer(self, offer, buyer, *, energy=None, time=None, from_bid=False):
+    def accept_offer(self, offer, buyer, *, energy=None, time=None, price_drop=False):
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
         if energy < offer.energy:
@@ -322,8 +322,8 @@ def iaa3(iaa2):
 
 
 def test_iaa_event_trade_forwards_residual_offer(iaa3):
-    engine = next((e for e in iaa3.engines if 'res_fwd' in e.offered_offers), None)
-    assert engine is not None, "Residual of forwarded offers not found in offered_offers"
+    engine = next((e for e in iaa3.engines if 'res_fwd' in e.forwarded_offers), None)
+    assert engine is not None, "Residual of forwarded offers not found in forwarded_offers"
     assert engine.offer_age['res'] == 10
-    offer_info = engine.offered_offers['res_fwd']
+    offer_info = engine.forwarded_offers['res_fwd']
     assert offer_info.source_offer.id == 'res'

@@ -80,10 +80,10 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
-                                 'buyer', 'residual', 'from_bid'))):
-    def __new__(cls, id, time, offer, seller, buyer, residual=None, from_bid=False):
+                                 'buyer', 'residual', 'price_drop'))):
+    def __new__(cls, id, time, offer, seller, buyer, residual=None, price_drop=False):
         # overridden to give the residual field a default value
-        return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual, from_bid)
+        return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual, price_drop)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
@@ -210,7 +210,7 @@ class Market:
                               buyer, seller, self)
 
                 trade = Trade(str(uuid.uuid4()), self._now,
-                              bid, seller, buyer, None)
+                              bid, seller, buyer, None, price_drop=False)
 
                 if track_bid:
                     self.trades.append(trade)
@@ -227,7 +227,7 @@ class Market:
                 raise Exception("Undefined state or conditions. Should never reach this place.")
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: Pendulum = None, from_bid: bool = False) -> Trade:
+                     time: Pendulum = None, price_drop: bool = False) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -285,7 +285,7 @@ class Market:
                 raise
 
             trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer,
-                          residual_offer, from_bid)
+                          residual_offer, price_drop)
             self.trades.append(trade)
             self._update_accumulated_trade_price_energy(trade)
             log.warning("[TRADE] %s", trade)
