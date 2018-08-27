@@ -88,6 +88,20 @@ class IAAEngine:
                     yield bid, offer
                     break
 
+    def _delete_forwarded_bid_entries(self, bid):
+        bid_info = self.forwarded_bids.pop(bid.id, None)
+        if not bid_info:
+            return
+        self.forwarded_bids.pop(bid_info.target_bid.id, None)
+        self.forwarded_bids.pop(bid_info.source_bid.id, None)
+
+    def _delete_forwarded_offer_entries(self, offer):
+        offer_info = self.forwarded_offers.pop(offer.id, None)
+        if not offer_info:
+            return
+        self.forwarded_offers.pop(offer_info.target_offer.id, None)
+        self.forwarded_offers.pop(offer_info.source_offer.id, None)
+
     def _match_offers_bids(self):
         for bid, offer in self._perform_pay_as_bid_matching():
             selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
@@ -97,23 +111,14 @@ class IAAEngine:
                                     buyer=self.owner.name,
                                     energy=selected_energy,
                                     price_drop=True)
-            if offer.id in self.forwarded_offers:
-                deleted_offerinfo = self.forwarded_offers.pop(offer.id)
-                self.forwarded_offers.pop(deleted_offerinfo.target_offer.id)
+            self._delete_forwarded_offer_entries(offer)
 
             self.markets.source.accept_bid(bid,
                                            selected_energy,
                                            seller=offer.seller,
                                            buyer=self.owner.name,
                                            track_bid=True)
-            bid_to_remove = bid
-            bid_info = self.forwarded_bids.pop(bid_to_remove.id, None)
-            if not bid_info:
-                continue
-            if bid_info.target_bid.id in self.forwarded_bids:
-                self.forwarded_bids.pop(bid_info.target_bid.id, None)
-            if bid_info.source_bid.id in self.forwarded_bids:
-                self.forwarded_bids.pop(bid_info.source_bid.id, None)
+            self._delete_forwarded_bid_entries(bid)
 
     def tick(self, *, area):
         # Store age of offer
@@ -166,9 +171,7 @@ class IAAEngine:
                 energy=traded_bid.offer.energy,
                 seller=self.owner.name
             )
-
-            self.forwarded_bids.pop(bid_info.source_bid.id, None)
-            self.forwarded_bids.pop(bid_info.target_bid.id, None)
+            self._delete_forwarded_bid_entries(bid_info.target_bid)
 
         # Bid was traded in the source market by someone else
         elif traded_bid.offer.id == bid_info.source_bid.id:
@@ -177,8 +180,7 @@ class IAAEngine:
                 self.markets.target.delete_bid(bid_info.target_bid)
             except BidNotFound:
                 pass
-            self.forwarded_bids.pop(bid_info.source_bid.id, None)
-            self.forwarded_bids.pop(bid_info.target_bid.id, None)
+            self._delete_forwarded_bid_entries(bid_info.source_bid)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
                             f"traded bid {traded_bid} was not in offered bids tuple {bid_info}")
@@ -235,8 +237,7 @@ class IAAEngine:
                     )
                     self.markets.target.delete_offer(residual_info.forwarded)
 
-            self.forwarded_offers.pop(offer_info.source_offer.id, None)
-            self.forwarded_offers.pop(offer_info.target_offer.id, None)
+            self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
 
         elif trade.offer.id == offer_info.source_offer.id and trade.buyer == self.owner.name:
@@ -250,8 +251,8 @@ class IAAEngine:
                 pass
             except MarketException as ex:
                 self.owner.log.error("Error deleting InterAreaAgent offer: {}".format(ex))
-            self.forwarded_offers.pop(offer_info.source_offer.id, None)
-            self.forwarded_offers.pop(offer_info.target_offer.id, None)
+
+            self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
         else:
             raise RuntimeError("Unknown state. Can't happen")
@@ -265,15 +266,15 @@ class IAAEngine:
             # Deletion doesn't concern us
             return
 
-        self.forwarded_bids.pop(bid_id)
         if bid_info.source_bid.id == bid_id:
             # Bid in source market of an bid we're already offering in the target market
             # was deleted - also delete in target market
             try:
                 self.markets.target.delete_bid(bid_info.target_bid.id)
-                self.forwarded_bids.pop(bid_info.target_bid.id, None)
+                self._delete_forwarded_bid_entries(bid_info.target_bid)
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
+        self._delete_forwarded_bid_entries(bid_info.source_bid)
 
     def event_offer_deleted(self, *, offer):
         if offer.id in self.offer_age:
@@ -290,8 +291,7 @@ class IAAEngine:
             # was deleted - also delete in target market
             try:
                 self.markets.target.delete_offer(offer_info.target_offer)
-                self.forwarded_offers.pop(offer_info.source_offer.id, None)
-                self.forwarded_offers.pop(offer_info.target_offer.id, None)
+                self._delete_forwarded_offer_entries(offer_info.source_offer)
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
         # TODO: Should potentially handle the flip side, by not deleting the source market offer
@@ -320,8 +320,7 @@ class IAAEngine:
                                 forwarded)
             # Do not delete the offered offer entries for the case of residual offers
             if existing_offer.seller != new_offer.seller:
-                del self.forwarded_offers[offer_info.target_offer.id]
-                del self.forwarded_offers[offer_info.source_offer.id]
+                self._delete_forwarded_offer_entries(offer_info.source_offer)
 
 
 class InterAreaAgent(BaseStrategy):
