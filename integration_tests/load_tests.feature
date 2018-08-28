@@ -5,7 +5,7 @@ Feature: Load Tests
     And d3a is installed
     When we run the d3a simulation with strategy_tests.user_profile_load_dict [24, 15, 15]
     Then the DefinedLoadStrategy follows the Load profile provided as dict
-    And load only accepted offers lower than acceptable_energy_rate
+    And load only accepted offers lower than max_energy_rate
 
   Scenario: Predefined load follows the string profile provided by the user
      Given a load profile string as input to predefined load
@@ -18,4 +18,4 @@ Feature: Load Tests
     And d3a is installed
     When we run the d3a simulation with strategy_tests.user_profile_load_csv [24, 15, 15]
     Then the DefinedLoadStrategy follows the Load profile provided as csv
-    And load only accepted offers lower than acceptable_energy_rate
+    And load only accepted offers lower than max_energy_rate

@@ -19,7 +19,7 @@ def get_setup(config):
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
-                                                                       acceptable_energy_rate=35),
+                                                                       max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
                          appliance=SwitchableAppliance()),
@@ -34,7 +34,7 @@ def get_setup(config):
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
-                                                                       acceptable_energy_rate=35),
+                                                                       max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVStrategy(3, 80),
                          appliance=PVAppliance()),
@@ -44,7 +44,7 @@ def get_setup(config):
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
-                                                                   acceptable_energy_rate=35),
+                                                                   max_energy_rate=35),
                  appliance=SwitchableAppliance())
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),

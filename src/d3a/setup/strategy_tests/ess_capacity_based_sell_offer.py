@@ -23,7 +23,7 @@ def get_setup(config):
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       acceptable_energy_rate=35),
+                                                                       max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=5,
                                                                  battery_capacity=5,

@@ -9,13 +9,13 @@ class CustomStorageStrategy(StorageStrategy):
         Greedy storage, as it buys maximal available and needed energy
         :return:
         """
-        return self.state.clamp_energy_to_buy(energy)
+        return self.state.clamp_energy_to_buy_kWh(energy)
 
     def calculate_energy_to_sell(self, energy, target_market):
         """
         Copy of original code
         """
-        energy = self.state.clamp_energy_to_sell(energy, target_market.time_slot)
+        energy = self.state.clamp_energy_to_sell_kWh(energy, target_market.time_slot)
         return energy
 
     def calculate_selling_rate(self, market):

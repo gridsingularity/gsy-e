@@ -3,6 +3,7 @@ import logging
 from pendulum.interval import Interval
 from pendulum import Pendulum
 from logging import getLogger
+from math import isclose
 
 # from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.strategy import ureg, Q_
@@ -104,6 +105,9 @@ class FakeMarket:
         offer = Offer('id', price, energy, seller, market)
         self.created_offers.append(offer)
         return offer
+
+    def bid(self, price, energy, buyer, seller):
+        pass
 
 
 """TEST1"""
@@ -438,6 +442,17 @@ def test_calculate_energy_amount_to_sell_respects_min_allowed_soc(storage_strate
         storage_strategy_test7_3.state.offered_storage -\
         storage_strategy_test7_3.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
     assert energy == target_energy
+
+
+def test_clamp_energy_to_buy(storage_strategy_test7_3):
+    storage_strategy_test7_3.event_activate()
+    storage_strategy_test7_3.state._battery_energy_per_slot = 0.5
+    assert storage_strategy_test7_3.state.clamp_energy_to_buy_kWh() == 0.5
+
+    # Reduce used storage below battery_energy_per_slot
+    storage_strategy_test7_3.state._used_storage = 4.6
+    assert isclose(storage_strategy_test7_3.state.free_storage, 0.41)
+    assert isclose(storage_strategy_test7_3.state.clamp_energy_to_buy_kWh(), 0.41)
 
 
 """TEST8"""

@@ -118,6 +118,7 @@ class SimulationEndpointBuffer:
 
     @staticmethod
     def _get_child_traded_energy(market, child):
+        # TODO: Try to reuse traded_energy for endpoints that use this information
         return market.traded_energy.get(
             child.name,
             market.traded_energy.get(make_iaa_name(child), '-')
