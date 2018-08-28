@@ -6,6 +6,7 @@ from pendulum.interval import Interval
 from d3a.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy.const import ConstSettings
 
 
 class LoadHoursStrategy(BaseStrategy):
@@ -110,6 +111,40 @@ class LoadHoursStrategy(BaseStrategy):
 
     def event_market_cycle(self):
         self._update_energy_requirement()
+        self.update_on_market_cycle()
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            if self.energy_requirement_Wh > 0:
+                self.post_first_bid(
+                    self.area.next_market,
+                    self.energy_requirement_Wh)
+
+    def event_bid_deleted(self, *, market, bid):
+        if market != self.area.next_market:
+            return
+        if bid.buyer != self.owner.name:
+            return
+        self.remove_bid_from_pending(bid.id, self.area.next_market)
+
+    def event_bid_traded(self, *, market, traded_bid):
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            # Do not handle bid trades on single sided markets
+            assert False and "Invalid state, cannot receive a bid if single sided market" \
+                             " is globally configured."
+
+        if traded_bid.offer.buyer != self.owner.name:
+            return
+
+        buffered_bid = next(filter(
+            lambda b: b.id == traded_bid.offer.id,
+            self.get_posted_bids(market)
+        ))
+
+        if traded_bid.offer.buyer == buffered_bid.buyer:
+            # Update energy requirement and clean up the pending bid buffer
+            self.energy_requirement_Wh -= traded_bid.offer.energy * 1000.0
+            self.hrs_per_day -= self._operating_hours(traded_bid.offer.energy)
+            self.remove_bid_from_pending(traded_bid.offer, market)
+            assert self.energy_requirement_Wh >= -0.0001
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):

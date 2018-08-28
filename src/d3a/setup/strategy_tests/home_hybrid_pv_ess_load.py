@@ -26,7 +26,7 @@ def get_setup(config):
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       acceptable_energy_rate=25),
+                                                                       max_energy_rate=14),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(risk=10,
                                                                  initial_capacity=0.6,
@@ -38,7 +38,6 @@ def get_setup(config):
                                                                  break_even=(12, 17.01)),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
-                                                      risk=10,
                                                       min_selling_rate=5,
                                                       initial_rate_option=2,
                                                       energy_rate_decrease_option=2,
