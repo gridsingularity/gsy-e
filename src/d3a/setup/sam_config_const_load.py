@@ -27,7 +27,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', config_file),
-                             acceptable_energy_rate=35),
+                             max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -44,7 +44,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', config_file),
-                             acceptable_energy_rate=35),
+                             max_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
@@ -58,7 +58,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', config_file),
-                             acceptable_energy_rate=35),
+                             max_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
@@ -72,7 +72,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', config_file),
-                             acceptable_energy_rate=35),
+                             max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -87,7 +87,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', config_file),
-                             acceptable_energy_rate=35),
+                             max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -102,7 +102,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', config_file),
-                             acceptable_energy_rate=35),
+                             max_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
@@ -114,7 +114,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', config_file),
-                             acceptable_energy_rate=35),
+                             max_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
@@ -126,7 +126,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', config_file),
-                             acceptable_energy_rate=35),
+                             max_energy_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]

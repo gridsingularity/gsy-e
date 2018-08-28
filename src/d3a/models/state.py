@@ -117,11 +117,13 @@ class StorageState:
         return abs(self.traded_energy_per_slot(time_slot)) >= \
                self._battery_energy_per_slot
 
-    def clamp_energy_to_buy(self, energy):
+    def clamp_energy_to_buy_kWh(self, energy=None):
+        # If no energy is passed, try to buy energy to fill up the battery
+        if energy is None:
+            energy = self.free_storage
         return min(self._battery_energy_per_slot, self.free_storage, energy)
 
-    def clamp_energy_to_sell(self, energy, time_slot):
-
+    def clamp_energy_to_sell_kWh(self, energy, time_slot):
         # If no energy is passed, try to sell all the Energy left in the storage
         if energy is None:
             energy = self.used_storage

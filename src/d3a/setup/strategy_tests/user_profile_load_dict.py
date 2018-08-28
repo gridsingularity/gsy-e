@@ -10,7 +10,7 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 
 """
 DefinedLoadStrategy Strategy requires daily_load_profile and
-acceptable_energy_rate is optional.
+max_energy_rate is optional.
 """
 
 user_profile = {
@@ -36,7 +36,7 @@ def get_setup(config):
                 [
                     Area('H1 DefinedLoad',
                          strategy=DefinedLoadStrategy(daily_load_profile=user_profile,
-                                                      acceptable_energy_rate=35),
+                                                      max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
             ),

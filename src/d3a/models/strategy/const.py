@@ -36,11 +36,16 @@ class ConstSettings:
     # Energy Sell/Buy Break-even
     STORAGE_BREAK_EVEN_SELL = 25
     STORAGE_BREAK_EVEN_BUY = 24.9
+    STORAGE_MIN_BUYING_RATE = 24.9
     STORAGE_MIN_ALLOWED_SOC = 0.1
     STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
     # PV SETTINGS
     # This price should be just above the marginal costs for a PV system - unit is cent
     MIN_PV_SELLING_RATE = 0
+
+    # LOAD SETTINGS
+    LOAD_MIN_ENERGY_RATE = 0
+    LOAD_MAX_ENERGY_RATE = 35
 
     # Option 1, use the historical market average
     # Default value 2 stands for market maker rate
@@ -86,3 +91,8 @@ class ConstSettings:
     MAX_OFFER_TRAVERSAL_LENGTH = 10
 
     INTER_AREA_AGENT_FEE_PERCENTAGE = 1
+
+    # Market type option
+    # Default value 1 stands for single sided market
+    # Option 2 stands for double sided pay as bid market
+    INTER_AREA_AGENT_MARKET_TYPE = 1
