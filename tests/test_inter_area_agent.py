@@ -131,7 +131,7 @@ def iaa_bid():
     iaa.owner.current_tick = 14
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
 
 
 def test_iaa_forwards_bids(iaa_bid):

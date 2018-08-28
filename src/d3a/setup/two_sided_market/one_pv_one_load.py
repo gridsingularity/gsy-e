@@ -10,6 +10,7 @@ def get_setup(config):
     # Two sided market
     ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
     ConstSettings.MIN_PV_SELLING_RATE = 0
+    ConstSettings.DEFAULT_MARKET_MAKER_RATE = 30
     ConstSettings.LOAD_MIN_ENERGY_RATE = 0
     ConstSettings.LOAD_MAX_ENERGY_RATE = 30
 

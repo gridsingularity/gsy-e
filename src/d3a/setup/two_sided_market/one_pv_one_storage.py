@@ -12,7 +12,7 @@ def get_setup(config):
     ConstSettings.MIN_PV_SELLING_RATE = 0
     ConstSettings.DEFAULT_MARKET_MAKER_RATE = 30
     ConstSettings.STORAGE_MIN_BUYING_RATE = 0
-    ConstSettings.STORAGE_BREAK_EVEN_BUY = 29
+    ConstSettings.STORAGE_BREAK_EVEN_BUY = 29.9
     ConstSettings.STORAGE_BREAK_EVEN_SELL = 30
 
     area = Area(
@@ -22,7 +22,11 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage',
-                         strategy=StorageStrategy(initial_capacity=0.6),
+                         strategy=StorageStrategy(initial_capacity=0.6,
+                                                  break_even=(
+                                                      ConstSettings.STORAGE_BREAK_EVEN_BUY,
+                                                      ConstSettings.STORAGE_BREAK_EVEN_SELL)
+                                                  ),
                          appliance=SwitchableAppliance()),
                 ]
             ),

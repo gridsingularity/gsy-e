@@ -22,4 +22,4 @@ Feature: Two sided market tests
      When we run the d3a simulation with two_sided_market.one_pv_one_storage [24, 15, 15]
      Then the storage is never selling energy
      And the storage final SOC is 100%
-     And all the trade rates are less than 20 ct/kWh
+     And the energy rate for all the trades is the mean of max and min pv/storage rate

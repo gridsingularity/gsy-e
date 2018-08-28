@@ -161,7 +161,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.state.market_cycle(self.area)
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            self.update_on_market_cycle(self.break_even[self.area.now.hour][1])
+            self.update_on_market_cycle(self.break_even[self.area.now.hour][0])
             if self.state.clamp_energy_to_buy_kWh() > 0:
                 self.post_first_bid(
                     self.area.next_market,

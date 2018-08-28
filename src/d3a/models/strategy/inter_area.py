@@ -240,7 +240,9 @@ class IAAEngine:
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
 
-        elif trade.offer.id == offer_info.source_offer.id and trade.buyer == self.owner.name:
+        elif trade.offer.id == offer_info.source_offer.id and \
+            trade.buyer == self.owner.name and \
+                ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             # Flip side of the event from above buying action - do nothing
             pass
         elif trade.offer.id == offer_info.source_offer.id:
