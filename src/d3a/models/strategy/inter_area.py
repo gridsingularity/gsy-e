@@ -5,7 +5,7 @@ from d3a.exceptions import MarketException, OfferNotFoundException, BidNotFound
 from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
 from d3a.models.strategy.const import ConstSettings
 from d3a.util import make_iaa_name
-
+from d3a import TIME_FORMAT
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
@@ -352,7 +352,7 @@ class InterAreaAgent(BaseStrategy):
                       self),
         ]
 
-        self.time_slot = higher_market.time_slot.strftime("%H:%M")
+        self.time_slot = higher_market.time_slot.strftime(TIME_FORMAT)
         self.tick_ratio = tick_ratio
 
         # serialization parameters

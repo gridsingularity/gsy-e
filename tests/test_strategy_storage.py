@@ -11,6 +11,7 @@ from d3a.models.market import Offer, Trade
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.config import SimulationConfig
+from d3a import TIME_FORMAT
 
 
 class FakeArea():
@@ -100,7 +101,7 @@ class FakeMarket:
 
     @property
     def time_slot_str(self):
-        return self.time_slot.strftime("%H:%M")
+        return self.time_slot.strftime(TIME_FORMAT)
 
     def delete_offer(self, offer_id):
         return
@@ -479,13 +480,11 @@ def storage_strategy_test8(area_test8):
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
     storage_strategy_test8.event_activate()
     storage_strategy_test8.sell_energy(energy=None)
-    print(area_test8._markets_return["Fake Market"].created_offers)
     assert abs(storage_strategy_test8.state.used_storage -
                storage_strategy_test8.state.capacity *
                ConstSettings.STORAGE_MIN_ALLOWED_SOC) < 0.0001
     assert storage_strategy_test8.state.offered_storage == \
         100 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
-    print(area_test8._markets_return["Fake Market"].created_offers)
     assert area_test8._markets_return["Fake Market"].created_offers[0].energy == \
         100 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(

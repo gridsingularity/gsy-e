@@ -3,6 +3,7 @@ from d3a.area_statistics import export_cumulative_grid_trades, export_cumulative
 from d3a.export_unmatched_loads import export_unmatched_loads
 from d3a.stats import energy_bills
 from d3a.util import make_iaa_name
+from d3a import TIME_FORMAT
 from collections import OrderedDict
 from statistics import mean
 from itertools import chain, repeat
@@ -192,7 +193,7 @@ class SimulationEndpointBuffer:
                 'trade_count': len(market.trades),
                 'offer_count': len(market.offers),
                 'type': type_,
-                'time_slot': market.time_slot.format("%H:%M"),
+                'time_slot': market.time_slot.format(TIME_FORMAT),
                 # 'url': url_for('market', area_slug=area.slug, market_time=market.time_slot),
             }
             for type_, (time, market)
@@ -208,7 +209,7 @@ class SimulationEndpointBuffer:
             for market in market_iterable:
                 if market not in self.market[area.slug].keys():
                     self.market[area.slug][market] = {
-                        'time_slot': market.time_slot.format("%H:%M"),
+                        'time_slot': market.time_slot.format(TIME_FORMAT),
                         # 'url': url_for('market', area_slug=area.slug,
                         #                market_time=market.time_slot),
                         'prices': {
@@ -290,7 +291,7 @@ class SimulationEndpointBuffer:
             'markets': [
                 {
                     'type': type_,
-                    'time_slot': time.format("%H:%M"),
+                    'time_slot': time.format(TIME_FORMAT),
                     # 'url': url_for('market', area_slug=area.slug,
                     #                market_time=time),
                     'trade_count': len(market.trades),

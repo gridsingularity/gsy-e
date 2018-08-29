@@ -10,6 +10,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
+from d3a import TIME_FORMAT
 
 
 @given('we have a scenario named {scenario}')
@@ -472,7 +473,7 @@ def check_pv_profile(context):
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
     profile_data = ReadProfileMixin._readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format("%H:%M"))
+        time = str(timepoint.format(TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
@@ -501,7 +502,7 @@ def check_pv_csv_profile(context):
     from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
     profile_data = ReadProfileMixin._readCSV(user_profile_path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format("%H:%M"))
+        time = str(timepoint.format(TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
@@ -554,7 +555,7 @@ def test_infinite_plant_energy_rate(context, plant_name):
                 trades_sold.append(trade)
         assert all([isclose(trade.offer.price / trade.offer.energy,
                     context.simulation.simulation_config.
-                            market_maker_rate[trade.time.strftime("%H:%M")])
+                            market_maker_rate[trade.time.strftime(TIME_FORMAT)])
                     for trade in trades_sold])
         assert len(trades_sold) > 0
 

@@ -19,7 +19,7 @@ from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.util import TaggedLogWrapper
 from d3a.models.strategy.const import ConstSettings
-
+from d3a import TIME_FORMAT
 
 log = getLogger(__name__)
 
@@ -101,7 +101,7 @@ class Area:
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
             s=self,
-            markets=[t.strftime("%H:%M") for t in self.markets.keys()]
+            markets=[t.strftime(TIME_FORMAT) for t in self.markets.keys()]
         )
 
     @cached_property

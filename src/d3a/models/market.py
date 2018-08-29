@@ -10,6 +10,7 @@ import sys
 from pendulum.pendulum import Pendulum
 from terminaltables.other_tables import SingleTable
 
+from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBid, BidNotFound
 from d3a.models.events import MarketEvent, OfferEvent
@@ -109,8 +110,7 @@ class Market:
         self.area = area
         self.time_slot = time_slot
         if self.time_slot is not None:
-            # TODO: save time_format somewhere even more central
-            self.time_slot_str = time_slot.strftime("%H:%M")
+            self.time_slot_str = time_slot.strftime(TIME_FORMAT)
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]

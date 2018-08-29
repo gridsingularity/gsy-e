@@ -6,6 +6,8 @@ import pathlib
 import d3a
 import inspect
 import os
+
+from d3a import TIME_FORMAT
 from d3a.models.strategy import ureg
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import ConstSettings
@@ -42,7 +44,7 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update
                          )
         self._power_profile_index = cloud_coverage
-        self._time_format = "%H:%M"
+        self._time_format = TIME_FORMAT
 
     def event_activate(self):
         """
@@ -94,7 +96,6 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
 
         # Populate energy production forecast data
         return self.read_profile_csv_to_dict("power", str(profile_path),
-                                             self._time_format,
                                              self.area.config.slot_length)
 
 
@@ -126,7 +127,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update
                          )
         self._power_profile_W = power_profile
-        self._time_format = "%H:%M"
+        self._time_format = TIME_FORMAT
 
     def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
         """
