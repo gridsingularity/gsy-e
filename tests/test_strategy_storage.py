@@ -98,6 +98,10 @@ class FakeMarket:
     def time_slot(self):
         return Pendulum.now().start_of('day')
 
+    @property
+    def time_slot_str(self):
+        return self.time_slot.strftime("%H:%M")
+
     def delete_offer(self, offer_id):
         return
 
@@ -250,7 +254,7 @@ def test_if_storage_max_sell_rate_is_one_unit_less_than_market_maker_rate(storag
                                                                           area_test4):
     storage_strategy_test4.event_activate()
     assert storage_strategy_test4._max_selling_rate(area_test4.current_market) \
-        == (area_test4.config.market_maker_rate[area_test4.current_market.time_slot.hour])
+        == (area_test4.config.market_maker_rate[area_test4.current_market.time_slot_str])
 
 
 """TEST5"""
@@ -380,7 +384,7 @@ def test_calculate_initial_sell_energy_rate_upper_bound(storage_strategy_test7_1
     storage_strategy_test7_1.event_activate()
     market = storage_strategy_test7_1.area.current_market
     market_maker_rate = \
-        storage_strategy_test7_1.area.config.market_maker_rate[market.time_slot.hour]
+        storage_strategy_test7_1.area.config.market_maker_rate[market.time_slot_str]
     assert storage_strategy_test7_1.calculate_selling_rate(market) == market_maker_rate
 
 
@@ -618,7 +622,7 @@ def storage_strategy_test12(area_test12):
 
 def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_test7):
     storage_strategy_test12.event_activate()
-    market_maker_rate = storage_strategy_test12.area.config.market_maker_rate[0]
+    market_maker_rate = storage_strategy_test12.area.config.market_maker_rate["00:00"]
     BE_sell = storage_strategy_test12.break_even[0][1]
     used_storage = storage_strategy_test12.state.used_storage
     battery_capacity = storage_strategy_test12.state.capacity

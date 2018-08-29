@@ -49,11 +49,11 @@ def json_string_profile(context, device):
     for i in range(24):
         for j in ["00", "15", "30", "45"]:
             if i < 10:
-                profile += f"\"{i}:{j}\": 100, "
+                profile += f"\"{i:02}:{j}\": 100, "
             elif 10 <= i < 20:
-                profile += f"\"{i}:{j}\": 50, "
+                profile += f"\"{i:02}:{j}\": 50, "
             else:
-                profile += f"\"{i}:{j}\": 25, "
+                profile += f"\"{i:02}:{j}\": 25, "
     profile += "}"
     context._device_profile = profile
 
@@ -61,8 +61,11 @@ def json_string_profile(context, device):
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
+    from d3a.models.strategy.mixins import ReadProfileMixin
+    read_profile = ReadProfileMixin()
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
-    context._market_maker_rate = setup_file_module.market_maker_rate
+    context._market_maker_rate = read_profile.\
+        read_arbitrary_profile("rate", setup_file_module.market_maker_rate, 15)
     assert context._market_maker_rate is not None
 
 
@@ -295,16 +298,17 @@ def test_export_data_csv(context, scenario):
 @then('we test that config parameters are correctly parsed for {scenario}'
       ' [{cloud_coverage}, {iaa_fee}]')
 def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):
+    from d3a.models.strategy.mixins import DEFAULT_PROFILE_DICT
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
-    assert len(context.simulation.simulation_config.market_maker_rate) == 24
-    for ti in range(24):
-        assert ti in context.simulation.simulation_config.market_maker_rate.keys()
-    assert context.simulation.simulation_config.market_maker_rate[1] == \
-        context._market_maker_rate[2]
-    assert context.simulation.simulation_config.market_maker_rate[12] == \
-        context._market_maker_rate[11]
-    assert context.simulation.simulation_config.market_maker_rate[23] == \
-        context._market_maker_rate[22]
+    assert len(context.simulation.simulation_config.market_maker_rate) == 24 * 60
+    assert len(DEFAULT_PROFILE_DICT) == len(context.simulation.simulation_config.
+                                            market_maker_rate.keys())
+    assert context.simulation.simulation_config.market_maker_rate["00:00"] == \
+        context._market_maker_rate["02:00"]
+    assert context.simulation.simulation_config.market_maker_rate["12:00"] == \
+        context._market_maker_rate["11:00"]
+    assert context.simulation.simulation_config.market_maker_rate["23:00"] == \
+        context._market_maker_rate["22:00"]
     assert context.simulation.simulation_config.iaa_fee == int(iaa_fee)
 
 
@@ -549,7 +553,8 @@ def test_infinite_plant_energy_rate(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert all([isclose(trade.offer.price / trade.offer.energy,
-                    context.simulation.simulation_config.market_maker_rate[trade.time.hour])
+                    context.simulation.simulation_config.
+                            market_maker_rate[trade.time.strftime("%H:%M")])
                     for trade in trades_sold])
         assert len(trades_sold) > 0
 
@@ -579,4 +584,4 @@ def test_pv_initial_pv_rate_option(context):
     for slot, market in house.past_markets.items():
         for trade in market.trades:
             assert isclose(trade.offer.price / trade.offer.energy,
-                           grid.config.market_maker_rate[market.time_slot.hour])
+                           grid.config.market_maker_rate[market.time_slot_str])

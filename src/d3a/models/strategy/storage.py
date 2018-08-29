@@ -256,7 +256,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.initial_rate_option == 1 and self.area.historical_avg_rate != 0:
             return self.area.historical_avg_rate
         else:
-            return self.area.config.market_maker_rate[market.time_slot.hour]
+            return self.area.config.market_maker_rate[market.time_slot_str]
 
     def capacity_dependant_sell_rate(self, market):
         if self.state.charge_history[market.time_slot] is '-':

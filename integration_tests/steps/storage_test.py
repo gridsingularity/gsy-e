@@ -75,7 +75,8 @@ def check_capacity_dependant_sell_rate(context):
                 trade_rate = round((trade.offer.price / trade.offer.energy), 2)
                 break_even_sell = round(storage.strategy.break_even[slot.hour][1], 2)
                 market_maker_rate = \
-                    round(context.simulation.area.config.market_maker_rate[slot.hour], 2)
+                    round(context.simulation.area.config.
+                          market_maker_rate[slot.strftime("%H:%M")], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) > 0
@@ -92,15 +93,16 @@ def check_custom_storage(context):
         for id, offer in market.offers.items():
             if offer.seller in storage.name:
                 assert isclose((offer.price / offer.energy),
-                               context.simulation.simulation_config.market_maker_rate[slot.hour]
-                               - price_dec_per_slot)
+                               context.simulation.simulation_config.
+                               market_maker_rate[slot.strftime("%H:%M")] - price_dec_per_slot)
         for trade in market.trades:
             if trade.seller == storage.name:
                 trades_sold.append(trade)
                 trade_rate = round((trade.offer.price / trade.offer.energy), 2)
                 break_even_sell = round(storage.strategy.break_even[slot.hour][1], 2)
                 market_maker_rate = \
-                    round(context.simulation.area.config.market_maker_rate[slot.hour], 2)
+                    round(context.simulation.area.config.
+                          market_maker_rate[slot.strftime("%H:%M")], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) > 0

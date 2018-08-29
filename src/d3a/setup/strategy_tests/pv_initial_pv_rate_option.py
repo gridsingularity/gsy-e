@@ -3,6 +3,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.config import SimulationConfig
 
 
 """
@@ -24,7 +25,7 @@ market_maker_rate = {
 
 
 def get_setup(config):
-    config.market_maker_rate = market_maker_rate
+    SimulationConfig.read_market_maker_rate(config, market_maker_rate)
     area = Area(
         'Grid',
         [

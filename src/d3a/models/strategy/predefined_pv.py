@@ -93,9 +93,9 @@ class PVPredefinedStrategy(ReadProfileMixin, PVStrategy):
             raise ValueError("Energy_profile has to be in [0,1,2]")
 
         # Populate energy production forecast data
-        return self.read_power_profile_csv_to_energy(str(profile_path),
-                                                     self._time_format,
-                                                     self.area.config.slot_length)
+        return self.read_profile_csv_to_dict("power", str(profile_path),
+                                             self._time_format,
+                                             self.area.config.slot_length)
 
 
 class PVUserProfileStrategy(PVPredefinedStrategy):
@@ -133,6 +133,6 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
-        return self.read_arbitrary_power_profile_W_to_energy_kWh(
-            self._power_profile_W, self.area.config.slot_length
-        )
+        return self.read_arbitrary_profile("power",
+                                           self._power_profile_W,
+                                           self.area.config.slot_length)

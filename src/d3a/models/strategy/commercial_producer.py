@@ -36,7 +36,7 @@ class CommercialStrategy(BaseStrategy):
         if self.energy_rate is None:
             market.offer(
                 self.energy_per_slot_kWh.m *
-                self.area.config.market_maker_rate[market.time_slot.hour],
+                self.area.config.market_maker_rate[market.time_slot_str],
                 self.energy_per_slot_kWh.m,
                 self.owner.name
             )

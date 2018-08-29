@@ -33,9 +33,9 @@ class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
         for each slot.
         :return: None
         """
-        self.load_profile = self.read_arbitrary_power_profile_W_to_energy_kWh(
-            self.daily_load_profile, self.area.config.slot_length
-        )
+        self.load_profile = self.read_arbitrary_profile("power",
+                                                        self.daily_load_profile,
+                                                        self.area.config.slot_length)
         self._update_energy_requirement()
 
     def _update_energy_requirement(self):
@@ -44,10 +44,10 @@ class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
         :return: None
         """
         self.energy_requirement = 0
-        if self.load_profile[self.area.next_market.time_slot.format('%H:%M')] != 0:
+        if self.load_profile[self.area.next_market.time_slot_str] != 0:
             # TODO: Refactor energy_requirement to denote unit Wh
             self.energy_requirement = \
-                self.load_profile[self.area.next_market.time_slot.format('%H:%M')] * 1000.0
+                self.load_profile[self.area.next_market.time_slot_str] * 1000.0
         self.state.record_desired_energy(self.area, self.energy_requirement)
 
     def _operating_hours(self, energy):
