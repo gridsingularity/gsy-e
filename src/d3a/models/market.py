@@ -89,7 +89,7 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
         mark_partial = "(partial)" if self.residual is not None else ""
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate}".
+            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate} {s.offer.id}".
             format(s=self, p=mark_partial, rate=self.offer.price / self.offer.energy)
         )
 
