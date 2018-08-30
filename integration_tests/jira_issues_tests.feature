@@ -14,3 +14,10 @@ Feature: Jira Issues Tests
      Then storage buys energy from the commercial producer
      And storage final SOC is 100%
      And storage buys energy respecting the break even buy threshold
+
+   Scenario: D3ASIM-662, IAA should always track offers back to its source
+     Given we have a scenario named strategy_tests/home_cp_ess_load
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.home_cp_ess_load [24, 15, 15]
+     Then on every market slot there should be matching trades on grid and house markets
+     And there should be no unmatched loads

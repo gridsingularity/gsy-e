@@ -4,13 +4,12 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.strategy.pv import PVStrategy
+
 
 '''
-This setup file is being modified to mimic a typical
-modern household having a hybrid PV-ESS system.
-Bug: The PV should be selling power cheaper than the Commercial Producer, but it's not selling
+This setup file is being modified to mimic a home with load and ess and a commercial producer
+The bug here is that the ESS is charging too fast from the commercial producer (it becomes
+fully charged in one slot bypassing the max abs battery power
 '''
 
 
@@ -26,7 +25,7 @@ def get_setup(config):
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       max_energy_rate=14),
+                                                                       max_energy_rate=25),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(risk=10,
                                                                  initial_capacity=0.6,
@@ -34,15 +33,9 @@ def get_setup(config):
                                                                  energy_rate_decrease_option=2,
                                                                  energy_rate_decrease_per_update=7,
                                                                  battery_capacity=1.2,
-                                                                 max_abs_battery_power=5,
-                                                                 break_even=(12, 17.01)),
+                                                                 max_abs_battery_power=0.05,
+                                                                 break_even=(16, 17.01)),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(panel_count=4,
-                                                      min_selling_rate=5,
-                                                      initial_rate_option=2,
-                                                      energy_rate_decrease_option=2,
-                                                      energy_rate_decrease_per_update=7),
-                         appliance=PVAppliance()),
 
                 ]
             ),
