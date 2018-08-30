@@ -3,6 +3,9 @@ branch = True
 source = d3a
 parallel = True
 
+omit =
+    */setup/*
+
 [paths]
 source =
     src/d3a
