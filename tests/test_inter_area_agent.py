@@ -4,6 +4,7 @@ from datetime import datetime
 
 from d3a.models.market import Offer, Trade, Bid
 from d3a.models.strategy.inter_area import InterAreaAgent
+from d3a.models.strategy.const import ConstSettings
 
 
 class FakeArea:
@@ -49,7 +50,8 @@ class FakeMarket:
         else:
             return Trade('trade_id', time, offer, offer.seller, buyer)
 
-    def accept_bid(self, bid, energy, seller, buyer=None, track_bid=True, *, time=None):
+    def accept_bid(self, bid, energy, seller, buyer=None, track_bid=True, *,
+                   time=None, price_drop=True):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         if energy < bid.energy:
@@ -117,7 +119,6 @@ def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
 
 @pytest.fixture
 def iaa_bid():
-    from d3a.models.strategy.const import ConstSettings
     ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
     higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner'),
@@ -139,10 +140,26 @@ def test_iaa_forwards_bids(iaa_bid):
     assert iaa_bid.higher_market.bid_count == 1
 
 
-def test_iaa_forwarded_bids_do_not_have_overhead(iaa_bid):
+def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
     assert iaa_bid.higher_market.bid_count == 1
-    assert iaa_bid.higher_market.forwarded_bid.price == \
+    assert iaa_bid.higher_market.forwarded_bid.price / (1 + (iaa_bid.transfer_fee_pct / 100)) == \
         list(iaa_bid.lower_market.bids.values())[-1].price
+
+
+@pytest.mark.parametrize("iaa_fee", [10, 0, 50, 75, 5, 2, 3])
+def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
+    higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')])
+    iaa = InterAreaAgent(owner=FakeArea('owner'),
+                         higher_market=higher_market,
+                         lower_market=lower_market,
+                         transfer_fee_pct=iaa_fee)
+    iaa.event_tick(area=iaa.owner)
+    assert iaa.higher_market.bid_count == 1
+    assert iaa.higher_market.forwarded_bid.price / (1 + (iaa_fee / 100)) == \
+        list(iaa.lower_market.bids.values())[-1].price
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
 
 
 def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(iaa_bid, called):

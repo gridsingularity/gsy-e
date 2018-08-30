@@ -190,7 +190,8 @@ class Market:
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def accept_bid(self, bid: Bid, energy: float = None,
-                   seller: str = None, buyer: str = None, track_bid: bool = True):
+                   seller: str = None, buyer: str = None, track_bid: bool = True,
+                   price_drop: bool = True):
         with self.trade_lock:
             market_bid = self.bids.pop(bid.id, None)
             seller = bid.seller if seller is None else seller
@@ -210,7 +211,7 @@ class Market:
                               buyer, seller, self)
 
                 trade = Trade(str(uuid.uuid4()), self._now,
-                              bid, seller, buyer, None, price_drop=False)
+                              bid, seller, buyer, None, price_drop=price_drop)
 
                 if track_bid:
                     self.trades.append(trade)

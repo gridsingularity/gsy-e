@@ -95,4 +95,4 @@ class ConstSettings:
     # Market type option
     # Default value 1 stands for single sided market
     # Option 2 stands for double sided pay as bid market
-    INTER_AREA_AGENT_MARKET_TYPE = 1
+    INTER_AREA_AGENT_MARKET_TYPE = 2

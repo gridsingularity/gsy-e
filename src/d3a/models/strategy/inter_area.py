@@ -51,12 +51,16 @@ class IAAEngine:
         if bid.buyer == self.markets.target.area.name and \
                 bid.seller == self.markets.source.area.name:
             return
-        forwarded_bid = self.markets.target.bid(bid.price, bid.energy,
-                                                self.markets.source.area.name,
-                                                self.markets.target.area.name)
+        forwarded_bid = self.markets.target.bid(
+            bid.price + (bid.price * (self.transfer_fee_pct / 100)),
+            bid.energy,
+            self.markets.source.area.name,
+            self.markets.target.area.name
+        )
         bid_coupling = BidInfo(bid, forwarded_bid)
         self.forwarded_bids[forwarded_bid.id] = bid_coupling
         self.forwarded_bids[bid.id] = bid_coupling
+        self.owner.log.debug(f"Forwarding bid {bid} to {forwarded_bid}")
         return forwarded_bid
 
     def _perform_pay_as_bid_matching(self):
@@ -117,7 +121,8 @@ class IAAEngine:
                                            selected_energy,
                                            seller=offer.seller,
                                            buyer=self.owner.name,
-                                           track_bid=True)
+                                           track_bid=True,
+                                           price_drop=True)
             self._delete_forwarded_bid_entries(bid)
 
     def tick(self, *, area):
@@ -166,6 +171,11 @@ class IAAEngine:
 
         # Bid was traded in target market, buy in source
         if traded_bid.offer.id == bid_info.target_bid.id:
+            if traded_bid.price_drop:
+                bid_info.source_bid.price = \
+                    (traded_bid.offer.price / traded_bid.offer.energy) * bid_info.source_bid.energy
+                bid_info.source_bid.price = \
+                    bid_info.source_bid.price / (1 + (self.transfer_fee_pct / 100))
             self.markets.source.accept_bid(
                 bid_info.source_bid,
                 energy=traded_bid.offer.energy,
@@ -205,12 +215,11 @@ class IAAEngine:
                                          "{} (Forwarded offer not found)".format(trade.offer))
 
             try:
-
                 if trade.price_drop:
                     offer_info.source_offer.price = \
                         (trade.offer.price / trade.offer.energy) * offer_info.source_offer.energy
                     offer_info.source_offer.price = \
-                        offer_info.source_offer.price * ((1 - self.transfer_fee_pct) / 100)
+                        offer_info.source_offer.price / (1 + (self.transfer_fee_pct / 100))
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,
