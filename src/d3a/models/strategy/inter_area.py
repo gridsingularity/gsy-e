@@ -174,12 +174,12 @@ class IAAEngine:
             source_price = bid_info.source_bid.price
             if traded_bid.price_drop:
                 # Use the rate of the trade bid for accepting the source bid too
-                source_price = (traded_bid.offer.price / traded_bid.offer.energy) * source_price
+                source_price = traded_bid.offer.price
                 # Drop the rate of the trade bid according to IAA fee
                 source_price = source_price / (1 + (self.transfer_fee_pct / 100))
 
             self.markets.source.accept_bid(
-                bid_info.source_bid._replace(price=source_price),
+                bid_info.source_bid._replace(price=source_price, energy=traded_bid.offer.energy),
                 energy=traded_bid.offer.energy,
                 seller=self.owner.name
             )
@@ -217,13 +217,13 @@ class IAAEngine:
                                          "{} (Forwarded offer not found)".format(trade.offer))
 
             try:
-                source_price = offer_info.source_offer.price
                 if trade.price_drop:
                     # Use the rate of the trade offer for accepting the source offer too
-                    source_price = (trade.offer.price / trade.offer.energy) * source_price
+                    source_price = trade.offer.price
                     # Drop the rate of the trade offer according to IAA fee
                     source_price = source_price / (1 + (self.transfer_fee_pct / 100))
-                offer_info.source_offer.price = source_price
+                    offer_info.source_offer.price = source_price
+                    offer_info.source_offer.energy = trade.offer.energy
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,

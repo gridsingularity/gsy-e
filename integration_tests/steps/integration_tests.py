@@ -379,7 +379,13 @@ def method_called(context, method):
 
 
 @when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
-def run_sim(context, scenario, duration, slot_length, tick_length):
+def run_sim_without_iaa_fee(context, scenario, duration, slot_length, tick_length):
+    run_sim(context, scenario, duration, slot_length, tick_length, 5)
+
+
+@when('we run the simulation with setup file {scenario} '
+      'and parameters [{duration}, {slot_length}, {tick_length}, {iaa_fee}]')
+def run_sim(context, scenario, duration, slot_length, tick_length, iaa_fee):
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.CRITICAL)
@@ -390,7 +396,7 @@ def run_sim(context, scenario, duration, slot_length, tick_length):
                                          market_count=5,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
-                                         iaa_fee=5)
+                                         iaa_fee=int(iaa_fee))
 
     slowdown = 0
     seed = 0

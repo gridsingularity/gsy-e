@@ -104,6 +104,7 @@ def energy_rate_average_between_min_and_max_ess_pv(context):
     rate_threshold = round(
         (ConstSettings.STORAGE_BREAK_EVEN_BUY - ConstSettings.STORAGE_MIN_BUYING_RATE) / 2
     )
+
     assert all([int(rate) == int(rate_threshold) for rate in storage_rates_set])
     assert all([int(rate) == int(rate_threshold) for rate in pv_rates_set])
 
