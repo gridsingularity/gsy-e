@@ -171,13 +171,15 @@ class IAAEngine:
 
         # Bid was traded in target market, buy in source
         if traded_bid.offer.id == bid_info.target_bid.id:
+            source_price = bid_info.source_bid.price
             if traded_bid.price_drop:
-                bid_info.source_bid.price = \
-                    (traded_bid.offer.price / traded_bid.offer.energy) * bid_info.source_bid.energy
-                bid_info.source_bid.price = \
-                    bid_info.source_bid.price / (1 + (self.transfer_fee_pct / 100))
+                # Use the rate of the trade bid for accepting the source bid too
+                source_price = (traded_bid.offer.price / traded_bid.offer.energy) * source_price
+                # Drop the rate of the trade bid according to IAA fee
+                source_price = source_price / (1 + (self.transfer_fee_pct / 100))
+
             self.markets.source.accept_bid(
-                bid_info.source_bid,
+                bid_info.source_bid._replace(price=source_price),
                 energy=traded_bid.offer.energy,
                 seller=self.owner.name
             )
@@ -215,11 +217,13 @@ class IAAEngine:
                                          "{} (Forwarded offer not found)".format(trade.offer))
 
             try:
+                source_price = offer_info.source_offer.price
                 if trade.price_drop:
-                    offer_info.source_offer.price = \
-                        (trade.offer.price / trade.offer.energy) * offer_info.source_offer.energy
-                    offer_info.source_offer.price = \
-                        offer_info.source_offer.price / (1 + (self.transfer_fee_pct / 100))
+                    # Use the rate of the trade offer for accepting the source offer too
+                    source_price = (trade.offer.price / trade.offer.energy) * source_price
+                    # Drop the rate of the trade offer according to IAA fee
+                    source_price = source_price / (1 + (self.transfer_fee_pct / 100))
+                offer_info.source_offer.price = source_price
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,
