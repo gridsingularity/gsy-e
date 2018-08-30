@@ -25,6 +25,7 @@ class FakeMarket:
         self.calls_energy_bids = []
         self.calls_offers = []
         self.calls_bids = []
+        self.calls_bids_price = []
         self.area = FakeArea("fake_area")
 
     @property
@@ -54,6 +55,7 @@ class FakeMarket:
                    time=None, price_drop=True):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
+        self.calls_bids_price.append(bid.price)
         if energy < bid.energy:
             residual_energy = bid.energy - energy
             residual = Bid('res', bid.price, residual_energy, bid.buyer, seller, bid.market)
@@ -213,14 +215,36 @@ def test_iaa_event_trade_buys_accepted_offer(iaa2):
 
 
 def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
+    iaa_double_sided.higher_market.forwarded_bid = \
+        iaa_double_sided.higher_market.forwarded_bid._replace(price=20)
     iaa_double_sided.event_bid_traded(
         traded_bid=Trade('trade_id',
                          datetime.now(),
                          iaa_double_sided.higher_market.forwarded_bid,
                          'owner',
-                         'someone_else'),
+                         'someone_else',
+                         price_drop=False),
         market=iaa_double_sided.higher_market)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
+
+    assert iaa_double_sided.higher_market.forwarded_bid.price == 20.0
+    assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10.0
+
+
+def test_iaa_event_bid_trade_reduces_bid_price(iaa_double_sided):
+    iaa_double_sided.higher_market.forwarded_bid = \
+        iaa_double_sided.higher_market.forwarded_bid._replace(price=20.2)
+    iaa_double_sided.event_bid_traded(
+        traded_bid=Trade('trade_id',
+                         datetime.now(),
+                         iaa_double_sided.higher_market.forwarded_bid,
+                         'owner',
+                         'someone_else',
+                         price_drop=True),
+        market=iaa_double_sided.higher_market)
+    assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
+    assert iaa_double_sided.higher_market.forwarded_bid.price == 20.2
+    assert iaa_double_sided.lower_market.calls_bids_price[-1] == 20.0
 
 
 def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
