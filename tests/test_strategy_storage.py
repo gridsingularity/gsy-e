@@ -201,7 +201,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
-    storage_strategy_test3.break_even = {0: (20, 25)}
+    storage_strategy_test3.break_even = {"00:00": (20, 25)}
     storage_strategy_test3.event_activate()
     storage_strategy_test3.event_tick(area=area_test3)
     assert len(storage_strategy_test3.accept_offer.calls) == 0
@@ -368,7 +368,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
 def test_calculate_initial_sell_energy_rate_lower_bound(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
-    break_even_sell = storage_strategy_test7.break_even[market.time_slot.hour][1]
+    break_even_sell = storage_strategy_test7.break_even[market.time_slot_str][1]
     assert storage_strategy_test7.calculate_selling_rate(market) == break_even_sell
 
 
@@ -584,15 +584,16 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
 
 
 def test_storage_populates_break_even_profile_correctly():
+    from d3a.models.strategy.mixins import default_profile_dict
     s = StorageStrategy(break_even=(22, 23))
     assert all([be[0] == 22 and be[1] == 23 for _, be in s.break_even.items()])
-    assert set(s.break_even.keys()) == set(range(24))
+    assert set(s.break_even.keys()) == set(default_profile_dict().keys())
 
     s = StorageStrategy(break_even={0: (22, 23), 10: (24, 25), 20: (27, 28)})
-    assert set(s.break_even.keys()) == set(range(24))
-    assert all([s.break_even[i] == (22, 23) for i in range(10)])
-    assert all([s.break_even[i] == (24, 25) for i in range(10, 20)])
-    assert all([s.break_even[i] == (27, 28) for i in range(20, 24)])
+    assert set(s.break_even.keys()) == set(default_profile_dict().keys())
+    assert all([s.break_even[f"{i:02}:00"] == (22, 23) for i in range(10)])
+    assert all([s.break_even[f"{i:02}:00"] == (24, 25) for i in range(10, 20)])
+    assert all([s.break_even[f"{i:02}:00"] == (27, 28) for i in range(20, 24)])
 
 
 """TEST12"""
@@ -622,7 +623,7 @@ def storage_strategy_test12(area_test12):
 def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_test7):
     storage_strategy_test12.event_activate()
     market_maker_rate = storage_strategy_test12.area.config.market_maker_rate["00:00"]
-    BE_sell = storage_strategy_test12.break_even[0][1]
+    BE_sell = storage_strategy_test12.break_even["00:00"][1]
     used_storage = storage_strategy_test12.state.used_storage
     battery_capacity = storage_strategy_test12.state.capacity
     soc = used_storage / battery_capacity

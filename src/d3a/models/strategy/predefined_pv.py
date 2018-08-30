@@ -136,4 +136,4 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         """
         return self.read_arbitrary_profile("power",
                                            self._power_profile_W,
-                                           self.area.config.slot_length)
+                                           slot_length=self.area.config.slot_length)

@@ -63,8 +63,7 @@ class SimulationConfig(ReadProfileMixin):
 
     def read_market_maker_rate(self, market_maker_rate):
         """
+        Reads market_maker_rate from arbitrary input types
         """
         market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
-        self.market_maker_rate = self.read_arbitrary_profile("rate",
-                                                             market_maker_rate_parsed,
-                                                             self.slot_length)
+        self.market_maker_rate = self.read_arbitrary_profile("rate", market_maker_rate_parsed)

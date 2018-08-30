@@ -66,7 +66,7 @@ def hour_profile_of_market_maker_rate(context, scenario):
     read_profile = ReadProfileMixin()
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
     context._market_maker_rate = read_profile.\
-        read_arbitrary_profile("rate", setup_file_module.market_maker_rate, 15)
+        read_arbitrary_profile("rate", setup_file_module.market_maker_rate)
     assert context._market_maker_rate is not None
 
 
@@ -299,11 +299,11 @@ def test_export_data_csv(context, scenario):
 @then('we test that config parameters are correctly parsed for {scenario}'
       ' [{cloud_coverage}, {iaa_fee}]')
 def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):
-    from d3a.models.strategy.mixins import DEFAULT_PROFILE_DICT
+    from d3a.models.strategy.mixins import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
     assert len(context.simulation.simulation_config.market_maker_rate) == 24 * 60
-    assert len(DEFAULT_PROFILE_DICT) == len(context.simulation.simulation_config.
-                                            market_maker_rate.keys())
+    assert len(default_profile_dict().keys()) == len(context.simulation.simulation_config.
+                                                     market_maker_rate.keys())
     assert context.simulation.simulation_config.market_maker_rate["00:00"] == \
         context._market_maker_rate["02:00"]
     assert context.simulation.simulation_config.market_maker_rate["12:00"] == \

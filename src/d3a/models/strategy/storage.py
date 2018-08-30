@@ -5,9 +5,12 @@ from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin
+from d3a.models.strategy.mixins import ReadProfileMixin
+from d3a import TIME_FORMAT
 
 
-class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
+class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin,
+                      ReadProfileMixin):
     parameters = ('risk', 'initial_capacity', 'initial_soc',
                   'battery_capacity', 'max_abs_battery_power')
 
@@ -23,11 +26,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
 
                  cap_price_strategy: bool=False):
-        break_even = self._update_break_even_points(break_even)
+        break_even = self.read_arbitrary_profile("break_even", break_even)
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_soc, battery_capacity, break_even)
         self.break_even = break_even
-        self.min_selling_rate = break_even[0][1]
+
+        self.min_selling_rate = break_even["00:00"][1]
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
@@ -49,22 +53,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
     def event_activate(self):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
-
-    def _update_break_even_points(self, break_even):
-        if isinstance(break_even, tuple) or isinstance(break_even, list):
-            return {i: (break_even[0], break_even[1]) for i in range(24)}
-        if isinstance(break_even, dict):
-            latest_entry = (ConstSettings.STORAGE_BREAK_EVEN_BUY,
-                            ConstSettings.STORAGE_BREAK_EVEN_SELL)
-            for i in range(24):
-                if i not in break_even:
-                    break_even[i] = latest_entry
-                else:
-                    latest_entry = break_even[i]
-            return break_even
-        else:
-            raise ValueError("Break even point should be either a tuple for the buy/sell rate, "
-                             "or an hourly dict of tuples.")
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity, initial_soc,
@@ -134,7 +122,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.add_bid_to_bought(traded_bid.offer, market)
 
     def event_market_cycle(self):
-        self.update_market_cycle(self.break_even[self.area.now.hour][1])
+        self.update_market_cycle(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
@@ -161,7 +149,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.state.market_cycle(self.area)
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            self.update_on_market_cycle(self.break_even[self.area.now.hour][0])
+            self.update_on_market_cycle(self.break_even[self.area.now.strftime(TIME_FORMAT)][0])
             if self.state.clamp_energy_to_buy_kWh() > 0:
                 self.post_first_bid(
                     self.area.next_market,
@@ -172,7 +160,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
         for market in self.area.markets.values():
-            max_affordable_offer_rate = self.break_even[market.time_slot.hour][0]
+            max_affordable_offer_rate = self.break_even[market.time_slot_str][0]
             for offer in market.sorted_offers:
                 if offer.seller == self.owner.name:
                     # Don't buy our own offer
@@ -248,7 +236,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
         else:
-            break_even_sell = self.break_even[market.time_slot.hour][1]
+            break_even_sell = self.break_even[market.time_slot_str][1]
             max_selling_rate = self._max_selling_rate(market)
             return max(max_selling_rate, break_even_sell)
 
@@ -265,7 +253,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             soc = self.state.charge_history[market.time_slot]
 
         max_selling_rate = self._max_selling_rate(market)
-        break_even_sell = self.break_even[market.time_slot.hour][1]
+        break_even_sell = self.break_even[market.time_slot_str][1]
         if max_selling_rate < break_even_sell:
             return break_even_sell
         else:

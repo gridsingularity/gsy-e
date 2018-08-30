@@ -35,7 +35,7 @@ class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
         """
         self.load_profile = self.read_arbitrary_profile("power",
                                                         self.daily_load_profile,
-                                                        self.area.config.slot_length)
+                                                        slot_length=self.area.config.slot_length)
         self._update_energy_requirement()
 
     def _update_energy_requirement(self):

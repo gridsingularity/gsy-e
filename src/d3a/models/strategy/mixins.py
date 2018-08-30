@@ -12,10 +12,12 @@ from typing import Dict
 from itertools import product
 from d3a import TIME_FORMAT
 
-ACCEPTED_PROFILE_TYPES = ("rate", "power")
-DEFAULT_PROFILE_DICT = dict((datetime(year=2000, month=1, day=1, hour=hour, minute=minute).
-                             strftime(TIME_FORMAT), 0)
-                            for hour, minute in product(range(24), range(60)))
+ACCEPTED_PROFILE_TYPES = ("rate", "power", "break_even")
+
+
+def default_profile_dict():
+    return dict((datetime(year=2000, month=1, day=1, hour=hour, minute=minute).
+                 strftime(TIME_FORMAT), 0) for hour, minute in product(range(24), range(60)))
 
 
 class ReadProfileMixin:
@@ -133,29 +135,29 @@ class ReadProfileMixin:
                             format(profile_type, ACCEPTED_PROFILE_TYPES))
 
     @staticmethod
-    def _fill_gaps_in_rate_profile(rate_profile_input: Dict[str, float]) -> Dict[str, float]:
+    def _fill_gaps_in_rate_profile(rate_profile_input: Dict) -> Dict:
         """
         Fills time steps, where no rate is provided, with the rate value of the
         last available time step.
         :param rate_profile_input: dict(str: float)
-        :return: continous rate profile (dict)
+        :return: continuous rate profile (dict)
         """
-        rate_profile = DEFAULT_PROFILE_DICT
 
+        rate_profile = default_profile_dict()
         current_rate = rate_profile_input[next(iter(rate_profile_input))]
         for hour, minute in product(range(24), range(60)):
             time_str = datetime(year=2000, month=1, day=1, hour=hour, minute=minute).\
                 strftime(TIME_FORMAT)
+
             if time_str in rate_profile_input.keys():
                 current_rate = rate_profile_input[time_str]
-            else:
-                rate_profile[time_str] = current_rate
+            rate_profile[time_str] = current_rate
 
         return rate_profile
 
     def read_arbitrary_profile(self, profile_type: str,
                                daily_profile,
-                               slot_length: Interval) -> Dict[str, float]:
+                               slot_length=Interval()) -> Dict[str, float]:
         """
         Reads arbitrary profile.
         Handles csv, dict and string input.
@@ -190,30 +192,40 @@ class ReadProfileMixin:
 
             elif isinstance(list(daily_profile.keys())[0], int):
                 # If it is an integer assume an hourly profile
-                input_profile = {hour: 0 for hour in range(24)}
-                input_profile.update(daily_profile)
                 input_profile = dict(
-                    (datetime(year=2000, month=1, day=1, hour=hour, minute=minute).
+                    (datetime(year=2000, month=1, day=1, hour=hour).
                      strftime(TIME_FORMAT), val)
-                    for hour, val in input_profile.items()
-                    for minute in range(60)
+                    for hour, val in daily_profile.items()
                 )
-            else:
-                raise TypeError("Unsupported type for load strategy input timestamp field: " +
-                                str(list(daily_profile.keys())[0]))
 
-        elif isinstance(daily_profile, int):
-            input_profile = DEFAULT_PROFILE_DICT
+            else:
+                raise TypeError("Unsupported input type : " + str(list(daily_profile.keys())[0]))
+
+        elif isinstance(daily_profile, int) or isinstance(daily_profile, tuple):
+            input_profile = default_profile_dict()
             for key in input_profile.keys():
                 input_profile[key] = daily_profile
 
         else:
-            raise TypeError(f"Unsupported type for load strategy input: {str(daily_profile)}")
+            raise TypeError(f"Unsupported input type: {str(daily_profile)}")
 
         if input_profile is not None:
-            if profile_type == "rate":
+            if profile_type == "rate" or profile_type == "break_even":
                 return self._fill_gaps_in_rate_profile(input_profile)
             elif profile_type == "power":
+                # this is a hacky way of making sure, that hourly input-profile is propagated
+                # into default_profile_dict (hours that are not definded should contain 0)
+                # TODO: refactor it, find a more general way
+                update_profile = dict(
+                    (datetime(year=2000, month=1, day=1,
+                              hour=datetime.strptime(time_str, TIME_FORMAT).hour,
+                              minute=minute).
+                     strftime(TIME_FORMAT), val)
+                    for time_str, val in input_profile.items()
+                    for minute in range(60)
+                )
+                temp_dict = default_profile_dict()
+                temp_dict.update(update_profile)
                 return self._calculate_energy_from_power_profile(
-                    input_profile,
+                    temp_dict,
                     slot_length)
