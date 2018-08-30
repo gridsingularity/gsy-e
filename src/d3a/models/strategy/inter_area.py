@@ -253,11 +253,6 @@ class IAAEngine:
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
 
-        elif trade.offer.id == offer_info.source_offer.id and \
-            trade.buyer == self.owner.name and \
-                ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
-            # Flip side of the event from above buying action - do nothing
-            pass
         elif trade.offer.id == offer_info.source_offer.id:
             # Offer was bought in source market by another party
             try:
@@ -271,6 +266,9 @@ class IAAEngine:
             self.offer_age.pop(offer_info.source_offer.id, None)
         else:
             raise RuntimeError("Unknown state. Can't happen")
+
+        assert offer_info.source_offer.id not in self.forwarded_offers
+        assert offer_info.target_offer.id not in self.forwarded_offers
 
     def event_bid_deleted(self, *, bid):
         from d3a.models.market import Bid
@@ -318,11 +316,17 @@ class IAAEngine:
             # for handling the upcoming trade event
             assert existing_offer.id not in self.trade_residual, \
                    "Offer should only change once before each trade."
+
             self.trade_residual[existing_offer.id] = new_offer
 
         elif market == self.markets.source and existing_offer.id in self.forwarded_offers:
             # an offer in the source market was split - delete the corresponding offer
             # in the target market and forward the new residual offer
+
+            if not self.owner.usable_offer(existing_offer) or \
+                    self.owner.name == existing_offer.seller:
+                return
+
             if new_offer.id in self.ignored_offers:
                 self.ignored_offers.remove(new_offer.id)
                 return
@@ -333,7 +337,8 @@ class IAAEngine:
             self.owner.log.info("Offer %s changed to residual offer %s",
                                 offer_info.target_offer,
                                 forwarded)
-            # Do not delete the offered offer entries for the case of residual offers
+
+            # Do not delete the forwarded offer entries for the case of residual offers
             if existing_offer.seller != new_offer.seller:
                 self._delete_forwarded_offer_entries(offer_info.source_offer)
 
