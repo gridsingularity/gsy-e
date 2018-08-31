@@ -52,7 +52,7 @@ class IAAEngine:
                 bid.seller == self.markets.source.area.name:
             return
         forwarded_bid = self.markets.target.bid(bid.price, bid.energy,
-                                                self.markets.source.area.name,
+                                                self.owner.name,
                                                 self.markets.target.area.name)
         bid_coupling = BidInfo(bid, forwarded_bid)
         self.forwarded_bids[forwarded_bid.id] = bid_coupling
@@ -113,12 +113,13 @@ class IAAEngine:
                                     price_drop=True)
             self._delete_forwarded_offer_entries(offer)
 
-            self.markets.source.accept_bid(bid,
-                                           selected_energy,
-                                           seller=offer.seller,
-                                           buyer=self.owner.name,
-                                           track_bid=True)
-            self._delete_forwarded_bid_entries(bid)
+            trade = self.markets.source.accept_bid(bid,
+                                                   selected_energy,
+                                                   seller=offer.seller,
+                                                   buyer=self.owner.name,
+                                                   track_bid=True)
+            if not trade.residual:
+                self._delete_forwarded_bid_entries(bid)
 
     def tick(self, *, area):
         # Store age of offer
@@ -171,10 +172,13 @@ class IAAEngine:
                 energy=traded_bid.offer.energy,
                 seller=self.owner.name
             )
-            self._delete_forwarded_bid_entries(bid_info.target_bid)
+            if not traded_bid.residual:
+                self._delete_forwarded_bid_entries(bid_info.target_bid)
 
         # Bid was traded in the source market by someone else
         elif traded_bid.offer.id == bid_info.source_bid.id:
+            if self.owner.name == traded_bid.seller:
+                return
             # Delete target bid
             try:
                 self.markets.target.delete_bid(bid_info.target_bid)

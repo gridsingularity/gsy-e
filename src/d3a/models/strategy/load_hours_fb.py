@@ -102,8 +102,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         if self.are_bids_posted(self.area.next_market):
             self.update_posted_bids(self.area.next_market)
-        else:
-            self.post_first_bid(self.area.next_market, self.energy_requirement_Wh)
 
     def event_tick(self, *, area):
         if self.energy_requirement_Wh <= 0:
@@ -164,7 +162,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             # Update energy requirement and clean up the pending bid buffer
             self.energy_requirement_Wh -= traded_bid.offer.energy * 1000.0
             self.hrs_per_day -= self._operating_hours(traded_bid.offer.energy)
-            self.remove_bid_from_pending(traded_bid.offer, market)
+            if not traded_bid.residual:
+                self.remove_bid_from_pending(traded_bid.offer, market)
             assert self.energy_requirement_Wh >= -0.0001
 
 
