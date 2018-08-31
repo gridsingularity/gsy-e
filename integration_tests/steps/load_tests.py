@@ -44,4 +44,9 @@ def check_user_pv_dict_profile(context):
             assert load.strategy.state.desired_energy[slot] == user_profile[slot.hour] / \
                    (Interval(hours=1) / house.config.slot_length)
         else:
-            assert load.strategy.state.desired_energy[slot] == 0
+            if int(slot.hour) > int(list(user_profile.keys())[-1]):
+                assert load.strategy.state.desired_energy[slot] == \
+                       user_profile[list(user_profile.keys())[-1]] / \
+                       (Interval(hours=1) / house.config.slot_length)
+            else:
+                assert load.strategy.state.desired_energy[slot] == 0

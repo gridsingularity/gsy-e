@@ -11,7 +11,7 @@ from typing import Dict
 from itertools import product
 from d3a import TIME_FORMAT
 
-ACCEPTED_PROFILE_TYPES = ("rate", "power", "break_even")
+ACCEPTED_PROFILE_TYPES = ("rate", "power")
 
 
 def default_profile_dict():
@@ -110,7 +110,7 @@ class ReadProfileMixin:
         """
 
         rate_profile = default_profile_dict()
-        current_rate = rate_profile_input[next(iter(rate_profile_input))]
+        current_rate = 0
         for hour, minute in product(range(24), range(60)):
             time_str = datetime(year=2000, month=1, day=1, hour=hour, minute=minute).\
                 strftime(TIME_FORMAT)
@@ -177,22 +177,10 @@ class ReadProfileMixin:
             raise TypeError(f"Unsupported input type: {str(daily_profile)}")
 
         if input_profile is not None:
-            if profile_type == "rate" or profile_type == "break_even":
-                return cls._fill_gaps_in_rate_profile(input_profile)
-            elif profile_type == "power":
-                # this is a hacky way of making sure, that hourly input-profile is propagated
-                # into default_profile_dict (hours that are not definded should contain 0)
-                # TODO: refactor it, find a more general way
-                update_profile = dict(
-                    (datetime(year=2000, month=1, day=1,
-                              hour=datetime.strptime(time_str, TIME_FORMAT).hour,
-                              minute=minute).
-                     strftime(TIME_FORMAT), val)
-                    for time_str, val in input_profile.items()
-                    for minute in range(60)
-                )
-                temp_dict = default_profile_dict()
-                temp_dict.update(update_profile)
+            filled_profile = cls._fill_gaps_in_rate_profile(input_profile)
+            if profile_type == "power":
                 return cls._calculate_energy_from_power_profile(
-                    temp_dict,
+                    filled_profile,
                     slot_length)
+            else:
+                return filled_profile

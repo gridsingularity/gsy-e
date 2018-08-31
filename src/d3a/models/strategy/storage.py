@@ -26,7 +26,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
 
                  cap_price_strategy: bool=False):
-        break_even = self.read_arbitrary_profile("break_even", break_even)
+        break_even = self.read_arbitrary_profile("rate", break_even)
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_soc, battery_capacity, break_even)
         self.break_even = break_even

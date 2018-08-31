@@ -304,8 +304,7 @@ def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee
     assert len(context.simulation.simulation_config.market_maker_rate) == 24 * 60
     assert len(default_profile_dict().keys()) == len(context.simulation.simulation_config.
                                                      market_maker_rate.keys())
-    assert context.simulation.simulation_config.market_maker_rate["00:00"] == \
-        context._market_maker_rate["02:00"]
+    assert context.simulation.simulation_config.market_maker_rate["01:59"] == 0
     assert context.simulation.simulation_config.market_maker_rate["12:00"] == \
         context._market_maker_rate["11:00"]
     assert context.simulation.simulation_config.market_maker_rate["23:00"] == \
@@ -492,7 +491,11 @@ def check_user_pv_dict_profile(context):
             assert energy == profile_data[timepoint.hour] / \
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
         else:
-            assert energy == 0
+            if int(timepoint.hour) > int(list(user_profile.keys())[-1]):
+                assert energy == user_profile[list(user_profile.keys())[-1]] / \
+                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+            else:
+                assert energy == 0
 
 
 @then('the UserProfile PV follows the PV profile of csv')
