@@ -77,7 +77,7 @@ class ExportAndPlot:
         Removes "grid" folder in self.plot_dir
         """
         old_dir = os.path.join(self.plot_dir, self.area.slug)
-        if not os.path.isfile(old_dir):
+        if not os.path.isdir(old_dir):
             _log.error("PLOT ERROR: No plots were generated for {} under {}".
                        format(self.area.slug, self.plot_dir))
             return
