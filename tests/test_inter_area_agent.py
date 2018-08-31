@@ -235,6 +235,7 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
 
 def test_iaa_forwards_partial_offer_from_source_market(iaa2):
     full_offer = iaa2.lower_market.sorted_offers[0]
+    iaa2.usable_offer = lambda s: True
     residual_offer = Offer('residual', 2, 1.4, 'other')
     iaa2.event_offer_changed(market=iaa2.lower_market,
                              existing_offer=full_offer,

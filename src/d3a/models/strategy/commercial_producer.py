@@ -22,27 +22,19 @@ class CommercialStrategy(BaseStrategy):
         for market in self._markets_to_offer_on_activate():
             self.offer_energy(market)
 
-    def event_trade(self, *, market, trade):
-        # If trade happened post a new offer
-        if self.owner.name == trade.seller:
-            self.offer_energy(market)
-
     def event_market_cycle(self):
         # Post new offers
         market = list(self.area.markets.values())[-1]
         self.offer_energy(market)
 
     def offer_energy(self, market):
-        if self.energy_rate is None:
-            market.offer(
-                self.energy_per_slot_kWh.m *
-                self.area.config.market_maker_rate[market.time_slot_str],
-                self.energy_per_slot_kWh.m,
-                self.owner.name
-            )
-        else:
-            market.offer(
-                self.energy_per_slot_kWh.m * self.energy_rate,
-                self.energy_per_slot_kWh.m,
-                self.owner.name
-            )
+        energy_rate = self.area.config.market_maker_rate[market.time_slot_str] \
+            if self.energy_rate is None \
+            else self.energy_rate
+        offer = market.offer(
+            self.energy_per_slot_kWh.m * energy_rate,
+            self.energy_per_slot_kWh.m,
+            self.owner.name
+        )
+
+        self.offers.post(offer, market)

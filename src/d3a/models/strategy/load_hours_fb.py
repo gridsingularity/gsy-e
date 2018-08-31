@@ -133,11 +133,11 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     def event_market_cycle(self):
         self._update_energy_requirement()
         self.update_on_market_cycle()
-        if self.energy_requirement_Wh > 0:
-            self.post_first_bid(
-                self.area.next_market,
-                self.energy_requirement_Wh
-            )
+        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            if self.energy_requirement_Wh > 0:
+                self.post_first_bid(
+                    self.area.next_market,
+                    self.energy_requirement_Wh)
 
     def event_bid_deleted(self, *, market, bid):
         if market != self.area.next_market:

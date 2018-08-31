@@ -1,5 +1,6 @@
 from behave import then
 from math import isclose
+from d3a.export_unmatched_loads import export_unmatched_loads
 
 
 def get_areas_from_2_house_grid(context):
@@ -84,3 +85,24 @@ def step_impl(context):
     ]
 
     assert all([trade.offer.price / trade.offer.energy < 16.99 for trade in storage_trades])
+
+
+@then('on every market slot there should be matching trades on grid and house markets')
+def check_matching_trades(context):
+    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
+    grid = context.simulation.area
+
+    for timeslot, market in grid.markets.items():
+        assert timeslot in house1.markets.keys()
+        grid_trades = grid.markets[timeslot].trades
+        house_trades = house1.markets[timeslot].trades
+        assert len(grid_trades) == len(house_trades)
+        assert all(
+            any(t.offer.energy == th.offer.energy and t.buyer == th.seller for th in house_trades)
+            for t in grid_trades)
+
+
+@then('there should be no unmatched loads')
+def no_unmatched_loads(context):
+    unmatched = export_unmatched_loads(context.simulation.area)
+    assert unmatched["unmatched_load_count"] == 0
