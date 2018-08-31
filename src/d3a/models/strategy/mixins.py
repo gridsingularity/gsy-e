@@ -4,11 +4,23 @@ Exposes mixins that can be used from strategy classes.
 import csv
 import os
 import ast
-import numpy as np
+from enum import Enum
 from datetime import datetime
 from pendulum import Interval
 from statistics import mean
 from typing import Dict
+from itertools import product
+from d3a import TIME_FORMAT
+
+
+class InputProfileTypes(Enum):
+    RATE = 1
+    POWER = 2
+
+
+def default_profile_dict():
+    return dict((datetime(year=2000, month=1, day=1, hour=hour, minute=minute).
+                 strftime(TIME_FORMAT), 0) for hour, minute in product(range(24), range(60)))
 
 
 class ReadProfileMixin:
@@ -33,50 +45,12 @@ class ReadProfileMixin:
         return profile_data
 
     @staticmethod
-    def _interpolate_profile_data_for_market_slot(profile_data_W: Dict[str, float],
-                                                  time_format: str,
-                                                  slot_length: Interval) -> Dict[str, float]:
-        """
-        Interpolates power curves onto slot times and converts it into energy (kWh)
-        The intrinsic conversion to seconds is done in order to enable slot-lengths < 1 minute
-        :param profile_data_W: Power profile in W, in the same format as the result of _readCSV
-        :param time_format: String format for time, eg. %H:%M
-        :param slot_length: slot length duration
-        :return: a mapping from time to energy values in kWh
-        """
-
-        timestr_solar_array = np.array(list(profile_data_W.keys()))
-        solar_power_W = np.array(list(profile_data_W.values()))
-
-        time0 = datetime.utcfromtimestamp(0)
-        time_solar_array = np.array([
-            (datetime.strptime(ti, time_format) - time0).seconds
-            for ti in timestr_solar_array
-                                    ])
-
-        whole_day_sec = 24 * 60 * 60
-        tt = np.append(time_solar_array, whole_day_sec)
-        timediff_array = [j - i for i, j in zip(tt[:-1], tt[1:])]
-        solar_energy_kWh = solar_power_W * timediff_array / 60 / 60 / 1000.
-
-        slot_time_list = np.arange(0, whole_day_sec, slot_length.seconds)
-
-        interp_energy_kWh = np.interp(slot_time_list, time_solar_array, solar_energy_kWh)
-
-        return {datetime.utcfromtimestamp(slot_time_list[ii]).strftime(time_format):
-                interp_energy_kWh[ii]
-                for ii in range(len(interp_energy_kWh))
-                }
-
-    @staticmethod
     def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
-                                             time_format: str,
                                              slot_length: Interval) -> Dict[str, float]:
         """
         Calculates energy from power profile. Does not use numpy, calculates avg power for each
         market slot and based on that calculates energy.
         :param profile_data_W: Power profile in W, in the same format as the result of _readCSV
-        :param time_format: String format for time, eg. %H:%M
         :param slot_length: slot length duration
         :return: a mapping from time to energy values in kWh
         """
@@ -85,7 +59,7 @@ class ReadProfileMixin:
         solar_power_input_W = list(profile_data_W.values())
         time0 = datetime.utcfromtimestamp(0)
         time_solar_array = [
-            (datetime.strptime(ti, time_format) - time0).seconds
+            (datetime.strptime(ti, TIME_FORMAT) - time0).seconds
             for ti in timestr_solar_array
         ]
         whole_day_sec = 24 * 60 * 60
@@ -95,7 +69,7 @@ class ReadProfileMixin:
             for index, seconds in enumerate(time_solar_array)
             for _ in range(seconds - time_solar_array[index - 1])
         ]
-        slot_time_list = np.arange(0, whole_day_sec, slot_length.seconds)
+        slot_time_list = [i for i in range(0, whole_day_sec, slot_length.seconds)]
         avg_power_kW = [
             mean(solar_power_array_W[
                     index * slot_length.seconds:index * slot_length.seconds + slot_length.seconds
@@ -104,73 +78,107 @@ class ReadProfileMixin:
         ]
         slot_energy_kWh = list(map(lambda x: x / (Interval(hours=1) / slot_length), avg_power_kW))
 
-        return {datetime.utcfromtimestamp(slot_time_list[ii]).strftime(time_format):
+        return {datetime.utcfromtimestamp(slot_time_list[ii]).strftime(TIME_FORMAT):
                 slot_energy_kWh[ii]
                 for ii in range(len(slot_energy_kWh))
                 }
 
-    def read_power_profile_csv_to_energy(self,
-                                         profile_path: str,
-                                         time_format: str,
-                                         slot_length: Interval) -> Dict[str, float]:
+    @classmethod
+    def read_profile_csv_to_dict(cls, profile_type: InputProfileTypes,
+                                 profile_path: str,
+                                 slot_length: Interval) -> Dict[str, float]:
         """
         Reads power profile from csv and converts it to energy
         :param profile_path: path of the csv file
-        :param time_format: String format for time, eg. %H:%M
         :param slot_length: slot length duration
         :return: a mapping from time to energy values in kWh
         """
-        profile_data = self._readCSV(profile_path)
-        return self._interpolate_profile_data_for_market_slot(
-            profile_data, time_format, slot_length
-        )
+        profile_data = cls._readCSV(profile_path)
+        if profile_type == InputProfileTypes.RATE:
+            return cls._fill_gaps_in_rate_profile(profile_data)
+        elif profile_type == InputProfileTypes.POWER:
+            return cls._calculate_energy_from_power_profile(
+                profile_data, slot_length
+            )
 
-    def read_arbitrary_power_profile_W_to_energy_kWh(self,
-                                                     daily_load_profile,
-                                                     slot_length: Interval) -> Dict[str, float]:
+    @staticmethod
+    def _fill_gaps_in_rate_profile(rate_profile_input: Dict) -> Dict:
         """
-        Reads arbitrary power profile and converts it to energy. Handles csv, dict and string
-        input.
-        :param daily_load_profile: Can be either a csv file path,
+        Fills time steps, where no rate is provided, with the rate value of the
+        last available time step.
+        :param rate_profile_input: dict(str: float)
+        :return: continuous rate profile (dict)
+        """
+
+        rate_profile = default_profile_dict()
+        current_rate = 0
+        for hour, minute in product(range(24), range(60)):
+            time_str = datetime(year=2000, month=1, day=1, hour=hour, minute=minute).\
+                strftime(TIME_FORMAT)
+
+            if time_str in rate_profile_input.keys():
+                current_rate = rate_profile_input[time_str]
+            rate_profile[time_str] = current_rate
+
+        return rate_profile
+
+    @classmethod
+    def read_arbitrary_profile(cls, profile_type: InputProfileTypes,
+                               daily_profile,
+                               slot_length=Interval()) -> Dict[str, float]:
+        """
+        Reads arbitrary profile.
+        Handles csv, dict and string input.
+        :param profile_type: Can be either rate or power
+        :param daily_profile: Can be either a csv file path,
         or a dict with hourly data (Dict[int, float])
         or a dict with arbitrary time data (Dict[str, float])
         or a string containing a serialized dict of the aforementioned structure
         :param slot_length: slot length duration
         :return: a mapping from time to energy values in kWh
         """
-        if os.path.isfile(str(daily_load_profile)):
-            return self.read_power_profile_csv_to_energy(
-                daily_load_profile,
-                "%H:%M",
+
+        if os.path.isfile(str(daily_profile)):
+            return cls.read_profile_csv_to_dict(
+                profile_type,
+                daily_profile,
                 slot_length
             )
-        elif isinstance(daily_load_profile, dict) or isinstance(daily_load_profile, str):
-            if isinstance(daily_load_profile, str):
-                daily_load_profile = ast.literal_eval(daily_load_profile)
-                daily_load_profile = {k: float(v) for k, v in daily_load_profile.items()}
-            if isinstance(list(daily_load_profile.keys())[0], str):
+        elif isinstance(daily_profile, dict) or isinstance(daily_profile, str):
+
+            if isinstance(daily_profile, str):
+                # JSON
+                input_profile = ast.literal_eval(daily_profile)
+                input_profile = {k: float(v) for k, v in input_profile.items()}
+
+            elif isinstance(list(daily_profile.keys())[0], str):
                 # Assume that the time fields are properly formatted.
-                return self._calculate_energy_from_power_profile(
-                    daily_load_profile,
-                    "%H:%M",
-                    slot_length
-                )
-            elif isinstance(list(daily_load_profile.keys())[0], int):
+                input_profile = daily_profile
+
+            elif isinstance(list(daily_profile.keys())[0], int):
                 # If it is an integer assume an hourly profile
-                input_profile = {hour: 0 for hour in range(24)}
-                input_profile.update(daily_load_profile)
                 input_profile = dict(
-                    (f"{k:02}:{m:02}", v)
-                    for k, v in input_profile.items()
-                    for m in range(60)
+                    (datetime(year=2000, month=1, day=1, hour=hour).
+                     strftime(TIME_FORMAT), val)
+                    for hour, val in daily_profile.items()
                 )
-                return self._calculate_energy_from_power_profile(
-                    input_profile,
-                    "%H:%M",
-                    slot_length
-                )
+
             else:
-                raise TypeError("Unsupported type for load strategy input timestamp field: " +
-                                str(list(daily_load_profile.keys())[0]))
+                raise TypeError("Unsupported input type : " + str(list(daily_profile.keys())[0]))
+
+        elif isinstance(daily_profile, int) or isinstance(daily_profile, tuple):
+            input_profile = default_profile_dict()
+            for key in input_profile.keys():
+                input_profile[key] = daily_profile
+
         else:
-            raise TypeError(f"Unsupported type for load strategy input: {str(daily_load_profile)}")
+            raise TypeError(f"Unsupported input type: {str(daily_profile)}")
+
+        if input_profile is not None:
+            filled_profile = cls._fill_gaps_in_rate_profile(input_profile)
+            if profile_type == InputProfileTypes.POWER:
+                return cls._calculate_energy_from_power_profile(
+                    filled_profile,
+                    slot_length)
+            else:
+                return filled_profile

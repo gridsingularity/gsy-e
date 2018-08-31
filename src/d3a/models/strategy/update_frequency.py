@@ -136,7 +136,7 @@ class OfferUpdateFrequencyMixin:
     def _calculate_price_decrease_rate(self, market):
         if self.energy_rate_decrease_option is \
                 RateDecreaseOption.PERCENTAGE_BASED_ENERGY_RATE_DECREASE:
-            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot.hour) * \
+            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot_str) * \
                                  (1 - self.risk/ConstSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s.m)

@@ -7,7 +7,7 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import ConstSettings
-
+from d3a import TIME_FORMAT
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today().at(hour=10, minute=45, second=2)
@@ -62,6 +62,10 @@ class FakeMarket:
     @property
     def time_slot(self):
         return Pendulum.now().start_of('day')
+
+    @property
+    def time_slot_str(self):
+        return self.time_slot.strftime(TIME_FORMAT)
 
     def delete_offer(self, offer_id):
         return

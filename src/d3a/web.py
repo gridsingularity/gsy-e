@@ -14,6 +14,7 @@ from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
+from d3a import TIME_FORMAT
 from d3a.simulation import Simulation, page_lock
 from d3a.stats import (
     energy_bills
@@ -168,7 +169,7 @@ def _api_app(simulation: Simulation):
             'markets': [
                 {
                     'type': type_,
-                    'time_slot': time.format("%H:%M"),
+                    'time_slot': time.format(TIME_FORMAT),
                     'url': url_for('market', area_slug=area_slug,
                                    market_time=time),
                     'trade_count': len(market.trades),
@@ -206,7 +207,7 @@ def _api_app(simulation: Simulation):
         market, type_ = _get_market(area, market_time)
         return {
             'type': type_,
-            'time_slot': market.time_slot.format("%H:%M"),
+            'time_slot': market.time_slot.format(TIME_FORMAT),
             'url': url_for('market', area_slug=area_slug, market_time=market.time_slot),
             'prices': {
                 'trade': {
@@ -281,7 +282,7 @@ def _api_app(simulation: Simulation):
                 'trade_count': len(market.trades),
                 'offer_count': len(market.offers),
                 'type': type_,
-                'time_slot': market.time_slot.format("%H:%M"),
+                'time_slot': market.time_slot.format(TIME_FORMAT),
                 'url': url_for('market', area_slug=area_slug, market_time=market.time_slot),
             }
             for type_, (time, market)
