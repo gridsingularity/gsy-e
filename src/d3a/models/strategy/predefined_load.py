@@ -43,12 +43,12 @@ class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self.energy_requirement = 0
+        self.energy_requirement_Wh = 0
         if self.load_profile[self.area.next_market.time_slot_str] != 0:
-            # TODO: Refactor energy_requirement to denote unit Wh
-            self.energy_requirement = \
+            # TODO: Refactor energy_requirement_Wh to denote unit Wh
+            self.energy_requirement_Wh = \
                 self.load_profile[self.area.next_market.time_slot_str] * 1000.0
-        self.state.record_desired_energy(self.area, self.energy_requirement)
+        self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
 
     def _operating_hours(self, energy):
         """
