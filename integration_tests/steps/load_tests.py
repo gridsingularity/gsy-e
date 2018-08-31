@@ -5,9 +5,10 @@ from d3a.setup.strategy_tests import user_profile_load_csv, user_profile_load_di
 
 @then('the DefinedLoadStrategy follows the Load profile provided as csv')
 def check_load_profile_csv(context):
+    from d3a.models.strategy.mixins import ReadProfileMixin
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))
-    input_profile = load.strategy._readCSV(user_profile_load_csv.profile_path)
+    input_profile = ReadProfileMixin._readCSV(user_profile_load_csv.profile_path)
 
     desired_energy = {f'{k.hour:02}:{k.minute:02}': v
                       for k, v in load.strategy.state.desired_energy.items()

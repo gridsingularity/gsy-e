@@ -4,9 +4,10 @@ Create a load that uses a profile as input for its power values
 import sys
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.mixins import ReadProfileMixin
+from d3a.models.strategy.mixins import InputProfileTypes
 
 
-class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
+class DefinedLoadStrategy(LoadHoursStrategy):
     """
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
@@ -33,9 +34,10 @@ class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
         for each slot.
         :return: None
         """
-        self.load_profile = self.read_arbitrary_profile("power",
-                                                        self.daily_load_profile,
-                                                        slot_length=self.area.config.slot_length)
+        self.load_profile = ReadProfileMixin.read_arbitrary_profile(
+            InputProfileTypes.POWER,
+            self.daily_load_profile,
+            slot_length=self.area.config.slot_length)
         self._update_energy_requirement()
 
     def _update_energy_requirement(self):

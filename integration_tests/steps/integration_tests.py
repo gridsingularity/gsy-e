@@ -63,10 +63,10 @@ def json_string_profile(context, device):
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
     from d3a.models.strategy.mixins import ReadProfileMixin
-    read_profile = ReadProfileMixin()
+    from d3a.models.strategy.mixins import InputProfileTypes
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
-    context._market_maker_rate = read_profile.\
-        read_arbitrary_profile("rate", setup_file_module.market_maker_rate)
+    context._market_maker_rate = ReadProfileMixin.\
+        read_arbitrary_profile(InputProfileTypes.RATE, setup_file_module.market_maker_rate)
     assert context._market_maker_rate is not None
 
 
@@ -515,9 +515,10 @@ def check_pv_csv_profile(context):
 
 @then('the predefined PV follows the PV profile from the csv')
 def check_pv_profile_csv(context):
+    from d3a.models.strategy.mixins import ReadProfileMixin
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
-    input_profile = pv.strategy._readCSV(context._device_profile)
+    input_profile = ReadProfileMixin._readCSV(context._device_profile)
     produced_energy = {f'{k.hour:02}:{k.minute:02}': v
                        for k, v in pv.strategy.energy_production_forecast_kWh.items()
                        }

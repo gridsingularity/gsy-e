@@ -4,6 +4,7 @@ Exposes mixins that can be used from strategy classes.
 import csv
 import os
 import ast
+from enum import Enum
 from datetime import datetime
 from pendulum import Interval
 from statistics import mean
@@ -11,7 +12,10 @@ from typing import Dict
 from itertools import product
 from d3a import TIME_FORMAT
 
-ACCEPTED_PROFILE_TYPES = ("rate", "power")
+
+class InputProfileTypes(Enum):
+    RATE = 1
+    POWER = 2
 
 
 def default_profile_dict():
@@ -80,7 +84,7 @@ class ReadProfileMixin:
                 }
 
     @classmethod
-    def read_profile_csv_to_dict(cls, profile_type: str,
+    def read_profile_csv_to_dict(cls, profile_type: InputProfileTypes,
                                  profile_path: str,
                                  slot_length: Interval) -> Dict[str, float]:
         """
@@ -90,15 +94,12 @@ class ReadProfileMixin:
         :return: a mapping from time to energy values in kWh
         """
         profile_data = cls._readCSV(profile_path)
-        if profile_type == "rate":
+        if profile_type == InputProfileTypes.RATE:
             return cls._fill_gaps_in_rate_profile(profile_data)
-        elif profile_type == "power":
+        elif profile_type == InputProfileTypes.POWER:
             return cls._calculate_energy_from_power_profile(
                 profile_data, slot_length
             )
-        else:
-            raise TypeError("{} not in accepted list of profile types {}".
-                            format(profile_type, ACCEPTED_PROFILE_TYPES))
 
     @staticmethod
     def _fill_gaps_in_rate_profile(rate_profile_input: Dict) -> Dict:
@@ -122,7 +123,7 @@ class ReadProfileMixin:
         return rate_profile
 
     @classmethod
-    def read_arbitrary_profile(cls, profile_type: str,
+    def read_arbitrary_profile(cls, profile_type: InputProfileTypes,
                                daily_profile,
                                slot_length=Interval()) -> Dict[str, float]:
         """
@@ -136,9 +137,6 @@ class ReadProfileMixin:
         :param slot_length: slot length duration
         :return: a mapping from time to energy values in kWh
         """
-        if profile_type not in ACCEPTED_PROFILE_TYPES:
-            raise TypeError("{} not in accepted list of profile types {}".
-                            format(profile_type, ACCEPTED_PROFILE_TYPES))
 
         if os.path.isfile(str(daily_profile)):
             return cls.read_profile_csv_to_dict(
@@ -178,7 +176,7 @@ class ReadProfileMixin:
 
         if input_profile is not None:
             filled_profile = cls._fill_gaps_in_rate_profile(input_profile)
-            if profile_type == "power":
+            if profile_type == InputProfileTypes.POWER:
                 return cls._calculate_energy_from_power_profile(
                     filled_profile,
                     slot_length)
