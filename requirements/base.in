@@ -9,7 +9,6 @@ ethereum
 flask
 flask-api
 flask-cors
-numpy
 pendulum
 pint
 pip-tools

@@ -4,7 +4,6 @@ Exposes mixins that can be used from strategy classes.
 import csv
 import os
 import ast
-import numpy as np
 from datetime import datetime
 from pendulum import Interval
 from statistics import mean
@@ -42,40 +41,6 @@ class ReadProfileMixin:
         return profile_data
 
     @staticmethod
-    def _interpolate_profile_data_for_market_slot(profile_data_W: Dict[str, float],
-                                                  slot_length: Interval) -> Dict[str, float]:
-        """
-        Interpolates power curves onto slot times and converts it into energy (kWh)
-        The intrinsic conversion to seconds is done in order to enable slot-lengths < 1 minute
-        :param profile_data_W: Power profile in W, in the same format as the result of _readCSV
-        :param slot_length: slot length duration
-        :return: a mapping from time to energy values in kWh
-        """
-
-        timestr_solar_array = np.array(list(profile_data_W.keys()))
-        solar_power_W = np.array(list(profile_data_W.values()))
-
-        time0 = datetime.utcfromtimestamp(0)
-        time_solar_array = np.array([
-            (datetime.strptime(ti, TIME_FORMAT) - time0).seconds
-            for ti in timestr_solar_array
-                                    ])
-
-        whole_day_sec = 24 * 60 * 60
-        tt = np.append(time_solar_array, whole_day_sec)
-        timediff_array = [j - i for i, j in zip(tt[:-1], tt[1:])]
-        solar_energy_kWh = solar_power_W * timediff_array / 60 / 60 / 1000.
-
-        slot_time_list = np.arange(0, whole_day_sec, slot_length.seconds)
-
-        interp_energy_kWh = np.interp(slot_time_list, time_solar_array, solar_energy_kWh)
-
-        return {datetime.utcfromtimestamp(slot_time_list[ii]).strftime(TIME_FORMAT):
-                interp_energy_kWh[ii]
-                for ii in range(len(interp_energy_kWh))
-                }
-
-    @staticmethod
     def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
                                              slot_length: Interval) -> Dict[str, float]:
         """
@@ -100,7 +65,7 @@ class ReadProfileMixin:
             for index, seconds in enumerate(time_solar_array)
             for _ in range(seconds - time_solar_array[index - 1])
         ]
-        slot_time_list = np.arange(0, whole_day_sec, slot_length.seconds)
+        slot_time_list = [i for i in range(0, whole_day_sec, slot_length.seconds)]
         avg_power_kW = [
             mean(solar_power_array_W[
                     index * slot_length.seconds:index * slot_length.seconds + slot_length.seconds
@@ -114,7 +79,8 @@ class ReadProfileMixin:
                 for ii in range(len(slot_energy_kWh))
                 }
 
-    def read_profile_csv_to_dict(self, profile_type: str,
+    @classmethod
+    def read_profile_csv_to_dict(cls, profile_type: str,
                                  profile_path: str,
                                  slot_length: Interval) -> Dict[str, float]:
         """
@@ -123,11 +89,11 @@ class ReadProfileMixin:
         :param slot_length: slot length duration
         :return: a mapping from time to energy values in kWh
         """
-        profile_data = self._readCSV(profile_path)
+        profile_data = cls._readCSV(profile_path)
         if profile_type == "rate":
-            return self._fill_gaps_in_rate_profile(profile_data)
+            return cls._fill_gaps_in_rate_profile(profile_data)
         elif profile_type == "power":
-            return self._interpolate_profile_data_for_market_slot(
+            return cls._calculate_energy_from_power_profile(
                 profile_data, slot_length
             )
         else:
@@ -155,7 +121,8 @@ class ReadProfileMixin:
 
         return rate_profile
 
-    def read_arbitrary_profile(self, profile_type: str,
+    @classmethod
+    def read_arbitrary_profile(cls, profile_type: str,
                                daily_profile,
                                slot_length=Interval()) -> Dict[str, float]:
         """
@@ -174,7 +141,7 @@ class ReadProfileMixin:
                             format(profile_type, ACCEPTED_PROFILE_TYPES))
 
         if os.path.isfile(str(daily_profile)):
-            return self.read_profile_csv_to_dict(
+            return cls.read_profile_csv_to_dict(
                 profile_type,
                 daily_profile,
                 slot_length
@@ -211,7 +178,7 @@ class ReadProfileMixin:
 
         if input_profile is not None:
             if profile_type == "rate" or profile_type == "break_even":
-                return self._fill_gaps_in_rate_profile(input_profile)
+                return cls._fill_gaps_in_rate_profile(input_profile)
             elif profile_type == "power":
                 # this is a hacky way of making sure, that hourly input-profile is propagated
                 # into default_profile_dict (hours that are not definded should contain 0)
@@ -226,6 +193,6 @@ class ReadProfileMixin:
                 )
                 temp_dict = default_profile_dict()
                 temp_dict.update(update_profile)
-                return self._calculate_energy_from_power_profile(
+                return cls._calculate_energy_from_power_profile(
                     temp_dict,
                     slot_length)

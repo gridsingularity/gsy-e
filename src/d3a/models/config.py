@@ -7,7 +7,7 @@ from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.mixins import ReadProfileMixin
 
 
-class SimulationConfig(ReadProfileMixin):
+class SimulationConfig:
     def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
                  market_count: int, cloud_coverage: int, market_maker_rate, iaa_fee: int):
         self.duration = duration
@@ -66,4 +66,5 @@ class SimulationConfig(ReadProfileMixin):
         Reads market_maker_rate from arbitrary input types
         """
         market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
-        self.market_maker_rate = self.read_arbitrary_profile("rate", market_maker_rate_parsed)
+        self.market_maker_rate = ReadProfileMixin.read_arbitrary_profile("rate",
+                                                                         market_maker_rate_parsed)
