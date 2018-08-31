@@ -167,11 +167,11 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
 def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(iaa_bid, called):
     iaa_bid.lower_market.delete_bid = called
     iaa_bid.event_bid_traded(
-        traded_bid=Trade('trade_id',
-                         datetime.now(),
-                         iaa_bid.higher_market.bids['id3'],
-                         'owner',
-                         'someone_else'),
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        iaa_bid.higher_market.bids['id3'],
+                        'owner',
+                        'someone_else'),
         market=iaa_bid.higher_market)
     assert len(iaa_bid.lower_market.delete_bid.calls) == 1
 
@@ -218,12 +218,12 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
     iaa_double_sided.higher_market.forwarded_bid = \
         iaa_double_sided.higher_market.forwarded_bid._replace(price=20)
     iaa_double_sided.event_bid_traded(
-        traded_bid=Trade('trade_id',
-                         datetime.now(),
-                         iaa_double_sided.higher_market.forwarded_bid,
-                         'owner',
-                         'someone_else',
-                         price_drop=False),
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        iaa_double_sided.higher_market.forwarded_bid,
+                        'owner',
+                        'someone_else',
+                        price_drop=False),
         market=iaa_double_sided.higher_market)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
 
@@ -235,12 +235,12 @@ def test_iaa_event_bid_trade_reduces_bid_price(iaa_double_sided):
     iaa_double_sided.higher_market.forwarded_bid = \
         iaa_double_sided.higher_market.forwarded_bid._replace(price=20.2)
     iaa_double_sided.event_bid_traded(
-        traded_bid=Trade('trade_id',
-                         datetime.now(),
-                         iaa_double_sided.higher_market.forwarded_bid,
-                         'owner',
-                         'someone_else',
-                         price_drop=True),
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        iaa_double_sided.higher_market.forwarded_bid,
+                        'owner',
+                        'someone_else',
+                        price_drop=True),
         market=iaa_double_sided.higher_market)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
     assert iaa_double_sided.higher_market.forwarded_bid.price == 20.2
@@ -264,12 +264,12 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
     total_bid = iaa_double_sided.higher_market.forwarded_bid
     accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer, total_bid.seller)
     iaa_double_sided.event_bid_traded(
-        traded_bid=Trade('trade_id',
-                         datetime.now(),
-                         accepted_bid,
-                         'owner',
-                         'someone_else',
-                         'residual_offer'),
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        accepted_bid,
+                        'owner',
+                        'someone_else',
+                        'residual_offer'),
         market=iaa_double_sided.higher_market)
     assert iaa_double_sided.lower_market.calls_energy_bids[0] == 1
 

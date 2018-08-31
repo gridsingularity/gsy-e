@@ -221,7 +221,7 @@ class Market:
                     self.traded_energy[bid.buyer] -= bid.energy
                     self._update_min_max_avg_trade_prices(bid.price / bid.energy)
 
-                self._notify_listeners(MarketEvent.BID_TRADED, traded_bid=trade)
+                self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
                 self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
                 return trade
             else:

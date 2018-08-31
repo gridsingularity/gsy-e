@@ -164,29 +164,29 @@ class IAAEngine:
 
             self._match_offers_bids()
 
-    def event_bid_traded(self, *, traded_bid):
-        bid_info = self.forwarded_bids.get(traded_bid.offer.id)
+    def event_bid_traded(self, *, bid_trade):
+        bid_info = self.forwarded_bids.get(bid_trade.offer.id)
         if not bid_info:
             return
 
         # Bid was traded in target market, buy in source
-        if traded_bid.offer.id == bid_info.target_bid.id:
+        if bid_trade.offer.id == bid_info.target_bid.id:
             source_price = bid_info.source_bid.price
-            if traded_bid.price_drop:
+            if bid_trade.price_drop:
                 # Use the rate of the trade bid for accepting the source bid too
-                source_price = traded_bid.offer.price
+                source_price = bid_trade.offer.price
                 # Drop the rate of the trade bid according to IAA fee
                 source_price = source_price / (1 + (self.transfer_fee_pct / 100))
 
             self.markets.source.accept_bid(
-                bid_info.source_bid._replace(price=source_price, energy=traded_bid.offer.energy),
-                energy=traded_bid.offer.energy,
+                bid_info.source_bid._replace(price=source_price, energy=bid_trade.offer.energy),
+                energy=bid_trade.offer.energy,
                 seller=self.owner.name
             )
             self._delete_forwarded_bid_entries(bid_info.target_bid)
 
         # Bid was traded in the source market by someone else
-        elif traded_bid.offer.id == bid_info.source_bid.id:
+        elif bid_trade.offer.id == bid_info.source_bid.id:
             # Delete target bid
             try:
                 self.markets.target.delete_bid(bid_info.target_bid)
@@ -195,7 +195,7 @@ class IAAEngine:
             self._delete_forwarded_bid_entries(bid_info.source_bid)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
-                            f"traded bid {traded_bid} was not in offered bids tuple {bid_info}")
+                            f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
 
     def event_trade(self, *, trade):
         offer_info = self.forwarded_offers.get(trade.offer.id)
@@ -219,10 +219,9 @@ class IAAEngine:
             try:
                 if trade.price_drop:
                     # Use the rate of the trade offer for accepting the source offer too
-                    source_price = trade.offer.price
                     # Drop the rate of the trade offer according to IAA fee
-                    source_price = source_price / (1 + (self.transfer_fee_pct / 100))
-                    offer_info.source_offer.price = source_price
+                    offer_info.source_offer.price = \
+                        trade.offer.price / (1 + (self.transfer_fee_pct / 100))
                     offer_info.source_offer.energy = trade.offer.energy
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
@@ -408,9 +407,9 @@ class InterAreaAgent(BaseStrategy):
         for engine in self.engines:
             engine.event_trade(trade=trade)
 
-    def event_bid_traded(self, *, market, traded_bid):
+    def event_bid_traded(self, *, market, bid_trade):
         for engine in self.engines:
-            engine.event_bid_traded(traded_bid=traded_bid)
+            engine.event_bid_traded(bid_trade=bid_trade)
 
     def event_bid_deleted(self, *, market, bid):
         for engine in self.engines:
