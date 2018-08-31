@@ -102,24 +102,24 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             return
         self.remove_bid_from_pending(bid.id, self.area.next_market)
 
-    def event_bid_traded(self, *, market, traded_bid):
+    def event_bid_traded(self, *, market, bid_trade):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             # Do not handle bid trades on single sided markets
             assert False and "Invalid state, cannot receive a bid if single sided market" \
                              " is globally configured."
 
-        if traded_bid.offer.buyer != self.owner.name:
+        if bid_trade.offer.buyer != self.owner.name:
             return
 
         buffered_bid = next(filter(
-            lambda b: b.id == traded_bid.offer.id, self.get_posted_bids(market)
+            lambda b: b.id == bid_trade.offer.id, self.get_posted_bids(market)
         ))
 
-        if traded_bid.offer.buyer == buffered_bid.buyer:
+        if bid_trade.offer.buyer == buffered_bid.buyer:
             # Update energy requirement and clean up the pending bid buffer
-            self.state.update_energy_per_slot(-traded_bid.offer.energy, market.time_slot)
-            self.state.block_storage(traded_bid.offer.energy)
-            self.add_bid_to_bought(traded_bid.offer, market)
+            self.state.update_energy_per_slot(-bid_trade.offer.energy, market.time_slot)
+            self.state.block_storage(bid_trade.offer.energy)
+            self.add_bid_to_bought(bid_trade.offer, market)
 
     def event_market_cycle(self):
         self.update_market_cycle(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])

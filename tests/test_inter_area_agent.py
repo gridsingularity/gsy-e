@@ -4,6 +4,7 @@ from datetime import datetime
 
 from d3a.models.market import Offer, Trade, Bid
 from d3a.models.strategy.inter_area import InterAreaAgent
+from d3a.models.strategy.const import ConstSettings
 
 
 class FakeArea:
@@ -24,6 +25,7 @@ class FakeMarket:
         self.calls_energy_bids = []
         self.calls_offers = []
         self.calls_bids = []
+        self.calls_bids_price = []
         self.area = FakeArea("fake_area")
 
     @property
@@ -49,9 +51,11 @@ class FakeMarket:
         else:
             return Trade('trade_id', time, offer, offer.seller, buyer)
 
-    def accept_bid(self, bid, energy, seller, buyer=None, track_bid=True, *, time=None):
+    def accept_bid(self, bid, energy, seller, buyer=None, track_bid=True, *,
+                   time=None, price_drop=True):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
+        self.calls_bids_price.append(bid.price)
         if energy < bid.energy:
             residual_energy = bid.energy - energy
             residual = Bid('res', bid.price, residual_energy, bid.buyer, seller, bid.market)
@@ -117,7 +121,6 @@ def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
 
 @pytest.fixture
 def iaa_bid():
-    from d3a.models.strategy.const import ConstSettings
     ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
     higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner'),
@@ -139,20 +142,36 @@ def test_iaa_forwards_bids(iaa_bid):
     assert iaa_bid.higher_market.bid_count == 1
 
 
-def test_iaa_forwarded_bids_do_not_have_overhead(iaa_bid):
+def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
     assert iaa_bid.higher_market.bid_count == 1
-    assert iaa_bid.higher_market.forwarded_bid.price == \
+    assert iaa_bid.higher_market.forwarded_bid.price / (1 + (iaa_bid.transfer_fee_pct / 100)) == \
         list(iaa_bid.lower_market.bids.values())[-1].price
+
+
+@pytest.mark.parametrize("iaa_fee", [10, 0, 50, 75, 5, 2, 3])
+def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
+    higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')])
+    iaa = InterAreaAgent(owner=FakeArea('owner'),
+                         higher_market=higher_market,
+                         lower_market=lower_market,
+                         transfer_fee_pct=iaa_fee)
+    iaa.event_tick(area=iaa.owner)
+    assert iaa.higher_market.bid_count == 1
+    assert iaa.higher_market.forwarded_bid.price / (1 + (iaa_fee / 100)) == \
+        list(iaa.lower_market.bids.values())[-1].price
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
 
 
 def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(iaa_bid, called):
     iaa_bid.lower_market.delete_bid = called
     iaa_bid.event_bid_traded(
-        traded_bid=Trade('trade_id',
-                         datetime.now(),
-                         iaa_bid.higher_market.bids['id3'],
-                         'owner',
-                         'someone_else'),
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        iaa_bid.higher_market.bids['id3'],
+                        'owner',
+                        'someone_else'),
         market=iaa_bid.higher_market)
     assert len(iaa_bid.lower_market.delete_bid.calls) == 1
 
@@ -196,14 +215,36 @@ def test_iaa_event_trade_buys_accepted_offer(iaa2):
 
 
 def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
+    iaa_double_sided.higher_market.forwarded_bid = \
+        iaa_double_sided.higher_market.forwarded_bid._replace(price=20)
     iaa_double_sided.event_bid_traded(
-        traded_bid=Trade('trade_id',
-                         datetime.now(),
-                         iaa_double_sided.higher_market.forwarded_bid,
-                         'owner',
-                         'someone_else'),
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        iaa_double_sided.higher_market.forwarded_bid,
+                        'owner',
+                        'someone_else',
+                        price_drop=False),
         market=iaa_double_sided.higher_market)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
+
+    assert iaa_double_sided.higher_market.forwarded_bid.price == 20.0
+    assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10.0
+
+
+def test_iaa_event_bid_trade_reduces_bid_price(iaa_double_sided):
+    iaa_double_sided.higher_market.forwarded_bid = \
+        iaa_double_sided.higher_market.forwarded_bid._replace(price=20.2)
+    iaa_double_sided.event_bid_traded(
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        iaa_double_sided.higher_market.forwarded_bid,
+                        'owner',
+                        'someone_else',
+                        price_drop=True),
+        market=iaa_double_sided.higher_market)
+    assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
+    assert iaa_double_sided.higher_market.forwarded_bid.price == 20.2
+    assert iaa_double_sided.lower_market.calls_bids_price[-1] == 20.0
 
 
 def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
@@ -223,12 +264,12 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
     total_bid = iaa_double_sided.higher_market.forwarded_bid
     accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer, total_bid.seller)
     iaa_double_sided.event_bid_traded(
-        traded_bid=Trade('trade_id',
-                         datetime.now(),
-                         accepted_bid,
-                         'owner',
-                         'someone_else',
-                         'residual_offer'),
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        accepted_bid,
+                        'owner',
+                        'someone_else',
+                        'residual_offer'),
         market=iaa_double_sided.higher_market)
     assert iaa_double_sided.lower_market.calls_energy_bids[0] == 1
 
