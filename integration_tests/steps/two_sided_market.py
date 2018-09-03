@@ -2,12 +2,50 @@ from behave import then
 from math import isclose
 from d3a.export_unmatched_loads import export_unmatched_loads
 from d3a.models.strategy.const import ConstSettings
+from d3a.util import make_iaa_name
 
 
 @then('the load has no unmatched loads')
 def no_unmatched_loads(context):
     unmatched = export_unmatched_loads(context.simulation.area)
     assert unmatched["unmatched_load_count"] == 0
+
+
+@then('the load has unmatched loads')
+def has_unmatched_loads(context):
+    unmatched = export_unmatched_loads(context.simulation.area)
+    assert unmatched["unmatched_load_count"] > 0
+
+
+@then('the load bid is partially fulfilled by the PV offers')
+def load_partially_fulfill_bid(context):
+    grid = context.simulation.area
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    load = next(filter(lambda x: "H1 General Load" in x.name, house1.children))
+    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
+    pvs = list(filter(lambda x: "H2 PV" in x.name, house2.children))
+
+    for slot, market in house1.past_markets.items():
+        if len(market.trades) == 0:
+            continue
+
+        # Assert one trade for each PV
+        assert len(market.trades) == 5
+        assert all(trade.buyer == load.name for trade in market.trades)
+        assert all(trade.seller == make_iaa_name(house1)
+                   for trade in house1.past_markets[slot].trades)
+        assert len(grid.past_markets[slot].trades) == 5
+        assert all(trade.buyer == make_iaa_name(house1)
+                   for trade in grid.past_markets[slot].trades)
+        assert all(trade.seller == make_iaa_name(house2)
+                   for trade in grid.past_markets[slot].trades)
+
+        pv_names = [pv.name for pv in pvs]
+        assert len(grid.past_markets[slot].trades) == 5
+        assert all(trade.buyer == make_iaa_name(house2)
+                   for trade in house2.past_markets[slot].trades)
+        assert all(trade.seller in pv_names
+                   for trade in house2.past_markets[slot].trades)
 
 
 @then('the PV always provides constant power according to load demand')
@@ -41,7 +79,7 @@ def energy_rate_average_between_min_and_max_load_pv(context):
     load = next(filter(lambda x: "H1 General Load" in x.name, house1.children))
 
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
-    pv = next(filter(lambda x: "H2 PV" in x.name, house2.children))
+    pvs = list(filter(lambda x: "H2 PV" in x.name, house2.children))
 
     load_rates_set = set()
     pv_rates_set = set()
@@ -52,7 +90,7 @@ def energy_rate_average_between_min_and_max_load_pv(context):
 
     for slot, market in house2.past_markets.items():
         for trade in market.trades:
-            if trade.seller == pv.name:
+            if any(trade.seller == pv.name for pv in pvs):
                 pv_rates_set.add(trade.offer.price / trade.offer.energy)
 
     rate_threshold = (ConstSettings.LOAD_MAX_ENERGY_RATE - ConstSettings.LOAD_MIN_ENERGY_RATE) / 2
