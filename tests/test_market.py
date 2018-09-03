@@ -40,6 +40,27 @@ def test_market_bid(market: Market):
     assert bid.market == market
 
 
+def test_market_bid_accepts_bid_id(market: Market):
+    bid = market.bid(1, 2, 'bidder', 'seller', bid_id='123')
+    assert market.bids['123'] == bid
+    assert bid.id == '123'
+    assert bid.price == 1
+    assert bid.energy == 2
+    assert bid.buyer == 'bidder'
+    assert bid.seller == 'seller'
+    assert bid.market == market
+
+    # Update existing bid is tested here
+    bid = market.bid(3, 4, 'updated_bidder', 'updated_seller', bid_id='123')
+    assert market.bids['123'] == bid
+    assert bid.id == '123'
+    assert bid.price == 3
+    assert bid.energy == 4
+    assert bid.buyer == 'updated_bidder'
+    assert bid.seller == 'updated_seller'
+    assert bid.market == market
+
+
 def test_market_offer_invalid(market: Market):
     with pytest.raises(InvalidOffer):
         market.offer(10, -1, 'someone')
@@ -126,6 +147,7 @@ def test_market_bid_trade(market: Market):
     assert trade.offer is bid
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
+    assert not trade.residual
 
 
 def test_market_trade_by_id(market: Market):
@@ -194,7 +216,43 @@ def test_market_trade_bid_partial(market: Market):
     assert trade.offer.seller == 'B'
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
-    assert len(market.bids) == 0
+    assert trade.residual
+    assert len(market.bids) == 1
+    assert bid.id in market.bids
+    assert market.bids[bid.id].energy == 15
+    assert market.bids[bid.id].price == 15
+    assert market.bids[bid.id].seller == 'B'
+    assert market.bids[bid.id].buyer == 'A'
+
+
+def test_market_accept_bid_emits_bid_traded_and_bid_deleted_event(market: Market, called):
+    market.add_listener(called)
+    bid = market.bid(20, 20, 'A', 'B')
+    trade = market.accept_bid(bid)
+    assert len(called.calls) == 2
+    assert called.calls[0][0] == (repr(MarketEvent.BID_TRADED), )
+    assert called.calls[1][0] == (repr(MarketEvent.BID_DELETED), )
+    assert called.calls[0][1] == {
+        'market': repr(market),
+        'bid_trade': repr(trade),
+    }
+    assert called.calls[1][1] == {
+        'market': repr(market),
+        'bid': repr(bid),
+    }
+
+
+def test_market_accept_bid_does_not_emit_bid_deleted_on_partial_bid(market: Market, called):
+    market.add_listener(called)
+    bid = market.bid(20, 20, 'A', 'B')
+    trade = market.accept_bid(bid, energy=1)
+    assert all([ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]])
+    assert len(called.calls) == 1
+    assert called.calls[0][0] == (repr(MarketEvent.BID_TRADED), )
+    assert called.calls[0][1] == {
+        'market': repr(market),
+        'bid_trade': repr(trade),
+    }
 
 
 @pytest.mark.parametrize('market_method', ('_update_accumulated_trade_price_energy',
@@ -293,14 +351,14 @@ def test_market_listeners_init(called):
     assert len(called.calls) == 1
 
 
-def test_market_listners_add(market, called):
+def test_market_listeners_add(market, called):
     market.add_listener(called)
     market.offer(10, 20, 'A')
 
     assert len(called.calls) == 1
 
 
-def test_market_listners_offer(market, called):
+def test_market_listeners_offer(market, called):
     market.add_listener(called)
     offer = market.offer(10, 20, 'A')
 
@@ -309,7 +367,7 @@ def test_market_listners_offer(market, called):
     assert called.calls[0][1] == {'offer': repr(offer), 'market': repr(market)}
 
 
-def test_market_listners_offer_changed(market, called):
+def test_market_listeners_offer_changed(market, called):
     market.add_listener(called)
     offer = market.offer(10, 20, 'A')
     market.accept_offer(offer, 'B', energy=3)
@@ -324,7 +382,7 @@ def test_market_listners_offer_changed(market, called):
     }
 
 
-def test_market_listners_offer_deleted(market, called):
+def test_market_listeners_offer_deleted(market, called):
     market.add_listener(called)
     offer = market.offer(10, 20, 'A')
     market.delete_offer(offer)
