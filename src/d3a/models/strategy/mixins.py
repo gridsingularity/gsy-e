@@ -155,7 +155,8 @@ class ReadProfileMixin:
                 # Assume that the time fields are properly formatted.
                 input_profile = daily_profile
 
-            elif isinstance(list(daily_profile.keys())[0], int):
+            elif isinstance(list(daily_profile.keys())[0], int) or \
+                    isinstance(list(daily_profile.keys())[0], float):
                 # If it is an integer assume an hourly profile
                 input_profile = dict(
                     (datetime(year=2000, month=1, day=1, hour=hour).
@@ -166,7 +167,9 @@ class ReadProfileMixin:
             else:
                 raise TypeError("Unsupported input type : " + str(list(daily_profile.keys())[0]))
 
-        elif isinstance(daily_profile, int) or isinstance(daily_profile, tuple):
+        elif isinstance(daily_profile, int) or \
+                isinstance(daily_profile, float) or \
+                isinstance(daily_profile, tuple):
             input_profile = default_profile_dict()
             for key in input_profile.keys():
                 input_profile[key] = daily_profile

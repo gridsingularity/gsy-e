@@ -1,6 +1,8 @@
 from behave import then
 from pendulum.interval import Interval
 from d3a.setup.strategy_tests import user_profile_load_csv, user_profile_load_dict # NOQA
+from d3a import TIME_FORMAT
+from d3a.export_unmatched_loads import export_unmatched_loads
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as csv')
@@ -30,8 +32,8 @@ def check_traded_energy_rate(context):
     for slot, market in house.past_markets.items():
         for trade in market.trades:
             if trade.buyer == load.name:
-                assert (trade.offer.price / trade.offer.energy) <\
-                       load.strategy.max_energy_rate.m
+                assert (trade.offer.price / trade.offer.energy) < \
+                       load.strategy.max_energy_rate[slot.strftime(TIME_FORMAT)]
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')
@@ -51,3 +53,15 @@ def check_user_pv_dict_profile(context):
                        (Interval(hours=1) / house.config.slot_length)
             else:
                 assert load.strategy.state.desired_energy[slot] == 0
+
+
+@then('LoadHoursStrategy does not buy energy with rates that are higher than the provided profile')
+def check_user_rate_profile_dict(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+
+    unmatched = export_unmatched_loads(context.simulation.area)
+    number_of_loads = 2
+    # There are two loads with the same max_energy_rate profile that should report unmatched
+    # energy demand for the first 6 hours of the day:
+    assert unmatched["unmatched_load_count"] == int(number_of_loads * 6. * 60 /
+                                                    house.config.slot_length.minutes)
