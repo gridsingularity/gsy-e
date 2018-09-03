@@ -7,7 +7,6 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.config import SimulationConfig
 
 """
 The infinite power plant strategy follows the market_maker_rate being passed as a
@@ -22,7 +21,7 @@ market_maker_rate = {
 
 
 def get_setup(config):
-    SimulationConfig.read_market_maker_rate(config, market_maker_rate)
+    config.read_market_maker_rate(market_maker_rate)
     area = Area(
         'Grid',
         [

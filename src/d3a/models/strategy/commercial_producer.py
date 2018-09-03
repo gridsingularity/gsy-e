@@ -28,7 +28,7 @@ class CommercialStrategy(BaseStrategy):
         self.offer_energy(market)
 
     def offer_energy(self, market):
-        energy_rate = self.area.config.market_maker_rate[market.time_slot.hour] \
+        energy_rate = self.area.config.market_maker_rate[market.time_slot_str] \
             if self.energy_rate is None \
             else self.energy_rate
         offer = market.offer(

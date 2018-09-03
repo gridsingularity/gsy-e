@@ -10,6 +10,7 @@ import sys
 from pendulum.pendulum import Pendulum
 from terminaltables.other_tables import SingleTable
 
+from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBid, BidNotFound
 from d3a.models.events import MarketEvent, OfferEvent
@@ -108,6 +109,8 @@ class Market:
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
         self.area = area
         self.time_slot = time_slot
+        if self.time_slot is not None:
+            self.time_slot_str = time_slot.strftime(TIME_FORMAT)
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
@@ -191,7 +194,8 @@ class Market:
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def accept_bid(self, bid: Bid, energy: float = None,
-                   seller: str = None, buyer: str = None, track_bid: bool = True):
+                   seller: str = None, buyer: str = None, track_bid: bool = True,
+                   price_drop: bool = True):
         with self.trade_lock:
             market_bid = self.bids.pop(bid.id, None)
             seller = bid.seller if seller is None else seller
@@ -216,7 +220,7 @@ class Market:
                               buyer, seller, self)
 
                 trade = Trade(str(uuid.uuid4()), self._now,
-                              bid, seller, buyer, residual, price_drop=False)
+                              bid, seller, buyer, residual, price_drop=price_drop)
 
                 if track_bid:
                     self.trades.append(trade)
@@ -226,7 +230,7 @@ class Market:
                     self.traded_energy[bid.buyer] -= bid.energy
                     self._update_min_max_avg_trade_prices(bid.price / bid.energy)
 
-                self._notify_listeners(MarketEvent.BID_TRADED, traded_bid=trade)
+                self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
                 if not residual:
                     self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
                 return trade

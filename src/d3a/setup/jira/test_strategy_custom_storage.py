@@ -23,7 +23,7 @@ class CustomStorageStrategy(StorageStrategy):
         Return initial selling rate (market maker rate)
         """
 
-        return self.area.config.market_maker_rate[market.time_slot.hour]
+        return self.area.config.market_maker_rate[market.time_slot_str]
 
     def decrease_energy_price_over_ticks(self):
         """

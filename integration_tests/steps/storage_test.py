@@ -1,5 +1,6 @@
 from behave import then
 from math import isclose
+from d3a import TIME_FORMAT
 
 
 @then('the storage devices buy and sell energy respecting the break even prices')
@@ -15,9 +16,9 @@ def check_storage_prices(context):
             elif trade.buyer in ["H1 Storage1"]:
                 trades_bought.append(trade)
     assert all([trade.offer.price / trade.offer.energy >=
-                storage.strategy.break_even[0][1] for trade in trades_sold])
+                storage.strategy.break_even["00:00"][1] for trade in trades_sold])
     assert all([trade.offer.price / trade.offer.energy <=
-                storage.strategy.break_even[0][0] for trade in trades_bought])
+                storage.strategy.break_even["00:00"][0] for trade in trades_bought])
     assert len(trades_sold) > 0
     assert len(trades_bought) > 0
 
@@ -33,10 +34,11 @@ def step_impl(context):
         trades_bought = []
         for slot, market in house1.past_markets.items():
             for trade in market.trades:
-                if trade.seller == name:
-                    trades_sold.append(trade)
-                elif trade.buyer == name:
-                    trades_bought.append(trade)
+                if slot.hour in profile.keys():
+                    if trade.seller == name:
+                        trades_sold.append(trade)
+                    elif trade.buyer == name:
+                        trades_bought.append(trade)
 
         assert all([round((trade.offer.price / trade.offer.energy), 2) >=
                     round(profile[trade.time.hour][1], 2) for trade in trades_sold])
@@ -59,7 +61,7 @@ def check_storage_sell_prices(context):
             elif trade.buyer == storage.name:
                 trades_bought.append(trade)
     assert all([trade.offer.price / trade.offer.energy >=
-                storage.strategy.break_even[0][1] for trade in trades_sold])
+                storage.strategy.break_even["00:00"][1] for trade in trades_sold])
     assert len(trades_sold) > 0
 
 
@@ -73,9 +75,11 @@ def check_capacity_dependant_sell_rate(context):
             if trade.seller == storage.name:
                 trades_sold.append(trade)
                 trade_rate = round((trade.offer.price / trade.offer.energy), 2)
-                break_even_sell = round(storage.strategy.break_even[slot.hour][1], 2)
+                break_even_sell = round(storage.strategy.break_even[
+                                            slot.strftime(TIME_FORMAT)][1], 2)
                 market_maker_rate = \
-                    round(context.simulation.area.config.market_maker_rate[slot.hour], 2)
+                    round(context.simulation.area.config.
+                          market_maker_rate[slot.strftime(TIME_FORMAT)], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) > 0
@@ -92,15 +96,17 @@ def check_custom_storage(context):
         for id, offer in market.offers.items():
             if offer.seller in storage.name:
                 assert isclose((offer.price / offer.energy),
-                               context.simulation.simulation_config.market_maker_rate[slot.hour]
-                               - price_dec_per_slot)
+                               context.simulation.simulation_config.
+                               market_maker_rate[slot.strftime(TIME_FORMAT)] - price_dec_per_slot)
         for trade in market.trades:
             if trade.seller == storage.name:
                 trades_sold.append(trade)
                 trade_rate = round((trade.offer.price / trade.offer.energy), 2)
-                break_even_sell = round(storage.strategy.break_even[slot.hour][1], 2)
+                break_even_sell = round(storage.strategy.break_even[
+                                            slot.strftime(TIME_FORMAT)][1], 2)
                 market_maker_rate = \
-                    round(context.simulation.area.config.market_maker_rate[slot.hour], 2)
+                    round(context.simulation.area.config.
+                          market_maker_rate[slot.strftime(TIME_FORMAT)], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) > 0

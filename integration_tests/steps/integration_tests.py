@@ -10,6 +10,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
+from d3a import TIME_FORMAT
 
 
 @given('we have a scenario named {scenario}')
@@ -49,11 +50,11 @@ def json_string_profile(context, device):
     for i in range(24):
         for j in ["00", "15", "30", "45"]:
             if i < 10:
-                profile += f"\"{i}:{j}\": 100, "
+                profile += f"\"{i:02}:{j}\": 100, "
             elif 10 <= i < 20:
-                profile += f"\"{i}:{j}\": 50, "
+                profile += f"\"{i:02}:{j}\": 50, "
             else:
-                profile += f"\"{i}:{j}\": 25, "
+                profile += f"\"{i:02}:{j}\": 25, "
     profile += "}"
     context._device_profile = profile
 
@@ -61,8 +62,11 @@ def json_string_profile(context, device):
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
+    from d3a.models.strategy.mixins import ReadProfileMixin
+    from d3a.models.strategy.mixins import InputProfileTypes
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
-    context._market_maker_rate = setup_file_module.market_maker_rate
+    context._market_maker_rate = ReadProfileMixin.\
+        read_arbitrary_profile(InputProfileTypes.RATE, setup_file_module.market_maker_rate)
     assert context._market_maker_rate is not None
 
 
@@ -295,16 +299,16 @@ def test_export_data_csv(context, scenario):
 @then('we test that config parameters are correctly parsed for {scenario}'
       ' [{cloud_coverage}, {iaa_fee}]')
 def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):
+    from d3a.models.strategy.mixins import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
-    assert len(context.simulation.simulation_config.market_maker_rate) == 24
-    for ti in range(24):
-        assert ti in context.simulation.simulation_config.market_maker_rate.keys()
-    assert context.simulation.simulation_config.market_maker_rate[1] == \
-        context._market_maker_rate[2]
-    assert context.simulation.simulation_config.market_maker_rate[12] == \
-        context._market_maker_rate[11]
-    assert context.simulation.simulation_config.market_maker_rate[23] == \
-        context._market_maker_rate[22]
+    assert len(context.simulation.simulation_config.market_maker_rate) == 24 * 60
+    assert len(default_profile_dict().keys()) == len(context.simulation.simulation_config.
+                                                     market_maker_rate.keys())
+    assert context.simulation.simulation_config.market_maker_rate["01:59"] == 0
+    assert context.simulation.simulation_config.market_maker_rate["12:00"] == \
+        context._market_maker_rate["11:00"]
+    assert context.simulation.simulation_config.market_maker_rate["23:00"] == \
+        context._market_maker_rate["22:00"]
     assert context.simulation.simulation_config.iaa_fee == int(iaa_fee)
 
 
@@ -379,7 +383,13 @@ def method_called(context, method):
 
 
 @when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
-def run_sim(context, scenario, duration, slot_length, tick_length):
+def run_sim_without_iaa_fee(context, scenario, duration, slot_length, tick_length):
+    run_sim(context, scenario, duration, slot_length, tick_length, 5)
+
+
+@when('we run the simulation with setup file {scenario} '
+      'and parameters [{duration}, {slot_length}, {tick_length}, {iaa_fee}]')
+def run_sim(context, scenario, duration, slot_length, tick_length, iaa_fee):
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.CRITICAL)
@@ -390,7 +400,7 @@ def run_sim(context, scenario, duration, slot_length, tick_length):
                                          market_count=5,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
-                                         iaa_fee=5)
+                                         iaa_fee=int(iaa_fee))
 
     slowdown = 0
     seed = 0
@@ -468,7 +478,7 @@ def check_pv_profile(context):
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
     profile_data = ReadProfileMixin._readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format("%H:%M"))
+        time = str(timepoint.format(TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
@@ -487,7 +497,11 @@ def check_user_pv_dict_profile(context):
             assert energy == profile_data[timepoint.hour] / \
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
         else:
-            assert energy == 0
+            if int(timepoint.hour) > int(list(user_profile.keys())[-1]):
+                assert energy == user_profile[list(user_profile.keys())[-1]] / \
+                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+            else:
+                assert energy == 0
 
 
 @then('the UserProfile PV follows the PV profile of csv')
@@ -497,7 +511,7 @@ def check_pv_csv_profile(context):
     from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
     profile_data = ReadProfileMixin._readCSV(user_profile_path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format("%H:%M"))
+        time = str(timepoint.format(TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
                    (Interval(hours=1) / pv.config.slot_length) / 1000.0
@@ -507,9 +521,10 @@ def check_pv_csv_profile(context):
 
 @then('the predefined PV follows the PV profile from the csv')
 def check_pv_profile_csv(context):
+    from d3a.models.strategy.mixins import ReadProfileMixin
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
-    input_profile = pv.strategy._readCSV(context._device_profile)
+    input_profile = ReadProfileMixin._readCSV(context._device_profile)
     produced_energy = {f'{k.hour:02}:{k.minute:02}': v
                        for k, v in pv.strategy.energy_production_forecast_kWh.items()
                        }
@@ -549,7 +564,8 @@ def test_infinite_plant_energy_rate(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert all([isclose(trade.offer.price / trade.offer.energy,
-                    context.simulation.simulation_config.market_maker_rate[trade.time.hour])
+                    context.simulation.simulation_config.
+                            market_maker_rate[trade.time.strftime(TIME_FORMAT)])
                     for trade in trades_sold])
         assert len(trades_sold) > 0
 
@@ -579,4 +595,4 @@ def test_pv_initial_pv_rate_option(context):
     for slot, market in house.past_markets.items():
         for trade in market.trades:
             assert isclose(trade.offer.price / trade.offer.energy,
-                           grid.config.market_maker_rate[market.time_slot.hour])
+                           grid.config.market_maker_rate[market.time_slot_str])

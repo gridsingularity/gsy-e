@@ -4,9 +4,10 @@ Create a load that uses a profile as input for its power values
 import sys
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.mixins import ReadProfileMixin
+from d3a.models.strategy.mixins import InputProfileTypes
 
 
-class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
+class DefinedLoadStrategy(LoadHoursStrategy):
     """
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
@@ -33,9 +34,10 @@ class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
         for each slot.
         :return: None
         """
-        self.load_profile = self.read_arbitrary_power_profile_W_to_energy_kWh(
-            self.daily_load_profile, self.area.config.slot_length
-        )
+        self.load_profile = ReadProfileMixin.read_arbitrary_profile(
+            InputProfileTypes.POWER,
+            self.daily_load_profile,
+            slot_length=self.area.config.slot_length)
         self._update_energy_requirement()
 
     def _update_energy_requirement(self):
@@ -43,12 +45,12 @@ class DefinedLoadStrategy(ReadProfileMixin, LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self.energy_requirement = 0
-        if self.load_profile[self.area.next_market.time_slot.format('%H:%M')] != 0:
-            # TODO: Refactor energy_requirement to denote unit Wh
-            self.energy_requirement = \
-                self.load_profile[self.area.next_market.time_slot.format('%H:%M')] * 1000.0
-        self.state.record_desired_energy(self.area, self.energy_requirement)
+        self.energy_requirement_Wh = 0
+        if self.load_profile[self.area.next_market.time_slot_str] != 0:
+            # TODO: Refactor energy_requirement_Wh to denote unit Wh
+            self.energy_requirement_Wh = \
+                self.load_profile[self.area.next_market.time_slot_str] * 1000.0
+        self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
 
     def _operating_hours(self, energy):
         """

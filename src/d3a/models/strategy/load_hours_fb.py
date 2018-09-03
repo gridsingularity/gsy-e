@@ -144,26 +144,26 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             return
         self.remove_bid_from_pending(bid.id, self.area.next_market)
 
-    def event_bid_traded(self, *, market, traded_bid):
+    def event_bid_traded(self, *, market, bid_trade):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             # Do not handle bid trades on single sided markets
             assert False and "Invalid state, cannot receive a bid if single sided market" \
                              " is globally configured."
 
-        if traded_bid.offer.buyer != self.owner.name:
+        if bid_trade.offer.buyer != self.owner.name:
             return
 
         buffered_bid = next(filter(
-            lambda b: b.id == traded_bid.offer.id,
+            lambda b: b.id == bid_trade.offer.id,
             self.get_posted_bids(market)
         ))
 
-        if traded_bid.offer.buyer == buffered_bid.buyer:
+        if bid_trade.offer.buyer == buffered_bid.buyer:
             # Update energy requirement and clean up the pending bid buffer
-            self.energy_requirement_Wh -= traded_bid.offer.energy * 1000.0
-            self.hrs_per_day -= self._operating_hours(traded_bid.offer.energy)
-            if not traded_bid.residual:
-                self.remove_bid_from_pending(traded_bid.offer, market)
+            self.energy_requirement_Wh -= bid_trade.offer.energy * 1000.0
+            self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)
+            if not bid_trade.residual:
+                self.remove_bid_from_pending(bid_trade.offer, market)
             assert self.energy_requirement_Wh >= -0.0001
 
 

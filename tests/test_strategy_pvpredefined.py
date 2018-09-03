@@ -63,6 +63,10 @@ class FakeMarket:
     def time_slot(self):
         return Pendulum.now().start_of('day')
 
+    @property
+    def time_slot_str(self):
+        return self.time_slot.strftime("%H:%M")
+
     def delete_offer(self, offer_id):
         return
 

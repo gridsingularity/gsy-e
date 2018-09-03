@@ -57,7 +57,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             self.energy_production_forecast_kWh[slot_time] = 0
         self.produced_energy_forecast_kWh()
 
-    def _incorporate_rate_restrictions(self, initial_sell_rate, current_time_h):
+    def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
         # Needed to calculate risk_dependency_of_selling_rate
         # if risk 0-100 then energy_price less than initial_sell_rate
         # if risk >100 then energy_price more than initial_sell_rate
@@ -67,7 +67,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if rounded_energy_rate == 0.0:
             # Initial selling offer
             rounded_energy_rate =\
-                self.area.config.market_maker_rate[current_time_h]
+                self.area.config.market_maker_rate[current_time]
         assert rounded_energy_rate >= 0.0
 
         return rounded_energy_rate
@@ -113,10 +113,9 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         # Iterate over all markets open in the future
         time = list(self.area.markets.keys())[0]
         market = list(self.area.markets.values())[0]
-        market_time_h = market.time_slot.hour
-        initial_sell_rate = self.calculate_initial_sell_rate(market_time_h)
+        initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
         rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
-                                                                  market_time_h)
+                                                                  market.time_slot_str)
         # Sell energy and save that an offer was posted into a list
         if self.energy_production_forecast_kWh[time] != 0:
             offer = market.offer(
