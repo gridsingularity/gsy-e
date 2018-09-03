@@ -22,7 +22,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                                                                        max_energy_rate)
         BidUpdateFrequencyMixin.__init__(self,
                                          initial_rate=min_energy_rate,
-                                         final_rate=self.max_energy_rate["00:00"])
+                                         final_rate=list(self.max_energy_rate.values())[0])
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 

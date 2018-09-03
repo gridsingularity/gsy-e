@@ -16,9 +16,9 @@ def check_storage_prices(context):
             elif trade.buyer in ["H1 Storage1"]:
                 trades_bought.append(trade)
     assert all([trade.offer.price / trade.offer.energy >=
-                storage.strategy.break_even["00:00"][1] for trade in trades_sold])
+                list(storage.strategy.break_even.values())[0][1] for trade in trades_sold])
     assert all([trade.offer.price / trade.offer.energy <=
-                storage.strategy.break_even["00:00"][0] for trade in trades_bought])
+                list(storage.strategy.break_even.values())[0][0] for trade in trades_bought])
     assert len(trades_sold) > 0
     assert len(trades_bought) > 0
 
@@ -61,7 +61,7 @@ def check_storage_sell_prices(context):
             elif trade.buyer == storage.name:
                 trades_bought.append(trade)
     assert all([trade.offer.price / trade.offer.energy >=
-                storage.strategy.break_even["00:00"][1] for trade in trades_sold])
+                list(storage.strategy.break_even.values()[0])[1] for trade in trades_sold])
     assert len(trades_sold) > 0
 
 
