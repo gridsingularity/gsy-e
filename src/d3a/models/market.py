@@ -200,7 +200,7 @@ class Market:
             market_bid = self.bids.pop(bid.id, None)
             seller = bid.seller if seller is None else seller
             buyer = bid.buyer if buyer is None else buyer
-            energy = market_bid.energy if not energy else energy
+            energy = market_bid.energy if energy is None else energy
             if market_bid is None:
                 raise BidNotFound("During accept bid: " + str(bid))
             if energy <= 0:
