@@ -61,7 +61,7 @@ def check_storage_sell_prices(context):
             elif trade.buyer == storage.name:
                 trades_bought.append(trade)
     assert all([trade.offer.price / trade.offer.energy >=
-                list(storage.strategy.break_even.values()[0])[1] for trade in trades_sold])
+                list(storage.strategy.break_even.values())[0][1] for trade in trades_sold])
     assert len(trades_sold) > 0
 
 
