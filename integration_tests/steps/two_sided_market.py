@@ -17,11 +17,12 @@ def has_unmatched_loads(context):
     assert unmatched["unmatched_load_count"] > 0
 
 
-@then('the load bid is partially fulfilled by the PV offers')
-def load_partially_fulfill_bid(context):
+@then('the {device} bid is partially fulfilled by the PV offers')
+def device_partially_fulfill_bid(context, device):
     grid = context.simulation.area
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    load = next(filter(lambda x: "H1 General Load" in x.name, house1.children))
+    device_name = "H1 General Load" if device == "load" else "H1 Storage"
+    load_or_storage = next(filter(lambda x: device_name in x.name, house1.children))
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
     pvs = list(filter(lambda x: "H2 PV" in x.name, house2.children))
 
@@ -31,7 +32,7 @@ def load_partially_fulfill_bid(context):
 
         # Assert one trade for each PV
         assert len(market.trades) == 5
-        assert all(trade.buyer == load.name for trade in market.trades)
+        assert all(trade.buyer == load_or_storage.name for trade in market.trades)
         assert all(trade.seller == make_iaa_name(house1)
                    for trade in house1.past_markets[slot].trades)
         assert len(grid.past_markets[slot].trades) == 5
