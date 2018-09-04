@@ -14,8 +14,9 @@ partially cover the demand with each different offer.
 Expected result: when having set the log level to WARN, there should be 5 distinct trade chains
 on each market slot (on market slots that PVs can provide energy though). These trades should
 be a chain of bid and offer trades from the PVs to the load. For simplicity, the iaa_fee is set
-to 0, and all the offer/bid trades should have the same energy rate (about 15 ct/kWh, depending
-on the interpolation of bids and offers).
+to 0 (it has to be set via the CLI, by configuring the cli argument iaa_fee to 0), and all the
+offer/bid trades should have the same energy rate (about 15 ct/kWh, depending on the
+interpolation of bids and offers).
 '''
 
 

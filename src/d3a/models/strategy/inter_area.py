@@ -87,7 +87,8 @@ class IAAEngine:
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
                    offer.price / offer.energy <= bid.price / bid.energy and \
-                   offer.seller != self.owner.name:
+                   offer.seller != self.owner.name and \
+                   offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
                     yield bid, offer
                     break
@@ -225,9 +226,10 @@ class IAAEngine:
                 if trade.price_drop:
                     # Use the rate of the trade offer for accepting the source offer too
                     # Drop the rate of the trade offer according to IAA fee
+                    trade_offer_rate = trade.offer.price / trade.offer.energy
                     offer_info.source_offer.price = \
-                        trade.offer.price / (1 + (self.transfer_fee_pct / 100))
-                    offer_info.source_offer.energy = trade.offer.energy
+                        trade_offer_rate * offer_info.source_offer.energy \
+                        / (1 + (self.transfer_fee_pct / 100))
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,
