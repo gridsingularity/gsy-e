@@ -11,6 +11,7 @@ from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
 from d3a import TIME_FORMAT
+from d3a.models.strategy.const import ConstSettings
 
 
 @given('we have a scenario named {scenario}')
@@ -384,7 +385,8 @@ def method_called(context, method):
 
 @when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
 def run_sim_without_iaa_fee(context, scenario, duration, slot_length, tick_length):
-    run_sim(context, scenario, duration, slot_length, tick_length, 5)
+    run_sim(context, scenario, duration, slot_length, tick_length,
+            ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
 
 
 @when('we run the simulation with setup file {scenario} '

@@ -31,7 +31,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                              initial_soc, battery_capacity, break_even)
         self.break_even = break_even
 
-        self.min_selling_rate = break_even["00:00"][1]
+        self.min_selling_rate = list(break_even.values())[0][1]
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
