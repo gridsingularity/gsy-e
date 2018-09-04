@@ -622,8 +622,8 @@ def storage_strategy_test12(area_test12):
 
 def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_test7):
     storage_strategy_test12.event_activate()
-    market_maker_rate = storage_strategy_test12.area.config.market_maker_rate["00:00"]
-    BE_sell = storage_strategy_test12.break_even["00:00"][1]
+    market_maker_rate = list(storage_strategy_test12.area.config.market_maker_rate.values())[0]
+    BE_sell = list(storage_strategy_test12.break_even.values())[0][1]
     used_storage = storage_strategy_test12.state.used_storage
     battery_capacity = storage_strategy_test12.state.capacity
     soc = used_storage / battery_capacity
