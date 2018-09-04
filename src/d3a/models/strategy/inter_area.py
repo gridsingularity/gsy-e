@@ -182,7 +182,8 @@ class IAAEngine:
             self.markets.source.accept_bid(
                 bid_info.source_bid._replace(price=source_price, energy=bid_trade.offer.energy),
                 energy=bid_trade.offer.energy,
-                seller=self.owner.name
+                seller=self.owner.name,
+                track_bid=True
             )
             if not bid_trade.residual:
                 self._delete_forwarded_bid_entries(bid_info.target_bid)
