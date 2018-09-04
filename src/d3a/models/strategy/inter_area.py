@@ -288,6 +288,9 @@ class IAAEngine:
             try:
                 self.markets.target.delete_bid(bid_info.target_bid.id)
                 self._delete_forwarded_bid_entries(bid_info.target_bid)
+            except BidNotFound:
+                self.owner.log.debug(f"Bid {bid_info.target_bid.id} not "
+                                     f"found in the target market.")
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
