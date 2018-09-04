@@ -10,10 +10,12 @@ flask
 flask-api
 flask-cors
 pendulum
+pint
+pip-tools
+plotly
 python-rex
-rlp==0.4.7
+rlp
 tablib
 terminaltables
 rq
 requests
-websocket-client

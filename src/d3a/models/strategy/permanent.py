@@ -1,15 +1,18 @@
 from d3a.exceptions import MarketException
 from d3a.models.strategy.base import BaseStrategy
+from d3a.models.state import LoadState
 
 
 class PermanentLoadStrategy(BaseStrategy):
     parameters = ('energy', 'pre_buy_range')
 
     def __init__(self, energy=100, pre_buy_range=4):
+        if energy <= 0 or pre_buy_range <= 1:
+            raise ValueError("Incorrect parameter values for PermanentLoad.")
         super().__init__()
         self.energy = energy
         self.pre_buy_range = pre_buy_range
-
+        self.state = LoadState()
         self.bought_in_market = set()
 
     def event_tick(self, *, area):
@@ -29,6 +32,11 @@ class PermanentLoadStrategy(BaseStrategy):
                     except MarketException:
                         # Offer already gone etc., use next one.
                         continue
-
         except IndexError:
             pass
+
+    def _update_energy_requirement(self):
+        self.state.record_desired_energy(self.area, self.energy)
+
+    def event_market_cycle(self):
+        self._update_energy_requirement()

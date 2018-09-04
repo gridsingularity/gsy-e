@@ -17,6 +17,8 @@ class MarketEvent(Enum):
     OFFER_CHANGED = 4
     OFFER_DELETED = 2
     TRADE = 3
+    BID_TRADED = 5
+    BID_DELETED = 6
 
 
 class AreaEvent(Enum):
@@ -26,9 +28,28 @@ class AreaEvent(Enum):
 
 
 class EventMixin:
+
+    @property
+    def _event_mapping(self):
+        try:
+            return self._event_map
+        except AttributeError:
+            self._event_map = {
+                AreaEvent.TICK: self.event_tick,
+                AreaEvent.MARKET_CYCLE: self.event_market_cycle,
+                AreaEvent.ACTIVATE: self.event_activate,
+                MarketEvent.OFFER: self.event_offer,
+                MarketEvent.OFFER_CHANGED: self.event_offer_changed,
+                MarketEvent.OFFER_DELETED: self.event_offer_deleted,
+                MarketEvent.TRADE: self.event_trade,
+                MarketEvent.BID_TRADED: self.event_bid_traded,
+                MarketEvent.BID_DELETED: self.event_bid_deleted
+            }
+            return self._event_map
+
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         self.log.debug("Dispatching event %s", event_type.name)
-        getattr(self, "event_{}".format(event_type.name.lower()))(**kwargs)
+        self._event_mapping[event_type](**kwargs)
 
     def event_tick(self, *, area):
         pass
@@ -49,6 +70,12 @@ class EventMixin:
         pass
 
     def event_trade(self, *, market, trade):
+        pass
+
+    def event_bid_traded(self, *, market, bid_trade):
+        pass
+
+    def event_bid_deleted(self, *, market, bid):
         pass
 
 

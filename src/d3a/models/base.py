@@ -23,6 +23,6 @@ class AreaBehaviorBase:
     def log(self):
         if not self.owner:
             log.warning("Logging without area in %s, using default logger",
-                        self.__class__.__name__, stack_info=True)
+                        self.__class__.__name__)
             return log
         return self._log

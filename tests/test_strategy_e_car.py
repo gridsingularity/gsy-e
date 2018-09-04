@@ -1,9 +1,10 @@
 import pendulum
 import pytest
 
+from unittest.mock import Mock
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
-from d3a.models.strategy.const import ARRIVAL_TIME, DEPART_TIME
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.e_car import ECarStrategy
 
 
@@ -19,7 +20,8 @@ class FakeArea():
         #            (time_in_hour // self.config.slot_length) * self.config.slot_length
         #        )
         dt = pendulum.now()
-        times = [dt.at(ARRIVAL_TIME, 0, 0, 0), dt.at(DEPART_TIME, 0, 0, 0)]
+        times = [dt.at(ConstSettings.ARRIVAL_TIME, 0, 0, 0),
+                 dt.at(ConstSettings.DEPART_TIME, 0, 0, 0)]
         self.now = times[count]
 
     @property
@@ -44,6 +46,10 @@ class FakeArea():
     @property
     def past_markets(self):
         return {"past market": self.past_market}
+
+    @property
+    def current_market(self):
+        return self.past_market
 
 
 class FakeMarket:
@@ -94,12 +100,12 @@ def e_car_strategy_test1(area_test1, called):
     e.area = area_test1
     e.arrive = called
     e.arrival_times_not_reached = list(range(23))
-    e.arrival_times_not_reached.remove(ARRIVAL_TIME)
+    e.arrival_times_not_reached.remove(ConstSettings.ARRIVAL_TIME)
     return e
 
 
 def test_car_arrival(e_car_strategy_test1, area_test1):
-    e_car_strategy_test1.arrival_time = ARRIVAL_TIME
+    e_car_strategy_test1.arrival_time = ConstSettings.ARRIVAL_TIME
     e_car_strategy_test1.event_tick(area=area_test1)
     assert len(e_car_strategy_test1.arrive.calls) == 1
 
@@ -126,24 +132,30 @@ def e_car_strategy_test2(area_test2, called):
     e = ECarStrategy()
     e.owner = area_test2
     e.area = area_test2
-    e.depart = called
+    e._remove_offers_on_depart = called
+    e.buy_energy = lambda: None
+    e.sell_energy = lambda: None
     e.depart_times_not_reached = list(range(24))
-    e.depart_times_not_reached.remove(DEPART_TIME)
-    e.depart_times_not_reached.remove(ARRIVAL_TIME)
+    e.depart_times_not_reached.remove(ConstSettings.DEPART_TIME)
+    e.depart_times_not_reached.remove(ConstSettings.ARRIVAL_TIME)
     return e
 
 
 def test_car_depart(e_car_strategy_test2, area_test2):
-    e_car_strategy_test2.depart_time = DEPART_TIME
+    e_car_strategy_test2.connected_to_grid = True
+    e_car_strategy_test2.depart_time = ConstSettings.DEPART_TIME
     e_car_strategy_test2.event_tick(area=area_test2)
-    assert len(e_car_strategy_test2.depart.calls) == 1
+    assert len(e_car_strategy_test2._remove_offers_on_depart.calls) == 1
+    assert not e_car_strategy_test2.connected_to_grid
 
 
 def test_car_not_depart(e_car_strategy_test2, area_test2):
+    e_car_strategy_test2.connected_to_grid = True
     for i in e_car_strategy_test2.depart_times_not_reached:
         e_car_strategy_test2.depart_time = i
         e_car_strategy_test2.event_tick(area=area_test2)
-        assert len(e_car_strategy_test2.depart.calls) == 0
+        assert len(e_car_strategy_test2._remove_offers_on_depart.calls) == 0
+        assert e_car_strategy_test2.connected_to_grid
 
 
 """TEST3"""
@@ -168,14 +180,21 @@ def e_car_strategy_test4(area_test1, called):
     e = ECarStrategy()
     e.owner = area_test1
     e.area = area_test1
-    e.sell_energy = called
+    e.sell_energy = Mock(return_value=None)
+    e.buy_energy = lambda: None
+    e.depart = called
     return e
 
 
-def test_ecar_arrival(e_car_strategy_test4):
+def test_ecar_arrival(e_car_strategy_test4, area_test1):
     e_car_strategy_test4.arrive()
     assert e_car_strategy_test4.connected_to_grid
-    assert len(e_car_strategy_test4.sell_energy.calls) == 1
+    assert e_car_strategy_test4.sell_energy.called
+    for i in range(1000):
+        e_car_strategy_test4.event_tick(area=area_test1)
+        assert e_car_strategy_test4.connected_to_grid
+        assert len(e_car_strategy_test4.depart.calls) == 0
+        assert e_car_strategy_test4.sell_energy.call_count == i+2
 
 
 """TEST5"""
@@ -218,3 +237,26 @@ def e_car_strategy_test6(area_test1, called):
 def test_ecar_market_cycle(e_car_strategy_test6):
     e_car_strategy_test6.event_market_cycle()
     assert len(e_car_strategy_test6.event_market_cycle.calls) == 1
+
+
+def test_ecar_constructor_rejects_invalid_parameters():
+    with pytest.raises(ValueError):
+        ECarStrategy(arrival_time=-1)
+    with pytest.raises(ValueError):
+        ECarStrategy(arrival_time=24)
+    with pytest.raises(ValueError):
+        ECarStrategy(depart_time=-1)
+    with pytest.raises(ValueError):
+        ECarStrategy(depart_time=24)
+    with pytest.raises(ValueError):
+        ECarStrategy(arrival_time=12, depart_time=11)
+
+
+def test_ecar_constructor_handles_none_arrive_depart_values():
+    from d3a.models.strategy.const import ConstSettings
+    try:
+        ecar = ECarStrategy(arrival_time=None, depart_time=None)
+        assert ecar.arrival_time == ConstSettings.ARRIVAL_TIME
+        assert ecar.depart_time == ConstSettings.DEPART_TIME
+    except Exception:
+        assert False

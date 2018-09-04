@@ -19,7 +19,8 @@ from d3a.models.market import Market
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.util import TaggedLogWrapper
-
+from d3a.models.strategy.const import ConstSettings
+from d3a import TIME_FORMAT
 
 log = getLogger(__name__)
 
@@ -28,7 +29,10 @@ DEFAULT_CONFIG = SimulationConfig(
     duration=Interval(hours=24),
     market_count=4,
     slot_length=Interval(minutes=15),
-    tick_length=Interval(seconds=1)
+    tick_length=Interval(seconds=1),
+    cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
+    market_maker_rate=str(ConstSettings.DEFAULT_MARKET_MAKER_RATE),
+    iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
 )
 
 
@@ -56,6 +60,7 @@ class Area:
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
+
         self.budget_keeper = budget_keeper
         if budget_keeper:
             self.budget_keeper.area = self
@@ -65,6 +70,8 @@ class Area:
         self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
         self._bc = None  # type: BlockChainInterface
         self.listeners = []
+        self._accumulated_past_price = 0
+        self._accumulated_past_energy = 0
 
     def activate(self, bc=None):
         if bc:
@@ -99,7 +106,7 @@ class Area:
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
             s=self,
-            markets=[t.strftime("%H:%M") for t in self.markets.keys()]
+            markets=[t.strftime(TIME_FORMAT) for t in self.markets.keys()]
         )
 
     @cached_property
@@ -159,19 +166,15 @@ class Area:
         )
 
     @property
-    def historical_avg_price(self):
+    def historical_avg_rate(self):
         price = sum(
-            t.offer.price
-            for market_container in (self.markets.values(), self.past_markets.values())
-            for market in market_container
-            for t in market.trades
-        )
+            market.accumulated_trade_price
+            for market in self.markets.values()
+        ) + self._accumulated_past_price
         energy = sum(
-            t.offer.energy
-            for market_container in (self.markets.values(), self.past_markets.values())
-            for market in market_container
-            for t in market.trades
-        )
+            market.accumulated_trade_energy
+            for market in self.markets.values()
+        ) + self._accumulated_past_energy
         return price / energy if energy else 0
 
     @property
@@ -254,6 +257,14 @@ class Area:
                 changed = True
                 self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
 
+        self._accumulated_past_price = sum(
+            market.accumulated_trade_price
+            for market in self.past_markets.values()
+        )
+        self._accumulated_past_energy = sum(
+            market.accumulated_trade_energy
+            for market in self.past_markets.values()
+        )
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
 
@@ -271,7 +282,8 @@ class Area:
                         iaa = InterAreaAgent(
                             owner=self,
                             higher_market=self.parent.markets[timeframe],
-                            lower_market=market
+                            lower_market=market,
+                            transfer_fee_pct=self.config.iaa_fee
                         )
                         # Attach agent to own IAA list
                         self.inter_area_agents[market].append(iaa)
@@ -330,7 +342,7 @@ class Area:
             time = self.now
         slot = market.time_slot
         if slot in self.markets or slot in self.past_markets:
-            market.actual_energy[time][reporter] += value
+            market.set_actual_energy(time, reporter, value)
         else:
             raise RuntimeError("Reporting energy for unknown market")
 
@@ -343,6 +355,7 @@ class Area:
             if market.time_slot not in self.markets:
                 # exclude past IAAs
                 continue
+
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         for listener in self.listeners:

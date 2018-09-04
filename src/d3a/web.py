@@ -4,7 +4,6 @@ from functools import lru_cache, wraps
 from itertools import chain, repeat
 from operator import itemgetter
 from threading import Thread
-from statistics import mean
 
 import pendulum
 from flask import Flask, abort, render_template, request
@@ -15,14 +14,12 @@ from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
+from d3a import TIME_FORMAT
 from d3a.simulation import Simulation, page_lock
 from d3a.stats import (
     energy_bills
 )
 from d3a.util import make_iaa_name, simulation_info
-from d3a.export_unmatched_loads import export_unmatched_loads
-from d3a.area_statistics import export_cumulative_loads, export_cumulative_grid_trades, \
-    export_price_energy_day
 
 
 _NO_VALUE = {
@@ -172,7 +169,7 @@ def _api_app(simulation: Simulation):
             'markets': [
                 {
                     'type': type_,
-                    'time_slot': time.format("%H:%M"),
+                    'time_slot': time.format(TIME_FORMAT),
                     'url': url_for('market', area_slug=area_slug,
                                    market_time=time),
                     'trade_count': len(market.trades),
@@ -210,7 +207,7 @@ def _api_app(simulation: Simulation):
         market, type_ = _get_market(area, market_time)
         return {
             'type': type_,
-            'time_slot': market.time_slot.format("%H:%M"),
+            'time_slot': market.time_slot.format(TIME_FORMAT),
             'url': url_for('market', area_slug=area_slug, market_time=market.time_slot),
             'prices': {
                 'trade': {
@@ -285,7 +282,7 @@ def _api_app(simulation: Simulation):
                 'trade_count': len(market.trades),
                 'offer_count': len(market.offers),
                 'type': type_,
-                'time_slot': market.time_slot.format("%H:%M"),
+                'time_slot': market.time_slot.format(TIME_FORMAT),
                 'url': url_for('market', area_slug=area_slug, market_time=market.time_slot),
             }
             for type_, (time, market)
@@ -330,45 +327,26 @@ def _api_app(simulation: Simulation):
     @app.route("/unmatched-loads", methods=['GET'])
     @lock_flask_endpoint
     def unmatched_loads():
-        return {"unmatched_loads": export_unmatched_loads(simulation.area)}
+        return simulation.endpoint_buffer.unmatched_loads
 
     @app.route("/cumulative-load-price", methods=['GET'])
     @lock_flask_endpoint
     def cumulative_load():
-        return {
-            "price-currency": "Euros",
-            "load-unit": "kWh",
-            "cumulative-load-price": export_cumulative_loads(simulation.area)
-        }
+        return simulation.endpoint_buffer.cumulative_loads
 
     @app.route("/price-energy-day", methods=['GET'])
     @lock_flask_endpoint
     def price_energy_day():
-        return {
-            "price-currency": "Euros",
-            "load-unit": "kWh",
-            "price-energy-day": export_price_energy_day(simulation.area)
-        }
+        return simulation.endpoint_buffer.price_energy_day
 
     @app.route("/cumulative-grid-trades", methods=['GET'])
     @lock_flask_endpoint
     def cumulative_grid_trades():
-        return export_cumulative_grid_trades(simulation.area)
+        return simulation.endpoint_buffer.cumulative_grid_trades
 
     @app.route("/<area_slug>/tree-summary")
     def tree_summary(area_slug):
-        price_energy_list = export_price_energy_day(_get_area(area_slug))
-
-        def calculate_prices(key, functor):
-            # Need to convert to euro cents to avoid having to change the backend
-            # TODO: Both this and the frontend have to remove the recalculation
-            energy_prices = [price_energy[key] for price_energy in price_energy_list]
-            return round(100 * functor(energy_prices), 2) if len(energy_prices) > 0 else 0.0
-        return {
-            "min_trade_price": calculate_prices("min_price", min),
-            "max_trade_price": calculate_prices("max_price", max),
-            "avg_trade_price": calculate_prices("av_price", mean),
-        }
+        return simulation.endpoint_buffer.tree_summary[area_slug]
 
     @app.route("/<area_slug>/bills")
     def bills(area_slug):

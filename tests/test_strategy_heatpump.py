@@ -2,7 +2,7 @@ import pytest
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
-from d3a.models.strategy.const import PUMP_MIN_NEEDED_ENERGY
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.heatpump import HeatPumpStrategy
 
 
@@ -22,7 +22,7 @@ class FakeArea():
         return 5
 
     @property
-    def historical_avg_price(self):
+    def historical_avg_rate(self):
         avg_price = [30]
         return avg_price[self.count]
 
@@ -43,12 +43,12 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', (10 * (PUMP_MIN_NEEDED_ENERGY / 1000)),
-                   (PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (10 * (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [Offer('id', 100000000,
-                   (PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
+                   (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ]
         ]
@@ -83,3 +83,10 @@ def test_event_tick(heatpump_strategy_test1, area_test1):
     assert (heatpump_strategy_test1.accept_offer.calls[0][0][1] ==
             repr(area_test1.current_market.sorted_offers[0])
             )
+
+
+def test_heatpump_constructor_rejects_invalid_parameters():
+    with pytest.raises(ValueError):
+        HeatPumpStrategy(risk=-1)
+    with pytest.raises(ValueError):
+        HeatPumpStrategy(risk=101)

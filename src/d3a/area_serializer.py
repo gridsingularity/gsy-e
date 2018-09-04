@@ -1,14 +1,15 @@
 import json
 
-from d3a.models.area import Area
+from d3a.models.area import Area # NOQA
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.appliance.simple import SimpleAppliance # NOQA
 from d3a.models.appliance.appliance import Appliance
 
 from d3a.models.appliance.fridge import FridgeAppliance  # NOQA
 from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
 from d3a.models.appliance.pv import PVAppliance  # NOQA
+from d3a.models.appliance.switchable import SwitchableAppliance # NOQA
 
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.e_car import ECarStrategy  # NOQA
@@ -22,8 +23,12 @@ from d3a.models.strategy.predef_load_prob import PredefLoadProbStrategy  # NOQA
 from d3a.models.strategy.pv import PVStrategy  # NOQA
 from d3a.models.strategy.simple import BuyStrategy, OfferStrategy  # NOQA
 from d3a.models.strategy.storage import StorageStrategy  # NOQA
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy # NOQA
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
-from d3a.models.leaves import Leaf
+from d3a.models.leaves import Leaf # NOQA
 from d3a.models.leaves import *  # NOQA
 
 

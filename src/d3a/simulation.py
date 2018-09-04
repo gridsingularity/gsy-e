@@ -1,13 +1,12 @@
 import random
 from importlib import import_module
 from logging import getLogger
-
 import time
 from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
-
 import dill
+
 from pendulum import Pendulum
 from pendulum.interval import Interval
 from pendulum.period import Period
@@ -16,12 +15,14 @@ from ptpython.repl import embed
 
 from d3a.blockchain import BlockChainInterface
 from d3a.exceptions import SimulationException, D3AException
-from d3a.export import export
-from d3a.models.overview import Overview
+from d3a.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
+from d3a.endpoint_buffer import SimulationEndpointBuffer
+from d3a.redis_communication import RedisSimulationCommunication
+
 
 log = getLogger(__name__)
 
@@ -34,31 +35,22 @@ class _SimulationInterruped(Exception):
 
 
 class Simulation:
-    def __init__(
-            self,
-            setup_module_name: str,
-            simulation_config: SimulationConfig,
-            slowdown: int = 0,
-            seed=None,
-            paused: bool = False,
-            pause_after: Interval = None,
-            use_repl: bool = False,
-            export: bool = False,
-            export_path: str = None,
-            reset_on_finish: bool = False,
-            reset_on_finish_wait: Interval = Interval(minutes=1),
-            exit_on_finish: bool = False,
-            exit_on_finish_wait: Interval = Interval(seconds=1),
-            api_url=None,
-            message_url=None,
-            use_bc=True
-    ):
+    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
+                 slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
+                 use_repl: bool = False, export: bool = False, export_path: str = None,
+                 reset_on_finish: bool = False,
+                 reset_on_finish_wait: Interval = Interval(minutes=1),
+                 exit_on_finish: bool = False,
+                 exit_on_finish_wait: Interval = Interval(seconds=1),
+                 api_url=None, redis_job_id=None, use_bc=True):
+
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
             paused=paused,
             pause_after=pause_after
         )
+
         self.simulation_config = simulation_config
         self.use_repl = use_repl
         self.export_on_finish = export
@@ -68,11 +60,11 @@ class Simulation:
         self.exit_on_finish = exit_on_finish
         self.exit_on_finish_wait = exit_on_finish_wait
         self.api_url = api_url
-        self.message_url = message_url
         self.setup_module_name = setup_module_name
         self.use_bc = use_bc
         self.is_stopped = False
-
+        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
+        self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
         if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
             raise D3AException(
                 "Can only specify one of '--reset-on-finish', '--exit-on-finish' and '--use-repl' "
@@ -125,12 +117,9 @@ class Simulation:
         log.info("Starting simulation with config %s", self.simulation_config)
         self.area.activate(self.bc)
 
-        if self.message_url is not None:
-            Overview(self, self.message_url).start()
-
     @property
     def finished(self):
-        return self.area.current_tick == self.area.config.total_ticks
+        return self.area.current_tick >= self.area.config.total_ticks
 
     @property
     def time_since_start(self):
@@ -178,7 +167,7 @@ class Simulation:
 
             try:
                 with NonBlockingConsole() as console:
-                    for slot_no in range(slot_resume, slot_count):
+                    for slot_no in range(slot_resume, slot_count-1):
                         run_duration = (
                             Pendulum.now() - self.run_start - Interval(seconds=self.paused_time)
                         )
@@ -208,8 +197,10 @@ class Simulation:
                                 slot_no + 1,
                                 (tick_no + 1) / config.ticks_per_slot * 100,
                             )
+
                             with page_lock:
                                 self.area.tick()
+
                             tick_length = time.monotonic() - tick_start
                             if self.slowdown and tick_length < tick_lengths_s:
                                 # Simulation runs faster than real time but a slowdown was
@@ -219,8 +210,16 @@ class Simulation:
                                 log.debug("Slowdown: %.4f", diff_slowdown)
                                 self._handle_input(console, diff_slowdown)
 
+                        with page_lock:
+                            self.endpoint_buffer.update(self.area, self.status)
+                            self.redis_connection.publish_intermediate_results(
+                                self.endpoint_buffer
+                            )
+
                     run_duration = Pendulum.now() - self.run_start
                     paused_duration = Interval(seconds=self.paused_time)
+
+                    self.redis_connection.publish_results(self.endpoint_buffer)
 
                     if not self.is_stopped:
                         log.error(
@@ -232,9 +231,8 @@ class Simulation:
                     if not self.exit_on_finish:
                         log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
-                        export(self.area,
-                               self.export_path,
-                               Pendulum.now().format("%Y-%m-%d_%X"))
+                        ExportAndPlot(self.area, self.export_path,
+                                      Pendulum.now().format("%Y-%m-%d_%X"))
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
@@ -257,6 +255,7 @@ class Simulation:
                         log.info("Ctrl-C to quit")
                         while True:
                             self._handle_input(console, 0.5)
+
                     break
             except _SimulationInterruped:
                 self.interrupted.set()
@@ -332,6 +331,8 @@ class Simulation:
         if self.paused:
             start = time.monotonic()
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
+            self.endpoint_buffer.update(self.area, self.status)
+            self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
             while self.paused and not self.interrupt.is_set():
                 self._handle_input(console, 0.1)
             log.critical("Simulation resumed")

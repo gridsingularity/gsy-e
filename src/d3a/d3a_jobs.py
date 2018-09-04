@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 from os import environ, getpid
+import ast
 
 import pendulum
 import pendulum.interval as interval
@@ -9,13 +10,15 @@ from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
+from d3a.models.strategy.const import ConstSettings
 from d3a.simulation import Simulation
 from d3a.web import start_web
 from d3a.util import available_simulation_scenarios
+from d3a.util import update_advanced_settings
 
 
 @job('d3a')
-def start(scenario, settings, message_url_format):
+def start(scenario, settings):
     logging.getLogger().setLevel(logging.ERROR)
     interface = environ.get('WORKER_INTERFACE', "0.0.0.0")
     port = int(environ.get('WORKER_PORT', 5000))
@@ -29,11 +32,19 @@ def start(scenario, settings, message_url_format):
     if settings is None:
         settings = {}
 
+    advanced_settings = settings.get('advanced_settings', None)
+    if advanced_settings is not None:
+        update_advanced_settings(ast.literal_eval(advanced_settings))
+
     config = SimulationConfig(
         duration=interval.instance(settings.get('duration', timedelta(days=1))),
         slot_length=interval.instance(settings.get('slot_length', timedelta(minutes=15))),
-        tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=1))),
-        market_count=settings.get('market_count', 4)
+        tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=15))),
+        market_count=settings.get('market_count', 4),
+        cloud_coverage=settings.get('cloud_coverage', ConstSettings.DEFAULT_PV_POWER_PROFILE),
+        market_maker_rate=settings.get('market_maker_rate',
+                                       str(ConstSettings.DEFAULT_MARKET_MAKER_RATE)),
+        iaa_fee=settings.get('iaa_fee', ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
     )
 
     if scenario is None:
@@ -50,7 +61,7 @@ def start(scenario, settings, message_url_format):
                             exit_on_finish=True,
                             exit_on_finish_wait=interval.instance(timedelta(seconds=10)),
                             api_url=api_url,
-                            message_url=message_url_format.format(job.id))
+                            redis_job_id=job.id)
 
     start_web(interface, port, simulation)
     simulation.run()

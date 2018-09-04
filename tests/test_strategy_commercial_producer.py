@@ -1,8 +1,9 @@
 import pytest
+import sys
 
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.const import COMMERCIAL_OFFERS
+from d3a.models.area import DEFAULT_CONFIG
 
 
 class FakeArea():
@@ -15,6 +16,10 @@ class FakeArea():
     @property
     def markets(self):
         return {"now": self.test_market}
+
+    @property
+    def config(self):
+        return DEFAULT_CONFIG
 
 
 class FakeMarket:
@@ -39,7 +44,7 @@ def area_test1():
 
 @pytest.fixture()
 def commercial_test1(area_test1):
-    c = CommercialStrategy()
+    c = CommercialStrategy(energy_rate=30)
     c.area = area_test1
     c.owner = area_test1
     return c
@@ -47,11 +52,8 @@ def commercial_test1(area_test1):
 
 def testing_event_activate(commercial_test1, area_test1):
     commercial_test1.event_activate()
-    assert len(area_test1.test_market.created_offers) == COMMERCIAL_OFFERS
-    (min_energy, max_energy) = commercial_test1.energy_range_wh
-    for i in range(COMMERCIAL_OFFERS - 1):
-        assert area_test1.test_market.created_offers[i].energy <= max_energy / 1000
-        assert area_test1.test_market.created_offers[i].energy >= min_energy / 1000
+    assert len(area_test1.test_market.created_offers) == 1
+    assert area_test1.test_market.created_offers[0].energy == sys.maxsize
 
 
 """TEST2"""
@@ -64,24 +66,69 @@ def area_test2():
 
 @pytest.fixture()
 def commercial_test2(area_test2):
-    c = CommercialStrategy()
+    c = CommercialStrategy(energy_rate=30)
     c.area = area_test2
     c.owner = area_test2
     return c
 
 
 def test_event_trade(area_test2, commercial_test2):
+    commercial_test2.event_activate()
+    traded_offer = Offer(id='id', price=20, energy=1, seller='FakeArea',)
     commercial_test2.event_trade(market=area_test2.test_market,
                                  trade=Trade(id='id',
                                              time='time',
-                                             offer=Offer(
-                                                 id='id', price=20, energy=1, seller='FakeArea',
-                                             ),
+                                             offer=traded_offer,
                                              seller='FakeArea',
                                              buyer='buyer'
                                              )
                                  )
     assert len(area_test2.test_market.created_offers) == 1
+    assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
+
+
+def test_on_offer_changed(area_test2, commercial_test2):
+    commercial_test2.event_activate()
+    existing_offer = Offer(id='id', price=20, energy=1, seller='FakeArea')
+    new_offer = Offer(id='new_id', price=15, energy=0.75, seller='FakeArea')
+    commercial_test2.event_offer_changed(market=area_test2.test_market,
+                                         existing_offer=existing_offer,
+                                         new_offer=new_offer)
+    assert existing_offer.id in commercial_test2.offers.changed
+    assert commercial_test2.offers.changed[existing_offer.id] == new_offer
+
+
+def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_test2):
+    existing_offer = Offer(id='old_id', price=20, energy=1, seller='FakeArea')
+    new_offer = Offer(id='new_id', price=15, energy=0.75, seller='FakeArea')
+
+    commercial_test2.offers.post(existing_offer, area_test2.test_market)
+    commercial_test2.offers.post(new_offer, area_test2.test_market)
+    commercial_test2.event_offer_changed(market=area_test2.test_market,
+                                         existing_offer=existing_offer,
+                                         new_offer=new_offer)
+    assert existing_offer.id in commercial_test2.offers.changed
+    assert commercial_test2.offers.changed[existing_offer.id] == new_offer
+    commercial_test2.event_trade(market=area_test2.test_market,
+                                 trade=Trade(id='id',
+                                             time='time',
+                                             offer=existing_offer,
+                                             seller='FakeArea',
+                                             buyer='buyer')
+                                 )
+
+    assert len(commercial_test2.offers.posted) == 2
+    assert new_offer in commercial_test2.offers.posted
+    assert commercial_test2.offers.posted[new_offer] == area_test2.test_market
+    assert len(commercial_test2.offers.changed) == 0
+    assert len(commercial_test2.offers.sold) == 1
+    assert existing_offer.id in commercial_test2.offers.sold[area_test2.test_market]
+
+
+def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, commercial_test2):
+    commercial_test2.offer_energy(area_test2.test_market)
+    assert len(commercial_test2.offers.posted) == 1
+    assert list(commercial_test2.offers.posted.values())[0] == area_test2.test_market
 
 
 """TEST3"""
@@ -94,16 +141,19 @@ def area_test3():
 
 @pytest.fixture()
 def commercial_test3(area_test3):
-    c = CommercialStrategy()
+    c = CommercialStrategy(energy_rate=30)
     c.area = area_test3
     c.owner = area_test3
     return c
 
 
 def testing_event_market_cycle(commercial_test3, area_test3):
+    commercial_test3.event_activate()
     commercial_test3.event_market_cycle()
-    assert len(area_test3.test_market.created_offers) == COMMERCIAL_OFFERS
-    (min_energy, max_energy) = commercial_test3.energy_range_wh
-    for i in range(COMMERCIAL_OFFERS - 1):
-        assert area_test3.test_market.created_offers[i].energy <= max_energy / 1000
-        assert area_test3.test_market.created_offers[i].energy >= min_energy / 1000
+    assert len(area_test3.test_market.created_offers) == 2
+    assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
+
+
+def test_commercial_producer_constructor_rejects_invalid_parameters():
+    with pytest.raises(ValueError):
+        CommercialStrategy(energy_rate=-1)

@@ -4,13 +4,17 @@ import sys
 import termios
 import tty
 from logging import LoggerAdapter, getLogger
-from pkgutil import iter_modules
+import json
 
 from click.types import ParamType
 from pendulum.interval import Interval
 from rex import rex
+from pkgutil import walk_packages
+from datetime import timedelta
 
-from d3a import get_project_root, setup as d3a_setup
+from d3a import get_project_root
+from d3a import setup as d3a_setup
+from d3a.models.strategy.const import ConstSettings
 
 
 log = getLogger(__name__)
@@ -21,8 +25,6 @@ INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2
 IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
 
 _CONTRACT_CACHE = {}
-
-available_simulation_scenarios = [name for _, name, _ in iter_modules(d3a_setup.__path__)]
 
 
 class TaggedLogWrapper(LoggerAdapter):
@@ -173,3 +175,62 @@ def get_cached_joined_contract_source(contract_name):
     if contract_path not in _CONTRACT_CACHE:
         _CONTRACT_CACHE[contract_path] = ContractJoiner().join(contract_path)
     return _CONTRACT_CACHE[contract_path]
+
+
+def iterate_over_all_d3a_setup():
+    module_list = []
+    for loader, module_name, is_pkg in walk_packages(d3a_setup.__path__):
+        if is_pkg:
+            loader.find_module(module_name).load_module(module_name)
+        else:
+            module_list.append(module_name)
+    return module_list
+
+
+available_simulation_scenarios = iterate_over_all_d3a_setup()
+
+
+def parseboolstring(thestring):
+    return thestring[0].upper() == 'T'
+
+
+def read_settings_from_file(settings_file):
+    """
+    Reads basic and advanced settings from a settings file (json format).
+    """
+    if os.path.isfile(settings_file):
+        with open(settings_file, "r") as sf:
+            settings = json.load(sf)
+        advanced_settings = settings["advanced_settings"]
+        simulation_settings = {
+            "duration": IntervalType('H:M')(
+                settings["basic_settings"].get('duration', timedelta(hours=24))),
+            "slot_length": IntervalType('M:S')(
+                settings["basic_settings"].get('slot_length', timedelta(minutes=15))),
+            "tick_length": IntervalType('M:S')(
+                settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
+            "market_count": settings["basic_settings"].get('market_count', 4),
+            "cloud_coverage": settings["basic_settings"].get(
+                'cloud_coverage', advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
+            "market_maker_rate": settings["basic_settings"].get(
+                'market_maker_rate', advanced_settings["DEFAULT_MARKET_MAKER_RATE"]),
+            "iaa_fee": settings["basic_settings"].get(
+                'INTER_AREA_AGENT_FEE_PERCENTAGE',
+                advanced_settings["INTER_AREA_AGENT_FEE_PERCENTAGE"])
+        }
+        return simulation_settings, advanced_settings
+    else:
+        raise FileExistsError("Please provide a valid settings_file path")
+
+
+def update_advanced_settings(advanced_settings):
+    """
+    Updates ConstStettings class variables with advanced_settings.
+    If variable is not part of ConstSettings, an Exception is raised.
+    """
+    for set_var, set_val in advanced_settings.items():
+        getattr(ConstSettings, set_var)
+        if isinstance(set_val, str):
+            setattr(ConstSettings, set_var, parseboolstring(set_val))
+        else:
+            setattr(ConstSettings, set_var, set_val)

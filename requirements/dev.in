@@ -1,6 +1,5 @@
 -r base.txt
 fabric3
-pip-tools
 pre-commit
 ptpython
 tox

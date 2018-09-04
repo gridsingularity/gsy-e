@@ -1,6 +1,7 @@
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.e_car import ECarStrategy
@@ -9,6 +10,11 @@ from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
+from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.heatpump import HeatPumpStrategy
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 
 
 class Leaf(Area):
@@ -62,5 +68,50 @@ class PV(Leaf):
     appliance_type = PVAppliance
 
 
+class PredefinedPV(Leaf):
+    strategy_type = PVPredefinedStrategy
+    appliance_type = PVAppliance
+
+
+class PVProfile(Leaf):
+    strategy_type = PVUserProfileStrategy
+    appliance_type = PVAppliance
+
+
+class LoadProfile(Leaf):
+    strategy_type = DefinedLoadStrategy
+    appliance_type = SwitchableAppliance
+
+
+class Heatpump(Leaf):
+    strategy_type = HeatPumpStrategy
+
+
 class Storage(Leaf):
     strategy_type = StorageStrategy
+    appliance_type = SwitchableAppliance
+
+
+class LoadHours(Leaf):
+    strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance
+
+
+class CellTower(Leaf):
+    strategy_type = CellTowerLoadHoursStrategy
+    appliance_type = SwitchableAppliance
+
+
+class FiniteDieselGenerator(Leaf):
+    strategy_type = FinitePowerPlant
+    appliance_type = SwitchableAppliance
+
+
+class Light(Leaf):
+    strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance
+
+
+class TV(Leaf):
+    strategy_type = LoadHoursStrategy
+    appliance_type = SwitchableAppliance

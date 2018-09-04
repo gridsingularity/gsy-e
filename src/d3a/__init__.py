@@ -6,6 +6,8 @@ import d3a
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
 VERSION = "1.0.0a0"
 
+TIME_FORMAT = "%H:%M"
+
 
 def get_project_root():
     return os.path.dirname(d3a.__file__)

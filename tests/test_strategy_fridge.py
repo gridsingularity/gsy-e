@@ -2,7 +2,7 @@ import pytest
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
-from d3a.models.strategy.const import FRIDGE_MIN_NEEDED_ENERGY
+from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.fridge import FridgeStrategy
 
 
@@ -26,7 +26,7 @@ class FakeArea():
         return 5
 
     @property
-    def historical_avg_price(self):
+    def historical_avg_rate(self):
         avg_price = [30]
         return avg_price[self.count]
 
@@ -47,23 +47,23 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', (10 * (FRIDGE_MIN_NEEDED_ENERGY / 1000)),
-                   (FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (10 * (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [Offer('id', 100000000,
-                   (FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
-            [Offer('id', (30 * (FRIDGE_MIN_NEEDED_ENERGY / 1000)),
-                   (FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (30 * (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [
 
              ],
-            [Offer('id', 10 * 50 * FRIDGE_MIN_NEEDED_ENERGY,
-                   50 * FRIDGE_MIN_NEEDED_ENERGY, 'A', self)]
+            [Offer('id', 10 * 50 * ConstSettings.FRIDGE_MIN_NEEDED_ENERGY,
+                   50 * ConstSettings.FRIDGE_MIN_NEEDED_ENERGY, 'A', self)]
         ]
         return offers[self.count]
 
@@ -255,3 +255,10 @@ def test_frigde_buys_partial_offer(area_test5, called):
     fridge.accept_offer = called
     fridge.event_tick(area=area_test5)
     assert float(fridge.accept_offer.calls[0][1]['energy']) > 0
+
+
+def test_heatpump_constructor_rejects_invalid_parameters():
+    with pytest.raises(ValueError):
+        FridgeStrategy(risk=-1)
+    with pytest.raises(ValueError):
+        FridgeStrategy(risk=101)
