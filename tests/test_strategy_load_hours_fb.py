@@ -9,6 +9,7 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a import TIME_FORMAT
 
 TIME = pendulum.today().at(hour=10, minute=45, second=2)
 
@@ -83,6 +84,10 @@ class FakeMarket:
     def time_slot(self):
         return Pendulum.now().start_of('day').add_timedelta(timedelta(hours=10))
 
+    @property
+    def time_slot_str(self):
+        return self.time_slot.strftime(TIME_FORMAT)
+
 
 class TestLoadHoursStrategyInput(unittest.TestCase):
 
@@ -112,16 +117,16 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
         power_W = 620
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                power_W, 4, [1, 2, 3, 4]).daily_energy_required.m,  power_W * 4)
+                power_W, 4, [1, 2, 3, 4]).daily_energy_required,  power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                power_W, None, [1, 2, 3, 4]).daily_energy_required.m, power_W * 4)
+                power_W, None, [1, 2, 3, 4]).daily_energy_required, power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                power_W, 4, [1, 2, 3, 4, 5, 6]).daily_energy_required.m, power_W * 4)
+                power_W, 4, [1, 2, 3, 4, 5, 6]).daily_energy_required, power_W * 4)
         self.assertEqual(
             self.Mock_LoadHoursStrategy(
-                power_W, 4, None).daily_energy_required.m, power_W * 4)
+                power_W, 4, None).daily_energy_required, power_W * 4)
         with self.assertRaises(ValueError):
             self.Mock_LoadHoursStrategy(power_W, 4, [1, 2])
 
@@ -191,14 +196,14 @@ def load_hours_strategy_test5(load_hours_strategy_test4, area_test2):
 # Test if daily energy requirement is calculated correctly for the device
 def test_calculate_daily_energy_req(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
-    assert load_hours_strategy_test1.daily_energy_required.m == 620*4
+    assert load_hours_strategy_test1.daily_energy_required == 620*4
 
 
 # Test if daily energy requirement is calculated correctly for the device
 def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
     assert load_hours_strategy_test1.energy_requirement_Wh == \
-        load_hours_strategy_test1.energy_per_slot_Wh.m
+        load_hours_strategy_test1.energy_per_slot_Wh
     ts = load_hours_strategy_test1.area.next_market.time_slot
     assert load_hours_strategy_test1.state.desired_energy[ts] == \
         load_hours_strategy_test1.energy_requirement_Wh
@@ -218,7 +223,7 @@ def test_event_market_cycle(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
     assert load_hours_strategy_test1.energy_requirement_Wh == \
-        load_hours_strategy_test1.energy_per_slot_Wh.m
+        load_hours_strategy_test1.energy_per_slot_Wh
 
 
 def test_event_market_cycle_resets_energy_requirement(load_hours_strategy_test1, market_test1):
@@ -227,11 +232,11 @@ def test_event_market_cycle_resets_energy_requirement(load_hours_strategy_test1,
     load_hours_strategy_test1.energy_requirement_Wh = 150.0
     load_hours_strategy_test1.event_market_cycle()
     assert load_hours_strategy_test1.energy_requirement_Wh == \
-        load_hours_strategy_test1.energy_per_slot_Wh.m
+        load_hours_strategy_test1.energy_per_slot_Wh
     load_hours_strategy_test1.energy_requirement_Wh += 1000000.0
     load_hours_strategy_test1.event_market_cycle()
     assert load_hours_strategy_test1.energy_requirement_Wh == \
-        load_hours_strategy_test1.energy_per_slot_Wh.m
+        load_hours_strategy_test1.energy_per_slot_Wh
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):
@@ -273,6 +278,6 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
     load_hours_strategy_test5.event_market_cycle()
     load_hours_strategy_test5.event_tick(area=area_test2)
     assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
-                   1000 / load_hours_strategy_test5.energy_per_slot_Wh.m) *
+                   1000 / load_hours_strategy_test5.energy_per_slot_Wh) *
                   (load_hours_strategy_test5.area.config.slot_length / Interval(hours=1))), 2) == \
         round(((0.1/0.155) * 0.25), 2)

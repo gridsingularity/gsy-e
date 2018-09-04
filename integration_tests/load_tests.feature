@@ -19,3 +19,9 @@ Feature: Load Tests
     When we run the d3a simulation with strategy_tests.user_profile_load_csv [24, 15, 15]
     Then the DefinedLoadStrategy follows the Load profile provided as csv
     And load only accepted offers lower than max_energy_rate
+
+  Scenario: LoadHoursStrategy buys energy in the rate range provided by the user as dict profile
+    Given we have a scenario named strategy_tests/user_rate_profile_load_dict
+    And d3a is installed
+    When we run the simulation with setup file strategy_tests.user_rate_profile_load_dict and parameters [24, 15, 15, 1]
+    Then LoadHoursStrategy does not buy energy with rates that are higher than the provided profile
