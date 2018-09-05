@@ -3,7 +3,7 @@ import pytest
 from datetime import datetime
 
 from d3a.models.market import Offer, Trade, Bid
-from d3a.models.strategy.inter_area import InterAreaAgent
+from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo
 from d3a.models.strategy.const import ConstSettings
 
 
@@ -170,10 +170,46 @@ def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(iaa_bid, called):
         bid_trade=Trade('trade_id',
                         datetime.now(),
                         iaa_bid.higher_market.bids['id3'],
-                        'owner',
-                        'someone_else'),
+                        'someone_else',
+                        'owner'),
         market=iaa_bid.higher_market)
     assert len(iaa_bid.lower_market.delete_bid.calls) == 1
+
+
+def test_iaa_event_trade_bid_does_not_delete_forwarded_bid_of_counterpart(iaa_bid, called):
+    iaa_bid.lower_market.delete_bid = called
+    high_to_low_engine = iaa_bid.engines[1]
+    high_to_low_engine.event_bid_traded(
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        iaa_bid.higher_market.bids['id3'],
+                        seller='owner',
+                        buyer='someone_else'))
+    assert len(iaa_bid.lower_market.delete_bid.calls) == 0
+
+
+@pytest.mark.parametrize("partial", [True, False])
+def test_iaa_event_trade_bid_does_not_update_forwarded_bids_on_partial(iaa_bid, called, partial):
+    iaa_bid.lower_market.delete_bid = called
+    low_to_high_engine = iaa_bid.engines[0]
+    source_bid = list(low_to_high_engine.markets.source.bids.values())[0]
+    target_bid = list(low_to_high_engine.markets.target.bids.values())[0]
+    bidinfo = BidInfo(source_bid=source_bid, target_bid=target_bid)
+    low_to_high_engine.forwarded_bids[source_bid.id] = bidinfo
+    low_to_high_engine.forwarded_bids[target_bid.id] = bidinfo
+    low_to_high_engine.event_bid_traded(
+        bid_trade=Trade('trade_id',
+                        datetime.now(),
+                        low_to_high_engine.markets.target.bids[target_bid.id],
+                        seller='someone_else',
+                        buyer='owner',
+                        residual=partial))
+    if not partial:
+        assert source_bid.id not in low_to_high_engine.forwarded_bids
+        assert target_bid.id not in low_to_high_engine.forwarded_bids
+    else:
+        assert source_bid.id in low_to_high_engine.forwarded_bids
+        assert target_bid.id in low_to_high_engine.forwarded_bids
 
 
 @pytest.fixture

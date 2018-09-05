@@ -27,8 +27,8 @@ def get_setup(config):
                 [
                     Area('H2 General Load', strategy=LoadHoursStrategy(
                         avg_power_W=100,
-                        hrs_per_day=6,
-                        hrs_of_day=list(range(10, 17)),
+                        hrs_per_day=10,
+                        hrs_of_day=list(range(8, 18)),
                         min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
                         max_energy_rate=ConstSettings.LOAD_MAX_ENERGY_RATE
                     ), appliance=SwitchableAppliance()),
