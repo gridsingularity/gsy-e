@@ -32,10 +32,8 @@ def before_scenario(context, scenario):
 def after_scenario(context, scenario):
     shutil.rmtree(context.simdir)
 
-    ConstSettings = update_advanced_settings(context.default_const_settings)
+    update_advanced_settings(context.default_const_settings)
     context.resource_manager.close()
-    if 'PV limits the minimum selling rate' in scenario.name:
-        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 
 def before_all(context):
