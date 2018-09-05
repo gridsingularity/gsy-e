@@ -9,7 +9,7 @@ ethereum
 flask
 flask-api
 flask-cors
-pendulum
+pendulum==1.5.1
 pint
 pip-tools
 plotly

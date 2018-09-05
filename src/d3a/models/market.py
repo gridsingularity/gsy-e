@@ -353,10 +353,12 @@ class Market:
                 raise
 
             if self.bc_contract:
+                privkey = self.area.bc.users[buyer].privkey
+                print(f"{buyer} | {privkey}")
                 success, _, trade_id = self.bc_contract.trade(
                     decode_hex(offer.id),
                     int(offer.energy * BC_NUM_FACTOR),
-                    sender=self.area.bc.users[buyer].privkey
+                    sender=privkey
                 )
                 trade_id = encode_hex(trade_id)
             else:
