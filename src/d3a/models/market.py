@@ -15,7 +15,6 @@ from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBid, BidNotFound
 from d3a.models.events import MarketEvent, OfferEvent
-from d3a.models.area import Area # NOQA
 
 
 BC_EVENT_MAP = {

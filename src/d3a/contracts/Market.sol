@@ -1,8 +1,8 @@
-pragma solidity ^0.4.23;
-import "./ClearingToken.sol";
-import "./Mortal.sol";
+pragma solidity ^0.4.4;
+import "ClearingToken.sol";
 
-contract Market is Mortal {
+
+contract Market {
 
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) offers;
@@ -31,7 +31,7 @@ contract Market is Mortal {
     // The interval of time for which market can be used for trading
     uint interval;
 
-    constructor (address clearingTokenAddress, uint _interval) public {
+    function Market(address clearingTokenAddress, uint _interval) {
 
         clearingToken = ClearingToken(clearingTokenAddress);
         interval = _interval;
@@ -44,18 +44,16 @@ contract Market is Mortal {
     event CancelOffer(uint energyUnits, int price, address indexed seller);
     event Trade(bytes32 tradeId, address indexed buyer, address indexed seller, uint energyUnits, int price);
     event OfferChanged(bytes32 oldOfferId, bytes32 newOfferId, uint energyUnits, int price,
-    address indexed seller);
+      address indexed seller);
 
     /*
      * @notice The msg.sender is able to introduce new offers.
      * @param energyUnits the units of energy offered generally in KWh.
      * @param price the price of each unit.
      */
-    function offer(uint energyUnits, int price) public returns (bytes32 offerId) {
-        bool success;
-        bytes32 id;
-        (success, id) = _offer(energyUnits, price, msg.sender);
-        if (success) emit NewOffer(id, energyUnits, price, msg.sender);
+    function offer(uint energyUnits, int price) returns (bytes32 offerId) {
+        var (success, id) = _offer(energyUnits, price, msg.sender);
+        if (success) NewOffer(id, energyUnits, price, msg.sender);
         offerId = id;
     }
 
@@ -63,14 +61,15 @@ contract Market is Mortal {
     private returns (bool success, bytes32 offerId) {
 
         if (energyUnits > 0) {
-            offerId = keccak256(energyUnits, price, seller, block.number, offerNonce++);
-            offers[offerId].energyUnits = energyUnits;
-            offers[offerId].price = price;
-            offers[offerId].seller = seller;
+            offerId = sha3(energyUnits, price, seller, block.number, offerNonce++);
+            Offer offer = offers[offerId];
+            offer.energyUnits = energyUnits;
+            offer.price = price;
+            offer.seller = seller;
             success = true;
         } else {
             success = false;
-            offerId = 0x0;
+            offerId = "";
         }
     }
 
@@ -78,16 +77,16 @@ contract Market is Mortal {
      * @notice Only the offer seller is able to cancel the offer
      * @param offerId Id of the offer
      */
-    function cancel(bytes32 offerId) public returns (bool success) {
-        if (offers[offerId].seller == msg.sender) {
-            emit CancelOffer(offers[offerId].energyUnits, offers[offerId].price, offers[offerId].seller);
-            offers[offerId].energyUnits = 0;
-            offers[offerId].price = 0;
-            offers[offerId].seller = 0;
+    function cancel(bytes32 offerId) returns (bool success) {
+        Offer offer = offers[offerId];
+        if (offer.seller == msg.sender) {
+            CancelOffer(offer.energyUnits, offer.price, offer.seller);
+            offer.energyUnits = 0;
+            offer.price = 0;
+            offer.seller = 0;
             success = true;
-        }
-        else {
-            success = false;
+        } else {
+          success = false;
         }
     }
 
@@ -100,40 +99,44 @@ contract Market is Mortal {
      *         from the "marketStartTime"
      * @ tradedEnergyUnits Allows for partial trading of energyUnits from an offer
      */
-    function trade(bytes32 offerId, uint tradedEnergyUnits) public returns (bool success, bytes32 newOfferId, bytes32 tradeId) {
-        if ((offers[offerId].energyUnits > 0)&&
-        (offers[offerId].seller != address(0))&&
-        (msg.sender != offers[offerId].seller)&&
-        (block.timestamp-marketStartTime < interval)&&
-        (tradedEnergyUnits > 0)&&
-        (tradedEnergyUnits <= offers[offerId].energyUnits)) {
+    function trade(bytes32 offerId, uint tradedEnergyUnits) returns (bool success, bytes32 newOfferId, bytes32 tradeId) {
+        Offer offer = offers[offerId];
+        address buyer = msg.sender;
+        if (offer.energyUnits > 0
+            && offer.seller != address(0)
+            && msg.sender != offer.seller
+            && now-marketStartTime < interval
+            && tradedEnergyUnits > 0
+            && tradedEnergyUnits <= offer.energyUnits) {
             // Allow Partial Trading, if tradedEnergyUnits  are less than the
             // energyUnits in the offer, make a new offer with the remaining energyUnits
             // and the same price. Also emit OfferChanged event with old offerId
             // and new Offer values.
-            if (tradedEnergyUnits < offers[offerId].energyUnits) {
-                uint newEnergyUnits = offers[offerId].energyUnits - tradedEnergyUnits;
-                (success, newOfferId) = _offer(newEnergyUnits, offers[offerId].price, offers[offerId].seller);
-                emit OfferChanged(offerId, newOfferId, newEnergyUnits, offers[offerId].price, offers[offerId].seller);
+            if (tradedEnergyUnits < offer.energyUnits) {
+                uint newEnergyUnits = offer.energyUnits - tradedEnergyUnits;
+                (success, newOfferId) = _offer(newEnergyUnits, offer.price, offer.seller);
+                emit OfferChanged(offerId, newOfferId, newEnergyUnits, offer.price, offer.seller);
             }
             // Record exchange of energy between buyer and seller
-            balances[msg.sender] += int(tradedEnergyUnits);
-            balances[offers[offerId].seller] -= int(tradedEnergyUnits);
+            balances[buyer] += int(tradedEnergyUnits);
+            balances[offer.seller] -= int(tradedEnergyUnits);
             // if the offer price is either positive or negative there has to be
             // a clearingTransfer to transfer Tokens from buyer to seller or
             // vice versa
-            if (offers[offerId].price != 0) {
-                success = clearingToken.clearingTransfer(msg.sender, offers[offerId].seller, int(tradedEnergyUnits) * offers[offerId].price);
+            if (offer.price != 0) {
+                int cost = int(tradedEnergyUnits) * offer.price;
+//                success = clearingToken.clearingTransfer(buyer, offer.seller, cost);
+                success = true;
             }
-            if (success || offers[offerId].price == 0) {
-                tradeId = keccak256(offerId, msg.sender);
-                emit Trade(tradeId, msg.sender, offers[offerId].seller, tradedEnergyUnits, offers[offerId].price);
-                offers[offerId].energyUnits = 0;
-                offers[offerId].price = 0;
-                offers[offerId].seller = 0;
+            if (success || offer.price == 0) {
+                tradeId = sha3(offerId, buyer);
+                emit Trade(tradeId, buyer, offer.seller, tradedEnergyUnits, offer.price);
+                offer.energyUnits = 0;
+                offer.price = 0;
+                offer.seller = 0;
                 success = true;
             } else {
-                revert();
+                throw;
             }
         } else {
             success = false;
@@ -143,21 +146,22 @@ contract Market is Mortal {
     /*
      * @notice Gets the Offer tuple if given a valid offerid
      */
-    function getOffer(bytes32 offerId) public view returns (uint, int, address) {
-        return (offers[offerId].energyUnits, offers[offerId].price, offers[offerId].seller);
+    function getOffer(bytes32 offerId) constant returns (uint, int, address) {
+        Offer offer = offers[offerId];
+        return (offer.energyUnits, offer.price, offer.seller);
     }
 
     /*
      * @notice Gets the address of the ClearingToken contract
      */
-    function getClearingTokenAddress() public view returns (address) {
+    function getClearingTokenAddress() constant returns (address) {
         return address(clearingToken);
     }
 
     /*
      * @notice Gets the energy balance of _owner
      */
-    function balanceOf(address _owner) public view returns (int256 balance) {
+    function balanceOf(address _owner) constant returns (int256 balance) {
         return balances[_owner];
     }
 
