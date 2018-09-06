@@ -14,9 +14,17 @@ from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundE
 from d3a.models.market import Market
 
 
+class FakeArea:
+    def __init__(self, name):
+        self.name = name
+        self.current_tick = 10
+        self.bc = False
+        self.now = Pendulum.now()
+
+
 @pytest.yield_fixture
 def market():
-    return Market()
+    return Market(area=FakeArea("FakeArea"))
 
 
 def test_market_offer(market: Market):
@@ -287,7 +295,7 @@ def test_market_most_affordable_offers(market: Market):
 
 
 def test_market_listeners_init(called):
-    market = Market(notification_listener=called)
+    market = Market(area=FakeArea('fake_house'), notification_listener=called)
     market.offer(10, 20, 'A')
 
     assert len(called.calls) == 1
@@ -379,7 +387,7 @@ class MarketStateMachine(RuleBasedStateMachine):
 
     def __init__(self):
         super().__init__()
-        self.market = Market()
+        self.market = Market(area=FakeArea(name='my_fake_house'))
 
     @rule(target=actors, actor=st.text(min_size=1, max_size=3,
                                        alphabet=string.ascii_letters + string.digits))
