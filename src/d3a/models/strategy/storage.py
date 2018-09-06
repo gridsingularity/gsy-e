@@ -122,7 +122,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.add_bid_to_bought(bid_trade.offer, market, remove_bid=not bid_trade.residual)
 
     def event_market_cycle(self):
-        self.update_market_cycle(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
@@ -149,7 +149,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.state.market_cycle(self.area)
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            self.update_on_market_cycle(self.break_even[self.area.now.strftime(TIME_FORMAT)][0])
+            self.update_market_cycle_bids(self.break_even[self.area.now.strftime(TIME_FORMAT)][0])
             if self.state.clamp_energy_to_buy_kWh() > 0:
                 self.post_first_bid(
                     self.area.next_market,
