@@ -76,7 +76,7 @@ class IAAEngine:
             key=lambda b: b.price / b.energy))
         )
 
-        # Sorted offers in ascending order
+        # Sorted offers in descending order
         sorted_offers = list(reversed(sorted(
             self.markets.source.offers.values(),
             key=lambda o: o.price / o.energy))
@@ -434,3 +434,7 @@ class InterAreaAgent(BaseStrategy):
             engine.event_offer_changed(market=market,
                                        existing_offer=existing_offer,
                                        new_offer=new_offer)
+
+
+class BalancingAgent(InterAreaAgent):
+    pass
