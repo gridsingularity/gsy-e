@@ -6,8 +6,8 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.setup.jira.test_strategy_custom_storage import CustomStorageStrategy
 
 """
-For testing CustomPvStrategy
-Apart from the PV in House 2, this setup is equal to setup default_2a
+For testing CustomStorageStrategy
+Apart from the Storage in House 1, this setup is equal to setup default_2a
 """
 
 
