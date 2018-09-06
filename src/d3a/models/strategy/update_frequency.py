@@ -35,7 +35,7 @@ class BidUpdateFrequencyMixin:
             energy_Wh / 1000.0
         )
 
-    def update_on_market_cycle(self, final_rate=None):
+    def update_market_cycle_bids(self, final_rate=None):
         if final_rate is not None:
             self._final_rate = final_rate
         self._increase_rate_timepoint_s = 0
@@ -146,6 +146,6 @@ class OfferUpdateFrequencyMixin:
                 RateDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
             return self.energy_rate_decrease_per_update
 
-    def update_market_cycle(self, min_selling_rate):
+    def update_market_cycle_offers(self, min_selling_rate):
         self.min_selling_rate = min_selling_rate
         self._decrease_price_timepoint_s = self._decrease_price_every_nr_s
