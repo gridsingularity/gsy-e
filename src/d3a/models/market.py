@@ -453,4 +453,10 @@ class BalancingOffer(Offer):
 
 
 class BalancingMarket(Market):
-    pass
+    def __init(self):
+        super().__init__()
+
+    def offer(self, price: float, energy: float, seller: str) -> Offer:
+        if DeviceRegistry.REGISTRY[seller] is None:
+            return
+        super().offer()
