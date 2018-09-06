@@ -15,6 +15,7 @@ from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBid, BidNotFound
 from d3a.models.events import MarketEvent, OfferEvent
+from d3a.models.area import Area # NOQA
 
 
 BC_EVENT_MAP = {
@@ -116,9 +117,7 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
 
 class Market:
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
-        from d3a.models.area import Area
         self.area = area  # type: Area
-        assert isinstance(self.area, Area)
         self.time_slot = time_slot
         if self.time_slot is not None:
             self.time_slot_str = time_slot.strftime(TIME_FORMAT)
@@ -174,7 +173,7 @@ class Market:
         elif event_type is MarketEvent.OFFER_DELETED:
             kwargs['offer'] = self.offers_deleted.pop(encode_hex(event['offerId']))
         elif event_type is MarketEvent.OFFER_CHANGED:
-            existing_offer, new_offer = self.offers_changed.pop(encode_hex(event['offerId']))
+            existing_offer, new_offer = self.offers_changed.pop(encode_hex(event['oldOfferId']))
             kwargs['existing_offer'] = existing_offer
             kwargs['new_offer'] = new_offer
         elif event_type is MarketEvent.TRADE:

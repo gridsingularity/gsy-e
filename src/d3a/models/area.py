@@ -141,9 +141,9 @@ class Area:
             return self.parent.config
         return DEFAULT_CONFIG
 
-    @cached_property
+    @property
     def bc(self) -> Optional[BlockChainInterface]:
-        if self._bc:
+        if self._bc is not None:
             return self._bc
         if self.parent:
             return self.parent.bc

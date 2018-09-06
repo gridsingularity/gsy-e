@@ -4,6 +4,7 @@ from logging import getLogger
 from typing import Dict, List, Mapping, Optional  # noqa
 
 from ethereum.common import mk_block_from_prevstate, set_execution_results
+from ethereum.config import Env
 from ethereum.consensus_strategy import get_consensus_strategy
 from ethereum.genesis_helpers import mk_basic_state
 from ethereum.meta import make_head_candidate
@@ -49,6 +50,8 @@ class BCUsers:
 class Chain(BaseChain):
     def __init__(self, time_source):
         self.time_source = time_source
+        env = Env()
+        env.config["BLOCK_GAS_LIMIT"] = 10 ** 10
         self.chain = chain.Chain(
             genesis=mk_basic_state(
                 base_alloc,
@@ -59,7 +62,9 @@ class Chain(BaseChain):
                     "timestamp": self.time_source().int_timestamp - 1,
                     "difficulty": 1,
                     "uncles_hash": '0x' + encode_hex(BLANK_UNCLES_HASH)
-                }),
+                },
+                env=env
+            ),
             reset_genesis=True
         )
         self.cs = get_consensus_strategy(self.chain.env.config)
