@@ -109,7 +109,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self.update_market_cycle(self.min_selling_rate)
+        self.update_market_cycle_offers(self.min_selling_rate)
         # Iterate over all markets open in the future
         time = list(self.area.markets.keys())[0]
         market = list(self.area.markets.values())[0]
