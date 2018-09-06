@@ -446,3 +446,11 @@ class Market:
         self.__dict__.update(state)
         self.offer_lock = Lock()
         self.trade_lock = Lock()
+
+
+class BalancingOffer(Offer):
+    pass
+
+
+class BalancingMarket(Market):
+    pass
