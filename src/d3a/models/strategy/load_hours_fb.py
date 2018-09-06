@@ -132,7 +132,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         self._update_energy_requirement()
-        self.update_on_market_cycle()
+        self.update_market_cycle_bids()
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
             if self.energy_requirement_Wh > 0:
                 self.post_first_bid(
