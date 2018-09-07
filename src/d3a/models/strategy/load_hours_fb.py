@@ -104,8 +104,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         if self.are_bids_posted(self.area.next_market):
             self.update_posted_bids(self.area.next_market)
-        else:
-            self.post_first_bid(self.area.next_market, self.energy_requirement_Wh)
 
     def event_tick(self, *, area):
         if self.energy_requirement_Wh <= 0:
@@ -134,7 +132,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         self._update_energy_requirement()
-        self.update_on_market_cycle()
+        self.update_market_cycle_bids()
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
             if self.energy_requirement_Wh > 0:
                 self.post_first_bid(
@@ -166,7 +164,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             # Update energy requirement and clean up the pending bid buffer
             self.energy_requirement_Wh -= bid_trade.offer.energy * 1000.0
             self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)
-            self.remove_bid_from_pending(bid_trade.offer, market)
+            if not bid_trade.residual:
+                self.remove_bid_from_pending(bid_trade.offer, market)
             assert self.energy_requirement_Wh >= -0.0001
 
 

@@ -99,6 +99,10 @@ class Simulation:
 
         if seed:
             random.seed(seed)
+        else:
+            random_seed = random.randint(0, 1000000)
+            random.seed(random_seed)
+            log.error("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
         self.bc = None  # type: BlockChainInterface

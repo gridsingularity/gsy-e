@@ -36,7 +36,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
-        # TODO: Likewise to the load strategy, make the bid rates configurable
         BidUpdateFrequencyMixin.__init__(self,
                                          initial_rate=ConstSettings.STORAGE_MIN_BUYING_RATE,
                                          final_rate=ConstSettings.STORAGE_BREAK_EVEN_BUY)
@@ -119,10 +118,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             # Update energy requirement and clean up the pending bid buffer
             self.state.update_energy_per_slot(-bid_trade.offer.energy, market.time_slot)
             self.state.block_storage(bid_trade.offer.energy)
-            self.add_bid_to_bought(bid_trade.offer, market)
+            # Do not remove bid in case the trade is partial
+            self.add_bid_to_bought(bid_trade.offer, market, remove_bid=not bid_trade.residual)
 
     def event_market_cycle(self):
-        self.update_market_cycle(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
@@ -149,7 +149,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.state.market_cycle(self.area)
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            self.update_on_market_cycle(self.break_even[self.area.now.strftime(TIME_FORMAT)][0])
+            self.update_market_cycle_bids(self.break_even[self.area.now.strftime(TIME_FORMAT)][0])
             if self.state.clamp_energy_to_buy_kWh() > 0:
                 self.post_first_bid(
                     self.area.next_market,

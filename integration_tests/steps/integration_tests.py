@@ -10,7 +10,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
-from d3a import TIME_FORMAT
+from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
 from d3a.models.strategy.const import ConstSettings
 
 
@@ -383,20 +383,21 @@ def method_called(context, method):
     assert context.ctrl_callback_call_count == 1
 
 
-@when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
-def run_sim_without_iaa_fee(context, scenario, duration, slot_length, tick_length):
-    run_sim(context, scenario, duration, slot_length, tick_length,
+@when('we run the d3a simulation with {scenario} [{total_duration}, '
+      '{slot_length}, {tick_length}]')
+def run_sim_without_iaa_fee(context, scenario, total_duration, slot_length, tick_length):
+    run_sim(context, scenario, total_duration, slot_length, tick_length,
             ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
 
 
 @when('we run the simulation with setup file {scenario} '
-      'and parameters [{duration}, {slot_length}, {tick_length}, {iaa_fee}]')
-def run_sim(context, scenario, duration, slot_length, tick_length, iaa_fee):
+      'and parameters [{total_duration}, {slot_length}, {tick_length}, {iaa_fee}]')
+def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee):
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.CRITICAL)
 
-    simulation_config = SimulationConfig(duration(hours=int(duration)),
+    simulation_config = SimulationConfig(duration(hours=int(total_duration)),
                                          duration(minutes=int(slot_length)),
                                          duration(seconds=int(tick_length)),
                                          market_count=5,
@@ -480,7 +481,7 @@ def check_pv_profile(context):
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
     profile_data = ReadProfileMixin._readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format(TIME_FORMAT))
+        time = str(timepoint.format(PENDULUM_TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
                    (duration(hours=1) / pv.config.slot_length) / 1000.0
@@ -513,7 +514,7 @@ def check_pv_csv_profile(context):
     from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
     profile_data = ReadProfileMixin._readCSV(user_profile_path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format(TIME_FORMAT))
+        time = str(timepoint.format(PENDULUM_TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
                    (duration(hours=1) / pv.config.slot_length) / 1000.0
