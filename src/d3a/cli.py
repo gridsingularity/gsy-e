@@ -91,10 +91,10 @@ _setup_modules = available_simulation_scenarios
 @click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
-@click.option('--disable-bc', is_flag=True, help="Run simulation without blockchain")
+@click.option('--enable-bc', is_flag=True, help="Run simulation without blockchain")
 def run(interface, port, setup_module_name, settings_file, slowdown, seed, paused, pause_after,
         repl, export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
-        exit_on_finish_wait, disable_bc, **config_params):
+        exit_on_finish_wait, enable_bc, **config_params):
     try:
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
@@ -120,7 +120,7 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
             exit_on_finish_wait=exit_on_finish_wait,
             api_url=api_url,
             redis_job_id=None,
-            use_bc=not disable_bc
+            use_bc=enable_bc
         )
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])

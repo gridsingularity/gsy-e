@@ -1,4 +1,4 @@
-from pendulum import Interval, Pendulum
+from pendulum import duration, DateTime
 from d3a.export_unmatched_loads import export_unmatched_loads
 from unittest.mock import MagicMock
 import unittest
@@ -24,8 +24,8 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.strategy3.state = MagicMock(spec=LoadState)
         self.strategy3.state.desired_energy = {}
         self.config = MagicMock(spec=SimulationConfig)
-        self.config.slot_length = Interval(minutes=15)
-        self.config.tick_length = Interval(seconds=15)
+        self.config.slot_length = duration(minutes=15)
+        self.config.tick_length = duration(seconds=15)
         self.area1 = Area("load1", None, self.strategy1, self.appliance, self.config, None)
         self.area2 = Area("load2", None, self.strategy2, self.appliance, self.config, None)
         self.area3 = Area("load3", None, self.strategy3, self.appliance, self.config, None)
@@ -38,7 +38,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.grid = Area("Grid", [house1])
         self.grid.past_markets = {}
         for i in range(1, 11):
-            timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
+            timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             self.strategy1.state.desired_energy[timeslot] = 100
             self.strategy2.energy = 100
             mock_market = MagicMock(spec=Market)
@@ -55,7 +55,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.grid = Area("Grid", [house1])
         self.grid.past_markets = {}
         for i in range(1, 11):
-            timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
+            timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             self.strategy1.state.desired_energy[timeslot] = 100
             self.strategy2.energy = 100
             mock_market = MagicMock(spec=Market)
@@ -71,7 +71,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.grid = Area("Grid", [house1])
         self.grid.past_markets = {}
         for i in range(1, 11):
-            timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
+            timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             self.strategy1.state.desired_energy[timeslot] = 100
             self.strategy2.energy = 100
             mock_market = MagicMock(spec=Market)
@@ -91,7 +91,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         cell_tower = Area("Cell Tower", strategy=ct_strategy)
         self.grid = Area("Grid", [house1, cell_tower])
         for i in range(1, 11):
-            timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
+            timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             self.strategy1.state.desired_energy[timeslot] = 100
             self.strategy2.energy = 100
 
@@ -115,7 +115,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.grid = Area("Grid", [house1])
         self.grid.past_markets = {}
         for i in range(1, 11):
-            timeslot = Pendulum(2018, 1, 1, 12+i, 0, 0)
+            timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             mock_market = MagicMock(spec=Market)
             self.strategy1.state.desired_energy[timeslot] = 100
             self.strategy3.state.desired_energy[timeslot] = 80

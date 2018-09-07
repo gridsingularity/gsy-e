@@ -9,7 +9,7 @@ atomicwrites==1.2.1       # via pytest
 attrs==18.2.0
 awesome-slugify==1.6.5
 behave==1.2.6
-cached-property==1.4.3
+cached-property==1.5.1
 certifi==2018.8.24
 cffi==1.11.5
 chardet==3.0.4
@@ -23,7 +23,7 @@ decorator==4.3.0
 dill==0.2.8.2
 docopt==0.6.2             # via ptpython
 et-xmlfile==1.0.1
-eth-hash==0.1.4
+eth-hash==0.2.0
 eth-typing==1.3.0
 eth-utils==1.2.1
 ethereum==2.3.2
@@ -55,10 +55,10 @@ parse-type==0.4.2         # via behave
 parse==1.8.4              # via behave, parse-type
 parso==0.3.1              # via jedi
 pbkdf2==1.3
-pendulum==1.5.1
+pendulum==2.0.3
 pint==0.8.1
 pip-tools==2.0.2
-plotly==3.1.1
+plotly==3.2.0
 pluggy==0.7.1             # via pytest
 prompt-toolkit==1.0.15    # via ptpython
 ptpython==0.41
@@ -71,7 +71,7 @@ pyethash==0.1.27
 pyflakes==1.6.0           # via flake8
 pygments==2.2.0           # via ptpython
 pysha3==1.0.2
-pytest==3.7.4
+pytest==3.8.0
 python-dateutil==2.7.3
 python-rex==0.4
 pytz==2018.5
@@ -91,7 +91,6 @@ tablib==0.12.1
 terminaltables==3.1.0
 toolz==0.9.0
 traitlets==4.3.2
-tzlocal==1.5.1
 unicodecsv==0.14.1
 unidecode==0.4.21
 urllib3==1.23

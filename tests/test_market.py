@@ -2,7 +2,7 @@ import string
 from collections import defaultdict
 
 import pytest
-from pendulum.pendulum import Pendulum
+from pendulum import DateTime
 
 from d3a.models.events import MarketEvent
 from hypothesis import strategies as st
@@ -19,7 +19,7 @@ class FakeArea:
         self.name = name
         self.current_tick = 10
         self.bc = False
-        self.now = Pendulum.now()
+        self.now = DateTime.now()
 
 
 @pytest.yield_fixture
@@ -113,7 +113,7 @@ def test_market_bid_delete_missing(market: Market):
 def test_market_trade(market: Market):
     offer = market.offer(20, 10, 'A')
 
-    now = Pendulum.now()
+    now = DateTime.now()
     trade = market.accept_offer(offer, 'B', time=now)
     assert trade
     assert trade == market.trades[0]

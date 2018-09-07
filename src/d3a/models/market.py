@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Set, Union  # noqa
 import sys
 
 from ethereum.utils import encode_hex, decode_hex
-from pendulum.pendulum import Pendulum
+from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
 from d3a import TIME_FORMAT
@@ -135,7 +135,7 @@ class Market:
         # Store actual energy consumption in a nested dict in the form of
         # Timestamp -> Actor -> Value
         self.actual_energy = defaultdict(
-            lambda: defaultdict(int))  # type: Dict[Pendulum, Dict[str, float]]
+            lambda: defaultdict(int))  # type: Dict[DateTime, Dict[str, float]]
         self.accumulated_actual_energy_agg = {}
         self.min_trade_price = sys.maxsize
         self._avg_trade_price = None
@@ -290,7 +290,7 @@ class Market:
                 raise Exception("Undefined state or conditions. Should never reach this place.")
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: Pendulum = None, price_drop: bool = False) -> Trade:
+                     time: DateTime = None, price_drop: bool = False) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -352,7 +352,6 @@ class Market:
 
             if self.bc_contract:
                 privkey = self.area.bc.users[buyer].privkey
-                print(f"{buyer} | {privkey}")
                 success, _, trade_id = self.bc_contract.trade(
                     decode_hex(offer.id),
                     int(offer.energy * BC_NUM_FACTOR),
@@ -445,7 +444,7 @@ class Market:
         if self.area:
             return self.area.now
         log.error("No area available. Using real system time!")
-        return Pendulum.now()
+        return DateTime.now()
 
     def set_actual_energy(self, time, reporter, value):
         self.actual_energy[time][reporter] += value

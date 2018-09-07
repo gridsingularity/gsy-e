@@ -1,4 +1,4 @@
-from pendulum import Interval, Pendulum
+from pendulum import duration, DateTime
 from collections import OrderedDict
 from unittest.mock import MagicMock
 import unittest
@@ -15,8 +15,8 @@ class TestAreaClass(unittest.TestCase):
         self.appliance = MagicMock(spec=SimpleAppliance)
         self.strategy = MagicMock(spec=StorageStrategy)
         self.config = MagicMock(spec=SimulationConfig)
-        self.config.slot_length = Interval(minutes=15)
-        self.config.tick_length = Interval(seconds=15)
+        self.config.slot_length = duration(minutes=15)
+        self.config.tick_length = duration(seconds=15)
         self.area = Area("test_area", None, self.strategy, self.appliance, self.config, None)
         self.area.parent = self.area
         self.area.children = [self.area]
@@ -45,9 +45,9 @@ class TestAreaClass(unittest.TestCase):
         o3.price = 12
         o3.energy = 1
         markets = OrderedDict()
-        markets[Pendulum(2018, 1, 1, 12, 0, 0)] = m1
-        markets[Pendulum(2018, 1, 1, 12, 15, 0)] = m2
-        markets[Pendulum(2018, 1, 1, 12, 30, 0)] = m3
+        markets[DateTime(2018, 1, 1, 12, 0, 0)] = m1
+        markets[DateTime(2018, 1, 1, 12, 15, 0)] = m2
+        markets[DateTime(2018, 1, 1, 12, 30, 0)] = m3
         self.area.markets = markets
         m1.sorted_offers = [o1, o1]
         m2.sorted_offers = [o2, o2]
