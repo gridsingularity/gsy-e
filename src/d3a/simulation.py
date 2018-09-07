@@ -42,7 +42,7 @@ class Simulation:
                  reset_on_finish_wait: duration = duration(minutes=1),
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: duration = duration(seconds=1),
-                 api_url=None, redis_job_id=None, use_bc=True):
+                 api_url=None, redis_job_id=None, use_bc=False):
 
         self.initial_params = dict(
             slowdown=slowdown,
