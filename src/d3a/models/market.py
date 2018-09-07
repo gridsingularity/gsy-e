@@ -452,11 +452,96 @@ class BalancingOffer(Offer):
     pass
 
 
+class BalancingTrade(Trade):
+    pass
+
+
 class BalancingMarket(Market):
-    def __init(self):
+    def __init__(self):
+        # balancing_offers-id -> BalancingOffer
+        self.balancing_offers = {}  # type: Dict[str, BalancingOffer]
         super().__init__()
 
-    def offer(self, price: float, energy: float, seller: str) -> Offer:
+    def balancing_offer(self, price: float, energy: float, seller: str) -> BalancingOffer:
         if DeviceRegistry.REGISTRY[seller] is None:
             return
-        super().offer(self, price, energy, seller)
+        if self.readonly:
+            raise MarketReadOnlyException()
+        if energy == 0:
+            raise InvalidOffer()
+        balancing_offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller, self)
+        with self.offer_lock:
+            self.balancing_offers[balancing_offer.id] = balancing_offer
+            self._sorted_offers = \
+                sorted(self.balancing_offers.values(), key=lambda o: o.price / o.energy)
+            log.info("[BALANCING_OFFER][NEW] %s", balancing_offer)
+            self._update_min_max_avg_offer_prices()
+        self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=balancing_offer)
+        return balancing_offer
+
+    def accept_balancing_offer(self, buyer: str, *, energy: int = None,
+                               time: Pendulum = None) -> BalancingTrade:
+        if self.readonly:
+            raise MarketReadOnlyException()
+        if time is None:
+            time = self._now
+        with self.offer_lock, self.trade_lock:
+            self._sorted_offers = sorted(self.balancing_offers.values(),
+                                         key=lambda o: o.price / o.energy)
+            clearing_rate, residual_balancing_offer = self._clearing_rate(energy)
+            self._balancing_market_trade(clearing_rate, buyer, time)
+
+    def _clearing_rate(self, energy):
+        residual_balancing_offer = None
+        clearing_energy = 0
+        for i in range(len(self._sorted_offers)):
+            clearing_energy += self._sorted_offers[i]
+            if energy < clearing_energy:
+                surplus_energy = clearing_energy - energy
+                accepted_energy = self._sorted_offers[i].energy - surplus_energy
+                clearing_rate = self._sorted_offers[i].price / self._sorted_offers[i].energy
+                clearing_energy -= surplus_energy
+                original_offer = self._sorted_offers[i]
+                accepted_offer = BalancingOffer(
+                    self._sorted_offers[i].id,
+                    clearing_rate * accepted_energy,
+                    accepted_energy,
+                    self._sorted_offers[i].seller,
+                    self._sorted_offers[i].market
+                )
+                residual_balancing_offer = BalancingOffer(
+                    str(uuid.uuid4()),
+                    clearing_rate * surplus_energy,
+                    surplus_energy,
+                    self._sorted_offers[i].seller,
+                    self._sorted_offers[i].market
+                )
+                self.balancing_offers[accepted_offer.id] = accepted_offer
+                log.info("[BALANCING_OFFER][CHANGED] %s -> %s", original_offer, accepted_offer)
+                self.balancing_offers[residual_balancing_offer.id] = residual_balancing_offer
+                log.info("[BALANCING_OFFER][CHANGED] %s -> %s",
+                         original_offer, residual_balancing_offer)
+                # offer = accepted_offer
+                self._sorted_offers = sorted(self.balancing_offers.values(),
+                                             key=lambda o: o.price / o.energy)
+                self._notify_listeners(
+                    MarketEvent.BALANCING_OFFER,
+                    existing_offer=original_offer,
+                    new_offer=residual_balancing_offer
+                )
+            elif energy == clearing_energy:
+                clearing_rate = self._sorted_offers[i].price / self._sorted_offers[i].energy
+            return clearing_rate, residual_balancing_offer
+
+    def _balancing_market_trade(self, clearing_rate, time, buyer, residual_balancing_offer):
+        for j in range(len(self._sorted_offers)):
+            if clearing_rate > (self._sorted_offers[j].price / self._sorted_offers[j].energy):
+                offer = self._sorted_offers[j]
+                trade = BalancingTrade(str(uuid.uuid4()), time, offer, offer.seller, buyer,
+                                       residual_balancing_offer)
+                self.trades.append(trade)
+                self._update_accumulated_trade_price_energy(trade)
+                log.warning("[BALANCING_TRADE] %s", trade)
+                self._sorted_offers[j]._traded(trade, self)
+                self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
+                return trade

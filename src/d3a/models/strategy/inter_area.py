@@ -437,4 +437,9 @@ class InterAreaAgent(BaseStrategy):
 
 
 class BalancingAgent(InterAreaAgent):
-    pass
+
+    def event_balancing_offer_changed(self, *, market, existing_offer, new_offer):
+        for engine in self.engines:
+            engine.event_offer_changed(market=market,
+                                       existing_offer=existing_offer,
+                                       new_offer=new_offer)
