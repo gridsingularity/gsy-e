@@ -1,17 +1,21 @@
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
+from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.setup.jira.test_strategy_custom_storage import CustomStorageStrategy
+from d3a.device_registry import DeviceRegistry
 
-"""
-For testing CustomStorageStrategy
-Apart from the Storage in House 1, this setup is equal to setup default_2a
-"""
+device_registry_dict = {
+    "H1 General Load": {"balancing rates": (22, 25)},
+    "H2 General Load": {"balancing rates": (22, 25)},
+    "H1 Storage1": {"balancing rates": (23, 25)},
+    "H1 Storage2": {"balancing rates": (23, 25)},
+}
 
 
 def get_setup(config):
+    DeviceRegistry.REGISTRY = device_registry_dict
     area = Area(
         'Grid',
         [
@@ -24,7 +28,9 @@ def get_setup(config):
                                                                            range(12, 18)),
                                                                        max_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=CustomStorageStrategy(initial_capacity=0.6),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
+                         appliance=SwitchableAppliance()),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_capacity=0.6),
                          appliance=SwitchableAppliance()),
                 ]
             ),
