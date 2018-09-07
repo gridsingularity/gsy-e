@@ -438,6 +438,13 @@ class InterAreaAgent(BaseStrategy):
 
 class BalancingAgent(InterAreaAgent):
 
+    def __init__():
+        super().__init__()
+
+    def event_balancing_trade(self, *, market, trade, offer=None):
+        for engine in self.engines:
+            engine.event_trade(trade=trade)
+
     def event_balancing_offer_changed(self, *, market, existing_offer, new_offer):
         for engine in self.engines:
             engine.event_offer_changed(market=market,
