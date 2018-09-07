@@ -459,4 +459,4 @@ class BalancingMarket(Market):
     def offer(self, price: float, energy: float, seller: str) -> Offer:
         if DeviceRegistry.REGISTRY[seller] is None:
             return
-        super().offer()
+        super().offer(self, price, energy, seller)
