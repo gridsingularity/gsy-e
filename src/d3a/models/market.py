@@ -14,7 +14,7 @@ from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBid, BidNotFound
 from d3a.models.events import MarketEvent, OfferEvent
-
+from d3a.device_registry import DeviceRegistry
 
 log = getLogger(__name__)
 
@@ -137,6 +137,7 @@ class Market:
         self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
+        self.device_registry = DeviceRegistry.REGISTRY
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
@@ -445,3 +446,17 @@ class Market:
         self.__dict__.update(state)
         self.offer_lock = Lock()
         self.trade_lock = Lock()
+
+
+class BalancingOffer(Offer):
+    pass
+
+
+class BalancingMarket(Market):
+    def __init(self):
+        super().__init__()
+
+    def offer(self, price: float, energy: float, seller: str) -> Offer:
+        if DeviceRegistry.REGISTRY[seller] is None:
+            return
+        super().offer()
