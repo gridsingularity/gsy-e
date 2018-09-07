@@ -9,6 +9,8 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.const import ConstSettings
+from d3a.models.market import Bid, Trade
 from d3a import TIME_FORMAT
 
 TIME = pendulum.today().at(hour=10, minute=45, second=2)
@@ -21,6 +23,7 @@ class FakeArea:
         self.appliance = None
         self.name = 'FakeArea'
         self.count = count
+        self._next_market = FakeMarket(15)
 
     @property
     def config(self):
@@ -45,7 +48,7 @@ class FakeArea:
 
     @property
     def next_market(self):
-        return FakeMarket(15)
+        return self._next_market
 
 
 class FakeMarket:
@@ -54,7 +57,7 @@ class FakeMarket:
         self.most_affordable_energy = 0.1551
 
     def bid(self, price: float, energy: float, buyer: str, seller: str):
-        pass
+        return Bid(id='bid_id', price=price, energy=energy, buyer=buyer, seller=seller)
 
     @property
     def sorted_offers(self):
@@ -281,3 +284,34 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
                    1000 / load_hours_strategy_test5.energy_per_slot_Wh) *
                   (load_hours_strategy_test5.area.config.slot_length / duration(hours=1))), 2) == \
         round(((0.1/0.155) * 0.25), 2)
+
+
+@pytest.mark.parametrize("partial", [False, True])
+def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strategy_test5,
+                                                                market_test2,
+                                                                called,
+                                                                partial):
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+
+    trade_market = load_hours_strategy_test5.area.next_market
+    load_hours_strategy_test5.remove_bid_from_pending = called
+    load_hours_strategy_test5.event_activate()
+    load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
+    load_hours_strategy_test5.event_market_cycle()
+    load_hours_strategy_test5.event_tick(area=area_test2)
+    # Get the bid that was posted on event_market_cycle
+    bid = list(load_hours_strategy_test5._bids.values())[0][0]
+
+    trade = Trade('idt', None, bid, load_hours_strategy_test5.owner.name, 'B', residual=partial)
+    load_hours_strategy_test5.event_bid_traded(market=trade_market, bid_trade=trade)
+
+    if not partial:
+        assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
+        assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid)
+        assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
+            repr(trade_market)
+    else:
+        assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 0
+        assert load_hours_strategy_test5.get_posted_bids(trade_market) == [bid]
+
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1

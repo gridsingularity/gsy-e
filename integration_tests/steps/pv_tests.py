@@ -19,11 +19,11 @@ def storages_pv_min_selling_rate(context):
             assert trade.buyer != storage2.name
             if trade.buyer == storage1.name:
                 # Storage 1 should buy energy offers with rate more than the PV min sell rate
-                assert trade.offer.price / trade.offer.energy >= pv.min_selling_rate
+                assert trade.offer.price / trade.offer.energy >= pv.strategy.min_selling_rate
 
     for slot, market in house2.past_markets.items():
         assert all(trade.seller == pv.name for trade in market.trades)
-        assert all(trade.offer.price / trade.offer.energy >= pv.min_selling_rate
+        assert all(trade.offer.price / trade.offer.energy >= pv.strategy.min_selling_rate
                    for trade in market.trades)
 
 
