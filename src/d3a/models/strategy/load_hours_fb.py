@@ -1,5 +1,5 @@
 import random
-from pendulum.interval import Interval
+from pendulum import duration
 from typing import Union
 
 from d3a.exceptions import MarketException
@@ -54,7 +54,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_activate(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
-                                   (Interval(hours=1)/self.area.config.slot_length))
+                                   (duration(hours=1)/self.area.config.slot_length))
         self.daily_energy_required = self.avg_power_W * self.hrs_per_day
         if self.daily_budget:
             self.max_acceptable_energy_price = (
@@ -121,7 +121,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def _operating_hours(self, energy):
         return (((energy * 1000) / self.energy_per_slot_Wh)
-                * (self.area.config.slot_length / Interval(hours=1)))
+                * (self.area.config.slot_length / duration(hours=1)))
 
     def _update_energy_requirement(self):
         self.energy_requirement_Wh = 0

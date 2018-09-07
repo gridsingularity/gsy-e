@@ -7,8 +7,8 @@ from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
 
-from pendulum import Pendulum
-from pendulum.interval import Interval
+from pendulum import DateTime
+from pendulum import duration
 from pendulum.period import Period
 from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
@@ -35,12 +35,12 @@ class _SimulationInterruped(Exception):
 
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
-                 slowdown: int = 0, seed=None, paused: bool = False, pause_after: Interval = None,
+                 slowdown: int = 0, seed=None, paused: bool = False, pause_after: duration = None,
                  use_repl: bool = False, export: bool = False, export_path: str = None,
                  reset_on_finish: bool = False,
-                 reset_on_finish_wait: Interval = Interval(minutes=1),
+                 reset_on_finish_wait: duration = duration(minutes=1),
                  exit_on_finish: bool = False,
-                 exit_on_finish_wait: Interval = Interval(seconds=1),
+                 exit_on_finish_wait: duration = duration(seconds=1),
                  api_url=None, redis_job_id=None):
 
         self.initial_params = dict(
@@ -129,7 +129,7 @@ class Simulation:
     def stop(self):
         self.is_stopped = True
 
-    def run(self, resume=False) -> (Period, Interval):
+    def run(self, resume=False) -> (Period, duration):
         if resume:
             log.critical("Resuming simulation")
             self._info()
@@ -146,7 +146,7 @@ class Simulation:
                     raise RuntimeError("Can't resume without saved state")
                 slot_resume, tick_resume = divmod(self.area.current_tick, config.ticks_per_slot)
             else:
-                self.run_start = Pendulum.now()
+                self.run_start = DateTime.now()
                 self.paused_time = 0
                 slot_resume = tick_resume = 0
 
@@ -154,7 +154,7 @@ class Simulation:
                 with NonBlockingConsole() as console:
                     for slot_no in range(slot_resume, slot_count-1):
                         run_duration = (
-                            Pendulum.now() - self.run_start - Interval(seconds=self.paused_time)
+                            DateTime.now() - self.run_start - duration(seconds=self.paused_time)
                         )
 
                         log.error(
@@ -201,11 +201,12 @@ class Simulation:
                                 self.endpoint_buffer
                             )
 
-                    run_duration = Pendulum.now() - self.run_start
-                    paused_duration = Interval(seconds=self.paused_time)
+                    run_duration = (
+                            DateTime.now() - self.run_start - duration(seconds=self.paused_time)
+                    )
+                    paused_duration = duration(seconds=self.paused_time)
 
                     self.redis_connection.publish_results(self.endpoint_buffer)
-
                     if not self.is_stopped:
                         log.error(
                             "Run finished in %s%s / %.2fx real time",
@@ -217,7 +218,7 @@ class Simulation:
                         log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
                         ExportAndPlot(self.area, self.export_path,
-                                      Pendulum.now().format("%Y-%m-%d_%X"))
+                                      DateTime.now().format("%Y-%m-%d_%X"))
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
@@ -356,7 +357,7 @@ class Simulation:
         save_dir = Path('.d3a')
         save_dir.mkdir(exist_ok=True)
         save_file_name = save_dir.joinpath(
-            "saved-state_{:%Y%m%dT%H%M%S}.pickle".format(Pendulum.now())
+            "saved-state_{:%Y%m%dT%H%M%S}.pickle".format(DateTime.now())
         )
         with save_file_name.open('wb') as save_file:
             dill.dump(self, save_file, protocol=HIGHEST_PROTOCOL)

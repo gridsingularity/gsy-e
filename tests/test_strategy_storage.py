@@ -1,7 +1,7 @@
 import pytest
 import logging
-from pendulum.interval import Interval
-from pendulum import Pendulum
+from pendulum import Duration
+from pendulum import DateTime
 from logging import getLogger
 from math import isclose
 
@@ -52,7 +52,7 @@ class FakeArea():
 
     @property
     def now(self):
-        return Pendulum.now().start_of('day').add_timedelta(
+        return DateTime.now().start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
@@ -63,10 +63,10 @@ class FakeArea():
     @property
     def config(self):
         return SimulationConfig(
-                duration=Interval(hours=24),
+                duration=Duration(hours=24),
                 market_count=4,
-                slot_length=Interval(minutes=15),
-                tick_length=Interval(seconds=15),
+                slot_length=Duration(minutes=15),
+                tick_length=Duration(seconds=15),
                 cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
                 market_maker_rate=ConstSettings.DEFAULT_MARKET_MAKER_RATE,
                 iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
@@ -97,7 +97,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return Pendulum.now().start_of('day')
+        return DateTime.now().start_of('day')
 
     @property
     def time_slot_str(self):

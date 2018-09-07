@@ -7,7 +7,7 @@ import d3a
 import inspect
 import os
 
-from d3a import TIME_FORMAT
+from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
 from d3a.models.strategy import ureg
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import ConstSettings
@@ -69,7 +69,7 @@ class PVPredefinedStrategy(PVStrategy):
                 ) // self.area.config.slot_length)
         ]:
             self.energy_production_forecast_kWh[slot_time] = \
-                data[slot_time.format(self._time_format)]
+                data[slot_time.format(PENDULUM_TIME_FORMAT)]
 
         # TODO: A bit clumsy, but this decrease price calculation needs to be added here as well
         # Need to refactor once we convert the config object to a singleton that is shared globally

@@ -1,4 +1,4 @@
-from pendulum.interval import Interval
+from pendulum import duration
 from d3a.models.strategy import ureg, Q_
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 
@@ -34,7 +34,7 @@ class FinitePowerPlant(CommercialStrategy):
 
     def event_activate(self):
         self.energy_per_slot_kWh = ureg.kWh * \
-            self.max_available_power_kW[0].m / (Interval(hours=1) / self.area.config.slot_length)
+            self.max_available_power_kW[0].m / (duration(hours=1) / self.area.config.slot_length)
         if self.energy_per_slot_kWh.m <= 0.0:
             return
         super().event_activate()
@@ -48,7 +48,7 @@ class FinitePowerPlant(CommercialStrategy):
         target_market_time = list(self.area.markets.keys())[-1]
         self.energy_per_slot_kWh = ureg.kWh * \
             self.max_available_power_kW[target_market_time.hour].m / \
-            (Interval(hours=1) / self.area.config.slot_length)
+            (duration(hours=1) / self.area.config.slot_length)
         if self.energy_per_slot_kWh.m <= 0.0:
             return
         super().event_market_cycle()

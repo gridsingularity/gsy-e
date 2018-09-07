@@ -1,7 +1,7 @@
 from typing import Dict  # noqa
 from pendulum import Time # noqa
 import math
-from pendulum import Interval
+from pendulum import duration
 
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
@@ -41,7 +41,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
-        self.midnight = self.area.now.start_of("day").hour_(0)
+        self.midnight = self.area.now.start_of("day")
         # Calculating the produced energy
         self.update_on_activate()
         for slot_time in [
@@ -105,7 +105,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                  )
             )
         # /1000 is needed to convert Wh into kW
-        w_to_wh_factor = (self.area.config.slot_length / Interval(hours=1))
+        w_to_wh_factor = (self.area.config.slot_length / duration(hours=1))
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
