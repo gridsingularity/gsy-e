@@ -4,7 +4,6 @@ from collections import defaultdict, namedtuple
 from logging import getLogger
 from threading import Lock
 from typing import Any, Dict, List, Set, Union  # noqa
-from numpy import sign
 
 import sys
 
@@ -450,7 +449,10 @@ class Market:
 
 
 class BalancingOffer(Offer):
-    pass
+
+    def __repr__(self):
+        return "<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
+            .format(s=self, rate=self.price / self.energy)
 
 
 class BalancingTrade(Trade):
@@ -458,8 +460,8 @@ class BalancingTrade(Trade):
 
 
 class BalancingMarket(Market):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+        Market.__init__(self, time_slot, area, notification_listener, readonly)
 
     def balancing_offer(self, price: float, energy: float, seller: str) -> BalancingOffer:
         if DeviceRegistry.REGISTRY[seller] is None:
@@ -491,7 +493,7 @@ class BalancingMarket(Market):
                                          key=lambda o: o.price / o.energy)
             if offer is None:
                 raise OfferNotFoundException()
-            if sign(offer.energy) != sign(energy):
+            if (offer.energy > 0 and energy < 0) or (offer.energy < 0 and energy > 0):
                 return
             try:
                 if time is None:
@@ -500,18 +502,18 @@ class BalancingMarket(Market):
                     # Partial trade
                     if energy == 0:
                         raise InvalidTrade("Energy can not be zero.")
-                    elif energy < offer.energy:
+                    elif abs(energy) < abs(offer.energy):
                         original_offer = offer
                         accepted_offer = Offer(
                             offer.id,
-                            offer.price / offer.energy * energy,
+                            (offer.price / abs(offer.energy)) * abs(energy),
                             energy,
                             offer.seller,
                             offer.market
                         )
                         residual_offer = Offer(
                             str(uuid.uuid4()),
-                            offer.price / offer.energy * (offer.energy - energy),
+                            (offer.price / abs(offer.energy)) * (abs(offer.energy) - abs(energy)),
                             offer.energy - energy,
                             offer.seller,
                             offer.market

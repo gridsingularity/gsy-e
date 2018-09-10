@@ -347,7 +347,6 @@ def test_market_most_affordable_offers(market: Market):
 def test_market_listeners_init(called):
     market = Market(notification_listener=called)
     market.offer(10, 20, 'A')
-
     assert len(called.calls) == 1
 
 

@@ -4,4 +4,3 @@ pre-commit
 ptpython
 tox
 readme-renderer
-numpy
