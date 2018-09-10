@@ -357,7 +357,7 @@ class InterAreaAgent(BaseStrategy):
                   'min_offer_age', 'tick_ratio')
 
     def __init__(self, *, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=1,
-                 tick_ratio=2):
+                 tick_ratio=ConstSettings.INTER_AREA_AGENT_RATIO):
         """
         Equalize markets
 
