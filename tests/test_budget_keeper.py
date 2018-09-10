@@ -2,7 +2,7 @@ import pytest
 
 from collections import namedtuple
 
-from pendulum import Pendulum
+from pendulum import DateTime
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.budget_keeper import BudgetKeeper
@@ -57,7 +57,7 @@ class FakeArea:
 
     @property
     def now(self):
-        return Pendulum.now()
+        return DateTime.now()
 
     @property
     def current_market(self):

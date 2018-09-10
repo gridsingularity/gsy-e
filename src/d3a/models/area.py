@@ -5,8 +5,8 @@ from random import random
 from typing import Dict, List, Optional, Union  # noqa
 
 from cached_property import cached_property
-from pendulum.interval import Interval
-from pendulum.pendulum import Pendulum
+from pendulum import duration
+from pendulum import DateTime
 from slugify import slugify
 
 from d3a.exceptions import AreaException
@@ -25,10 +25,10 @@ log = getLogger(__name__)
 
 
 DEFAULT_CONFIG = SimulationConfig(
-    duration=Interval(hours=24),
+    duration=duration(hours=24),
     market_count=4,
-    slot_length=Interval(minutes=15),
-    tick_length=Interval(seconds=1),
+    slot_length=duration(minutes=15),
+    tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
     market_maker_rate=str(ConstSettings.DEFAULT_MARKET_MAKER_RATE),
     iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
@@ -63,9 +63,9 @@ class Area:
         if budget_keeper:
             self.budget_keeper.area = self
         # Children trade in `markets`
-        self.markets = OrderedDict()  # type: Dict[Pendulum, Market]
+        self.markets = OrderedDict()  # type: Dict[DateTime, Market]
         # Past markets
-        self.past_markets = OrderedDict()  # type: Dict[Pendulum, Market]
+        self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.listeners = []
         self._accumulated_past_price = 0
         self._accumulated_past_energy = 0
@@ -220,10 +220,9 @@ class Area:
             self.budget_keeper.process_market_cycle()
 
         now = self.now
-        time_in_hour = Interval(minutes=now.minute, seconds=now.second)
-        now = now.at(now.hour, minute=0, second=0).add_timedelta(
-            (time_in_hour // self.config.slot_length) * self.config.slot_length
-        )
+        time_in_hour = duration(minutes=now.minute, seconds=now.second)
+        now = now.at(now.hour, minute=0, second=0) + \
+            ((time_in_hour // self.config.slot_length) * self.config.slot_length)
 
         self.log.info("Cycling markets")
         changed = False
@@ -257,7 +256,7 @@ class Area:
 
         # Markets range from one slot to MARKET_SLOT_COUNT into the future
         for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
-            timeframe = now.add_timedelta(offset)
+            timeframe = now + offset
             if timeframe not in self.markets:
                 # Create markets for missing slots
                 market = Market(timeframe, self,
@@ -290,23 +289,23 @@ class Area:
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
-    def get_now(self) -> Pendulum:
+    def get_now(self) -> DateTime:
         """Compatibility wrapper"""
         warnings.warn("The '.get_now()' method has been replaced by the '.now' property. "
                       "Please use that in the future.")
         return self.now
 
     @property
-    def now(self) -> Pendulum:
+    def now(self) -> DateTime:
         """
-        Return the 'current time' as a `Pendulum` object.
+        Return the 'current time' as a `DateTime` object.
         Can be overridden in subclasses to change the meaning of 'now'.
 
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return Pendulum.now().start_of('day').add_timedelta(
-            self.config.tick_length * self.current_tick
+        return DateTime.now().start_of('day').add(
+            seconds=self.config.tick_length.seconds * self.current_tick
         )
 
     @cached_property

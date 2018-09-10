@@ -6,7 +6,7 @@ import json
 from math import ceil, floor
 from typing import Dict  # noqa
 
-from pendulum import Interval, parse
+from pendulum import duration, parse
 from pendulum import Time  # noqa
 
 from d3a.models.strategy.base import BaseStrategy
@@ -16,17 +16,17 @@ class CustomProfile:
     """Compute energy needed/produced by owning strategy"""
 
     def __init__(self, strategy, *,
-                 values=None, start_time=None, time_step=Interval(seconds=1)):
+                 values=None, start_time=None, time_step=duration(seconds=1)):
         assert isinstance(strategy, CustomProfileStrategy), \
                "CustomProfile should only be used with CustomProfileStrategy"
         self.strategy = strategy
         self.set_from_list(values or [], start_time, time_step)
 
-    def set_from_list(self, values, start_time=None, time_step=Interval(seconds=1)):
+    def set_from_list(self, values, start_time=None, time_step=duration(seconds=1)):
         self.values = tuple(values)
         self.start_time = start_time
         self.time_step = time_step
-        self.factor = time_step / Interval(hours=1)
+        self.factor = time_step / duration(hours=1)
 
     def _value(self, index):
         if not 0 <= index < len(self.values):
@@ -59,7 +59,7 @@ class CustomProfileIrregularTimes:
         assert isinstance(strategy, CustomProfileStrategy), \
             "CustomProfile should only be used with CustomProfileStrategy"
         self.strategy = strategy
-        self.time_step = Interval(minutes=1)
+        self.time_step = duration(minutes=1)
 
     def _time_offset(self, time):
         return int((time - self.start_time).as_interval() / self.time_step)
@@ -187,7 +187,7 @@ def custom_profile_strategy_from_csv_file(consumption, production, *, log=None):
 
 
 def custom_profile_strategy_from_list(*, consumption=None, production=None,
-                                      time_step=Interval(seconds=1), start_time=None):
+                                      time_step=duration(seconds=1), start_time=None):
     strategy = CustomProfileStrategy()
     if consumption is not None:
         strategy.consumption.set_from_list(consumption, start_time, time_step)

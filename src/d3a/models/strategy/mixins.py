@@ -6,7 +6,7 @@ import os
 import ast
 from enum import Enum
 from datetime import datetime
-from pendulum import Interval
+from pendulum import duration
 from statistics import mean
 from typing import Dict
 from itertools import product
@@ -46,7 +46,7 @@ class ReadProfileMixin:
 
     @staticmethod
     def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
-                                             slot_length: Interval) -> Dict[str, float]:
+                                             slot_length: duration) -> Dict[str, float]:
         """
         Calculates energy from power profile. Does not use numpy, calculates avg power for each
         market slot and based on that calculates energy.
@@ -76,7 +76,7 @@ class ReadProfileMixin:
                  ]) / 1000.0
             for index, slot in enumerate(slot_time_list)
         ]
-        slot_energy_kWh = list(map(lambda x: x / (Interval(hours=1) / slot_length), avg_power_kW))
+        slot_energy_kWh = list(map(lambda x: x / (duration(hours=1) / slot_length), avg_power_kW))
 
         return {datetime.utcfromtimestamp(slot_time_list[ii]).strftime(TIME_FORMAT):
                 slot_energy_kWh[ii]
@@ -86,7 +86,7 @@ class ReadProfileMixin:
     @classmethod
     def read_profile_csv_to_dict(cls, profile_type: InputProfileTypes,
                                  profile_path: str,
-                                 slot_length: Interval) -> Dict[str, float]:
+                                 slot_length: duration) -> Dict[str, float]:
         """
         Reads power profile from csv and converts it to energy
         :param profile_path: path of the csv file
@@ -125,7 +125,7 @@ class ReadProfileMixin:
     @classmethod
     def read_arbitrary_profile(cls, profile_type: InputProfileTypes,
                                daily_profile,
-                               slot_length=Interval()) -> Dict[str, float]:
+                               slot_length=duration()) -> Dict[str, float]:
         """
         Reads arbitrary profile.
         Handles csv, dict and string input.
