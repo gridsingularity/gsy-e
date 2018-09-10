@@ -1,6 +1,6 @@
 import pytest
 
-from pendulum import Interval, Pendulum
+from pendulum import duration, DateTime
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.strategy.custom_profile import CustomProfileStrategy, \
@@ -24,8 +24,8 @@ class FakeArea:
 class FakeParent(FakeArea):
     def __init__(self):
         self.markets = {
-            Pendulum(2017, 1, 1, 0, 0): FakeMarket(),
-            Pendulum(2017, 1, 1, 0, 15): FakeMarket()
+            DateTime(2017, 1, 1, 0, 0): FakeMarket(),
+            DateTime(2017, 1, 1, 0, 15): FakeMarket()
         }
 
 
@@ -39,7 +39,7 @@ class FakeCustomProfile:
         self.strategy = strategy
         self.value = value
         self.factor = 1/60.0
-        self.start_time = Pendulum(2017, 1, 1, 0, 0)
+        self.start_time = DateTime(2017, 1, 1, 0, 0)
 
     def amount_over_period(self, period_start, duration):
         return self.value
@@ -75,28 +75,28 @@ def profile(fake_owner):
     strategy = CustomProfileStrategy()
     strategy.owner = fake_owner
     strategy.consumption.set_from_list([5.5, 2.9, 3.1, 2.5, 1.0],
-                                       Pendulum(2017, 1, 1),
-                                       Interval(minutes=1))
+                                       DateTime(2017, 1, 1),
+                                       duration(minutes=1))
     return strategy.consumption
 
 
 def test_custom_profile_set_from_list(profile):
-    assert profile.power_at(Pendulum(2016, 12, 31)) == 0.0
-    assert profile.power_at(Pendulum(2017, 1, 1, 0, 2)) == 3.1
-    assert profile.power_at(Pendulum(2017, 1, 1, 0, 3)) == 2.5
-    assert profile.power_at(Pendulum(2017, 1, 1, 0, 7)) == 0.0
+    assert profile.power_at(DateTime(2016, 12, 31)) == 0.0
+    assert profile.power_at(DateTime(2017, 1, 1, 0, 2)) == 3.1
+    assert profile.power_at(DateTime(2017, 1, 1, 0, 3)) == 2.5
+    assert profile.power_at(DateTime(2017, 1, 1, 0, 7)) == 0.0
 
 
 def test_custom_profile_amount_over_period(profile):
-    assert profile.amount_over_period(Pendulum(2017, 1, 1, 0, 1), Interval(minutes=2)) == 0.1
-    assert profile.amount_over_period(Pendulum(2017, 1, 1, 0, 0), Interval(minutes=5)) == 0.25
+    assert profile.amount_over_period(DateTime(2017, 1, 1, 0, 1), duration(minutes=2)) == 0.1
+    assert profile.amount_over_period(DateTime(2017, 1, 1, 0, 0), duration(minutes=5)) == 0.25
 
 
 def test_custom_profile_amount_over_period_fractioned(profile):
-    profile.set_from_list([0.0, 1.0, 2.0, 3.0, 4.0], Pendulum(2017, 1, 1), Interval(hours=1))
-    assert profile.amount_over_period(Pendulum(2017, 1, 1, 0, 30), Interval(minutes=45)) == 0.25
-    assert profile.amount_over_period(Pendulum(2017, 1, 1, 1, 5), Interval(minutes=30)) == 0.5
-    assert profile.amount_over_period(Pendulum(2017, 1, 1, 1, 45), Interval(hours=2)) == 4.5
+    profile.set_from_list([0.0, 1.0, 2.0, 3.0, 4.0], DateTime(2017, 1, 1), duration(hours=1))
+    assert profile.amount_over_period(DateTime(2017, 1, 1, 0, 30), duration(minutes=45)) == 0.25
+    assert profile.amount_over_period(DateTime(2017, 1, 1, 1, 5), duration(minutes=30)) == 0.5
+    assert profile.amount_over_period(DateTime(2017, 1, 1, 1, 45), duration(hours=2)) == 4.5
 
 
 @pytest.fixture
@@ -104,45 +104,47 @@ def profile_irreg(fake_owner):
     strategy = CustomProfileStrategy(profile_type=CustomProfileIrregularTimes)
     strategy.owner = fake_owner
     data = {
-        Pendulum(2017, 1, 1, 0, 10): 3.0,
-        Pendulum(2017, 1, 1, 0, 11): 14.0,
-        Pendulum(2017, 1, 1, 0, 15): 14.0,
-        Pendulum(2017, 1, 1, 0, 16): 11.0
+        DateTime(2017, 1, 1, 0, 10): 3.0,
+        DateTime(2017, 1, 1, 0, 11): 14.0,
+        DateTime(2017, 1, 1, 0, 15): 14.0,
+        DateTime(2017, 1, 1, 0, 16): 11.0
     }
     strategy.consumption.set_from_dict(data)
     return strategy.consumption
 
 
 def test_irregular_times_power_at(profile_irreg):
-    assert profile_irreg.power_at(Pendulum(2017, 1, 1, 0, 8)) == 0.0
-    assert profile_irreg.power_at(Pendulum(2017, 1, 1, 0, 10)) == 3.0
-    assert profile_irreg.power_at(Pendulum(2017, 1, 1, 0, 11)) == 14.0
-    assert profile_irreg.power_at(Pendulum(2017, 1, 1, 0, 16, 1)) == 0.0
+    assert profile_irreg.power_at(DateTime(2017, 1, 1, 0, 8)) == 0.0
+    assert profile_irreg.power_at(DateTime(2017, 1, 1, 0, 10)) == 3.0
+    assert profile_irreg.power_at(DateTime(2017, 1, 1, 0, 11)) == 14.0
+    assert profile_irreg.power_at(DateTime(2017, 1, 1, 0, 16, 1)) == 0.0
 
 
 def test_irregular_times_amount_over_period(profile_irreg):
-    start = Pendulum(2017, 1, 1, 0, 11)
-    assert profile_irreg.amount_over_period(start, Interval(minutes=4)) == 56.0
+    start = DateTime(2017, 1, 1, 0, 11)
+    assert profile_irreg.amount_over_period(start, duration(minutes=4)) == 56.0
 
 
 def test_irregular_times_amount_over_period_early_end(profile_irreg):
-    start = Pendulum(2017, 1, 1, 0, 11)
-    assert profile_irreg.amount_over_period(start, Interval(minutes=3)) == 42.0
+    start = DateTime(2017, 1, 1, 0, 11)
+    assert profile_irreg.amount_over_period(start, duration(minutes=3)) == 42.0
 
 
 def test_irregular_times_amount_over_period_late_begin(profile_irreg):
-    start = Pendulum(2017, 1, 1, 0, 13)
-    assert profile_irreg.amount_over_period(start, Interval(minutes=2)) == 28.0
+    start = DateTime(2017, 1, 1, 0, 13)
+    assert profile_irreg.amount_over_period(start, duration(minutes=2)) == 28.0
 
 
 def test_read_from_csv(fake_owner):
     cons = ('2017-01-01T00:10:00,17.4', '2017-01-01T00:19:00,3.1', '2017-01-01T00:41:00,3.1')
     prod = ('2017-01-01T00:10:00,11.3', '2017-01-01T00:16:00,8.0', '2017-01-01T00:30:00,8.0')
     testee = custom_profile_strategy_from_csv(cons, prod)
-    assert testee.consumption.power_at(Pendulum(2017, 1, 1, 0, 10)) == 17.4
-    assert testee.consumption.power_at(Pendulum(2017, 1, 1, 0, 40)) == 3.1
-    assert testee.production.power_at(Pendulum(2017, 1, 1, 0, 10)) == 11.3
-    assert testee.production.power_at(Pendulum(2017, 1, 1, 0, 18)) == 8.0
+    from pendulum import timezone
+    tz = timezone('UTC')
+    assert testee.consumption.power_at(DateTime(2017, 1, 1, 0, 10, tzinfo=tz)) == 17.4
+    assert testee.consumption.power_at(DateTime(2017, 1, 1, 0, 40, tzinfo=tz)) == 3.1
+    assert testee.production.power_at(DateTime(2017, 1, 1, 0, 10, tzinfo=tz)) == 11.3
+    assert testee.production.power_at(DateTime(2017, 1, 1, 0, 18, tzinfo=tz)) == 8.0
 
 
 @pytest.fixture

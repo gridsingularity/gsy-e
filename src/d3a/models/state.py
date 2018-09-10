@@ -1,5 +1,5 @@
 from collections import defaultdict
-from pendulum.interval import Interval
+from pendulum import duration
 
 from d3a.models.strategy.const import ConstSettings
 
@@ -75,7 +75,7 @@ class StorageState:
         self.used_history = defaultdict(lambda: '-')
         self.charge_history = defaultdict(lambda: '-')
         self.charge_history_kWh = defaultdict(lambda: '-')
-        self._traded_energy_per_slot = defaultdict(lambda: 0.0)  # type: Dict[Pendulum, float]
+        self._traded_energy_per_slot = defaultdict(lambda: 0.0)  # type: Dict[DateTime, float]
 
     @property
     def blocked_storage(self):
@@ -111,7 +111,7 @@ class StorageState:
 
     def set_battery_energy_per_slot(self, slot_length):
         self._battery_energy_per_slot = self.max_abs_battery_power * \
-                                        (slot_length/Interval(hours=1))
+                                        (slot_length/duration(hours=1))
 
     def has_battery_reached_max_power(self, time_slot):
         return abs(self.traded_energy_per_slot(time_slot)) >= \
