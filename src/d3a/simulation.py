@@ -6,7 +6,6 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
-import os
 
 from pendulum import Pendulum
 from pendulum.interval import Interval
@@ -73,28 +72,27 @@ class Simulation:
 
         self.run_start = None
         self.paused_time = None
-        self.hierarchy_list = []
 
         self._load_setup_module()
         self._init(**self.initial_params)
         self._init_events()
 
     def _set_traversal_length(self):
-        self._get_setup_levels(self.area, "")
-        no_of_levels = max([len(li.split("/")) for li in self.hierarchy_list]) + 1
-        num_ticks_to_propagate = int(no_of_levels * ConstSettings.INTER_AREA_AGENT_RATIO)
-        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
-        time_to_propagate = num_ticks_to_propagate * self.simulation_config.tick_length.seconds/60.
-        log.error("Setup has {} levels, offers/bids need at least {} minutes "
-                  "({} ticks) to propagate.".format(no_of_levels, num_ticks_to_propagate,
-                                                    time_to_propagate))
+        if ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH is None:
+            no_of_levels = self._get_setup_levels(self.area)
+            num_ticks_to_propagate = no_of_levels * ConstSettings.INTER_AREA_AGENT_RATIO
+            ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
+            time_to_propagate = num_ticks_to_propagate * \
+                self.simulation_config.tick_length.seconds / 60.
+            log.error("Setup has {} levels, offers/bids need at least {} minutes "
+                      "({} ticks) to propagate.".format(no_of_levels, time_to_propagate,
+                                                        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH,))
 
-    def _get_setup_levels(self, area, address):
-        for child in area.children:
-            if child.children:
-                node = os.path.join(address, child.slug)
-                self.hierarchy_list.append(node)
-                self._get_setup_levels(child, node)
+    def _get_setup_levels(self, area, level_count=0):
+        level_count += 1
+        count_list = [self._get_setup_levels(child, level_count)
+                      for child in area.children if child.children]
+        return max(count_list) if len(count_list) > 0 else level_count
 
     def _load_setup_module(self):
         try:
