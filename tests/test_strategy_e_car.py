@@ -15,8 +15,8 @@ class FakeArea():
         self.count = count
         self.past_market = FakeMarket(0)
         # Setting "now" to "today" at 16hr
-        #        time_in_hour = Interval(minutes=0, seconds=0)
-        #        self.now = now.at(hour=16, minute=0, second=0).add_timedelta(
+        #        time_in_hour = duration(minutes=0, seconds=0)
+        #        self.now = now.at(hour=16, minute=0, second=0) + (
         #            (time_in_hour // self.config.slot_length) * self.config.slot_length
         #        )
         dt = pendulum.now()

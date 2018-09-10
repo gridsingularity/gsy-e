@@ -1,7 +1,7 @@
 import pytest
 import pendulum
 import uuid
-from pendulum import Pendulum, Interval
+from pendulum import DateTime, duration
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
@@ -26,15 +26,15 @@ class FakeArea():
         return DEFAULT_CONFIG
 
     @property
-    def now(self) -> Pendulum:
+    def now(self) -> DateTime:
         """
-        Return the 'current time' as a `Pendulum` object.
+        Return the 'current time' as a `DateTime` object.
         Can be overridden in subclasses to change the meaning of 'now'.
 
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return Pendulum.now().start_of('day').add_timedelta(
+        return DateTime.now().start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
@@ -61,7 +61,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return Pendulum.now().start_of('day')
+        return DateTime.now().start_of('day')
 
     @property
     def time_slot_str(self):
@@ -281,7 +281,7 @@ def pv_test_cloudy(area_test7):
     p = PVPredefinedStrategy(cloud_coverage=1)
     p.area = area_test7
     p.owner = area_test7
-    p.area.config.slot_length = Interval(minutes=20)
+    p.area.config.slot_length = duration(minutes=20)
     return p
 
 

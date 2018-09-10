@@ -7,7 +7,7 @@ import json
 from logging import LoggerAdapter
 
 from click.types import ParamType
-from pendulum.interval import Interval
+from pendulum import duration
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
@@ -45,7 +45,7 @@ class IntervalType(ParamType):
     def convert(self, value, param, ctx):
         match = self.re(value)
         if match:
-            return Interval(**{
+            return duration(**{
                 k: int(v) if v else 0
                 for k, v in match.items()
                 if isinstance(k, str)
