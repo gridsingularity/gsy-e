@@ -1,5 +1,5 @@
 from behave import then
-from pendulum.interval import Interval
+from pendulum import duration
 from d3a.setup.strategy_tests import user_profile_load_csv, user_profile_load_dict # NOQA
 from d3a import TIME_FORMAT
 from d3a.export_unmatched_loads import export_unmatched_loads
@@ -19,7 +19,7 @@ def check_load_profile_csv(context):
     for timepoint, energy in desired_energy.items():
         if timepoint in input_profile:
             assert energy == input_profile[timepoint] / \
-                   (Interval(hours=1) / load.config.slot_length)
+                   (duration(hours=1) / load.config.slot_length)
         else:
             assert False
 
@@ -45,12 +45,12 @@ def check_user_pv_dict_profile(context):
     for slot, market in house.past_markets.items():
         if slot.hour in user_profile.keys():
             assert load.strategy.state.desired_energy[slot] == user_profile[slot.hour] / \
-                   (Interval(hours=1) / house.config.slot_length)
+                   (duration(hours=1) / house.config.slot_length)
         else:
             if int(slot.hour) > int(list(user_profile.keys())[-1]):
                 assert load.strategy.state.desired_energy[slot] == \
                        user_profile[list(user_profile.keys())[-1]] / \
-                       (Interval(hours=1) / house.config.slot_length)
+                       (duration(hours=1) / house.config.slot_length)
             else:
                 assert load.strategy.state.desired_energy[slot] == 0
 

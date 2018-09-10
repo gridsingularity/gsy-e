@@ -3,8 +3,8 @@ import unittest
 import pendulum
 from unittest.mock import MagicMock, Mock
 from datetime import timedelta
-from pendulum import Pendulum
-from pendulum.interval import Interval
+from pendulum import DateTime
+from pendulum import duration
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
 from d3a.models.appliance.simple import SimpleAppliance
@@ -34,15 +34,15 @@ class FakeArea:
         return 5
 
     @property
-    def now(self) -> Pendulum:
+    def now(self) -> DateTime:
         """
-        Return the 'current time' as a `Pendulum` object.
+        Return the 'current time' as a `DateTime` object.
         Can be overridden in subclasses to change the meaning of 'now'.
 
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return Pendulum.now().start_of('day').add_timedelta(
+        return DateTime.now().start_of('day') + (
             timedelta(hours=10) + self.config.tick_length * self.current_tick
         )
 
@@ -85,7 +85,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return Pendulum.now().start_of('day').add_timedelta(timedelta(hours=10))
+        return DateTime.now().start_of('day') + timedelta(hours=10)
 
     @property
     def time_slot_str(self):
@@ -282,7 +282,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
     load_hours_strategy_test5.event_tick(area=area_test2)
     assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
                    1000 / load_hours_strategy_test5.energy_per_slot_Wh) *
-                  (load_hours_strategy_test5.area.config.slot_length / Interval(hours=1))), 2) == \
+                  (load_hours_strategy_test5.area.config.slot_length / duration(hours=1))), 2) == \
         round(((0.1/0.155) * 0.25), 2)
 
 

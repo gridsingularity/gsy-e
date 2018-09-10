@@ -1,7 +1,7 @@
 import pytest
 import pendulum
 import uuid
-from pendulum import Pendulum
+from pendulum import DateTime
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
@@ -26,15 +26,15 @@ class FakeArea():
         return DEFAULT_CONFIG
 
     @property
-    def now(self) -> Pendulum:
+    def now(self) -> DateTime:
         """
-        Return the 'current time' as a `Pendulum` object.
+        Return the 'current time' as a `DateTime` object.
         Can be overridden in subclasses to change the meaning of 'now'.
 
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return Pendulum.now().start_of('day').add_timedelta(
+        return DateTime.now().start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
@@ -61,7 +61,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return Pendulum.now().start_of('day')
+        return DateTime.now().start_of('day')
 
     @property
     def time_slot_str(self):
@@ -98,7 +98,7 @@ def pv_test1(area_test1):
 
 def testing_activation(pv_test1, area_test1):
     pv_test1.event_activate()
-    # Pendulum.today() returns pendulum object with the date of today and midnight
+    # DateTime.today() returns pendulum object with the date of today and midnight
     assert pv_test1.midnight == pendulum.today()
     global ENERGY_FORECAST
     ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh

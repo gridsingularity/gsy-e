@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Dict  # noqa
 
-from pendulum import Interval
+from pendulum import duration
 
 from d3a.models.area import Area
 from d3a.util import make_iaa_name
@@ -93,7 +93,7 @@ class BudgetKeeper:
                     break
 
     def begin_period(self):
-        self.period_end = self.area.now + Interval(self.days_per_period)
+        self.period_end = self.area.now + duration(self.days_per_period)
         self.remaining = self.budget
         for child in self.area.children:
             self._enable(child)

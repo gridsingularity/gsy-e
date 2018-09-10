@@ -1,4 +1,4 @@
-from pendulum import Interval
+from pendulum import duration
 
 from d3a.models.appliance.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.fridge import FridgeAppliance
@@ -14,7 +14,7 @@ values = [0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
           0.1, 0.9, 1.1, 1.2, 0.5, 0.0,
           0.0, 0.4, 0.0, 0.0, 0.0, 0.0]
 
-time_step = Interval(hours=1)
+time_step = duration(hours=1)
 
 
 def get_setup(config):

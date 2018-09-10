@@ -1,10 +1,8 @@
 import logging
-from datetime import timedelta
 from os import environ, getpid
 import ast
 
 import pendulum
-import pendulum.interval as interval
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
@@ -37,9 +35,15 @@ def start(scenario, settings):
         update_advanced_settings(ast.literal_eval(advanced_settings))
 
     config = SimulationConfig(
-        duration=interval.instance(settings.get('duration', timedelta(days=1))),
-        slot_length=interval.instance(settings.get('slot_length', timedelta(minutes=15))),
-        tick_length=interval.instance(settings.get('tick_length', timedelta(seconds=15))),
+        duration=pendulum.duration(
+            days=1 if 'duration' not in settings else settings['duration'].days
+        ),
+        slot_length=pendulum.duration(
+            seconds=15*60 if 'slot_length' not in settings else settings['slot_length'].seconds
+        ),
+        tick_length=pendulum.duration(
+            seconds=15 if 'tick_length' not in settings else settings['tick_length'].seconds
+        ),
         market_count=settings.get('market_count', 4),
         cloud_coverage=settings.get('cloud_coverage', ConstSettings.DEFAULT_PV_POWER_PROFILE),
         market_maker_rate=settings.get('market_maker_rate',
@@ -59,7 +63,7 @@ def start(scenario, settings):
                             config,
                             slowdown=settings.get('slowdown', 0),
                             exit_on_finish=True,
-                            exit_on_finish_wait=interval.instance(timedelta(seconds=10)),
+                            exit_on_finish_wait=pendulum.duration(seconds=10),
                             api_url=api_url,
                             redis_job_id=job.id)
 
