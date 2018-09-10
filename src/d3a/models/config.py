@@ -1,5 +1,5 @@
 import ast
-from pendulum.interval import Interval
+from pendulum import duration
 
 from d3a.exceptions import D3AException
 from d3a.util import format_interval
@@ -9,7 +9,7 @@ from d3a.models.strategy.mixins import InputProfileTypes
 
 
 class SimulationConfig:
-    def __init__(self, duration: Interval, slot_length: Interval, tick_length: Interval,
+    def __init__(self, duration: duration, slot_length: duration, tick_length: duration,
                  market_count: int, cloud_coverage: int, market_maker_rate, iaa_fee: int):
         self.duration = duration
         self.slot_length = slot_length
@@ -57,7 +57,7 @@ class SimulationConfig:
         fields = {'duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
                   'total_ticks', 'cloud_coverage'}
         return {
-            k: format_interval(v) if isinstance(v, Interval) else v
+            k: format_interval(v) if isinstance(v, duration) else v
             for k, v in self.__dict__.items()
             if k in fields
         }

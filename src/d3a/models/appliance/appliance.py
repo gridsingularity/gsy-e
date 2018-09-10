@@ -4,7 +4,7 @@ from d3a.models.appliance.properties import MeasurementParamType
 from logging import getLogger
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.area import Area
-from pendulum import Interval
+from pendulum import duration
 import math
 import random
 
@@ -23,7 +23,7 @@ class ApplianceMode(Enum):
 class EnergyCurve:
 
     def __init__(self, mode: ApplianceMode, curve: List,
-                 sampling: Interval, tick_duration: Interval):
+                 sampling: duration, tick_duration: duration):
         self.dictModeCurve = dict()
         self.sampling = sampling
         self.tick_duration = tick_duration

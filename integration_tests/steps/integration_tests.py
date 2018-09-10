@@ -3,14 +3,14 @@ import importlib
 import logging
 import glob
 from math import isclose
-from pendulum.interval import Interval
+from pendulum import duration
 from behave import given, when, then
 
 from d3a.models.config import SimulationConfig
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
-from d3a import TIME_FORMAT
+from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
 from d3a.models.strategy.const import ConstSettings
 
 
@@ -120,9 +120,9 @@ def pv_profile_scenario(context):
             }
         ]
     }
-    context._settings = SimulationConfig(tick_length=Interval(seconds=15),
-                                         slot_length=Interval(minutes=15),
-                                         duration=Interval(hours=24),
+    context._settings = SimulationConfig(tick_length=duration(seconds=15),
+                                         slot_length=duration(minutes=15),
+                                         duration=duration(hours=24),
                                          market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
@@ -174,9 +174,9 @@ def load_profile_scenario(context):
         }
       ]
     }
-    context._settings = SimulationConfig(tick_length=Interval(seconds=15),
-                                         slot_length=Interval(minutes=15),
-                                         duration=Interval(hours=24),
+    context._settings = SimulationConfig(tick_length=duration(seconds=15),
+                                         slot_length=duration(minutes=15),
+                                         duration=duration(hours=24),
                                          market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
@@ -193,14 +193,14 @@ def running_the_simulation(context):
     slowdown = 0
     seed = 0
     paused = False
-    pause_after = Interval()
+    pause_after = duration()
     repl = False
     export = False
     export_path = None
     reset_on_finish = False
-    reset_on_finish_wait = Interval()
+    reset_on_finish_wait = duration()
     exit_on_finish = True
-    exit_on_finish_wait = Interval()
+    exit_on_finish_wait = duration()
 
     api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
@@ -238,9 +238,9 @@ def run_sim_with_config_setting(context, cloud_coverage,
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.CRITICAL)
 
-    simulation_config = SimulationConfig(Interval(hours=int(24)),
-                                         Interval(minutes=int(60)),
-                                         Interval(seconds=int(60)),
+    simulation_config = SimulationConfig(duration(hours=int(24)),
+                                         duration(minutes=int(60)),
+                                         duration(seconds=int(60)),
                                          market_count=5,
                                          cloud_coverage=int(cloud_coverage),
                                          market_maker_rate=context._market_maker_rate,
@@ -249,14 +249,14 @@ def run_sim_with_config_setting(context, cloud_coverage,
     slowdown = 0
     seed = 0
     paused = False
-    pause_after = Interval()
+    pause_after = duration()
     repl = False
     export = False
     export_path = None
     reset_on_finish = False
-    reset_on_finish_wait = Interval()
+    reset_on_finish_wait = duration()
     exit_on_finish = True
-    exit_on_finish_wait = Interval()
+    exit_on_finish_wait = duration()
 
     api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
@@ -315,17 +315,17 @@ def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee
 
 @when('a simulation is created for scenario {scenario}')
 def create_sim_object(context, scenario):
-    simulation_config = SimulationConfig(Interval(hours=int(24)),
-                                         Interval(minutes=int(15)),
-                                         Interval(seconds=int(30)),
+    simulation_config = SimulationConfig(duration(hours=int(24)),
+                                         duration(minutes=int(15)),
+                                         duration(seconds=int(30)),
                                          market_count=5,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          iaa_fee=5)
 
     context.simulation = Simulation(
-        scenario, simulation_config, 0, 0, False, Interval(), False, False, None, False,
-        Interval(), True, Interval(), None, "1234"
+        scenario, simulation_config, 0, 0, False, duration(), False, False, None, False,
+        duration(), True, duration(), None, "1234"
     )
 
 
@@ -383,22 +383,23 @@ def method_called(context, method):
     assert context.ctrl_callback_call_count == 1
 
 
-@when('we run the d3a simulation with {scenario} [{duration}, {slot_length}, {tick_length}]')
-def run_sim_without_iaa_fee(context, scenario, duration, slot_length, tick_length):
-    run_sim(context, scenario, duration, slot_length, tick_length,
+@when('we run the d3a simulation with {scenario} [{total_duration}, '
+      '{slot_length}, {tick_length}]')
+def run_sim_without_iaa_fee(context, scenario, total_duration, slot_length, tick_length):
+    run_sim(context, scenario, total_duration, slot_length, tick_length,
             ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
 
 
 @when('we run the simulation with setup file {scenario} '
-      'and parameters [{duration}, {slot_length}, {tick_length}, {iaa_fee}]')
-def run_sim(context, scenario, duration, slot_length, tick_length, iaa_fee):
+      'and parameters [{total_duration}, {slot_length}, {tick_length}, {iaa_fee}]')
+def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee):
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.CRITICAL)
 
-    simulation_config = SimulationConfig(Interval(hours=int(duration)),
-                                         Interval(minutes=int(slot_length)),
-                                         Interval(seconds=int(tick_length)),
+    simulation_config = SimulationConfig(duration(hours=int(total_duration)),
+                                         duration(minutes=int(slot_length)),
+                                         duration(seconds=int(tick_length)),
                                          market_count=5,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
@@ -407,14 +408,14 @@ def run_sim(context, scenario, duration, slot_length, tick_length, iaa_fee):
     slowdown = 0
     seed = 0
     paused = False
-    pause_after = Interval()
+    pause_after = duration()
     repl = False
     export = False
     export_path = None
     reset_on_finish = False
-    reset_on_finish_wait = Interval()
+    reset_on_finish_wait = duration()
     exit_on_finish = True
-    exit_on_finish_wait = Interval()
+    exit_on_finish_wait = duration()
 
     api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
@@ -463,7 +464,7 @@ def check_load_profile(context):
     for timepoint, energy in load.strategy.state.desired_energy.items():
         if timepoint.hour in context._device_profile:
             assert energy == context._device_profile[timepoint.hour] / \
-                   (Interval(hours=1) / load.config.slot_length)
+                   (duration(hours=1) / load.config.slot_length)
         else:
             assert energy == 0
 
@@ -480,10 +481,10 @@ def check_pv_profile(context):
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
     profile_data = ReadProfileMixin._readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format(TIME_FORMAT))
+        time = str(timepoint.format(PENDULUM_TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
-                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+                   (duration(hours=1) / pv.config.slot_length) / 1000.0
         else:
             assert energy == 0
 
@@ -497,11 +498,11 @@ def check_user_pv_dict_profile(context):
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
         if timepoint.hour in profile_data.keys():
             assert energy == profile_data[timepoint.hour] / \
-                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+                   (duration(hours=1) / pv.config.slot_length) / 1000.0
         else:
             if int(timepoint.hour) > int(list(user_profile.keys())[-1]):
                 assert energy == user_profile[list(user_profile.keys())[-1]] / \
-                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+                   (duration(hours=1) / pv.config.slot_length) / 1000.0
             else:
                 assert energy == 0
 
@@ -513,10 +514,10 @@ def check_pv_csv_profile(context):
     from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
     profile_data = ReadProfileMixin._readCSV(user_profile_path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format(TIME_FORMAT))
+        time = str(timepoint.format(PENDULUM_TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
-                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+                   (duration(hours=1) / pv.config.slot_length) / 1000.0
         else:
             assert energy == 0
 
@@ -533,7 +534,7 @@ def check_pv_profile_csv(context):
     for timepoint, energy in produced_energy.items():
         if timepoint in input_profile:
             assert energy == input_profile[timepoint] / \
-                   (Interval(hours=1) / pv.config.slot_length) / 1000.0
+                   (duration(hours=1) / pv.config.slot_length) / 1000.0
         else:
             assert False
 
@@ -586,7 +587,7 @@ def test_finite_plant_max_power(context, plant_name):
                 trades_sold.append(trade)
         assert sum([trade.offer.energy for trade in trades_sold]) <= \
             finite.strategy.max_available_power_kW[market.time_slot.hour].m / \
-            (Interval(hours=1) / finite.config.slot_length)
+            (duration(hours=1) / finite.config.slot_length)
 
 
 @then('the PV sells energy at the market maker rate for every market slot')

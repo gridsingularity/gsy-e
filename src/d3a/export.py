@@ -261,7 +261,7 @@ class ExportAndPlot:
         title = 'Unmatched Loads for all devices in {}'.format(root_name)
         xtitle = 'Time'
         ytitle = 'Energy (kWh)'
-        barmode = 'bar'
+        barmode = 'stack'
         load_list = [child_key for child_key in self.stats.keys()
                      if unmatched_key in self.stats[child_key].keys()]
 
@@ -341,7 +341,7 @@ class ExportAndPlot:
         Plots average trade for the specified level of the hierarchy
         """
         data = list()
-        barmode = 'bar'
+        barmode = 'stack'
         xtitle = "Time"
         ytitle = "Rate [ct./kWh]"
         key = 'avg trade rate [ct./kWh]'
@@ -489,7 +489,7 @@ class BarGraph:
             out_time_list = []
             time_list = data[di]["x"]
             for ti in time_list:
-                out_time_list.append(ti.timezone_("UTC"))
+                out_time_list.append(ti.in_timezone("UTC"))
                 day_set.add(pendulum.datetime(ti.year, ti.month, ti.day))
             data[di]["x"] = out_time_list
 
@@ -498,9 +498,9 @@ class BarGraph:
             raise ValueError("There is no time information in plot {}".format(title))
 
         start_time = pendulum.datetime(day_list[0].year, day_list[0].month, day_list[0].day,
-                                       0, 0, 0, tzinfo="UTC")
+                                       0, 0, 0, tz="UTC")
         end_time = pendulum.datetime(day_list[-1].year, day_list[-1].month, day_list[-1].day,
-                                     23, 59, 59, tzinfo="UTC")
+                                     23, 59, 59, tz="UTC")
 
         return [start_time, end_time], data
 
