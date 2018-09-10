@@ -4,6 +4,7 @@ from collections import defaultdict, namedtuple
 from logging import getLogger
 from threading import Lock
 from typing import Any, Dict, List, Set, Union  # noqa
+from numpy import sign
 
 import sys
 
@@ -458,11 +459,6 @@ class BalancingTrade(Trade):
 
 class BalancingMarket(Market):
     def __init__(self):
-        # balancing_offers-id -> BalancingOffer
-        self.balancing_offers = {}  # type: Dict[str, BalancingOffer]
-        self.clearing_rate = {}  # type: Dict[DateTime, float]
-        self.clearing_energy = {}  # type: Dict[DateTime, float]
-        self._sorted_balancing_offers = []
         super().__init__()
 
     def balancing_offer(self, price: float, energy: float, seller: str) -> BalancingOffer:
@@ -472,76 +468,89 @@ class BalancingMarket(Market):
             raise MarketReadOnlyException()
         if energy == 0:
             raise InvalidOffer()
-        balancing_offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller, self)
+        offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller, self)
         with self.offer_lock:
-            self.balancing_offers[balancing_offer.id] = balancing_offer
-            self._sorted_balancing_offers = \
-                sorted(self.balancing_offers.values(), key=lambda o: o.price / o.energy)
-            log.info("[BALANCING_OFFER][NEW] %s", balancing_offer)
-        self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=balancing_offer)
-        return balancing_offer
+            self.offers[offer.id] = offer
+            self._sorted_offers = \
+                sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+            log.info("[BALANCING_OFFER][NEW] %s", offer)
+        self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
+        return offer
 
-    def accept_balancing_offer(self, buyer: str, *, energy: int = None,
-                               time: DateTime = None) -> BalancingTrade:
+    def accept_balancing_offer(self, offer_or_id: Union[str, BalancingOffer],
+                               buyer: str, *, energy: int = None,
+                               time: DateTime = None, price_drop: bool = False) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
-        if time is None:
-            time = self._now
+        if isinstance(offer_or_id, Offer):
+            offer_or_id = offer_or_id.id
+        residual_offer = None
         with self.offer_lock, self.trade_lock:
-            self._sorted_balancing_offers = sorted(self.balancing_offers.values(),
-                                                   key=lambda o: o.price / o.energy)
-
-        residual_balancing_offer = None
-        clearing_energy = 0
-        for i in range(len(self._sorted_balancing_offers)):
-            clearing_energy += self._sorted_balancing_offers[i]
-            if energy < clearing_energy:
-                surplus_energy = clearing_energy - energy
-                accepted_energy = self._sorted_balancing_offers[i].energy - surplus_energy
-                clearing_rate = \
-                    self._sorted_balancing_offers[i].price / \
-                    self._sorted_balancing_offers[i].energy
-                clearing_energy -= surplus_energy
-                original_offer = self._sorted_balancing_offers[i]
-                accepted_offer = BalancingOffer(
-                    self._sorted_balancing_offers[i].id,
-                    clearing_rate * accepted_energy,
-                    accepted_energy,
-                    self._sorted_balancing_offers[i].seller,
-                    self._sorted_balancing_offers[i].market
-                )
-                residual_balancing_offer = BalancingOffer(
-                    str(uuid.uuid4()),
-                    clearing_rate * surplus_energy,
-                    surplus_energy,
-                    self._sorted_balancing_offers[i].seller,
-                    self._sorted_balancing_offers[i].market
-                )
-                self.balancing_offers[accepted_offer.id] = accepted_offer
-                log.info("[BALANCING_OFFER][UPDATED] %s -> %s", original_offer, accepted_offer)
-                self.balancing_offers[residual_balancing_offer.id] = residual_balancing_offer
-                log.info("[BALANCING_OFFER][CHANGED] %s -> %s",
-                         original_offer, residual_balancing_offer)
-                # offer = accepted_offer
-                self._sorted_balancing_offers = sorted(self.balancing_offers.values(),
-                                                       key=lambda o: o.price / o.energy)
-                self._notify_listeners(
-                    MarketEvent.BALANCING_OFFER,
-                    existing_offer=original_offer,
-                    new_offer=residual_balancing_offer
-                )
-            elif energy == clearing_energy:
-                clearing_rate = \
-                    self._sorted_balancing_offers[i].price / \
-                    self._sorted_balancing_offers[i].energy
+            offer = self.offers.pop(offer_or_id, None)
+            self._sorted_offers = sorted(self.offers.values(),
+                                         key=lambda o: o.price / o.energy)
+            if offer is None:
+                raise OfferNotFoundException()
+            if sign(offer.energy) != sign(energy):
+                return
+            try:
+                if time is None:
+                    time = self._now
+                if energy is not None:
+                    # Partial trade
+                    if energy == 0:
+                        raise InvalidTrade("Energy can not be zero.")
+                    elif energy < offer.energy:
+                        original_offer = offer
+                        accepted_offer = Offer(
+                            offer.id,
+                            offer.price / offer.energy * energy,
+                            energy,
+                            offer.seller,
+                            offer.market
+                        )
+                        residual_offer = Offer(
+                            str(uuid.uuid4()),
+                            offer.price / offer.energy * (offer.energy - energy),
+                            offer.energy - energy,
+                            offer.seller,
+                            offer.market
+                        )
+                        self.offers[residual_offer.id] = residual_offer
+                        log.info("[BALANCING_OFFER][CHANGED] %s -> %s",
+                                 original_offer, residual_offer)
+                        offer = accepted_offer
+                        self._sorted_offers = sorted(self.offers.values(),
+                                                     key=lambda o: o.price / o.energy)
+                        self._notify_listeners(
+                            MarketEvent.BALANCING_OFFER_CHANGED,
+                            existing_offer=original_offer,
+                            new_offer=residual_offer
+                        )
+                    elif energy > offer.energy:
+                        raise InvalidTrade("Energy can't be greater than offered energy")
+                    else:
+                        # Requested partial is equal to offered energy - just proceed normally
+                        pass
+            except Exception:
+                # Exception happened - restore offer
+                self.offers[offer.id] = offer
+                self._sorted_offers = sorted(self.offers.values(),
+                                             key=lambda o: o.price / o.energy)
+                raise
 
             trade = BalancingTrade(str(uuid.uuid4()), time,
-                                   self._sorted_balancing_offers[i],
-                                   self._sorted_balancing_offers[i].seller, buyer,
-                                   residual_balancing_offer)
+                                   offer, offer.seller, buyer,
+                                   residual_offer, price_drop)
             self.trades.append(trade)
+            self._update_accumulated_trade_price_energy(trade)
             log.warning("[BALANCING_TRADE] %s", trade)
-            self._sorted_balancing_offers[i]._traded(trade, self)
-            self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
-        self.clearing_rate[time] = clearing_rate
-        self.clearing_energy[time] = clearing_energy
+            self.traded_energy[offer.seller] += offer.energy
+            self.traded_energy[buyer] -= offer.energy
+            self.ious[buyer][offer.seller] += offer.price
+            self._update_min_max_avg_trade_prices(offer.price / offer.energy)
+            # Recalculate offer min/max price since offer was removed
+            self._update_min_max_avg_offer_prices()
+        offer._traded(trade, self)
+        self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
+        return trade

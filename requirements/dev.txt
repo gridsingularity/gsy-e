@@ -41,3 +41,4 @@ tox==3.2.1
 virtualenv==16.0.0        # via pre-commit, tox
 wcwidth==0.1.7            # via prompt-toolkit
 webencodings==0.5.1       # via html5lib
+numpy==1.15.1
