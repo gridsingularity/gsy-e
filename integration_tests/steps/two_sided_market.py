@@ -4,6 +4,8 @@ from d3a.export_unmatched_loads import export_unmatched_loads
 from d3a.models.strategy.const import ConstSettings
 from d3a.util import make_iaa_name
 
+RATE_THRESHOLD = 12
+
 
 @then('the load has no unmatched loads')
 def no_unmatched_loads(context):
@@ -94,9 +96,8 @@ def energy_rate_average_between_min_and_max_load_pv(context):
             if any(trade.seller == pv.name for pv in pvs):
                 pv_rates_set.add(trade.offer.price / trade.offer.energy)
 
-    rate_threshold = (ConstSettings.LOAD_MAX_ENERGY_RATE - ConstSettings.LOAD_MIN_ENERGY_RATE) / 2
-    assert all([int(rate) == int(rate_threshold) for rate in load_rates_set])
-    assert all([int(rate) == int(rate_threshold) for rate in pv_rates_set])
+    assert all([RATE_THRESHOLD < rate for rate in load_rates_set])
+    assert all([RATE_THRESHOLD < rate for rate in pv_rates_set])
 
 
 @then('the storage is never selling energy')
@@ -140,12 +141,8 @@ def energy_rate_average_between_min_and_max_ess_pv(context):
             if trade.seller == pv.name:
                 pv_rates_set.add(trade.offer.price / trade.offer.energy)
 
-    rate_threshold = round(
-        (ConstSettings.STORAGE_BREAK_EVEN_BUY - ConstSettings.STORAGE_MIN_BUYING_RATE) / 2
-    )
-
-    assert all([int(rate) == int(rate_threshold) for rate in storage_rates_set])
-    assert all([int(rate) == int(rate_threshold) for rate in pv_rates_set])
+    assert all([RATE_THRESHOLD < rate for rate in storage_rates_set])
+    assert all([RATE_THRESHOLD < rate for rate in pv_rates_set])
 
 
 @then('the storage is never buying energy and is always selling energy')

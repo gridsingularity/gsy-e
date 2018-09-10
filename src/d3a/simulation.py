@@ -6,6 +6,7 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
+import os
 
 from pendulum import Pendulum
 from pendulum.interval import Interval
@@ -21,6 +22,7 @@ from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
+from d3a.models.strategy.const import ConstSettings
 
 
 log = getLogger(__name__)
@@ -71,10 +73,28 @@ class Simulation:
 
         self.run_start = None
         self.paused_time = None
+        self.hierarchy_list = []
 
         self._load_setup_module()
         self._init(**self.initial_params)
         self._init_events()
+
+    def _set_traversal_length(self):
+        self._get_setup_levels(self.area, "")
+        no_of_levels = max([len(li.split("/")) for li in self.hierarchy_list]) + 1
+        num_ticks_to_propagate = int(no_of_levels * ConstSettings.INTER_AREA_AGENT_RATIO)
+        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
+        time_to_propagate = num_ticks_to_propagate * self.simulation_config.tick_length.seconds/60.
+        log.error("Setup has {} levels, offers/bids need at least {} minutes "
+                  "({} ticks) to propagate.".format(no_of_levels, num_ticks_to_propagate,
+                                                    time_to_propagate))
+
+    def _get_setup_levels(self, area, address):
+        for child in area.children:
+            if child.children:
+                node = os.path.join(address, child.slug)
+                self.hierarchy_list.append(node)
+                self._get_setup_levels(child, node)
 
     def _load_setup_module(self):
         try:
@@ -104,6 +124,9 @@ class Simulation:
 
         self.area = self.setup_module.get_setup(self.simulation_config)
         log.info("Starting simulation with config %s", self.simulation_config)
+
+        self._set_traversal_length()
+
         self.area.activate()
 
     @property
