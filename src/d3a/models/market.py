@@ -321,7 +321,7 @@ class Market:
         offer_prices = [o.price / o.energy for o in self.offers.values()]
         if offer_prices:
             self.min_offer_price = round(min(offer_prices), 4)
-            self.min_offer_price = round(max(offer_prices), 4)
+            self.max_offer_price = round(max(offer_prices), 4)
 
     def _update_min_max_avg_trade_prices(self, price):
         self.max_trade_price = round(max(self.max_trade_price, price), 4)
