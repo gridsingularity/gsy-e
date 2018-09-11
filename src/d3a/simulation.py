@@ -243,7 +243,7 @@ class Simulation:
                         log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
                         ExportAndPlot(self.area, self.export_path,
-                                      DateTime.now().format("%Y-%m-%d_%X"))
+                                      DateTime.now().format("YYYY-MM-DD_HH:mm"))
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
