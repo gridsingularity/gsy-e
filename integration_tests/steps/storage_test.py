@@ -45,7 +45,6 @@ def step_impl(context):
         assert all([round((trade.offer.price / trade.offer.energy), 2) <=
                     round(profile[trade.time.hour][0], 2) for trade in trades_bought])
         assert len(trades_sold) > 0
-        assert len(trades_bought) > 0
 
 
 @then('the storage devices sell energy respecting the break even prices')
