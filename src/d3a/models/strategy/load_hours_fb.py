@@ -14,7 +14,7 @@ from d3a.models.strategy.mixins import InputProfileTypes
 class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'max_energy_rate')
 
-    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, random_factor=0,
+    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  daily_budget=None, min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
                  max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE):
         BaseStrategy.__init__(self)
@@ -28,8 +28,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         # consolidated_cycle is KWh energy consumed for the entire year
         self.daily_energy_required = None
-        # Random factor to modify buying
-        self.random_factor = random_factor
         # Budget for a single day in eur
         self.daily_budget = daily_budget * 100 if daily_budget is not None else None
         # Energy consumed during the day ideally should not exceed daily_energy_required
@@ -124,10 +122,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     def _update_energy_requirement(self):
         self.energy_requirement_Wh = 0
         if self._allowed_operating_hours(self.area.now.hour):
-            energy_per_slot = self.energy_per_slot_Wh
-            if self.random_factor:
-                energy_per_slot += energy_per_slot * random.random() * self.random_factor
-            self.energy_requirement_Wh += energy_per_slot
+            self.energy_requirement_Wh += self.energy_per_slot_Wh
         self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
 
     def event_market_cycle(self):
