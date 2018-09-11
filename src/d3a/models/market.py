@@ -12,7 +12,7 @@ from terminaltables.other_tables import SingleTable
 
 from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade, InvalidBid, BidNotFound
+    InvalidTrade, InvalidBid, BidNotFound, InvalidBalancingTradeException
 from d3a.models.events import MarketEvent, OfferEvent
 from d3a.device_registry import DeviceRegistry
 
@@ -454,9 +454,23 @@ class BalancingOffer(Offer):
         return "<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
             .format(s=self, rate=self.price / self.energy)
 
+    def __str__(self):
+        return "<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: " \
+               "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self,
+                                                             rate=self.price / self.energy)
+
 
 class BalancingTrade(Trade):
-    pass
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self):
+        mark_partial = "(partial)" if self.residual is not None else ""
+        return (
+            "<BalancingTrade{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
+            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate} {s.offer.id}>".
+            format(s=self, p=mark_partial, rate=self.offer.price / self.offer.energy)
+        )
 
 
 class BalancingMarket(Market):
@@ -494,7 +508,8 @@ class BalancingMarket(Market):
             if offer is None:
                 raise OfferNotFoundException()
             if (offer.energy > 0 and energy < 0) or (offer.energy < 0 and energy > 0):
-                return
+                raise InvalidBalancingTradeException("BalancingOffer and energy "
+                                                     "are not compatible")
             try:
                 if time is None:
                     time = self._now
@@ -506,15 +521,16 @@ class BalancingMarket(Market):
                         original_offer = offer
                         accepted_offer = Offer(
                             offer.id,
-                            (offer.price / abs(offer.energy)) * abs(energy),
+                            abs((offer.price / offer.energy) * energy),
                             energy,
                             offer.seller,
                             offer.market
                         )
+                        residual_energy = (offer.energy - energy)
                         residual_offer = Offer(
                             str(uuid.uuid4()),
-                            (offer.price / abs(offer.energy)) * (abs(offer.energy) - abs(energy)),
-                            offer.energy - energy,
+                            abs((offer.price / offer.energy) * residual_energy),
+                            residual_energy,
                             offer.seller,
                             offer.market
                         )
@@ -529,7 +545,7 @@ class BalancingMarket(Market):
                             existing_offer=original_offer,
                             new_offer=residual_offer
                         )
-                    elif energy > offer.energy:
+                    elif abs(energy) > abs(offer.energy):
                         raise InvalidTrade("Energy can't be greater than offered energy")
                     else:
                         # Requested partial is equal to offered energy - just proceed normally
@@ -540,10 +556,9 @@ class BalancingMarket(Market):
                 self._sorted_offers = sorted(self.offers.values(),
                                              key=lambda o: o.price / o.energy)
                 raise
-
-            trade = BalancingTrade(str(uuid.uuid4()), time,
-                                   offer, offer.seller, buyer,
-                                   residual_offer, price_drop)
+            trade = BalancingTrade(id=str(uuid.uuid4()), time=time,
+                                   offer=offer, seller=offer.seller, buyer=buyer,
+                                   residual=residual_offer, price_drop=price_drop)
             self.trades.append(trade)
             self._update_accumulated_trade_price_energy(trade)
             log.warning("[BALANCING_TRADE] %s", trade)
