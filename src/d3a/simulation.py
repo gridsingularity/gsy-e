@@ -82,10 +82,10 @@ class Simulation:
             no_of_levels = self._get_setup_levels(self.area)
             num_ticks_to_propagate = no_of_levels * ConstSettings.INTER_AREA_AGENT_RATIO
             ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
-            time_to_propagate = num_ticks_to_propagate * \
+            time_to_propagate_minutes = num_ticks_to_propagate * \
                 self.simulation_config.tick_length.seconds / 60.
             log.error("Setup has {} levels, offers/bids need at least {} minutes "
-                      "({} ticks) to propagate.".format(no_of_levels, time_to_propagate,
+                      "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
                                                         ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH,))
 
     def _get_setup_levels(self, area, level_count=0):
