@@ -2,8 +2,7 @@ import random
 import uuid
 from collections import defaultdict, namedtuple
 from logging import getLogger
-from threading import Lock
-from typing import Any, Dict, List, Set, Union  # noqa
+from typing import Dict, List, Set, Union  # noqa
 
 import sys
 
@@ -131,8 +130,6 @@ class Market:
         self._avg_offer_price = None
         self.max_offer_price = 0
         self._sorted_offers = []
-        self.offer_lock = Lock()
-        self.trade_lock = Lock()
         self.accumulated_trade_price = 0
         self.accumulated_trade_energy = 0
         if notification_listener:
@@ -153,11 +150,10 @@ class Market:
         if energy <= 0:
             raise InvalidOffer()
         offer = Offer(str(uuid.uuid4()), price, energy, seller, self)
-        with self.offer_lock:
-            self.offers[offer.id] = offer
-            self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
-            log.info("[OFFER][NEW] %s", offer)
-            self._update_min_max_avg_offer_prices()
+        self.offers[offer.id] = offer
+        self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        log.info("[OFFER][NEW] %s", offer)
+        self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
 
@@ -166,9 +162,8 @@ class Market:
             raise InvalidBid()
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self)
-        with self.offer_lock:
-            self.bids[bid.id] = bid
-            log.info("[BID][NEW] %s", bid)
+        self.bids[bid.id] = bid
+        log.info("[BID][NEW] %s", bid)
         return bid
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
@@ -176,13 +171,12 @@ class Market:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
-        with self.offer_lock:
-            offer = self.offers.pop(offer_or_id, None)
-            self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
-            self._update_min_max_avg_offer_prices()
-            if not offer:
-                raise OfferNotFoundException()
-            log.info("[OFFER][DEL] %s", offer)
+        offer = self.offers.pop(offer_or_id, None)
+        self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        self._update_min_max_avg_offer_prices()
+        if not offer:
+            raise OfferNotFoundException()
+        log.info("[OFFER][DEL] %s", offer)
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def delete_bid(self, bid_or_id: Union[str, Bid]):
@@ -197,47 +191,42 @@ class Market:
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, track_bid: bool = True,
                    price_drop: bool = True):
-        with self.trade_lock:
-            market_bid = self.bids.pop(bid.id, None)
-            seller = market_bid.seller if seller is None else seller
-            buyer = market_bid.buyer if buyer is None else buyer
-            energy = market_bid.energy if energy is None else energy
-            if market_bid is None:
-                raise BidNotFound("During accept bid: " + str(bid))
-            if energy <= 0:
-                raise InvalidTrade("Energy cannot be zero.")
-            elif energy > bid.energy:
-                raise InvalidTrade("Traded energy cannot be more than the bid energy.")
-            elif energy is None or energy <= market_bid.energy:
-                residual = False
-                if energy < market_bid.energy:
-                    # Partial bidding
-                    residual = True
-                    energy_rate = market_bid.price / market_bid.energy
-                    final_price = energy * energy_rate
-                    residual_energy = market_bid.energy - energy
-                    residual_price = residual_energy * energy_rate
-                    self.bid(residual_price, residual_energy, buyer, seller, bid.id)
-                    bid = Bid(bid.id, final_price, energy,
-                              buyer, seller, self)
+        market_bid = self.bids.pop(bid.id, None)
+        if market_bid is None:
+            raise BidNotFound("During accept bid: " + str(bid))
 
-                trade = Trade(str(uuid.uuid4()), self._now,
-                              bid, seller, buyer, residual, price_drop=price_drop)
+        seller = market_bid.seller if seller is None else seller
+        buyer = market_bid.buyer if buyer is None else buyer
+        energy = market_bid.energy if energy is None else energy
+        if energy <= 0:
+            raise InvalidTrade("Energy cannot be zero.")
+        elif energy > bid.energy:
+            raise InvalidTrade("Traded energy cannot be more than the bid energy.")
+        elif energy is None or energy <= market_bid.energy:
+            residual = False
+            if energy < market_bid.energy:
+                # Partial bidding
+                residual = True
+                energy_rate = market_bid.price / market_bid.energy
+                final_price = energy * energy_rate
+                residual_energy = market_bid.energy - energy
+                residual_price = residual_energy * energy_rate
+                self.bid(residual_price, residual_energy, buyer, seller, bid.id)
+                bid = Bid(bid.id, final_price, energy,
+                          buyer, seller, self)
 
-                self.trades.append(trade)
-                self._update_accumulated_trade_price_energy(trade)
-                if track_bid:
-                    log.warning("[TRADE][BID] %s", trade)
-                self.traded_energy[bid.seller] += bid.energy
-                self.traded_energy[bid.buyer] -= bid.energy
-                self._update_min_max_avg_trade_prices(bid.price / bid.energy)
+            trade = Trade(str(uuid.uuid4()), self._now,
+                          bid, seller, buyer, residual, price_drop=price_drop)
+            self._update_stats_after_trade(trade, bid, bid.buyer)
+            if track_bid:
+                log.warning("[TRADE][BID] %s", trade)
 
-                self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
-                if not trade.residual:
-                    self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
-                return trade
-            else:
-                raise Exception("Undefined state or conditions. Should never reach this place.")
+            self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
+            if not trade.residual:
+                self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
+            return trade
+        else:
+            raise Exception("Undefined state or conditions. Should never reach this place.")
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None, price_drop: bool = False) -> Trade:
@@ -246,71 +235,74 @@ class Market:
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
         residual_offer = None
-        with self.offer_lock, self.trade_lock:
-            offer = self.offers.pop(offer_or_id, None)
+        offer = self.offers.pop(offer_or_id, None)
+        self._sorted_offers = sorted(self.offers.values(),
+                                     key=lambda o: o.price / o.energy)
+        if offer is None:
+            raise OfferNotFoundException()
+        try:
+            if time is None:
+                time = self._now
+            if energy is not None:
+                # Partial trade
+                if energy == 0:
+                    raise InvalidTrade("Energy can not be zero.")
+                elif energy < offer.energy:
+                    original_offer = offer
+                    accepted_offer = Offer(
+                        offer.id,
+                        offer.price / offer.energy * energy,
+                        energy,
+                        offer.seller,
+                        offer.market
+                    )
+                    residual_offer = Offer(
+                        str(uuid.uuid4()),
+                        offer.price / offer.energy * (offer.energy - energy),
+                        offer.energy - energy,
+                        offer.seller,
+                        offer.market
+                    )
+                    self.offers[residual_offer.id] = residual_offer
+                    log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
+                    offer = accepted_offer
+                    self._sorted_offers = sorted(self.offers.values(),
+                                                 key=lambda o: o.price / o.energy)
+                    self._notify_listeners(
+                        MarketEvent.OFFER_CHANGED,
+                        existing_offer=original_offer,
+                        new_offer=residual_offer
+                    )
+                elif energy > offer.energy:
+                    raise InvalidTrade("Energy can't be greater than offered energy")
+                else:
+                    # Requested partial is equal to offered energy - just proceed normally
+                    pass
+        except Exception:
+            # Exception happened - restore offer
+            self.offers[offer.id] = offer
             self._sorted_offers = sorted(self.offers.values(),
                                          key=lambda o: o.price / o.energy)
-            if offer is None:
-                raise OfferNotFoundException()
-            try:
-                if time is None:
-                    time = self._now
-                if energy is not None:
-                    # Partial trade
-                    if energy == 0:
-                        raise InvalidTrade("Energy can not be zero.")
-                    elif energy < offer.energy:
-                        original_offer = offer
-                        accepted_offer = Offer(
-                            offer.id,
-                            offer.price / offer.energy * energy,
-                            energy,
-                            offer.seller,
-                            offer.market
-                        )
-                        residual_offer = Offer(
-                            str(uuid.uuid4()),
-                            offer.price / offer.energy * (offer.energy - energy),
-                            offer.energy - energy,
-                            offer.seller,
-                            offer.market
-                        )
-                        self.offers[residual_offer.id] = residual_offer
-                        log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
-                        offer = accepted_offer
-                        self._sorted_offers = sorted(self.offers.values(),
-                                                     key=lambda o: o.price / o.energy)
-                        self._notify_listeners(
-                            MarketEvent.OFFER_CHANGED,
-                            existing_offer=original_offer,
-                            new_offer=residual_offer
-                        )
-                    elif energy > offer.energy:
-                        raise InvalidTrade("Energy can't be greater than offered energy")
-                    else:
-                        # Requested partial is equal to offered energy - just proceed normally
-                        pass
-            except Exception:
-                # Exception happened - restore offer
-                self.offers[offer.id] = offer
-                self._sorted_offers = sorted(self.offers.values(),
-                                             key=lambda o: o.price / o.energy)
-                raise
+            raise
 
-            trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer,
-                          residual_offer, price_drop)
-            self.trades.append(trade)
-            self._update_accumulated_trade_price_energy(trade)
-            log.warning("[TRADE] %s", trade)
-            self.traded_energy[offer.seller] += offer.energy
-            self.traded_energy[buyer] -= offer.energy
-            self.ious[buyer][offer.seller] += offer.price
-            self._update_min_max_avg_trade_prices(offer.price / offer.energy)
-            # Recalculate offer min/max price since offer was removed
-            self._update_min_max_avg_offer_prices()
+        trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer,
+                      residual_offer, price_drop)
+        self._update_stats_after_trade(trade, offer, buyer)
+        log.warning("[TRADE] %s", trade)
+
         offer._traded(trade, self)
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
+
+    def _update_stats_after_trade(self, trade, offer, buyer):
+        self.trades.append(trade)
+        self._update_accumulated_trade_price_energy(trade)
+        self.traded_energy[offer.seller] += offer.energy
+        self.traded_energy[buyer] -= offer.energy
+        self.ious[buyer][offer.seller] += offer.price
+        self._update_min_max_avg_trade_prices(offer.price / offer.energy)
+        # Recalculate offer min/max price since offer was removed
+        self._update_min_max_avg_offer_prices()
 
     def _update_accumulated_trade_price_energy(self, trade):
         self.accumulated_trade_price += trade.offer.price
@@ -343,16 +335,14 @@ class Market:
     @property
     def avg_offer_price(self):
         if self._avg_offer_price is None:
-            with self.offer_lock:
-                price = sum(o.price for o in self.offers.values())
-                energy = sum(o.energy for o in self.offers.values())
+            price = sum(o.price for o in self.offers.values())
+            energy = sum(o.energy for o in self.offers.values())
             self._avg_offer_price = round(price / energy, 4) if energy else 0
         return self._avg_offer_price
 
     @property
     def avg_trade_price(self):
         if self._avg_trade_price is None:
-            # with self.trade_lock:
             price = self.accumulated_trade_price
             energy = self.accumulated_trade_energy
             self._avg_trade_price = round(price / energy, 4) if energy else 0
@@ -435,14 +425,3 @@ class Market:
 
     def total_earned(self, seller):
         return sum(trade.offer.price for trade in self.trades if trade.seller == seller)
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['offer_lock']
-        del state['trade_lock']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.offer_lock = Lock()
-        self.trade_lock = Lock()
