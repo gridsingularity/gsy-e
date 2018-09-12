@@ -460,9 +460,10 @@ class BalancingOffer(Offer):
                                                              rate=self.price / self.energy)
 
 
-class BalancingTrade(Trade):
-    def __init__(self):
-        super().__init__()
+class BalancingTrade():
+    def __new__(cls, id, time, offer, seller, buyer, residual=None, price_drop=False):
+        # overridden to give the residual field a default value
+        return Trade(id, time, offer, seller, buyer, residual, price_drop)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
@@ -556,8 +557,8 @@ class BalancingMarket(Market):
                 self._sorted_offers = sorted(self.offers.values(),
                                              key=lambda o: o.price / o.energy)
                 raise
-            trade = BalancingTrade(id=str(uuid.uuid4()), time=time,
-                                   offer=offer, seller=offer.seller, buyer=buyer,
+            trade = BalancingTrade(id=str(uuid.uuid4()), time=time, offer=offer,
+                                   seller=offer.seller, buyer=buyer,
                                    residual=residual_offer, price_drop=price_drop)
             self.trades.append(trade)
             self._update_accumulated_trade_price_energy(trade)
