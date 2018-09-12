@@ -199,8 +199,8 @@ class Market:
                    price_drop: bool = True):
         with self.trade_lock:
             market_bid = self.bids.pop(bid.id, None)
-            seller = bid.seller if seller is None else seller
-            buyer = bid.buyer if buyer is None else buyer
+            seller = market_bid.seller if seller is None else seller
+            buyer = market_bid.buyer if buyer is None else buyer
             energy = market_bid.energy if energy is None else energy
             if market_bid is None:
                 raise BidNotFound("During accept bid: " + str(bid))
@@ -224,13 +224,13 @@ class Market:
                 trade = Trade(str(uuid.uuid4()), self._now,
                               bid, seller, buyer, residual, price_drop=price_drop)
 
+                self.trades.append(trade)
+                self._update_accumulated_trade_price_energy(trade)
                 if track_bid:
-                    self.trades.append(trade)
-                    self._update_accumulated_trade_price_energy(trade)
                     log.warning("[TRADE][BID] %s", trade)
-                    self.traded_energy[bid.seller] += bid.energy
-                    self.traded_energy[bid.buyer] -= bid.energy
-                    self._update_min_max_avg_trade_prices(bid.price / bid.energy)
+                self.traded_energy[bid.seller] += bid.energy
+                self.traded_energy[bid.buyer] -= bid.energy
+                self._update_min_max_avg_trade_prices(bid.price / bid.energy)
 
                 self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
                 if not trade.residual:
