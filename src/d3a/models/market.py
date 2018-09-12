@@ -217,7 +217,7 @@ class Market:
 
             trade = Trade(str(uuid.uuid4()), self._now,
                           bid, seller, buyer, residual, price_drop=price_drop)
-            self._update_stats_after_trade(trade, bid, bid.buyer)
+            self._update_stats_after_trade(trade, bid, bid.buyer, track_bid)
             if track_bid:
                 log.warning("[TRADE][BID] %s", trade)
 
@@ -294,8 +294,9 @@ class Market:
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
 
-    def _update_stats_after_trade(self, trade, offer, buyer):
-        self.trades.append(trade)
+    def _update_stats_after_trade(self, trade, offer, buyer, track_trade=True):
+        if track_trade:
+            self.trades.append(trade)
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy[offer.seller] += offer.energy
         self.traded_energy[buyer] -= offer.energy
