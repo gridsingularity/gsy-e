@@ -40,3 +40,7 @@ class AreaException(D3AException):
 
 class InvalidBalancingTradeException(MarketException):
     pass
+
+
+class DeviceNotInRegistryError(MarketException):
+    pass

@@ -438,8 +438,11 @@ class InterAreaAgent(BaseStrategy):
 
 class BalancingAgent(InterAreaAgent):
 
-    def __init__():
-        super().__init__()
+    def __init__(self, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=1,
+                 tick_ratio=ConstSettings.INTER_AREA_AGENT_RATIO):
+        InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
+                                lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
+                                min_offer_age=min_offer_age, tick_ratio=tick_ratio)
 
     def event_balancing_trade(self, *, market, trade, offer=None):
         for engine in self.engines:

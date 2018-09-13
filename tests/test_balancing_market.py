@@ -4,16 +4,15 @@ from pendulum import DateTime
 from d3a.models.events import MarketEvent
 
 from d3a.exceptions import MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade
+    InvalidTrade, DeviceNotInRegistryError
 from d3a.models.market import BalancingMarket
 
 from d3a.device_registry import DeviceRegistry
-device_registry_dict = {
+DeviceRegistry.REGISTRY = {
     "A": {"balancing rates": (23, 25)},
     "someone": {"balancing rates": (23, 25)},
     "seller": {"balancing rates": (23, 25)},
 }
-DeviceRegistry.REGISTRY = device_registry_dict
 
 
 @pytest.yield_fixture
@@ -22,7 +21,7 @@ def market():
 
 
 def test_device_registry(market: BalancingMarket):
-    with pytest.raises(KeyError):
+    with pytest.raises(DeviceNotInRegistryError):
         market.balancing_offer(10, 10, 'noone')
 
 

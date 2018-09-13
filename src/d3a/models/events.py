@@ -21,7 +21,8 @@ class MarketEvent(Enum):
     BID_DELETED = 6
     BALANCING_OFFER = 7
     BALANCING_OFFER_CHANGED = 8
-    BALANCING_TRADE = 9
+    BALANCING_OFFER_DELETED = 9
+    BALANCING_TRADE = 10
 
 
 class AreaEvent(Enum):
@@ -49,6 +50,7 @@ class EventMixin:
                 MarketEvent.BID_DELETED: self.event_bid_deleted,
                 MarketEvent.BALANCING_OFFER: self.event_balancing_offer,
                 MarketEvent.BALANCING_OFFER_CHANGED: self.event_balancing_offer_changed,
+                MarketEvent.BALANCING_OFFER_DELETED: self.event_balancing_offer_deleted,
                 MarketEvent.BALANCING_TRADE: self.event_balancing_trade
             }
             return self._event_map
@@ -88,6 +90,9 @@ class EventMixin:
         pass
 
     def event_balancing_offer_changed(self, *, market, existing_offer, new_offer):
+        pass
+
+    def event_balancing_offer_deleted(self, *, market, offer):
         pass
 
     def event_balancing_trade(self, *, market, trade):
