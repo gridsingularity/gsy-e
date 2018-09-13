@@ -101,3 +101,6 @@ class ConstSettings:
     # Default value 1 stands for single sided market
     # Option 2 stands for double sided pay as bid market
     INTER_AREA_AGENT_MARKET_TYPE = 1
+
+    # Balancing Market parameter
+    BALANCING_SPOT_TRADE_RATIO = 0.2
