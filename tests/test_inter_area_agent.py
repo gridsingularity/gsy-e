@@ -3,7 +3,7 @@ import pytest
 from datetime import datetime
 
 from d3a.models.market import Offer, Trade, Bid
-from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo
+from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo, OfferInfo
 from d3a.models.strategy.const import ConstSettings
 
 
@@ -138,6 +138,18 @@ def iaa_bid():
 
 
 def test_iaa_forwards_bids(iaa_bid):
+    assert iaa_bid.lower_market.bid_count == 2
+    assert iaa_bid.higher_market.bid_count == 1
+
+
+def test_iaa_does_not_forward_bids_if_the_IAA_name_is_the_same_as_the_target_market(iaa_bid):
+    assert iaa_bid.lower_market.bid_count == 2
+    assert iaa_bid.higher_market.bid_count == 1
+    engine = next(filter(lambda e: e.name == 'Low -> High', iaa_bid.engines))
+    engine.owner.name = "TARGET MARKET"
+    iaa_bid.higher_market.area.name = "TARGET MARKET"
+    bid = Bid('id', 1, 1, 'this', 'other')
+    engine._forward_bid(bid)
     assert iaa_bid.lower_market.bid_count == 2
     assert iaa_bid.higher_market.bid_count == 1
 
@@ -365,9 +377,23 @@ def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
     iaa_double_sided_2.lower_market.calls_bids = []
     low_high_engine = next(filter(lambda e: e.name == "Low -> High",
                                   iaa_double_sided_2.engines))
+    source_bid = Bid('bid_id3', 12, 10, 'B', 'S')
     iaa_double_sided_2.lower_market._bids = [Bid('bid_id1', 11, 10, 'B', 'S'),
                                              Bid('bid_id2', 9, 10, 'B', 'S'),
-                                             Bid('bid_id3', 12, 10, 'B', 'S')]
+                                             source_bid]
+
+    target_bid = Bid('fwd_bid_id3', 12, 10, 'B', 'S')
+    # Populate forwarded_bids and offers to test they get cleaned up afterwards
+    fwd_bidinfo = BidInfo(source_bid=source_bid, target_bid=target_bid)
+    low_high_engine.forwarded_bids['bid_id3'] = fwd_bidinfo
+    low_high_engine.forwarded_bids['fwd_bid_id3'] = fwd_bidinfo
+
+    source_offer = iaa_double_sided_2.lower_market.sorted_offers[0]
+    target_offer = Offer('forwarded_id', 1, 1, 'other')
+    fwd_offerinfo = OfferInfo(source_offer=source_offer, target_offer=target_offer)
+    low_high_engine.forwarded_offers['id'] = fwd_offerinfo
+    low_high_engine.forwarded_offers['forwarded_id'] = fwd_offerinfo
+
     low_high_engine._match_offers_bids()
     assert len(iaa_double_sided_2.lower_market.calls_offers) == 1
     offer = iaa_double_sided_2.lower_market.calls_offers[0]
@@ -380,6 +406,9 @@ def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
     assert bid.id == 'bid_id3'
     assert bid.energy == 10
     assert bid.price == 12
+
+    assert len(low_high_engine.forwarded_bids.keys()) == 0
+    assert len(low_high_engine.forwarded_offers.keys()) == 0
 
 
 @pytest.fixture

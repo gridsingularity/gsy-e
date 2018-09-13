@@ -49,7 +49,9 @@ class IAAEngine:
 
     def _forward_bid(self, bid):
         if bid.buyer == self.markets.target.area.name and \
-                bid.seller == self.markets.source.area.name:
+           bid.seller == self.markets.source.area.name:
+            return
+        if self.owner.name == self.markets.target.area.name:
             return
         forwarded_bid = self.markets.target.bid(
             bid.price + (bid.price * (self.transfer_fee_pct / 100)),
@@ -118,14 +120,13 @@ class IAAEngine:
                                     price_drop=True)
             self._delete_forwarded_offer_entries(offer)
 
-            trade = self.markets.source.accept_bid(bid,
-                                                   selected_energy,
-                                                   seller=offer.seller,
-                                                   buyer=self.owner.name,
-                                                   track_bid=False,
-                                                   price_drop=True)
-            if not trade.residual:
-                self._delete_forwarded_bid_entries(bid)
+            self.markets.source.accept_bid(bid,
+                                           selected_energy,
+                                           seller=offer.seller,
+                                           buyer=bid.buyer,
+                                           track_bid=False,
+                                           price_drop=True)
+            self._delete_forwarded_bid_entries(bid)
 
     def tick(self, *, area):
         # Store age of offer

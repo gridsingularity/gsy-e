@@ -168,6 +168,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         return bid
 
     def remove_bid_from_pending(self, bid_id, market):
+        if bid_id in market.bids.keys():
+            market.delete_bid(bid_id)
         self._bids[market] = [bid for bid in self._bids[market] if bid.id != bid_id]
 
     def add_bid_to_bought(self, bid, market, remove_bid=True):
