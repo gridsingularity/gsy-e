@@ -302,7 +302,9 @@ def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strat
     # Get the bid that was posted on event_market_cycle
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
 
-    trade = Trade('idt', None, bid, load_hours_strategy_test5.owner.name, 'B', residual=partial)
+    # Increase energy requirement to cover the energy from the bid
+    load_hours_strategy_test5.energy_requirement_Wh = 1000
+    trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=partial)
     load_hours_strategy_test5.event_bid_traded(market=trade_market, bid_trade=trade)
 
     if not partial:
@@ -313,5 +315,31 @@ def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strat
     else:
         assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 0
         assert load_hours_strategy_test5.get_posted_bids(trade_market) == [bid]
+
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+
+
+def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_strategy_test5,
+                                                                   market_test2,
+                                                                   called):
+    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+
+    trade_market = load_hours_strategy_test5.area.next_market
+    load_hours_strategy_test5.remove_bid_from_pending = called
+    load_hours_strategy_test5.event_activate()
+    load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
+    load_hours_strategy_test5.event_market_cycle()
+    load_hours_strategy_test5.event_tick(area=area_test2)
+    bid = list(load_hours_strategy_test5._bids.values())[0][0]
+
+    # Increase energy requirement to cover the energy from the bid + threshold
+    load_hours_strategy_test5.energy_requirement_Wh = bid.energy * 1000 + 0.000009
+    trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=True)
+    load_hours_strategy_test5.event_bid_traded(market=trade_market, bid_trade=trade)
+
+    assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid)
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
+        repr(trade_market)
 
     ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1

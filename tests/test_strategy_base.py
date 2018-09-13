@@ -45,6 +45,7 @@ class FakeOffer:
 class FakeMarket:
     def __init__(self, *, raises):
         self.raises = raises
+        self.bids = {}
 
     def accept_offer(self, offer, id, *, energy=None, time=None, price_drop=False):
         if self.raises:
