@@ -481,7 +481,8 @@ class BalancingMarket(Market):
     def balancing_offer(self, price: float, energy: float, seller: str) -> BalancingOffer:
 
         if seller not in DeviceRegistry.REGISTRY.keys():
-            raise DeviceNotInRegistryError()
+            raise DeviceNotInRegistryError(f"Device {seller} "
+                                           f"not in registry ({DeviceRegistry.REGISTRY}).")
         if self.readonly:
             raise MarketReadOnlyException()
         if energy == 0:
@@ -572,7 +573,7 @@ class BalancingMarket(Market):
         self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
         return trade
 
-    def delete_balancing_offer(self, offer_or_id: Union[str, Offer]):
+    def delete_balancing_offer(self, offer_or_id: Union[str, BalancingOffer]):
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
