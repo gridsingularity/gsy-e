@@ -38,19 +38,13 @@ class BidUpdateFrequencyMixin:
     def update_market_cycle_bids(self, final_rate=None):
         if final_rate is not None:
             self._final_rate = final_rate
-        self._increase_rate_timepoint_s = 0
+        self._increase_rate_timepoint_s = self._increase_frequency_s
 
     def update_posted_bids(self, market):
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
-        if (
-                # FIXME: Make sure that the offer reached every system participant.
-                # FIXME: Therefore it can only be update (depending on number of niveau and
-                # FIXME: InterAreaAgent min_offer_age
-                current_tick_number > ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH
-                and elapsed_seconds > self._increase_rate_timepoint_s
-        ):
+        if elapsed_seconds > self._increase_rate_timepoint_s:
             self._increase_rate_timepoint_s += self._increase_frequency_s
             existing_bids = list(self.get_posted_bids(market))
             for bid in existing_bids:
@@ -103,13 +97,7 @@ class OfferUpdateFrequencyMixin:
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds * ureg.seconds
 
-        if (
-                # FIXME: Make sure that the offer reached every system participant.
-                # FIXME: Therefore it can only be update (depending on number of niveau and
-                # FIXME: InterAreaAgent min_offer_age
-                current_tick_number > ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH
-                and elapsed_seconds > self._decrease_price_timepoint_s
-        ):
+        if elapsed_seconds > self._decrease_price_timepoint_s:
             self._decrease_price_timepoint_s += self._decrease_price_every_nr_s
             next_market = list(self.area.markets.values())[0]
             self._decrease_offer_price(next_market,
