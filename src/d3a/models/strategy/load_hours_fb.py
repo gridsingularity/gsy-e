@@ -147,7 +147,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             assert False and "Invalid state, cannot receive a bid if single sided market" \
                              " is globally configured."
 
-        if bid_trade.offer.buyer != self.owner.name:
+        if bid_trade.buyer != self.owner.name:
             return
 
         buffered_bid = next(filter(
@@ -159,9 +159,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             # Update energy requirement and clean up the pending bid buffer
             self.energy_requirement_Wh -= bid_trade.offer.energy * 1000.0
             self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)
-            if not bid_trade.residual:
+            if not bid_trade.residual or self.energy_requirement_Wh < 0.00001:
                 self.remove_bid_from_pending(bid_trade.offer, market)
-            assert self.energy_requirement_Wh >= -0.0001
+            assert self.energy_requirement_Wh >= -0.00001
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):

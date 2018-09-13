@@ -256,15 +256,14 @@ def test_market_accept_bid_does_not_emit_bid_deleted_on_partial_bid(market: Mark
 
 
 @pytest.mark.parametrize('market_method', ('_update_accumulated_trade_price_energy',
-                                           '_update_min_max_avg_trade_price'))
-def test_market_accept_bid_respects_track_bid_by_not_updating_trade_stats(
-        market: Market, called, market_method):
+                                           '_update_min_max_avg_trade_prices'))
+def test_market_accept_bid_always_updates_trade_stats(market: Market, called, market_method):
     setattr(market, market_method, called)
 
     bid = market.bid(20, 20, 'A', 'B')
     trade = market.accept_bid(bid, energy=5, seller='B', track_bid=False)
     assert trade
-    assert len(getattr(market, market_method).calls) == 0
+    assert len(getattr(market, market_method).calls) == 1
 
 
 @pytest.mark.parametrize('energy', (0, 21))
