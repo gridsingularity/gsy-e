@@ -565,3 +565,4 @@ class BalancingMarket(Market):
             raise OfferNotFoundException()
         log.info("[BALANCING_OFFER][DEL] %s", offer)
         self._notify_listeners(MarketEvent.BALANCING_OFFER_DELETED, offer=offer)
+       
