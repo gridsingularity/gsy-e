@@ -452,17 +452,21 @@ class BalancingAgent(InterAreaAgent):
     def event_trade(self, *, market, trade, offer=None):
         self.balancing_energy += trade.offer.energy * self.balancing_spot_trade_ratio
         for offer in self.engines[1].markets.source.sorted_offers:
-            if offer.energy <= self.balancing_energy:
-                self.engines[1].markets.source.accept_balancing_offer(offer,
-                                                                      self.owner.name,
-                                                                      offer.energy)
-                self.balancing_energy -= offer.energy
-            elif offer.energy > self.balancing_energy and self.balancing_energy != 0:
-                self.engines[1].markets.source.accept_balancing_offer(offer,
-                                                                      self.owner.name,
-                                                                      self.balancing_energy)
-                self.balancing_energy = 0
-            elif self.balancing_energy <= 0:
+            if abs(offer.energy) <= abs(self.balancing_energy):
+                trade = \
+                    self.engines[1].markets.source.accept_balancing_offer(offer,
+                                                                          self.owner.name,
+                                                                          offer.energy)
+                if trade is not None:
+                    self.balancing_energy -= offer.energy
+            elif abs(offer.energy) > abs(self.balancing_energy) and self.balancing_energy != 0:
+                trade = \
+                    self.engines[1].markets.source.accept_balancing_offer(offer,
+                                                                          self.owner.name,
+                                                                          self.balancing_energy)
+                if trade is not None:
+                    self.balancing_energy = 0
+            elif self.balancing_energy == 0:
                 break
 
     def event_balancing_trade(self, *, market, trade, offer=None):
