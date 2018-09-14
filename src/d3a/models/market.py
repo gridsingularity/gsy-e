@@ -456,6 +456,8 @@ class BalancingTrade():
 
 class BalancingMarket(Market):
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+        self.balancing_energy = 0  # if non-zero -> unmatched_energy
+        self.cumulative_energy_traded = 0
         Market.__init__(self, time_slot, area, notification_listener, readonly)
 
     def balancing_offer(self, price: float, energy: float, seller: str) -> BalancingOffer:
