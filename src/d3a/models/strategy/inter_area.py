@@ -78,7 +78,7 @@ class IAAEngine:
             key=lambda b: b.price / b.energy))
         )
 
-        # Sorted offers in ascending order
+        # Sorted offers in descending order
         sorted_offers = list(reversed(sorted(
             self.markets.source.offers.values(),
             key=lambda o: o.price / o.energy))
@@ -431,6 +431,25 @@ class InterAreaAgent(BaseStrategy):
             engine.event_offer_deleted(offer=offer)
 
     def event_offer_changed(self, *, market, existing_offer, new_offer):
+        for engine in self.engines:
+            engine.event_offer_changed(market=market,
+                                       existing_offer=existing_offer,
+                                       new_offer=new_offer)
+
+
+class BalancingAgent(InterAreaAgent):
+
+    def __init__(self, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=1,
+                 tick_ratio=ConstSettings.INTER_AREA_AGENT_RATIO):
+        InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
+                                lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
+                                min_offer_age=min_offer_age, tick_ratio=tick_ratio)
+
+    def event_balancing_trade(self, *, market, trade, offer=None):
+        for engine in self.engines:
+            engine.event_trade(trade=trade)
+
+    def event_balancing_offer_changed(self, *, market, existing_offer, new_offer):
         for engine in self.engines:
             engine.event_offer_changed(market=market,
                                        existing_offer=existing_offer,

@@ -36,3 +36,11 @@ class InvalidBid(MarketException):
 
 class AreaException(D3AException):
     pass
+
+
+class InvalidBalancingTradeException(MarketException):
+    pass
+
+
+class DeviceNotInRegistryError(MarketException):
+    pass
