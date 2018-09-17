@@ -104,7 +104,7 @@ class ContractJoiner(object):
             return []
 
         self.seen.add(contract_file.name)
-        log.trace('Reading contract file "%s"', contract_file.name)
+        log.debug('Reading contract file "%s"', contract_file.name)
 
         for line in contract_file:
             line = line.strip('\r\n')

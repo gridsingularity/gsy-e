@@ -4,21 +4,21 @@
 #
 #    pip-compile --no-index --output-file requirements/dev.txt requirements/dev.in
 #
-asn1crypto==0.24.0
+asn1crypto==0.24.0        # via cryptography
 aspy.yaml==1.1.1          # via pre-commit
+attrdict==2.0.0
 attrs==18.2.0
 awesome-slugify==1.6.5
 bcrypt==3.1.4             # via paramiko
 bleach==2.1.4             # via readme-renderer
 cached-property==1.5.1
 certifi==2018.8.24
-cffi==1.11.5
+cffi==1.11.5              # via bcrypt, cmarkgfm, cryptography, pynacl
 cfgv==1.1.0               # via pre-commit
 chardet==3.0.4
 click-default-group==1.2
 click==6.7
 cmarkgfm==0.4.2           # via readme-renderer
-coincurve==9.0.0
 colorlog==3.1.4
 cryptography==2.3.1       # via paramiko
 cytoolz==0.9.0.1
@@ -27,18 +27,23 @@ dill==0.2.8.2
 docopt==0.6.2             # via ptpython
 docutils==0.14            # via readme-renderer
 et-xmlfile==1.0.1
-eth-hash==0.2.0
+eth-abi==1.2.0
+eth-account==0.3.0
+eth-hash[pycryptodome]==0.2.0
+eth-keyfile==0.5.1
+eth-keys==0.2.0b3
+eth-rlp==0.1.2
 eth-typing==1.3.0
 eth-utils==1.2.1
-ethereum==2.3.2
 fabric3==1.14.post1
 first==2.0.1
 flask-api==1.0
 flask-cors==3.0.6
 flask==1.0.2
-future==0.16.0
+future==0.16.0            # via readme-renderer
+hexbytes==0.1.0
 html5lib==1.0.1           # via bleach
-identify==1.1.4           # via pre-commit
+identify==1.1.5           # via pre-commit
 idna==2.7
 ipython-genutils==0.2.0
 itsdangerous==0.24
@@ -47,14 +52,15 @@ jedi==0.12.1              # via ptpython
 jinja2==2.10
 jsonschema==2.6.0
 jupyter-core==4.4.0
+lru-dict==1.1.6
 markupsafe==1.0
 nbformat==4.4.0
 nodeenv==1.3.2            # via pre-commit
 odfpy==1.3.6
-openpyxl==2.5.6
+openpyxl==2.5.7
 paramiko==2.4.1           # via fabric3
+parsimonious==0.8.0
 parso==0.3.1              # via jedi
-pbkdf2==1.3
 pendulum==2.0.3
 pint==0.8.1
 pip-tools==2.0.2
@@ -63,15 +69,12 @@ pluggy==0.7.1             # via tox
 pre-commit==1.11.0
 prompt-toolkit==1.0.15    # via ptpython
 ptpython==0.41
-py-ecc==1.4.3
 py==1.6.0                 # via tox
 pyasn1==0.4.4             # via paramiko
-pycparser==2.18
+pycparser==2.18           # via cffi
 pycryptodome==3.6.6
-pyethash==0.1.27
 pygments==2.2.0           # via ptpython, readme-renderer
 pynacl==1.2.1             # via paramiko
-pysha3==1.0.2
 python-dateutil==2.7.3
 python-rex==0.4
 pytz==2018.5
@@ -80,25 +83,25 @@ pyyaml==3.13
 readme-renderer==21.0
 redis==2.10.6
 regex==2018.8.29
-repoze.lru==0.7
 requests==2.19.1
 retrying==1.3.3
-rlp==1.0.2
+rlp==0.6.0
 rq==0.12.0
-scrypt==0.8.6
 six==1.11.0
 tablib==0.12.1
 terminaltables==3.1.0
-toml==0.9.4               # via pre-commit
+toml==0.9.6               # via pre-commit, tox
 toolz==0.9.0
-tox==3.2.1
+tox==3.3.0
 traitlets==4.3.2
 unicodecsv==0.14.1
 unidecode==0.4.21
 urllib3==1.23
 virtualenv==16.0.0        # via pre-commit, tox
 wcwidth==0.1.7            # via prompt-toolkit
+web3==4.7.1
 webencodings==0.5.1       # via html5lib
+websockets==6.0
 werkzeug==0.14.1
 xlrd==1.1.0
 xlwt==1.3.0

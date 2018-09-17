@@ -20,7 +20,7 @@ from d3a.device_registry import DeviceRegistry
 BC_EVENT_MAP = {
     b"NewOffer": MarketEvent.OFFER,
     b"CancelOffer": MarketEvent.OFFER_DELETED,
-    b"Trade": MarketEvent.TRADE,
+    b"NewTrade": MarketEvent.TRADE,
     b"OfferChanged": MarketEvent.OFFER_CHANGED
 }
 BC_NUM_FACTOR = 10 ** 10
