@@ -1,4 +1,5 @@
 from typing import Union
+from collections import namedtuple
 
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
@@ -25,7 +26,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  break_even: Union[tuple, dict]=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
 
-                 cap_price_strategy: bool=False):
+                 cap_price_strategy: bool=False,
+                 balancing_percentage: namedtuple = namedtuple('balancing_percentage',
+                                                               ('charge', 'discharge')),
+                 balancing_rate: namedtuple = namedtuple('balancing_rate',
+                                                         ('charge_rate', 'discharge_rate'))):
+
         break_even = ReadProfileMixin.read_arbitrary_profile(InputProfileTypes.RATE, break_even)
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_soc, battery_capacity, break_even)
@@ -48,6 +54,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.cap_price_strategy = cap_price_strategy
+        self.balancing_percentage = balancing_percentage
+        self.balancing_rate = balancing_rate
 
     def event_activate(self):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
@@ -258,3 +266,18 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             return break_even_sell
         else:
             return max_selling_rate - (max_selling_rate - break_even_sell) * soc
+
+    def event_trade(self, *, market, trade):
+        if (trade.buyer == self.owner.name) or (trade.seller == self.owner.name):
+            charge_energy = -1 * self.balancing_percentage.charge * trade.offer.energy
+            charge_price = self.balancing_rate.charge_rate * charge_energy
+            discharge_energy = self.balancing_percentage.discharge * trade.offer.energy
+            discharge_price = self.balancing_rate.discharge_rate * discharge_energy
+            if self.state.used_storage >= discharge_energy:
+                self.area.balancing_markets[market.time_slot].balancing_offer(discharge_price,
+                                                                              discharge_energy,
+                                                                              self.owner.name)
+            if self.state.free_storage >= charge_energy:
+                self.area.balancing_markets[market.time_slot].balancing_offer(charge_price,
+                                                                              charge_energy,
+                                                                              self.owner.name)
