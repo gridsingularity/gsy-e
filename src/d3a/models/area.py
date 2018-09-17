@@ -69,7 +69,7 @@ class Area:
             self.budget_keeper.area = self
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[DateTime, Market]
-        self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
+        self.balancing_market = None  # type: BalancingMarket
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
@@ -234,14 +234,14 @@ class Area:
         self.log.info("Cycling markets")
 
         # moving old balancing market to past_balancing_markets
-        if len(self.balancing_markets.keys()) != 0:
-            last_market_timeframe = list(self.balancing_markets.keys())[-1]
-            balancing_market = self.balancing_markets.pop(last_market_timeframe)
-            balancing_market.readonly = True
-            self.balancing_agents.pop(balancing_market, None)
-            self.past_balancing_markets[last_market_timeframe] = balancing_market
+        if self.balancing_market is not None:
+            last_market_timeframe = self.balancing_market.time_slot
+            self.balancing_market.readonly = True
+            self.balancing_agents.pop(self.balancing_market, None)
+            self.past_balancing_markets[last_market_timeframe] = self.balancing_market
             self.log.debug("Moving {t:%H:%M} balancing_market to past".
                            format(t=last_market_timeframe))
+            self.balancing_market = None
         # Move old and current markets to `past_markets`
         # We use `list()` here to get a copy since we modify the market list in-place
         changed = False
@@ -301,29 +301,27 @@ class Area:
                     format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
                 ))
         next_market_timeframe = now + self.config.slot_length
-        # Create balancing_markets for missing slots
+        # Create balancing_markets for next slot
         balancing_market = \
             BalancingMarket(next_market_timeframe, self,
                             notification_listener=self._broadcast_notification)
-        if balancing_market not in self.balancing_agents:
-            if self.parent and next_market_timeframe in self.parent.balancing_markets \
-                    and not self.strategy:
-                # Only connect BalancingAgent if we have a parent,
-                # a corresponding timeframe balancing_market exists in the parent
-                # and we have no strategy
-                baa = BalancingAgent(
-                    owner=self,
-                    higher_market=self.parent.balancing_markets[next_market_timeframe],
-                    lower_market=balancing_market,
-                    transfer_fee_pct=self.config.iaa_fee,
-                    balancing_spot_trade_ratio=self.balancing_spot_trade_ratio
-                )
-                # Attach agent to own BA list
-                self.balancing_agents[balancing_market].append(baa)
-                parent_balancing_markets = self.parent.balancing_markets[next_market_timeframe]
-                # And also to parents to allow events to flow form both markets
-                self.parent.balancing_agents[parent_balancing_markets].append(baa)
-        self.balancing_markets[next_market_timeframe] = balancing_market
+        if self.parent == self.parent.balancing_market and not self.strategy:
+            # Only connect BalancingAgent if we have a parent,
+            # a corresponding timeframe balancing_market exists in the parent
+            # and we have no strategy
+            baa = BalancingAgent(
+                owner=self,
+                higher_market=self.parent.balancing_market,
+                lower_market=balancing_market,
+                transfer_fee_pct=self.config.iaa_fee,
+                balancing_spot_trade_ratio=self.balancing_spot_trade_ratio
+            )
+            # Attach agent to own BA list
+            self.balancing_agents[balancing_market].append(baa)
+            parent_balancing_markets = self.parent.balancing_market
+            # And also to parents to allow events to flow form both markets
+            self.parent.balancing_agents[parent_balancing_markets].append(baa)
+        self.balancing_market = balancing_market
         format = \
             "%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
         self.log.debug("Adding {t:{format}} balancing_market".format(
@@ -391,8 +389,8 @@ class Area:
                 agent.event_listener(event_type, **kwargs)
         # Also broadcast to BAs. Again in random order
         for market, agents in self.balancing_agents.items():
-            if market.time_slot not in self.balancing_markets:
-                # exclude past Bs
+            if market.time_slot != self.balancing_market.time_slot:
+                # exclude past BAs
                 continue
 
             for agent in sorted(agents, key=lambda _: random()):
