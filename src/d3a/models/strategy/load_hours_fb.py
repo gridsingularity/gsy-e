@@ -179,7 +179,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         if trade.buyer != self.owner.name:
             return
 
-        ramp_up_energy = self.balancing_percentage.ramp_up * trade.offer.energy
+        ramp_up_energy = -1 * self.balancing_percentage.ramp_up * trade.offer.energy
         ramp_up_price = self.balancing_rate.upward_rate * ramp_up_energy
         ramp_down_energy = self.balancing_percentage.ramp_down * trade.offer.energy
         ramp_down_price = self.balancing_rate.downward_rate * ramp_down_energy
