@@ -305,7 +305,8 @@ class Area:
         balancing_market = \
             BalancingMarket(next_market_timeframe, self,
                             notification_listener=self._broadcast_notification)
-        if self.parent == self.parent.balancing_market and not self.strategy:
+        if self.parent is not None and self.parent.balancing_market is not None \
+                and not self.strategy:
             # Only connect BalancingAgent if we have a parent,
             # a corresponding timeframe balancing_market exists in the parent
             # and we have no strategy
