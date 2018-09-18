@@ -478,7 +478,7 @@ class BalancingMarket(Market):
         return offer
 
     def accept_balancing_offer(self, offer_or_id: Union[str, BalancingOffer],
-                               buyer: str, *, energy: int = None,
+                               buyer: str, energy: int = None,
                                time: DateTime = None, price_drop: bool = False) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
