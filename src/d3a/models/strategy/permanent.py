@@ -36,7 +36,7 @@ class PermanentLoadStrategy(BaseStrategy):
             pass
 
     def _update_energy_requirement(self):
-        self.state.record_desired_energy(self.area, self.energy)
+        self.state.desired_energy_Wh[self.area.next_market.time_slot] = self.energy
 
     def event_market_cycle(self):
         self._update_energy_requirement()

@@ -103,6 +103,11 @@ class OfferUpdateFrequencyMixin:
             self._decrease_offer_price(next_market,
                                        self._calculate_price_decrease_rate(next_market))
 
+            # TODO: Decide whether to decrease energy rate for future markets as well
+            # for market in self.area.markets.values():
+            #     self._decrease_offer_price(market,
+            #                                self._calculate_price_decrease_rate(market))
+
     def _decrease_offer_price(self, market, decrease_rate_per_tick):
         if market not in self.offers.open.values():
             return

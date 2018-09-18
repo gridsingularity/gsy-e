@@ -165,7 +165,7 @@ def test_event_market_cycle(storage_strategy_test2, area_test2, bought_energy=0,
     storage_strategy_test2.event_market_cycle()
 
     # Checking if storage variables are updated correctly
-    assert storage_strategy_test2.state.used_storage == offered_energy + bought_energy
+    assert storage_strategy_test2.state.usable_storage == offered_energy + bought_energy
     assert storage_strategy_test2.state.blocked_storage == 3
 
     # Checking if every bought offer in this market will be sold
@@ -279,7 +279,7 @@ def test_energy_buying_possible(storage_strategy_test4, area_test4, market_test4
         storage_strategy_test4.accept_offer.calls[4][0][1]
 
     # Checking if storage respects it's current load and doesn't buy more than it has capacity
-    storage_strategy_test4.used_storage = (ConstSettings.STORAGE_CAPACITY * 2) + 1
+    storage_strategy_test4.usable_storage = (ConstSettings.STORAGE_CAPACITY * 2) + 1
     assert not storage_strategy_test4.energy_buying_possible(max_buying_price=30)
 
 

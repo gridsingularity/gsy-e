@@ -18,6 +18,6 @@ Feature: Commercial Power Plant tests
      Given we have a scenario named strategy_tests/commercial_producer_market_maker_rate
      And d3a is installed
      And we have a profile of market_maker_rate for strategy_tests.commercial_producer_market_maker_rate
-     When we run the d3a simulation with config parameters [1, 5] and strategy_tests.commercial_producer_market_maker_rate
-     Then we test that config parameters are correctly parsed for strategy_tests.commercial_producer_market_maker_rate [1, 5]
+     When we run the d3a simulation with config parameters [1, 1] and strategy_tests.commercial_producer_market_maker_rate
+     Then we test that config parameters are correctly parsed for strategy_tests.commercial_producer_market_maker_rate [1, 1]
      And the Commercial Energy Producer always sells energy at the defined market maker rate

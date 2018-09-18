@@ -10,7 +10,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
-from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
+from d3a import PENDULUM_TIME_FORMAT
 from d3a.models.strategy.const import ConstSettings
 
 
@@ -241,7 +241,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
     simulation_config = SimulationConfig(duration(hours=int(24)),
                                          duration(minutes=int(60)),
                                          duration(seconds=int(60)),
-                                         market_count=5,
+                                         market_count=4,
                                          cloud_coverage=int(cloud_coverage),
                                          market_maker_rate=context._market_maker_rate,
                                          iaa_fee=int(iaa_fee))
@@ -318,7 +318,7 @@ def create_sim_object(context, scenario):
     simulation_config = SimulationConfig(duration(hours=int(24)),
                                          duration(minutes=int(15)),
                                          duration(seconds=int(30)),
-                                         market_count=5,
+                                         market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          iaa_fee=5)
@@ -449,9 +449,8 @@ def test_output(context, scenario, duration, slot_length, tick_length):
         street1 = list(filter(lambda x: x.name == "Street 1", context.simulation.area.children))[0]
         house1 = list(filter(lambda x: x.name == "S1 House 1", street1.children))[0]
         permanent_load = list(filter(lambda x: x.name == "S1 H1 Load", house1.children))[0]
-        energy_profile = [ki for ki in permanent_load.strategy.state.desired_energy.values()]
+        energy_profile = [ki for ki in permanent_load.strategy.state.desired_energy_Wh.values()]
         assert all([permanent_load.strategy.energy == ei for ei in energy_profile])
-    # TODO: Implement more sophisticated tests for success of simulation
 
 
 @then('the predefined load follows the load profile')
@@ -461,12 +460,9 @@ def check_load_profile(context):
 
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: x.name == "H1 Load", house1.children))[0]
-    for timepoint, energy in load.strategy.state.desired_energy.items():
-        if timepoint.hour in context._device_profile:
-            assert energy == context._device_profile[timepoint.hour] / \
-                   (duration(hours=1) / load.config.slot_length)
-        else:
-            assert energy == 0
+    for timepoint, energy in load.strategy.state.desired_energy_Wh.items():
+        assert energy == context._device_profile[timepoint.hour] / \
+               (duration(hours=1) / load.config.slot_length)
 
 
 @then('the predefined PV follows the PV profile')
@@ -566,11 +562,11 @@ def test_infinite_plant_energy_rate(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
-        assert all([isclose(trade.offer.price / trade.offer.energy,
-                    context.simulation.simulation_config.
-                            market_maker_rate[trade.time.strftime(TIME_FORMAT)])
-                    for trade in trades_sold])
-        assert len(trades_sold) > 0
+    assert all([isclose(trade.offer.price / trade.offer.energy,
+                context.simulation.simulation_config.
+                        market_maker_rate[trade.offer.market.time_slot_str])
+                for trade in trades_sold])
+    assert len(trades_sold) > 0
 
 
 @then('the {plant_name} never produces more power than its max available power')

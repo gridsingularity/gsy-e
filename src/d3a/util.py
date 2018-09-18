@@ -205,7 +205,7 @@ def read_settings_from_file(settings_file):
                 settings["basic_settings"].get('slot_length', timedelta(minutes=15))),
             "tick_length": IntervalType('M:S')(
                 settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
-            "market_count": settings["basic_settings"].get('market_count', 4),
+            "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
             "market_maker_rate": settings["basic_settings"].get(

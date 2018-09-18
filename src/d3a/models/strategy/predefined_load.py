@@ -5,6 +5,7 @@ import sys
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.models.strategy.mixins import InputProfileTypes
+from d3a import TIME_FORMAT
 
 
 class DefinedLoadStrategy(LoadHoursStrategy):
@@ -45,12 +46,22 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self.energy_requirement_Wh = 0
-        if self.load_profile[self.area.next_market.time_slot_str] != 0:
-            # TODO: Refactor energy_requirement_Wh to denote unit Wh
-            self.energy_requirement_Wh = \
-                self.load_profile[self.area.next_market.time_slot_str] * 1000.0
-        self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
+
+        for slot_time in [
+                    self.area.now + (self.area.config.slot_length * i)
+                    for i in range(
+                        (
+                                    self.area.config.duration
+                                    + (
+                                            self.area.config.market_count *
+                                            self.area.config.slot_length)
+                        ) // self.area.config.slot_length)
+                    ]:
+            if self._allowed_operating_hours(slot_time.hour):
+                self.energy_requirement_Wh[slot_time] = \
+                    self.load_profile[slot_time.strftime(TIME_FORMAT)] * 1000
+                self.state.desired_energy_Wh[slot_time] = \
+                    self.load_profile[slot_time.strftime(TIME_FORMAT)] * 1000
 
     def _operating_hours(self, energy):
         """

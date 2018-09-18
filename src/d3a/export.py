@@ -446,7 +446,7 @@ class ExportLeafData(ExportData):
                     stored]
         elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
                                              DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
-            desired = self.area.strategy.state.desired_energy[slot] / 1000
+            desired = self.area.strategy.state.desired_energy_Wh[slot] / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
             produced = market.actual_energy_agg.get(self.area.name, 0)

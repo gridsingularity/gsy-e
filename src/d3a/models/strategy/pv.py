@@ -7,6 +7,7 @@ from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
+from d3a.models.state import PVState
 
 
 class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
@@ -32,6 +33,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.midnight = None
         self.min_selling_rate = min_selling_rate
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
+        self.state = PVState()
 
     @staticmethod
     def _validate_constructor_arguments(panel_count, risk):
@@ -58,12 +60,8 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.produced_energy_forecast_kWh()
 
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
-        # Needed to calculate risk_dependency_of_selling_rate
-        # if risk 0-100 then energy_price less than initial_sell_rate
-        # if risk >100 then energy_price more than initial_sell_rate
         energy_rate = max(initial_sell_rate, self.min_selling_rate)
         rounded_energy_rate = round(energy_rate, 2)
-        # This lets the pv system sleep if there are no offers in any markets (cold start)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
             rounded_energy_rate =\
@@ -83,6 +81,8 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
             self.energy_production_forecast_kWh[slot_time] =\
                 self.gaussian_energy_forecast_kWh(difference_to_midnight_in_minutes)
+            self.state.available_energy_kWh[slot_time] = \
+                self.energy_production_forecast_kWh[slot_time] * self.panel_count
             assert self.energy_production_forecast_kWh[slot_time] >= 0.0
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
@@ -104,27 +104,30 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                     / 38.60) ** 2
                  )
             )
-        # /1000 is needed to convert Wh into kW
+        # /1000 is needed to convert Wh into kWh
         w_to_wh_factor = (self.area.config.slot_length / duration(hours=1))
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
         self.update_market_cycle_offers(self.min_selling_rate)
         # Iterate over all markets open in the future
-        time = list(self.area.markets.keys())[0]
-        market = list(self.area.markets.values())[0]
-        initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
-        rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
-                                                                  market.time_slot_str)
-        # Sell energy and save that an offer was posted into a list
-        if self.energy_production_forecast_kWh[time] != 0:
-            offer = market.offer(
-                rounded_energy_rate * self.panel_count *
-                self.energy_production_forecast_kWh[time],
-                self.energy_production_forecast_kWh[time] * self.panel_count,
-                self.owner.name
-            )
-            self.offers.post(offer, market)
+        for market in self.area.markets.values():
+            initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
+            rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
+                                                                      market.time_slot_str)
+            assert round(self.state.available_energy_kWh[market.time_slot], 10) >= 0
+            if self.energy_production_forecast_kWh[market.time_slot] > 0:
+                if self.state.available_energy_kWh[market.time_slot] > 0:
+
+                    offer = market.offer(
+                        rounded_energy_rate * self.panel_count *
+                        self.state.available_energy_kWh[market.time_slot],
+                        self.state.available_energy_kWh[market.time_slot] * self.panel_count,
+                        self.owner.name
+                    )
+                    self.offers.post(offer, market)
+                    self.state.available_energy_kWh[market.time_slot] -= \
+                        offer.energy / self.panel_count
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)

@@ -26,7 +26,7 @@ log = getLogger(__name__)
 
 DEFAULT_CONFIG = SimulationConfig(
     duration=duration(hours=24),
-    market_count=4,
+    market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
@@ -254,7 +254,7 @@ class Area:
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
 
-        # Markets range from one slot to MARKET_SLOT_COUNT into the future
+        # Markets range from one slot to market_count into the future
         for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
             timeframe = now + offset
             if timeframe not in self.markets:

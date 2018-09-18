@@ -152,7 +152,7 @@ class Market:
         offer = Offer(str(uuid.uuid4()), price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
-        log.info("[OFFER][NEW] %s", offer)
+        log.info("[OFFER][NEW][{}] {}".format(offer.market.time_slot_str, offer))
         self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
@@ -163,7 +163,7 @@ class Market:
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self)
         self.bids[bid.id] = bid
-        log.info("[BID][NEW] %s", bid)
+        log.info("[BID][NEW][{}] {}".format(bid.market.time_slot_str, bid))
         return bid
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
@@ -176,7 +176,7 @@ class Market:
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
-        log.info("[OFFER][DEL] %s", offer)
+        log.info("[OFFER][DEL][{}] {}".format(offer.market.time_slot_str, offer))
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def delete_bid(self, bid_or_id: Union[str, Bid]):
@@ -185,7 +185,7 @@ class Market:
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFound(bid_or_id)
-        log.info("[BID][DEL] %s", bid)
+        log.info("[BID][DEL][{}] {}".format(bid.market.time_slot_str, bid))
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def accept_bid(self, bid: Bid, energy: float = None,
@@ -219,7 +219,7 @@ class Market:
                           bid, seller, buyer, residual, price_drop=price_drop)
             self._update_stats_after_trade(trade, bid, bid.buyer, track_bid)
             if track_bid:
-                log.warning("[TRADE][BID] %s", trade)
+                log.warning("[TRADE][BID][{}] {}".format(trade.offer.market.time_slot_str, trade))
 
             self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
             if not trade.residual:
@@ -264,7 +264,8 @@ class Market:
                         offer.market
                     )
                     self.offers[residual_offer.id] = residual_offer
-                    log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
+                    log.info("[OFFER][CHANGED][{}] {} -> {}".format(
+                        original_offer.market.time_slot_str, original_offer, residual_offer))
                     offer = accepted_offer
                     self._sorted_offers = sorted(self.offers.values(),
                                                  key=lambda o: o.price / o.energy)
@@ -288,7 +289,7 @@ class Market:
         trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer,
                       residual_offer, price_drop)
         self._update_stats_after_trade(trade, offer, buyer)
-        log.warning("[TRADE] %s", trade)
+        log.warning("[TRADE][{}] {}".format(trade.offer.market.time_slot_str, trade))
 
         offer._traded(trade, self)
         self._notify_listeners(MarketEvent.TRADE, trade=trade)

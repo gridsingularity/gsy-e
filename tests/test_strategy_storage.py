@@ -292,7 +292,7 @@ def test_if_storage_handles_capacity_correctly(storage_strategy_test5, area_test
     storage_strategy_test5.event_activate()
     storage_strategy_test5.event_market_cycle()
     assert storage_strategy_test5.state.blocked_storage == 0
-    assert storage_strategy_test5.state.used_storage == 1
+    assert storage_strategy_test5.state.usable_storage == 1
     assert storage_strategy_test5.sell_energy.calls[0][1] == {'energy': '1'}
     assert storage_strategy_test5.state.offered_storage == 2
     assert len(storage_strategy_test5.offers.open_in_market(area_test5.past_market)) == 0
@@ -354,7 +354,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     energy = 1.3
     storage_strategy_test7.state.traded_energy_per_slot(area_test7.now)
     storage_strategy_test7.sell_energy(energy=energy)
-    assert storage_strategy_test7.state.used_storage == 1.7
+    assert storage_strategy_test7.state.usable_storage == 1.7
     assert storage_strategy_test7.state.offered_storage == 1.3
     assert area_test7._markets_return["Fake Market"].created_offers[0].energy == 1.3
     assert len(storage_strategy_test7.offers.posted_in_market(
@@ -443,8 +443,8 @@ def test_calculate_energy_amount_to_sell_respects_min_allowed_soc(storage_strate
         storage_strategy_test7_3.calculate_energy_to_sell(energy=0.6,
                                                           target_market=area_test7.current_market)
     target_energy = \
-        storage_strategy_test7_3.state.used_storage + \
-        storage_strategy_test7_3.state.offered_storage -\
+        storage_strategy_test7_3.state.usable_storage + \
+        storage_strategy_test7_3.state.offered_storage - \
         storage_strategy_test7_3.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
     assert energy == target_energy
 
@@ -480,7 +480,7 @@ def storage_strategy_test8(area_test8):
 def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_test8: FakeArea):
     storage_strategy_test8.event_activate()
     storage_strategy_test8.sell_energy(energy=None)
-    assert abs(storage_strategy_test8.state.used_storage -
+    assert abs(storage_strategy_test8.state.usable_storage -
                storage_strategy_test8.state.capacity *
                ConstSettings.STORAGE_MIN_ALLOWED_SOC) < 0.0001
     assert storage_strategy_test8.state.offered_storage == \
@@ -515,7 +515,7 @@ def test_initial_charge(caplog):
     with caplog.at_level(logging.WARNING):
         storage = StorageStrategy(initial_capacity=1, initial_soc=60)
     assert any('initial_capacity' in record.msg for record in caplog.records)
-    assert storage.state.used_storage == 0.6 * storage.state.capacity
+    assert storage.state.usable_storage == 0.6 * storage.state.capacity
 
 
 def test_storage_constructor_rejects_incorrect_parameters():
@@ -624,7 +624,7 @@ def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_te
     storage_strategy_test12.event_activate()
     market_maker_rate = list(storage_strategy_test12.area.config.market_maker_rate.values())[0]
     BE_sell = list(storage_strategy_test12.break_even.values())[0][1]
-    used_storage = storage_strategy_test12.state.used_storage
+    used_storage = storage_strategy_test12.state.usable_storage
     battery_capacity = storage_strategy_test12.state.capacity
     soc = used_storage / battery_capacity
     actual_rate = storage_strategy_test12.calculate_selling_rate(market_test7)
