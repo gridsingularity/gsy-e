@@ -145,6 +145,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         if bid.buyer != self.owner.name:
             return
         self.remove_bid_from_pending(bid.id, market)
+        # If the bid was not traded, add energy to self.energy_requirement_Wh again
+        if bid.id not in [trades.offer.id for trades in market.trades]:
+            self.energy_requirement_Wh[market.time_slot] += bid.energy * 1000
 
     def event_bid_traded(self, *, market, bid_trade):
         if bid_trade.buyer != self.owner.name:

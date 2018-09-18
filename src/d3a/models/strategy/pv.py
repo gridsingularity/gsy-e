@@ -115,19 +115,17 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
             rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
                                                                       market.time_slot_str)
-            assert round(self.state.available_energy_kWh[market.time_slot], 10) >= 0
+            assert self.state.available_energy_kWh[market.time_slot] >= -0.00001
             if self.energy_production_forecast_kWh[market.time_slot] > 0:
                 if self.state.available_energy_kWh[market.time_slot] > 0:
 
                     offer = market.offer(
-                        rounded_energy_rate * self.panel_count *
+                        rounded_energy_rate * self.state.available_energy_kWh[market.time_slot],
                         self.state.available_energy_kWh[market.time_slot],
-                        self.state.available_energy_kWh[market.time_slot] * self.panel_count,
                         self.owner.name
                     )
                     self.offers.post(offer, market)
-                    self.state.available_energy_kWh[market.time_slot] -= \
-                        offer.energy / self.panel_count
+                    self.state.available_energy_kWh[market.time_slot] -= offer.energy
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
@@ -135,3 +133,8 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             raise ValueError("'new_risk' value has to be in range 0 - 100")
         self.risk = new_risk
         self.log.warn("Risk changed to %s", new_risk)
+
+    def event_offer_deleted(self, *, market, offer):
+        # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
+        if offer.id not in [trades.offer.id for trades in market.trades]:
+            self.state.available_energy_kWh[market.time_slot] += offer.energy
