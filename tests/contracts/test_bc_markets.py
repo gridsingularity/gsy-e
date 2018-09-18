@@ -2,10 +2,10 @@ from contextlib import contextmanager
 
 import pytest
 
-from eth_utils import to_bytes
 from solc import compile_source
 from web3 import Web3, HTTPProvider
 from web3.contract import Contract
+from eth_utils import to_bytes
 
 from d3a.util import get_cached_joined_contract_source
 
@@ -130,7 +130,7 @@ def test_cancel(base_state_contract, state):
     assert cancel_retval[0]['args']['price'] == 956
     assert cancel_retval[0]['args']['seller'] == state.eth.accounts[1]
 
-    assert market_contract.functions.getOffer(to_bytes(offer_id)).call() == [0, 0, zero_address]
+    assert market_contract.functions.getOffer(offer_id).call() == [0, 0, zero_address]
 
 
 def test_get_clearing_token_address(base_state_contract):
