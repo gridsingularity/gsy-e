@@ -36,8 +36,8 @@ def place_offer_and_return_offerid(market_contract, energy_units, price, sender,
     return offer_retval[0]['args']["offerId"] if len(offer_retval) else 0
 
 
-def perform_trade_and_return_offer_changed_trade_event(market_contract, offerid,
-                                                       energy, sender, state):
+def perform_trade_and_return_offer_changed_trade_event(market_contract, offerid, energy, sender,
+                                                       state):
     tx_hash = market_contract.functions.trade(offerid, energy).transact({'from': sender})
     tx_receipt = state.eth.waitForTransactionReceipt(tx_hash)
     new_trade = market_contract.events.NewTrade().processReceipt(tx_receipt)

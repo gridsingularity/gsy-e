@@ -107,8 +107,9 @@ class Simulation:
         self.area = self.setup_module.get_setup(self.simulation_config)
         self.bc = None  # type: BlockChainInterface
         if self.use_bc:
-            self.bc = BlockChainInterface(lambda: self.area.now)
+            self.bc = BlockChainInterface()
             self.clearing_token = self.bc.init_contract(
+                "ClearingToken.sol",
                 "ClearingToken",
                 [
                     10 ** 10,
