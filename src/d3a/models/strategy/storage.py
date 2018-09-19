@@ -175,15 +175,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                         if not self.state.has_battery_reached_max_power(market.time_slot):
                             self.accept_offer(market, offer, energy=max_energy)
                             self.state.block_storage(max_energy)
-                            return True
                         else:
                             self.state.update_energy_per_slot(max_energy, market.time_slot)
-
                     except MarketException:
-                        # Offer already gone etc., try next one.
-                        return False
-                else:
-                    return False
+                        pass
 
     def sell_energy(self, energy=None, open_offer=False):
         target_market = self.select_market_to_sell()
