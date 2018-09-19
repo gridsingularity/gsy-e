@@ -448,6 +448,8 @@ class BalancingAgent(InterAreaAgent):
                                 min_offer_age=min_offer_age, tick_ratio=tick_ratio)
 
     def event_trade(self, *, market, trade, offer=None):
+        print("Market: " + str(market))
+        print("Trade: " + str(trade))
         self.lower_market.balancing_energy += trade.offer.energy * self.balancing_spot_trade_ratio
         for offer in self.lower_market.sorted_offers:
             if self.lower_market.balancing_energy == 0:
@@ -471,9 +473,9 @@ class BalancingAgent(InterAreaAgent):
                         self.lower_market.balancing_energy
                     self.lower_market.balancing_energy = 0
 
-    def event_balancing_trade(self, *, market, trade, offer=None):
-        for engine in self.engines:
-            engine.event_trade(trade=trade)
+    # def event_balancing_trade(self, *, market, trade, offer=None):
+    #     for engine in self.engines:
+    #         engine.event_trade(trade=trade)
 
     def event_balancing_offer_changed(self, *, market, existing_offer, new_offer):
         for engine in self.engines:

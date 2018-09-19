@@ -69,7 +69,7 @@ class Area:
             self.budget_keeper.area = self
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[DateTime, Market]
-        self.balancing_market = None  # type: BalancingMarket
+        self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
@@ -233,17 +233,9 @@ class Area:
 
         self.log.info("Cycling markets")
 
-        # moving old balancing market to past_balancing_markets
-        if self.balancing_market is not None:
-            last_market_timeframe = self.balancing_market.time_slot
-            self.balancing_market.readonly = True
-            self.balancing_agents.pop(self.balancing_market, None)
-            self.past_balancing_markets[last_market_timeframe] = self.balancing_market
-            self.log.debug("Moving {t:%H:%M} balancing_market to past".
-                           format(t=last_market_timeframe))
-            self.balancing_market = None
-        # Move old and current markets to `past_markets`
-        # We use `list()` here to get a copy since we modify the market list in-place
+        # Move old and current markets & balancing_markets to
+        # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
+        # modify the market list in-place
         changed = False
         first = True
         for timeframe in list(self.markets.keys()):
@@ -252,12 +244,25 @@ class Area:
                 market.readonly = True
                 self.past_markets[timeframe] = market
                 if not first:
-                    # Remove inter area agent & balancing_agent
+                    # Remove inter area agent
                     self.inter_area_agents.pop(market, None)
                 else:
                     first = False
                 changed = True
                 self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
+
+        first_balancing_market = True
+        for timeframe in list(self.balancing_markets.keys()):
+            if timeframe < now:
+                balancing_market = self.balancing_markets.pop(timeframe)
+                balancing_market.readonly = True
+                self.past_balancing_markets[timeframe] = balancing_market
+                if not first_balancing_market:
+                    # Remove balancing_agent
+                    self.balancing_agents.pop(balancing_market, None)
+                else:
+                    first_balancing_market = False
+                self.log.debug("Moving {t:%H:%M} balancing_market to past".format(t=timeframe))
 
         self._accumulated_past_price = sum(
             market.accumulated_trade_price
@@ -300,34 +305,39 @@ class Area:
                     t=timeframe,
                     format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
                 ))
-        next_market_timeframe = now + self.config.slot_length
-        # Create balancing_markets for next slot
-        balancing_market = \
-            BalancingMarket(next_market_timeframe, self,
-                            notification_listener=self._broadcast_notification)
-        if self.parent is not None and self.parent.balancing_market is not None \
-                and not self.strategy:
-            # Only connect BalancingAgent if we have a parent,
-            # a corresponding timeframe balancing_market exists in the parent
-            # and we have no strategy
-            baa = BalancingAgent(
-                owner=self,
-                higher_market=self.parent.balancing_market,
-                lower_market=balancing_market,
-                transfer_fee_pct=self.config.iaa_fee,
-                balancing_spot_trade_ratio=self.balancing_spot_trade_ratio
-            )
-            # Attach agent to own BA list
-            self.balancing_agents[balancing_market].append(baa)
-            parent_balancing_markets = self.parent.balancing_market
-            # And also to parents to allow events to flow form both markets
-            self.parent.balancing_agents[parent_balancing_markets].append(baa)
-        self.balancing_market = balancing_market
-        format = \
-            "%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
-        self.log.debug("Adding {t:{format}} balancing_market".format(
-            t=next_market_timeframe,
-            format=format))
+
+        # BalancingMarkets range from one slot to MARKET_SLOT_COUNT into the future
+        for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
+            timeframe = now + offset
+            if timeframe not in self.balancing_markets:
+                # Create balancing_markets for missing slots
+                balancing_market = \
+                    BalancingMarket(timeframe,
+                                    self,
+                                    notification_listener=self._broadcast_notification)
+                if balancing_market not in self.balancing_agents:
+                    if self.parent and timeframe in self.parent.balancing_markets \
+                            and not self.strategy:
+                        # Only connect BalancingAgent if we have a parent, a corresponding
+                        # timeframe market exists in the parent and we have no strategy
+                        baa = BalancingAgent(
+                            owner=self,
+                            higher_market=self.parent.balancing_markets,
+                            lower_market=balancing_market,
+                            transfer_fee_pct=self.config.iaa_fee,
+                            balancing_spot_trade_ratio=self.balancing_spot_trade_ratio
+                        )
+                        # Attach agent to own BA list
+                        self.balancing_agents[balancing_market].append(baa)
+                        # And also to parents to allow events to flow from both markets
+                        self.parent.balancing_agents[self.parent.balancing_markets[timeframe]].\
+                            append(baa)
+                self.balancing_markets[timeframe] = balancing_market
+                changed = True
+                self.log.debug("Adding {t:{format}} balancing_market".format(
+                    t=timeframe,
+                    format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
+                ))
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
@@ -389,8 +399,8 @@ class Area:
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         # Also broadcast to BAs. Again in random order
-        for market, agents in self.balancing_agents.items():
-            if market.time_slot != self.balancing_market.time_slot:
+        for balancing_market, agents in self.balancing_agents.items():
+            if balancing_market.time_slot not in self.balancing_markets:
                 # exclude past BAs
                 continue
 
