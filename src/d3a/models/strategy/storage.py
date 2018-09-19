@@ -126,7 +126,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
-            if self.state.used_storage > 0:
+            if self.state.usable_storage > 0:
                 self.sell_energy()
             return
         # if energy in this slot was bought: update the storage
@@ -144,7 +144,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.sell_energy(offer.energy, open_offer=True)
             self.offers.sold_offer(offer.id, past_market)
         # sell remaining capacity too (e. g. initial capacity)
-        if self.state.used_storage > 0:
+        if self.state.usable_storage > 0:
             self.sell_energy()
         self.state.market_cycle(self.area)
 
@@ -175,10 +175,15 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                         if not self.state.has_battery_reached_max_power(market.time_slot):
                             self.accept_offer(market, offer, energy=max_energy)
                             self.state.block_storage(max_energy)
+                            return True
                         else:
                             self.state.update_energy_per_slot(max_energy, market.time_slot)
+
                     except MarketException:
-                        pass
+                        # Offer already gone etc., try next one.
+                        return False
+                else:
+                    return False
 
     def sell_energy(self, energy=None, open_offer=False):
         target_market = self.select_market_to_sell()
@@ -227,6 +232,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         return self.state.clamp_energy_to_buy_kWh(energy)
 
     def calculate_energy_to_sell(self, energy, target_market):
+        # print("calculate_energy_to_sell")
         return self.state.clamp_energy_to_sell_kWh(energy, target_market.time_slot)
 
     def calculate_selling_rate(self, market):
@@ -245,7 +251,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
     def capacity_dependant_sell_rate(self, market):
         if self.state.charge_history[market.time_slot] is '-':
-            soc = self.state.used_storage / self.state.capacity
+            soc = self.state.usable_storage / self.state.capacity
         else:
             soc = self.state.charge_history[market.time_slot]
 
