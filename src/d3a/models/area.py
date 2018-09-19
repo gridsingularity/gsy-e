@@ -322,7 +322,7 @@ class Area:
                         # timeframe market exists in the parent and we have no strategy
                         baa = BalancingAgent(
                             owner=self,
-                            higher_market=self.parent.balancing_markets,
+                            higher_market=self.parent.balancing_markets[timeframe],
                             lower_market=balancing_market,
                             transfer_fee_pct=self.config.iaa_fee,
                             balancing_spot_trade_ratio=self.balancing_spot_trade_ratio
