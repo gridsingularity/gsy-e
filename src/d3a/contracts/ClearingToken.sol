@@ -10,7 +10,7 @@ contract ClearingToken is IOUToken {
 
     // Mapping of the clearing member which is allowed to transfer IOU's
     //between any accounts. These could also be market contracts.
-    mapping (address => uint256) public clearingMemberAmount;
+    mapping (address => int256) public clearingMemberAmount;
 
     // list of all the clearing members
     address[] public clearingMembers;
@@ -40,7 +40,7 @@ contract ClearingToken is IOUToken {
     function clearingTransfer(address _from, address _to, int256 _value) public payable returns (bool success) {
         // 1st condition checks whether market is registered and
         // second condition checks whether _value is below the allowed value for transfers
-        if (clearingMemberAmount[msg.sender] > 0 && _value < int(clearingMemberAmount[msg.sender])) {
+        if (isGloballyApproved(msg.sender)) {
              // balance mapping has been passed on from
              // StandardToken -> IOUToken -> ClearingToken
              // balance could be negative
@@ -58,7 +58,7 @@ contract ClearingToken is IOUToken {
      * _value token between any accounts
      * @param _value Maximum amount allowed to be transferred between the participants
      */
-    function globallyApprove(address clearingMember, uint _value) public returns (bool success) {
+    function globallyApprove(address clearingMember, int256 _value) public returns (bool success) {
         // Only the approver can call this function to add a clearingMember
         if (msg.sender == approver && _value > 0) {
             clearingMemberAmount[clearingMember] = _value;
@@ -73,21 +73,21 @@ contract ClearingToken is IOUToken {
     /*
      * @notice Status whether Market is registered
      */
-    function isGloballyApproved(address clearingMember) public constant returns (bool) {
+    function isGloballyApproved(address clearingMember) public view returns (bool) {
         return clearingMemberAmount[clearingMember] > 0;
     }
 
     /*
      * @notice Gets the owner which approves cleaing members of the contract
      */
-    function getApprover() public constant returns (address) {
+    function getApprover() public view returns (address) {
         return approver;
     }
 
     /*
      * @notice Gets all approved markets in the contracts
      */
-    function getApprovedMarkets() public constant returns (address[]) {
+    function getApprovedMarkets() public view returns (address[]) {
         return clearingMembers;
     }
 

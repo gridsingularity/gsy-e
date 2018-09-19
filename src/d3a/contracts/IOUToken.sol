@@ -9,11 +9,6 @@ contract IOUToken is StandardToken {
     uint8 public decimals;
     string public symbol;
 
-    function () public {
-        // if ether is sent to this address, send it back.
-        revert();
-    }
-
     constructor(
         uint128 _initialAmount,
         string _tokenName,
@@ -27,6 +22,10 @@ contract IOUToken is StandardToken {
         symbol = _tokenSymbol;                               // Set the symbol for display purposes
     }
 
+    function () public payable {
+        // if ether is sent to this address, send it back.
+        revert("Ether should never be sent to this address.");
+    }
 
     /* Approves and then calls the receiving contract */
     function approveAndCall(address _spender, uint256 _value, bytes _extraData) public returns (bool success) {
@@ -39,10 +38,9 @@ contract IOUToken is StandardToken {
         // it is assumed that when does this that the call *should* succeed, otherwise one would use
         // vanilla approve instead.
         if (!_spender.call(bytes4(
-                bytes32(keccak256(
-                    "receiveApproval(address,uint256,address,bytes)"))),
+            bytes32(keccak256("receiveApproval(address,uint256,address,bytes)"))),
             msg.sender, _value, this, _extraData)) {
-            revert();
+            revert("Failed to call receiveApproval callback.");
         }
         return true;
     }

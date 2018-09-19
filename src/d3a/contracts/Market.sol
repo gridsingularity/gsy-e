@@ -5,13 +5,13 @@ import "ClearingToken.sol";
 contract Market {
 
     // holds the offerId -> Offer() mapping
-    mapping (bytes32 => Offer) offers;
+    mapping (bytes32 => Offer) private offers;
 
     // Nonce counter to ensure unique offer ids
-    uint offerNonce;
+    uint private offerNonce;
 
     //mapping of the energy balances for market participants
-    mapping (address => int256) balances;
+    mapping (address => int256) private balances;
 
     //Container to hold the details of the Offer
     struct Offer {
@@ -22,13 +22,13 @@ contract Market {
     }
 
     // Holds the reference to ClearingToken contract used for token transfers
-    ClearingToken clearingToken;
+    ClearingToken private clearingToken;
 
     // Initialized when the market contract is created on the blockchain
-    uint marketStartTime;
+    uint private marketStartTime;
 
     // The interval of time for which market can be used for trading
-    uint interval;
+    uint private interval;
 
     constructor(address clearingTokenAddress, uint _interval) public {
         clearingToken = ClearingToken(clearingTokenAddress);
@@ -41,9 +41,11 @@ contract Market {
 
     event CancelOffer(uint energyUnits, int price, address indexed seller);
 
-    event NewTrade(bytes32 tradeId, address indexed buyer, address indexed seller, uint energyUnits, int price);
+    event NewTrade(bytes32 tradeId, address indexed buyer, address indexed seller,
+    uint energyUnits, int price, bool success);
 
-    event OfferChanged(bytes32 oldOfferId, bytes32 newOfferId, uint energyUnits, int price, address indexed seller);
+    event OfferChanged(bytes32 oldOfferId, bytes32 newOfferId,
+    uint energyUnits, int price, address indexed seller, bool success);
 
     /*
      * @notice The msg.sender is able to introduce new offers.
@@ -51,7 +53,9 @@ contract Market {
      * @param price the price of each unit.
      */
     function offer(uint energyUnits, int price) public returns (bytes32 offerId) {
-        (bool success, bytes32 id) = _offer(energyUnits, price, msg.sender);
+        (
+        bool success,
+        bytes32 id) = _offer(energyUnits, price, msg.sender);
         if (success) {
             emit NewOffer(id, energyUnits, price, msg.sender);
         }
@@ -84,24 +88,28 @@ contract Market {
      *         from the "marketStartTime"
      * @ tradedEnergyUnits Allows for partial trading of energyUnits from an offer
      */
-    function trade(bytes32 offerId, uint tradedEnergyUnits) public payable returns (bool success,
+    function trade(bytes32 offerId, uint tradedEnergyUnits) public returns (bool success,
         bytes32 newOfferId, bytes32 tradeId) {
         Offer storage tradedOffer = offers[offerId];
         address buyer = msg.sender;
-        if (tradedOffer.energyUnits > 0
-            && tradedOffer.seller != address(0)
-            && msg.sender != tradedOffer.seller
-            && now-marketStartTime < interval
-            && tradedEnergyUnits > 0
-            && tradedEnergyUnits <= tradedOffer.energyUnits) {
+        if (
+        tradedOffer.energyUnits > 0 &&
+        tradedOffer.seller != address(0) &&
+        msg.sender != tradedOffer.seller &&
+        block.timestamp-marketStartTime < interval &&
+        tradedEnergyUnits > 0 &&
+        tradedEnergyUnits <= tradedOffer.energyUnits
+        ) {
+            success = true;
             // Allow Partial Trading, if tradedEnergyUnits  are less than the
             // energyUnits in the offer, make a new offer with the remaining energyUnits
             // and the same price. Also emit OfferChanged event with old offerId
             // and new Offer values.
+
             if (tradedEnergyUnits < tradedOffer.energyUnits) {
                 uint newEnergyUnits = tradedOffer.energyUnits - tradedEnergyUnits;
                 (success, newOfferId) = _offer(newEnergyUnits, tradedOffer.price, tradedOffer.seller);
-                emit OfferChanged(offerId, newOfferId, newEnergyUnits, tradedOffer.price, tradedOffer.seller);
+                emit OfferChanged(offerId, newOfferId, newEnergyUnits, tradedOffer.price, tradedOffer.seller, success);
             }
             // Record exchange of energy between buyer and seller
             balances[buyer] += int(tradedEnergyUnits);
@@ -117,13 +125,13 @@ contract Market {
                 tradeId = keccak256(
                     abi.encodePacked(offerId, buyer)
                 );
-                emit NewTrade(tradeId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price);
+                emit NewTrade(tradeId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, true);
                 tradedOffer.energyUnits = 0;
                 tradedOffer.price = 0;
                 tradedOffer.seller = 0;
                 success = true;
             } else {
-                revert();
+                emit NewTrade(offerId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, false);
             }
         } else {
             success = false;
@@ -133,22 +141,22 @@ contract Market {
     /*
      * @notice Gets the Offer tuple if given a valid offerid
      */
-    function getOffer(bytes32 offerId) public constant returns (uint, int, address) {
-        Offer storage retrievedOffer = offers[offerId];
+    function getOffer(bytes32 offerId) public view returns (uint, int, address) {
+        Offer retrievedOffer = offers[offerId];
         return (retrievedOffer.energyUnits, retrievedOffer.price, retrievedOffer.seller);
     }
 
     /*
      * @notice Gets the address of the ClearingToken contract
      */
-    function getClearingTokenAddress() public constant returns (address) {
+    function getClearingTokenAddress() public view returns (address) {
         return address(clearingToken);
     }
 
     /*
      * @notice Gets the energy balance of _owner
      */
-    function balanceOf(address _owner) public constant returns (int256 balance) {
+    function balanceOf(address _owner) public view returns (int256 balance) {
         return balances[_owner];
     }
 

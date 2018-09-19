@@ -23,7 +23,7 @@ contract StandardToken is Token {
         if (_value > 0) {
             balances[msg.sender] -= int(_value);
             balances[_to] += int(_value);
-            emit Transfer (msg.sender, _to, _value);
+            emit Transfer(msg.sender, _to, _value);
             return true;
         } else {
             return false;
@@ -73,6 +73,6 @@ contract StandardToken is Token {
     }
 
     // Balances can be negative hence mapping from address to int256 type
-    mapping (address => int256) balances;
-    mapping (address => mapping (address => uint256)) allowed;
+    mapping (address => int256) internal balances;
+    mapping (address => mapping (address => uint256)) internal allowed;
 }
