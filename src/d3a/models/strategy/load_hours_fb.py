@@ -82,14 +82,24 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         return random.choice(offers)
 
     def _one_sided_market_event_tick(self, market):
+        self.log.warning("Start of _one_sided_market_event_tick")
         try:
+            self.log.warning("sorted_offers {} {}".format(
+                market.time_slot_str, market.sorted_offers))
             if len(market.sorted_offers) < 1:
                 return
+            self.log.warning("len(market.sorted_offers) > 0")
             acceptable_offer = self._find_acceptable_offer(market)
+            self.log.warning("acceptable_offer {} {} {} ".format(
+                self.min_energy_rate,
+                acceptable_offer.price / acceptable_offer.energy,
+                self.max_energy_rate[market.time_slot_str]
+            ))
             if acceptable_offer and \
                     self.min_energy_rate <= \
                     acceptable_offer.price / acceptable_offer.energy <= \
                     self.max_energy_rate[market.time_slot_str]:
+                self.log.warning("acceptable_offer ")
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000
                 if acceptable_offer.energy > max_energy:
                     self.accept_offer(market, acceptable_offer, energy=max_energy)
@@ -110,7 +120,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     def event_tick(self, *, area):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             for market in self.active_markets:
+                # self.log.warning("Looping over Markets {}".format(market.time_slot_str))
                 if market.time_slot not in self.energy_requirement_Wh:
+                    self.log.error("aahhhhhhh #######")
                     continue
                 if self.energy_requirement_Wh[market.time_slot] <= 0:
                     continue

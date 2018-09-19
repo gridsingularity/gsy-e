@@ -112,11 +112,14 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.update_market_cycle_offers(self.min_selling_rate)
         # Iterate over all markets open in the future
         for market in self.area.markets.values():
+            self.log.warning("looping over markets {}".format(market.time_slot_str))
             initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
             rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
                                                                       market.time_slot_str)
             assert self.state.available_energy_kWh[market.time_slot] >= -0.00001
             if self.energy_production_forecast_kWh[market.time_slot] > 0:
+                self.log.warning("available_energy_kWh {}".format(
+                    self.state.available_energy_kWh[market.time_slot]))
                 if self.state.available_energy_kWh[market.time_slot] > 0:
 
                     offer = market.offer(

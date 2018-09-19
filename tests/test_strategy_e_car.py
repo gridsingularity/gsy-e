@@ -165,7 +165,7 @@ def test_car_not_depart(e_car_strategy_test2, area_test2):
 
 def test_ecar_unload(e_car_strategy_test1, area_test1):
     e_car_strategy_test1.connected_to_grid = False
-    e_car_strategy_test1.state._used_storage = 66
+    e_car_strategy_test1.state._usable_storage = 66
     e_car_strategy_test1.event_tick(area=area_test1)
     assert e_car_strategy_test1.state.usable_storage == 66 * 0.9999
 
