@@ -54,6 +54,9 @@ class BidUpdateFrequencyMixin:
             self._increase_rate_timepoint_s += self._increase_frequency_s
             existing_bids = list(self.get_posted_bids(market))
             for bid in existing_bids:
+                if bid.id in market.bids.keys():
+                    bid = market.bids[bid.id]
+
                 market.delete_bid(bid.id)
                 self.remove_bid_from_pending(bid.id, market)
                 self.post_bid(market,

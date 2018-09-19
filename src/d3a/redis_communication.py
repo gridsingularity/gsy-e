@@ -19,6 +19,7 @@ class RedisSimulationCommunication:
         self._sub_callback_dict = {self._simulation_id + "/reset": self._reset_callback,
                                    self._simulation_id + "/stop": self._stop_callback,
                                    self._simulation_id + "/pause": self._pause_callback,
+                                   self._simulation_id + "/resume": self._resume_callback,
                                    self._simulation_id + "/slowdown": self._slowdown_callback}
         self.result_channel = "d3a-results"
 
@@ -42,7 +43,12 @@ class RedisSimulationCommunication:
         self._simulation.stop()
 
     def _pause_callback(self, _):
-        self._simulation.toggle_pause()
+        if not self._simulation.paused:
+            self._simulation.toggle_pause()
+
+    def _resume_callback(self, _):
+        if self._simulation.paused:
+            self._simulation.toggle_pause()
 
     def _slowdown_callback(self, message):
         data = json.loads(message["data"])

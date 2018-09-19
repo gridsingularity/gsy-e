@@ -49,7 +49,9 @@ class IAAEngine:
 
     def _forward_bid(self, bid):
         if bid.buyer == self.markets.target.area.name and \
-                bid.seller == self.markets.source.area.name:
+           bid.seller == self.markets.source.area.name:
+            return
+        if self.owner.name == self.markets.target.area.name:
             return
         forwarded_bid = self.markets.target.bid(
             bid.price + (bid.price * (self.transfer_fee_pct / 100)),
@@ -76,7 +78,7 @@ class IAAEngine:
             key=lambda b: b.price / b.energy))
         )
 
-        # Sorted offers in ascending order
+        # Sorted offers in descending order
         sorted_offers = list(reversed(sorted(
             self.markets.source.offers.values(),
             key=lambda o: o.price / o.energy))
@@ -118,14 +120,13 @@ class IAAEngine:
                                     price_drop=True)
             self._delete_forwarded_offer_entries(offer)
 
-            trade = self.markets.source.accept_bid(bid,
-                                                   selected_energy,
-                                                   seller=offer.seller,
-                                                   buyer=self.owner.name,
-                                                   track_bid=False,
-                                                   price_drop=True)
-            if not trade.residual:
-                self._delete_forwarded_bid_entries(bid)
+            self.markets.source.accept_bid(bid,
+                                           selected_energy,
+                                           seller=offer.seller,
+                                           buyer=bid.buyer,
+                                           track_bid=False,
+                                           price_drop=True)
+            self._delete_forwarded_bid_entries(bid)
 
     def tick(self, *, area):
         # Store age of offer
@@ -357,7 +358,7 @@ class InterAreaAgent(BaseStrategy):
                   'min_offer_age', 'tick_ratio')
 
     def __init__(self, *, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=1,
-                 tick_ratio=2):
+                 tick_ratio=ConstSettings.INTER_AREA_AGENT_RATIO):
         """
         Equalize markets
 
@@ -430,6 +431,25 @@ class InterAreaAgent(BaseStrategy):
             engine.event_offer_deleted(offer=offer)
 
     def event_offer_changed(self, *, market, existing_offer, new_offer):
+        for engine in self.engines:
+            engine.event_offer_changed(market=market,
+                                       existing_offer=existing_offer,
+                                       new_offer=new_offer)
+
+
+class BalancingAgent(InterAreaAgent):
+
+    def __init__(self, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=1,
+                 tick_ratio=ConstSettings.INTER_AREA_AGENT_RATIO):
+        InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
+                                lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
+                                min_offer_age=min_offer_age, tick_ratio=tick_ratio)
+
+    def event_balancing_trade(self, *, market, trade, offer=None):
+        for engine in self.engines:
+            engine.event_trade(trade=trade)
+
+    def event_balancing_offer_changed(self, *, market, existing_offer, new_offer):
         for engine in self.engines:
             engine.event_offer_changed(market=market,
                                        existing_offer=existing_offer,

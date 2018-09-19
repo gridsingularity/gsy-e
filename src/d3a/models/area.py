@@ -57,6 +57,7 @@ class Area:
         for child in self.children:
             child.parent = self
         self.inter_area_agents = defaultdict(list)  # type: Dict[Market, List[InterAreaAgent]]
+        self.balancing_agents = defaultdict(list)  # type: Dict[Market, List[BalancingAgent]]
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
@@ -66,8 +67,10 @@ class Area:
             self.budget_keeper.area = self
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[DateTime, Market]
+        self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
+        self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
         self._bc = None  # type: BlockChainInterface
         self.listeners = []
         self._accumulated_past_price = 0

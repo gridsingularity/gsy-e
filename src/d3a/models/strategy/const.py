@@ -88,7 +88,12 @@ class ConstSettings:
     # Minimal consumption per household in Wh
     MIN_HOUSEHOLD_CONSUMPTION = 70
 
-    MAX_OFFER_TRAVERSAL_LENGTH = 10
+    # INTER_AREA_AGENT
+    # TODO: The motivation for this tick ratio is not clear and should be removed in the future
+    INTER_AREA_AGENT_RATIO = 2
+
+    # This parameter is modified by the Simulation class
+    MAX_OFFER_TRAVERSAL_LENGTH = None
 
     INTER_AREA_AGENT_FEE_PERCENTAGE = 1
 

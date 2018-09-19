@@ -22,6 +22,7 @@ from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
+from d3a.models.strategy.const import ConstSettings
 
 
 log = getLogger(__name__)
@@ -78,6 +79,23 @@ class Simulation:
         self._init(**self.initial_params)
         self._init_events()
 
+    def _set_traversal_length(self):
+        if ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH is None:
+            no_of_levels = self._get_setup_levels(self.area)
+            num_ticks_to_propagate = no_of_levels * ConstSettings.INTER_AREA_AGENT_RATIO
+            ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
+            time_to_propagate_minutes = num_ticks_to_propagate * \
+                self.simulation_config.tick_length.seconds / 60.
+            log.error("Setup has {} levels, offers/bids need at least {} minutes "
+                      "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
+                                                        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH,))
+
+    def _get_setup_levels(self, area, level_count=0):
+        level_count += 1
+        count_list = [self._get_setup_levels(child, level_count)
+                      for child in area.children if child.children]
+        return max(count_list) if len(count_list) > 0 else level_count
+
     def _load_setup_module(self):
         try:
             self.setup_module = import_module(".{}".format(self.setup_module_name), 'd3a.setup')
@@ -120,6 +138,9 @@ class Simulation:
                 id_='ClearingToken'
             )
         log.info("Starting simulation with config %s", self.simulation_config)
+
+        self._set_traversal_length()
+
         self.area.activate(self.bc)
 
     @property
@@ -238,7 +259,7 @@ class Simulation:
                         log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
                         ExportAndPlot(self.area, self.export_path,
-                                      DateTime.now().format("%Y-%m-%d_%X"))
+                                      DateTime.now().isoformat())
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
