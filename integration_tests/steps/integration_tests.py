@@ -615,14 +615,7 @@ def test_pv_initial_pv_rate_option(context):
 def test_sim_market_count(context):
     grid_1 = context.simulation_1.area
     grid_4 = context.simulation_4.area
-    # trades_sold = []
     for slot, market_1 in grid_1.past_markets.items():
         market_4 = grid_4.past_markets[slot]
-        print(slot)
         for area in market_1.traded_energy.keys():
-            print("1", area, market_1.traded_energy[area])
-            print("4", area, market_4.traded_energy[area])
-            # assert isclose(market_1.traded_energy[area],market_4.traded_energy[area] )
-
-    # print(context.simulation_1.area)
-    assert context.simulation_1 == context.simulation_4
+            assert isclose(market_1.traded_energy[area], market_4.traded_energy[area])

@@ -112,14 +112,11 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.update_market_cycle_offers(self.min_selling_rate)
         # Iterate over all markets open in the future
         for market in self.area.markets.values():
-            self.log.warning("looping over markets {}".format(market.time_slot_str))
             initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
             rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
                                                                       market.time_slot_str)
             assert self.state.available_energy_kWh[market.time_slot] >= -0.00001
             if self.energy_production_forecast_kWh[market.time_slot] > 0:
-                self.log.warning("available_energy_kWh {}".format(
-                    self.state.available_energy_kWh[market.time_slot]))
                 if self.state.available_energy_kWh[market.time_slot] > 0:
 
                     offer = market.offer(
@@ -135,7 +132,6 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if not (-1 < new_risk < 101):
             raise ValueError("'new_risk' value has to be in range 0 - 100")
         self.risk = new_risk
-        self.log.warn("Risk changed to %s", new_risk)
 
     def event_offer_deleted(self, *, market, offer):
         # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
