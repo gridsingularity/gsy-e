@@ -12,6 +12,7 @@ from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
 from d3a import PENDULUM_TIME_FORMAT
 from d3a.models.strategy.const import ConstSettings
+from d3a.export_unmatched_loads import export_unmatched_loads
 
 
 @given('we have a scenario named {scenario}')
@@ -452,7 +453,9 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
       '{scenario} [{duration}, {slot_length}, {tick_length}]')
 def test_output(context, scenario, duration, slot_length, tick_length):
 
-    # Check if simulation ran through
+    if scenario in ["default_2", "default_2a", "default_3"]:
+        unmatched = export_unmatched_loads(context.simulation.area)
+        assert unmatched["unmatched_load_count"] == 0
     # (check if number of last slot is the maximal number of slots):
     no_of_slots = (int(duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
