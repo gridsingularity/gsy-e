@@ -554,7 +554,7 @@ class BalancingMarket(Market):
         # Recalculate offer min/max price since offer was removed
         self._update_min_max_avg_offer_prices()
         offer._traded(trade, self)
-        # self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
+        self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
         return trade
 
     def delete_balancing_offer(self, offer_or_id: Union[str, BalancingOffer]):

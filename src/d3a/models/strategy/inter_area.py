@@ -451,7 +451,6 @@ class BalancingAgent(InterAreaAgent):
     def event_trade(self, *, market, trade, offer=None):
         if trade.buyer != self.owner.name:
             return
-        print("Trade-BA: " + str(trade))
         positive_balancing_energy = trade.offer.energy * self.balancing_spot_trade_ratio
         negative_balancing_energy = trade.offer.energy * self.balancing_spot_trade_ratio
         cumulative_energy_traded_upward = 0
