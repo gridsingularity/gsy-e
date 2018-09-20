@@ -232,7 +232,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         return self.state.clamp_energy_to_buy_kWh(energy)
 
     def calculate_energy_to_sell(self, energy, target_market):
-        # print("calculate_energy_to_sell")
         return self.state.clamp_energy_to_sell_kWh(energy, target_market.time_slot)
 
     def calculate_selling_rate(self, market):
