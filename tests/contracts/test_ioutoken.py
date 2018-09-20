@@ -1,12 +1,15 @@
 from contextlib import contextmanager
 
 import pytest
+from time import sleep
+from subprocess import Popen
 from web3 import Web3, HTTPProvider
 from web3.contract import Contract
 
 from solc import compile_source
 
 from d3a.util import get_cached_joined_contract_source
+from d3a.models.strategy.const import ConstSettings
 
 
 iou_compiled_sol = compile_source(get_cached_joined_contract_source("IOUToken.sol"))
@@ -23,7 +26,11 @@ def print_gas_used(state, string):
 
 @pytest.fixture
 def base_state_contract():
-    state = Web3(HTTPProvider("http://127.0.0.1:8545"))
+    ganache_subprocess = Popen(['ganache-cli'], close_fds=False) \
+        if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN \
+        else None
+    sleep(2)
+    state = Web3(HTTPProvider(ConstSettings.BLOCKCHAIN_URL))
 
     iou_contract = state.eth.contract(abi=iou_contract_interface['abi'],
                                       bytecode=iou_contract_interface['bin'])
@@ -34,7 +41,10 @@ def base_state_contract():
                                       abi=iou_contract_interface['abi'],
                                       ContractFactoryClass=Contract)
 
-    return state, iou_instance, iou_address
+    yield state, iou_instance, iou_address
+
+    if ganache_subprocess:
+        ganache_subprocess.terminate()
 
 
 def test_balanceOf(base_state_contract):

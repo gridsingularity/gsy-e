@@ -4,8 +4,11 @@ from typing import Dict, List, Mapping, Optional  # noqa
 from web3 import Web3, HTTPProvider
 from solc import compile_source
 from web3.contract import Contract
+from subprocess import Popen, DEVNULL
+from time import sleep
 
 from d3a.util import get_cached_joined_contract_source
+from d3a.models.strategy.const import ConstSettings
 
 
 log = getLogger(__name__)
@@ -42,7 +45,11 @@ class BCUsers:
 
 class BlockChainInterface:
     def __init__(self, default_user_balance=10 ** 8):
-        self.chain = Web3(HTTPProvider("http://127.0.0.1:8545"))
+        if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN:
+            self._ganache_process = Popen(['ganache-cli', '-a', '50', '-e', '10000000000'],
+                                          close_fds=False, stdout=DEVNULL, stderr=DEVNULL)
+        sleep(2)
+        self.chain = Web3(HTTPProvider(ConstSettings.BLOCKCHAIN_URL))
         self.contracts = {}  # type: Dict[str, Contract]
         self.users = BCUsers(self.chain, self.contracts, default_user_balance)
         self.listeners = defaultdict(list)  # type: Dict[str, List[callable]]

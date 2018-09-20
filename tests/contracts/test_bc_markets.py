@@ -1,13 +1,15 @@
 from contextlib import contextmanager
 
 import pytest
-
+from time import sleep
+from subprocess import Popen
 from solc import compile_source
 from web3 import Web3, HTTPProvider
 from web3.contract import Contract
 from eth_utils import to_bytes
 
 from d3a.util import get_cached_joined_contract_source
+from d3a.models.strategy.const import ConstSettings
 
 emptybytes = b'\x00' * 32
 
@@ -55,7 +57,14 @@ def print_gas_used(state, string):
 
 @pytest.fixture(scope='module')
 def state():
-    return Web3(HTTPProvider("http://127.0.0.1:8545"))
+    ganache_subprocess = Popen(['ganache-cli'], close_fds=False) \
+        if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN \
+        else None
+    sleep(2)
+    yield Web3(HTTPProvider(ConstSettings.BLOCKCHAIN_URL))
+
+    if ganache_subprocess:
+        ganache_subprocess.terminate()
 
 
 @pytest.fixture

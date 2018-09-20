@@ -101,3 +101,6 @@ class ConstSettings:
     # Default value 1 stands for single sided market
     # Option 2 stands for double sided pay as bid market
     INTER_AREA_AGENT_MARKET_TYPE = 1
+
+    BLOCKCHAIN_URL = "http://127.0.0.1:8545"
+    BLOCKCHAIN_START_LOCAL_CHAIN = True
