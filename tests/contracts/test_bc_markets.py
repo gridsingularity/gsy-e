@@ -68,7 +68,7 @@ def state():
     ganache_subprocess = Popen([ganachecli_command()], close_fds=False) \
         if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN \
         else None
-    sleep(2)
+    sleep(5)
     yield Web3(HTTPProvider(ConstSettings.BLOCKCHAIN_URL))
 
     if ganache_subprocess:

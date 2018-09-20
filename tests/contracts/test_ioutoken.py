@@ -37,7 +37,7 @@ def base_state_contract():
     ganache_subprocess = Popen([ganachecli_command()], close_fds=False) \
         if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN \
         else None
-    sleep(2)
+    sleep(5)
     state = Web3(HTTPProvider(ConstSettings.BLOCKCHAIN_URL))
 
     iou_contract = state.eth.contract(abi=iou_contract_interface['abi'],
