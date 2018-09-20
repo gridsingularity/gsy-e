@@ -59,14 +59,14 @@ def print_gas_used(state, string):
 @property
 def ganachecli_command():
     if "GANACHE_BINARY" in os.environ:
-        return [os.environ["GANACHE_BINARY"]]
+        return os.environ["GANACHE_BINARY"]
     else:
-        return ['ganache-cli']
+        return 'ganache-cli'
 
 
 @pytest.fixture(scope='module')
 def state():
-    ganache_subprocess = Popen(ganachecli_command, close_fds=False, env=os.environ) \
+    ganache_subprocess = Popen([ganachecli_command], close_fds=False, env=os.environ) \
         if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN \
         else None
     sleep(2)
