@@ -10,10 +10,11 @@ attrdict==2.0.0
 attrs==18.2.0
 awesome-slugify==1.6.5
 bcrypt==3.1.4             # via paramiko
+bitcoin==1.1.42
 bleach==2.1.4             # via readme-renderer
 cached-property==1.5.1
 certifi==2018.8.24
-cffi==1.11.5              # via bcrypt, cmarkgfm, cryptography, pynacl
+cffi==1.11.5
 cfgv==1.1.0               # via pre-commit
 chardet==3.0.4
 click-default-group==1.2
@@ -33,8 +34,10 @@ eth-hash[pycryptodome]==0.2.0
 eth-keyfile==0.5.1
 eth-keys==0.2.0b3
 eth-rlp==0.1.2
+eth-testrpc==1.3.5
 eth-typing==1.3.0
 eth-utils==1.2.1
+ethereum==1.6.1
 fabric3==1.14.post1
 first==2.0.1
 flask-api==1.0
@@ -50,6 +53,7 @@ itsdangerous==0.24
 jdcal==1.4
 jedi==0.12.1              # via ptpython
 jinja2==2.10
+json-rpc==1.11.1
 jsonschema==2.6.0
 jupyter-core==4.4.0
 lru-dict==1.1.6
@@ -61,6 +65,7 @@ openpyxl==2.5.7
 paramiko==2.4.1           # via fabric3
 parsimonious==0.8.0
 parso==0.3.1              # via jedi
+pbkdf2==1.3
 pendulum==2.0.3
 pint==0.8.1
 pip-tools==2.0.2
@@ -69,12 +74,15 @@ pluggy==0.7.1             # via tox
 pre-commit==1.11.0
 prompt-toolkit==1.0.15    # via ptpython
 ptpython==0.41
+py-solc==3.1.0
 py==1.6.0                 # via tox
 pyasn1==0.4.4             # via paramiko
-pycparser==2.18           # via cffi
+pycparser==2.18
 pycryptodome==3.6.6
+pyethash==0.1.27
 pygments==2.2.0           # via ptpython, readme-renderer
 pynacl==1.2.1             # via paramiko
+pysha3==1.0.2
 python-dateutil==2.7.3
 python-rex==0.4
 pytz==2018.5
@@ -83,10 +91,14 @@ pyyaml==3.13
 readme-renderer==21.0
 redis==2.10.6
 regex==2018.8.29
+repoze.lru==0.7
 requests==2.19.1
 retrying==1.3.3
 rlp==0.6.0
 rq==0.12.0
+scrypt==0.8.6
+secp256k1==0.13.2
+semantic-version==2.6.0
 six==1.11.0
 tablib==0.12.1
 terminaltables==3.1.0
