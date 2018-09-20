@@ -14,6 +14,8 @@ from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundE
     InvalidTrade, InvalidBid, BidNotFound, InvalidBalancingTradeException, DeviceNotInRegistryError
 from d3a.models.events import MarketEvent, OfferEvent
 from d3a.device_registry import DeviceRegistry
+from d3a.blockchain_utils import create_market_contract, create_new_offer, cancel_offer, \
+    trade_offer
 
 BC_EVENT_MAP = {
     b"NewOffer": MarketEvent.OFFER,
@@ -21,7 +23,6 @@ BC_EVENT_MAP = {
     b"NewTrade": MarketEvent.TRADE,
     b"OfferChanged": MarketEvent.OFFER_CHANGED
 }
-BC_NUM_FACTOR = 10 ** 10
 
 log = getLogger(__name__)
 
@@ -147,34 +148,13 @@ class Market:
         self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
-        self.bc_contract = None
-        if self.area and self.area.bc:
-            self._instantiate_market_smart_contract()
+        self.bc_contract = \
+            create_market_contract(self.area.bc,
+                                   self.area.config.duration.in_seconds(),
+                                   [self._bc_listener]) \
+            if self.area and self.area.bc \
+            else None
         self.device_registry = DeviceRegistry.REGISTRY
-
-    def _instantiate_market_smart_contract(self):
-        self.bc_contract = self.area.bc.init_contract(
-            "Market.sol",
-            "Market",
-            [
-                self.area.bc.contracts['ClearingToken'].address,
-                self.area.config.duration.in_seconds()
-            ],
-            [self._bc_listener]
-        )
-        clearing_contract_instance = self.area.bc.contracts['ClearingToken']
-        market_address = self.bc_contract.address
-        tx_hash = clearing_contract_instance.functions\
-            .globallyApprove(market_address, 10 ** 18)\
-            .transact({'from': self.area.bc.chain.eth.accounts[0]})
-        tx_receipt = self.area.bc.chain.eth.waitForTransactionReceipt(tx_hash)
-        approve_retval = clearing_contract_instance.events\
-            .ApproveClearingMember()\
-            .processReceipt(tx_receipt)
-        assert len(approve_retval) > 0
-        assert approve_retval[0]["args"]["approver"] == self.area.bc.chain.eth.accounts[0]
-        assert approve_retval[0]["args"]["market"] == market_address
-        assert approve_retval[0]["event"] == "ApproveClearingMember"
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
@@ -182,19 +162,20 @@ class Market:
     def _bc_listener(self, event):
         # TODO: Disabled for now, should be added once event driven blockchain transaction
         # handling is introduced
-        event_type = BC_EVENT_MAP[event['_event_type']]
-        kwargs = {}
-        if event_type is MarketEvent.OFFER:
-            kwargs['offer'] = self.offers[event['offerId']]
-        elif event_type is MarketEvent.OFFER_DELETED:
-            kwargs['offer'] = self.offers_deleted.pop(event['offerId'])
-        elif event_type is MarketEvent.OFFER_CHANGED:
-            existing_offer, new_offer = self.offers_changed.pop(event['oldOfferId'])
-            kwargs['existing_offer'] = existing_offer
-            kwargs['new_offer'] = new_offer
-        elif event_type is MarketEvent.TRADE:
-            kwargs['trade'] = self._trades_by_id.pop(event['tradeId'])
-        self._notify_listeners(event_type, **kwargs)
+        # event_type = BC_EVENT_MAP[event['_event_type']]
+        # kwargs = {}
+        # if event_type is MarketEvent.OFFER:
+        #     kwargs['offer'] = self.offers[event['offerId']]
+        # elif event_type is MarketEvent.OFFER_DELETED:
+        #     kwargs['offer'] = self.offers_deleted.pop(event['offerId'])
+        # elif event_type is MarketEvent.OFFER_CHANGED:
+        #     existing_offer, new_offer = self.offers_changed.pop(event['oldOfferId'])
+        #     kwargs['existing_offer'] = existing_offer
+        #     kwargs['new_offer'] = new_offer
+        # elif event_type is MarketEvent.TRADE:
+        #     kwargs['trade'] = self._trades_by_id.pop(event['tradeId'])
+        # self._notify_listeners(event_type, **kwargs)
+        return
 
     def _notify_listeners(self, event, **kwargs):
         # Deliver notifications in random order to ensure fairness
@@ -207,16 +188,10 @@ class Market:
         if energy <= 0:
             raise InvalidOffer()
 
-        if self.bc_contract:
-            tx_hash = self.bc_contract.functions.offer(
-                int(energy * BC_NUM_FACTOR),
-                int(price * BC_NUM_FACTOR)).transact({"from": self.area.bc.users[seller].address})
-            tx_receipt = self.area.bc.chain.eth.waitForTransactionReceipt(tx_hash)
-            offer_id = self.bc_contract.events\
-                .NewOffer()\
-                .processReceipt(tx_receipt)[0]['args']["offerId"]
-        else:
-            offer_id = str(uuid.uuid4())
+        offer_id = create_new_offer(self.area.bc, self.bc_contract, energy, price, seller) \
+            if self.bc_contract \
+            else str(uuid.uuid4())
+
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
@@ -242,13 +217,8 @@ class Market:
 
         offer = self.offers.pop(offer_or_id, None)
 
-        if self.bc_contract:
-            if offer is not None:
-                self.area.bc.chain.eth.waitForTransactionReceipt(
-                    self.bc_contract.functions.cancel(offer.real_id).transact(
-                        {"from": self.area.bc.users[offer.seller].address}
-                    )
-                )
+        if self.bc_contract and offer is not None:
+            cancel_offer(self.area.bc, self.bc_contract, offer.real_id, offer.seller)
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self._update_min_max_avg_offer_prices()
         if not offer:
@@ -396,29 +366,14 @@ class Market:
 
     def _handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
         if self.bc_contract:
-            tx_hash = self.bc_contract.functions.trade(
-                offer.real_id,
-                int(offer.energy * BC_NUM_FACTOR)
-            ).transact({"from": self.area.bc.users[buyer].address})
-            tx_receipt = self.area.bc.chain.eth.waitForTransactionReceipt(tx_hash)
-            new_trade_retval = self.bc_contract.events.NewTrade().processReceipt(tx_receipt)
-            offer_changed_retval = self.bc_contract.events\
-                .OfferChanged()\
-                .processReceipt(tx_receipt)
+            trade_id, new_offer_id = trade_offer(self.area.bc, self.bc_contract, offer.real_id,
+                                                 offer.energy, buyer)
 
-            if len(offer_changed_retval) > 0 and \
-                    not offer_changed_retval[0]['args']['success']:
-                raise InvalidOffer(f"Invalid blockchain offer changed. Transaction return "
-                                   f"value {offer_changed_retval}")
-
-            if not new_trade_retval[0]['args']['success']:
-                raise InvalidTrade(f"Invalid blockchain trade. Transaction return "
-                                   f"value {new_trade_retval}")
-
-            trade_id = new_trade_retval[0]['args']['tradeId']
             if residual_offer is not None:
-                residual_offer.id = str(offer_changed_retval[0]["args"]["newOfferId"])
-                residual_offer.real_id = offer_changed_retval[0]["args"]["newOfferId"]
+                if new_offer_id is None:
+                    raise InvalidTrade("Blockchain and local residual offers are out of sync")
+                residual_offer.id = str(new_offer_id)
+                residual_offer.real_id = new_offer_id
                 self._notify_listeners(
                     MarketEvent.OFFER_CHANGED,
                     existing_offer=original_offer,
@@ -426,7 +381,7 @@ class Market:
                 )
         else:
             trade_id = str(uuid.uuid4())
-        return trade_id
+        return trade_id, residual_offer
 
     def _update_stats_after_trade(self, trade, offer, buyer, track_trade=True):
         # FIXME: The following updates need to be done in response to the BC event
