@@ -355,10 +355,9 @@ class IAAEngine:
 
 class InterAreaAgent(BaseStrategy):
     parameters = ('owner', 'higher_market', 'lower_market', 'transfer_fee_pct',
-                  'min_offer_age', 'tick_ratio')
+                  'min_offer_age')
 
-    def __init__(self, *, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=1,
-                 tick_ratio=ConstSettings.INTER_AREA_AGENT_RATIO):
+    def __init__(self, *, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=1):
         """
         Equalize markets
 
@@ -367,7 +366,6 @@ class InterAreaAgent(BaseStrategy):
         :param lower_market:
         :type lower_market: Market
         :param min_offer_age: Minimum age of offer before transferring
-        :param tick_ratio: How often markets should be compared (default 4 := 1/4)
         """
         super().__init__()
         self.owner = owner
@@ -381,7 +379,6 @@ class InterAreaAgent(BaseStrategy):
         ]
 
         self.time_slot = higher_market.time_slot.strftime(TIME_FORMAT)
-        self.tick_ratio = tick_ratio
 
         # serialization parameters
         self.higher_market = higher_market
@@ -407,8 +404,6 @@ class InterAreaAgent(BaseStrategy):
     def event_tick(self, *, area):
         if area != self.owner:
             # We're connected to both areas but only want tick events from our owner
-            return
-        if area.current_tick % self.tick_ratio != 0:
             return
 
         for engine in self.engines:
@@ -439,13 +434,13 @@ class InterAreaAgent(BaseStrategy):
 
 class BalancingAgent(InterAreaAgent):
 
-    def __init__(self, *, owner, higher_market, lower_market,
+    def __init__(self, owner, higher_market, lower_market,
                  transfer_fee_pct=1, min_offer_age=1, tick_ratio=2,
                  balancing_spot_trade_ratio=ConstSettings.BALANCING_SPOT_TRADE_RATIO):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
-                                min_offer_age=min_offer_age, tick_ratio=tick_ratio)
+                                min_offer_age=min_offer_age)
 
     def event_trade(self, *, market, trade):
         if trade.buyer != self.owner.name:

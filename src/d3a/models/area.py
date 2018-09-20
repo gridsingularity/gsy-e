@@ -251,6 +251,7 @@ class Area:
                 changed = True
                 self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
 
+        changed_balancing_market = False
         first_balancing_market = True
         for timeframe in list(self.balancing_markets.keys()):
             if timeframe < now:
@@ -262,6 +263,7 @@ class Area:
                     self.balancing_agents.pop(balancing_market, None)
                 else:
                     first_balancing_market = False
+                changed_balancing_market = True
                 self.log.debug("Moving {t:%H:%M} balancing_market to past".format(t=timeframe))
 
         self._accumulated_past_price = sum(
@@ -333,7 +335,7 @@ class Area:
                         self.parent.balancing_agents[self.parent.balancing_markets[timeframe]].\
                             append(baa)
                 self.balancing_markets[timeframe] = balancing_market
-                changed = True
+                changed_balancing_market = True
                 self.log.debug("Adding {t:{format}} balancing_market".format(
                     t=timeframe,
                     format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
@@ -342,6 +344,11 @@ class Area:
         # Force market cycle event in case this is the first market slot
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
+
+        # Force balancing_market cycle event in case this is the first market slot
+        if (changed_balancing_market or len(self.past_balancing_markets.keys()) == 0) \
+                and _trigger_event:
+            self._broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE)
 
     def get_now(self) -> DateTime:
         """Compatibility wrapper"""

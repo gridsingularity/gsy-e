@@ -79,8 +79,8 @@ class Simulation:
 
     def _set_traversal_length(self):
         if ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH is None:
-            no_of_levels = self._get_setup_levels(self.area)
-            num_ticks_to_propagate = no_of_levels * ConstSettings.INTER_AREA_AGENT_RATIO
+            no_of_levels = self._get_setup_levels(self.area) + 1
+            num_ticks_to_propagate = no_of_levels * 2
             ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
             time_to_propagate_minutes = num_ticks_to_propagate * \
                 self.simulation_config.tick_length.seconds / 60.
