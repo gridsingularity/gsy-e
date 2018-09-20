@@ -664,5 +664,6 @@ def test_storage_only_buys_and_sells_in_the_power_limit(storage_strategy_test13,
     assert storage_strategy_test13.state._traded_energy_per_slot[market_test13.time_slot] == \
         traded_energy
     storage_strategy_test13.buy_energy()
+    bought_energy = market_test13.sorted_offers[0].energy
     assert storage_strategy_test13.state._traded_energy_per_slot[market_test13.time_slot] == \
-        traded_energy - 0.5
+        traded_energy - bought_energy
