@@ -414,8 +414,7 @@ class InterAreaAgent(BaseStrategy):
         for engine in self.engines:
             engine.tick(area=area)
 
-    def event_trade(self, *, market, trade, offer=None):
-        print("Trade-IAA: " + str(trade))
+    def event_trade(self, *, market, trade):
         for engine in self.engines:
             engine.event_trade(trade=trade)
 
@@ -448,7 +447,7 @@ class BalancingAgent(InterAreaAgent):
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
                                 min_offer_age=min_offer_age, tick_ratio=tick_ratio)
 
-    def event_trade(self, *, market, trade, offer=None):
+    def event_trade(self, *, market, trade):
         if trade.buyer != self.owner.name:
             return
         positive_balancing_energy = trade.offer.energy * self.balancing_spot_trade_ratio
@@ -465,10 +464,10 @@ class BalancingAgent(InterAreaAgent):
                     cumulative_energy_traded_upward += balance_trade.offer.energy
             elif offer.energy < 0 and negative_balancing_energy > 0:
                 balance_trade = self._balancing_trade(offer,
-                                                      negative_balancing_energy)
+                                                      -negative_balancing_energy)
                 if balance_trade is not None:
-                    negative_balancing_energy -= balance_trade.offer.energy
-                    cumulative_energy_traded_downward += balance_trade.offer.energy
+                    negative_balancing_energy -= abs(balance_trade.offer.energy)
+                    cumulative_energy_traded_downward += abs(balance_trade.offer.energy)
         self.lower_market.unmatched_energy_upward += positive_balancing_energy
         self.lower_market.unmatched_energy_downward += negative_balancing_energy
         self.lower_market.cumulative_energy_traded_upward += cumulative_energy_traded_upward
@@ -479,7 +478,7 @@ class BalancingAgent(InterAreaAgent):
             trade = self.lower_market.accept_balancing_offer(offer,
                                                              self.owner.name,
                                                              offer.energy)
-        elif abs(offer.energy) > abs(target_energy):
+        elif abs(offer.energy) >= abs(target_energy):
             trade = self.lower_market.accept_balancing_offer(offer,
                                                              self.owner.name,
                                                              target_energy)

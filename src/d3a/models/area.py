@@ -306,7 +306,7 @@ class Area:
                     format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
                 ))
 
-        # BalancingMarkets range from one slot to MARKET_SLOT_COUNT into the future
+        # BalancingMarkets range from one slot to market_count into the future
         for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
             timeframe = now + offset
             if timeframe not in self.balancing_markets:
