@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-if [ "$TOXENV" == "solium" ]; then
+if [ "$TOXENV" == "solium" ] || [ "$TOXENV" == "travis" ]; then
 	. $HOME/.nvm/nvm.sh
 	nvm install stable
 	nvm use stable
 	npm install -g solium@1.1.8
+	npm install -g ganache-cli
 fi
 
 if [ "$TOXENV" == "py36,coverage" ] || [ "$TOXENV" == "py36" ] || [ "$TOXENV" == "travis" ]; then
