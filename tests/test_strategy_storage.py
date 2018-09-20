@@ -630,3 +630,40 @@ def test_storage_capacity_dependant_sell_rate(storage_strategy_test12, market_te
     actual_rate = storage_strategy_test12.calculate_selling_rate(market_test7)
     expected_rate = market_maker_rate - (market_maker_rate - BE_sell) * soc
     assert actual_rate == expected_rate
+
+
+"""TEST13"""
+
+
+@pytest.fixture()
+def area_test13():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def market_test13():
+    return FakeMarket(0)
+
+
+@pytest.fixture()
+def storage_strategy_test13(area_test13, called):
+    s = StorageStrategy(battery_capacity=5, initial_capacity=2.5,
+                        max_abs_battery_power=5, break_even=(34, 35.1))
+    s.owner = area_test13
+    s.area = area_test13
+    s.accept_offer = called
+    return s
+
+
+def test_storage_only_buys_and_sells_in_the_power_limit(storage_strategy_test13, market_test13):
+    ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 4
+    storage_strategy_test13.event_activate()
+    storage_strategy_test13.sell_energy(energy=5)
+    traded_energy = storage_strategy_test13.state._traded_energy_per_slot[market_test13.time_slot]
+    storage_strategy_test13.sell_energy(energy=5)
+    assert storage_strategy_test13.state._traded_energy_per_slot[market_test13.time_slot] == \
+        traded_energy
+    storage_strategy_test13.buy_energy()
+    bought_energy = market_test13.sorted_offers[0].energy
+    assert storage_strategy_test13.state._traded_energy_per_slot[market_test13.time_slot] == \
+        traded_energy - bought_energy
