@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 import pytest
 from time import sleep
+import os
 from subprocess import Popen
 from web3 import Web3, HTTPProvider
 from web3.contract import Contract
@@ -26,7 +27,7 @@ def print_gas_used(state, string):
 
 @pytest.fixture
 def base_state_contract():
-    ganache_subprocess = Popen(['ganache-cli'], close_fds=False) \
+    ganache_subprocess = Popen(['ganache-cli'], close_fds=False, env=os.environ) \
         if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN \
         else None
     sleep(2)
