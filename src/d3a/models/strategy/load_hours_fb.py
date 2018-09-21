@@ -1,6 +1,7 @@
 import random
 from pendulum import duration
 from typing import Union
+from collections import namedtuple
 
 from d3a.exceptions import MarketException
 from d3a.models.state import LoadState
@@ -9,6 +10,7 @@ from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import BidUpdateFrequencyMixin
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.models.strategy.mixins import InputProfileTypes
+from d3a.device_registry import DeviceRegistry
 
 
 class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
@@ -16,7 +18,11 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, random_factor=0,
                  daily_budget=None, min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
-                 max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE):
+                 max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE,
+                 balancing_percentage: namedtuple=namedtuple('balancing_percentage',
+                                                             ('ramp_up', 'ramp_down')),
+                 balancing_rate: namedtuple=namedtuple('balancing_rate',
+                                                       ('upward_rate', 'downward_rate'))):
         BaseStrategy.__init__(self)
         self.max_energy_rate = ReadProfileMixin.read_arbitrary_profile(InputProfileTypes.RATE,
                                                                        max_energy_rate)
@@ -45,6 +51,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
+        self.balancing_percentage = balancing_percentage
+        self.balancing_rate = balancing_rate
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
@@ -167,6 +175,23 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             if not bid_trade.residual or self.energy_requirement_Wh < 0.00001:
                 self.remove_bid_from_pending(bid_trade.offer, market)
             assert self.energy_requirement_Wh >= -0.00001
+
+    def event_trade(self, *, market, trade):
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
+        if trade.seller != self.owner.name:
+            return
+
+        ramp_up_energy = -1 * self.balancing_percentage.ramp_up * trade.offer.energy
+        ramp_up_price = self.balancing_rate.upward_rate * ramp_up_energy
+        ramp_down_energy = self.balancing_percentage.ramp_down * trade.offer.energy
+        ramp_down_price = self.balancing_rate.downward_rate * ramp_down_energy
+        self.area.balancing_markets[market.time_slot].balancing_offer(ramp_up_price,
+                                                                      ramp_up_energy,
+                                                                      self.owner.name)
+        self.area.balancing_markets[market.time_slot].balancing_offer(ramp_down_price,
+                                                                      ramp_down_energy,
+                                                                      self.owner.name)
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):
