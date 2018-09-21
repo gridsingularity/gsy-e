@@ -236,12 +236,12 @@ class Area:
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
         # modify the market list in-place
-        changed, first = self._market_rotation(current_time=now,
-                                               markets=self.markets,
-                                               past_markets=self.past_markets,
-                                               area_agent=self.inter_area_agents)
+        changed, _ = self._market_rotation(current_time=now,
+                                           markets=self.markets,
+                                           past_markets=self.past_markets,
+                                           area_agent=self.inter_area_agents)
 
-        changed_balancing_market, first_balancing_market = \
+        changed_balancing_market, _ = \
             self._market_rotation(current_time=now,
                                   markets=self.balancing_markets,
                                   past_markets=self.past_balancing_markets,
@@ -259,7 +259,7 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to market_count into the future
-        changed = self._create_future_markets(current_time=now, markets=self.markets,
+        changed = self._create_future_markets(current_time=self.now, markets=self.markets,
                                               parent=self.parent,
                                               parent_markets=self.parent.markets
                                               if self.parent is not None else None,
@@ -270,7 +270,7 @@ class Area:
                                               market_class=Market)
 
         changed_balancing_market = \
-            self._create_future_markets(current_time=now, markets=self.balancing_markets,
+            self._create_future_markets(current_time=self.now, markets=self.balancing_markets,
                                         parent=self.parent,
                                         parent_markets=self.parent.balancing_markets
                                         if self.parent is not None else None,
