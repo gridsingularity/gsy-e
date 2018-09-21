@@ -24,9 +24,29 @@ class CommercialStrategy(BaseStrategy):
             self.offer_energy(market)
 
         for market in self.area.balancing_markets.values():
-            self.offer_balancing_energy(market)
+            self._offer_balancing_energy(market)
 
-    def offer_balancing_energy(self, market):
+    def event_market_cycle(self):
+        # Post new offers
+        market = list(self.area.markets.values())[-1]
+        self.offer_energy(market)
+
+        balancing_market = list(self.area.balancing_markets.values())[-1]
+        self._offer_balancing_energy(balancing_market)
+
+    def offer_energy(self, market):
+        energy_rate = self.area.config.market_maker_rate[market.time_slot_str] \
+            if self.energy_rate is None \
+            else self.energy_rate
+        offer = market.offer(
+            self.energy_per_slot_kWh.m * energy_rate,
+            self.energy_per_slot_kWh.m,
+            self.owner.name
+        )
+
+        self.offers.post(offer, market)
+
+    def _offer_balancing_energy(self, market):
         if self.owner.name not in DeviceRegistry.REGISTRY:
             return
 
@@ -40,24 +60,4 @@ class CommercialStrategy(BaseStrategy):
             self.energy_per_slot_kWh.m,
             self.owner.name
         )
-        self.offers.post(offer, market)
-
-    def event_market_cycle(self):
-        # Post new offers
-        market = list(self.area.markets.values())[-1]
-        self.offer_energy(market)
-
-        balancing_market = list(self.area.balancing_markets.values())[-1]
-        self.offer_balancing_energy(balancing_market)
-
-    def offer_energy(self, market):
-        energy_rate = self.area.config.market_maker_rate[market.time_slot_str] \
-            if self.energy_rate is None \
-            else self.energy_rate
-        offer = market.offer(
-            self.energy_per_slot_kWh.m * energy_rate,
-            self.energy_per_slot_kWh.m,
-            self.owner.name
-        )
-
         self.offers.post(offer, market)
