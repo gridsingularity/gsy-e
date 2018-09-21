@@ -31,8 +31,9 @@ class CommercialStrategy(BaseStrategy):
         market = list(self.area.markets.values())[-1]
         self.offer_energy(market)
 
-        balancing_market = list(self.area.balancing_markets.values())[-1]
-        self._offer_balancing_energy(balancing_market)
+        if len(self.area.balancing_markets.values()) > 0:
+            balancing_market = list(self.area.balancing_markets.values())[-1]
+            self._offer_balancing_energy(balancing_market)
 
     def offer_energy(self, market):
         energy_rate = self.area.config.market_maker_rate[market.time_slot_str] \
