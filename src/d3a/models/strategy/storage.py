@@ -9,6 +9,7 @@ from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidU
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.models.strategy.mixins import InputProfileTypes
 from d3a import TIME_FORMAT
+from d3a.device_registry import DeviceRegistry
 
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
@@ -268,6 +269,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             return max_selling_rate - (max_selling_rate - break_even_sell) * soc
 
     def event_trade(self, *, market, trade):
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
+
         if (trade.buyer == self.owner.name) or (trade.seller == self.owner.name):
             charge_energy = -1 * self.balancing_percentage.charge * trade.offer.energy
             charge_price = self.balancing_rate.charge_rate * charge_energy

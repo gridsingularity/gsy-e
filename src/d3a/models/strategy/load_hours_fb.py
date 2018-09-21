@@ -10,6 +10,7 @@ from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import BidUpdateFrequencyMixin
 from d3a.models.strategy.mixins import ReadProfileMixin
 from d3a.models.strategy.mixins import InputProfileTypes
+from d3a.device_registry import DeviceRegistry
 
 
 class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
@@ -176,7 +177,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             assert self.energy_requirement_Wh >= -0.00001
 
     def event_trade(self, *, market, trade):
-        if trade.buyer != self.owner.name:
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
+        if trade.seller != self.owner.name:
             return
 
         ramp_up_energy = -1 * self.balancing_percentage.ramp_up * trade.offer.energy
