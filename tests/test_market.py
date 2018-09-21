@@ -455,7 +455,6 @@ def test_market_listeners_offer_changed(market, offer, accept_offer, add_listene
     getattr(market, add_listener)(called)
     e_offer = getattr(market, offer)(10, 20, 'A')
     getattr(market, accept_offer)(e_offer, 'B', energy=3)
-
     assert len(called.calls) == 3
     assert called.calls[1][0] == (repr(event), )
     call_kwargs = called.calls[1][1]
