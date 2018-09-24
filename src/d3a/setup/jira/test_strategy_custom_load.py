@@ -8,7 +8,7 @@ Is also used for integrationtest.
 
 class CustomLoadStrategy(LoadHoursStrategy):
 
-    def update_posted_bids(self, market):
+    def update_posted_bids_over_ticks(self, market):
         """
         Copy of original code
         """
@@ -21,7 +21,6 @@ class CustomLoadStrategy(LoadHoursStrategy):
             for bid in existing_bids:
                 if bid.id in market.bids.keys():
                     bid = market.bids[bid.id]
-
                 market.delete_bid(bid.id)
                 self.remove_bid_from_pending(bid.id, market)
                 self.post_bid(market,

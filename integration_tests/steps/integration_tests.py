@@ -453,7 +453,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
       '{scenario} [{duration}, {slot_length}, {tick_length}]')
 def test_output(context, scenario, duration, slot_length, tick_length):
 
-    if scenario in ["default_2", "default_2a", "default_3"]:
+    if scenario in ["default_2a", "default_2b", "default_3"]:
         unmatched = export_unmatched_loads(context.simulation.area)
         assert unmatched["unmatched_load_count"] == 0
     # (check if number of last slot is the maximal number of slots):

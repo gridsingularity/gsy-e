@@ -230,3 +230,12 @@ def update_advanced_settings(advanced_settings):
             setattr(ConstSettings, set_var, parseboolstring(set_val))
         else:
             setattr(ConstSettings, set_var, set_val)
+
+
+def generate_market_slot_list(area, duration, slot_length, market_count):
+    market_slots = []
+    for slot_time in [
+        area.now + (slot_length * i) for i in range(
+            (duration + (market_count * slot_length)) // slot_length)]:
+        market_slots.append(slot_time)
+    return market_slots

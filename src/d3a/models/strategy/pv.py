@@ -3,6 +3,7 @@ from pendulum import Time # noqa
 import math
 from pendulum import duration
 
+from d3a.util import generate_market_slot_list
 from d3a.models.events import Trigger
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
@@ -46,17 +47,6 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.midnight = self.area.now.start_of("day")
         # Calculating the produced energy
         self.update_on_activate()
-        for slot_time in [
-                    self.area.now + (self.area.config.slot_length * i)
-                    for i in range(
-                        (
-                                    self.area.config.duration
-                                    + (
-                                            self.area.config.market_count *
-                                            self.area.config.slot_length)
-                        ) // self.area.config.slot_length)
-                    ]:
-            self.energy_production_forecast_kWh[slot_time] = 0
         self.produced_energy_forecast_kWh()
 
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
@@ -71,18 +61,23 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         return rounded_energy_rate
 
     def event_tick(self, *, area):
-        self.decrease_energy_price_over_ticks()
+        for market in list(self.area.markets.values()):
+            self.decrease_energy_price_over_ticks(market)
 
     def produced_energy_forecast_kWh(self):
         # This forecast ist based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        for slot_time in self.energy_production_forecast_kWh.keys():
+        for slot_time in generate_market_slot_list(self.area,
+                                                   self.area.config.duration,
+                                                   self.area.config.slot_length,
+                                                   self.area.config.market_count):
             difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
-            self.energy_production_forecast_kWh[slot_time] =\
-                self.gaussian_energy_forecast_kWh(difference_to_midnight_in_minutes)
+            self.energy_production_forecast_kWh[slot_time] = \
+                self.gaussian_energy_forecast_kWh(
+                    difference_to_midnight_in_minutes) * self.panel_count
             self.state.available_energy_kWh[slot_time] = \
-                self.energy_production_forecast_kWh[slot_time] * self.panel_count
+                self.energy_production_forecast_kWh[slot_time]
             assert self.energy_production_forecast_kWh[slot_time] >= 0.0
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
@@ -110,22 +105,20 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         self.update_market_cycle_offers(self.min_selling_rate)
+
         # Iterate over all markets open in the future
         for market in self.area.markets.values():
             initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
             rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
                                                                       market.time_slot_str)
             assert self.state.available_energy_kWh[market.time_slot] >= -0.00001
-            if self.energy_production_forecast_kWh[market.time_slot] > 0:
-                if self.state.available_energy_kWh[market.time_slot] > 0:
-
-                    offer = market.offer(
-                        rounded_energy_rate * self.state.available_energy_kWh[market.time_slot],
-                        self.state.available_energy_kWh[market.time_slot],
-                        self.owner.name
-                    )
-                    self.offers.post(offer, market)
-                    self.state.available_energy_kWh[market.time_slot] -= offer.energy
+            if self.state.available_energy_kWh[market.time_slot] > 0:
+                offer = market.offer(
+                    rounded_energy_rate * self.state.available_energy_kWh[market.time_slot],
+                    self.state.available_energy_kWh[market.time_slot],
+                    self.owner.name
+                )
+                self.offers.post(offer, market)
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)
@@ -136,4 +129,19 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def event_offer_deleted(self, *, market, offer):
         # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
         if offer.id not in [trades.offer.id for trades in market.trades]:
-            self.state.available_energy_kWh[market.time_slot] += offer.energy
+            if offer.seller == self.owner.name:
+                self.state.available_energy_kWh[market.time_slot] += offer.energy
+
+    def event_offer(self, *, market, offer):
+        # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
+        if offer.id not in [trades.offer.id for trades in market.trades]:
+            if offer.seller == self.owner.name:
+                self.state.available_energy_kWh[market.time_slot] -= offer.energy
+
+    def update_market_cycle_offers(self, min_selling_rate):
+        self.min_selling_rate = min_selling_rate
+        # increase energy rate for each market again, except for the newly created one
+        for market in list(self.area.markets.values()):
+            self._decrease_price_timepoint_s[market.time_slot] = self._decrease_price_every_nr_s
+        for market in list(self.area.markets.values())[:-1]:
+            self.reset_price_on_market_cycle(market)

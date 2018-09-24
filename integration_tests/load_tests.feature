@@ -32,4 +32,3 @@ Feature: Load Tests
      When we run the simulation with setup file jira.d3asim_638_custom_load and parameters [24, 15, 15, 0, 4]
      Then the load has no unmatched loads
      And the PV always provides constant power according to load demand
-     And the energy rate for all the trades is the mean of max and min load/pv rate

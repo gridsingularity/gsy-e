@@ -426,6 +426,7 @@ class ExportLeafData(ExportData):
         return market.traded_energy[self.area.name]
 
     def _row(self, slot, market):
+        # print(f"{slot} {self._traded(market)}")
         return [slot,
                 self._traded(market),
                 ] + self._specific_row(slot, market)
@@ -489,19 +490,18 @@ class BarGraph:
             out_time_list = []
             time_list = data[di]["x"]
             for ti in time_list:
-                out_time_list.append(ti.in_timezone("UTC"))
-                day_set.add(pendulum.datetime(ti.year, ti.month, ti.day))
+                out_time_list.append(ti.in_timezone("local"))
+                day_set.add(pendulum.local(ti.year, ti.month, ti.day))
             data[di]["x"] = out_time_list
 
         day_list = sorted(list(day_set))
         if len(day_list) == 0:
             raise ValueError("There is no time information in plot {}".format(title))
 
-        start_time = pendulum.datetime(day_list[0].year, day_list[0].month, day_list[0].day,
-                                       0, 0, 0, tz="UTC")
-        end_time = pendulum.datetime(day_list[-1].year, day_list[-1].month, day_list[-1].day,
-                                     23, 59, 59, tz="UTC")
-
+        start_time = pendulum.local(
+            day_list[0].year, day_list[0].month, day_list[0].day, 0, 0, 0)
+        end_time = pendulum.local(
+            day_list[-1].year, day_list[-1].month, day_list[-1].day, 23, 59, 59)
         return [start_time, end_time], data
 
     @classmethod
