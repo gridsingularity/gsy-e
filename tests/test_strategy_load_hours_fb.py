@@ -55,6 +55,7 @@ class FakeMarket:
     def __init__(self, count):
         self.count = count
         self.most_affordable_energy = 0.1551
+        self.bids = {}
 
     def bid(self, price: float, energy: float, buyer: str, seller: str):
         return Bid(id='bid_id', price=price, energy=energy, buyer=buyer, seller=seller)
