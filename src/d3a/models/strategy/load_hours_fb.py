@@ -152,6 +152,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 self.remove_bid_from_pending(bid_trade.offer.id, market)
             assert self.energy_requirement_Wh[market.time_slot] >= -0.00001
 
-
+            
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):
     pass
