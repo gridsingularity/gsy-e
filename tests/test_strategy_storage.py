@@ -584,7 +584,7 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
 
 
 def test_storage_populates_break_even_profile_correctly():
-    from d3a.models.strategy.mixins import default_profile_dict
+    from d3a.models.strategy.read_user_profile import default_profile_dict
     s = StorageStrategy(break_even=(22, 23))
     assert all([be[0] == 22 and be[1] == 23 for _, be in s.break_even.items()])
     assert set(s.break_even.keys()) == set(default_profile_dict().keys())

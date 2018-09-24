@@ -7,7 +7,7 @@ from pendulum import duration
 from behave import given, when, then
 
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.mixins import ReadProfileMixin
+from d3a.models.strategy.read_user_profile import read_arbitrary_profile, _readCSV
 from d3a.simulation import Simulation
 from d3a.models.strategy.predefined_pv import d3a_path
 from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
@@ -64,10 +64,9 @@ def json_string_profile(context, device):
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
-    from d3a.models.strategy.mixins import ReadProfileMixin
-    from d3a.models.strategy.mixins import InputProfileTypes
+    from d3a.models.strategy.read_user_profile import InputProfileTypes
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
-    context._market_maker_rate = ReadProfileMixin.\
+    context._market_maker_rate = \
         read_arbitrary_profile(InputProfileTypes.RATE, setup_file_module.market_maker_rate)
     assert context._market_maker_rate is not None
 
@@ -301,7 +300,7 @@ def test_export_data_csv(context, scenario):
 @then('we test that config parameters are correctly parsed for {scenario}'
       ' [{cloud_coverage}, {iaa_fee}]')
 def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):
-    from d3a.models.strategy.mixins import default_profile_dict
+    from d3a.models.strategy.read_user_profile import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
     assert len(context.simulation.simulation_config.market_maker_rate) == 24 * 60
     assert len(default_profile_dict().keys()) == len(context.simulation.simulation_config.
@@ -481,7 +480,7 @@ def check_pv_profile(context):
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_partial.csv")
     if pv.strategy._power_profile_index == 2:
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
-    profile_data = ReadProfileMixin._readCSV(path)
+    profile_data = _readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
         time = str(timepoint.format(PENDULUM_TIME_FORMAT))
         if time in profile_data.keys():
@@ -514,7 +513,7 @@ def check_pv_csv_profile(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
     from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
-    profile_data = ReadProfileMixin._readCSV(user_profile_path)
+    profile_data = _readCSV(user_profile_path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
         time = str(timepoint.format(PENDULUM_TIME_FORMAT))
         if time in profile_data.keys():
@@ -526,10 +525,9 @@ def check_pv_csv_profile(context):
 
 @then('the predefined PV follows the PV profile from the csv')
 def check_pv_profile_csv(context):
-    from d3a.models.strategy.mixins import ReadProfileMixin
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
-    input_profile = ReadProfileMixin._readCSV(context._device_profile)
+    input_profile = _readCSV(context._device_profile)
     produced_energy = {f'{k.hour:02}:{k.minute:02}': v
                        for k, v in pv.strategy.energy_production_forecast_kWh.items()
                        }
