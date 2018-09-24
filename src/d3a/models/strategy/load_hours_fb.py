@@ -24,8 +24,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         self.max_energy_rate = ReadProfileMixin.read_arbitrary_profile(InputProfileTypes.RATE,
                                                                        max_energy_rate)
         BidUpdateFrequencyMixin.__init__(self,
-                                         initial_rate=list(self.min_energy_rate.values())[0],
-                                         final_rate=list(self.max_energy_rate.values())[0])
+                                         initial_rate_profile=self.min_energy_rate,
+                                         final_rate_profile=self.max_energy_rate)
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 
@@ -131,10 +131,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         self._update_energy_requirement()
-        self.update_market_cycle_bids(
-            initial_rate=self.min_energy_rate[self.area.next_market.time_slot_str],
-            final_rate=self.max_energy_rate[self.area.next_market.time_slot_str]
-        )
+        self.update_market_cycle_bids()
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
             if self.energy_requirement_Wh > 0:
                 self.post_first_bid(
