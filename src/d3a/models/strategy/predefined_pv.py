@@ -58,10 +58,7 @@ class PVPredefinedStrategy(PVStrategy):
         # therefore config cannot be read at that point
         data = self._read_predefined_profile_for_pv()
 
-        for slot_time in generate_market_slot_list(self.area,
-                                                   self.area.config.duration,
-                                                   self.area.config.slot_length,
-                                                   self.area.config.market_count):
+        for slot_time in generate_market_slot_list(self.area):
             self.energy_production_forecast_kWh[slot_time] = \
                 data[slot_time.format(PENDULUM_TIME_FORMAT)]
             self.state.available_energy_kWh[slot_time] = \

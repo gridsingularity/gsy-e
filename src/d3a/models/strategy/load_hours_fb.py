@@ -44,7 +44,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
-        self.active_markets = []
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
@@ -52,22 +51,19 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         if len(hrs_of_day) < hrs_per_day:
             raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
-    def _get_active_markets(self):
+    @property
+    def active_markets(self):
         markets = []
         for time, market in self.area.markets.items():
             if self._allowed_operating_hours(time.hour):
                 markets.append(market)
-        self.active_markets = markets
+        return markets
 
     def event_activate(self):
-        self._get_active_markets()
         self.energy_per_slot_Wh = (self.avg_power_W /
                                    (duration(hours=1)/self.area.config.slot_length))
 
-        for slot_time in generate_market_slot_list(self.area,
-                                                   self.area.config.duration,
-                                                   self.area.config.slot_length,
-                                                   self.area.config.market_count):
+        for slot_time in generate_market_slot_list(self.area):
             if self._allowed_operating_hours(slot_time.hour):
                 self.energy_requirement_Wh[slot_time] = self.energy_per_slot_Wh
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
@@ -124,7 +120,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 * (self.area.config.slot_length / duration(hours=1)))
 
     def event_market_cycle(self):
-        self._get_active_markets()
         for market in self.active_markets:
             if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
