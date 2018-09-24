@@ -86,7 +86,7 @@ class Offers:
             else:
                 return True
         except KeyError:
-            self.strategy.log.warn("Could not find offer to remove")
+            self.strategy.log.warning("Could not find offer to remove")
 
     def replace(self, old_offer, new_offer, market):
         if self.remove(old_offer):
