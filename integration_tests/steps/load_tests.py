@@ -67,7 +67,7 @@ def check_user_rate_profile_dict(context):
                                                     house.config.slot_length.minutes)
 
 
-@then('LoadHoursStrategy does not buy energy with rates that are lower than the provided profile')
+@then('LoadHoursStrategy buys energy according to the minimum energy rate profile')
 def check_min_user_rate_profile_dict(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load1 = next(filter(lambda x: x.name == "H1 General Load 1", house.children))

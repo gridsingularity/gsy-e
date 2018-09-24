@@ -11,7 +11,7 @@ from d3a.models.strategy.const import ConstSettings
 
 
 """
-Test parsing of LoadHoursStrategy max_energy_rate as dictionary.
+Test parsing of LoadHoursStrategy min_energy_rate as dictionary.
 """
 
 user_profile_int = {
