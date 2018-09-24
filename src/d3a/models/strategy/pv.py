@@ -130,7 +130,8 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def event_offer_deleted(self, *, market, offer):
         # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
         if offer.id not in [trades.offer.id for trades in market.trades]:
-            self.state.available_energy_kWh[market.time_slot] += offer.energy
+            if offer.seller == self.owner.name:
+                self.state.available_energy_kWh[market.time_slot] += offer.energy
 
     def event_offer(self, *, market, offer):
         # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
