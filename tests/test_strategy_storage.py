@@ -7,11 +7,18 @@ from math import isclose
 
 # from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.strategy import ureg, Q_
-from d3a.models.market import Offer, Trade
+from d3a.models.market import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.config import SimulationConfig
 from d3a import TIME_FORMAT
+from d3a.device_registry import DeviceRegistry
+DeviceRegistry.REGISTRY = {
+    "A": (23, 25),
+    "someone": (23, 25),
+    "seller": (23, 25),
+    "FakeArea": (23, 25),
+}
 
 
 class FakeArea():
@@ -24,6 +31,7 @@ class FakeArea():
         self.current_market = FakeMarket(0)
         self._markets_return = {"Fake Market": FakeMarket(self.count)}
         self.next_market = list(self.markets.values())[0]
+        self.test_balancing_market = FakeMarket(1)
 
     log = getLogger(__name__)
 
@@ -57,6 +65,10 @@ class FakeArea():
         )
 
     @property
+    def balancing_markets(self):
+        return {self.now: self.test_balancing_market}
+
+    @property
     def historical_avg_rate(self):
         return 30
 
@@ -84,6 +96,7 @@ class FakeMarket:
                        'id2': Offer('id2', 20, 0.5, 'A', self),
                        'id3': Offer('id3', 20, 1, 'A', self),
                        'id4': Offer('id4', 19, 5.1, 'A', self)}
+        self.created_balancing_offers = []
 
     @property
     def sorted_offers(self):
@@ -109,6 +122,12 @@ class FakeMarket:
     def offer(self, price, energy, seller, market=None):
         offer = Offer('id', price, energy, seller, market)
         self.created_offers.append(offer)
+        return offer
+
+    def balancing_offer(self, price, energy, seller, market=None):
+        offer = BalancingOffer('id', price, energy, seller, market)
+        self.created_balancing_offers.append(offer)
+        offer.id = 'id'
         return offer
 
     def bid(self, price, energy, buyer, seller):
@@ -326,6 +345,10 @@ def storage_strategy_test6(area_test6, market_test6, called):
 
 def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.event_trade(market=market_test6, trade=market_test6.trade)
+    print("market_test6.trade.offer: " + str(market_test6.trade.offer))
+    print("storage_strategy_test6.offers.sold_in_market(market_test6): " +
+          str(storage_strategy_test6.offers.sold_in_market(market_test6)))
+
     assert market_test6.trade.offer in \
         storage_strategy_test6.offers.sold_in_market(market_test6)
     assert market_test6.trade.offer not in storage_strategy_test6.offers.open

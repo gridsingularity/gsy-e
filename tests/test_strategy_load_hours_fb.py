@@ -6,12 +6,22 @@ from datetime import timedelta
 from pendulum import DateTime
 from pendulum import duration
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market import Offer
+from d3a.models.market import Offer, BalancingOffer
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.market import Bid, Trade
 from d3a import TIME_FORMAT
+
+from d3a.device_registry import DeviceRegistry
+DeviceRegistry.REGISTRY = {
+    "A": (23, 25),
+    "someone": (23, 25),
+    "seller": (23, 25),
+    "FakeArea": (23, 25),
+}
+
+ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 TIME = pendulum.today().at(hour=10, minute=45, second=2)
 
@@ -24,6 +34,8 @@ class FakeArea:
         self.name = 'FakeArea'
         self.count = count
         self._next_market = FakeMarket(15)
+        self.test_balancing_market = FakeMarket(1)
+        self.test_balancing_market_2 = FakeMarket(2)
 
     @property
     def config(self):
@@ -47,6 +59,10 @@ class FakeArea:
         )
 
     @property
+    def balancing_markets(self):
+        return {self.now: self.test_balancing_market}
+
+    @property
     def next_market(self):
         return self._next_market
 
@@ -55,6 +71,7 @@ class FakeMarket:
     def __init__(self, count):
         self.count = count
         self.most_affordable_energy = 0.1551
+        self.created_balancing_offers = []
 
     def bid(self, price: float, energy: float, buyer: str, seller: str):
         return Bid(id='bid_id', price=price, energy=energy, buyer=buyer, seller=seller)
@@ -90,6 +107,12 @@ class FakeMarket:
     @property
     def time_slot_str(self):
         return self.time_slot.strftime(TIME_FORMAT)
+
+    def balancing_offer(self, price, energy, seller, market=None):
+        offer = BalancingOffer('id', price, energy, seller, market)
+        self.created_balancing_offers.append(offer)
+        offer.id = 'id'
+        return offer
 
 
 class TestLoadHoursStrategyInput(unittest.TestCase):

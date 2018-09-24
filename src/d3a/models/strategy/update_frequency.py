@@ -44,6 +44,10 @@ class BidUpdateFrequencyMixin:
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
+        print("current_tick_number: " + str(current_tick_number))
+        print("ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH: " +
+              str(ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH))
+
         if (
                 # FIXME: Make sure that the offer reached every system participant.
                 # FIXME: Therefore it can only be update (depending on number of niveau and
