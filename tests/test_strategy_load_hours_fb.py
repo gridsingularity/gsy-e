@@ -95,6 +95,10 @@ class FakeMarket:
 class TestLoadHoursStrategyInput(unittest.TestCase):
 
     def setUp(self):
+        # MAX_OFFER_TRAVERSAL_LENGTH should be set here, otherwise some tests fail
+        # when only the load tests are executed. Works fine when all tests are executed
+        # though
+        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 5
         self.appliance = MagicMock(spec=SimpleAppliance)
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
 
@@ -271,7 +275,7 @@ def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strat
 
     if not partial:
         assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
-        assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid)
+        assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
         assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
             repr(trade_market)
     else:
@@ -300,7 +304,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     load_hours_strategy_test5.event_bid_traded(market=trade_market, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid)
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
         repr(trade_market)
 

@@ -161,9 +161,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         if bid_trade.offer.buyer == buffered_bid.buyer:
             self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)
             if not bid_trade.residual or self.energy_requirement_Wh[market.time_slot] < 0.00001:
-                self.remove_bid_from_pending(bid_trade.offer, market)
+                self.remove_bid_from_pending(bid_trade.offer.id, market)
             assert self.energy_requirement_Wh[market.time_slot] >= -0.00001
 
-
+            
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):
     pass
