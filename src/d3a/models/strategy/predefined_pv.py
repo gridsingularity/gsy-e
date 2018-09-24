@@ -11,8 +11,8 @@ from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
 from d3a.models.strategy import ureg
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import ConstSettings
-from d3a.models.strategy.mixins import ReadProfileMixin
-from d3a.models.strategy.mixins import InputProfileTypes
+from d3a.models.strategy.read_user_profile import read_profile_csv_to_dict, read_arbitrary_profile
+from d3a.models.strategy.read_user_profile import InputProfileTypes
 from typing import Dict
 
 
@@ -96,7 +96,7 @@ class PVPredefinedStrategy(PVStrategy):
             raise ValueError("Energy_profile has to be in [0,1,2]")
 
         # Populate energy production forecast data
-        return ReadProfileMixin.read_profile_csv_to_dict(
+        return read_profile_csv_to_dict(
             InputProfileTypes.POWER, str(profile_path),
             self.area.config.slot_length)
 
@@ -136,7 +136,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
-        return ReadProfileMixin.read_arbitrary_profile(
+        return read_arbitrary_profile(
             InputProfileTypes.POWER,
             self._power_profile_W,
             slot_length=self.area.config.slot_length)

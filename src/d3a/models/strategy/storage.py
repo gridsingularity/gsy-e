@@ -5,8 +5,8 @@ from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin
-from d3a.models.strategy.mixins import ReadProfileMixin
-from d3a.models.strategy.mixins import InputProfileTypes
+from d3a.models.strategy.read_user_profile import read_arbitrary_profile
+from d3a.models.strategy.read_user_profile import InputProfileTypes
 from d3a import TIME_FORMAT
 
 
@@ -26,7 +26,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
 
                  cap_price_strategy: bool=False):
-        break_even = ReadProfileMixin.read_arbitrary_profile(InputProfileTypes.RATE, break_even)
+        break_even = read_arbitrary_profile(InputProfileTypes.RATE, break_even)
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_soc, battery_capacity, break_even)
         self.break_even = break_even

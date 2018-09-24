@@ -132,8 +132,10 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if not (-1 < new_risk < 101):
             raise ValueError("'new_risk' value has to be in range 0 - 100")
         self.risk = new_risk
+        self.log.warning("Risk changed to %s", new_risk)
 
     def event_offer_deleted(self, *, market, offer):
         # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
         if offer.id not in [trades.offer.id for trades in market.trades]:
             self.state.available_energy_kWh[market.time_slot] += offer.energy
+

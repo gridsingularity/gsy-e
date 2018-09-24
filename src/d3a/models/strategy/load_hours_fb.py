@@ -7,8 +7,8 @@ from d3a.models.state import LoadState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import BidUpdateFrequencyMixin
-from d3a.models.strategy.mixins import ReadProfileMixin
-from d3a.models.strategy.mixins import InputProfileTypes
+from d3a.models.strategy.read_user_profile import read_arbitrary_profile
+from d3a.models.strategy.read_user_profile import InputProfileTypes
 
 
 class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
@@ -18,8 +18,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                  daily_budget=None, min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
                  max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE):
         BaseStrategy.__init__(self)
-        self.max_energy_rate = ReadProfileMixin.read_arbitrary_profile(InputProfileTypes.RATE,
-                                                                       max_energy_rate)
+        self.max_energy_rate = read_arbitrary_profile(InputProfileTypes.RATE,
+                                                      max_energy_rate)
         BidUpdateFrequencyMixin.__init__(self,
                                          initial_rate=min_energy_rate,
                                          final_rate=list(self.max_energy_rate.values())[0])
