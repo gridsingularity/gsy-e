@@ -173,7 +173,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             self.energy_requirement_Wh -= bid_trade.offer.energy * 1000.0
             self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)
             if not bid_trade.residual or self.energy_requirement_Wh < 0.00001:
-                self.remove_bid_from_pending(bid_trade.offer, market)
+                self.remove_bid_from_pending(bid_trade.offer.id, market)
             assert self.energy_requirement_Wh >= -0.00001
 
     def event_trade(self, *, market, trade):
