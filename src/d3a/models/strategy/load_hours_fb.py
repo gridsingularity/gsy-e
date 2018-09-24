@@ -38,8 +38,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
         self.energy_requirement_Wh = 0
-        # In ct. / kWh
-        self.min_energy_rate = min_energy_rate
         # be a parameter on the constructor or if we want to deal in percentages
         if hrs_per_day is None:
             hrs_per_day = len(hrs_of_day)
@@ -133,7 +131,10 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         self._update_energy_requirement()
-        self.update_market_cycle_bids()
+        self.update_market_cycle_bids(
+            initial_rate=self.min_energy_rate[self.area.next_market.time_slot_str],
+            final_rate=self.max_energy_rate[self.area.next_market.time_slot_str]
+        )
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
             if self.energy_requirement_Wh > 0:
                 self.post_first_bid(

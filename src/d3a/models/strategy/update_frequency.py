@@ -29,13 +29,24 @@ class BidUpdateFrequencyMixin:
         return self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
 
     def post_first_bid(self, market, energy_Wh):
+        # TODO: It will be safe to remove this check once we remove the event_market_cycle being
+        # called twice, but still it is nice to have it here as a precaution. In general, there
+        # should be only bid from a device to a market at all times, which will be replaced if
+        # it needs to be updated. If this check is not there, the market cycle event will post
+        # one bid twice, which actually happens on the very first market slot cycle.
+        if not all(bid.buyer != self.owner.name for bid in self.area.next_market.bids.values()):
+            self.owner.log.warning(f"There is already another bid posted on the market, therefore"
+                                   f" do not repost another first bid.")
+            return
         return self.post_bid(
             market,
             energy_Wh * self._initial_rate / 1000.0,
             energy_Wh / 1000.0
         )
 
-    def update_market_cycle_bids(self, final_rate=None):
+    def update_market_cycle_bids(self, initial_rate=None, final_rate=None):
+        if initial_rate is not None:
+            self._initial_rate = initial_rate
         if final_rate is not None:
             self._final_rate = final_rate
         self._increase_rate_timepoint_s = 0
