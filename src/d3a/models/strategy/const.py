@@ -59,7 +59,7 @@ class ConstSettings:
     ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
 
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
-    MAX_PV_OUTPUT = 160
+    PV_MAX_PANEL_OUTPUT_W = 160
 
     # HEATPUMP SETTINGS
     # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)

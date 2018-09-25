@@ -1,5 +1,6 @@
 from behave import then
 from math import isclose
+from pendulum import duration
 from d3a.models.strategy.const import ConstSettings
 from d3a import PENDULUM_TIME_FORMAT
 
@@ -91,3 +92,20 @@ def pv_const_energy(context):
                 )
                 assert isclose(offer.energy, pv.strategy.energy_production_forecast_kWh[slot] *
                                pv.strategy.panel_count, rel_tol=0.001)
+
+
+@then('the load buys at most the energy equivalent of {power_W} W')
+def load_buys_200_W(context, power_W):
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    load = list(filter(lambda x: "Load" in x.name, house1.children))[0]
+
+    max_desired_energy = float(power_W) * (house1.config.slot_length / duration(hours=1)) / 1000.0
+    total_energy_per_slot = []
+    for slot, market in house1.past_markets.items():
+        total_energy = sum(trade.offer.energy
+                           for trade in market.trades
+                           if trade.buyer == load.name)
+        assert total_energy <= max_desired_energy
+        total_energy_per_slot.append(total_energy)
+
+    assert max(total_energy_per_slot) == max_desired_energy

@@ -17,27 +17,33 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
     parameters = ('panel_count', 'risk')
 
-    def __init__(self, panel_count: int=1, risk: float=ConstSettings.DEFAULT_RISK,
-                 min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
-                 initial_rate_option: float=ConstSettings.INITIAL_PV_RATE_OPTION,
-                 energy_rate_decrease_option: int=ConstSettings.PV_RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update: float=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE):  # NOQA
-        self._validate_constructor_arguments(panel_count, risk)
+    def __init__(
+        self, panel_count: int=1, risk: float=ConstSettings.DEFAULT_RISK,
+        min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
+        initial_rate_option: float=ConstSettings.INITIAL_PV_RATE_OPTION,
+        energy_rate_decrease_option: int=ConstSettings.PV_RATE_DECREASE_OPTION,
+        energy_rate_decrease_per_update: float=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+        max_panel_power_W: float=ConstSettings.PV_MAX_PANEL_OUTPUT_W
+    ):
+        self._validate_constructor_arguments(panel_count, risk, max_panel_power_W)
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
         self.risk = risk
         self.panel_count = panel_count
+        self.max_panel_power_W = max_panel_power_W
         self.midnight = None
         self.min_selling_rate = min_selling_rate
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
 
     @staticmethod
-    def _validate_constructor_arguments(panel_count, risk):
+    def _validate_constructor_arguments(panel_count, risk, max_panel_output_W):
         if not (0 <= risk <= 100 and panel_count >= 1):
             raise ValueError("Risk is a percentage value, should be "
                              "between 0 and 100, panel_count should be positive.")
+        if max_panel_output_W < 0:
+            raise ValueError("Max panel output in Watts should always be positive.")
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock
@@ -91,13 +97,12 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
         # Clamp to day range
         time_in_minutes %= 60 * 24
-        peak_pv_output = ConstSettings.MAX_PV_OUTPUT
 
         if (8 * 60) > time_in_minutes or time_in_minutes > (16.5 * 60):
             gauss_forecast = 0
 
         else:
-            gauss_forecast = peak_pv_output * math.exp(
+            gauss_forecast = self.max_panel_power_W * math.exp(
                 # time/5 is needed because we only have one data set per 5 minutes
 
                 (- (((round(time_in_minutes / 5, 0)) - 147.2)
