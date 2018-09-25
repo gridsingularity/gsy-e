@@ -52,3 +52,9 @@ Feature: PV Tests
     Given we have a scenario named jira/d3asim_640_custom_pv
     When we run the d3a simulation with jira.d3asim_640_custom_pv [24, 15, 30]
     Then the PV offers energy as expected at an expected price
+
+  Scenario: PV max_panel_power_W argument changes power of a single PV panel
+     Given we have a scenario named strategy_tests/pv_max_panel_output
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.pv_max_panel_output [24, 15, 15]
+     Then the load buys at most the energy equivalent of 200 W
