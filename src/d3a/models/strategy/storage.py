@@ -25,10 +25,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  max_abs_battery_power: float=ConstSettings.MAX_ABS_BATTERY_POWER,
                  break_even: Union[tuple, dict]=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
-
-                 cap_price_strategy: bool=False,
                  balancing_percentage: tuple=(ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
-                                              ConstSettings.BALANCING_OFFER_SUPPLY_RATIO)):
+                                              ConstSettings.BALANCING_OFFER_SUPPLY_RATIO),
 
                  cap_price_strategy: bool=False):
         break_even = read_arbitrary_profile(InputProfileTypes.RATE, break_even)
@@ -162,6 +160,23 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                     self.state.clamp_energy_to_buy_kWh() * 1000.0
                 )
 
+        # Balancing Offers
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
+
+        if self.state.free_storage > 0:
+            charge_energy = self.balancing_percentage[0] * self.state.free_storage
+            charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
+            self.area.balancing_markets[self.area.now].balancing_offer(charge_price,
+                                                                       -charge_energy,
+                                                                       self.owner.name)
+        if self.state.used_storage > 0:
+            discharge_energy = self.balancing_percentage[1] * self.state.used_storage
+            discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
+            self.area.balancing_markets[self.area.now].balancing_offer(discharge_price,
+                                                                       discharge_energy,
+                                                                       self.owner.name)
+
     def buy_energy(self):
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
@@ -266,21 +281,3 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             return break_even_sell
         else:
             return max_selling_rate - (max_selling_rate - break_even_sell) * soc
-
-    def event_trade(self, *, market, trade):
-        if self.owner.name not in DeviceRegistry.REGISTRY:
-            return
-
-        if (trade.buyer == self.owner.name) or (trade.seller == self.owner.name):
-            charge_energy = self.balancing_percentage[0] * trade.offer.energy
-            charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
-            discharge_energy = self.balancing_percentage[1] * trade.offer.energy
-            discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
-            if self.state.free_storage >= charge_energy:
-                self.area.balancing_markets[market.time_slot].balancing_offer(charge_price,
-                                                                              -charge_energy,
-                                                                              self.owner.name)
-            if self.state.used_storage >= discharge_energy:
-                self.area.balancing_markets[market.time_slot].balancing_offer(discharge_price,
-                                                                              discharge_energy,
-                                                                              self.owner.name)

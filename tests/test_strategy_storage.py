@@ -347,10 +347,6 @@ def storage_strategy_test6(area_test6, market_test6, called):
 
 def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.event_trade(market=market_test6, trade=market_test6.trade)
-    print("market_test6.trade.offer: " + str(market_test6.trade.offer))
-    print("storage_strategy_test6.offers.sold_in_market(market_test6): " +
-          str(storage_strategy_test6.offers.sold_in_market(market_test6)))
-
     assert market_test6.trade.offer in \
         storage_strategy_test6.offers.sold_in_market(market_test6)
     assert market_test6.trade.offer not in storage_strategy_test6.offers.open
@@ -698,13 +694,7 @@ def test_balancing_offers_are_not_created_if_device_not_in_registry(
         storage_strategy_test13, area_test13):
     DeviceRegistry.REGISTRY = {}
     storage_strategy_test13.event_activate()
-    selected_offer = area_test13.current_market.sorted_offers[0]
-    storage_strategy_test13.event_trade(market=area_test13.current_market,
-                                        trade=Trade(id='id',
-                                                    time=area_test13.now,
-                                                    offer=selected_offer,
-                                                    seller='B',
-                                                    buyer='FakeArea'))
+    storage_strategy_test13.event_market_cycle()
     assert len(area_test13.test_balancing_market.created_balancing_offers) == 0
 
 
@@ -712,19 +702,14 @@ def test_balancing_offers_are_created_if_device_in_registry(
         storage_strategy_test13, area_test13):
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     storage_strategy_test13.event_activate()
-    selected_offer = area_test13.current_market.sorted_offers[0]
-    storage_strategy_test13.event_trade(market=area_test13.current_market,
-                                        trade=Trade(id='id',
-                                                    time=area_test13.now,
-                                                    offer=selected_offer,
-                                                    seller='B',
-                                                    buyer='FakeArea'))
+    storage_strategy_test13.event_market_cycle()
 
     assert len(area_test13.test_balancing_market.created_balancing_offers) == 2
     actual_balancing_demand_energy = \
         area_test13.test_balancing_market.created_balancing_offers[0].energy
     expected_balancing_demand_energy = \
-        -1 * storage_strategy_test13.balancing_percentage[0] * selected_offer.energy
+        -1 * storage_strategy_test13.balancing_percentage[0] * \
+        storage_strategy_test13.state.free_storage
     assert actual_balancing_demand_energy == expected_balancing_demand_energy
     actual_balancing_demand_price = \
         area_test13.test_balancing_market.created_balancing_offers[0].price
@@ -732,7 +717,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
     actual_balancing_supply_energy = \
         area_test13.test_balancing_market.created_balancing_offers[1].energy
     expected_balancing_supply_energy = \
-        selected_offer.energy * storage_strategy_test13.balancing_percentage[1]
+        storage_strategy_test13.state.used_storage * \
+        storage_strategy_test13.balancing_percentage[1]
     assert actual_balancing_supply_energy == expected_balancing_supply_energy
     actual_balancing_supply_price = \
         area_test13.test_balancing_market.created_balancing_offers[1].price

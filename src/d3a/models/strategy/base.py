@@ -67,14 +67,9 @@ class Offers:
                 if market == _market and offer.id not in self.sold[market]]
 
     def posted_in_market(self, market):
-        # print("sold in market: " +
-        # str([offer for offer, _market in self.posted.items() if market == _market]))
         return [offer for offer, _market in self.posted.items() if market == _market]
 
     def sold_in_market(self, market):
-        print("sold in market: " +
-              str(offer for offer in self.posted_in_market(market)
-                  if offer.id in self.sold[market]))
         return [offer
                 for offer in self.posted_in_market(market)
                 if offer.id in self.sold[market]]
