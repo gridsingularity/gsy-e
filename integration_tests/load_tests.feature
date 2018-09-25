@@ -24,7 +24,7 @@ Feature: Load Tests
     Given we have a scenario named strategy_tests/user_rate_profile_load_dict
     And d3a is installed
     When we run the simulation with setup file strategy_tests.user_rate_profile_load_dict and parameters [24, 15, 15, 1]
-    Then LoadHoursStrategy buys energy according to the minimum energy rate profile
+    Then LoadHoursStrategy does not buy energy with rates that are higher than the provided profile
 
   Scenario: Custom Load strategy works as expected
      Given we have a scenario named jira/d3asim_638_custom_load
