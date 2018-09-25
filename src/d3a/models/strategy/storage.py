@@ -275,11 +275,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
             discharge_energy = self.balancing_percentage[1] * trade.offer.energy
             discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
-            if self.state.used_storage >= discharge_energy:
-                self.area.balancing_markets[market.time_slot].balancing_offer(discharge_price,
-                                                                              discharge_energy,
-                                                                              self.owner.name)
             if self.state.free_storage >= charge_energy:
                 self.area.balancing_markets[market.time_slot].balancing_offer(charge_price,
                                                                               -charge_energy,
+                                                                              self.owner.name)
+            if self.state.used_storage >= discharge_energy:
+                self.area.balancing_markets[market.time_slot].balancing_offer(discharge_price,
+                                                                              discharge_energy,
                                                                               self.owner.name)

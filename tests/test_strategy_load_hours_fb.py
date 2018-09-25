@@ -370,3 +370,46 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
         repr(trade_market)
 
     ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+
+
+def test_balancing_offers_are_not_created_if_device_not_in_registry(
+        load_hours_strategy_test5, area_test2):
+    DeviceRegistry.REGISTRY = {}
+    load_hours_strategy_test5.event_activate()
+    load_hours_strategy_test5.event_market_cycle()
+    assert len(area_test2.test_balancing_market.created_balancing_offers) == 0
+
+
+def test_balancing_offers_are_created_if_device_in_registry(
+        load_hours_strategy_test5, area_test2):
+    DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
+    load_hours_strategy_test5.event_activate()
+    load_hours_strategy_test5.event_market_cycle()
+    expected_balancing_demand_energy =\
+        load_hours_strategy_test5.balancing_percentage[0] * \
+        load_hours_strategy_test5.state.desired_energy[area_test2.now]
+    actual_balancing_demand_energy = \
+        area_test2.test_balancing_market.created_balancing_offers[0].energy
+    assert len(area_test2.test_balancing_market.created_balancing_offers) == 1
+    assert actual_balancing_demand_energy == expected_balancing_demand_energy
+    actual_balancing_demand_price = \
+        area_test2.test_balancing_market.created_balancing_offers[0].price
+
+    assert actual_balancing_demand_price == expected_balancing_demand_energy * 30
+    selected_offer = area_test2.current_market.sorted_offers[0]
+    load_hours_strategy_test5.event_trade(market=area_test2.current_market,
+                                          trade=Trade(id='id',
+                                                      time=area_test2.now,
+                                                      offer=selected_offer,
+                                                      seller='B',
+                                                      buyer='FakeArea'))
+    assert len(area_test2.test_balancing_market.created_balancing_offers) == 2
+    actual_balancing_supply_energy = \
+        area_test2.test_balancing_market.created_balancing_offers[1].energy
+    expected_balancing_supply_energy = \
+        selected_offer.energy * load_hours_strategy_test5.balancing_percentage[1]
+    assert actual_balancing_supply_energy == expected_balancing_supply_energy
+    actual_balancing_supply_price = \
+        area_test2.test_balancing_market.created_balancing_offers[1].price
+    assert actual_balancing_supply_price == expected_balancing_supply_energy * 40
+    DeviceRegistry.REGISTRY = {}

@@ -181,6 +181,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self):
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
         ramp_up_energy = \
             self.balancing_percentage[0] * self.state.desired_energy[self.area.now]
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
