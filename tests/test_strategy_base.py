@@ -8,7 +8,7 @@ from d3a.models.market import Offer, Trade, Bid
 
 
 class FakeLog:
-    def warn(self, *args):
+    def warning(self, *args):
         pass
 
     def error(self, *args):

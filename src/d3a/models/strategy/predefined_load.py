@@ -3,8 +3,8 @@ Create a load that uses a profile as input for its power values
 """
 import sys
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
-from d3a.models.strategy.mixins import ReadProfileMixin
-from d3a.models.strategy.mixins import InputProfileTypes
+from d3a.models.strategy.read_user_profile import read_arbitrary_profile
+from d3a.models.strategy.read_user_profile import InputProfileTypes
 
 
 class DefinedLoadStrategy(LoadHoursStrategy):
@@ -34,7 +34,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for each slot.
         :return: None
         """
-        self.load_profile = ReadProfileMixin.read_arbitrary_profile(
+        self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self.daily_load_profile,
             slot_length=self.area.config.slot_length)
