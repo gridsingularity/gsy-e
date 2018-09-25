@@ -73,7 +73,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         return random.choice(offers)
 
     def _one_sided_market_event_tick(self, market):
-        # self.log.error("error")
         try:
             if len(market.sorted_offers) < 1:
                 return

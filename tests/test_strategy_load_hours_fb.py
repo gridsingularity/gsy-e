@@ -23,8 +23,11 @@ class FakeArea:
         self.appliance = None
         self.name = 'FakeArea'
         self.count = count
-        self._next_market = FakeMarket(15)
+        self._next_market = FakeMarket(0)
         self._bids = {}
+        self.markets = {TIME: FakeMarket(0),
+                        TIME + self.config.slot_length: FakeMarket(0),
+                        TIME + 2 * self.config.slot_length: FakeMarket(0)}
 
     @property
     def config(self):
@@ -90,7 +93,6 @@ class FakeMarket:
     @property
     def time_slot(self):
         return TIME
-        # return DateTime.now().start_of('day') + timedelta(hours=10)
 
     @property
     def time_slot_str(self):
@@ -135,7 +137,6 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
 def area_test1(market_test1):
     area = FakeArea(0)
     area.current_market = market_test1
-    area.markets = {TIME: market_test1}
     return area
 
 
@@ -182,7 +183,6 @@ def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
 def load_hours_strategy_test4():
     strategy = LoadHoursStrategy(avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12])
     strategy.accept_offer = Mock()
-    strategy.accept_offer.call_args
     return strategy
 
 
@@ -202,6 +202,13 @@ def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
                 for ts, energy in load_hours_strategy_test1.energy_requirement_Wh.items()])
 
 
+# Test if daily energy requirement is calculated correctly for the device
+def test_calculate_daily_energy_req(load_hours_strategy_test1):
+    load_hours_strategy_test1.event_activate()
+    assert all([energy == 620/4
+                for energy in load_hours_strategy_test1.energy_requirement_Wh.values()])
+
+
 # Test if device accepts the most affordable offer
 def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
@@ -212,8 +219,9 @@ def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == repr(cheapest_offer)
 
 
-def test_active_markets(load_hours_strategy_test1, market_test1):
-    assert load_hours_strategy_test1.active_markets == [market_test1]
+def test_active_markets(load_hours_strategy_test1):
+    assert load_hours_strategy_test1.active_markets == \
+           [list(load_hours_strategy_test1.area.markets.values())[0]]
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):
@@ -247,7 +255,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
                                                              market_test2):
     market_test2.most_affordable_energy = 0.1
     load_hours_strategy_test5.event_activate()
-    load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
+    # load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test5.event_market_cycle()
     load_hours_strategy_test5.event_tick(area=area_test2)
     assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
