@@ -15,12 +15,13 @@ ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 class IAAEngine:
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
-                 owner: "InterAreaAgent"):
+                 owner: "InterAreaAgent", agent):
         self.name = name
         self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
         self.transfer_fee_pct = transfer_fee_pct
         self.owner = owner
+        self.agent = agent
 
         self.offer_age = {}  # type: Dict[str, int]
         # Offer.id -> OfferInfo
@@ -39,7 +40,8 @@ class IAAEngine:
         forwarded_offer = self.markets.target.offer(
             offer.price + (offer.price * (self.transfer_fee_pct / 100)),
             offer.energy,
-            self.owner.name
+            self.owner.name,
+            self.agent is 'BalancingAgent'
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -357,7 +359,8 @@ class InterAreaAgent(BaseStrategy):
     parameters = ('owner', 'higher_market', 'lower_market', 'transfer_fee_pct',
                   'min_offer_age')
 
-    def __init__(self, *, owner, higher_market, lower_market, transfer_fee_pct=1, min_offer_age=1):
+    def __init__(self, *, owner, higher_market, lower_market,
+                 transfer_fee_pct=1, min_offer_age=1, agent="InterAreaAgent"):
         """
         Equalize markets
 
@@ -373,9 +376,9 @@ class InterAreaAgent(BaseStrategy):
 
         self.engines = [
             IAAEngine('High -> Low', higher_market, lower_market, min_offer_age, transfer_fee_pct,
-                      self),
+                      self, agent),
             IAAEngine('Low -> High', lower_market, higher_market, min_offer_age, transfer_fee_pct,
-                      self),
+                      self, agent),
         ]
 
         self.time_slot = higher_market.time_slot.strftime(TIME_FORMAT)
@@ -440,7 +443,7 @@ class BalancingAgent(InterAreaAgent):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
-                                min_offer_age=min_offer_age)
+                                min_offer_age=min_offer_age, agent="BalancingAgent")
 
     def event_trade(self, *, market, trade):
         if trade.buyer != self.owner.name:

@@ -70,7 +70,7 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller):
+    def offer(self, price, energy, seller, agent=False):
         self.offer_count += 1
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller, market=self)
         return self.forwarded_offer

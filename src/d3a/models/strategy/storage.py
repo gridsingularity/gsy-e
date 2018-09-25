@@ -167,15 +167,17 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.state.free_storage > 0:
             charge_energy = self.balancing_percentage[0] * self.state.free_storage
             charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
-            self.area.balancing_markets[self.area.now].balancing_offer(charge_price,
-                                                                       -charge_energy,
-                                                                       self.owner.name)
+            if charge_energy != 0 and charge_price != 0:
+                self.area.balancing_markets[self.area.now].balancing_offer(charge_price,
+                                                                           -charge_energy,
+                                                                           self.owner.name)
         if self.state.used_storage > 0:
             discharge_energy = self.balancing_percentage[1] * self.state.used_storage
             discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
-            self.area.balancing_markets[self.area.now].balancing_offer(discharge_price,
-                                                                       discharge_energy,
-                                                                       self.owner.name)
+            if discharge_energy != 0 and discharge_price != 0:
+                self.area.balancing_markets[self.area.now].balancing_offer(discharge_price,
+                                                                           discharge_energy,
+                                                                           self.owner.name)
 
     def buy_energy(self):
         # Here starts the logic if energy should be bought

@@ -177,30 +177,34 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     def event_trade(self, *, market, trade):
         if ConstSettings.BALANCING_FLEXIBLE_LOADS_SUPPORT:
             # Load can only put supply_balancing_offers only when there is a trade in spot_market
-            self._supply_balancing_offer(trade)
+            self._supply_balancing_offer(market, trade)
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self):
         if self.owner.name not in DeviceRegistry.REGISTRY:
             return
         ramp_up_energy = \
-            self.balancing_percentage[0] * self.state.desired_energy[self.area.now]
+            self.balancing_percentage[0] * \
+            self.state.desired_energy[self.area.next_market.time_slot]
+
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
-        self.area.balancing_markets[self.area.now].balancing_offer(ramp_up_price,
-                                                                   -ramp_up_energy,
-                                                                   self.owner.name)
+        if ramp_up_energy != 0 and ramp_up_price != 0:
+            self.area.balancing_markets[self.area.next_market.time_slot].\
+                balancing_offer(ramp_up_price,
+                                -ramp_up_energy,
+                                self.owner.name)
 
     # committing to reduce its consumption when required
-    def _supply_balancing_offer(self, trade):
+    def _supply_balancing_offer(self, market, trade):
         if self.owner.name not in DeviceRegistry.REGISTRY:
             return
         if trade.buyer != self.owner.name:
             return
         ramp_down_energy = self.balancing_percentage[1] * trade.offer.energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy
-        self.area.balancing_markets[trade.time].balancing_offer(ramp_down_price,
-                                                                ramp_down_energy,
-                                                                self.owner.name)
+        self.area.balancing_markets[market.time_slot].balancing_offer(ramp_down_price,
+                                                                      ramp_down_energy,
+                                                                      self.owner.name)
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):

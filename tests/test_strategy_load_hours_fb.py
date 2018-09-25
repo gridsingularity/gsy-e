@@ -60,7 +60,7 @@ class FakeArea:
 
     @property
     def balancing_markets(self):
-        return {self.now: self.test_balancing_market}
+        return {self._next_market.time_slot: self.test_balancing_market}
 
     @property
     def next_market(self):
@@ -387,11 +387,11 @@ def test_balancing_offers_are_created_if_device_in_registry(
     load_hours_strategy_test5.event_market_cycle()
     expected_balancing_demand_energy =\
         load_hours_strategy_test5.balancing_percentage[0] * \
-        load_hours_strategy_test5.state.desired_energy[area_test2.now]
+        load_hours_strategy_test5.state.desired_energy[area_test2.current_market.time_slot]
     actual_balancing_demand_energy = \
         area_test2.test_balancing_market.created_balancing_offers[0].energy
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 1
-    assert actual_balancing_demand_energy == expected_balancing_demand_energy
+    assert actual_balancing_demand_energy == -expected_balancing_demand_energy
     actual_balancing_demand_price = \
         area_test2.test_balancing_market.created_balancing_offers[0].price
 
