@@ -99,7 +99,7 @@ def load_buys_200_W(context, power_W):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: "Load" in x.name, house1.children))[0]
 
-    max_desired_energy = power_W * (house1.config.slot_length / duration(hours=1)) / 1000.0
+    max_desired_energy = float(power_W) * (house1.config.slot_length / duration(hours=1)) / 1000.0
     total_energy_per_slot = []
     for slot, market in house1.past_markets.items():
         total_energy = sum(trade.offer.energy
