@@ -50,6 +50,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.cap_price_strategy = cap_price_strategy
 
     def event_activate(self):
+        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 

@@ -352,7 +352,7 @@ def storage_strategy_test7(area_test7):
 def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     storage_strategy_test7.event_activate()
     energy = 1.3
-    storage_strategy_test7.state.traded_energy_per_slot(area_test7.now)
+    storage_strategy_test7.state.blocked_energy_per_slot(area_test7.now)
     storage_strategy_test7.sell_energy(energy=energy)
     assert storage_strategy_test7.state.usable_storage == 1.7
     assert storage_strategy_test7.state.offered_storage == 1.3
@@ -360,7 +360,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     assert len(storage_strategy_test7.offers.posted_in_market(
         area_test7._markets_return["Fake Market"])
     ) > 0
-    assert storage_strategy_test7.state.traded_energy_per_slot(
+    assert storage_strategy_test7.state.blocked_energy_per_slot(
         area_test7.current_market.time_slot
     ) == energy
 
@@ -412,7 +412,7 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
     price_dec_per_slot = (area_test7.historical_avg_rate) * (1 - storage_strategy_test7_2.risk /
                                                              ConstSettings.MAX_RISK)
     price_updates_per_slot = int(area_test7.config.slot_length.seconds
-                                 / storage_strategy_test7_2._decrease_price_every_nr_s.m)
+                                 / storage_strategy_test7_2._decrease_price_every_nr_s)
     price_dec_per_update = price_dec_per_slot / price_updates_per_slot
     assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
@@ -455,7 +455,7 @@ def test_clamp_energy_to_buy(storage_strategy_test7_3):
     assert storage_strategy_test7_3.state.clamp_energy_to_buy_kWh() == 0.5
 
     # Reduce used storage below battery_energy_per_slot
-    storage_strategy_test7_3.state._used_storage = 4.6
+    storage_strategy_test7_3.state._usable_storage = 4.6
     assert isclose(storage_strategy_test7_3.state.free_storage, 0.41)
     assert isclose(storage_strategy_test7_3.state.clamp_energy_to_buy_kWh(), 0.41)
 
@@ -552,7 +552,7 @@ def test_free_storage_calculation_takes_into_account_storage_capacity(storage_st
 
         assert storage_strategy_test1.state.free_storage == \
             storage_strategy_test1.state.capacity \
-            - storage_strategy_test1.state._used_storage \
+            - storage_strategy_test1.state._usable_storage \
             - storage_strategy_test1.state._offered_storage \
             - storage_strategy_test1.state._blocked_storage
 
@@ -578,7 +578,8 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
                                                                  area_test11):
     storage_strategy_test11.event_activate()
     storage_strategy_test11.buy_energy()
-    te = storage_strategy_test11.state.traded_energy_per_slot(area_test11.current_market.time_slot)
+    te = storage_strategy_test11.state.blocked_energy_per_slot(
+        area_test11.current_market.time_slot)
     assert te == -float(storage_strategy_test11.accept_offer.calls[0][1]['energy'])
     assert len(storage_strategy_test11.accept_offer.calls) >= 1
 
@@ -659,11 +660,11 @@ def test_storage_only_buys_and_sells_in_the_power_limit(storage_strategy_test13,
     ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 4
     storage_strategy_test13.event_activate()
     storage_strategy_test13.sell_energy(energy=5)
-    traded_energy = storage_strategy_test13.state._traded_energy_per_slot[market_test13.time_slot]
+    traded_energy = storage_strategy_test13.state._blocked_energy_per_slot[market_test13.time_slot]
     storage_strategy_test13.sell_energy(energy=5)
-    assert storage_strategy_test13.state._traded_energy_per_slot[market_test13.time_slot] == \
+    assert storage_strategy_test13.state._blocked_energy_per_slot[market_test13.time_slot] == \
         traded_energy
     storage_strategy_test13.buy_energy()
     bought_energy = market_test13.sorted_offers[0].energy
-    assert storage_strategy_test13.state._traded_energy_per_slot[market_test13.time_slot] == \
+    assert storage_strategy_test13.state._blocked_energy_per_slot[market_test13.time_slot] == \
         traded_energy - bought_energy
