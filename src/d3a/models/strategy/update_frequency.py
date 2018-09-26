@@ -63,7 +63,7 @@ class BidUpdateFrequencyMixin:
 
             self.remove_bid_from_pending(bid.id, market)
             self.post_bid(market,
-                          bid.energy * self._get_current_energy_rate(current_tick_number),
+                          bid.energy * self._get_current_energy_rate(current_tick_number, market),
                           bid.energy)
 
     def update_posted_bids_over_ticks(self, market):
@@ -73,7 +73,6 @@ class BidUpdateFrequencyMixin:
         if elapsed_seconds > self._increase_rate_timepoint_s:
             self._increase_rate_timepoint_s += self._increase_frequency_s
             self._update_posted_bids(market, current_tick_number)
-
 
     def _get_current_energy_rate(self, current_tick, market):
         percentage_of_rate = current_tick / self.area.config.ticks_per_slot
