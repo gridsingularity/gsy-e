@@ -132,8 +132,13 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     def _update_energy_requirement(self):
         self.energy_requirement_Wh = 0
         if self._allowed_operating_hours(self.area.now.hour):
-            energy_per_slot = self.energy_per_slot_Wh
-            self.energy_requirement_Wh += energy_per_slot
+            if self.owner.name in DeviceRegistry.REGISTRY:
+                energy_per_slot = \
+                    self.energy_per_slot_Wh * (1 - self.balancing_energy_ratio.demand)
+                self.energy_requirement_Wh += energy_per_slot
+            else:
+                energy_per_slot = self.energy_per_slot_Wh
+                self.energy_requirement_Wh += energy_per_slot
         self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
 
     def event_market_cycle(self):
@@ -185,9 +190,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         if self.owner.name not in DeviceRegistry.REGISTRY:
             return
         ramp_up_energy = \
-            self.balancing_energy_ratio.demand * \
-            self.state.desired_energy[self.area.next_market.time_slot]
-        self.energy_requirement_Wh -= ramp_up_energy * 1000
+            self.balancing_energy_ratio.demand * (self.energy_per_slot_Wh / 1000)
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
             self.area.balancing_markets[self.area.next_market.time_slot].\

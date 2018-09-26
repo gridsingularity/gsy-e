@@ -4,7 +4,7 @@ from typing import Dict, Set  # noqa
 from d3a.exceptions import MarketException, OfferNotFoundException, BidNotFound
 from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
 from d3a.models.strategy.const import ConstSettings
-from d3a.util import make_iaa_name
+from d3a.util import make_iaa_name, make_ba_name
 from d3a import TIME_FORMAT
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
@@ -444,12 +444,17 @@ class BalancingAgent(InterAreaAgent):
         InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
                                 min_offer_age=min_offer_age, agent=True)
+        self.name = make_ba_name(self.owner)
 
     def event_trade(self, *, market, trade):
-        if trade.buyer != make_iaa_name(self.owner):
+        if trade.buyer != make_ba_name(self.owner):
             return
-        positive_balancing_energy = trade.offer.energy * self.balancing_spot_trade_ratio
-        negative_balancing_energy = trade.offer.energy * self.balancing_spot_trade_ratio
+        positive_balancing_energy = \
+            trade.offer.energy * self.balancing_spot_trade_ratio + \
+            self.lower_market.unmatched_energy_upward
+        negative_balancing_energy = \
+            trade.offer.energy * self.balancing_spot_trade_ratio + \
+            self.lower_market.unmatched_energy_downward
         cumulative_energy_traded_upward = 0
         cumulative_energy_traded_downward = 0
         for offer in self.lower_market.sorted_offers:
@@ -465,8 +470,8 @@ class BalancingAgent(InterAreaAgent):
                 if balance_trade is not None:
                     negative_balancing_energy -= abs(balance_trade.offer.energy)
                     cumulative_energy_traded_downward += abs(balance_trade.offer.energy)
-        self.lower_market.unmatched_energy_upward += positive_balancing_energy
-        self.lower_market.unmatched_energy_downward += negative_balancing_energy
+        self.lower_market.unmatched_energy_upward = positive_balancing_energy
+        self.lower_market.unmatched_energy_downward = negative_balancing_energy
         self.lower_market.cumulative_energy_traded_upward += cumulative_energy_traded_upward
         self.lower_market.cumulative_energy_traded_downward += cumulative_energy_traded_downward
 

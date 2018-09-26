@@ -126,6 +126,10 @@ def make_iaa_name(owner):
     return "IAA {}".format(owner.name)
 
 
+def make_ba_name(owner):
+    return "BA {}".format(owner.name)
+
+
 def area_name_from_area_or_iaa_name(name):
     return name[4:] if name[:4] == 'IAA ' else name
 
