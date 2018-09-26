@@ -18,10 +18,10 @@ class RateDecreaseOption(Enum):
 
 class BidUpdateFrequencyMixin:
     def __init__(self,
-                 initial_rate,
-                 final_rate):
-        self._initial_rate = initial_rate
-        self._final_rate = final_rate
+                 initial_rate_profile,
+                 final_rate_profile):
+        self._initial_rate_profile = initial_rate_profile
+        self._final_rate_profile = final_rate_profile
         self._increase_rate_timepoint_s = 0
 
     @cached_property
@@ -29,15 +29,22 @@ class BidUpdateFrequencyMixin:
         return self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
 
     def post_first_bid(self, market, energy_Wh):
+        # TODO: It will be safe to remove this check once we remove the event_market_cycle being
+        # called twice, but still it is nice to have it here as a precaution. In general, there
+        # should be only bid from a device to a market at all times, which will be replaced if
+        # it needs to be updated. If this check is not there, the market cycle event will post
+        # one bid twice, which actually happens on the very first market slot cycle.
+        if not all(bid.buyer != self.owner.name for bid in self.area.next_market.bids.values()):
+            self.owner.log.warning(f"There is already another bid posted on the market, therefore"
+                                   f" do not repost another first bid.")
+            return
         return self.post_bid(
             market,
-            energy_Wh * self._initial_rate / 1000.0,
+            energy_Wh * self._initial_rate_profile[market.time_slot_str] / 1000.0,
             energy_Wh / 1000.0
         )
 
-    def update_market_cycle_bids(self, final_rate=None):
-        if final_rate is not None:
-            self._final_rate = final_rate
+    def update_market_cycle_bids(self):
         self._increase_rate_timepoint_s = 0
 
     def update_posted_bids(self, market):
@@ -63,13 +70,17 @@ class BidUpdateFrequencyMixin:
 
                 market.delete_bid(bid.id)
                 self.remove_bid_from_pending(bid.id, market)
-                self.post_bid(market,
-                              bid.energy * self._get_current_energy_rate(current_tick_number),
-                              bid.energy)
+                self.post_bid(
+                    market,
+                    bid.energy * self._get_current_energy_rate(current_tick_number, market),
+                    bid.energy
+                )
 
-    def _get_current_energy_rate(self, current_tick):
+    def _get_current_energy_rate(self, current_tick, market):
         percentage_of_rate = current_tick / self.area.config.ticks_per_slot
-        return (self._final_rate - self._initial_rate) * percentage_of_rate + self._initial_rate
+        rate_range = self._final_rate_profile[market.time_slot_str] - \
+            self._initial_rate_profile[market.time_slot_str]
+        return rate_range * percentage_of_rate + self._initial_rate_profile[market.time_slot_str]
 
 
 class OfferUpdateFrequencyMixin:

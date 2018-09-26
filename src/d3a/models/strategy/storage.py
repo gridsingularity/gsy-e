@@ -39,9 +39,15 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
+        # Normalize min/max buying rate profiles before passing to the bid mixin
+        self.min_buying_rate_profile = read_arbitrary_profile(
+            InputProfileTypes.RATE,
+            ConstSettings.STORAGE_MIN_BUYING_RATE
+        )
+        self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
         BidUpdateFrequencyMixin.__init__(self,
-                                         initial_rate=ConstSettings.STORAGE_MIN_BUYING_RATE,
-                                         final_rate=ConstSettings.STORAGE_BREAK_EVEN_BUY)
+                                         initial_rate_profile=self.min_buying_rate_profile,
+                                         final_rate_profile=self.max_buying_rate_profile)
 
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
@@ -153,7 +159,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.state.market_cycle(self.area)
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            self.update_market_cycle_bids(self.break_even[self.area.now.strftime(TIME_FORMAT)][0])
+            self.update_market_cycle_bids()
             if self.state.clamp_energy_to_buy_kWh() > 0:
                 self.post_first_bid(
                     self.area.next_market,
