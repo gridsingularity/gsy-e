@@ -62,8 +62,9 @@ def test_baa_event_trade(baa):
                   datetime.now(),
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
-                  'owner')
+                  'IAA owner')
     expected_balancing_trade = trade.offer.energy * baa.balancing_spot_trade_ratio
+    print("expected_balancing_trade: " + str(expected_balancing_trade))
     baa.event_trade(trade=trade,
                     market=Market(time_slot=datetime.now()))
     assert baa.lower_market.cumulative_energy_traded_upward == expected_balancing_trade
@@ -87,7 +88,7 @@ def test_baa_unmatched_event_trade(baa2):
                   datetime.now(),
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
-                  'owner')
+                  'IAA owner')
     expected_balancing_trade = (baa2.lower_market.sorted_offers)[0].energy
     baa2.event_trade(trade=trade,
                      market=Market(time_slot=datetime.now()))

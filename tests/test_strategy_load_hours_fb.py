@@ -250,6 +250,7 @@ def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
 
 
 def test_event_market_cycle(load_hours_strategy_test1, market_test1):
+    DeviceRegistry.REGISTRY = {}
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
@@ -387,7 +388,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.event_market_cycle()
     expected_balancing_demand_energy =\
-        load_hours_strategy_test5.balancing_percentage[0] * \
+        load_hours_strategy_test5.balancing_energy_ratio.demand * \
         load_hours_strategy_test5.state.desired_energy[area_test2.current_market.time_slot]
     actual_balancing_demand_energy = \
         area_test2.test_balancing_market.created_balancing_offers[0].energy
@@ -408,7 +409,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     actual_balancing_supply_energy = \
         area_test2.test_balancing_market.created_balancing_offers[1].energy
     expected_balancing_supply_energy = \
-        selected_offer.energy * load_hours_strategy_test5.balancing_percentage[1]
+        selected_offer.energy * load_hours_strategy_test5.balancing_energy_ratio.supply
     assert actual_balancing_supply_energy == expected_balancing_supply_energy
     actual_balancing_supply_price = \
         area_test2.test_balancing_market.created_balancing_offers[1].price
