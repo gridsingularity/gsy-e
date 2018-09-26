@@ -14,15 +14,18 @@ from d3a.models.strategy.read_user_profile import InputProfileTypes
 class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'max_energy_rate')
 
-    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, random_factor=0,
-                 daily_budget=None, min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
+    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
+                 random_factor=0, daily_budget=None,
+                 min_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MIN_ENERGY_RATE,
                  max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE):
         BaseStrategy.__init__(self)
+        self.min_energy_rate = read_arbitrary_profile(InputProfileTypes.RATE,
+                                                      min_energy_rate)
         self.max_energy_rate = read_arbitrary_profile(InputProfileTypes.RATE,
                                                       max_energy_rate)
         BidUpdateFrequencyMixin.__init__(self,
-                                         initial_rate=min_energy_rate,
-                                         final_rate=list(self.max_energy_rate.values())[0])
+                                         initial_rate_profile=self.min_energy_rate,
+                                         final_rate_profile=self.max_energy_rate)
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 
@@ -35,8 +38,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
         self.energy_requirement_Wh = 0
-        # In ct. / kWh
-        self.min_energy_rate = min_energy_rate
         # be a parameter on the constructor or if we want to deal in percentages
         if hrs_per_day is None:
             hrs_per_day = len(hrs_of_day)
@@ -80,7 +81,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                     return
                 acceptable_offer = self._find_acceptable_offer(market)
                 if acceptable_offer and \
-                        self.min_energy_rate <= \
+                        self.min_energy_rate[market.time_slot_str] <= \
                         acceptable_offer.price / acceptable_offer.energy <= \
                         self.max_energy_rate[market.time_slot_str]:
                     max_energy = self.energy_requirement_Wh / 1000
@@ -125,8 +126,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         self.energy_requirement_Wh = 0
         if self._allowed_operating_hours(self.area.now.hour):
             energy_per_slot = self.energy_per_slot_Wh
-            if self.random_factor:
-                energy_per_slot += energy_per_slot * random.random() * self.random_factor
             self.energy_requirement_Wh += energy_per_slot
         self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
 

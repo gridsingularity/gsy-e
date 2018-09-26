@@ -32,6 +32,12 @@ Feature: Two sided market tests
      And the load bid is partially fulfilled by the PV offers
      And the energy rate for all the trades is the mean of max and min load/pv rate
 
+  Scenario: LoadHoursStrategy buys energy in the min rate range provided by the user as dict profile
+    Given we have a scenario named two_sided_market/user_min_rate_profile_load_dict
+    And d3a is installed
+    When we run the simulation with setup file two_sided_market.user_min_rate_profile_load_dict and parameters [24, 15, 15, 1]
+    Then LoadHoursStrategy buys energy with rates equal to the min rate profile
+
 #  Scenario: 5 pv, one storage
 #     Given we have a scenario named two_sided_market/one_storage_5_pv_partial
 #     And d3a is installed
