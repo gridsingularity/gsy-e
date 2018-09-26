@@ -148,7 +148,6 @@ class Market:
         assert agents is False
         if self.readonly:
             raise MarketReadOnlyException()
-        print("Energy: " + str(energy))
         if energy <= 0:
             raise InvalidOffer()
         offer = Offer(str(uuid.uuid4()), price, energy, seller, self)
