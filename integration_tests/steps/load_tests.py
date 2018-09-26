@@ -64,3 +64,22 @@ def check_user_rate_profile_dict(context):
     # energy demand for the first 6 hours of the day:
     assert unmatched["unmatched_load_count"] == int(number_of_loads * 6. * 60 /
                                                     house.config.slot_length.minutes)
+
+
+@then('LoadHoursStrategy buys energy with rates equal to the min rate profile')
+def check_min_user_rate_profile_dict(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    load1 = next(filter(lambda x: x.name == "H1 General Load 1", house.children))
+    load2 = next(filter(lambda x: x.name == "H1 General Load 2", house.children))
+
+    for slot, market in house.past_markets.items():
+        assert len(market.trades) > 0
+        for trade in market.trades:
+            if trade.buyer == load1.name:
+                assert int(trade.offer.price / trade.offer.energy) == \
+                       int(load1.strategy.min_energy_rate[market.time_slot_str])
+            elif trade.buyer == load2.name:
+                assert int(trade.offer.price / trade.offer.energy) == \
+                       int(load2.strategy.min_energy_rate[market.time_slot_str])
+            else:
+                assert False, "All trades should be bought by load1 or load2, no other consumer."
