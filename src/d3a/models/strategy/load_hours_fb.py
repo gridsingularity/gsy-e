@@ -51,7 +51,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
-        self.balancing_energy_ratio = BalancingRatio(balancing_energy_ratio)
+        self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")

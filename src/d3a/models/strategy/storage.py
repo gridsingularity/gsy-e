@@ -60,7 +60,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.cap_price_strategy = cap_price_strategy
-        self.balancing_energy_ratio = BalancingRatio(balancing_energy_ratio)
+        self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
     def event_activate(self):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)

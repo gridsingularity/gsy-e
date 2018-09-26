@@ -4,7 +4,7 @@ from typing import Dict, Set  # noqa
 from d3a.exceptions import MarketException, OfferNotFoundException, BidNotFound
 from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
 from d3a.models.strategy.const import ConstSettings
-from d3a.util import make_iaa_name
+from d3a.util import make_iaa_name, make_ba_name
 from d3a import TIME_FORMAT
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
@@ -438,18 +438,26 @@ class InterAreaAgent(BaseStrategy):
 class BalancingAgent(InterAreaAgent):
 
     def __init__(self, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1, tick_ratio=2,
-                 balancing_spot_trade_ratio=ConstSettings.BALANCING_SPOT_TRADE_RATIO):
-        self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
+                 transfer_fee_pct=1, min_offer_age=1, tick_ratio=2):
+        self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
         InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
                                 min_offer_age=min_offer_age, agent="BalancingAgent")
 
+        self.name = make_ba_name(owner)
+        print(self.balancing_spot_trade_ratio)
+
     def event_trade(self, *, market, trade):
-        if trade.buyer != self.owner.name:
+        if trade.buyer != make_iaa_name(self.owner) or \
+                market.time_slot != self.lower_market.time_slot:
             return
-        positive_balancing_energy = trade.offer.energy * self.balancing_spot_trade_ratio
-        negative_balancing_energy = trade.offer.energy * self.balancing_spot_trade_ratio
+
+        positive_balancing_energy = \
+            trade.offer.energy * self.balancing_spot_trade_ratio + \
+            self.lower_market.unmatched_energy_upward
+        negative_balancing_energy = \
+            trade.offer.energy * self.balancing_spot_trade_ratio + \
+            self.lower_market.unmatched_energy_downward
         cumulative_energy_traded_upward = 0
         cumulative_energy_traded_downward = 0
 
@@ -458,7 +466,7 @@ class BalancingAgent(InterAreaAgent):
                 balance_trade = self._balancing_trade(offer,
                                                       positive_balancing_energy)
                 if balance_trade is not None:
-                    positive_balancing_energy -= balance_trade.offer.energy
+                    positive_balancing_energy -= abs(balance_trade.offer.energy)
                     cumulative_energy_traded_upward += balance_trade.offer.energy
             elif offer.energy < 0 and negative_balancing_energy > 0:
                 balance_trade = self._balancing_trade(offer,
@@ -466,25 +474,26 @@ class BalancingAgent(InterAreaAgent):
                 if balance_trade is not None:
                     negative_balancing_energy -= abs(balance_trade.offer.energy)
                     cumulative_energy_traded_downward += abs(balance_trade.offer.energy)
-        self.lower_market.unmatched_energy_upward += positive_balancing_energy
-        self.lower_market.unmatched_energy_downward += negative_balancing_energy
+
+        self.lower_market.unmatched_energy_upward = positive_balancing_energy
+        self.lower_market.unmatched_energy_downward = negative_balancing_energy
         self.lower_market.cumulative_energy_traded_upward += cumulative_energy_traded_upward
         self.lower_market.cumulative_energy_traded_downward += cumulative_energy_traded_downward
 
     def _balancing_trade(self, offer, target_energy):
         if abs(offer.energy) <= abs(target_energy):
-            trade = self.lower_market.accept_balancing_offer(offer,
-                                                             self.owner.name,
-                                                             offer.energy)
+            trade = self.lower_market.accept_offer(offer_or_id=offer,
+                                                   buyer=make_ba_name(self.owner),
+                                                   energy=offer.energy)
         elif abs(offer.energy) >= abs(target_energy):
-            trade = self.lower_market.accept_balancing_offer(offer,
-                                                             self.owner.name,
-                                                             target_energy)
+            trade = self.lower_market.accept_offer(offer_or_id=offer,
+                                                   buyer=make_ba_name(self.owner),
+                                                   energy=target_energy)
         return trade
 
-    # def event_balancing_trade(self, *, market, trade, offer=None):
-    #     for engine in self.engines:
-    #         engine.event_trade(trade=trade)
+    def event_balancing_trade(self, *, market, trade, offer=None):
+        for engine in self.engines:
+            engine.event_trade(trade=trade)
 
     def event_balancing_offer_changed(self, *, market, existing_offer, new_offer):
         for engine in self.engines:
