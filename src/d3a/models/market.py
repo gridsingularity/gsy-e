@@ -483,9 +483,9 @@ class BalancingMarket(Market):
         self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
 
-    def accept_balancing_offer(self, offer_or_id: Union[str, BalancingOffer],
-                               buyer: str, energy: int = None,
-                               time: DateTime = None, price_drop: bool = False) -> BalancingTrade:
+    def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
+                     energy: int = None, time: DateTime = None, price_drop:
+                     bool = False) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -505,7 +505,7 @@ class BalancingMarket(Market):
             if energy is not None:
                 # Partial trade
                 if energy == 0:
-                    raise InvalidTrade("Energy can not be zero.")
+                    raise InvalidBalancingTradeException("Energy can not be zero.")
                 elif abs(energy) < abs(offer.energy):
                     original_offer = offer
                     accepted_offer = Offer(
@@ -535,7 +535,9 @@ class BalancingMarket(Market):
                         new_offer=residual_offer
                     )
                 elif abs(energy) > abs(offer.energy):
-                    raise InvalidTrade("Energy can't be greater than offered energy")
+                    raise InvalidBalancingTradeException(
+                        f"Energy {energy} can't be greater than offered energy {offer}"
+                    )
                 else:
                     # Requested partial is equal to offered energy - just proceed normally
                     pass
