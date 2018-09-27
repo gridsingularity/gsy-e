@@ -27,6 +27,11 @@ class FakeMarket:
         self.calls_bids = []
         self.calls_bids_price = []
         self.area = FakeArea("fake_area")
+        self.time_slot = datetime.now()
+
+    def set_time_slot(self, timeslot):
+        self.time_slot = timeslot
+        print(self.time_slot)
 
     @property
     def offers(self):
@@ -35,10 +40,6 @@ class FakeMarket:
     @property
     def bids(self):
         return {bid.id: bid for bid in self._bids}
-
-    @property
-    def time_slot(self):
-        return datetime.now()
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, price_drop=False):
         self.calls_energy.append(energy)
@@ -70,7 +71,7 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller):
+    def offer(self, price, energy, seller, agent=False):
         self.offer_count += 1
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller, market=self)
         return self.forwarded_offer

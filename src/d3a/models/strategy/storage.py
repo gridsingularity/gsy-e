@@ -1,4 +1,5 @@
 from typing import Union
+from collections import namedtuple
 
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
@@ -8,6 +9,9 @@ from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidU
 from d3a.models.strategy.read_user_profile import read_arbitrary_profile
 from d3a.models.strategy.read_user_profile import InputProfileTypes
 from d3a import TIME_FORMAT
+from d3a.device_registry import DeviceRegistry
+
+BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
@@ -24,6 +28,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  max_abs_battery_power: float=ConstSettings.MAX_ABS_BATTERY_POWER,
                  break_even: Union[tuple, dict]=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
+                 balancing_energy_ratio: tuple=(ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
+                                                ConstSettings.BALANCING_OFFER_SUPPLY_RATIO),
 
                  cap_price_strategy: bool=False):
         break_even = read_arbitrary_profile(InputProfileTypes.RATE, break_even)
@@ -54,6 +60,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.cap_price_strategy = cap_price_strategy
+        self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
     def event_activate(self):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
@@ -161,6 +168,27 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                     self.area.next_market,
                     self.state.clamp_energy_to_buy_kWh() * 1000.0
                 )
+
+        # Balancing Offers
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
+
+        if self.state.free_storage > 0:
+            charge_energy = self.balancing_energy_ratio.demand * self.state.free_storage
+            charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
+            if charge_energy != 0 and charge_price != 0:
+                # committing to start charging when required
+                self.area.balancing_markets[self.area.now].balancing_offer(charge_price,
+                                                                           -charge_energy,
+                                                                           self.owner.name)
+        if self.state.used_storage > 0:
+            discharge_energy = self.balancing_energy_ratio.supply * self.state.used_storage
+            discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
+            # committing to start discharging when required
+            if discharge_energy != 0 and discharge_price != 0:
+                self.area.balancing_markets[self.area.now].balancing_offer(discharge_price,
+                                                                           discharge_energy,
+                                                                           self.owner.name)
 
     def buy_energy(self):
         # Here starts the logic if energy should be bought

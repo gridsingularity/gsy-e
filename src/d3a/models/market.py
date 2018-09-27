@@ -144,7 +144,8 @@ class Market:
         for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
             listener(event, market=self, **kwargs)
 
-    def offer(self, price: float, energy: float, seller: str) -> Offer:
+    def offer(self, price: float, energy: float, seller: str, agents: bool=False) -> Offer:
+        assert agents is False
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -462,9 +463,12 @@ class BalancingMarket(Market):
         self.cumulative_energy_traded_downward = 0
         Market.__init__(self, time_slot, area, notification_listener, readonly)
 
-    def balancing_offer(self, price: float, energy: float, seller: str) -> BalancingOffer:
+    def offer(self, price: float, energy: float, seller: str, agent: bool=False):
+        return self.balancing_offer(price, energy, seller, agent)
 
-        if seller not in DeviceRegistry.REGISTRY.keys():
+    def balancing_offer(self, price: float, energy: float,
+                        seller: str, agent: bool=False) -> BalancingOffer:
+        if seller not in DeviceRegistry.REGISTRY.keys() and not agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
         if self.readonly:
@@ -479,9 +483,9 @@ class BalancingMarket(Market):
         self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
 
-    def accept_balancing_offer(self, offer_or_id: Union[str, BalancingOffer],
-                               buyer: str, energy: int = None,
-                               time: DateTime = None, price_drop: bool = False) -> BalancingTrade:
+    def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
+                     energy: int = None, time: DateTime = None, price_drop:
+                     bool = False) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -501,7 +505,7 @@ class BalancingMarket(Market):
             if energy is not None:
                 # Partial trade
                 if energy == 0:
-                    raise InvalidTrade("Energy can not be zero.")
+                    raise InvalidBalancingTradeException("Energy can not be zero.")
                 elif abs(energy) < abs(offer.energy):
                     original_offer = offer
                     accepted_offer = Offer(
@@ -531,7 +535,9 @@ class BalancingMarket(Market):
                         new_offer=residual_offer
                     )
                 elif abs(energy) > abs(offer.energy):
-                    raise InvalidTrade("Energy can't be greater than offered energy")
+                    raise InvalidBalancingTradeException(
+                        f"Energy {energy} can't be greater than offered energy {offer}"
+                    )
                 else:
                     # Requested partial is equal to offered energy - just proceed normally
                     pass

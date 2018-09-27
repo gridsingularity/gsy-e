@@ -20,6 +20,7 @@ before_tag(context, tag), after_tag(context, tag)
 # step_matcher("cfparse")
 
 from d3a.models.strategy.const import ConstSettings
+from d3a.device_registry import DeviceRegistry
 from d3a.util import update_advanced_settings
 
 
@@ -34,6 +35,7 @@ def after_scenario(context, scenario):
 
     update_advanced_settings(context.default_const_settings)
     context.resource_manager.close()
+    DeviceRegistry.REGISTRY = {}
 
 
 def before_all(context):
