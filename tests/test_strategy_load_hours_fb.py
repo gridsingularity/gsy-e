@@ -233,8 +233,10 @@ def test_calculate_daily_energy_req(load_hours_strategy_test1):
 # Test if daily energy requirement is calculated correctly for the device
 def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
-    assert load_hours_strategy_test1.energy_requirement_Wh == \
-        load_hours_strategy_test1.energy_per_slot_Wh
+    expected_energy_requirement = \
+        load_hours_strategy_test1.energy_per_slot_Wh * \
+        (1 - load_hours_strategy_test1.balancing_energy_ratio.demand)
+    assert expected_energy_requirement == load_hours_strategy_test1.energy_requirement_Wh
     ts = load_hours_strategy_test1.area.next_market.time_slot
     assert load_hours_strategy_test1.state.desired_energy[ts] == \
         load_hours_strategy_test1.energy_requirement_Wh
@@ -250,14 +252,24 @@ def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
 
 
 def test_event_market_cycle(load_hours_strategy_test1, market_test1):
+    DeviceRegistry.REGISTRY = {}
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.event_market_cycle()
     assert load_hours_strategy_test1.energy_requirement_Wh == \
         load_hours_strategy_test1.energy_per_slot_Wh
+    DeviceRegistry.REGISTRY = {'FakeArea': (30, 30)}
+    load_hours_strategy_test1.event_activate()
+    load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
+    load_hours_strategy_test1.event_market_cycle()
+    expected_energy_requirement = \
+        load_hours_strategy_test1.energy_per_slot_Wh * \
+        (1 - load_hours_strategy_test1.balancing_energy_ratio.demand)
+    assert load_hours_strategy_test1.energy_requirement_Wh == expected_energy_requirement
 
 
 def test_event_market_cycle_resets_energy_requirement(load_hours_strategy_test1, market_test1):
+    DeviceRegistry.REGISTRY = {}
     load_hours_strategy_test1.event_activate()
     load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
     load_hours_strategy_test1.energy_requirement_Wh = 150.0
@@ -387,8 +399,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.event_market_cycle()
     expected_balancing_demand_energy =\
-        load_hours_strategy_test5.balancing_percentage[0] * \
-        load_hours_strategy_test5.state.desired_energy[area_test2.current_market.time_slot]
+        load_hours_strategy_test5.balancing_energy_ratio.demand * \
+        load_hours_strategy_test5.energy_per_slot_Wh / 1000
     actual_balancing_demand_energy = \
         area_test2.test_balancing_market.created_balancing_offers[0].energy
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 1
@@ -408,7 +420,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     actual_balancing_supply_energy = \
         area_test2.test_balancing_market.created_balancing_offers[1].energy
     expected_balancing_supply_energy = \
-        selected_offer.energy * load_hours_strategy_test5.balancing_percentage[1]
+        selected_offer.energy * load_hours_strategy_test5.balancing_energy_ratio.supply
     assert actual_balancing_supply_energy == expected_balancing_supply_energy
     actual_balancing_supply_price = \
         area_test2.test_balancing_market.created_balancing_offers[1].price

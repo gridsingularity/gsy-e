@@ -708,7 +708,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     actual_balancing_demand_energy = \
         area_test13.test_balancing_market.created_balancing_offers[0].energy
     expected_balancing_demand_energy = \
-        -1 * storage_strategy_test13.balancing_percentage[0] * \
+        -1 * storage_strategy_test13.balancing_energy_ratio.demand * \
         storage_strategy_test13.state.free_storage
     assert actual_balancing_demand_energy == expected_balancing_demand_energy
     actual_balancing_demand_price = \
@@ -718,7 +718,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
         area_test13.test_balancing_market.created_balancing_offers[1].energy
     expected_balancing_supply_energy = \
         storage_strategy_test13.state.used_storage * \
-        storage_strategy_test13.balancing_percentage[1]
+        storage_strategy_test13.balancing_energy_ratio.supply
     assert actual_balancing_supply_energy == expected_balancing_supply_energy
     actual_balancing_supply_price = \
         area_test13.test_balancing_market.created_balancing_offers[1].price

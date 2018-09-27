@@ -19,7 +19,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'max_energy_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, random_factor=0,
-                 daily_budget=None, min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
+                 daily_budget=None,
+                 min_energy_rate: Union[float, dict, str] = ConstSettings.LOAD_MIN_ENERGY_RATE,
                  max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE,
                  balancing_energy_ratio: tuple=(ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
                                                 ConstSettings.BALANCING_OFFER_SUPPLY_RATIO)):
@@ -131,8 +132,13 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     def _update_energy_requirement(self):
         self.energy_requirement_Wh = 0
         if self._allowed_operating_hours(self.area.now.hour):
-            energy_per_slot = self.energy_per_slot_Wh
-            self.energy_requirement_Wh += energy_per_slot
+            if self.owner.name in DeviceRegistry.REGISTRY:
+                energy_per_slot = \
+                    self.energy_per_slot_Wh * (1 - self.balancing_energy_ratio.demand)
+                self.energy_requirement_Wh += energy_per_slot
+            else:
+                energy_per_slot = self.energy_per_slot_Wh
+                self.energy_requirement_Wh += energy_per_slot
         self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
 
     def event_market_cycle(self):

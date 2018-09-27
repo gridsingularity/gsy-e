@@ -41,7 +41,7 @@ class IAAEngine:
             offer.price + (offer.price * (self.transfer_fee_pct / 100)),
             offer.energy,
             self.owner.name,
-            self.agent is 'BalancingAgent'
+            self.agent
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -360,7 +360,7 @@ class InterAreaAgent(BaseStrategy):
                   'min_offer_age')
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1, agent="InterAreaAgent"):
+                 transfer_fee_pct=1, min_offer_age=1, agent=False):
         """
         Equalize markets
 
@@ -442,7 +442,11 @@ class BalancingAgent(InterAreaAgent):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
         InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
-                                min_offer_age=min_offer_age, agent="BalancingAgent")
+                                min_offer_age=min_offer_age, agent=True)
+        self.name = make_ba_name(self.owner)
+
+        self.name = make_ba_name(owner)
+        print(self.balancing_spot_trade_ratio)
 
         self.name = make_ba_name(owner)
         print(self.balancing_spot_trade_ratio)
@@ -451,7 +455,6 @@ class BalancingAgent(InterAreaAgent):
         if trade.buyer != make_iaa_name(self.owner) or \
                 market.time_slot != self.lower_market.time_slot:
             return
-
         positive_balancing_energy = \
             trade.offer.energy * self.balancing_spot_trade_ratio + \
             self.lower_market.unmatched_energy_upward
@@ -460,7 +463,6 @@ class BalancingAgent(InterAreaAgent):
             self.lower_market.unmatched_energy_downward
         cumulative_energy_traded_upward = 0
         cumulative_energy_traded_downward = 0
-
         for offer in self.lower_market.sorted_offers:
             if offer.energy > 0 and positive_balancing_energy > 0:
                 balance_trade = self._balancing_trade(offer,

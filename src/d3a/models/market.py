@@ -463,7 +463,7 @@ class BalancingMarket(Market):
         self.cumulative_energy_traded_downward = 0
         Market.__init__(self, time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str, agent: str=None):
+    def offer(self, price: float, energy: float, seller: str, agent: bool=False):
         return self.balancing_offer(price, energy, seller, agent)
 
     def balancing_offer(self, price: float, energy: float,
