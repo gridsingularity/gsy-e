@@ -31,7 +31,6 @@ class FakeMarket:
 
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot
-        print(self.time_slot)
 
     @property
     def offers(self):
