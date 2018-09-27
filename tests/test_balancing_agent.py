@@ -2,10 +2,10 @@ import pytest
 
 from datetime import datetime
 from d3a.exceptions import InvalidBalancingTradeException
-from d3a.models.market import BalancingOffer, BalancingTrade, \
-    Market, Offer, Trade
+from d3a.models.market import BalancingOffer, BalancingTrade, Offer, Trade
 from d3a.models.strategy.inter_area import BalancingAgent
 from d3a.models.strategy.const import ConstSettings
+from tests.test_inter_area_agent import FakeMarket
 
 
 class FakeArea:
@@ -24,15 +24,16 @@ class FakeBalancingMarket:
         self.unmatched_energy_downward = 0
         self.cumulative_energy_traded_upward = 0
         self.cumulative_energy_traded_downward = 0
+        self._timeslot = datetime.now()
 
     @property
     def time_slot(self):
-        return datetime.now()
+        return self._timeslot
 
-    def accept_balancing_offer(self, offer, buyer, energy=None, time=None, price_drop=False):
+    def accept_offer(self, offer_or_id, buyer, energy=None, time=None, price_drop=False):
         if time is None:
             time = self.time_slot
-
+        offer = offer_or_id
         if (offer.energy > 0 and energy < 0) or (offer.energy < 0 and energy > 0):
             raise InvalidBalancingTradeException("BalancingOffer and energy "
                                                  "are not compatible")
@@ -59,14 +60,15 @@ def baa():
 
 def test_baa_event_trade(baa):
     trade = Trade('trade_id',
-                  datetime.now(),
+                  baa.lower_market.time_slot,
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
-                  'BA owner')
+                  'IAA owner')
     expected_balancing_trade = trade.offer.energy * baa.balancing_spot_trade_ratio
-    print("expected_balancing_trade: " + str(expected_balancing_trade))
+    fake_spot_market = FakeMarket(15)
+    fake_spot_market.set_time_slot(baa.lower_market.time_slot)
     baa.event_trade(trade=trade,
-                    market=Market(time_slot=datetime.now()))
+                    market=fake_spot_market)
     assert baa.lower_market.cumulative_energy_traded_upward == expected_balancing_trade
     assert baa.lower_market.cumulative_energy_traded_downward == expected_balancing_trade
     assert baa.lower_market.unmatched_energy_upward == 0
@@ -88,10 +90,12 @@ def test_baa_unmatched_event_trade(baa2):
                   datetime.now(),
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
-                  'BA owner')
+                  'IAA owner')
     expected_balancing_trade = (baa2.lower_market.sorted_offers)[0].energy
+    fake_spot_market = FakeMarket(15)
+    fake_spot_market.set_time_slot(baa2.lower_market.time_slot)
     baa2.event_trade(trade=trade,
-                     market=Market(time_slot=datetime.now()))
+                     market=fake_spot_market)
     assert baa2.lower_market.cumulative_energy_traded_upward == expected_balancing_trade
     assert baa2.lower_market.cumulative_energy_traded_downward == expected_balancing_trade
     assert baa2.lower_market.unmatched_energy_upward != 0

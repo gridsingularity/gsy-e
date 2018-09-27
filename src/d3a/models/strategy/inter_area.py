@@ -445,14 +445,10 @@ class BalancingAgent(InterAreaAgent):
                                 min_offer_age=min_offer_age, agent=True)
         self.name = make_ba_name(self.owner)
 
-        self.name = make_ba_name(owner)
-        print(self.balancing_spot_trade_ratio)
-
     def event_trade(self, *, market, trade):
         if trade.buyer != make_iaa_name(self.owner) or \
                 market.time_slot != self.lower_market.time_slot:
             return
-
         positive_balancing_energy = \
             trade.offer.energy * self.balancing_spot_trade_ratio + \
             self.lower_market.unmatched_energy_upward
