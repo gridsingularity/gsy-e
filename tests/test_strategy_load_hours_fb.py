@@ -12,8 +12,9 @@ from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.market import Bid, Trade
 from d3a import TIME_FORMAT
-
+from d3a import TIME_ZONE
 from d3a.device_registry import DeviceRegistry
+
 DeviceRegistry.REGISTRY = {
     "A": (23, 25),
     "someone": (23, 25),
@@ -54,7 +55,7 @@ class FakeArea:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now().start_of('day') + (
+        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
             timedelta(hours=10) + self.config.tick_length * self.current_tick
         )
 
@@ -103,7 +104,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now().start_of('day') + timedelta(hours=10)
+        return DateTime.now(tz=TIME_ZONE).start_of('day') + timedelta(hours=10)
 
     @property
     def time_slot_str(self):

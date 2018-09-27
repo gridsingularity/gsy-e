@@ -9,7 +9,7 @@ from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
-
+from d3a import TIME_ZONE
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
@@ -42,7 +42,7 @@ class Launcher:
         enqueued = self.queue.jobs
         if enqueued:
             earliest = min(job.enqueued_at for job in enqueued)
-            if datetime.now()-earliest >= self.max_delay:
+            if datetime.now(tz=TIME_ZONE)-earliest >= self.max_delay:
                 return True
         return False
 
