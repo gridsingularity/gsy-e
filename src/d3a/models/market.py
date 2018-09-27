@@ -144,8 +144,9 @@ class Market:
         for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
             listener(event, market=self, **kwargs)
 
-    def offer(self, price: float, energy: float, seller: str, agent: bool=False) -> Offer:
-        assert agent is False
+    def offer(self, price: float, energy: float, seller: str,
+              balancing_agent: bool=False) -> Offer:
+        assert balancing_agent is False
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -463,12 +464,12 @@ class BalancingMarket(Market):
         self.cumulative_energy_traded_downward = 0
         Market.__init__(self, time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str, agent: bool=False):
-        return self.balancing_offer(price, energy, seller, agent)
+    def offer(self, price: float, energy: float, seller: str, balancing_agent: bool=False):
+        return self.balancing_offer(price, energy, seller, balancing_agent)
 
     def balancing_offer(self, price: float, energy: float,
-                        seller: str, agent: bool=False) -> BalancingOffer:
-        if seller not in DeviceRegistry.REGISTRY.keys() and not agent:
+                        seller: str, balancing_agent: bool=False) -> BalancingOffer:
+        if seller not in DeviceRegistry.REGISTRY.keys() and not balancing_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
         if self.readonly:
