@@ -1,6 +1,7 @@
 import pytest
 
-from datetime import datetime
+import pendulum
+from d3a import TIME_ZONE
 from d3a.exceptions import InvalidBalancingTradeException
 from d3a.models.market import BalancingOffer, BalancingTrade, Offer, Trade
 from d3a.models.strategy.inter_area import BalancingAgent
@@ -24,7 +25,7 @@ class FakeBalancingMarket:
         self.unmatched_energy_downward = 0
         self.cumulative_energy_traded_upward = 0
         self.cumulative_energy_traded_downward = 0
-        self._timeslot = datetime.now()
+        self._timeslot = pendulum.now(tz=TIME_ZONE)
 
     @property
     def time_slot(self):
@@ -87,7 +88,7 @@ def baa2():
 
 def test_baa_unmatched_event_trade(baa2):
     trade = Trade('trade_id',
-                  datetime.now(),
+                  pendulum.now(tz=TIME_ZONE),
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
                   'IAA owner')

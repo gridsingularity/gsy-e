@@ -3,6 +3,7 @@ import pendulum
 import uuid
 from pendulum import DateTime
 
+from d3a import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
@@ -34,7 +35,7 @@ class FakeArea():
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now().start_of('day') + (
+        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
@@ -61,7 +62,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now().start_of('day')
+        return DateTime.now(tz=TIME_ZONE).start_of('day')
 
     @property
     def time_slot_str(self):
@@ -99,7 +100,7 @@ def pv_test1(area_test1):
 def testing_activation(pv_test1, area_test1):
     pv_test1.event_activate()
     # DateTime.today() returns pendulum object with the date of today and midnight
-    assert pv_test1.midnight == pendulum.today()
+    assert pv_test1.midnight == pendulum.today(tz=TIME_ZONE)
     global ENERGY_FORECAST
     ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh
 
@@ -138,7 +139,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     assert market_test2.created_offers[0].price == \
         29.9 * pv_test2.energy_production_forecast_kWh[TIME]
     assert pv_test2.energy_production_forecast_kWh[
-               pendulum.today().at(hour=0, minute=0, second=2)
+               pendulum.today(tz=TIME_ZONE).at(hour=0, minute=0, second=2)
            ] == 0
     area_test2.current_tick = DEFAULT_CONFIG.ticks_per_slot - 2
     pv_test2.event_tick(area=area_test2)
@@ -258,8 +259,8 @@ def pv_test6(area_test3):
 def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
 
     pv_test6.event_activate()
-    morning_time = pendulum.today().at(hour=8, minute=20, second=0)
-    afternoon_time = pendulum.today().at(hour=16, minute=40, second=0)
+    morning_time = pendulum.today(tz=TIME_ZONE).at(hour=8, minute=20, second=0)
+    afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=16, minute=40, second=0)
 
     class Counts(object):
         def __init__(self, time):

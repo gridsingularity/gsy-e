@@ -3,6 +3,7 @@ import pendulum
 import uuid
 from pendulum import DateTime, duration
 
+from d3a import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
@@ -10,7 +11,7 @@ from d3a.models.strategy.const import ConstSettings
 
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
-TIME = pendulum.today().at(hour=10, minute=45, second=2)
+TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=2)
 
 
 class FakeArea():
@@ -34,7 +35,7 @@ class FakeArea():
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now().start_of('day') + (
+        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
@@ -61,7 +62,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now().start_of('day')
+        return DateTime.now(tz=TIME_ZONE).start_of('day')
 
     @property
     def time_slot_str(self):
@@ -199,8 +200,8 @@ def pv_test6(area_test3):
 def testing_produced_energy_forecast_real_data(pv_test6):
 
     pv_test6.event_activate()
-    morning_time = pendulum.today().at(hour=5, minute=10, second=0)
-    afternoon_time = pendulum.today().at(hour=19, minute=10, second=0)
+    morning_time = pendulum.today(tz=TIME_ZONE).at(hour=5, minute=10, second=0)
+    afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=19, minute=10, second=0)
 
     class Counts(object):
         def __init__(self, time):

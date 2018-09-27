@@ -6,6 +6,7 @@ from logging import getLogger
 from math import isclose
 
 # from d3a.models.area import DEFAULT_CONFIG
+from d3a import TIME_ZONE
 from d3a.models.strategy import ureg, Q_
 from d3a.models.market import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
@@ -62,7 +63,7 @@ class FakeArea():
 
     @property
     def now(self):
-        return DateTime.now().start_of('day') + (
+        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
@@ -112,7 +113,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now().start_of('day')
+        return DateTime.now(tz=TIME_ZONE).start_of('day')
 
     @property
     def time_slot_str(self):

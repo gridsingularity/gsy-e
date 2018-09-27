@@ -9,6 +9,7 @@ import sys
 from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
+from d3a import TIME_ZONE
 from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBid, BidNotFound, InvalidBalancingTradeException, DeviceNotInRegistryError
@@ -366,7 +367,7 @@ class Market:
         if self.area:
             return self.area.now
         log.error("No area available. Using real system time!")
-        return DateTime.now()
+        return DateTime.now(tz=TIME_ZONE)
 
     def set_actual_energy(self, time, reporter, value):
         self.actual_energy[time][reporter] += value
