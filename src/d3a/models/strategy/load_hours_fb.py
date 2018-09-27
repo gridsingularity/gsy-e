@@ -1,6 +1,7 @@
 import random
 from pendulum import duration
 from typing import Union
+from collections import namedtuple
 
 from d3a.util import generate_market_slot_list
 from d3a.exceptions import MarketException
@@ -8,17 +9,22 @@ from d3a.models.state import LoadState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import BidUpdateFrequencyMixin
+from d3a.device_registry import DeviceRegistry
 from d3a.models.strategy.read_user_profile import read_arbitrary_profile
 from d3a.models.strategy.read_user_profile import InputProfileTypes
+
+BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 
 class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'max_energy_rate')
 
-    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
-                 daily_budget=None,
+    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, daily_budget=None,
                  min_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MIN_ENERGY_RATE,
-                 max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE):
+                 max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE,
+                 balancing_energy_ratio: tuple=(ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
+                                                ConstSettings.BALANCING_OFFER_SUPPLY_RATIO)):
+
         BaseStrategy.__init__(self)
         self.min_energy_rate = read_arbitrary_profile(InputProfileTypes.RATE,
                                                       min_energy_rate)
@@ -46,6 +52,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
+        self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
@@ -121,6 +128,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 * (self.area.config.slot_length / duration(hours=1)))
 
     def event_market_cycle(self):
+        self._demand_balancing_offer()
         for market in self.active_markets:
             if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
@@ -147,6 +155,36 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             if not bid_trade.residual or self.energy_requirement_Wh[market.time_slot] < 0.00001:
                 self.remove_bid_from_pending(bid_trade.offer.id, market)
             assert self.energy_requirement_Wh[market.time_slot] >= -0.00001
+
+    def event_trade(self, *, market, trade):
+        if ConstSettings.BALANCING_FLEXIBLE_LOADS_SUPPORT:
+            # Load can only put supply_balancing_offers only when there is a trade in spot_market
+            self._supply_balancing_offer(market, trade)
+
+    # committing to increase its consumption when required
+    def _demand_balancing_offer(self):
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
+        ramp_up_energy = \
+            self.balancing_energy_ratio.demand * (self.energy_per_slot_Wh / 1000)
+        ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
+        if ramp_up_energy != 0 and ramp_up_price != 0:
+            self.area.balancing_markets[self.area.next_market.time_slot].\
+                balancing_offer(ramp_up_price,
+                                -ramp_up_energy,
+                                self.owner.name)
+
+    # committing to reduce its consumption when required
+    def _supply_balancing_offer(self, market, trade):
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
+        if trade.buyer != self.owner.name:
+            return
+        ramp_down_energy = self.balancing_energy_ratio.supply * trade.offer.energy
+        ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy
+        self.area.balancing_markets[market.time_slot].balancing_offer(ramp_down_price,
+                                                                      ramp_down_energy,
+                                                                      self.owner.name)
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):

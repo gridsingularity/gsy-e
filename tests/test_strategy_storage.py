@@ -6,12 +6,22 @@ from logging import getLogger
 from math import isclose
 
 # from d3a.models.area import DEFAULT_CONFIG
+from d3a import TIME_ZONE
 from d3a.models.strategy import ureg, Q_
-from d3a.models.market import Offer, Trade
+from d3a.models.market import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.config import SimulationConfig
 from d3a import TIME_FORMAT
+from d3a.device_registry import DeviceRegistry
+DeviceRegistry.REGISTRY = {
+    "A": (23, 25),
+    "someone": (23, 25),
+    "seller": (23, 25),
+    "FakeArea": (23, 25),
+}
+
+ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 
 class FakeArea():
@@ -24,6 +34,7 @@ class FakeArea():
         self.current_market = FakeMarket(0)
         self._markets_return = {"Fake Market": FakeMarket(self.count)}
         self.next_market = list(self.markets.values())[0]
+        self.test_balancing_market = FakeMarket(1)
 
     log = getLogger(__name__)
 
@@ -52,9 +63,13 @@ class FakeArea():
 
     @property
     def now(self):
-        return DateTime.now().start_of('day') + (
+        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
             self.config.tick_length * self.current_tick
         )
+
+    @property
+    def balancing_markets(self):
+        return {self.now: self.test_balancing_market}
 
     @property
     def historical_avg_rate(self):
@@ -84,6 +99,7 @@ class FakeMarket:
                        'id2': Offer('id2', 20, 0.5, 'A', self),
                        'id3': Offer('id3', 20, 1, 'A', self),
                        'id4': Offer('id4', 19, 5.1, 'A', self)}
+        self.created_balancing_offers = []
 
     @property
     def sorted_offers(self):
@@ -97,7 +113,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now().start_of('day')
+        return DateTime.now(tz=TIME_ZONE).start_of('day')
 
     @property
     def time_slot_str(self):
@@ -109,6 +125,12 @@ class FakeMarket:
     def offer(self, price, energy, seller, market=None):
         offer = Offer('id', price, energy, seller, market)
         self.created_offers.append(offer)
+        return offer
+
+    def balancing_offer(self, price, energy, seller, market=None):
+        offer = BalancingOffer('id', price, energy, seller, market)
+        self.created_balancing_offers.append(offer)
+        offer.id = 'id'
         return offer
 
     def bid(self, price, energy, buyer, seller):
@@ -668,3 +690,39 @@ def test_storage_only_buys_and_sells_in_the_power_limit(storage_strategy_test13,
     bought_energy = market_test13.sorted_offers[0].energy
     assert storage_strategy_test13.state._blocked_energy_per_slot[market_test13.time_slot] == \
         traded_energy - bought_energy
+
+
+def test_balancing_offers_are_not_created_if_device_not_in_registry(
+        storage_strategy_test13, area_test13):
+    DeviceRegistry.REGISTRY = {}
+    storage_strategy_test13.event_activate()
+    storage_strategy_test13.event_market_cycle()
+    assert len(area_test13.test_balancing_market.created_balancing_offers) == 0
+
+
+def test_balancing_offers_are_created_if_device_in_registry(
+        storage_strategy_test13, area_test13):
+    DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
+    storage_strategy_test13.event_activate()
+    storage_strategy_test13.event_market_cycle()
+
+    assert len(area_test13.test_balancing_market.created_balancing_offers) == 2
+    actual_balancing_demand_energy = \
+        area_test13.test_balancing_market.created_balancing_offers[0].energy
+    expected_balancing_demand_energy = \
+        -1 * storage_strategy_test13.balancing_energy_ratio.demand * \
+        storage_strategy_test13.state.free_storage
+    assert actual_balancing_demand_energy == expected_balancing_demand_energy
+    actual_balancing_demand_price = \
+        area_test13.test_balancing_market.created_balancing_offers[0].price
+    assert actual_balancing_demand_price == abs(expected_balancing_demand_energy) * 30
+    actual_balancing_supply_energy = \
+        area_test13.test_balancing_market.created_balancing_offers[1].energy
+    expected_balancing_supply_energy = \
+        storage_strategy_test13.state.used_storage * \
+        storage_strategy_test13.balancing_energy_ratio.supply
+    assert actual_balancing_supply_energy == expected_balancing_supply_energy
+    actual_balancing_supply_price = \
+        area_test13.test_balancing_market.created_balancing_offers[1].price
+    assert actual_balancing_supply_price == expected_balancing_supply_energy * 40
+    DeviceRegistry.REGISTRY = {}

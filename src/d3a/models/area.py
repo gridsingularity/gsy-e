@@ -9,6 +9,7 @@ from pendulum import duration
 from pendulum import DateTime
 from slugify import slugify
 
+from d3a import TIME_ZONE
 from d3a.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.appliance.inter_area import InterAreaAppliance
@@ -304,7 +305,7 @@ class Area:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now().start_of('day').add(
+        return DateTime.now(tz=TIME_ZONE).start_of('day').add(
             seconds=self.config.tick_length.seconds * self.current_tick
         )
 

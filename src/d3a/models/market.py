@@ -9,6 +9,7 @@ import sys
 from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
+from d3a import TIME_ZONE
 from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBid, BidNotFound, InvalidBalancingTradeException, DeviceNotInRegistryError
@@ -146,7 +147,9 @@ class Market:
         for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
             listener(event, market=self, **kwargs)
 
-    def offer(self, price: float, energy: float, seller: str) -> Offer:
+    def offer(self, price: float, energy: float, seller: str,
+              balancing_agent: bool=False) -> Offer:
+        assert balancing_agent is False
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -368,7 +371,7 @@ class Market:
         if self.area:
             return self.area.now
         log.error("No area available. Using real system time!")
-        return DateTime.now()
+        return DateTime.now(tz=TIME_ZONE)
 
     def set_actual_energy(self, time, reporter, value):
         self.actual_energy[time][reporter] += value
@@ -465,9 +468,12 @@ class BalancingMarket(Market):
         self.cumulative_energy_traded_downward = 0
         Market.__init__(self, time_slot, area, notification_listener, readonly)
 
-    def balancing_offer(self, price: float, energy: float, seller: str) -> BalancingOffer:
+    def offer(self, price: float, energy: float, seller: str, balancing_agent: bool=False):
+        return self.balancing_offer(price, energy, seller, balancing_agent)
 
-        if seller not in DeviceRegistry.REGISTRY.keys():
+    def balancing_offer(self, price: float, energy: float,
+                        seller: str, balancing_agent: bool=False) -> BalancingOffer:
+        if seller not in DeviceRegistry.REGISTRY.keys() and not balancing_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
         if self.readonly:
@@ -482,9 +488,9 @@ class BalancingMarket(Market):
         self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
 
-    def accept_balancing_offer(self, offer_or_id: Union[str, BalancingOffer],
-                               buyer: str, energy: int = None,
-                               time: DateTime = None, price_drop: bool = False) -> BalancingTrade:
+    def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
+                     energy: int = None, time: DateTime = None, price_drop:
+                     bool = False) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -504,7 +510,7 @@ class BalancingMarket(Market):
             if energy is not None:
                 # Partial trade
                 if energy == 0:
-                    raise InvalidTrade("Energy can not be zero.")
+                    raise InvalidBalancingTradeException("Energy can not be zero.")
                 elif abs(energy) < abs(offer.energy):
                     original_offer = offer
                     accepted_offer = Offer(
@@ -534,7 +540,9 @@ class BalancingMarket(Market):
                         new_offer=residual_offer
                     )
                 elif abs(energy) > abs(offer.energy):
-                    raise InvalidTrade("Energy can't be greater than offered energy")
+                    raise InvalidBalancingTradeException(
+                        f"Energy {energy} can't be greater than offered energy {offer}"
+                    )
                 else:
                     # Requested partial is equal to offered energy - just proceed normally
                     pass

@@ -123,7 +123,11 @@ class ContractJoiner(object):
 
 
 def make_iaa_name(owner):
-    return "IAA {}".format(owner.name)
+    return f"IAA {owner.name}"
+
+
+def make_ba_name(owner):
+    return f"BA {owner.name}"
 
 
 def area_name_from_area_or_iaa_name(name):

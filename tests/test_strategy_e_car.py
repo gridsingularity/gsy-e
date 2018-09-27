@@ -2,6 +2,7 @@ import pendulum
 import pytest
 
 from unittest.mock import Mock
+from d3a import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.const import ConstSettings
@@ -19,7 +20,7 @@ class FakeArea():
         #        self.now = now.at(hour=16, minute=0, second=0) + (
         #            (time_in_hour // self.config.slot_length) * self.config.slot_length
         #        )
-        dt = pendulum.now()
+        dt = pendulum.now(tz=TIME_ZONE)
         times = [dt.at(ConstSettings.ARRIVAL_TIME, 0, 0, 0),
                  dt.at(ConstSettings.DEPART_TIME, 0, 0, 0)]
         self.now = times[count]

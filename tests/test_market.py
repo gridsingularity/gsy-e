@@ -4,13 +4,14 @@ from collections import defaultdict
 import pytest
 from pendulum import DateTime
 
+from d3a import TIME_ZONE
 from d3a.models.events import MarketEvent
 from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade, InvalidBid, BidNotFound, DeviceNotInRegistryError
+    InvalidTrade, InvalidBalancingTradeException, InvalidBid, BidNotFound, DeviceNotInRegistryError
 from d3a.models.market import Market, BalancingMarket
 
 from d3a.device_registry import DeviceRegistry
@@ -143,11 +144,11 @@ def test_market_bid_delete_missing(market: Market):
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
     (Market(), "offer", "accept_offer"),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer")
+    (BalancingMarket(), "balancing_offer", "accept_offer")
 ])
 def test_market_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
-    now = DateTime.now()
+    now = DateTime.now(tz=TIME_ZONE)
     trade = getattr(market, accept_offer)(offer_or_id=e_offer, buyer='B',
                                           energy=10, time=now)
     assert trade
@@ -162,8 +163,8 @@ def test_market_trade(market, offer, accept_offer):
 def test_balancing_market_negative_offer_trade(market=BalancingMarket()):
     offer = market.balancing_offer(20, -10, 'A')
 
-    now = DateTime.now()
-    trade = market.accept_balancing_offer(offer, 'B', time=now, energy=-10)
+    now = DateTime.now(tz=TIME_ZONE)
+    trade = market.accept_offer(offer, 'B', time=now, energy=-10)
     assert trade
     assert trade == market.trades[0]
     assert trade.id
@@ -188,11 +189,11 @@ def test_market_bid_trade(market: Market):
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
     (Market(), "offer", "accept_offer"),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer")
+    (BalancingMarket(), "balancing_offer", "accept_offer")
 ])
 def test_market_trade_by_id(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
-    now = DateTime.now()
+    now = DateTime.now(tz=TIME_ZONE)
     trade = getattr(market, accept_offer)(offer_or_id=e_offer.id, buyer='B',
                                           energy=10, time=now)
     assert trade
@@ -200,7 +201,7 @@ def test_market_trade_by_id(market, offer, accept_offer):
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
     (Market(), "offer", "accept_offer"),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer")
+    (BalancingMarket(), "balancing_offer", "accept_offer")
 ])
 def test_market_trade_readonly(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
@@ -211,7 +212,7 @@ def test_market_trade_readonly(market, offer, accept_offer):
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
     (Market(), "offer", "accept_offer"),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer")
+    (BalancingMarket(), "balancing_offer", "accept_offer")
 ])
 def test_market_trade_not_found(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
@@ -232,7 +233,7 @@ def test_market_trade_bid_not_found(market: Market):
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
     (Market(), "offer", "accept_offer"),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer")
+    (BalancingMarket(), "balancing_offer", "accept_offer")
 ])
 def test_market_trade_partial(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 20, 'A')
@@ -319,15 +320,15 @@ def test_market_accept_bid_always_updates_trade_stats(market: Market, called, ma
     assert len(getattr(market, market_method).calls) == 1
 
 
-@pytest.mark.parametrize("market, offer, accept_offer, energy", [
-    (Market(), "offer", "accept_offer", 0),
-    (Market(), "offer", "accept_offer", 21),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer", 0),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer", 21)
+@pytest.mark.parametrize("market, offer, accept_offer, energy, exception", [
+    (Market(), "offer", "accept_offer", 0, InvalidTrade),
+    (Market(), "offer", "accept_offer", 21, InvalidTrade),
+    (BalancingMarket(), "balancing_offer", "accept_offer", 0, InvalidBalancingTradeException),
+    (BalancingMarket(), "balancing_offer", "accept_offer", 21, InvalidBalancingTradeException)
 ])
-def test_market_trade_partial_invalid(market, offer, accept_offer, energy):
+def test_market_trade_partial_invalid(market, offer, accept_offer, energy, exception):
     e_offer = getattr(market, offer)(20, 20, 'A')
-    with pytest.raises(InvalidTrade):
+    with pytest.raises(exception):
         getattr(market, accept_offer)(offer_or_id=e_offer, buyer='B', energy=energy)
 
 
@@ -448,7 +449,7 @@ def test_market_listeners_offer(market, offer, add_listener, event, called):
 
 @pytest.mark.parametrize("market, offer, accept_offer, add_listener, event", [
     (Market(), "offer", "accept_offer", "add_listener", MarketEvent.OFFER_CHANGED),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer", "add_listener",
+    (BalancingMarket(), "balancing_offer", "accept_offer", "add_listener",
      MarketEvent.BALANCING_OFFER_CHANGED)
 ])
 def test_market_listeners_offer_changed(market, offer, accept_offer, add_listener, event, called):
@@ -509,7 +510,7 @@ def test_market_iou(market: Market):
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
     (Market(), "offer", "accept_offer"),
-    (BalancingMarket(), "balancing_offer", "accept_balancing_offer")
+    (BalancingMarket(), "balancing_offer", "accept_offer")
 ])
 def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(2.0, 4, 'seller')
