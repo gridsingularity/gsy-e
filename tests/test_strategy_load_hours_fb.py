@@ -24,7 +24,7 @@ DeviceRegistry.REGISTRY = {
 
 ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
-TIME = pendulum.today().at(hour=10, minute=45, second=5)
+TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=5)
 
 MIN_BUY_ENERGY = 50  # wh
 

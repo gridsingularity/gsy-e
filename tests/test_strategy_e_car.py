@@ -166,9 +166,9 @@ def test_car_not_depart(e_car_strategy_test2, area_test2):
 
 def test_ecar_unload(e_car_strategy_test1, area_test1):
     e_car_strategy_test1.connected_to_grid = False
-    e_car_strategy_test1.state._usable_storage = 66
+    e_car_strategy_test1.state._used_storage = 66
     e_car_strategy_test1.event_tick(area=area_test1)
-    assert e_car_strategy_test1.state.usable_storage == 66 * 0.9999
+    assert e_car_strategy_test1.state.used_storage == 66 * 0.9999
 
 
 """TEST4"""
@@ -217,7 +217,7 @@ def e_car_strategy_test5(area_test1, called):
 def test_ecar_departure(e_car_strategy_test5):
     e_car_strategy_test5.depart()
     assert not e_car_strategy_test5.connected_to_grid
-    assert e_car_strategy_test5.state.usable_storage == 1
+    assert e_car_strategy_test5.state.used_storage == 1
 
 
 """TEST6"""

@@ -24,7 +24,7 @@ class NightStorageStrategy(BaseStrategy):
         if self.area.past_markets:
             past_market = list(self.area.past_markets.values())[-1]
         else:
-            if self.state.usable_storage > 0:
+            if self.state.used_storage > 0:
                 # For the case of the first market slot sell with a default value.
                 self.sell_energy(self.selling_price)
             return
@@ -93,7 +93,7 @@ class NightStorageStrategy(BaseStrategy):
         most_expensive_market = expensive_offers.market
         # If no energy is passed, try to sell all the Energy left in the storage
         if energy <= 0 or energy is None:
-            energy = self.state.usable_storage
+            energy = self.state.used_storage
         # Try to create an offer to sell the stored energy
 
         if energy > 0.0:

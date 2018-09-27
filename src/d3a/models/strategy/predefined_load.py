@@ -2,6 +2,7 @@
 Create a load that uses a profile as input for its power values
 """
 import sys
+from d3a.util import generate_market_slot_list
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a import TIME_FORMAT
 from d3a.models.strategy.read_user_profile import read_arbitrary_profile
@@ -47,16 +48,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         :return: None
         """
 
-        for slot_time in [
-                    self.area.now + (self.area.config.slot_length * i)
-                    for i in range(
-                        (
-                                    self.area.config.duration
-                                    + (
-                                            self.area.config.market_count *
-                                            self.area.config.slot_length)
-                        ) // self.area.config.slot_length)
-                    ]:
+        for slot_time in generate_market_slot_list(self.area):
             if self._allowed_operating_hours(slot_time.hour):
                 self.energy_requirement_Wh[slot_time] = \
                     self.load_profile[slot_time.strftime(TIME_FORMAT)] * 1000
