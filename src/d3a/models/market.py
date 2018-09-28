@@ -109,10 +109,9 @@ class Market:
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
         self.area = area
         self.time_slot = time_slot
-        if self.time_slot is not None:
-            self.time_slot_str = time_slot.strftime(TIME_FORMAT)
-        else:
-            self.time_slot_str = ""
+        self.time_slot_str = time_slot.strftime(TIME_FORMAT) \
+            if self.time_slot is not None \
+            else None
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]

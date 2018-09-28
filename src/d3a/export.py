@@ -427,7 +427,6 @@ class ExportLeafData(ExportData):
         return market.traded_energy[self.area.name]
 
     def _row(self, slot, market):
-        # print(f"{slot} {self._traded(market)}")
         return [slot,
                 self._traded(market),
                 ] + self._specific_row(slot, market)

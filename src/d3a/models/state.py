@@ -20,12 +20,12 @@ from d3a.models.strategy.const import ConstSettings
 
 class PVState:
     def __init__(self):
-        self.available_energy_kWh = defaultdict(lambda: 0)
+        self.available_energy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
 
 
 class LoadState:
     def __init__(self):
-        self.desired_energy_Wh = defaultdict(lambda: 0)
+        self.desired_energy_Wh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
 
 
 class FridgeState:
