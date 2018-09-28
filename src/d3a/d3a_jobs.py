@@ -44,7 +44,7 @@ def start(scenario, settings):
         tick_length=pendulum.duration(
             seconds=15 if 'tick_length' not in settings else settings['tick_length'].seconds
         ),
-        market_count=settings.get('market_count', 4),
+        market_count=settings.get('market_count', 1),
         cloud_coverage=settings.get('cloud_coverage', ConstSettings.DEFAULT_PV_POWER_PROFILE),
         market_maker_rate=settings.get('market_maker_rate',
                                        str(ConstSettings.DEFAULT_MARKET_MAKER_RATE)),

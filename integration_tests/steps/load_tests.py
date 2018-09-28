@@ -12,11 +12,10 @@ def check_load_profile_csv(context):
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))
     input_profile = _readCSV(user_profile_load_csv.profile_path)
 
-    desired_energy = {f'{k.hour:02}:{k.minute:02}': v
-                      for k, v in load.strategy.state.desired_energy.items()
-                      }
+    desired_energy_Wh = {f'{k.hour:02}:{k.minute:02}': v for k, v in
+                         load.strategy.state.desired_energy_Wh.items()}
 
-    for timepoint, energy in desired_energy.items():
+    for timepoint, energy in desired_energy_Wh.items():
         if timepoint in input_profile:
             assert energy == input_profile[timepoint] / \
                    (duration(hours=1) / load.config.slot_length)
@@ -44,15 +43,15 @@ def check_user_pv_dict_profile(context):
 
     for slot, market in house.past_markets.items():
         if slot.hour in user_profile.keys():
-            assert load.strategy.state.desired_energy[slot] == user_profile[slot.hour] / \
+            assert load.strategy.state.desired_energy_Wh[slot] == user_profile[slot.hour] / \
                    (duration(hours=1) / house.config.slot_length)
         else:
             if int(slot.hour) > int(list(user_profile.keys())[-1]):
-                assert load.strategy.state.desired_energy[slot] == \
+                assert load.strategy.state.desired_energy_Wh[slot] == \
                        user_profile[list(user_profile.keys())[-1]] / \
                        (duration(hours=1) / house.config.slot_length)
             else:
-                assert load.strategy.state.desired_energy[slot] == 0
+                assert load.strategy.state.desired_energy_Wh[slot] == 0
 
 
 @then('LoadHoursStrategy does not buy energy with rates that are higher than the provided profile')

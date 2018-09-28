@@ -45,7 +45,9 @@ class FakeArea():
 
     @property
     def markets(self):
-        return {TIME: self.test_market}
+        return {TIME: self.test_market,
+                TIME + self.config.slot_length: self.test_market,
+                TIME + 2 * self.config.slot_length: self.test_market}
 
 
 class FakeMarket:
@@ -62,7 +64,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now(tz=TIME_ZONE).start_of('day')
+        return TIME
 
     @property
     def time_slot_str(self):
@@ -353,7 +355,7 @@ def testing_low_risk(area_test3, pv_test7):
         price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test7.risk
                                                                  / ConstSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
-                                     / pv_test7._decrease_price_every_nr_s.m)
+                                     / pv_test7._decrease_price_every_nr_s)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
@@ -384,7 +386,7 @@ def testing_high_risk(area_test3, pv_test8):
         price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test8.risk /
                                                                  ConstSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
-                                     / pv_test8._decrease_price_every_nr_s.m)
+                                     / pv_test8._decrease_price_every_nr_s)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
@@ -415,4 +417,4 @@ def pv_test9(area_test9):
 def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
     pv_test9.event_activate()
     pv_test9.event_market_cycle()
-    assert len(market_test9.created_offers) == 1
+    assert len(market_test9.created_offers) == len(list(area_test9.markets.keys()))

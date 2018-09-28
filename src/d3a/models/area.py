@@ -27,7 +27,7 @@ log = getLogger(__name__)
 
 DEFAULT_CONFIG = SimulationConfig(
     duration=duration(hours=24),
-    market_count=4,
+    market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
@@ -369,8 +369,9 @@ class Area:
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:
             self.tick()
-        elif event_type is AreaEvent.MARKET_CYCLE:
-            self._cycle_markets(_market_cycle=True)
+        # TODO: Review this change. Make sure this trigger is not needed anywhere else
+        # elif event_type is AreaEvent.MARKET_CYCLE:
+        #     self._cycle_markets(_market_cycle=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.activate()
         if self.strategy:

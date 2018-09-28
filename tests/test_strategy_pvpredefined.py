@@ -62,7 +62,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now(tz=TIME_ZONE).start_of('day')
+        return TIME
 
     @property
     def time_slot_str(self):
@@ -99,7 +99,7 @@ def pv_test1(area_test1):
 
 def test_activation(pv_test1, area_test1):
     pv_test1.event_activate()
-    assert pv_test1._decrease_price_every_nr_s.m > 0
+    assert pv_test1._decrease_price_every_nr_s > 0
     global ENERGY_FORECAST
     ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh
 

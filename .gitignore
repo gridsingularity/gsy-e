@@ -97,3 +97,5 @@ ENV/
 requirements/local.*
 
 .vagrant/
+
+.pytest_cache
