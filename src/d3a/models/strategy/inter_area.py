@@ -438,12 +438,19 @@ class InterAreaAgent(BaseStrategy):
 class BalancingAgent(InterAreaAgent):
 
     def __init__(self, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1, tick_ratio=2):
+                 transfer_fee_pct=1, min_offer_age=1):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
         InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
                                 min_offer_age=min_offer_age, agent=True)
         self.name = make_ba_name(self.owner)
+
+    def event_tick(self, *, area):
+        super().event_tick(area=area)
+        if self.lower_market.unmatched_energy_downward > 0.0 or \
+                self.lower_market.unmatched_energy_upward > 0.0:
+            self._trigger_balancing_trades(self.lower_market.unmatched_energy_upward,
+                                           self.lower_market.unmatched_energy_downward)
 
     def event_trade(self, *, market, trade):
         if trade.buyer != make_iaa_name(self.owner) or \
@@ -455,6 +462,10 @@ class BalancingAgent(InterAreaAgent):
         negative_balancing_energy = \
             trade.offer.energy * self.balancing_spot_trade_ratio + \
             self.lower_market.unmatched_energy_downward
+        self._trigger_balancing_trades(positive_balancing_energy, negative_balancing_energy)
+        super().event_trade(market=market, trade=trade)
+
+    def _trigger_balancing_trades(self, positive_balancing_energy, negative_balancing_energy):
         cumulative_energy_traded_upward = 0
         cumulative_energy_traded_downward = 0
         for offer in self.lower_market.sorted_offers:
@@ -477,6 +488,7 @@ class BalancingAgent(InterAreaAgent):
         self.lower_market.cumulative_energy_traded_downward += cumulative_energy_traded_downward
 
     def _balancing_trade(self, offer, target_energy):
+        trade = None
         if abs(offer.energy) <= abs(target_energy):
             trade = self.lower_market.accept_offer(offer_or_id=offer,
                                                    buyer=make_ba_name(self.owner),
