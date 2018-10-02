@@ -104,26 +104,28 @@ class ExportAndPlot:
     def _export_area_energy(self, area: Area, directory: dir):
         """
         Exports files containing individual trades  (*-trades.csv  files)
+        Also sorts accumuklated traded energy into self.trades' subdictionary "sold_energy" and
+        "bought_energy".
         """
 
         out_keys = ("sold_energy", "bought_energy")
-        out_keys_ids = (5, 6)
+        out_keys_ids = (4, 5)  # corresponding ids in the trade._to_csv() info
         try:
             with open(self._file_path(directory, "{}-trades".format(area.slug)), 'w') as csv_file:
                 writer = csv.writer(csv_file)
-                labels = ("slot",) + Trade._csv_fields()
+                labels = Trade._csv_fields()
                 writer.writerow(labels)
                 out_dict = dict((key, {}) for key in out_keys)
                 for slot, market in area.past_markets.items():
                     for trade in market.trades:
-                        row = (slot, ) + trade._to_csv()
+                        row = trade._to_csv()
                         writer.writerow(row)
                         for ii, ks in enumerate(out_keys):
                             node = slugify(row[out_keys_ids[ii]], to_lower=True)
                             if node not in out_dict[ks]:
                                 out_dict[ks][node] = dict(
                                     (key, 0) for key in area.past_markets.keys())
-                            out_dict[ks][node][slot] += row[4]
+                            out_dict[ks][node][slot] += row[3]
 
             for ks in out_keys:
                 out_dict[ks + "_lists"] = dict((ki, {}) for ki in out_dict[ks].keys())
