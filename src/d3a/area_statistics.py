@@ -202,16 +202,16 @@ def _generate_self_consumption_entries(accumulated_trades):
     self_consumed_energy = []
     for area_name, area_data in accumulated_trades.items():
         sc_energy = 0
-        sc_price = 0
+        sc_money = 0
         if area_name in area_data["consumedFrom"].keys():
             sc_energy = area_data["consumedFrom"].pop(area_name)
-            sc_price = area_data["spentTo"].pop(area_name)
+            sc_money = area_data["spentTo"].pop(area_name)
         self_consumed_energy.append({
             "x": area_name,
             "y": sc_energy,
             "target": area_name,
             "label": f"{area_name} Consumed {str(round(sc_energy, 3))} kWh from {area_name}",
-            "priceLabel": f"{area_name} Spent {str(round(sc_price, 3))} cents on "
+            "priceLabel": f"{area_name} Spent {str(round(sc_money, 3))} cents on "
                           f"energy from {area_name}",
         })
     return sorted(self_consumed_energy, key=lambda a: a["x"])
