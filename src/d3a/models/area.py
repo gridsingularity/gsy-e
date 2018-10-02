@@ -9,6 +9,7 @@ from pendulum import duration
 from pendulum import DateTime
 from slugify import slugify
 
+from d3a.blockchain import BlockChainInterface
 from d3a import TIME_ZONE
 from d3a.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
@@ -74,11 +75,14 @@ class Area:
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
+        self._bc = None  # type: BlockChainInterface
         self.listeners = []
         self._accumulated_past_price = 0
         self._accumulated_past_energy = 0
 
-    def activate(self):
+    def activate(self, bc=None):
+        if bc:
+            self._bc = bc
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
             if attr:
                 if self.parent:
@@ -143,6 +147,14 @@ class Area:
         if self.parent:
             return self.parent.config
         return DEFAULT_CONFIG
+
+    @property
+    def bc(self) -> Optional[BlockChainInterface]:
+        if self._bc is not None:
+            return self._bc
+        if self.parent:
+            return self.parent.bc
+        return None
 
     @property
     def _offer_count(self):

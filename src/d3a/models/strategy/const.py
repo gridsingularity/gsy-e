@@ -99,7 +99,11 @@ class ConstSettings:
     # Option 2 stands for double sided pay as bid market
     INTER_AREA_AGENT_MARKET_TYPE = 1
 
-    # Balancing Market parameter
+    # Blockchain parameters
+    BLOCKCHAIN_URL = "http://127.0.0.1:8545"
+    BLOCKCHAIN_START_LOCAL_CHAIN = True
+
+    # Balancing Market parameters
     BALANCING_SPOT_TRADE_RATIO = 0.2
     BALANCING_OFFER_DEMAND_RATIO = 0.1
     BALANCING_OFFER_SUPPLY_RATIO = 0.1

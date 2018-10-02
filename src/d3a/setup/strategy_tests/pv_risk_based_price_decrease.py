@@ -7,7 +7,7 @@ from d3a.models.strategy.pv import PVStrategy
 
 """
 This setup file shows the scenario of PV decreasing its unsold offer based on RISK/percentage.
-In this scenario, the risk: 20, initial_pv_rate_option: 2 i.e. based on market_maker_rate.
+In this scenario, the risk: 20, initial_rate_option: 2 i.e. based on market_maker_rate.
 Load wants to purchase energy for 24hr @ max_energy_rate: 7.01 i,e, load will only buy PV's
 energy if its lower than its max_energy_rate.
 

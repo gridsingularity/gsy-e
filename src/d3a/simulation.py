@@ -13,6 +13,7 @@ from pendulum.period import Period
 from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
+from d3a.blockchain import BlockChainInterface
 from d3a import TIME_ZONE
 from d3a.exceptions import SimulationException, D3AException
 from d3a.export import ExportAndPlot
@@ -43,7 +44,7 @@ class Simulation:
                  reset_on_finish_wait: duration = duration(minutes=1),
                  exit_on_finish: bool = False,
                  exit_on_finish_wait: duration = duration(seconds=1),
-                 api_url=None, redis_job_id=None):
+                 api_url=None, redis_job_id=None, use_bc=False):
 
         self.initial_params = dict(
             slowdown=slowdown,
@@ -62,6 +63,7 @@ class Simulation:
         self.exit_on_finish_wait = exit_on_finish_wait
         self.api_url = api_url
         self.setup_module_name = setup_module_name
+        self.use_bc = use_bc
         self.is_stopped = False
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
@@ -122,11 +124,25 @@ class Simulation:
             log.error("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        self.bc = None  # type: BlockChainInterface
+        if self.use_bc:
+            self.bc = BlockChainInterface()
+            self.clearing_token = self.bc.init_contract(
+                "ClearingToken.sol",
+                "ClearingToken",
+                [
+                    10 ** 10,
+                    "ClearingToken",
+                    0,
+                    "CT"
+                ],
+                id_='ClearingToken'
+            )
         log.info("Starting simulation with config %s", self.simulation_config)
 
         self._set_traversal_length()
 
-        self.area.activate()
+        self.area.activate(self.bc)
 
     @property
     def finished(self):
