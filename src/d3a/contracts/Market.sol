@@ -1,6 +1,5 @@
 pragma solidity 0.4.25;
 import "ClearingToken.sol";
-import "Mortal.sol";
 
 
 contract Market is Mortal {

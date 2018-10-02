@@ -1,12 +1,9 @@
 pragma solidity 0.4.25;
 import "IOUToken.sol";
+import "Mortal.sol";
 
 
-contract ClearingToken is IOUToken {
-
-    // Approves Clearing Members to be registered with this contract
-    // Initialized while making the contract
-    address public approver;
+contract ClearingToken is IOUToken, Owned {
 
     // Mapping of the clearing member which is allowed to transfer IOU's
     //between any accounts. These could also be market contracts.
@@ -26,8 +23,6 @@ contract ClearingToken is IOUToken {
         _decimalUnits,
         _tokenSymbol
     ) {
-
-        approver = msg.sender;
     }
 
     // event
@@ -58,13 +53,13 @@ contract ClearingToken is IOUToken {
      * _value token between any accounts
      * @param _value Maximum amount allowed to be transferred between the participants
      */
-    function globallyApprove(address clearingMember, int256 _value) public returns (bool success) {
+    function globallyApprove(address clearingMember, int256 _value) public onlyowner returns (bool success) {
         // Only the approver can call this function to add a clearingMember
-        if (msg.sender == approver && _value > 0) {
+        if (_value > 0) {
             clearingMemberAmount[clearingMember] = _value;
             clearingMembers.push(clearingMember);
             success = true;
-            emit ApproveClearingMember(clearingMember, approver);
+            emit ApproveClearingMember(clearingMember, owner);
         } else {
             success = false;
         }
@@ -81,7 +76,7 @@ contract ClearingToken is IOUToken {
      * @notice Gets the owner which approves cleaing members of the contract
      */
     function getApprover() public view returns (address) {
-        return approver;
+        return owner;
     }
 
     /*

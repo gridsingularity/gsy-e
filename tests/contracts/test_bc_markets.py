@@ -13,6 +13,8 @@ def _bc(blockchain_fixture):
 
 
 emptybytes = b'\x00' * 32
+zero_address = '0' * 40
+zero_address_hex = '0x' + zero_address
 
 market_compiled_sol = compile_source(get_cached_joined_contract_source("Market.sol"))
 market_contract_interface = market_compiled_sol['<stdin>:Market']
@@ -101,15 +103,14 @@ def test_offer(base_state_contract, _bc):
 
 def test_offer_fail(base_state_contract, _bc):
     clearing_contract, clearing_address, market_contract, market_address = base_state_contract
-    zero_address = '0x' + '0' * 40
     offer_id = place_offer_and_return_offerid(market_contract, 0, 956,
                                               _bc.eth.accounts[1], _bc)
-    assert market_contract.functions.getOffer(to_bytes(offer_id)).call() == [0, 0, zero_address]
+    assert market_contract.functions.getOffer(to_bytes(offer_id)).call() == \
+        [0, 0, zero_address_hex]
 
 
 def test_cancel(base_state_contract, _bc):
     clearing_contract, clearing_address, market_contract, market_address = base_state_contract
-    zero_address = '0x' + '0' * 40
     offer_id = place_offer_and_return_offerid(market_contract, 7, 956,
                                               _bc.eth.accounts[1], _bc)
     assert market_contract.functions.getOffer(offer_id).call() == [7, 956, _bc.eth.accounts[1]]
@@ -120,7 +121,7 @@ def test_cancel(base_state_contract, _bc):
     assert cancel_retval[0]['args']['price'] == 956
     assert cancel_retval[0]['args']['seller'] == _bc.eth.accounts[1]
 
-    assert market_contract.functions.getOffer(offer_id).call() == [0, 0, zero_address]
+    assert market_contract.functions.getOffer(offer_id).call() == [0, 0, zero_address_hex]
 
 
 def test_get_clearing_token_address(base_state_contract):
@@ -223,7 +224,6 @@ def test_offer_price_negative(base_state_contract, _bc):
 
 
 def test_offer_price_zero(base_state_contract, _bc):
-    zero_address = '0' * 40
     clearing_contract, clearing_address, market_contract, market_address = base_state_contract
     offer_id = place_offer_and_return_offerid(market_contract, 7, 0, _bc.eth.accounts[2], _bc)
     assert market_contract.functions.getOffer(offer_id).call() == [7, 0, _bc.eth.accounts[2]]
