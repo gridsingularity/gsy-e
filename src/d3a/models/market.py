@@ -223,14 +223,14 @@ class Market:
 
         if self.bc_contract and offer is not None:
             cancel_offer(self.area.bc, self.bc_contract, offer.real_id, offer.seller)
+            # Hold on to deleted offer until bc event is processed
+            self.offers_deleted[offer_or_id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
         log.info(f"[OFFER][DEL][{self.time_slot_str}] {offer}")
-        if self.bc_contract:
-            # Hold on to deleted offer until bc event is processed
-            self.offers_deleted[offer_or_id] = offer
+
         # TODO: Once we add event-driven blockchain, this should be asynchronous
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
