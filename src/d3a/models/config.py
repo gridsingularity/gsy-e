@@ -4,8 +4,8 @@ from pendulum import duration
 from d3a.exceptions import D3AException
 from d3a.util import format_interval
 from d3a.models.strategy.const import ConstSettings
-from d3a.models.strategy.mixins import ReadProfileMixin
-from d3a.models.strategy.mixins import InputProfileTypes
+from d3a.models.strategy.read_user_profile import read_arbitrary_profile
+from d3a.models.strategy.read_user_profile import InputProfileTypes
 
 
 class SimulationConfig:
@@ -67,5 +67,5 @@ class SimulationConfig:
         Reads market_maker_rate from arbitrary input types
         """
         market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
-        self.market_maker_rate = ReadProfileMixin.read_arbitrary_profile(InputProfileTypes.RATE,
-                                                                         market_maker_rate_parsed)
+        self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.RATE,
+                                                        market_maker_rate_parsed)

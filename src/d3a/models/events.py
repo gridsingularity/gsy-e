@@ -28,7 +28,8 @@ class MarketEvent(Enum):
 class AreaEvent(Enum):
     TICK = 1
     MARKET_CYCLE = 2
-    ACTIVATE = 3
+    BALANCING_MARKET_CYCLE = 3
+    ACTIVATE = 4
 
 
 class EventMixin:
@@ -41,6 +42,7 @@ class EventMixin:
             self._event_map = {
                 AreaEvent.TICK: self.event_tick,
                 AreaEvent.MARKET_CYCLE: self.event_market_cycle,
+                AreaEvent.BALANCING_MARKET_CYCLE: self.event_balancing_market_cycle,
                 AreaEvent.ACTIVATE: self.event_activate,
                 MarketEvent.OFFER: self.event_offer,
                 MarketEvent.OFFER_CHANGED: self.event_offer_changed,
@@ -57,12 +59,16 @@ class EventMixin:
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         self.log.debug("Dispatching event %s", event_type.name)
+
         self._event_mapping[event_type](**kwargs)
 
     def event_tick(self, *, area):
         pass
 
     def event_market_cycle(self):
+        pass
+
+    def event_balancing_market_cycle(self):
         pass
 
     def event_activate(self):

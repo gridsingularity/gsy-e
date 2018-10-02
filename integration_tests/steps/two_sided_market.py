@@ -76,30 +76,6 @@ def pv_constant_power(context):
     assert load_energies_set == pv_energies_set
 
 
-@then('the energy rate for all the trades is the mean of max and min load/pv rate')
-def energy_rate_average_between_min_and_max_load_pv(context):
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    load = next(filter(lambda x: "H1 General Load" in x.name, house1.children))
-
-    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
-    pvs = list(filter(lambda x: "H2 PV" in x.name, house2.children))
-
-    load_rates_set = set()
-    pv_rates_set = set()
-    for slot, market in house1.past_markets.items():
-        for trade in market.trades:
-            if trade.buyer == load.name:
-                load_rates_set.add(trade.offer.price / trade.offer.energy)
-
-    for slot, market in house2.past_markets.items():
-        for trade in market.trades:
-            if any(trade.seller == pv.name for pv in pvs):
-                pv_rates_set.add(trade.offer.price / trade.offer.energy)
-
-    assert all([RATE_THRESHOLD < rate for rate in load_rates_set])
-    assert all([RATE_THRESHOLD < rate for rate in pv_rates_set])
-
-
 @then('the storage is never selling energy')
 def storage_never_selling(context):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))

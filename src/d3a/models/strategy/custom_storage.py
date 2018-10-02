@@ -34,7 +34,7 @@ class CustomStorageStrategy(StorageStrategy):
 
         pass
 
-    def decrease_energy_price_over_ticks(self):
+    def decrease_energy_price_over_ticks(self, market):
         """
         Overrides d3a.models.strategy.update_frequency.decrease_energy_price_over_ticks
         Is called on every EVENT_TICK event
@@ -52,7 +52,7 @@ class CustomStorageStrategy(StorageStrategy):
 
         pass
 
-    def update_posted_bids(self, market):
+    def update_posted_bids_over_ticks(self, market):
         """
         Overwrites d3a.models.strategy.load_hours_fb.update_posted_bids
         Is called on every TICK event.

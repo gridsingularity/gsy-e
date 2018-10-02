@@ -9,7 +9,7 @@ Feature: Run integration tests
      | scenario |
      | integration_test_setup |
 
-  Scenario Outline: Run integration tests
+  Scenario Outline: Run general integration tests for simulation
      Given we have a scenario named <scenario>
      And d3a is installed
      When we run the d3a simulation with <scenario> [<duration>, <slot_length>, <tick_length>]
@@ -58,3 +58,11 @@ Feature: Run integration tests
      And d3a is installed
      When we run simulation on console with default settings file
      Then we test the export functionality of default
+
+  Scenario: Simulation returns same results for different market counts
+    Given we have a scenario named default_2a
+    And d3a is installed
+    When we run the simulation with setup file default_2a with two different market_counts
+    Then the results are the same for each simulation run
+
+

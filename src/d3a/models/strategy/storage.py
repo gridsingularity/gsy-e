@@ -1,13 +1,17 @@
 from typing import Union
+from collections import namedtuple
 
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin
-from d3a.models.strategy.mixins import ReadProfileMixin
-from d3a.models.strategy.mixins import InputProfileTypes
+from d3a.models.strategy.read_user_profile import read_arbitrary_profile
+from d3a.models.strategy.read_user_profile import InputProfileTypes
 from d3a import TIME_FORMAT
+from d3a.device_registry import DeviceRegistry
+
+BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
@@ -24,9 +28,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  max_abs_battery_power: float=ConstSettings.MAX_ABS_BATTERY_POWER,
                  break_even: Union[tuple, dict]=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
                              ConstSettings.STORAGE_BREAK_EVEN_SELL),
+                 balancing_energy_ratio: tuple=(ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
+                                                ConstSettings.BALANCING_OFFER_SUPPLY_RATIO),
 
                  cap_price_strategy: bool=False):
-        break_even = ReadProfileMixin.read_arbitrary_profile(InputProfileTypes.RATE, break_even)
+        break_even = read_arbitrary_profile(InputProfileTypes.RATE, break_even)
         self._validate_constructor_arguments(risk, initial_capacity,
                                              initial_soc, battery_capacity, break_even)
         self.break_even = break_even
@@ -36,9 +42,15 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
+        # Normalize min/max buying rate profiles before passing to the bid mixin
+        self.min_buying_rate_profile = read_arbitrary_profile(
+            InputProfileTypes.RATE,
+            ConstSettings.STORAGE_MIN_BUYING_RATE
+        )
+        self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
         BidUpdateFrequencyMixin.__init__(self,
-                                         initial_rate=ConstSettings.STORAGE_MIN_BUYING_RATE,
-                                         final_rate=ConstSettings.STORAGE_BREAK_EVEN_BUY)
+                                         initial_rate_profile=self.min_buying_rate_profile,
+                                         final_rate_profile=self.max_buying_rate_profile)
 
         self.risk = risk
         self.state = StorageState(initial_capacity=initial_capacity,
@@ -48,8 +60,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.cap_price_strategy = cap_price_strategy
+        self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
     def event_activate(self):
+        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
@@ -79,7 +93,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             if self.state.clamp_energy_to_buy_kWh() <= 0:
                 return
             if self.are_bids_posted(self.area.next_market):
-                self.update_posted_bids(self.area.next_market)
+                self.update_posted_bids_over_ticks(self.area.next_market)
             else:
                 # TODO: Refactor this to reuse all markets
                 self.post_first_bid(
@@ -89,7 +103,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
         self.state.tick(area)  # To incorporate battery energy loss over time
         if self.cap_price_strategy is False:
-            self.decrease_energy_price_over_ticks()
+            self.decrease_energy_price_over_ticks(self.area.next_market)
 
     def event_bid_deleted(self, *, market, bid):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
@@ -149,17 +163,40 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.state.market_cycle(self.area)
 
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            self.update_market_cycle_bids(self.break_even[self.area.now.strftime(TIME_FORMAT)][0])
+            self.update_market_cycle_bids(final_rate=self.break_even[
+                self.area.now.strftime(TIME_FORMAT)][0])
+
             if self.state.clamp_energy_to_buy_kWh() > 0:
                 self.post_first_bid(
                     self.area.next_market,
                     self.state.clamp_energy_to_buy_kWh() * 1000.0
                 )
 
+        # Balancing Offers
+        if self.owner.name not in DeviceRegistry.REGISTRY:
+            return
+
+        if self.state.free_storage > 0:
+            charge_energy = self.balancing_energy_ratio.demand * self.state.free_storage
+            charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
+            if charge_energy != 0 and charge_price != 0:
+                # committing to start charging when required
+                self.area.balancing_markets[self.area.now].balancing_offer(charge_price,
+                                                                           -charge_energy,
+                                                                           self.owner.name)
+        if self.state.used_storage > 0:
+            discharge_energy = self.balancing_energy_ratio.supply * self.state.used_storage
+            discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
+            # committing to start discharging when required
+            if discharge_energy != 0 and discharge_price != 0:
+                self.area.balancing_markets[self.area.now].balancing_offer(discharge_price,
+                                                                           discharge_energy,
+                                                                           self.owner.name)
+
     def buy_energy(self):
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
-        for market in self.area.markets.values():
+        for market in [list(self.area.markets.values())[0]]:
             max_affordable_offer_rate = self.break_even[market.time_slot_str][0]
             for offer in market.sorted_offers:
                 if offer.seller == self.owner.name:

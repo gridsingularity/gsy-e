@@ -1,7 +1,8 @@
 import pytest
 
-from datetime import datetime
+import pendulum
 
+from d3a import TIME_ZONE
 from d3a.models.market import Offer, Trade, Bid
 from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo, OfferInfo
 from d3a.models.strategy.const import ConstSettings
@@ -27,6 +28,10 @@ class FakeMarket:
         self.calls_bids = []
         self.calls_bids_price = []
         self.area = FakeArea("fake_area")
+        self.time_slot = pendulum.now(tz=TIME_ZONE)
+
+    def set_time_slot(self, timeslot):
+        self.time_slot = timeslot
 
     @property
     def offers(self):
@@ -35,10 +40,6 @@ class FakeMarket:
     @property
     def bids(self):
         return {bid.id: bid for bid in self._bids}
-
-    @property
-    def time_slot(self):
-        return datetime.now()
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, price_drop=False):
         self.calls_energy.append(energy)
@@ -70,7 +71,7 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller):
+    def offer(self, price, energy, seller, agent=False):
         self.offer_count += 1
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller, market=self)
         return self.forwarded_offer
@@ -111,7 +112,7 @@ def test_iaa_forwarded_offers_complied_to_transfer_fee_percentage(iaa):
 def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
     iaa.lower_market.delete_offer = called
     iaa.event_trade(trade=Trade('trade_id',
-                                datetime.now(),
+                                pendulum.now(tz=TIME_ZONE),
                                 iaa.higher_market.offers['id3'],
                                 'owner',
                                 'someone_else'),
@@ -180,7 +181,7 @@ def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(iaa_bid, called):
     iaa_bid.lower_market.delete_bid = called
     iaa_bid.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         iaa_bid.higher_market.bids['id3'],
                         'someone_else',
                         'owner'),
@@ -193,7 +194,7 @@ def test_iaa_event_trade_bid_does_not_delete_forwarded_bid_of_counterpart(iaa_bi
     high_to_low_engine = iaa_bid.engines[1]
     high_to_low_engine.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         iaa_bid.higher_market.bids['id3'],
                         seller='owner',
                         buyer='someone_else'))
@@ -211,7 +212,7 @@ def test_iaa_event_trade_bid_does_not_update_forwarded_bids_on_partial(iaa_bid, 
     low_to_high_engine.forwarded_bids[target_bid.id] = bidinfo
     low_to_high_engine.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         low_to_high_engine.markets.target.bids[target_bid.id],
                         seller='someone_else',
                         buyer='owner',
@@ -254,7 +255,7 @@ def iaa_double_sided():
 
 def test_iaa_event_trade_buys_accepted_offer(iaa2):
     iaa2.event_trade(trade=Trade('trade_id',
-                                 datetime.now(),
+                                 pendulum.now(tz=TIME_ZONE),
                                  iaa2.higher_market.forwarded_offer,
                                  'owner',
                                  'someone_else'),
@@ -267,7 +268,7 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
         iaa_double_sided.higher_market.forwarded_bid._replace(price=20)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         iaa_double_sided.higher_market.forwarded_bid,
                         'owner',
                         'someone_else',
@@ -284,7 +285,7 @@ def test_iaa_event_bid_trade_reduces_bid_price(iaa_double_sided):
         iaa_double_sided.higher_market.forwarded_bid._replace(price=20.2)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         iaa_double_sided.higher_market.forwarded_bid,
                         'owner',
                         'someone_else',
@@ -299,7 +300,7 @@ def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
     total_offer = iaa2.higher_market.forwarded_offer
     accepted_offer = Offer(total_offer.id, total_offer.price, 1, total_offer.seller)
     iaa2.event_trade(trade=Trade('trade_id',
-                                 datetime.now(),
+                                 pendulum.now(tz=TIME_ZONE),
                                  accepted_offer,
                                  'owner',
                                  'someone_else',
@@ -313,7 +314,7 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
     accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer, total_bid.seller)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         accepted_bid,
                         'owner',
                         'someone_else',
@@ -419,7 +420,7 @@ def iaa3(iaa2):
                              existing_offer=fwd_offer,
                              new_offer=fwd_residual)
     iaa2.event_trade(trade=Trade('trade_id',
-                                 datetime.now(),
+                                 pendulum.now(tz=TIME_ZONE),
                                  Offer(fwd_offer.id, fwd_offer.price, 1, fwd_offer.seller),
                                  'owner',
                                  'someone_else',

@@ -61,3 +61,17 @@ class TestAreaClass(unittest.TestCase):
         o2.price = 19
         o3.price = 20
         assert self.area.market_with_most_expensive_offer is m3
+
+    def test_cycle_markets(self):
+        self.area = Area(name="Street", children=[Area(name="House")])
+        self.area.parent = Area(name="GRID")
+        self.area.config.market_count = 5
+        self.area.activate()
+        assert len(self.area.markets) == 5
+        assert len(self.area.balancing_markets) == 5
+        self.area.current_tick = 900
+        self.area.tick()
+        assert len(self.area.past_markets) == 1
+        assert len(self.area.past_balancing_markets) == 1
+        assert len(self.area.markets) == 5
+        assert len(self.area.balancing_markets) == 5

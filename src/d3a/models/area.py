@@ -10,14 +10,15 @@ from pendulum import DateTime
 # from slugify import slugify
 
 from d3a.blockchain import BlockChainInterface
+from d3a import TIME_ZONE
 from d3a.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.config import SimulationConfig
 from d3a.models.events import AreaEvent, MarketEvent, TriggerMixin
-from d3a.models.market import Market
+from d3a.models.market import Market, BalancingMarket
 from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.inter_area import InterAreaAgent
+from d3a.models.strategy.inter_area import InterAreaAgent, BalancingAgent
 from d3a.util import TaggedLogWrapper
 from d3a.models.strategy.const import ConstSettings
 from d3a import TIME_FORMAT
@@ -27,7 +28,7 @@ log = getLogger(__name__)
 
 DEFAULT_CONFIG = SimulationConfig(
     duration=duration(hours=24),
-    market_count=4,
+    market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
@@ -43,7 +44,9 @@ class Area:
                  strategy: BaseStrategy = None,
                  appliance: BaseAppliance = None,
                  config: SimulationConfig = None,
-                 budget_keeper=None):
+                 budget_keeper=None,
+                 balancing_spot_trade_ratio=ConstSettings.BALANCING_SPOT_TRADE_RATIO):
+        self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
@@ -56,8 +59,10 @@ class Area:
         self.children = children if children is not None else []
         for child in self.children:
             child.parent = self
-        self.inter_area_agents = defaultdict(list)  # type: Dict[Market, List[InterAreaAgent]]
-        self.balancing_agents = defaultdict(list)  # type: Dict[Market, List[BalancingAgent]]
+        self.inter_area_agents = \
+            defaultdict(list)  # type: Dict[Market, List[InterAreaAgent]]
+        self.balancing_agents = \
+            defaultdict(list)  # type: Dict[BalancingMarket, List[BalancingAgent]]
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
@@ -241,23 +246,20 @@ class Area:
             ((time_in_hour // self.config.slot_length) * self.config.slot_length)
 
         self.log.info("Cycling markets")
-        changed = False
 
-        # Move old and current markets to `past_markets`
-        # We use `list()` here to get a copy since we modify the market list in-place
-        first = True
-        for timeframe in list(self.markets.keys()):
-            if timeframe < now:
-                market = self.markets.pop(timeframe)
-                market.readonly = True
-                self.past_markets[timeframe] = market
-                if not first:
-                    # Remove inter area agent
-                    self.inter_area_agents.pop(market, None)
-                else:
-                    first = False
-                changed = True
-                self.log.debug("Moving {t:%H:%M} market to past".format(t=timeframe))
+        # Move old and current markets & balancing_markets to
+        # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
+        # modify the market list in-place
+        changed, _ = self._market_rotation(current_time=now,
+                                           markets=self.markets,
+                                           past_markets=self.past_markets,
+                                           area_agent=self.inter_area_agents)
+
+        changed_balancing_market, _ = \
+            self._market_rotation(current_time=now,
+                                  markets=self.balancing_markets,
+                                  past_markets=self.past_balancing_markets,
+                                  area_agent=self.balancing_agents)
 
         self._accumulated_past_price = sum(
             market.accumulated_trade_price
@@ -270,40 +272,36 @@ class Area:
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
 
-        # Markets range from one slot to MARKET_SLOT_COUNT into the future
-        for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
-            timeframe = now + offset
-            if timeframe not in self.markets:
-                # Create markets for missing slots
-                market = Market(timeframe, self,
-                                notification_listener=self._broadcast_notification)
-                if market not in self.inter_area_agents:
-                    if self.parent and timeframe in self.parent.markets and not self.strategy:
-                        # Only connect an InterAreaAgent if we have a parent, a corresponding
-                        # timeframe market exists in the parent and we have no strategy
-                        iaa = InterAreaAgent(
-                            owner=self,
-                            higher_market=self.parent.markets[timeframe],
-                            lower_market=market,
-                            transfer_fee_pct=self.config.iaa_fee
-                        )
-                        # Attach agent to own IAA list
-                        self.inter_area_agents[market].append(iaa)
-                        # And also to parents to allow events to flow form both markets
-                        self.parent.inter_area_agents[self.parent.markets[timeframe]].append(iaa)
-                        if self.parent:
-                            # Add inter area appliance to report energy
-                            self.appliance = InterAreaAppliance(self.parent, self)
-                self.markets[timeframe] = market
-                changed = True
-                self.log.debug("Adding {t:{format}} market".format(
-                    t=timeframe,
-                    format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
-                ))
+        # Markets range from one slot to market_count into the future
+        changed = self._create_future_markets(current_time=self.now, markets=self.markets,
+                                              parent=self.parent,
+                                              parent_markets=self.parent.markets
+                                              if self.parent is not None else None,
+                                              area_agent=self.inter_area_agents,
+                                              parent_area_agent=self.parent.inter_area_agents
+                                              if self.parent is not None else None,
+                                              agent_class=InterAreaAgent,
+                                              market_class=Market)
+
+        changed_balancing_market = \
+            self._create_future_markets(current_time=self.now, markets=self.balancing_markets,
+                                        parent=self.parent,
+                                        parent_markets=self.parent.balancing_markets
+                                        if self.parent is not None else None,
+                                        area_agent=self.balancing_agents,
+                                        parent_area_agent=self.parent.balancing_agents
+                                        if self.parent is not None else None,
+                                        agent_class=BalancingAgent,
+                                        market_class=BalancingMarket)
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
+
+        # Force balancing_market cycle event in case this is the first market slot
+        if (changed_balancing_market or len(self.past_balancing_markets.keys()) == 0) \
+                and _trigger_event:
+            self._broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE)
 
     def get_now(self) -> DateTime:
         """Compatibility wrapper"""
@@ -320,7 +318,7 @@ class Area:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now().start_of('day').add(
+        return DateTime.now(tz=TIME_ZONE).start_of('day').add(
             seconds=self.config.tick_length.seconds * self.current_tick
         )
 
@@ -360,6 +358,14 @@ class Area:
 
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
+        # Also broadcast to BAs. Again in random order
+        for balancing_market, agents in self.balancing_agents.items():
+            if balancing_market.time_slot not in self.balancing_markets:
+                # exclude past BAs
+                continue
+
+            for agent in sorted(agents, key=lambda _: random()):
+                agent.event_listener(event_type, **kwargs)
         for listener in self.listeners:
             listener.event_listener(event_type, **kwargs)
 
@@ -376,11 +382,64 @@ class Area:
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:
             self.tick()
-        elif event_type is AreaEvent.MARKET_CYCLE:
-            self._cycle_markets(_market_cycle=True)
+        # TODO: Review this change. Make sure this trigger is not needed anywhere else
+        # elif event_type is AreaEvent.MARKET_CYCLE:
+        #     self._cycle_markets(_market_cycle=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.activate()
         if self.strategy:
             self.strategy.event_listener(event_type, **kwargs)
         if self.appliance:
             self.appliance.event_listener(event_type, **kwargs)
+
+    def _market_rotation(self, current_time, markets, past_markets, area_agent):
+        changed = False
+        first = True
+        for timeframe in list(markets.keys()):
+            if timeframe < current_time:
+                market = markets.pop(timeframe)
+                market.readonly = True
+                past_markets[timeframe] = market
+                if not first:
+                    # Remove inter area agent
+                    area_agent.pop(market, None)
+                else:
+                    first = False
+                changed = True
+                self.log.debug("Moving {t:%H:%M} {m} to past"
+                               .format(t=timeframe, m=past_markets[timeframe].area.name))
+        return changed, first
+
+    def _create_future_markets(self, current_time, markets, parent, parent_markets,
+                               area_agent, parent_area_agent, agent_class, market_class):
+        changed = False
+        for offset in (self.config.slot_length * i for i in range(self.config.market_count)):
+            timeframe = current_time + offset
+            if timeframe not in markets:
+                # Create markets for missing slots
+                market = market_class(timeframe, self,
+                                      notification_listener=self._broadcast_notification)
+                if market not in area_agent:
+                    if parent and timeframe in parent_markets and not self.strategy:
+                        # Only connect an InterAreaAgent if we have a parent, a corresponding
+                        # timeframe market exists in the parent and we have no strategy
+                        iaa = agent_class(
+                            owner=self,
+                            higher_market=parent_markets[timeframe],
+                            lower_market=market,
+                            transfer_fee_pct=self.config.iaa_fee
+                        )
+                        # Attach agent to own IAA list
+                        area_agent[market].append(iaa)
+                        # And also to parents to allow events to flow form both markets
+                        parent_area_agent[parent_markets[timeframe]].append(iaa)
+                        if parent:
+                            # Add inter area appliance to report energy
+                            self.appliance = InterAreaAppliance(parent, self)
+                markets[timeframe] = market
+                changed = True
+                self.log.debug("Adding {t:{format}} market".format(
+                    t=timeframe,
+                    format="%H:%M" if self.config.slot_length.total_seconds() > 60 else "%H:%M:%S"
+                ))
+        return changed

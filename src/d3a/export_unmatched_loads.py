@@ -12,7 +12,7 @@ DEFICIT_THRESHOLD_Wh = 0.0001
 def _calculate_stats_for_single_device(hour_data, area, current_slot):
     if isinstance(area.strategy, LoadHoursStrategy) or \
        isinstance(area.strategy, DefinedLoadStrategy):
-        desired_energy_Wh = area.strategy.state.desired_energy[current_slot]
+        desired_energy_Wh = area.strategy.state.desired_energy_Wh[current_slot]
     elif isinstance(area.strategy, PermanentLoadStrategy):
         desired_energy_Wh = area.strategy.energy
     else:

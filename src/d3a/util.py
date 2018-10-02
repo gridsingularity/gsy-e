@@ -127,7 +127,11 @@ class ContractJoiner(object):
 
 
 def make_iaa_name(owner):
-    return "IAA {}".format(owner.name)
+    return f"IAA {owner.name}"
+
+
+def make_ba_name(owner):
+    return f"BA {owner.name}"
 
 
 def area_name_from_area_or_iaa_name(name):
@@ -209,7 +213,7 @@ def read_settings_from_file(settings_file):
                 settings["basic_settings"].get('slot_length', timedelta(minutes=15))),
             "tick_length": IntervalType('M:S')(
                 settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
-            "market_count": settings["basic_settings"].get('market_count', 4),
+            "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
             "market_maker_rate": settings["basic_settings"].get(
@@ -234,3 +238,16 @@ def update_advanced_settings(advanced_settings):
             setattr(ConstSettings, set_var, parseboolstring(set_val))
         else:
             setattr(ConstSettings, set_var, set_val)
+
+
+def generate_market_slot_list(area):
+    """
+    Returns a list of all slot times
+    """
+    market_slots = []
+    for slot_time in [
+        area.now + (area.config.slot_length * i) for i in range(
+            (area.config.duration + (area.config.market_count * area.config.slot_length)) //
+            area.config.slot_length)]:
+        market_slots.append(slot_time)
+    return market_slots

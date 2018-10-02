@@ -8,6 +8,7 @@ VERSION = "1.0.0a0"
 
 TIME_FORMAT = "%H:%M"
 PENDULUM_TIME_FORMAT = "HH:mm"
+TIME_ZONE = "UTC"
 
 
 def get_project_root():

@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from pendulum import DateTime
 
+from d3a import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.util import make_iaa_name
@@ -57,7 +58,7 @@ class FakeArea:
 
     @property
     def now(self):
-        return DateTime.now()
+        return DateTime.now(tz=TIME_ZONE)
 
     @property
     def current_market(self):

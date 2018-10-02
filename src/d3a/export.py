@@ -8,6 +8,7 @@ import pendulum
 import shutil
 from slugify import slugify
 
+from d3a import TIME_ZONE
 from d3a.models.market import Trade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
@@ -446,7 +447,7 @@ class ExportLeafData(ExportData):
                     stored]
         elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
                                              DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
-            desired = self.area.strategy.state.desired_energy[slot] / 1000
+            desired = self.area.strategy.state.desired_energy_Wh[slot] / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
             produced = market.actual_energy_agg.get(self.area.name, 0)
@@ -486,21 +487,18 @@ class BarGraph:
         """
         day_set = set()
         for di in range(len(data)):
-            out_time_list = []
             time_list = data[di]["x"]
             for ti in time_list:
-                out_time_list.append(ti.in_timezone("UTC"))
-                day_set.add(pendulum.datetime(ti.year, ti.month, ti.day))
-            data[di]["x"] = out_time_list
+                day_set.add(pendulum.datetime(ti.year, ti.month, ti.day, tz=TIME_ZONE))
 
         day_list = sorted(list(day_set))
         if len(day_list) == 0:
             raise ValueError("There is no time information in plot {}".format(title))
 
         start_time = pendulum.datetime(day_list[0].year, day_list[0].month, day_list[0].day,
-                                       0, 0, 0, tz="UTC")
+                                       0, 0, 0, tz=TIME_ZONE)
         end_time = pendulum.datetime(day_list[-1].year, day_list[-1].month, day_list[-1].day,
-                                     23, 59, 59, tz="UTC")
+                                     23, 59, 59, tz=TIME_ZONE)
 
         return [start_time, end_time], data
 

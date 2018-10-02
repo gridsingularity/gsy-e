@@ -59,7 +59,7 @@ class ConstSettings:
     ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
 
     DEFAULT_PV_POWER_PROFILE = 0  # sunny
-    MAX_PV_OUTPUT = 160
+    PV_MAX_PANEL_OUTPUT_W = 160
 
     # HEATPUMP SETTINGS
     # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)
@@ -99,5 +99,12 @@ class ConstSettings:
     # Option 2 stands for double sided pay as bid market
     INTER_AREA_AGENT_MARKET_TYPE = 1
 
+    # Blockchain parameters
     BLOCKCHAIN_URL = "http://127.0.0.1:8545"
     BLOCKCHAIN_START_LOCAL_CHAIN = True
+
+    # Balancing Market parameters
+    BALANCING_SPOT_TRADE_RATIO = 0.2
+    BALANCING_OFFER_DEMAND_RATIO = 0.1
+    BALANCING_OFFER_SUPPLY_RATIO = 0.1
+    BALANCING_FLEXIBLE_LOADS_SUPPORT = True

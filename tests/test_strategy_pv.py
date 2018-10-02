@@ -3,6 +3,7 @@ import pendulum
 import uuid
 from pendulum import DateTime
 
+from d3a import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
@@ -34,7 +35,7 @@ class FakeArea():
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now().start_of('day') + (
+        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
             self.config.tick_length * self.current_tick
         )
 
@@ -44,7 +45,9 @@ class FakeArea():
 
     @property
     def markets(self):
-        return {TIME: self.test_market}
+        return {TIME: self.test_market,
+                TIME + self.config.slot_length: self.test_market,
+                TIME + 2 * self.config.slot_length: self.test_market}
 
 
 class FakeMarket:
@@ -61,7 +64,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now().start_of('day')
+        return TIME
 
     @property
     def time_slot_str(self):
@@ -99,7 +102,7 @@ def pv_test1(area_test1):
 def testing_activation(pv_test1, area_test1):
     pv_test1.event_activate()
     # DateTime.today() returns pendulum object with the date of today and midnight
-    assert pv_test1.midnight == pendulum.today()
+    assert pv_test1.midnight == pendulum.today(tz=TIME_ZONE)
     global ENERGY_FORECAST
     ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh
 
@@ -138,7 +141,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     assert market_test2.created_offers[0].price == \
         29.9 * pv_test2.energy_production_forecast_kWh[TIME]
     assert pv_test2.energy_production_forecast_kWh[
-               pendulum.today().at(hour=0, minute=0, second=2)
+               pendulum.today(tz=TIME_ZONE).at(hour=0, minute=0, second=2)
            ] == 0
     area_test2.current_tick = DEFAULT_CONFIG.ticks_per_slot - 2
     pv_test2.event_tick(area=area_test2)
@@ -258,8 +261,8 @@ def pv_test6(area_test3):
 def testing_produced_energy_forecast_real_data(pv_test6, market_test3):
 
     pv_test6.event_activate()
-    morning_time = pendulum.today().at(hour=8, minute=20, second=0)
-    afternoon_time = pendulum.today().at(hour=16, minute=40, second=0)
+    morning_time = pendulum.today(tz=TIME_ZONE).at(hour=8, minute=20, second=0)
+    afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=16, minute=40, second=0)
 
     class Counts(object):
         def __init__(self, time):
@@ -352,7 +355,7 @@ def testing_low_risk(area_test3, pv_test7):
         price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test7.risk
                                                                  / ConstSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
-                                     / pv_test7._decrease_price_every_nr_s.m)
+                                     / pv_test7._decrease_price_every_nr_s)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
@@ -383,7 +386,7 @@ def testing_high_risk(area_test3, pv_test8):
         price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test8.risk /
                                                                  ConstSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
-                                     / pv_test8._decrease_price_every_nr_s.m)
+                                     / pv_test8._decrease_price_every_nr_s)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
 
@@ -414,4 +417,4 @@ def pv_test9(area_test9):
 def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
     pv_test9.event_activate()
     pv_test9.event_market_cycle()
-    assert len(market_test9.created_offers) == 1
+    assert len(market_test9.created_offers) == len(list(area_test9.markets.keys()))
