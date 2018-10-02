@@ -37,8 +37,7 @@ contract IOUToken is StandardToken {
         // receiveApproval(address _from, uint256 _value, address _tokenContract, bytes _extraData)
         // it is assumed that when does this that the call *should* succeed, otherwise one would use
         // vanilla approve instead.
-        if (!_spender.call(bytes4(
-            bytes32(keccak256("receiveApproval(address,uint256,address,bytes)"))),
+        if (!_spender.call(bytes4(keccak256("receiveApproval(address,uint256,address,bytes)")),
             msg.sender, _value, this, _extraData)) {
             revert("Failed to call receiveApproval callback.");
         }
