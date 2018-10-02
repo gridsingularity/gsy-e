@@ -91,7 +91,7 @@ _setup_modules = available_simulation_scenarios
 @click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
-@click.option('--enable-bc', is_flag=True, help="Run simulation without blockchain")
+@click.option('--enable-bc', is_flag=True, help="Run simulation on blockchain")
 def run(interface, port, setup_module_name, settings_file, slowdown, seed, paused, pause_after,
         repl, export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
         exit_on_finish_wait, enable_bc, **config_params):
@@ -138,7 +138,3 @@ def resume(save_file, interface, port):
     simulation = dill.load(save_file)
     start_web(interface, port, simulation)
     simulation.run(resume=True)
-
-
-if __name__ == "__main__":
-    main()

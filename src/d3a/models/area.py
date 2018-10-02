@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Union  # noqa
 from cached_property import cached_property
 from pendulum import duration
 from pendulum import DateTime
-# from slugify import slugify
+from slugify import slugify
 
 from d3a.blockchain import BlockChainInterface
 from d3a import TIME_ZONE
@@ -51,8 +51,7 @@ class Area:
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
-        # self.slug = slugify(name, to_lower=True)
-        self.slug = name.lower().replace(" ", "-")
+        self.slug = slugify(name, to_lower=True)
         self.area_id = Area._area_id_counter
         Area._area_id_counter += 1
         self.parent = None
