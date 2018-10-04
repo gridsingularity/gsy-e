@@ -110,9 +110,9 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
                 cls._fields[3:5])
 
     def _to_csv(self):
-        price = round(self.offer.price / self.offer.energy, 4)
+        rate = round(self.offer.price / self.offer.energy, 4)
         # residual_energy = 0 if self.residual is None else self.residual.energy
-        return self[:2] + (price, self.offer.energy) + self[3:5]
+        return self[:2] + (rate, self.offer.energy) + self[3:5]
 
 
 class Market:
@@ -537,10 +537,12 @@ class BalancingOffer(Offer):
                                                              rate=self.price / self.energy)
 
 
-class BalancingTrade():
+class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'seller',
+                                                   'buyer', 'residual', 'price_drop'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None, price_drop=False):
         # overridden to give the residual field a default value
-        return Trade(id, time, offer, seller, buyer, residual, price_drop)
+        return super(BalancingTrade, cls).__new__(cls, id, time, offer, seller,
+                                                  buyer, residual, price_drop)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
@@ -549,6 +551,16 @@ class BalancingTrade():
             "{s.offer.energy} kWh {p} @ {s.offer.price} {rate} {s.offer.id}>".
             format(s=self, p=mark_partial, rate=self.offer.price / self.offer.energy)
         )
+
+    @classmethod
+    def _csv_fields(cls):
+        return (cls._fields[:2] + ('rate [ct./kWh]', 'energy [kWh]') +
+                cls._fields[3:5])
+
+    def _to_csv(self):
+        rate = round(self.offer.price / self.offer.energy, 4)
+        # residual_energy = 0 if self.residual is None else self.residual.energy
+        return self[:2] + (rate, self.offer.energy) + self[3:5]
 
 
 class BalancingMarket(Market):
