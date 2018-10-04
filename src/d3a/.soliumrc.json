@@ -4,9 +4,9 @@
     "security"
   ],
   "rules": {
-    "operator-whitespace": 0,
-    "security/no-block-members": 0,
     "security/no-low-level-calls": 0,
+    "security/no-block-members": [0, ["timestamp"]],
+    "operator-whitespace": 0,
     "quotes": [
       "error",
       "double"

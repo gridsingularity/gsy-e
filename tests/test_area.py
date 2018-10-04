@@ -25,6 +25,7 @@ class TestAreaClass(unittest.TestCase):
         pass
 
     def test_markets_are_cycled_according_to_market_count(self):
+        self.area._bc = False
         for i in range(2, 100):
             self.config.market_count = i
             self.area._cycle_markets(False, False)

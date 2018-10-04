@@ -3,8 +3,8 @@ import select
 import sys
 import termios
 import tty
+from logging import LoggerAdapter, getLogger
 import json
-from logging import LoggerAdapter
 
 from click.types import ParamType
 from pendulum import duration
@@ -15,6 +15,10 @@ from datetime import timedelta
 from d3a import get_project_root
 from d3a import setup as d3a_setup
 from d3a.models.strategy.const import ConstSettings
+
+
+log = getLogger(__name__)
+
 
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
 INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2})s?)?$/")
@@ -100,7 +104,7 @@ class ContractJoiner(object):
             return []
 
         self.seen.add(contract_file.name)
-        print('Reading {}'.format(contract_file.name))
+        log.debug('Reading contract file "%s"', contract_file.name)
 
         for line in contract_file:
             line = line.strip('\r\n')
@@ -170,7 +174,7 @@ def get_contract_path(contract_name):
     return os.path.realpath(contract_path)
 
 
-def get_contract_source(contract_name):
+def get_cached_joined_contract_source(contract_name):
     contract_path = get_contract_path(contract_name)
     if contract_path not in _CONTRACT_CACHE:
         _CONTRACT_CACHE[contract_path] = ContractJoiner().join(contract_path)
