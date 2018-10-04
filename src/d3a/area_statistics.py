@@ -111,13 +111,16 @@ def _accumulate_cell_tower_trades(cell_tower, grid, accumulated_trades):
         "type": "cell_tower",
         "id": cell_tower.area_id,
         "produced": 0.0,
-        "consumedFrom": defaultdict(int)
+        "earned": 0.0,
+        "consumedFrom": defaultdict(int),
+        "spentTo": defaultdict(int),
     }
     for slot, market in grid.past_markets.items():
         for trade in market.trades:
             if trade.buyer == cell_tower.name:
                 sell_id = area_name_from_area_or_iaa_name(trade.seller)
                 accumulated_trades[cell_tower.name]["consumedFrom"][sell_id] += trade.offer.energy
+                accumulated_trades[cell_tower.name]["spentTo"][sell_id] += trade.offer.price
     return accumulated_trades
 
 
@@ -127,7 +130,9 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
             "type": "house",
             "id": house.area_id,
             "produced": 0.0,
-            "consumedFrom": defaultdict(int)
+            "earned": 0.0,
+            "consumedFrom": defaultdict(int),
+            "spentTo": defaultdict(int),
         }
     house_IAA_name = make_iaa_name(house)
     child_names = [c.name for c in house.children]
@@ -137,8 +142,11 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
                     area_name_from_area_or_iaa_name(trade.buyer) in child_names:
                 # House self-consumption trade
                 accumulated_trades[house.name]["produced"] -= trade.offer.energy
+                accumulated_trades[house.name]["earned"] += trade.offer.price
                 accumulated_trades[house.name]["consumedFrom"][house.name] += trade.offer.energy
+                accumulated_trades[house.name]["spentTo"][house.name] += trade.offer.price
             elif trade.buyer == house_IAA_name:
+                accumulated_trades[house.name]["earned"] += trade.offer.price
                 accumulated_trades[house.name]["produced"] -= trade.offer.energy
 
     for slot, market in grid.past_markets.items():
@@ -146,6 +154,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
             if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
                 seller_id = area_name_from_area_or_iaa_name(trade.seller)
                 accumulated_trades[house.name]["consumedFrom"][seller_id] += trade.offer.energy
+                accumulated_trades[house.name]["spentTo"][seller_id] += trade.offer.price
     return accumulated_trades
 
 
@@ -182,7 +191,8 @@ def _generate_produced_energy_entries(accumulated_trades):
         "x": area_name,
         "y": area_data["produced"],
         "target": area_name,
-        "label": str(area_name) + " Produced " + str(round(abs(area_data["produced"]), 3)) + " kWh"
+        "label": f"{area_name} Produced {str(round(abs(area_data['produced']), 3))} kWh",
+        "priceLabel": f"{area_name} Earned {str(round(abs(area_data['earned']), 3))} cents",
     } for area_name, area_data in accumulated_trades.items()]
     return sorted(produced_energy, key=lambda a: a["x"])
 
@@ -192,15 +202,17 @@ def _generate_self_consumption_entries(accumulated_trades):
     self_consumed_energy = []
     for area_name, area_data in accumulated_trades.items():
         sc_energy = 0
+        sc_money = 0
         if area_name in area_data["consumedFrom"].keys():
             sc_energy = area_data["consumedFrom"].pop(area_name)
+            sc_money = area_data["spentTo"].pop(area_name)
         self_consumed_energy.append({
             "x": area_name,
             "y": sc_energy,
             "target": area_name,
-            "label":
-                str(area_name) + " Consumed " + str(round(sc_energy, 3)) +
-                " kWh from " + str(area_name)
+            "label": f"{area_name} Consumed {str(round(sc_energy, 3))} kWh from {area_name}",
+            "priceLabel": f"{area_name} Spent {str(round(sc_money, 3))} cents on "
+                          f"energy from {area_name}",
         })
     return sorted(self_consumed_energy, key=lambda a: a["x"])
 
@@ -210,6 +222,7 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
     # irregardless of their keys
     for area_name, area_data in accumulated_trades.items():
         area_data["consumedFrom"] = list(area_data["consumedFrom"].items())
+        area_data["spentTo"] = list(area_data["spentTo"].items())
 
     consumption_rows = []
     # Exhaust all consumedFrom entries from all houses
@@ -217,16 +230,22 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
         consumption_row = []
         for area_name in sorted(accumulated_trades.keys()):
             target_area = area_name
+            p_target_area = area_name
             consumption = 0
+            spent_to = 0
             if accumulated_trades[area_name]["consumedFrom"]:
                 target_area, consumption = accumulated_trades[area_name]["consumedFrom"].pop()
+            if accumulated_trades[area_name]["spentTo"]:
+                p_target_area, spent_to = accumulated_trades[area_name]["spentTo"].pop()
+                assert p_target_area == target_area
             consumption_row.append({
                 "x": area_name,
                 "y": consumption,
                 "target": target_area,
-                "label":
-                    area_name + " Consumed " + str(round(consumption, 3)) +
-                    " kWh from " + target_area
+                "label": f"{area_name} Consumed {str(round(consumption, 3))} kWh "
+                         f"from {target_area}",
+                "priceLabel": f"{area_name} Spent {str(round(spent_to, 3))} cents on "
+                              f"energy from {p_target_area}"
             })
         consumption_rows.append(sorted(consumption_row, key=lambda x: x["x"]))
     return consumption_rows
