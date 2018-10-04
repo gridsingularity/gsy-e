@@ -128,8 +128,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 * (self.area.config.slot_length / duration(hours=1)))
 
     def event_market_cycle(self):
-        self._demand_balancing_offer()
         for market in self.active_markets:
+            self._demand_balancing_offer(market)
             if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
                     self.post_first_bid(market, self.energy_requirement_Wh[market.time_slot])
@@ -162,16 +162,16 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             self._supply_balancing_offer(market, trade)
 
     # committing to increase its consumption when required
-    def _demand_balancing_offer(self):
+    def _demand_balancing_offer(self, market):
         if self.owner.name not in DeviceRegistry.REGISTRY:
             return
         ramp_up_energy = \
             self.balancing_energy_ratio.demand * \
-            self.state.desired_energy[self.area.next_market.time_slot]
-        self.energy_requirement_Wh -= ramp_up_energy
+            self.state.desired_energy_Wh[market.time_slot]
+        self.energy_requirement_Wh[market.time_slot] -= ramp_up_energy
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
-            self.area.balancing_markets[self.area.next_market.time_slot].\
+            self.area.balancing_markets[market.time_slot].\
                 balancing_offer(ramp_up_price,
                                 -ramp_up_energy,
                                 self.owner.name)
