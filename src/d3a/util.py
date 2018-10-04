@@ -3,8 +3,8 @@ import select
 import sys
 import termios
 import tty
+from logging import LoggerAdapter, getLogger
 import json
-from logging import LoggerAdapter
 
 from click.types import ParamType
 from pendulum import duration
@@ -15,6 +15,10 @@ from datetime import timedelta
 from d3a import get_project_root
 from d3a import setup as d3a_setup
 from d3a.models.strategy.const import ConstSettings
+
+
+log = getLogger(__name__)
+
 
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
 INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2})s?)?$/")
@@ -100,7 +104,7 @@ class ContractJoiner(object):
             return []
 
         self.seen.add(contract_file.name)
-        print('Reading {}'.format(contract_file.name))
+        log.debug('Reading contract file "%s"', contract_file.name)
 
         for line in contract_file:
             line = line.strip('\r\n')
@@ -170,7 +174,7 @@ def get_contract_path(contract_name):
     return os.path.realpath(contract_path)
 
 
-def get_contract_source(contract_name):
+def get_cached_joined_contract_source(contract_name):
     contract_path = get_contract_path(contract_name)
     if contract_path not in _CONTRACT_CACHE:
         _CONTRACT_CACHE[contract_path] = ContractJoiner().join(contract_path)
@@ -209,7 +213,7 @@ def read_settings_from_file(settings_file):
                 settings["basic_settings"].get('slot_length', timedelta(minutes=15))),
             "tick_length": IntervalType('M:S')(
                 settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
-            "market_count": settings["basic_settings"].get('market_count', 4),
+            "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
             "market_maker_rate": settings["basic_settings"].get(
@@ -234,3 +238,16 @@ def update_advanced_settings(advanced_settings):
             setattr(ConstSettings, set_var, parseboolstring(set_val))
         else:
             setattr(ConstSettings, set_var, set_val)
+
+
+def generate_market_slot_list(area):
+    """
+    Returns a list of all slot times
+    """
+    market_slots = []
+    for slot_time in [
+        area.now + (area.config.slot_length * i) for i in range(
+            (area.config.duration + (area.config.market_count * area.config.slot_length)) //
+            area.config.slot_length)]:
+        market_slots.append(slot_time)
+    return market_slots

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.4;
+pragma solidity 0.4.25;
 
 
 library ItSet {
@@ -12,14 +12,13 @@ library ItSet {
     }
 
     function insert(ByteSet storage self, bytes32 k) internal {
-        var entry = self.entries[k];
-        if (entry.idx == 0) {
-            entry.idx = self.list.length + 1;
+        if (self.entries[k].idx == 0) {
+            self.entries[k].idx = self.list.length + 1;
             self.list.push(k);
         }
     }
 
-    function contains(ByteSet storage self, bytes32 k) internal constant returns (bool) {
+    function contains(ByteSet storage self, bytes32 k) internal view returns (bool) {
         return self.entries[k].idx > 0;
     }
 
@@ -35,7 +34,7 @@ library ItSet {
         }
     }
 
-    function size(ByteSet storage self) internal constant returns (uint) {
+    function size(ByteSet storage self) internal view returns (uint) {
         return self.list.length;
     }
 }

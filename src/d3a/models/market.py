@@ -9,11 +9,21 @@ import sys
 from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
+from d3a import TIME_ZONE
 from d3a import TIME_FORMAT
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBid, BidNotFound, InvalidBalancingTradeException, DeviceNotInRegistryError
 from d3a.models.events import MarketEvent, OfferEvent
 from d3a.device_registry import DeviceRegistry
+from d3a.blockchain_utils import create_market_contract, create_new_offer, cancel_offer, \
+    trade_offer
+
+BC_EVENT_MAP = {
+    b"NewOffer": MarketEvent.OFFER,
+    b"CancelOffer": MarketEvent.OFFER_DELETED,
+    b"NewTrade": MarketEvent.TRADE,
+    b"OfferChanged": MarketEvent.OFFER_CHANGED
+}
 
 log = getLogger(__name__)
 
@@ -24,6 +34,7 @@ OFFER_PRICE_THRESHOLD = 0.00001
 class Offer:
     def __init__(self, id, price, energy, seller, market=None):
         self.id = str(id)
+        self.real_id = id
         self.price = price
         self.energy = energy
         self.seller = seller
@@ -108,14 +119,19 @@ class Market:
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
         self.area = area
         self.time_slot = time_slot
-        if self.time_slot is not None:
-            self.time_slot_str = time_slot.strftime(TIME_FORMAT)
+        self.time_slot_str = time_slot.strftime(TIME_FORMAT) \
+            if self.time_slot is not None \
+            else None
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
+        self.offers_deleted = {}  # type: Dict[str, Offer]
+        self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
         self.bids = {}  # type: Dict[str, Bid]
         self.notification_listeners = []
         self.trades = []  # type: List[Trade]
+        # Store trades temporarily until bc event has fired
+        self._trades_by_id = {}  # type: Dict[str, Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
         self.traded_energy = defaultdict(int)
         # Store actual energy consumption in a nested dict in the form of
@@ -134,26 +150,56 @@ class Market:
         self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
+        self.bc_contract = \
+            create_market_contract(self.area.bc,
+                                   self.area.config.duration.in_seconds(),
+                                   [self._bc_listener]) \
+            if self.area and self.area.bc \
+            else None
         self.device_registry = DeviceRegistry.REGISTRY
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
+
+    def _bc_listener(self, event):
+        # TODO: Disabled for now, should be added once event driven blockchain transaction
+        # handling is introduced
+        # event_type = BC_EVENT_MAP[event['_event_type']]
+        # kwargs = {}
+        # if event_type is MarketEvent.OFFER:
+        #     kwargs['offer'] = self.offers[event['offerId']]
+        # elif event_type is MarketEvent.OFFER_DELETED:
+        #     kwargs['offer'] = self.offers_deleted.pop(event['offerId'])
+        # elif event_type is MarketEvent.OFFER_CHANGED:
+        #     existing_offer, new_offer = self.offers_changed.pop(event['oldOfferId'])
+        #     kwargs['existing_offer'] = existing_offer
+        #     kwargs['new_offer'] = new_offer
+        # elif event_type is MarketEvent.TRADE:
+        #     kwargs['trade'] = self._trades_by_id.pop(event['tradeId'])
+        # self._notify_listeners(event_type, **kwargs)
+        return
 
     def _notify_listeners(self, event, **kwargs):
         # Deliver notifications in random order to ensure fairness
         for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
             listener(event, market=self, **kwargs)
 
-    def offer(self, price: float, energy: float, seller: str, agents: bool=False) -> Offer:
-        assert agents is False
+    def offer(self, price: float, energy: float, seller: str,
+              balancing_agent: bool=False) -> Offer:
+        assert balancing_agent is False
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
-        offer = Offer(str(uuid.uuid4()), price, energy, seller, self)
+
+        offer_id = create_new_offer(self.area.bc, self.bc_contract, energy, price, seller) \
+            if self.bc_contract \
+            else str(uuid.uuid4())
+
+        offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
-        log.info("[OFFER][NEW] %s", offer)
+        log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
@@ -164,7 +210,7 @@ class Market:
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self)
         self.bids[bid.id] = bid
-        log.info("[BID][NEW] %s", bid)
+        log.info(f"[BID][NEW][{self.time_slot_str}] {bid}")
         return bid
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
@@ -172,12 +218,20 @@ class Market:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
+
         offer = self.offers.pop(offer_or_id, None)
+
+        if self.bc_contract and offer is not None:
+            cancel_offer(self.area.bc, self.bc_contract, offer.real_id, offer.seller)
+            # Hold on to deleted offer until bc event is processed
+            self.offers_deleted[offer_or_id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
-        log.info("[OFFER][DEL] %s", offer)
+        log.info(f"[OFFER][DEL][{self.time_slot_str}] {offer}")
+
+        # TODO: Once we add event-driven blockchain, this should be asynchronous
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def delete_bid(self, bid_or_id: Union[str, Bid]):
@@ -186,7 +240,7 @@ class Market:
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFound(bid_or_id)
-        log.info("[BID][DEL] %s", bid)
+        log.info(f"[BID][DEL][{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def accept_bid(self, bid: Bid, energy: float = None,
@@ -220,7 +274,7 @@ class Market:
                           bid, seller, buyer, residual, price_drop=price_drop)
             self._update_stats_after_trade(trade, bid, bid.buyer, track_bid)
             if track_bid:
-                log.warning("[TRADE][BID] %s", trade)
+                log.warning(f"[TRADE][BID][{self.time_slot_str}] {trade}")
 
             self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
             if not trade.residual:
@@ -235,8 +289,9 @@ class Market:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
-        residual_offer = None
         offer = self.offers.pop(offer_or_id, None)
+        original_offer = offer
+        residual_offer = None
         self._sorted_offers = sorted(self.offers.values(),
                                      key=lambda o: o.price / o.energy)
         if offer is None:
@@ -250,8 +305,11 @@ class Market:
                     raise InvalidTrade("Energy can not be zero.")
                 elif energy < offer.energy:
                     original_offer = offer
+                    accepted_offer_id = offer.id \
+                        if self.area is None or self.area.bc is None \
+                        else offer.real_id
                     accepted_offer = Offer(
-                        offer.id,
+                        accepted_offer_id,
                         offer.price / offer.energy * energy,
                         energy,
                         offer.seller,
@@ -265,15 +323,19 @@ class Market:
                         offer.market
                     )
                     self.offers[residual_offer.id] = residual_offer
-                    log.info("[OFFER][CHANGED] %s -> %s", original_offer, residual_offer)
+                    log.info(f"[OFFER][CHANGED][{self.time_slot_str}] "
+                             f"{original_offer} -> {residual_offer}")
                     offer = accepted_offer
-                    self._sorted_offers = sorted(self.offers.values(),
-                                                 key=lambda o: o.price / o.energy)
-                    self._notify_listeners(
-                        MarketEvent.OFFER_CHANGED,
-                        existing_offer=original_offer,
-                        new_offer=residual_offer
-                    )
+                    if self.area and self.area.bc:
+                        self.offers_changed[offer.id] = (original_offer, residual_offer)
+                    else:
+                        self._sorted_offers = sorted(self.offers.values(),
+                                                     key=lambda o: o.price / o.energy)
+                        self._notify_listeners(
+                            MarketEvent.OFFER_CHANGED,
+                            existing_offer=original_offer,
+                            new_offer=residual_offer
+                        )
                 elif energy > offer.energy:
                     raise InvalidTrade("Energy can't be greater than offered energy")
                 else:
@@ -286,16 +348,50 @@ class Market:
                                          key=lambda o: o.price / o.energy)
             raise
 
-        trade = Trade(str(uuid.uuid4()), time, offer, offer.seller, buyer,
+        trade_id = self._handle_blockchain_trade_event(offer, buyer,
+                                                       original_offer, residual_offer)
+        trade = Trade(trade_id, time, offer, offer.seller, buyer,
                       residual_offer, price_drop)
-        self._update_stats_after_trade(trade, offer, buyer)
-        log.warning("[TRADE] %s", trade)
+        if self.area and self.area.bc:
+            self._trades_by_id[trade_id] = trade
 
+        self._update_stats_after_trade(trade, offer, buyer)
+
+        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
+        log.warning(f"[TRADE][{self.time_slot_str}] {trade}")
+
+        # FIXME: Needs to be triggered by blockchain event
+        # TODO: Same as above, should be modified when event-driven blockchain is introduced
         offer._traded(trade, self)
+
+        # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
+        # normal runs.
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
         return trade
 
+    def _handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
+        if self.bc_contract:
+            trade_id, new_offer_id = trade_offer(self.area.bc, self.bc_contract, offer.real_id,
+                                                 offer.energy, buyer)
+
+            if residual_offer is not None:
+                if new_offer_id is None:
+                    raise InvalidTrade("Blockchain and local residual offers are out of sync")
+                residual_offer.id = str(new_offer_id)
+                residual_offer.real_id = new_offer_id
+                self._notify_listeners(
+                    MarketEvent.OFFER_CHANGED,
+                    existing_offer=original_offer,
+                    new_offer=residual_offer
+                )
+        else:
+            trade_id = str(uuid.uuid4())
+        return trade_id, residual_offer
+
     def _update_stats_after_trade(self, trade, offer, buyer, track_trade=True):
+        # FIXME: The following updates need to be done in response to the BC event
+        # TODO: For now event driven blockchain updates have been disabled in favor of a
+        # sequential approach, but once event handling is enabled this needs to be handled
         if track_trade:
             self.trades.append(trade)
         self._update_accumulated_trade_price_energy(trade)
@@ -366,7 +462,7 @@ class Market:
         if self.area:
             return self.area.now
         log.error("No area available. Using real system time!")
-        return DateTime.now()
+        return DateTime.now(tz=TIME_ZONE)
 
     def set_actual_energy(self, time, reporter, value):
         self.actual_energy[time][reporter] += value
@@ -463,12 +559,12 @@ class BalancingMarket(Market):
         self.cumulative_energy_traded_downward = 0
         Market.__init__(self, time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str, agent: bool=False):
-        return self.balancing_offer(price, energy, seller, agent)
+    def offer(self, price: float, energy: float, seller: str, balancing_agent: bool=False):
+        return self.balancing_offer(price, energy, seller, balancing_agent)
 
     def balancing_offer(self, price: float, energy: float,
-                        seller: str, agent: bool=False) -> BalancingOffer:
-        if seller not in DeviceRegistry.REGISTRY.keys() and not agent:
+                        seller: str, balancing_agent: bool=False) -> BalancingOffer:
+        if seller not in DeviceRegistry.REGISTRY.keys() and not balancing_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
         if self.readonly:

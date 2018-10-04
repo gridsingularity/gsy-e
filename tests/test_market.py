@@ -4,6 +4,7 @@ from collections import defaultdict
 import pytest
 from pendulum import DateTime
 
+from d3a import TIME_ZONE
 from d3a.models.events import MarketEvent
 from hypothesis import strategies as st
 from hypothesis.control import assume
@@ -21,9 +22,17 @@ DeviceRegistry.REGISTRY = {
 }
 
 
+class FakeArea:
+    def __init__(self, name):
+        self.name = name
+        self.current_tick = 10
+        self.bc = False
+        self.now = DateTime.now()
+
+
 @pytest.yield_fixture
 def market():
-    return Market()
+    return Market(area=FakeArea("FakeArea"))
 
 
 def test_device_registry(market=BalancingMarket()):
@@ -147,7 +156,7 @@ def test_market_bid_delete_missing(market: Market):
 ])
 def test_market_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
-    now = DateTime.now()
+    now = DateTime.now(tz=TIME_ZONE)
     trade = getattr(market, accept_offer)(offer_or_id=e_offer, buyer='B',
                                           energy=10, time=now)
     assert trade
@@ -162,7 +171,7 @@ def test_market_trade(market, offer, accept_offer):
 def test_balancing_market_negative_offer_trade(market=BalancingMarket()):
     offer = market.balancing_offer(20, -10, 'A')
 
-    now = DateTime.now()
+    now = DateTime.now(tz=TIME_ZONE)
     trade = market.accept_offer(offer, 'B', time=now, energy=-10)
     assert trade
     assert trade == market.trades[0]
@@ -192,7 +201,7 @@ def test_market_bid_trade(market: Market):
 ])
 def test_market_trade_by_id(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
-    now = DateTime.now()
+    now = DateTime.now(tz=TIME_ZONE)
     trade = getattr(market, accept_offer)(offer_or_id=e_offer.id, buyer='B',
                                           energy=10, time=now)
     assert trade
@@ -418,7 +427,7 @@ def test_market_most_affordable_offers(market, offer):
     (BalancingMarket, "balancing_offer")
 ])
 def test_market_listeners_init(market, offer, called):
-    markt = market(notification_listener=called)
+    markt = market(area=FakeArea('fake_house'), notification_listener=called)
     getattr(markt, offer)(10, 20, 'A')
     assert len(called.calls) == 1
 
@@ -529,7 +538,7 @@ class MarketStateMachine(RuleBasedStateMachine):
 
     def __init__(self):
         super().__init__()
-        self.market = Market()
+        self.market = Market(area=FakeArea(name='my_fake_house'))
 
     @rule(target=actors, actor=st.text(min_size=1, max_size=3,
                                        alphabet=string.ascii_letters + string.digits))

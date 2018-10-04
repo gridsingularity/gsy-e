@@ -8,7 +8,7 @@ import inspect
 import os
 
 from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
-from d3a.models.strategy import ureg
+from d3a.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.read_user_profile import read_profile_csv_to_dict, read_arbitrary_profile
@@ -58,25 +58,17 @@ class PVPredefinedStrategy(PVStrategy):
         # therefore config cannot be read at that point
         data = self._read_predefined_profile_for_pv()
 
-        for slot_time in [
-            self.area.now + (self.area.config.slot_length * i)
-            for i in range(
-                (
-                        self.area.config.duration
-                        + (
-                                self.area.config.market_count *
-                                self.area.config.slot_length)
-                ) // self.area.config.slot_length)
-        ]:
+        for slot_time in generate_market_slot_list(self.area):
             self.energy_production_forecast_kWh[slot_time] = \
                 data[slot_time.format(PENDULUM_TIME_FORMAT)]
+            self.state.available_energy_kWh[slot_time] = \
+                self.energy_production_forecast_kWh[slot_time]
 
         # TODO: A bit clumsy, but this decrease price calculation needs to be added here as well
         # Need to refactor once we convert the config object to a singleton that is shared globally
         # in the simulation
         self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1) \
-            * ureg.seconds
+            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
 
     def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
         """

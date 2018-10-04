@@ -9,6 +9,8 @@ from pendulum import duration
 from pendulum import DateTime
 from slugify import slugify
 
+from d3a.blockchain import BlockChainInterface
+from d3a import TIME_ZONE
 from d3a.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.appliance.inter_area import InterAreaAppliance
@@ -26,7 +28,7 @@ log = getLogger(__name__)
 
 DEFAULT_CONFIG = SimulationConfig(
     duration=duration(hours=24),
-    market_count=4,
+    market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
@@ -73,11 +75,14 @@ class Area:
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
+        self._bc = None  # type: BlockChainInterface
         self.listeners = []
         self._accumulated_past_price = 0
         self._accumulated_past_energy = 0
 
-    def activate(self):
+    def activate(self, bc=None):
+        if bc:
+            self._bc = bc
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
             if attr:
                 if self.parent:
@@ -142,6 +147,14 @@ class Area:
         if self.parent:
             return self.parent.config
         return DEFAULT_CONFIG
+
+    @property
+    def bc(self) -> Optional[BlockChainInterface]:
+        if self._bc is not None:
+            return self._bc
+        if self.parent:
+            return self.parent.bc
+        return None
 
     @property
     def _offer_count(self):
@@ -304,7 +317,7 @@ class Area:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now().start_of('day').add(
+        return DateTime.now(tz=TIME_ZONE).start_of('day').add(
             seconds=self.config.tick_length.seconds * self.current_tick
         )
 
@@ -368,8 +381,9 @@ class Area:
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:
             self.tick()
-        elif event_type is AreaEvent.MARKET_CYCLE:
-            self._cycle_markets(_market_cycle=True)
+        # TODO: Review this change. Make sure this trigger is not needed anywhere else
+        # elif event_type is AreaEvent.MARKET_CYCLE:
+        #     self._cycle_markets(_market_cycle=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.activate()
         if self.strategy:

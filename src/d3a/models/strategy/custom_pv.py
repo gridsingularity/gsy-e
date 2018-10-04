@@ -26,7 +26,7 @@ class CustomPvStrategy(PVStrategy):
 
         pass
 
-    def decrease_energy_price_over_ticks(self):
+    def decrease_energy_price_over_ticks(self, market):
         """
         Overrides d3a.models.strategy.update_frequency.decrease_energy_price_over_ticks
         Is called on every EVENT_TICK event.

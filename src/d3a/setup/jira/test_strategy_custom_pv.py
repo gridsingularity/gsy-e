@@ -23,7 +23,7 @@ class CustomPvStrategy(PVStrategy):
 
         return self.area.config.market_maker_rate[current_time_h]
 
-    def decrease_energy_price_over_ticks(self):
+    def decrease_energy_price_over_ticks(self, market):
         """
         Decreases the offer rate by 0.1 ct/kWh per tick
         """

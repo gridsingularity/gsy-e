@@ -1,5 +1,4 @@
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.const import ConstSettings
 
 """
 Example file for StorageStrategy.
@@ -31,7 +30,7 @@ class CustomStorageStrategy(StorageStrategy):
 
         return self.area.config.market_maker_rate[market.time_slot_str]
 
-    def decrease_energy_price_over_ticks(self):
+    def decrease_energy_price_over_ticks(self, market):
         """
         Decreases the offer rate by 0.1 ct/kWh per tick
         """
@@ -48,7 +47,7 @@ class CustomStorageStrategy(StorageStrategy):
         """
         return self.area.next_market
 
-    def update_posted_bids(self, market):
+    def update_posted_bids_over_ticks(self, market):
         """
         Copy of the original code
         This is  not tested in the integrationtest (Scenario: "Custom storage works as expected")
@@ -57,18 +56,6 @@ class CustomStorageStrategy(StorageStrategy):
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
-        if (
-                # FIXME: Make sure that the offer reached every system participant.
-                # FIXME: Therefore it can only be update (depending on number of niveau and
-                # FIXME: InterAreaAgent min_offer_age
-                current_tick_number > ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH
-                and elapsed_seconds > self._increase_rate_timepoint_s
-        ):
+        if elapsed_seconds > self._increase_rate_timepoint_s:
             self._increase_rate_timepoint_s += self._increase_frequency_s
-            existing_bids = list(self.get_posted_bids(market))
-            for bid in existing_bids:
-                market.delete_bid(bid.id)
-                self.remove_bid_from_pending(bid.id, market)
-                self.post_bid(market,
-                              bid.energy * self._get_current_energy_rate(current_tick_number),
-                              bid.energy)
+            self._update_posted_bids(market, current_tick_number)

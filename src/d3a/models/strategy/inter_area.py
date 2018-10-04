@@ -15,13 +15,13 @@ ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 class IAAEngine:
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
-                 owner: "InterAreaAgent", agent):
+                 owner: "InterAreaAgent", balancing_agent):
         self.name = name
         self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
         self.transfer_fee_pct = transfer_fee_pct
         self.owner = owner
-        self.agent = agent
+        self.balancing_agent = balancing_agent
 
         self.offer_age = {}  # type: Dict[str, int]
         # Offer.id -> OfferInfo
@@ -41,7 +41,7 @@ class IAAEngine:
             offer.price + (offer.price * (self.transfer_fee_pct / 100)),
             offer.energy,
             self.owner.name,
-            self.agent
+            self.balancing_agent
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -360,7 +360,7 @@ class InterAreaAgent(BaseStrategy):
                   'min_offer_age')
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1, agent=False):
+                 transfer_fee_pct=1, min_offer_age=1, balancing_agent=False):
         """
         Equalize markets
 
@@ -373,12 +373,13 @@ class InterAreaAgent(BaseStrategy):
         super().__init__()
         self.owner = owner
         self.name = make_iaa_name(owner)
+        self.balancing_agent = balancing_agent
 
         self.engines = [
             IAAEngine('High -> Low', higher_market, lower_market, min_offer_age, transfer_fee_pct,
-                      self, agent),
+                      self, balancing_agent),
             IAAEngine('Low -> High', lower_market, higher_market, min_offer_age, transfer_fee_pct,
-                      self, agent),
+                      self, balancing_agent),
         ]
 
         self.time_slot = higher_market.time_slot.strftime(TIME_FORMAT)
@@ -442,7 +443,7 @@ class BalancingAgent(InterAreaAgent):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
         InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
-                                min_offer_age=min_offer_age, agent=True)
+                                min_offer_age=min_offer_age, balancing_agent=True)
         self.name = make_ba_name(self.owner)
 
     def event_tick(self, *, area):

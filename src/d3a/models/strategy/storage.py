@@ -63,6 +63,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
     def event_activate(self):
+        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
@@ -92,7 +93,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             if self.state.clamp_energy_to_buy_kWh() <= 0:
                 return
             if self.are_bids_posted(self.area.next_market):
-                self.update_posted_bids(self.area.next_market)
+                self.update_posted_bids_over_ticks(self.area.next_market)
             else:
                 # TODO: Refactor this to reuse all markets
                 self.post_first_bid(
@@ -102,7 +103,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
         self.state.tick(area)  # To incorporate battery energy loss over time
         if self.cap_price_strategy is False:
-            self.decrease_energy_price_over_ticks()
+            self.decrease_energy_price_over_ticks(self.area.next_market)
 
     def event_bid_deleted(self, *, market, bid):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
@@ -158,7 +159,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.market_cycle(self.area)
 
             if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-                self.update_market_cycle_bids()
+                self.update_market_cycle_bids(final_rate=self.break_even[
+                    self.area.now.strftime(TIME_FORMAT)][0])
                 if self.state.clamp_energy_to_buy_kWh() > 0:
                     self.post_first_bid(
                         self.area.next_market,
@@ -192,7 +194,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
     def buy_energy(self):
         # Here starts the logic if energy should be bought
         # Iterating over all offers in every open market
-        for market in self.area.markets.values():
+        for market in [list(self.area.markets.values())[0]]:
             max_affordable_offer_rate = self.break_even[market.time_slot_str][0]
             for offer in market.sorted_offers:
                 if offer.seller == self.owner.name:

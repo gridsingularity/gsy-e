@@ -58,7 +58,7 @@ _setup_modules = available_simulation_scenarios
 @click.option('-f', '--iaa_fee', type=int,
               default=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE, show_default=True,
               help="Inter-Area-Agent Fee in percentage")
-@click.option('-m', '--market-count', type=int, default=5, show_default=True,
+@click.option('-m', '--market-count', type=int, default=1, show_default=True,
               help="Number of tradable market slots into the future")
 @click.option('-i', '--interface', default="0.0.0.0", show_default=True,
               help="REST-API server listening interface")
@@ -85,14 +85,16 @@ _setup_modules = available_simulation_scenarios
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
 @click.option('--exit-on-finish', is_flag=True)
-@click.option('--exit-on-finish-wait', type=IntervalType('M:S'), default="1s", show_default=True,
-              help="Wait time before exiting after finishing the simulation run")
+@click.option('--exit-on-finish-wait', type=IntervalType('M:S'), default="0",
+              help="Wait time before exiting after finishing the simulation run. "
+                   "[default: disabled]")
 @click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
+@click.option('--enable-bc', is_flag=True, help="Run simulation on blockchain")
 def run(interface, port, setup_module_name, settings_file, slowdown, seed, paused, pause_after,
         repl, export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
-        exit_on_finish_wait, **config_params):
+        exit_on_finish_wait, enable_bc, **config_params):
     try:
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
@@ -117,7 +119,8 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
             exit_on_finish=exit_on_finish,
             exit_on_finish_wait=exit_on_finish_wait,
             api_url=api_url,
-            redis_job_id=None
+            redis_job_id=None,
+            use_bc=enable_bc
         )
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])

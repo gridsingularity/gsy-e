@@ -5,7 +5,6 @@ click
 click-default-group
 colorlog
 dill
-ethereum
 flask
 flask-api
 flask-cors
@@ -13,9 +12,10 @@ pendulum
 pint
 pip-tools
 plotly
+py-solc
 python-rex
-rlp
 tablib
 terminaltables
 rq
 requests
+web3

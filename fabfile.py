@@ -93,6 +93,20 @@ def _ensure_pip_tools():
             local("pip install pip-tools")
 
 
+def _ensure_ganache_cli():
+    error_code = os.system('ganache-cli --version > /dev/null')
+    if error_code != 0:
+        local('npm install --global ganache-cli')
+
+
+def _ensure_solidity_compiler():
+    solidity_version = local('solc --version')
+    # Smart contracts depend on solc v0.4.25
+    if "0.4.25" not in solidity_version:
+        local('brew install https://raw.githubusercontent.com/ethereum/'
+              'homebrew-ethereum/f26f126820e5f47c3ed7ec6d5e6e046707443d87/solidity.rb')
+
+
 def _pre_check():
     _ensure_venv()
     with hide('running', 'stdout'):
@@ -104,6 +118,8 @@ def _pre_check():
 
 def _post_check():
     _ensure_solium()
+    _ensure_ganache_cli()
+    _ensure_solidity_compiler()
     _ensure_pre_commit()
 
 
