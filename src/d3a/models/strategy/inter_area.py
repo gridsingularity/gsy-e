@@ -490,13 +490,16 @@ class BalancingAgent(InterAreaAgent):
 
     def _balancing_trade(self, offer, target_energy):
         trade = None
+        buyer = make_ba_name(self.owner) \
+            if make_ba_name(self.owner) != offer.seller \
+            else f"{self.owner.name} Reserve"
         if abs(offer.energy) <= abs(target_energy):
             trade = self.lower_market.accept_offer(offer_or_id=offer,
-                                                   buyer=make_ba_name(self.owner),
+                                                   buyer=buyer,
                                                    energy=offer.energy)
         elif abs(offer.energy) >= abs(target_energy):
             trade = self.lower_market.accept_offer(offer_or_id=offer,
-                                                   buyer=make_ba_name(self.owner),
+                                                   buyer=buyer,
                                                    energy=target_energy)
         return trade
 
