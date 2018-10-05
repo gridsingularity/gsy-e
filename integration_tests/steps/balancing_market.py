@@ -38,8 +38,6 @@ def number_of_balancing_trades(context, area, b_trade_nr, s_trade_nr):
             market.trades,
             0
         )
-        print(b_trade_nr)
-        print(reduced_trades)
         assert b_trade_nr == reduced_trades
         assert len(area_object.past_markets[slot].trades) == s_trade_nr
 

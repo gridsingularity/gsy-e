@@ -575,7 +575,7 @@ class BalancingMarket(Market):
         self.offers[offer.id] = offer
         self._sorted_offers = \
             sorted(self.offers.values(), key=lambda o: o.price / o.energy)
-        log.info("[BALANCING_OFFER][NEW] %s", offer)
+        log.info(f"[BALANCING_OFFER][NEW][{self.time_slot_str}] {offer}", offer)
         self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
 
@@ -620,8 +620,8 @@ class BalancingMarket(Market):
                         offer.market
                     )
                     self.offers[residual_offer.id] = residual_offer
-                    log.info("[BALANCING_OFFER][CHANGED] %s -> %s",
-                             original_offer, residual_offer)
+                    log.info(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
+                             f"{original_offer} -> {residual_offer}")
                     offer = accepted_offer
                     self._sorted_offers = sorted(self.offers.values(),
                                                  key=lambda o: o.price / o.energy)
@@ -648,7 +648,7 @@ class BalancingMarket(Market):
                                residual=residual_offer, price_drop=price_drop)
         self.trades.append(trade)
         self._update_accumulated_trade_price_energy(trade)
-        log.warning("[BALANCING_TRADE] %s", trade)
+        log.warning(f"[BALANCING_TRADE][{self.time_slot_str}] {trade}")
         self.traded_energy[offer.seller] += offer.energy
         self.traded_energy[buyer] -= offer.energy
         self.ious[buyer][offer.seller] += offer.price
@@ -669,5 +669,5 @@ class BalancingMarket(Market):
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
-        log.info("[BALANCING_OFFER][DEL] %s", offer)
+        log.info(f"[BALANCING_OFFER][DEL][{self.time_slot_str}] {offer}")
         self._notify_listeners(MarketEvent.BALANCING_OFFER_DELETED, offer=offer)
