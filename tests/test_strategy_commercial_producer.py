@@ -111,6 +111,8 @@ def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registr
     assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == \
         sys.maxsize * 50
 
+    DeviceRegistry.REGISTRY = {}
+
 
 """TEST2"""
 
