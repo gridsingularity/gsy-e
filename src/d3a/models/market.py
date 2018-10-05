@@ -569,6 +569,14 @@ class BalancingMarket(Market):
         self.unmatched_energy_downward = 0
         self.cumulative_energy_traded_upward = 0
         self.cumulative_energy_traded_downward = 0
+        self.accumulated_supply_balancing_trade_price = 0
+        self.accumulated_supply_balancing_trade_energy = 0
+        self.accumulated_demand_balancing_trade_price = 0
+        self.accumulated_demand_balancing_trade_energy = 0
+
+        self._avg_supply_balancing_trade_rate = None
+        self._avg_demand_balancing_trade_rate = None
+
         Market.__init__(self, time_slot, area, notification_listener, readonly)
 
     def offer(self, price: float, energy: float, seller: str, balancing_agent: bool=False):
@@ -683,3 +691,27 @@ class BalancingMarket(Market):
             raise OfferNotFoundException()
         log.info("[BALANCING_OFFER][DEL] %s", offer)
         self._notify_listeners(MarketEvent.BALANCING_OFFER_DELETED, offer=offer)
+
+    def _update_accumulated_trade_price_energy(self, trade):
+        if trade.offer.energy > 0:
+            self.accumulated_supply_balancing_trade_price += trade.offer.price
+            self.accumulated_supply_balancing_trade_energy += trade.offer.energy
+        elif trade.offer.energy < 0:
+            self.accumulated_demand_balancing_trade_price += trade.offer.price
+            self.accumulated_demand_balancing_trade_energy += abs(trade.offer.energy)
+
+    @property
+    def avg_supply_balancing_trade_rate(self):
+        if self._avg_supply_balancing_trade_rate is None:
+            price = self.accumulated_supply_balancing_trade_price
+            energy = self.accumulated_supply_balancing_trade_energy
+            self._avg_supply_balancing_trade_rate = round(price / energy, 4) if energy else 0
+        return self._avg_supply_balancing_trade_rate
+
+    @property
+    def avg_demand_balancing_trade_rate(self):
+        if self._avg_demand_balancing_trade_rate is None:
+            price = self.accumulated_demand_balancing_trade_price
+            energy = self.accumulated_demand_balancing_trade_energy
+            self._avg_demand_balancing_trade_rate = round(price / energy, 4) if energy else 0
+        return self._avg_demand_balancing_trade_rate
