@@ -111,7 +111,6 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
 
     def _to_csv(self):
         rate = round(self.offer.price / self.offer.energy, 4)
-        # residual_energy = 0 if self.residual is None else self.residual.energy
         return self[:2] + (rate, self.offer.energy) + self[3:5]
 
 
@@ -559,7 +558,6 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
 
     def _to_csv(self):
         rate = round(self.offer.price / self.offer.energy, 4)
-        # residual_energy = 0 if self.residual is None else self.residual.energy
         return self[:2] + (rate, self.offer.energy) + self[3:5]
 
 
@@ -573,9 +571,6 @@ class BalancingMarket(Market):
         self.accumulated_supply_balancing_trade_energy = 0
         self.accumulated_demand_balancing_trade_price = 0
         self.accumulated_demand_balancing_trade_energy = 0
-
-        self._avg_supply_balancing_trade_rate = None
-        self._avg_demand_balancing_trade_rate = None
 
         Market.__init__(self, time_slot, area, notification_listener, readonly)
 
@@ -702,16 +697,12 @@ class BalancingMarket(Market):
 
     @property
     def avg_supply_balancing_trade_rate(self):
-        if self._avg_supply_balancing_trade_rate is None:
-            price = self.accumulated_supply_balancing_trade_price
-            energy = self.accumulated_supply_balancing_trade_energy
-            self._avg_supply_balancing_trade_rate = round(price / energy, 4) if energy else 0
-        return self._avg_supply_balancing_trade_rate
+        price = self.accumulated_supply_balancing_trade_price
+        energy = self.accumulated_supply_balancing_trade_energy
+        return round(price / energy, 4) if energy else 0
 
     @property
     def avg_demand_balancing_trade_rate(self):
-        if self._avg_demand_balancing_trade_rate is None:
-            price = self.accumulated_demand_balancing_trade_price
-            energy = self.accumulated_demand_balancing_trade_energy
-            self._avg_demand_balancing_trade_rate = round(price / energy, 4) if energy else 0
-        return self._avg_demand_balancing_trade_rate
+        price = self.accumulated_demand_balancing_trade_price
+        energy = self.accumulated_demand_balancing_trade_energy
+        return round(price / energy, 4) if energy else 0

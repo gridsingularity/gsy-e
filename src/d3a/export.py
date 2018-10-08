@@ -195,7 +195,7 @@ class ExportAndPlot:
         """
         if balancing:
             data = ExportBalancingData(area)
-            area_name = area.slug + str("-balancing")
+            area_name = area.slug + "-balancing"
         else:
             data = ExportData.create(area)
             area_name = area.slug
@@ -655,15 +655,3 @@ class TradeHistory:
             fig["data"][0]["labels"].append(key)
 
         py.offline.plot(fig, filename=filename, auto_open=False)
-
-
-# if __name__ == "__main__":
-#     import pickle
-#     # import ExportAndPlot
-#     from pendulum import DateTime
-#
-#     data = \
-#         pickle.load(open(
-#             "/Users/muhammad.faizan/d3a/.d3a/saved-state_20181002T121234.pickle", "rb"))
-#
-#     ExportAndPlot(data.area, "", DateTime.now(tz=TIME_ZONE).isoformat())
