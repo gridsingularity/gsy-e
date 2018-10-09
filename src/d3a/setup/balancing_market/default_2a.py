@@ -9,8 +9,8 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.device_registry import DeviceRegistry
 
 device_registry_dict = {
-    "H1 General Load": (22, 25),
-    "H2 General Load": (22, 25),
+    "H1 General Load": (33, 35),
+    "H2 General Load": (33, 35),
     "H1 Storage1": (23, 25),
     "H1 Storage2": (23, 25),
 }
