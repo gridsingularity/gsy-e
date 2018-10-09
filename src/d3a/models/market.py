@@ -247,7 +247,7 @@ class Market:
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def accept_bid(self, bid: Bid, energy: float = None,
-                   seller: str = None, buyer: str = None, already_tracked: bool = True,
+                   seller: str = None, buyer: str = None, already_tracked: bool = False,
                    price_drop: bool = True):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
@@ -392,11 +392,11 @@ class Market:
             trade_id = str(uuid.uuid4())
         return trade_id, residual_offer
 
-    def _update_stats_after_trade(self, trade, offer, buyer, track_trade=True):
+    def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):
         # FIXME: The following updates need to be done in response to the BC event
         # TODO: For now event driven blockchain updates have been disabled in favor of a
         # sequential approach, but once event handling is enabled this needs to be handled
-        if track_trade:
+        if not already_tracked:
             self.trades.append(trade)
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy[offer.seller] += offer.energy
