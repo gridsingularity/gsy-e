@@ -505,7 +505,6 @@ def test_market_issuance_acct_reverse(market: Market, last_offer_size, traded_en
     market.accept_offer(offer1, 'B')
     market.accept_offer(offer2, 'C')
     market.accept_offer(offer3, 'A')
-    print("Traded Energy: " + str(market.traded_energy))
     assert market.traded_energy['A'] == traded_energy
 
 

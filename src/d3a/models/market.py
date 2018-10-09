@@ -546,8 +546,8 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
         return (
-            "<BalancingTrade{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate} {s.offer.id}>".
+            "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
+            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate} {s.offer.id}".
             format(s=self, p=mark_partial, rate=self.offer.price / self.offer.energy)
         )
 
@@ -697,12 +697,20 @@ class BalancingMarket(Market):
 
     @property
     def avg_supply_balancing_trade_rate(self):
+        print("cumulative_energy_traded_upward: " +
+              str(self.cumulative_energy_traded_upward))
+        print("accumulated_supply_balancing_trade_energy: " +
+              str(self.accumulated_supply_balancing_trade_energy))
         price = self.accumulated_supply_balancing_trade_price
         energy = self.accumulated_supply_balancing_trade_energy
         return round(price / energy, 4) if energy else 0
 
     @property
     def avg_demand_balancing_trade_rate(self):
+        print("cumulative_energy_traded_downward: " +
+              str(self.cumulative_energy_traded_downward))
+        print("accumulated_demand_balancing_trade_energy: " +
+              str(self.accumulated_demand_balancing_trade_energy))
         price = self.accumulated_demand_balancing_trade_price
         energy = self.accumulated_demand_balancing_trade_energy
         return round(price / energy, 4) if energy else 0
