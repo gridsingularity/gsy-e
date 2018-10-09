@@ -52,7 +52,7 @@ class FakeMarket:
         else:
             return Trade('trade_id', time, offer, offer.seller, buyer)
 
-    def accept_bid(self, bid, energy, seller, buyer=None, track_bid=True, *,
+    def accept_bid(self, bid, energy, seller, buyer=None, already_tracked=True, *,
                    time=None, price_drop=True):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)

@@ -323,7 +323,7 @@ def test_market_accept_bid_always_updates_trade_stats(market: Market, called, ma
     setattr(market, market_method, called)
 
     bid = market.bid(20, 20, 'A', 'B')
-    trade = market.accept_bid(bid, energy=5, seller='B', track_bid=False)
+    trade = market.accept_bid(bid, energy=5, seller='B', already_tracked=False)
     assert trade
     assert len(getattr(market, market_method).calls) == 1
 

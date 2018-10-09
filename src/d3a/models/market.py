@@ -247,7 +247,7 @@ class Market:
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def accept_bid(self, bid: Bid, energy: float = None,
-                   seller: str = None, buyer: str = None, track_bid: bool = True,
+                   seller: str = None, buyer: str = None, already_tracked: bool = True,
                    price_drop: bool = True):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
@@ -275,9 +275,9 @@ class Market:
 
             trade = Trade(str(uuid.uuid4()), self._now,
                           bid, seller, buyer, residual, price_drop=price_drop,
-                          already_tracked=not track_bid)
-            self._update_stats_after_trade(trade, bid, bid.buyer, track_bid)
-            if track_bid:
+                          already_tracked=already_tracked)
+            self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
+            if not already_tracked:
                 log.warning(f"[TRADE][BID][{self.time_slot_str}] {trade}")
 
             self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)

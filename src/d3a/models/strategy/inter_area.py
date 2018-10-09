@@ -126,7 +126,7 @@ class IAAEngine:
                                            selected_energy,
                                            seller=offer.seller,
                                            buyer=bid.buyer,
-                                           track_bid=False,
+                                           already_tracked=True,
                                            price_drop=True)
             self._delete_forwarded_bid_entries(bid)
 
@@ -187,7 +187,7 @@ class IAAEngine:
                 bid_info.source_bid._replace(price=source_price, energy=bid_trade.offer.energy),
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
-                track_bid=True
+                already_tracked=False
             )
             if not bid_trade.residual:
                 self._delete_forwarded_bid_entries(bid_info.target_bid)
