@@ -91,10 +91,13 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
-                                 'buyer', 'residual', 'price_drop'))):
-    def __new__(cls, id, time, offer, seller, buyer, residual=None, price_drop=False):
+                                 'buyer', 'residual', 'price_drop',
+                                 'already_tracked'))):
+    def __new__(cls, id, time, offer, seller, buyer, residual=None,
+                price_drop=False, already_tracked=False):
         # overridden to give the residual field a default value
-        return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual, price_drop)
+        return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual,
+                                         price_drop, already_tracked)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
@@ -271,7 +274,8 @@ class Market:
                           buyer, seller, self)
 
             trade = Trade(str(uuid.uuid4()), self._now,
-                          bid, seller, buyer, residual, price_drop=price_drop)
+                          bid, seller, buyer, residual, price_drop=price_drop,
+                          already_tracked=not track_bid)
             self._update_stats_after_trade(trade, bid, bid.buyer, track_bid)
             if track_bid:
                 log.warning(f"[TRADE][BID][{self.time_slot_str}] {trade}")
@@ -575,7 +579,7 @@ class BalancingMarket(Market):
         self.offers[offer.id] = offer
         self._sorted_offers = \
             sorted(self.offers.values(), key=lambda o: o.price / o.energy)
-        log.info(f"[BALANCING_OFFER][NEW][{self.time_slot_str}] {offer}", offer)
+        log.info(f"[BALANCING_OFFER][NEW][{self.time_slot_str}] {offer}")
         self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
 

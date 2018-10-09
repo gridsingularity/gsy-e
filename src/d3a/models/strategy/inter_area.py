@@ -454,6 +454,16 @@ class BalancingAgent(InterAreaAgent):
                                            self.lower_market.unmatched_energy_downward)
 
     def event_trade(self, *, market, trade):
+        self._calculate_and_buy_balancing_energy(market, trade)
+        super().event_trade(market=market, trade=trade)
+
+    def event_bid_traded(self, *, market, bid_trade):
+        if bid_trade.already_tracked:
+            return
+        self._calculate_and_buy_balancing_energy(market, bid_trade)
+        super().event_bid_traded(market=market, bid_trade=bid_trade)
+
+    def _calculate_and_buy_balancing_energy(self, market, trade):
         if trade.buyer != make_iaa_name(self.owner) or \
                 market.time_slot != self.lower_market.time_slot:
             return
@@ -464,7 +474,6 @@ class BalancingAgent(InterAreaAgent):
             trade.offer.energy * self.balancing_spot_trade_ratio + \
             self.lower_market.unmatched_energy_downward
         self._trigger_balancing_trades(positive_balancing_energy, negative_balancing_energy)
-        super().event_trade(market=market, trade=trade)
 
     def _trigger_balancing_trades(self, positive_balancing_energy, negative_balancing_energy):
         cumulative_energy_traded_upward = 0
