@@ -42,6 +42,25 @@ def number_of_balancing_trades(context, area, b_trade_nr, s_trade_nr):
         assert len(area_object.past_markets[slot].trades) == s_trade_nr
 
 
+@then('balancing market of {area} has {r_trade_nr} reserve trades and {s_trade_nr} spot trades')
+def number_of_reserve_trades(context, area, r_trade_nr, s_trade_nr):
+    r_trade_nr = int(r_trade_nr)
+    s_trade_nr = int(s_trade_nr)
+    area_object = next(filter(lambda x: x.name == area, context.simulation.area.children))
+
+    for slot, market in area_object.past_balancing_markets.items():
+        if len(market.trades) == 0:
+            continue
+        reduced_reserve_trades = reduce(
+            lambda acc, t: acc + 1 if t.buyer == area_object.name + " Reserve" else acc,
+            market.trades,
+            0
+        )
+
+        assert r_trade_nr == reduced_reserve_trades
+        assert len(area_object.past_markets[slot].trades) == s_trade_nr
+
+
 @then('grid has 1 balancing trade from house 1 to house 2')
 def grid_has_balancing_trade_h1_h2(context):
     for slot, market in context.simulation.area.past_balancing_markets.items():

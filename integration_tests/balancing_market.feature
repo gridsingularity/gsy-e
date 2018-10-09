@@ -11,7 +11,7 @@ Feature: Balancing Market Tests
     And d3a is installed
     When we run the d3a simulation with balancing_market.one_load_one_pv [24, 15, 15]
     Then balancing market of House 1 has 2 balancing trades and 1 spot trades
-    And balancing market of House 2 has 1 balancing trades and 1 spot trades
+    And balancing market of House 2 has 1 reserve trades and 1 spot trades
     And grid has 1 balancing trade from house 1 to house 2
     And all trades follow the device registry H1 General Load rate for supply and demand
     And all trades are in accordance to the balancing energy ratio
@@ -21,7 +21,7 @@ Feature: Balancing Market Tests
     And d3a is installed
     When we run the d3a simulation with balancing_market.one_storage_one_pv [24, 15, 15]
     Then balancing market of House 1 has 4 balancing trades and 1 spot trades
-    And balancing market of House 2 has 2 balancing trades and 1 spot trades
+    And balancing market of House 2 has 2 reserve trades and 1 spot trades
     And grid has 2 balancing trades from house 1 to house 2
     And all trades follow the device registry H1 Storage rate for supply and demand
     And all trades are in accordance to the balancing energy ratio
@@ -41,3 +41,13 @@ Feature: Balancing Market Tests
     When we run the d3a simulation with default_2a [24, 15, 15]
     Then all trades follow one of H1 Storage1 or H1 General Load rates for supply and demand
     And there are balancing trades on some markets
+
+  Scenario: Balancing market is compatible to the 2 sided market
+    Given we have a scenario named balancing_market/two_sided_one_load_one_pv
+    And d3a is installed
+    When we run the d3a simulation with balancing_market.two_sided_one_load_one_pv [24, 15, 15]
+    Then balancing market of House 1 has 2 balancing trades and 1 spot trades
+    And balancing market of House 2 has 1 reserve trades and 1 spot trades
+    And grid has 1 balancing trade from house 1 to house 2
+    And all trades follow the device registry H1 General Load rate for supply and demand
+    And all trades are in accordance to the balancing energy ratio
