@@ -1,5 +1,5 @@
 import ast
-from pendulum import duration
+from pendulum import duration, Duration
 
 from d3a.exceptions import D3AException
 from d3a.util import format_interval
@@ -57,7 +57,7 @@ class SimulationConfig:
         fields = {'duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
                   'total_ticks', 'cloud_coverage'}
         return {
-            k: format_interval(v) if isinstance(v, duration) else v
+            k: format_interval(v) if isinstance(v, Duration) else v
             for k, v in self.__dict__.items()
             if k in fields
         }
