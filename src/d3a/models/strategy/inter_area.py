@@ -439,7 +439,7 @@ class InterAreaAgent(BaseStrategy):
 class BalancingAgent(InterAreaAgent):
 
     def __init__(self, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1, tick_ratio=2):
+                 transfer_fee_pct=1, min_offer_age=1):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
         InterAreaAgent.__init__(self, owner=owner, higher_market=higher_market,
                                 lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
@@ -456,26 +456,20 @@ class BalancingAgent(InterAreaAgent):
         negative_balancing_energy = \
             trade.offer.energy * self.balancing_spot_trade_ratio + \
             self.lower_market.unmatched_energy_downward
-        cumulative_energy_traded_upward = 0
-        cumulative_energy_traded_downward = 0
         for offer in self.lower_market.sorted_offers:
             if offer.energy > 0 and positive_balancing_energy > 0:
                 balance_trade = self._balancing_trade(offer,
                                                       positive_balancing_energy)
                 if balance_trade is not None:
                     positive_balancing_energy -= abs(balance_trade.offer.energy)
-                    cumulative_energy_traded_upward += balance_trade.offer.energy
             elif offer.energy < 0 and negative_balancing_energy > 0:
                 balance_trade = self._balancing_trade(offer,
                                                       -negative_balancing_energy)
                 if balance_trade is not None:
                     negative_balancing_energy -= abs(balance_trade.offer.energy)
-                    cumulative_energy_traded_downward += abs(balance_trade.offer.energy)
 
         self.lower_market.unmatched_energy_upward = positive_balancing_energy
         self.lower_market.unmatched_energy_downward = negative_balancing_energy
-        self.lower_market.cumulative_energy_traded_upward += cumulative_energy_traded_upward
-        self.lower_market.cumulative_energy_traded_downward += cumulative_energy_traded_downward
 
     def _balancing_trade(self, offer, target_energy):
         if abs(offer.energy) <= abs(target_energy):

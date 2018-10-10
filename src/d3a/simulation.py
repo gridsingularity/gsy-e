@@ -290,7 +290,6 @@ class Simulation:
             except _SimulationInterruped:
                 self.interrupted.set()
             except KeyboardInterrupt:
-                print("Exiting")
                 break
 
     def toggle_pause(self):
