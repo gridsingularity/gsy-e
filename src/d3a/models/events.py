@@ -59,7 +59,6 @@ class EventMixin:
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         self.log.debug("Dispatching event %s", event_type.name)
-
         self._event_mapping[event_type](**kwargs)
 
     def event_tick(self, *, area):
