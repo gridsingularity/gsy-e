@@ -129,8 +129,8 @@ class ExportAndPlot:
                 writer = csv.writer(csv_file)
                 writer.writerow(labels)
                 out_dict = dict((key, {}) for key in out_keys)
-                for slot, balancing_market in past_markets.items():
-                    for trade in balancing_market.trades:
+                for slot, market in past_markets.items():
+                    for trade in market.trades:
                         row = (slot,) + trade._to_csv()
                         writer.writerow(row)
                         for ii, ks in enumerate(out_keys):
