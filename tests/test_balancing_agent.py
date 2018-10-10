@@ -23,8 +23,6 @@ class FakeBalancingMarket:
         self.area = FakeArea("fake_area")
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
-        self.cumulative_energy_traded_upward = 0
-        self.cumulative_energy_traded_downward = 0
         self._timeslot = pendulum.now(tz=TIME_ZONE)
 
     @property
@@ -65,13 +63,10 @@ def test_baa_event_trade(baa):
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
                   'IAA owner')
-    expected_balancing_trade = trade.offer.energy * baa.balancing_spot_trade_ratio
     fake_spot_market = FakeMarket(15)
     fake_spot_market.set_time_slot(baa.lower_market.time_slot)
     baa.event_trade(trade=trade,
                     market=fake_spot_market)
-    assert baa.lower_market.cumulative_energy_traded_upward == expected_balancing_trade
-    assert baa.lower_market.cumulative_energy_traded_downward == expected_balancing_trade
     assert baa.lower_market.unmatched_energy_upward == 0
     assert baa.lower_market.unmatched_energy_downward == 0
 
@@ -92,12 +87,9 @@ def test_baa_unmatched_event_trade(baa2):
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
                   'IAA owner')
-    expected_balancing_trade = (baa2.lower_market.sorted_offers)[0].energy
     fake_spot_market = FakeMarket(15)
     fake_spot_market.set_time_slot(baa2.lower_market.time_slot)
     baa2.event_trade(trade=trade,
                      market=fake_spot_market)
-    assert baa2.lower_market.cumulative_energy_traded_upward == expected_balancing_trade
-    assert baa2.lower_market.cumulative_energy_traded_downward == expected_balancing_trade
     assert baa2.lower_market.unmatched_energy_upward != 0
     assert baa2.lower_market.unmatched_energy_downward != 0

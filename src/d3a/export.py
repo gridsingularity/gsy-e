@@ -9,7 +9,7 @@ import shutil
 from slugify import slugify
 
 from d3a import TIME_ZONE
-from d3a.models.market import Trade
+from d3a.models.market import Trade, BalancingTrade
 from d3a.models.strategy.fridge import FridgeStrategy
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
@@ -34,7 +34,9 @@ class ExportAndPlot:
 
     def __init__(self, root_area: Area, path: str, subdir: str):
         self.trades = {}
+        self.balancing_trades = {}
         self.stats = {}
+        self.balancing_stats = {}
         self.buyer_trades = {}
         self.seller_trades = {}
         self.area = root_area
@@ -97,26 +99,39 @@ class ExportAndPlot:
             subdirectory.mkdir(exist_ok=True, parents=True)
             for child in area.children:
                 self._export_area_with_children(child, subdirectory)
-        self.stats[area.slug.replace(' ', '_')] = self._export_area_flat(area, directory)
+        self.stats[area.slug.replace(' ', '_')] = self._export_area_flat(area, directory, False)
+        self.balancing_stats[area.slug.replace(' ', '_')] = \
+            self._export_area_flat(area, directory, True)
         if area.children:
             self.trades[area.slug.replace(' ', '_')] = self._export_area_energy(area, directory)
+            self.balancing_trades[area.slug.replace(' ', '_')] = \
+                self._export_area_energy(area, directory, True)
 
-    def _export_area_energy(self, area: Area, directory: dir):
+    def _export_area_energy(self, area: Area, directory: dir, balancing_area: bool = False):
         """
         Exports files containing individual trades  (*-trades.csv  files)
+        return: dict[out_keys]
         """
 
         out_keys = ("sold_energy", "bought_energy")
         out_keys_ids = (5, 6)
+        if balancing_area:
+            file_path = self._file_path(directory, "{}-balancing-trades".format(area.slug))
+            labels = ("slot",) + BalancingTrade._csv_fields()
+            past_markets = area.past_balancing_markets
+        else:
+            file_path = self._file_path(directory, "{}-trades".format(area.slug))
+            labels = ("slot",) + Trade._csv_fields()
+            past_markets = area.past_markets
+
         try:
-            with open(self._file_path(directory, "{}-trades".format(area.slug)), 'w') as csv_file:
+            with open(file_path, 'w') as csv_file:
                 writer = csv.writer(csv_file)
-                labels = ("slot",) + Trade._csv_fields()
                 writer.writerow(labels)
                 out_dict = dict((key, {}) for key in out_keys)
-                for slot, market in area.past_markets.items():
+                for slot, market in past_markets.items():
                     for trade in market.trades:
-                        row = (slot, ) + trade._to_csv()
+                        row = (slot,) + trade._to_csv()
                         writer.writerow(row)
                         for ii, ks in enumerate(out_keys):
                             node = slugify(row[out_keys_ids[ii]], to_lower=True)
@@ -124,16 +139,15 @@ class ExportAndPlot:
                                 out_dict[ks][node] = dict(
                                     (key, 0) for key in area.past_markets.keys())
                             out_dict[ks][node][slot] += row[4]
-
-            for ks in out_keys:
-                out_dict[ks + "_lists"] = dict((ki, {}) for ki in out_dict[ks].keys())
-                for node in out_dict[ks].keys():
-                    out_dict[ks + "_lists"][node]["slot"] = list(out_dict[ks][node].keys())
-                    out_dict[ks + "_lists"][node]["energy"] = list(out_dict[ks][node].values())
-
-            return out_dict
         except OSError:
             _log.exception("Could not export area trades")
+
+        for ks in out_keys:
+            out_dict[ks + "_lists"] = dict((ki, {}) for ki in out_dict[ks].keys())
+            for node in out_dict[ks].keys():
+                out_dict[ks + "_lists"][node]["slot"] = list(out_dict[ks][node].keys())
+                out_dict[ks + "_lists"][node]["energy"] = list(out_dict[ks][node].values())
+        return out_dict
 
     def _get_buyer_seller_trades(self, area: Area):
         """
@@ -160,15 +174,20 @@ class ExportAndPlot:
             if child.children:
                 self._get_buyer_seller_trades(child)
 
-    def _export_area_flat(self, area: Area, directory: dir):
+    def _export_area_flat(self, area: Area, directory: dir, balancing: bool):
         """
         Exports stats (*.csv files)
         """
-        data = ExportData.create(area)
+        if balancing:
+            data = ExportBalancingData(area)
+            area_name = area.slug + "-balancing"
+        else:
+            data = ExportData.create(area)
+            area_name = area.slug
         rows = data.rows()
         if rows:
             try:
-                with open(self._file_path(directory, area.slug), 'w') as csv_file:
+                with open(self._file_path(directory, area_name), 'w') as csv_file:
                     writer = csv.writer(csv_file)
                     labels = data.labels()
                     writer.writerow(labels)
@@ -224,23 +243,16 @@ class ExportAndPlot:
         ytitle = 'Energy [kWh]'
         key = 'energy'
         title = 'Energy Trade Profile of {}'.format(market_name)
-        for seller in self.trades[market_name]["sold_energy_lists"].keys():
-
-            graph_obj = BarGraph(self.trades[market_name]["sold_energy_lists"][seller], key)
-            graph_obj.graph_value(scale_value=ENERGY_SELLER_SIGN_PLOTS)
-            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
-                              y=list(graph_obj.umHours.values()),
-                              name=seller + " (seller)")
-            data.append(data_obj)
-        for buyer in self.trades[market_name]["bought_energy_lists"].keys():
-
-            graph_obj = BarGraph(self.trades[market_name]["bought_energy_lists"][buyer], key)
-            graph_obj.graph_value(scale_value=ENERGY_BUYER_SIGN_PLOTS)
-            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
-                              y=list(graph_obj.umHours.values()),
-                              name=buyer + " (buyer)")
-            data.append(data_obj)
-
+        data.extend(self._plot_energy_graph(self.trades, market_name, "sold_energy_lists",
+                                            "-seller", key))
+        data.extend(self._plot_energy_graph(self.trades, market_name, "bought_energy_lists",
+                                            "-buyer", key))
+        data.extend(self._plot_energy_graph(self.balancing_trades, market_name,
+                                            "sold_energy_lists",
+                                            "-balancing-seller", key))
+        data.extend(self._plot_energy_graph(self.balancing_trades, market_name,
+                                            "bought_energy_lists",
+                                            "-balancing-buyer", key))
         if len(data) == 0:
             return
         if all([len(da.y) == 0 for da in data]):
@@ -251,6 +263,18 @@ class ExportAndPlot:
         output_file = os.path.join(plot_dir,
                                    'energy_profile_{}.html'.format(market_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def _plot_energy_graph(self, trades, market_name, agent, agent_label, key):
+        internal_data = []
+        for trader in trades[market_name][agent].keys():
+
+            graph_obj = BarGraph(trades[market_name][agent][trader], key)
+            graph_obj.graph_value(scale_value=ENERGY_SELLER_SIGN_PLOTS)
+            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
+                              y=list(graph_obj.umHours.values()),
+                              name=trader + agent_label)
+            internal_data.append(data_obj)
+        return internal_data
 
     def plot_all_unmatched_loads(self):
         """
@@ -348,18 +372,31 @@ class ExportAndPlot:
         key = 'avg trade rate [ct./kWh]'
         title = 'Average Trade Price {}'.format(area_list[0])
         for area_name in area_list:
-            graph_obj = BarGraph(self.stats[area_name.lower()], key)
-            graph_obj.graph_value()
-            data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
-                                  y=list(graph_obj.umHours.values()),
-                                  name=area_name.lower())
-            data.append(data_obj)
+            data.append(self._plot_avg_trade_graph(self.stats, area_name, key, area_name))
+            if self.balancing_stats[area_name.lower()] is not None:
+                area_name_balancing = area_name.lower() + "-demand-balancing-trades"
+                data.append(self._plot_avg_trade_graph(self.balancing_stats, area_name,
+                                                       'avg demand balancing trade rate [ct./kWh]',
+                                                       area_name_balancing))
+                area_name_balancing = area_name.lower() + "-supply-balancing-trades"
+                data.append(self._plot_avg_trade_graph(self.balancing_stats, area_name,
+                                                       'avg supply balancing trade rate [ct./kWh]',
+                                                       area_name_balancing))
+
         if all([len(da.y) == 0 for da in data]):
             return
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'average_trade_price_{}.html'.format(area_list[0]))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def _plot_avg_trade_graph(self, stats, area_name, key, label):
+        graph_obj = BarGraph(stats[area_name.lower()], key)
+        graph_obj.graph_value()
+        data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
+                              y=list(graph_obj.umHours.values()),
+                              name=label.lower())
+        return data_obj
 
 
 class ExportData:
@@ -396,6 +433,25 @@ class ExportUpperLevelData(ExportData):
                 len(market.trades),
                 sum(trade.offer.energy for trade in market.trades),
                 sum(trade.offer.price for trade in market.trades)]
+
+
+class ExportBalancingData:
+    def __init__(self, area):
+        self.area = area
+
+    def labels(self):
+        return ['slot',
+                'avg supply balancing trade rate [ct./kWh]',
+                'avg demand balancing trade rate [ct./kWh]']
+
+    def rows(self):
+        markets = self.area.past_balancing_markets
+        return [self._row(slot, markets[slot]) for slot in markets]
+
+    def _row(self, slot, market):
+        return [slot,
+                market.avg_supply_balancing_trade_rate,
+                market.avg_demand_balancing_trade_rate]
 
 
 class ExportLeafData(ExportData):
