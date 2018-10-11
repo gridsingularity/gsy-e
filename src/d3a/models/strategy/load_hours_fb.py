@@ -52,6 +52,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         self.hrs_of_day = hrs_of_day
         self.hrs_per_day = hrs_per_day
+        self._initial_hrs_per_day = hrs_per_day
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
@@ -128,6 +129,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 * (self.area.config.slot_length / duration(hours=1)))
 
     def event_market_cycle(self):
+        if self.area.now.hour == 0 and self.area.now.minute == 0:
+            self.hrs_per_day = self._initial_hrs_per_day
         for market in self.active_markets:
             self._demand_balancing_offer(market)
             if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
