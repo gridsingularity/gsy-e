@@ -21,3 +21,12 @@ Feature: Jira Issues Tests
      When we run the d3a simulation with strategy_tests.home_cp_ess_load [24, 15, 15]
      Then on every market slot there should be matching trades on grid and house markets
      And there should be no unmatched loads
+
+   @slow
+   Scenario: D3ASIM-706, multi-day simulation for load and pv
+     Given we have a scenario named jira/d3asim_706_multiday_sim
+     And d3a is installed
+     When we run the d3a simulation with jira.d3asim_706_multiday_sim [72, 15, 60]
+     Then pv produces the same energy on each corresponding time slot regardless of the day
+     And all loads consume the same energy on each corresponding time slot regardless of the day
+     And all loads adhere to the hours of day configuration
