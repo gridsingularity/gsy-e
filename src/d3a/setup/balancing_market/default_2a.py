@@ -20,7 +20,7 @@ device_registry_dict = {
 
 def get_setup(config):
     DeviceRegistry.REGISTRY = device_registry_dict
-    ConstSettings.BALANCING_MARKET = True
+    ConstSettings.ENABLE_BALANCING_MARKET = True
     area = Area(
         'Grid',
         [
@@ -57,9 +57,9 @@ def get_setup(config):
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
                                                                    max_energy_rate=35),
-                 appliance=SwitchableAppliance())
+                 appliance=SwitchableAppliance()),
             # Area('Commercial Energy Producer',
-            #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
+            #      strategy=CommercialStrategy(energy_rate=30),
             #      appliance=SimpleAppliance()
             #      ),
 

@@ -15,7 +15,7 @@ device_registry_dict = {
 def get_setup(config):
     DeviceRegistry.REGISTRY = device_registry_dict
     ConstSettings.BALANCING_FLEXIBLE_LOADS_SUPPORT = False
-    ConstSettings.BALANCING_MARKET = True
+    ConstSettings.ENABLE_BALANCING_MARKET = True
 
     area = Area(
         'Grid',

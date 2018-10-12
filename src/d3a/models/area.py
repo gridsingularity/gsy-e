@@ -283,7 +283,7 @@ class Area:
                                               agent_class=InterAreaAgent,
                                               market_class=Market)
 
-        if ConstSettings.BALANCING_MARKET and len(DeviceRegistry.REGISTRY.keys()) != 0:
+        if ConstSettings.ENABLE_BALANCING_MARKET and len(DeviceRegistry.REGISTRY.keys()) != 0:
             changed_balancing_market = \
                 self._create_future_markets(current_time=self.now, markets=self.balancing_markets,
                                             parent=self.parent,
@@ -294,13 +294,12 @@ class Area:
                                             if self.parent is not None else None,
                                             agent_class=BalancingAgent,
                                             market_class=BalancingMarket)
-            # print("Creating Balancing market")
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
-        if not ConstSettings.BALANCING_MARKET:
+        if not ConstSettings.ENABLE_BALANCING_MARKET:
             return
 
         # Force balancing_market cycle event in case this is the first market slot

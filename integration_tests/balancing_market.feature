@@ -1,9 +1,9 @@
 Feature: Balancing Market Tests
 
   Scenario: No Balancing market created when its disabled
-    Given we have a scenario named balancing_market/disabled_balancing_market
+    Given we have a scenario named default_2a
     And d3a is installed
-    When we run the d3a simulation with balancing_market.disabled_balancing_market [1, 30, 15]
+    When we run the d3a simulation with default_2a [1, 30, 15]
     Then no balancing market is created
 
   Scenario: DeviceRegistry works as expected

@@ -105,6 +105,7 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
             simulation_config = SimulationConfig(**config_params)
 
         api_url = "http://{}:{}/api".format(interface, port)
+        ConstSettings.ENABLE_BALANCING_MARKET = enable_bm
         simulation = Simulation(
             setup_module_name=setup_module_name,
             simulation_config=simulation_config,
@@ -123,8 +124,6 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
             redis_job_id=None,
             use_bc=enable_bc
         )
-        if enable_bm:
-            ConstSettings.BALANCING_MARKET = enable_bm
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
     start_web(interface, port, simulation)

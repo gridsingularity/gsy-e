@@ -6,6 +6,8 @@ from d3a.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.events import EventMixin, TriggerMixin, Trigger, AreaEvent, MarketEvent
 from d3a.models.market import Market, Offer  # noqa
+from d3a.models.strategy.const import ConstSettings
+from d3a.device_registry import DeviceRegistry
 
 
 log = getLogger(__name__)
@@ -146,6 +148,12 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             else t.offer.energy
             for t in self.trades[market]
         )
+
+    @property
+    def is_ineligible_for_balancing_market(self):
+        if self.owner.name not in DeviceRegistry.REGISTRY \
+                or not ConstSettings.ENABLE_BALANCING_MARKET:
+            return True
 
     def accept_offer(self, market: Market, offer, *, buyer=None, energy=None, price_drop=False):
         if buyer is None:

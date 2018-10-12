@@ -166,8 +166,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self, market):
-        if self.owner.name not in DeviceRegistry.REGISTRY or not ConstSettings.BALANCING_MARKET:
+        if self.is_ineligible_for_balancing_market:
             return
+
         ramp_up_energy = \
             self.balancing_energy_ratio.demand * \
             self.state.desired_energy_Wh[market.time_slot]
@@ -181,7 +182,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     # committing to reduce its consumption when required
     def _supply_balancing_offer(self, market, trade):
-        if self.owner.name not in DeviceRegistry.REGISTRY or not ConstSettings.BALANCING_MARKET:
+        if self.is_ineligible_for_balancing_market:
             return
         if trade.buyer != self.owner.name:
             return
