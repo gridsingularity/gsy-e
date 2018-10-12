@@ -25,6 +25,10 @@ class BCUsers:
         self._default_balance = default_balance
 
     def __getitem__(self, username_or_addr):
+        from web3 import Web3, HTTPProvider
+        web3 = Web3(HTTPProvider("http://127.0.0.1:8545", request_kwargs={'timeout': 600}))
+        web3.personal.unlockAccount(web3.eth.accounts[0], 'testgsy')
+
         user = self._users.get(username_or_addr)
         if not user:
             if username_or_addr.startswith("0x"):
@@ -59,10 +63,15 @@ class BlockChainInterface:
 
         log.debug("Initializing contract '%s'", contract_name)
         compiled_sol = compile_source(get_cached_joined_contract_source(contract_filename))
+        # print("compiled_sol: " + str(compiled_sol))
         contract_interface = compiled_sol['<stdin>:' + contract_name]
+        # print("contract_interface: " + str(contract_interface))
 
         contract = self.chain.eth.contract(abi=contract_interface['abi'],
                                            bytecode=contract_interface['bin'])
+        print("contract: " + str(contract))
+        print(f'filename {contract_name} {contract_filename}')
+        print(self.chain.personal.unlockAccount(self.chain.eth.accounts[0], 'testgsy'))
         tx_hash = contract.constructor(*args).transact({'from': self.chain.eth.accounts[0]})
         contract_address = self.chain.eth.waitForTransactionReceipt(tx_hash).contractAddress
         contract = self.chain.eth.contract(address=contract_address,
