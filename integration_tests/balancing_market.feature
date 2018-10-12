@@ -1,6 +1,6 @@
 Feature: Balancing Market Tests
 
-  Scenario: Disabled Balancing market works as expected
+  Scenario: No Balancing market created when its disabled
     Given we have a scenario named balancing_market/disabled_balancing_market
     And d3a is installed
     When we run the d3a simulation with balancing_market.disabled_balancing_market [1, 30, 15]
@@ -41,10 +41,10 @@ Feature: Balancing Market Tests
     And every balancing trade matches a spot market trade according to the balancing energy ratio
 
   Scenario: default_2a buys balancing energy on all BAs
-    Given we have configured all the default_2a devices in the registry
-    And we have a scenario named default_2a
+    Given we have configured all the balancing_market.default_2a devices in the registry
+    And we have a scenario named balancing_market/default_2a
     And d3a is installed
-    When we run the d3a simulation with default_2a [24, 15, 15]
+    When we run the d3a simulation with balancing_market.default_2a [24, 15, 15]
     Then all trades follow one of H1 Storage1 or H1 General Load rates for supply and demand
     And there are balancing trades on some markets
 

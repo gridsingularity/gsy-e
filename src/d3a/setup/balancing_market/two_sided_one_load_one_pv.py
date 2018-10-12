@@ -21,6 +21,7 @@ def get_setup(config):
     ConstSettings.LOAD_MAX_ENERGY_RATE = 30
     DeviceRegistry.REGISTRY = device_registry_dict
     ConstSettings.BALANCING_FLEXIBLE_LOADS_SUPPORT = False
+    ConstSettings.BALANCING_MARKET = True
 
     area = Area(
         'Grid',

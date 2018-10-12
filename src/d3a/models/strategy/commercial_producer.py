@@ -3,6 +3,7 @@ from d3a.models.strategy import ureg, Q_
 
 from d3a.models.strategy.base import BaseStrategy
 from d3a.device_registry import DeviceRegistry
+from d3a.models.strategy.const import ConstSettings
 
 
 class CommercialStrategy(BaseStrategy):
@@ -48,7 +49,7 @@ class CommercialStrategy(BaseStrategy):
         self.offers.post(offer, market)
 
     def _offer_balancing_energy(self, market):
-        if self.owner.name not in DeviceRegistry.REGISTRY:
+        if self.owner.name not in DeviceRegistry.REGISTRY or not ConstSettings.BALANCING_MARKET:
             return
 
         # The second tuple member in the device registry is the balancing supply rate

@@ -7,11 +7,21 @@ from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market, Offer
+from d3a.models.strategy.const import ConstSettings
+from d3a.device_registry import DeviceRegistry
 
 
 class TestAreaClass(unittest.TestCase):
 
     def setUp(self):
+        ConstSettings.BALANCING_MARKET = True
+        DeviceRegistry.REGISTRY = {
+            "H1 General Load": (33, 35),
+            "H2 General Load": (33, 35),
+            "H1 Storage1": (23, 25),
+            "H1 Storage2": (23, 25),
+        }
+
         self.appliance = MagicMock(spec=SimpleAppliance)
         self.strategy = MagicMock(spec=StorageStrategy)
         self.config = MagicMock(spec=SimulationConfig)
@@ -68,6 +78,7 @@ class TestAreaClass(unittest.TestCase):
         self.area.config.market_count = 5
         self.area.activate()
         assert len(self.area.markets) == 5
+
         assert len(self.area.balancing_markets) == 5
         self.area.current_tick = 900
         self.area.tick()

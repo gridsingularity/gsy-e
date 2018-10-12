@@ -6,7 +6,7 @@ from d3a.util import make_ba_name
 from d3a.models.strategy.const import ConstSettings
 
 
-@given('we have configured all the default_2a devices in the registry')
+@given('we have configured all the balancing_market.default_2a devices in the registry')
 def configure_default_2a_registry(context):
     DeviceRegistry.REGISTRY = {
         "H1 General Load": (22, 25),

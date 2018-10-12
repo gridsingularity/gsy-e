@@ -13,9 +13,10 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rul
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade, InvalidBalancingTradeException, InvalidBid, BidNotFound, DeviceNotInRegistryError
 from d3a.models.market import Market, BalancingMarket
+from d3a.models.strategy.const import ConstSettings
 
 from d3a.device_registry import DeviceRegistry
-DeviceRegistry.REGISTRY = {
+device_registry_dict = {
     "A": {"balancing rates": (23, 25)},
     "someone": {"balancing rates": (23, 25)},
     "seller": {"balancing rates": (23, 25)},
@@ -28,6 +29,8 @@ class FakeArea:
         self.current_tick = 10
         self.bc = False
         self.now = DateTime.now()
+        DeviceRegistry.REGISTRY = device_registry_dict
+        ConstSettings.BALANCING_MARKET = True
 
 
 @pytest.yield_fixture

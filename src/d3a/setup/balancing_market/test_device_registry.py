@@ -5,6 +5,7 @@ from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHo
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.device_registry import DeviceRegistry
+from d3a.models.strategy.const import ConstSettings
 
 device_registry_dict = {
     "H1 General Load": (22, 25),
@@ -16,6 +17,7 @@ device_registry_dict = {
 
 def get_setup(config):
     DeviceRegistry.REGISTRY = device_registry_dict
+    ConstSettings.BALANCING_MARKET = True
     area = Area(
         'Grid',
         [
