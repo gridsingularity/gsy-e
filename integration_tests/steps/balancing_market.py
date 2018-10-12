@@ -24,6 +24,12 @@ def check_device_registry(context):
         assert market.device_registry == device_registry_dict
 
 
+@then("no balancing market is created")
+def check_balancing_market(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    assert len(house.past_balancing_markets) == 0
+
+
 @then('balancing market of {area} has {b_trade_nr} balancing trades and {s_trade_nr} spot trades')
 def number_of_balancing_trades(context, area, b_trade_nr, s_trade_nr):
     b_trade_nr = int(b_trade_nr)

@@ -1,5 +1,11 @@
 Feature: Balancing Market Tests
 
+  Scenario: Disabled Balancing market works as expected
+    Given we have a scenario named balancing_market/disabled_balancing_market
+    And d3a is installed
+    When we run the d3a simulation with balancing_market.disabled_balancing_market [1, 30, 15]
+    Then no balancing market is created
+
   Scenario: DeviceRegistry works as expected
     Given we have a scenario named balancing_market/test_device_registry
     And d3a is installed
