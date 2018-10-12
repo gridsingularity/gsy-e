@@ -3,7 +3,7 @@ from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
+from d3a.models.strategy.depreciated.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import CellTowerLoadHoursStrategy
 from d3a.util import area_name_from_area_or_iaa_name, make_iaa_name
 

@@ -4,7 +4,6 @@ from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.e_car import ECarStrategy
 from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.heatpump import HeatPumpStrategy
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
@@ -57,13 +56,14 @@ def get_setup(config):
                                  appliance=PVAppliance()),
                             Area('S1 H3 PV 4', strategy=PVStrategy(2, 60),
                                  appliance=PVAppliance()),
-                            Area('S1 H3 Storage', strategy=StorageStrategy(80),
+                            Area('S1 H2 Load 1', strategy=PermanentLoadStrategy(50),
                                  appliance=SimpleAppliance()),
-                            Area('S1 H3 Night_Storage', strategy=NightStorageStrategy(80),
+                            Area('S1 H2 Load 2', strategy=PermanentLoadStrategy(80),
                                  appliance=SimpleAppliance()),
                         ]
                     ),
-                    Area('S1 ECar', strategy=ECarStrategy(), appliance=SimpleAppliance()),
+                    Area('S1 ECar', strategy=ECarStrategy(arrival_time=None, depart_time=None),
+                         appliance=SimpleAppliance()),
                 ]
             ),
             Area(

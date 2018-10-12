@@ -84,8 +84,7 @@ def pv_profile_scenario(context):
             {
                 "name": "Commercial Energy Producer",
                 "type": "CommercialProducer",
-                "energy_price": 15.5,
-                "energy_range_wh": [40, 120]
+                "energy_rate": 15.5
             },
             {
                 "name": "House 1",
@@ -109,8 +108,8 @@ def pv_profile_scenario(context):
                     {
                         "name": "H2 Storage",
                         "type": "Storage",
-                        "capacity": 5,
-                        "initial_charge": 40
+                        "initial_capacity": 5,
+                        "battery_capacity": 12.5,
                     },
                     {
                         "name": "H2 Fridge 1",
@@ -138,8 +137,7 @@ def load_profile_scenario(context):
         {
           "name": "Commercial Energy Producer",
           "type": "CommercialProducer",
-          "energy_price": 15.5,
-          "energy_range_wh": [40, 120]
+          "energy_rate": 15.5
         },
         {
           "name": "House 1",
@@ -163,8 +161,8 @@ def load_profile_scenario(context):
             {
               "name": "H2 Storage",
               "type": "Storage",
-              "capacity": 5,
-              "initial_charge": 40
+              "initial_capacity": 5,
+              "battery_capacity": 12.5,
             },
             {
               "name": "H2 Fridge 1",

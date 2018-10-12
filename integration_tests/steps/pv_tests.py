@@ -47,10 +47,10 @@ def pv_price_decrease(context):
             minimum_rate = max((market_maker_rate[slot.format(PENDULUM_TIME_FORMAT)] *
                                 pv.strategy.risk / 100), pv.strategy.min_selling_rate)
             for id, offer in market.offers.items():
-                assert isclose((offer.price/offer.energy), minimum_rate)
+                assert isclose(round(offer.price/offer.energy, 6), minimum_rate)
             for trade in market.trades:
                 if trade.seller == pv.name:
-                    assert any([isclose(trade.offer.price / trade.offer.energy,
+                    assert any([isclose(round(trade.offer.price / trade.offer.energy, 6),
                                         max((market_maker_rate[slot.format(PENDULUM_TIME_FORMAT)] -
                                              i * price_dec_per_update),
                                             pv.strategy.min_selling_rate))

@@ -52,8 +52,9 @@ class ECarStrategy(StorageStrategy):
             # This means the car is driving around some where
             self.state.lose(0.0001)
             return
+        self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in area.markets.values()])
         # Check if there are cheap offers to buy
-        self.buy_energy()
+        self.buy_energy(self.area.next_market)
         # Check if any energy from the Car can be sold
         # Same process as Storage
         self.sell_energy()
@@ -61,7 +62,7 @@ class ECarStrategy(StorageStrategy):
     def arrive(self):
         self.log.info("E-Car arrived")
         self.connected_to_grid = True
-        self.sell_energy(energy=self.state.used_storage)
+        self.sell_energy()
 
     trigger_arrive = arrive
 
@@ -69,7 +70,6 @@ class ECarStrategy(StorageStrategy):
         for offer, market in self.offers.posted.items():
             try:
                 market.delete_offer(offer.id)
-                self.state.remove_offered(offer.energy)
             except MarketException:
                 continue
 
