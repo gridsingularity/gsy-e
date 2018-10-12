@@ -92,9 +92,10 @@ _setup_modules = available_simulation_scenarios
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 @click.option('--enable-bc', is_flag=True, help="Run simulation on blockchain")
+@click.option('--enable_bm', is_flag=True, default=False, help="Run simulation on blockchain")
 def run(interface, port, setup_module_name, settings_file, slowdown, seed, paused, pause_after,
         repl, export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
-        exit_on_finish_wait, enable_bc, **config_params):
+        exit_on_finish_wait, enable_bc, enable_bm, **config_params):
     try:
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
@@ -122,6 +123,8 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
             redis_job_id=None,
             use_bc=enable_bc
         )
+        if enable_bm:
+            ConstSettings.BALANCING_MARKET = enable_bm
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
     start_web(interface, port, simulation)
