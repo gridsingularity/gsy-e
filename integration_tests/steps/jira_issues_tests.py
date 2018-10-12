@@ -138,11 +138,9 @@ def _assert_sum_of_energy_is_same_for_same_time(area, load_name):
 
 @then('all loads consume the same energy on each corresponding time slot regardless of the day')
 def loads_consume_same_amount_of_energy_day(context):
-    grid = context.simulation.area
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     house2 = [child for child in context.simulation.area.children if child.name == "House 2"][0]
 
-    _assert_sum_of_energy_is_same_for_same_time(grid, "Cell Tower")
     _assert_sum_of_energy_is_same_for_same_time(house1, "H1 General Load")
     _assert_sum_of_energy_is_same_for_same_time(house2, "H2 General Load")
 
@@ -159,13 +157,10 @@ def _assert_hours_of_day(area, device):
 
 @then('all loads adhere to the hours of day configuration')
 def loads_adhere_to_hours_of_day_multiday(context):
-    grid = context.simulation.area
-    cell_tower = [child for child in grid.children if child.name == "Cell Tower"][0]
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     h1_load = [child for child in house1.children if child.name == "H1 General Load"][0]
     house2 = [child for child in context.simulation.area.children if child.name == "House 2"][0]
     h2_load = [child for child in house2.children if child.name == "H2 General Load"][0]
 
-    _assert_hours_of_day(grid, cell_tower)
     _assert_hours_of_day(house1, h1_load)
     _assert_hours_of_day(house2, h2_load)

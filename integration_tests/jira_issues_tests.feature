@@ -24,9 +24,9 @@ Feature: Jira Issues Tests
 
    @slow
    Scenario: D3ASIM-706, multi-day simulation for load and pv
-     Given we have a scenario named jira/d3asim_706_multiday_sim
+     Given we have a scenario named default_3
      And d3a is installed
-     When we run the d3a simulation with jira.d3asim_706_multiday_sim [72, 15, 60]
+     When we run the d3a simulation with default_3 [72, 15, 60]
      Then pv produces the same energy on each corresponding time slot regardless of the day
      And all loads consume the same energy on each corresponding time slot regardless of the day
      And all loads adhere to the hours of day configuration
