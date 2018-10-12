@@ -174,6 +174,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
     def buy_energy(self, market):
         max_affordable_offer_rate = self.break_even[market.time_slot_str][0]
+        # TODO: This check seams to be important, but why is that? :
         market = [m for s, m in self.area.markets.items() if s == market.time_slot][0]
         for offer in market.sorted_offers:
             if offer.seller == self.owner.name:
@@ -183,16 +184,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             if self.state.free_storage(market.time_slot) > 0.0 \
                     and (offer.price / offer.energy) < max_affordable_offer_rate:
                 try:
-                    print(market.time_slot)
-                    print(self.state.energy_to_buy_dict.keys())
                     max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
                     if not self.state.has_battery_reached_max_power(max_energy, market.time_slot):
-                        self.log.warning("accept!")
                         self.accept_offer(market, offer, energy=max_energy)
                         self.state.bought_energy[market.time_slot] += max_energy
                         return True
-                    else:
-                        self.log.warning("can not buy because battery_reached_max_power")
 
                 except MarketException:
                     # Offer already gone etc., try next one.
@@ -206,6 +202,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             [ma.time_slot for ma in markets_to_sell])
 
         for market in markets_to_sell:
+            # TODO: This check seams to be important, but why is that? :
             market = [m for s, m in self.area.markets.items() if s == market.time_slot][0]
             selling_rate = self.calculate_selling_rate(market)
             energy = energy_sell_dict[market.time_slot]

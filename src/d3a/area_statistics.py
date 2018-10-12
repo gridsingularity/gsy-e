@@ -3,7 +3,6 @@ from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.depreciated.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import CellTowerLoadHoursStrategy
 from d3a.util import area_name_from_area_or_iaa_name, make_iaa_name
 
@@ -28,8 +27,7 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
         if child.children == [] and not \
                 (isinstance(child.strategy, StorageStrategy) or
                  isinstance(child.strategy, PVStrategy) or
-                 isinstance(child.strategy, InterAreaAgent) or
-                 isinstance(child.strategy, NightStorageStrategy)):
+                 isinstance(child.strategy, InterAreaAgent)):
             for slot, market in child.parent.past_markets.items():
                 if slot.hour not in load_price_lists.keys():
                     load_price_lists[slot.hour] = loads_avg_prices(load=[], price=[])
@@ -71,8 +69,7 @@ def gather_prices_pv_stor_energ(area, price_energ_lists):
                 price_energ_lists[slot_time_str].pv_energ.extend(traded_energy)
 
             if child.children == [] and \
-                    (isinstance(child.strategy, StorageStrategy) or
-                     isinstance(child.strategy, NightStorageStrategy)):
+                    (isinstance(child.strategy, StorageStrategy)):
                 traded_energy = []
 
                 for t in market.trades:
