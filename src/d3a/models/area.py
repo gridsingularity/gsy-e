@@ -21,6 +21,7 @@ from d3a.models.strategy.base import BaseStrategy
 from d3a.models.strategy.inter_area import InterAreaAgent, BalancingAgent
 from d3a.util import TaggedLogWrapper
 from d3a.models.strategy.const import ConstSettings
+from d3a.device_registry import DeviceRegistry
 from d3a import TIME_FORMAT
 
 log = getLogger(__name__)
@@ -249,14 +250,11 @@ class Area:
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
         # modify the market list in-place
-        changed, _ = self._market_rotation(current_time=now,
-                                           markets=self.markets,
-                                           past_markets=self.past_markets,
-                                           area_agent=self.inter_area_agents)
-
-        changed_balancing_market, _ = \
-            self._market_rotation(current_time=now,
-                                  markets=self.balancing_markets,
+        self._market_rotation(current_time=now, markets=self.markets,
+                              past_markets=self.past_markets,
+                              area_agent=self.inter_area_agents)
+        if self.balancing_markets is not None:
+            self._market_rotation(current_time=now, markets=self.balancing_markets,
                                   past_markets=self.past_balancing_markets,
                                   area_agent=self.balancing_agents)
 
@@ -282,20 +280,24 @@ class Area:
                                               agent_class=InterAreaAgent,
                                               market_class=Market)
 
-        changed_balancing_market = \
-            self._create_future_markets(current_time=self.now, markets=self.balancing_markets,
-                                        parent=self.parent,
-                                        parent_markets=self.parent.balancing_markets
-                                        if self.parent is not None else None,
-                                        area_agent=self.balancing_agents,
-                                        parent_area_agent=self.parent.balancing_agents
-                                        if self.parent is not None else None,
-                                        agent_class=BalancingAgent,
-                                        market_class=BalancingMarket)
+        if ConstSettings.ENABLE_BALANCING_MARKET and len(DeviceRegistry.REGISTRY.keys()) != 0:
+            changed_balancing_market = \
+                self._create_future_markets(current_time=self.now, markets=self.balancing_markets,
+                                            parent=self.parent,
+                                            parent_markets=self.parent.balancing_markets
+                                            if self.parent is not None else None,
+                                            area_agent=self.balancing_agents,
+                                            parent_area_agent=self.parent.balancing_agents
+                                            if self.parent is not None else None,
+                                            agent_class=BalancingAgent,
+                                            market_class=BalancingMarket)
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
+
+        if not ConstSettings.ENABLE_BALANCING_MARKET:
+            return
 
         # Force balancing_market cycle event in case this is the first market slot
         if (changed_balancing_market or len(self.past_balancing_markets.keys()) == 0) \
@@ -392,7 +394,6 @@ class Area:
             self.appliance.event_listener(event_type, **kwargs)
 
     def _market_rotation(self, current_time, markets, past_markets, area_agent):
-        changed = False
         first = True
         for timeframe in list(markets.keys()):
             if timeframe < current_time:
@@ -404,10 +405,8 @@ class Area:
                     area_agent.pop(market, None)
                 else:
                     first = False
-                changed = True
                 self.log.debug("Moving {t:%H:%M} {m} to past"
                                .format(t=timeframe, m=past_markets[timeframe].area.name))
-        return changed, first
 
     def _create_future_markets(self, current_time, markets, parent, parent_markets,
                                area_agent, parent_area_agent, agent_class, market_class):

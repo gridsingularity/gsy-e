@@ -171,7 +171,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 self.sell_energy()
 
         # Balancing Offers
-        if self.owner.name not in DeviceRegistry.REGISTRY:
+        if not self.is_eligible_for_balancing_market:
             return
 
         if self.state.free_storage > 0:
