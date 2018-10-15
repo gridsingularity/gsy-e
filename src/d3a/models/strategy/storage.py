@@ -171,7 +171,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 self.sell_energy()
 
         # Balancing Offers
-        if self.is_ineligible_for_balancing_market:
+        if not self.is_eligible_for_balancing_market:
             return
 
         if self.state.free_storage > 0:

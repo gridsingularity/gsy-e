@@ -150,9 +150,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         )
 
     @property
-    def is_ineligible_for_balancing_market(self):
-        if self.owner.name not in DeviceRegistry.REGISTRY \
-                or not ConstSettings.ENABLE_BALANCING_MARKET:
+    def is_eligible_for_balancing_market(self):
+        if self.owner.name in DeviceRegistry.REGISTRY and ConstSettings.ENABLE_BALANCING_MARKET:
             return True
 
     def accept_offer(self, market: Market, offer, *, buyer=None, energy=None, price_drop=False):

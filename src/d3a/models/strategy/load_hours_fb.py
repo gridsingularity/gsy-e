@@ -166,7 +166,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self, market):
-        if self.is_ineligible_for_balancing_market:
+        if not self.is_eligible_for_balancing_market:
             return
 
         ramp_up_energy = \
@@ -182,7 +182,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     # committing to reduce its consumption when required
     def _supply_balancing_offer(self, market, trade):
-        if self.is_ineligible_for_balancing_market:
+        if not self.is_eligible_for_balancing_market:
             return
         if trade.buyer != self.owner.name:
             return

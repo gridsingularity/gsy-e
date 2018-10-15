@@ -48,7 +48,7 @@ class CommercialStrategy(BaseStrategy):
         self.offers.post(offer, market)
 
     def _offer_balancing_energy(self, market):
-        if self.is_ineligible_for_balancing_market:
+        if not self.is_eligible_for_balancing_market:
             return
 
         # The second tuple member in the device registry is the balancing supply rate

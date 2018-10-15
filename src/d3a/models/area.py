@@ -250,16 +250,13 @@ class Area:
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
         # modify the market list in-place
-        changed, _ = self._market_rotation(current_time=now,
-                                           markets=self.markets,
-                                           past_markets=self.past_markets,
-                                           area_agent=self.inter_area_agents)
+        self._market_rotation(current_time=now, markets=self.markets,
+                              past_markets=self.past_markets,
+                              area_agent=self.inter_area_agents)
         if self.balancing_markets is not None:
-            changed_balancing_market, _ = \
-                self._market_rotation(current_time=now,
-                                      markets=self.balancing_markets,
-                                      past_markets=self.past_balancing_markets,
-                                      area_agent=self.balancing_agents)
+            self._market_rotation(current_time=now, markets=self.balancing_markets,
+                                  past_markets=self.past_balancing_markets,
+                                  area_agent=self.balancing_agents)
 
         self._accumulated_past_price = sum(
             market.accumulated_trade_price
@@ -397,7 +394,6 @@ class Area:
             self.appliance.event_listener(event_type, **kwargs)
 
     def _market_rotation(self, current_time, markets, past_markets, area_agent):
-        changed = False
         first = True
         for timeframe in list(markets.keys()):
             if timeframe < current_time:
@@ -409,10 +405,8 @@ class Area:
                     area_agent.pop(market, None)
                 else:
                     first = False
-                changed = True
                 self.log.debug("Moving {t:%H:%M} {m} to past"
                                .format(t=timeframe, m=past_markets[timeframe].area.name))
-        return changed, first
 
     def _create_future_markets(self, current_time, markets, parent, parent_markets,
                                area_agent, parent_area_agent, agent_class, market_class):
