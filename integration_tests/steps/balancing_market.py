@@ -6,7 +6,7 @@ from d3a.util import make_ba_name
 from d3a.models.strategy.const import ConstSettings
 
 
-@given('we have configured all the default_2a devices in the registry')
+@given('we have configured all the balancing_market.default_2a devices in the registry')
 def configure_default_2a_registry(context):
     DeviceRegistry.REGISTRY = {
         "H1 General Load": (22, 25),
@@ -22,6 +22,12 @@ def check_device_registry(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     for slot, market in house.past_markets.items():
         assert market.device_registry == device_registry_dict
+
+
+@then("no balancing market is created")
+def check_balancing_market(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    assert len(house.past_balancing_markets) == 0
 
 
 @then('balancing market of {area} has {b_trade_nr} balancing trades and {s_trade_nr} spot trades')
