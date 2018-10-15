@@ -43,7 +43,7 @@ _setup_modules = available_simulation_scenarios
 
 
 @main.command()
-@click.option('-d', '--duration', type=IntervalType('H:M'), default="24h", show_default=True,
+@click.option('-d', '--duration', type=IntervalType('D:H'), default="1d", show_default=True,
               help="Duration of simulation")
 @click.option('-t', '--tick-length', type=IntervalType('M:S'), default="1s", show_default=True,
               help="Length of a tick")
