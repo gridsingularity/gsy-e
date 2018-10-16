@@ -2,7 +2,7 @@ import pendulum
 import pytest
 
 from unittest.mock import Mock
-from d3a import TIME_ZONE
+from d3a import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
 from d3a.models.strategy.const import ConstSettings
@@ -60,6 +60,8 @@ class FakeMarket:
                            'FakeArea', 'buyer'
                            )
         self.created_offers = []
+        self.time_slot = pendulum.now(tz=TIME_ZONE)
+        self.time_slot_str = self.time_slot.strftime(TIME_FORMAT)
 
     @property
     def offers(self):
@@ -134,7 +136,7 @@ def e_car_strategy_test2(area_test2, called):
     e.owner = area_test2
     e.area = area_test2
     e._remove_offers_on_depart = called
-    e.buy_energy = lambda: None
+    e.buy_energy = Mock(return_value=None)
     e.sell_energy = lambda: None
     e.depart_times_not_reached = list(range(24))
     e.depart_times_not_reached.remove(ConstSettings.DEPART_TIME)
@@ -182,7 +184,7 @@ def e_car_strategy_test4(area_test1, called):
     e.owner = area_test1
     e.area = area_test1
     e.sell_energy = Mock(return_value=None)
-    e.buy_energy = lambda: None
+    e.buy_energy = Mock(return_value=None)
     e.depart = called
     return e
 
@@ -210,14 +212,13 @@ def e_car_strategy_test5(area_test1, called):
     e.area = area_test1
     e.sell_energy = called
     e.offers.post(Offer('id', 1, 1, 'A', market=area_test1.past_market), area_test1.past_market)
-    e.state._offered_storage = 1
     return e
 
 
 def test_ecar_departure(e_car_strategy_test5):
     e_car_strategy_test5.depart()
     assert not e_car_strategy_test5.connected_to_grid
-    assert e_car_strategy_test5.state.used_storage == 1
+    assert e_car_strategy_test5.state.used_storage == 0
 
 
 """TEST6"""

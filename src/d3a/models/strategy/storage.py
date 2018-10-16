@@ -93,7 +93,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
 
                 if self.are_bids_posted(market):
-                    self.log.warning("increase price!")
                     self.update_posted_bids_over_ticks(market)
                 else:
                     energy_kWh = self.state.energy_to_buy_dict[market.time_slot]
@@ -113,11 +112,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
 
     def event_bid_traded(self, *, market, bid_trade):
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
-            # Do not handle bid trades on single sided markets
-            assert False and "Invalid state, cannot receive a bid if single sided market" \
-                             " is globally configured."
-
         if bid_trade.offer.buyer != self.owner.name:
             return
 
@@ -198,12 +192,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         markets_to_sell = self.select_market_to_sell()
         energy_sell_dict = self.state.clamp_energy_to_sell_kWh(
             [ma.time_slot for ma in markets_to_sell])
-
         for market in markets_to_sell:
             selling_rate = self.calculate_selling_rate(market)
             energy = energy_sell_dict[market.time_slot]
             if not self.state.has_battery_reached_max_power(-energy, market.time_slot):
                 if energy > 0.0:
+
                     offer = market.offer(
                         energy * selling_rate,
                         energy,

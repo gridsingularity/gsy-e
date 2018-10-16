@@ -54,7 +54,8 @@ class ECarStrategy(StorageStrategy):
             return
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in area.markets.values()])
         # Check if there are cheap offers to buy
-        self.buy_energy(self.area.next_market)
+        next_market = list(self.area.markets.values())[0]
+        self.buy_energy(next_market)
         # Check if any energy from the Car can be sold
         # Same process as Storage
         self.sell_energy()

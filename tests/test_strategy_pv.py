@@ -357,7 +357,8 @@ def testing_low_risk(area_test3, pv_test7):
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
                                      / pv_test7._decrease_price_every_nr_s)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-        assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
+        assert new_offer.price == round(old_offer.price
+                                        - (old_offer.energy * price_dec_per_update), 8)
 
 
 """TEST8"""
