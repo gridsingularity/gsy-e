@@ -151,7 +151,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 self.state.offered_buy_kWh[current_market.time_slot] += energy_kWh
 
         # Balancing Offers
-        if self.owner.name not in DeviceRegistry.REGISTRY:
+        if not self.is_eligible_for_balancing_market:
             return
 
         free_storage = self.state.free_storage(current_market.time_slot)

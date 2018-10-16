@@ -20,10 +20,10 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'max_energy_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, daily_budget=None,
-                 min_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MIN_ENERGY_RATE,
-                 max_energy_rate: Union[float, dict, str]=ConstSettings.LOAD_MAX_ENERGY_RATE,
-                 balancing_energy_ratio: tuple=(ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
-                                                ConstSettings.BALANCING_OFFER_SUPPLY_RATIO)):
+                 min_energy_rate: Union[float, dict, str] = ConstSettings.LOAD_MIN_ENERGY_RATE,
+                 max_energy_rate: Union[float, dict, str] = ConstSettings.LOAD_MAX_ENERGY_RATE,
+                 balancing_energy_ratio: tuple = (ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
+                                                  ConstSettings.BALANCING_OFFER_SUPPLY_RATIO)):
 
         BaseStrategy.__init__(self)
         self.min_energy_rate = read_arbitrary_profile(InputProfileTypes.RATE,
@@ -43,6 +43,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
         self.energy_requirement_Wh = {}  # type: Dict[Time, float]
+        self.hrs_per_day = {}  # type: Dict[int, int]
 
         # be a parameter on the constructor or if we want to deal in percentages
         if hrs_per_day is None:
@@ -51,7 +52,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             hrs_of_day = list(range(24))
 
         self.hrs_of_day = hrs_of_day
-        self.hrs_per_day = hrs_per_day
+        self._initial_hrs_per_day = hrs_per_day
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
         if not all([0 <= h <= 23 for h in hrs_of_day]):
@@ -64,16 +65,20 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     def active_markets(self):
         markets = []
         for time, market in self.area.markets.items():
-            if self._allowed_operating_hours(time.hour):
+            if self._allowed_operating_hours(time):
                 markets.append(market)
         return markets
 
     def event_activate(self):
         self.energy_per_slot_Wh = (self.avg_power_W /
-                                   (duration(hours=1)/self.area.config.slot_length))
+                                   (duration(hours=1) / self.area.config.slot_length))
+
+        self._simulation_start_timestamp = self.area.now
+        self.hrs_per_day = {day: self._initial_hrs_per_day
+                            for day in range(self.area.config.duration.days + 1)}
 
         for slot_time in generate_market_slot_list(self.area):
-            if self._allowed_operating_hours(slot_time.hour):
+            if self._allowed_operating_hours(slot_time):
                 self.energy_requirement_Wh[slot_time] = self.energy_per_slot_Wh
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
 
@@ -91,18 +96,22 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                     round(acceptable_offer.price / acceptable_offer.energy, 8) <= \
                     self.max_energy_rate[market.time_slot_str]:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
+                current_day = self._get_day_of_timestamp(market.time_slot)
                 if acceptable_offer.energy > max_energy:
                     self.accept_offer(market, acceptable_offer, energy=max_energy)
                     self.energy_requirement_Wh[market.time_slot] = 0
-                    self.hrs_per_day -= self._operating_hours(max_energy)
+                    self.hrs_per_day[current_day] -= self._operating_hours(max_energy)
                 else:
                     self.accept_offer(market, acceptable_offer)
                     self.energy_requirement_Wh[market.time_slot] -= \
                         acceptable_offer.energy * 1000.0
-                    self.hrs_per_day -= self._operating_hours(acceptable_offer.energy)
+                    self.hrs_per_day[current_day] -= self._operating_hours(acceptable_offer.energy)
 
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
+
+    def _get_day_of_timestamp(self, time_slot):
+        return (time_slot - self._simulation_start_timestamp).days
 
     def _double_sided_market_event_tick(self, market):
         if self.are_bids_posted(market):
@@ -121,7 +130,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 self._double_sided_market_event_tick(market)
 
     def _allowed_operating_hours(self, time):
-        return time in self.hrs_of_day and self.hrs_per_day > 0
+        return time.hour in self.hrs_of_day and \
+               self.hrs_per_day[self._get_day_of_timestamp(time)] > 0
 
     def _operating_hours(self, energy):
         return (((energy * 1000) / self.energy_per_slot_Wh)
@@ -151,7 +161,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
         if bid_trade.offer.buyer == buffered_bid.buyer:
             self.energy_requirement_Wh[market.time_slot] -= bid_trade.offer.energy * 1000.0
-            self.hrs_per_day -= self._operating_hours(bid_trade.offer.energy)
+            self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
+                self._operating_hours(bid_trade.offer.energy)
             if not bid_trade.residual or self.energy_requirement_Wh[market.time_slot] < 0.00001:
                 self.remove_bid_from_pending(bid_trade.offer.id, market)
             assert self.energy_requirement_Wh[market.time_slot] >= -0.00001
@@ -166,22 +177,23 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self, market):
-        if self.owner.name not in DeviceRegistry.REGISTRY:
+        if not self.is_eligible_for_balancing_market:
             return
+
         ramp_up_energy = \
             self.balancing_energy_ratio.demand * \
             self.state.desired_energy_Wh[market.time_slot]
         self.energy_requirement_Wh[market.time_slot] -= ramp_up_energy
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
-            self.area.balancing_markets[market.time_slot].\
+            self.area.balancing_markets[market.time_slot]. \
                 balancing_offer(ramp_up_price,
                                 -ramp_up_energy,
                                 self.owner.name)
 
     # committing to reduce its consumption when required
     def _supply_balancing_offer(self, market, trade):
-        if self.owner.name not in DeviceRegistry.REGISTRY:
+        if not self.is_eligible_for_balancing_market:
             return
         if trade.buyer != self.owner.name:
             return

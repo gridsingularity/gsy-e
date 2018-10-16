@@ -75,7 +75,8 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
         for slot_time in generate_market_slot_list(self.area):
-            difference_to_midnight_in_minutes = slot_time.diff(self.midnight).in_minutes()
+            difference_to_midnight_in_minutes = \
+                slot_time.diff(self.midnight).in_minutes() % (60 * 24)
             self.energy_production_forecast_kWh[slot_time] = \
                 self.gaussian_energy_forecast_kWh(
                     difference_to_midnight_in_minutes) * self.panel_count

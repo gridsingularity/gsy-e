@@ -20,6 +20,7 @@ from d3a.models.strategy.const import ConstSettings
 log = getLogger(__name__)
 
 
+INTERVAL_DH_RE = rex("/^(?:(?P<days>[0-9]{1,4})[d:])?(?:(?P<hours>[0-9]{1,2})[h:])?$/")
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
 INTERVAL_MS_RE = rex("/^(?:(?P<minutes>[0-9]{1,4})[m:])?(?:(?P<seconds>[0-9]{1,2})s?)?$/")
 IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
@@ -40,6 +41,9 @@ class IntervalType(ParamType):
         if type == 'H:M':
             self.re = INTERVAL_HM_RE
             self.allowed_formats = "'XXh', 'XXm', 'XXhYYm', 'XX:YY'"
+        elif type == 'D:H':
+            self.re = INTERVAL_DH_RE
+            self.allowed_formats = "'XXh', 'XXd', 'XXdYYh'"
         elif type == 'M:S':
             self.re = INTERVAL_MS_RE
             self.allowed_formats = "'XXm', 'XXs', 'XXmYYs', 'XX:YY'"
