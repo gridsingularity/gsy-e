@@ -67,17 +67,24 @@ class StorageState:
         self.capacity = capacity
         self.loss_per_hour = loss_per_hour
         self.max_abs_battery_power = max_abs_battery_power
-        self.pledged_storage = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
-        self.offered_storage = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
-        self.bought_energy = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
-        self.sought_energy = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+
+        # storage capacity, that is already sold:
+        self.pledged_sell_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        # storage capacity, that has been offered (but not traded yet):
+        self.offered_sell_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        # energy, that has been bought:
+        self.pledged_buy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        # energy, that the storage wants to buy (but not traded yet):
+        self.offered_buy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+
         self.charge_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
         self.charge_history_kWh = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
         self.offered_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
         self.used_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
+        self.energy_to_buy_dict = defaultdict(lambda: 0.)
+
         self._used_storage = initial_capacity
         self._battery_energy_per_slot = 0.0
-        self.energy_to_buy_dict = {}
 
     @property
     def used_storage(self):
@@ -91,17 +98,19 @@ class StorageState:
         Storage, that has not been promised or occupied
         """
         in_use = self._used_storage \
-            - self.pledged_storage[time_slot] - self.offered_storage[time_slot] \
-            + self.bought_energy[time_slot] + self.sought_energy[time_slot]
+            - self.pledged_sell_kWh[time_slot] \
+            + self.pledged_buy_kWh[time_slot] \
+            + self.offered_buy_kWh[time_slot]
         return self.capacity - in_use
 
     def max_offer_energy_kWh(self, time_slot):
-        return self.used_storage - self.pledged_storage[time_slot] - self.offered_storage[
-            time_slot]
+        return self.used_storage - self.pledged_sell_kWh[time_slot] \
+                                 - self.offered_sell_kWh[time_slot]
 
     def max_buy_energy_kWh(self, time_slot):
         return self.capacity - (self.used_storage
-                                + self.bought_energy[time_slot] + self.sought_energy[time_slot])
+                                + self.pledged_buy_kWh[time_slot]
+                                + self.offered_buy_kWh[time_slot])
 
     def set_battery_energy_per_slot(self, slot_length):
         self._battery_energy_per_slot = self.max_abs_battery_power * \
@@ -109,21 +118,21 @@ class StorageState:
 
     def has_battery_reached_max_power(self, energy, time_slot):
         return abs(energy
-                   + self.pledged_storage[time_slot]
-                   + self.offered_storage[time_slot]
-                   - self.bought_energy[time_slot]
-                   - self.sought_energy[time_slot]) > \
+                   + self.pledged_sell_kWh[time_slot]
+                   + self.offered_sell_kWh[time_slot]
+                   - self.pledged_buy_kWh[time_slot]
+                   - self.offered_buy_kWh[time_slot]) > \
                self._battery_energy_per_slot
 
     def clamp_energy_to_sell_kWh(self, market_slot_time_list):
         """
-        Determines available energy to sell for each active market and resturns a dict[TIME, FLOAT]
+        Determines available energy to sell for each active market and returns a dict[TIME, FLOAT]
         """
         accumulated_pledged = 0
         accumulated_offered = 0
         for time_slot in market_slot_time_list:
-            accumulated_pledged += self.pledged_storage[time_slot]
-            accumulated_offered += self.offered_storage[time_slot]
+            accumulated_pledged += self.pledged_sell_kWh[time_slot]
+            accumulated_offered += self.offered_sell_kWh[time_slot]
         energy = round((self.used_storage - accumulated_pledged - accumulated_offered) /
                        len(market_slot_time_list), 10)
 
@@ -131,11 +140,11 @@ class StorageState:
         for time_slot in market_slot_time_list:
             clamped_energy = min(energy, self.max_offer_energy_kWh(time_slot),
                                  self._battery_energy_per_slot)
-            target_soc = (self.used_storage - self.pledged_storage[time_slot] -
-                          self.offered_storage[time_slot] - clamped_energy) / self.capacity
+            target_soc = (self.used_storage - self.pledged_sell_kWh[time_slot] -
+                          self.offered_sell_kWh[time_slot] - clamped_energy) / self.capacity
             if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
-                clamped_energy = max(0, self.used_storage + self.pledged_storage[time_slot] -
-                                     self.offered_storage[time_slot] -
+                clamped_energy = max(0, self.used_storage + self.pledged_sell_kWh[time_slot] -
+                                     self.offered_sell_kWh[time_slot] -
                                      self.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC)
 
             storage_dict[time_slot] = clamped_energy
@@ -151,8 +160,8 @@ class StorageState:
         accumulated_bought = 0
         accumulated_sought = 0
         for time_slot in market_slot_time_list:
-            accumulated_bought += self.bought_energy[time_slot]
-            accumulated_sought += self.sought_energy[time_slot]
+            accumulated_bought += self.pledged_buy_kWh[time_slot]
+            accumulated_sought += self.offered_buy_kWh[time_slot]
         energy = round((self.capacity
                         - self.used_storage
                         - accumulated_bought
@@ -164,49 +173,32 @@ class StorageState:
 
             self.energy_to_buy_dict[time_slot] = clamped_energy
 
-    def check_state(self, area, time_slot):
+    def check_state(self, time_slot):
         """
-        This is to sanity check the state variables. Until now, it does not have an influence
-        on the simulation run.
-        TODO: Is this needed?
+        Sanity check of the state variables.
         """
         charge = 100.0 * self.used_storage / self.capacity
-        try:
-            assert 0 <= round(charge, 10) <= 100
-            assert 0 <= round(self.offered_storage[time_slot], 10) <= self.capacity
-            assert 0 <= round(self.pledged_storage[time_slot], 10) <= self.capacity
-            assert 0 <= round(self.bought_energy[time_slot], 10) <= self.capacity
-            assert 0 <= round(self.sought_energy[time_slot], 10) <= self.capacity
-        except AssertionError:
-            area.log.error(time_slot)
-            area.log.error(f"SOC {charge}")
-            area.log.error(f"used_storage {self.used_storage}")
-            area.log.error(f"offered_storage {self.offered_storage[time_slot]}")
-            area.log.error(f"pledged_storage {self.pledged_storage[time_slot]}")
-            area.log.error(f"bought_energy {self.bought_energy[time_slot]}")
-            area.log.error(f"sought_energy {self.sought_energy[time_slot]}")
+        assert 0 <= round(charge, 10) <= 100
+        assert 0 <= round(self.offered_sell_kWh[time_slot], 10) <= self.capacity
+        assert 0 <= round(self.pledged_sell_kWh[time_slot], 10) <= self.capacity
+        assert 0 <= round(self.pledged_buy_kWh[time_slot], 10) <= self.capacity
+        assert 0 <= round(self.offered_buy_kWh[time_slot], 10) <= self.capacity
 
     def lose(self, proportion):
         self._used_storage *= 1.0 - proportion
 
     def tick(self, area, time_slot):
-
-        self.check_state(area, time_slot)
-
+        self.check_state(time_slot)
         self.lose(self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
-        # TODO: Check if the following lines are neccessary:
-        free = self.free_storage(time_slot) / self.capacity
-        if free < 0.2:
-            area.log.info(f"Storage reached more than 80% Battery: {(1 - free) * 100}%")
 
     def market_cycle(self, past_time_slot, time_slot):
         """
         Simulate actual Energy flow by removing pledged storage and added baought energy to the
         used_storage
         """
-        self._used_storage -= self.pledged_storage[past_time_slot]
-        self._used_storage += self.bought_energy[past_time_slot]
+        self._used_storage -= self.pledged_sell_kWh[past_time_slot]
+        self._used_storage += self.pledged_buy_kWh[past_time_slot]
 
         self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
         self.charge_history_kWh[time_slot] = self.used_storage
-        self.offered_history[time_slot] = self.offered_storage[time_slot]
+        self.offered_history[time_slot] = self.offered_sell_kWh[time_slot]
