@@ -9,7 +9,7 @@ from behave import given, when, then
 from d3a.models.config import SimulationConfig
 from d3a.models.strategy.read_user_profile import read_arbitrary_profile, _readCSV
 from d3a.simulation import Simulation
-from d3a.models.strategy.predefined_pv import d3a_path
+from d3a.util import d3a_path
 from d3a import PENDULUM_TIME_FORMAT
 from d3a.models.strategy.const import ConstSettings
 from d3a.export_unmatched_loads import export_unmatched_loads
