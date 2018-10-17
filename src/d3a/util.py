@@ -1,4 +1,3 @@
-import os
 import select
 import sys
 import termios
@@ -16,6 +15,10 @@ from d3a import get_project_root
 from d3a import setup as d3a_setup
 from d3a.models.strategy.const import ConstSettings
 
+import d3a
+import inspect
+import os
+d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 log = getLogger(__name__)
 
