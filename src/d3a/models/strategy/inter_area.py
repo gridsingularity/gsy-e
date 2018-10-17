@@ -160,7 +160,7 @@ class IAAEngine:
             forwarded_offer = self._forward_offer(offer, offer_id)
             self.owner.log.info("Offering %s", forwarded_offer)
 
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+        if ConstSettings.IAASettings.MARKET_TYPE == 2:
             for bid_id, bid in self.markets.source.bids.items():
                 if bid_id not in self.forwarded_bids and \
                         self.owner.usable_bid(bid) and \

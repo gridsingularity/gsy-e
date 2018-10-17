@@ -1,111 +1,106 @@
 class ConstSettings:
 
-    # GENERAL SETTINGS
-    # Unit is percentage
-    MAX_RISK = 100
-    # Unit is percentage
-    DEFAULT_RISK = 50
-    # Max energy price in ct / kWh
-    DEFAULT_MARKET_MAKER_RATE = 30  # 0.3 Eur
+    class GeneralSettings:
+        # Unit is percentage
+        MAX_RISK = 100
+        # Unit is percentage
+        DEFAULT_RISK = 50
+        # Max energy price in ct / kWh
+        DEFAULT_MARKET_MAKER_RATE = 30  # 0.3 Eur
+        # This parameter is modified by the Simulation class
+        MAX_OFFER_TRAVERSAL_LENGTH = None
+        ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
 
-    # FRIDGE SETTINGS
-    # Unit is degree celsius
-    MAX_FRIDGE_TEMP = 8.0
-    # Unit is degree celsius
-    MIN_FRIDGE_TEMP = 4.0
-    # Unit is degree celsius
-    FRIDGE_TEMPERATURE = 6.0
+    class FridgeSettings:
+        # Unit is degree celsius
+        MAX_TEMP = 8.0
+        # Unit is degree celsius
+        MIN_TEMP = 4.0
+        # Unit is degree celsius
+        TEMPERATURE = 6.0
+        # MARKET RELATED LIMITATIONS
+        # Unit is in Wh
+        MIN_NEEDED_ENERGY = 10
 
-    # MARKET RELATED LIMITATIONS
-    # Unit is in Wh
-    FRIDGE_MIN_NEEDED_ENERGY = 10
+    class StorageSettings:
+        # Unit is kWh
+        CAPACITY = 1.2
+        # Unit is kW
+        MAX_ABS_POWER = 5
+        # Initial ESS rate calculation for every market slot, before rate reduction per tick
+        # Option 1, use the historical market average
+        # Default value 2 stands for market maker rate
+        INITIAL_RATE_OPTION = 2
+        # Energy rate decrease option for unsold ESS offers
+        # Default value 1 stands for percentage/RISK based energy rate decrease
+        # Option 2, use the constant energy rate decrease
+        RATE_DECREASE_OPTION = 1
+        # Energy Sell/Buy Break-even
+        BREAK_EVEN_SELL = 25
+        BREAK_EVEN_BUY = 24.9
+        MIN_BUYING_RATE = 24.9
+        MIN_ALLOWED_SOC = 0.1
+        SELL_ON_MOST_EXPENSIVE_MARKET = False
 
-    # ENERGY STORAGE SETTINGS
-    # Unit is kWh
-    STORAGE_CAPACITY = 1.2
-    # Unit is kW
-    MAX_ABS_BATTERY_POWER = 5
-    # Initial ESS rate calculation for every market slot, before rate reduction per tick
-    # Option 1, use the historical market average
-    # Default value 2 stands for market maker rate
-    INITIAL_ESS_RATE_OPTION = 2
-    # Energy rate decrease option for unsold ESS offers
-    # Default value 1 stands for percentage/RISK based energy rate decrease
-    # Option 2, use the constant energy rate decrease
-    ESS_RATE_DECREASE_OPTION = 1
-    # Energy Sell/Buy Break-even
-    STORAGE_BREAK_EVEN_SELL = 25
-    STORAGE_BREAK_EVEN_BUY = 24.9
-    STORAGE_MIN_BUYING_RATE = 24.9
-    STORAGE_MIN_ALLOWED_SOC = 0.1
-    STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET = False
-    # PV SETTINGS
-    # This price should be just above the marginal costs for a PV system - unit is cent
-    MIN_PV_SELLING_RATE = 0
+    class LoadSettings:
+        MIN_ENERGY_RATE = 0
+        MAX_ENERGY_RATE = 35
 
-    # LOAD SETTINGS
-    LOAD_MIN_ENERGY_RATE = 0
-    LOAD_MAX_ENERGY_RATE = 35
+    class PVSettings:
+        # This price should be just above the marginal costs for a PV system - unit is cent
+        MIN_SELLING_RATE = 0
+        # Option 1, use the historical market average
+        # Default value 2 stands for market maker rate
+        INITIAL_RATE_OPTION = 2
+        # Energy rate decrease option for unsold PV offers
+        # Default value 1 stands for percentage/RISK based energy rate decrease
+        # Option 2, use the constant energy rate decrease
+        RATE_DECREASE_OPTION = 1
+        DEFAULT_POWER_PROFILE = 0  # sunny
+        MAX_PANEL_OUTPUT_W = 160
 
-    # Option 1, use the historical market average
-    # Default value 2 stands for market maker rate
-    INITIAL_PV_RATE_OPTION = 2
+    class HeatpumpSettings:
+        # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)
+        EARTH_TEMP = 6.0
+        # Unit is degree celsius
+        MAX_STORAGE_TEMP = 55.0
+        # Unit is degree celsius
+        MIN_STORAGE_TEMP = 30.0
+        # Unit is degree celsius
+        INITIAL_STORAGE_TEMP = 30.0
+        # Unit is in Wh
+        MIN_NEEDED_ENERGY = 50
+        # Temperature increment of the storage per min Needed Energy
+        # Assuming 200L storage capacity and a heat pump conversion efficiency of 5
+        # --> (1kWh energy = 5kWh heat)
+        # This means 50 Wh increase the temp of the storage for 0.2C
+        MIN_TEMP_INCREASE = 2
 
-    # Energy rate decrease option for unsold PV offers
-    # Default value 1 stands for percentage/RISK based energy rate decrease
-    # Option 2, use the constant energy rate decrease
-    PV_RATE_DECREASE_OPTION = 1
+    class EcarSettings:
+        # Car: Arrival time at charging station
+        ARRIVAL_TIME = 1
+        # Car: Depart time from charging station
+        DEPART_TIME = 23
 
-    ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
+    class PredefinedLoadSettings:
+        # Minimal consumption per household in Wh
+        MIN_HOUSEHOLD_CONSUMPTION = 70
 
-    DEFAULT_PV_POWER_PROFILE = 0  # sunny
-    PV_MAX_PANEL_OUTPUT_W = 160
+    class IAASettings:
+        # IAA fee
+        FEE_PERCENTAGE = 1
+        # Market type option
+        # Default value 1 stands for single sided market
+        # Option 2 stands for double sided pay as bid market
+        MARKET_TYPE = 1
 
-    # HEATPUMP SETTINGS
-    # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)
-    EARTH_TEMP = 6.0
-    # Unit is degree celsius
-    MAX_STORAGE_TEMP = 55.0
-    # Unit is degree celsius
-    MIN_STORAGE_TEMP = 30.0
-    # Unit is degree celsius
-    INITIAL_PUMP_STORAGE_TEMP = 30.0
-    # Unit is in Wh
-    PUMP_MIN_NEEDED_ENERGY = 50
-    # Temperature increment of the storage per min Needed Energy
-    # Assuming 200L storage capacity and a heat pump conversion efficiency of 5
-    # --> (1kWh energy = 5kWh heat)
-    # This means 50 Wh increase the temp of the storage for 0.2C
-    PUMP_MIN_TEMP_INCREASE = 2
+    class BlockchainSettings:
+        BLOCKCHAIN_URL = "http://127.0.0.1:8545"
+        BLOCKCHAIN_START_LOCAL_CHAIN = True
 
-    # ECAR SETTINGS
-    # Car: Arrival time at charging station
-    ARRIVAL_TIME = 1
-    # Car: Depart time from charging station
-    DEPART_TIME = 23
-
-    # PREDEF_LEAD SETTINGS
-    # Minimal consumption per household in Wh
-    MIN_HOUSEHOLD_CONSUMPTION = 70
-
-    # INTER_AREA_AGENT
-    # This parameter is modified by the Simulation class
-    MAX_OFFER_TRAVERSAL_LENGTH = None
-
-    INTER_AREA_AGENT_FEE_PERCENTAGE = 1
-
-    # Market type option
-    # Default value 1 stands for single sided market
-    # Option 2 stands for double sided pay as bid market
-    INTER_AREA_AGENT_MARKET_TYPE = 1
-
-    # Blockchain parameters
-    BLOCKCHAIN_URL = "http://127.0.0.1:8545"
-    BLOCKCHAIN_START_LOCAL_CHAIN = True
-
-    # Balancing Market parameters
-    ENABLE_BALANCING_MARKET = False
-    BALANCING_SPOT_TRADE_RATIO = 0.2
-    BALANCING_OFFER_DEMAND_RATIO = 0.1
-    BALANCING_OFFER_SUPPLY_RATIO = 0.1
-    BALANCING_FLEXIBLE_LOADS_SUPPORT = True
+    class BalancingSettings:
+        ENABLE_BALANCING_MARKET = False
+        SPOT_TRADE_RATIO = 0.2
+        OFFER_DEMAND_RATIO = 0.1
+        OFFER_SUPPLY_RATIO = 0.1
+        FLEXIBLE_LOADS_SUPPORT = True

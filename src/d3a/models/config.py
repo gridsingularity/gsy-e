@@ -36,7 +36,7 @@ class SimulationConfig:
         self.market_maker_rate = {}
         self.read_market_maker_rate(market_maker_rate)
         if iaa_fee is None:
-            self.iaa_fee = ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
+            self.iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
         else:
             self.iaa_fee = iaa_fee
 

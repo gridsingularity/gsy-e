@@ -92,7 +92,7 @@ def final_soc_full(context, soc_level):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
     if soc_level == '0':
-        soc_level = ConstSettings.STORAGE_MIN_ALLOWED_SOC * 100.0
+        soc_level = ConstSettings.StorageSettings.MIN_ALLOWED_SOC * 100.0
     final_soc = list(storage.strategy.state.charge_history.values())[-1]
     assert isclose(final_soc, float(soc_level))
 
@@ -144,6 +144,6 @@ def trade_rates_break_even(context):
     for area in [house1, house2, storage, load]:
         for slot, market in area.past_markets.items():
             for trade in market.trades:
-                assert ConstSettings.STORAGE_BREAK_EVEN_SELL <= \
+                assert ConstSettings.StorageSettings.BREAK_EVEN_SELL <= \
                        trade.offer.price / trade.offer.energy <= \
-                       ConstSettings.DEFAULT_MARKET_MAKER_RATE
+                       ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

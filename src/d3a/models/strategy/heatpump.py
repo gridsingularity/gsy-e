@@ -8,15 +8,15 @@ from d3a.models.strategy.const import ConstSettings
 class HeatPumpStrategy(BaseStrategy):
     parameters = ('risk',)
 
-    def __init__(self, risk=ConstSettings.DEFAULT_RISK):
+    def __init__(self, risk=ConstSettings.GeneralSettings.DEFAULT_RISK):
         if not 0 <= risk <= 100:
             raise ValueError("Risk is a percentage value, should be between 0 and 100.")
         super().__init__()
         self.risk = risk
         self.threshold_price = 0.0
-        self.earth_temp = ConstSettings.EARTH_TEMP
+        self.earth_temp = ConstSettings.HeatpumpSettings.EARTH_TEMP
         # The current temperature of the water storage coupled to the heat pump
-        self.storage_temp = ConstSettings.INITIAL_PUMP_STORAGE_TEMP
+        self.storage_temp = ConstSettings.HeatpumpSettings.INITIAL_STORAGE_TEMP
 
     def event_tick(self, *, area):
         # Temperature losses are negligible (0,04 W * m^2)/mK
@@ -28,16 +28,18 @@ class HeatPumpStrategy(BaseStrategy):
 
         # THIS LOGIC IS MOSTLY SHARED WITH THE FRIDGE!!!
         # Assuming a linear correlation between accepted price and risk
-        max_risk = ConstSettings.MAX_RISK
+        max_risk = ConstSettings.GeneralSettings.MAX_RISK
         median_risk = max_risk / 2
         # The threshold buying price depends on historical market data
         min_historical_price, max_historical_price = self.area.historical_min_max_price
         average_market_price = self.area.historical_avg_rate
-        storage_temp_domain = ConstSettings.MAX_STORAGE_TEMP - ConstSettings.MIN_STORAGE_TEMP
+        storage_temp_domain = ConstSettings.HeatpumpSettings.MAX_STORAGE_TEMP \
+            - ConstSettings.HeatpumpSettings.MIN_STORAGE_TEMP
         # normalized_storage_temp has a value between 1 and -1
         # If self.storage_temp = 30 the normalized_storage_temp is 1
         normalized_storage_temp = (
-            ((0.5 * (ConstSettings.MAX_STORAGE_TEMP + ConstSettings.MIN_STORAGE_TEMP) -
+            ((0.5 * (ConstSettings.HeatpumpSettings.MAX_STORAGE_TEMP
+                     + ConstSettings.HeatpumpSettings.MIN_STORAGE_TEMP) -
               self.storage_temp)) / (0.5 * storage_temp_domain)
         )
         # deviation_from_average is the value that determines the deviation (in percentage of
@@ -60,7 +62,8 @@ class HeatPumpStrategy(BaseStrategy):
         # which is of course the point of highest possible risk
         # Then we add the slope times the risk (lower risk needs to result in a higher price)
         risk_dependency_of_threshold_price = (accepted_price_at_highest_risk +
-                                              ((ConstSettings.MAX_RISK - self.risk) / 100) *
+                                              ((ConstSettings.GeneralSettings.MAX_RISK -
+                                                self.risk) / 100) *
                                               risk_price_slope
                                               )
 
@@ -94,19 +97,21 @@ class HeatPumpStrategy(BaseStrategy):
             # offer.energy * 1000 is needed to get the energy in Wh
             # For PUMP_MIN_TEMP_INCREASE see constant.py file
             heating_temperature = ((
-                                    (offer.energy * 1000) / ConstSettings.PUMP_MIN_NEEDED_ENERGY)
-                                   * ConstSettings.PUMP_MIN_TEMP_INCREASE
+                                    (offer.energy * 1000) /
+                                    ConstSettings.HeatpumpSettings.MIN_NEEDED_ENERGY)
+                                   * ConstSettings.HeatpumpSettings.MIN_TEMP_INCREASE
                                    )
             if (
                         (
                                 (
                                     (offer.price / offer.energy) <= threshold_price
                                     and self.storage_temp + heating_temperature <
-                                    ConstSettings.MAX_STORAGE_TEMP
+                                    ConstSettings.HeatpumpSettings.MAX_STORAGE_TEMP
                                 )
-                                or self.storage_temp <= ConstSettings.MIN_STORAGE_TEMP
+                                or self.storage_temp <=
+                                ConstSettings.HeatpumpSettings.MIN_STORAGE_TEMP
                         )
-                    and (offer.energy * 1000) >= ConstSettings.PUMP_MIN_NEEDED_ENERGY
+                    and (offer.energy * 1000) >= ConstSettings.HeatpumpSettings.MIN_NEEDED_ENERGY
             ):
                 try:
                     self.accept_offer(next_market, offer)
@@ -119,7 +124,7 @@ class HeatPumpStrategy(BaseStrategy):
                     self.log.exception("Couldn't buy")
                     continue
         else:
-            if self.storage_temp < ConstSettings.MIN_STORAGE_TEMP:
+            if self.storage_temp < ConstSettings.HeatpumpSettings.MIN_STORAGE_TEMP:
                 self.log.critical("Need energy (temp: %.2f) but can't buy", self.storage_temp)
                 try:
                     self.log.info("cheapest price is is %s",
