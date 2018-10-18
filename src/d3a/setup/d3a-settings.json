@@ -64,8 +64,8 @@
       "MARKET_TYPE": 1
     },
     "BlockchainSettings": {
-      "BLOCKCHAIN_URL": "http://127.0.0.1:8545",
-      "BLOCKCHAIN_START_LOCAL_CHAIN": true
+      "URL": "http://127.0.0.1:8545",
+      "START_LOCAL_CHAIN": true
     },
     "BalancingSettings": {
       "ENABLE_BALANCING_MARKET": false,

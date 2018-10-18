@@ -204,8 +204,12 @@ available_simulation_scenarios = iterate_over_all_d3a_setup()
 def parseboolstring(thestring):
     if thestring == "None":
         return None
+    elif thestring[0].upper() == 'T':
+        return True
+    elif thestring[0].upper() == 'F':
+        return False
     else:
-        return thestring[0].upper() == 'T'
+        return thestring
 
 
 def read_settings_from_file(settings_file):

@@ -95,8 +95,8 @@ class ConstSettings:
         MARKET_TYPE = 1
 
     class BlockchainSettings:
-        BLOCKCHAIN_URL = "http://127.0.0.1:8545"
-        BLOCKCHAIN_START_LOCAL_CHAIN = True
+        URL = "http://127.0.0.1:8545"
+        START_LOCAL_CHAIN = True
 
     class BalancingSettings:
         ENABLE_BALANCING_MARKET = False
