@@ -60,9 +60,9 @@ class Area:
         for child in self.children:
             child.parent = self
         self.inter_area_agents = \
-            defaultdict(list)  # type: Dict[Market, List[InterAreaAgent]]
+            defaultdict(list)  # type: Dict[DateTime, List[InterAreaAgent]]
         self.balancing_agents = \
-            defaultdict(list)  # type: Dict[BalancingMarket, List[BalancingAgent]]
+            defaultdict(list)  # type: Dict[DateTime, List[BalancingAgent]]
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
@@ -132,6 +132,9 @@ class Area:
             return list(self.markets.values())[0]
         except IndexError:
             return None
+
+    def get_future_market_from_timeslot(self, time_slot):
+        pass
 
     @property
     def current_slot(self):
@@ -280,7 +283,11 @@ class Area:
                                               agent_class=InterAreaAgent,
                                               market_class=Market)
 
-        if ConstSettings.ENABLE_BALANCING_MARKET and len(DeviceRegistry.REGISTRY.keys()) != 0:
+        # Force market cycle event in case this is the first market slot
+        if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
+            self._broadcast_notification(AreaEvent.MARKET_CYCLE)
+
+        if ConstSettings.ENABLE_BALANCING_MARKET or len(DeviceRegistry.REGISTRY.keys()) != 0:
             changed_balancing_market = \
                 self._create_future_markets(current_time=self.now, markets=self.balancing_markets,
                                             parent=self.parent,
@@ -292,17 +299,10 @@ class Area:
                                             agent_class=BalancingAgent,
                                             market_class=BalancingMarket)
 
-        # Force market cycle event in case this is the first market slot
-        if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
-            self._broadcast_notification(AreaEvent.MARKET_CYCLE)
-
-        if not ConstSettings.ENABLE_BALANCING_MARKET:
-            return
-
-        # Force balancing_market cycle event in case this is the first market slot
-        if (changed_balancing_market or len(self.past_balancing_markets.keys()) == 0) \
-                and _trigger_event:
-            self._broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE)
+            # Force balancing_market cycle event in case this is the first market slot
+            if (changed_balancing_market or len(self.past_balancing_markets.keys()) == 0) \
+                    and _trigger_event:
+                self._broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE)
 
     def get_now(self) -> DateTime:
         """Compatibility wrapper"""
@@ -352,16 +352,16 @@ class Area:
         for child in sorted(self.children, key=lambda _: random()):
             child.event_listener(event_type, **kwargs)
         # Also broadcast to IAAs. Again in random order
-        for market, agents in self.inter_area_agents.items():
-            if market.time_slot not in self.markets:
+        for time_slot, agents in self.inter_area_agents.items():
+            if time_slot not in self.markets:
                 # exclude past IAAs
                 continue
 
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         # Also broadcast to BAs. Again in random order
-        for balancing_market, agents in self.balancing_agents.items():
-            if balancing_market.time_slot not in self.balancing_markets:
+        for time_slot, agents in self.balancing_agents.items():
+            if time_slot not in self.balancing_markets:
                 # exclude past BAs
                 continue
 
@@ -428,9 +428,9 @@ class Area:
                             transfer_fee_pct=self.config.iaa_fee
                         )
                         # Attach agent to own IAA list
-                        area_agent[market].append(iaa)
+                        area_agent[timeframe].append(iaa)
                         # And also to parents to allow events to flow form both markets
-                        parent_area_agent[parent_markets[timeframe]].append(iaa)
+                        parent_area_agent[timeframe].append(iaa)
                         if parent:
                             # Add inter area appliance to report energy
                             self.appliance = InterAreaAppliance(parent, self)

@@ -170,7 +170,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             if self.state.used_storage > 0:
                 self.sell_energy()
 
-        # Balancing Offers
+    def event_balancing_market_cycle(self):
         if not self.is_eligible_for_balancing_market:
             return
 

@@ -139,11 +139,14 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         for market in self.active_markets:
-            self._demand_balancing_offer(market)
             if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
                     self.post_first_bid(market, self.energy_requirement_Wh[market.time_slot])
                 self.update_market_cycle_bids()
+
+    def event_balancing_market_cycle(self):
+        for market in self.active_markets:
+            self._demand_balancing_offer(market)
 
     def event_bid_deleted(self, *, market, bid):
         if bid.buyer != self.owner.name:
