@@ -101,7 +101,7 @@ class ConstSettings:
 
     # Blockchain parameters
     BLOCKCHAIN_URL = "http://127.0.0.1:8545"
-    BLOCKCHAIN_START_LOCAL_CHAIN = True
+    BLOCKCHAIN_START_LOCAL_CHAIN = False
 
     # Balancing Market parameters
     ENABLE_BALANCING_MARKET = False

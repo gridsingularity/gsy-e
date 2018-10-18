@@ -28,7 +28,7 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
     clearing_contract_instance = bc_interface.contracts['ClearingToken']
     market_address = contract.address
 
-    print(web3.personal.unlockAccount(web3.eth.accounts[0], 'testgsy'))
+    web3.personal.unlockAccount(web3.eth.accounts[0], 'testgsy')
     tx_hash = clearing_contract_instance.functions\
         .globallyApprove(market_address, 10 ** 18)\
         .transact({'from': bc_interface.chain.eth.accounts[0]})
@@ -36,6 +36,8 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
     approve_retval = clearing_contract_instance.events\
         .ApproveClearingMember()\
         .processReceipt(tx_receipt)
+    from time import sleep
+    sleep(5)
     assert len(approve_retval) > 0
     assert approve_retval[0]["args"]["approver"] == bc_interface.chain.eth.accounts[0]
     assert approve_retval[0]["args"]["market"] == market_address
@@ -44,12 +46,16 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
 
 
 def create_new_offer(bc_interface, bc_contract, energy, price, seller):
-    web3.personal.unlockAccount(bc_interface.users[seller].address, 'testgsy')
+    print(web3.personal.unlockAccount(bc_interface.users[seller].address, 'testgsy'))
+    bc_energy = int(energy * BC_NUM_FACTOR)
+    print("Offered Energy: " + str(bc_energy))
     tx_hash = bc_contract.functions.offer(
-        int(energy * BC_NUM_FACTOR),
+        bc_energy,
         int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
-    tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
+    tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash, timeout=200)
+    time.sleep(5)
     offer_id = bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
+    print("Offer id: " + str(offer_id))
     return offer_id
 
 
@@ -66,26 +72,25 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     web3.personal.unlockAccount(bc_interface.users[buyer].address, 'testgsy')
     print("Balance: " + str(web3.eth.getBalance(bc_interface.users[buyer].address)))
     print("Buyer: " + str(buyer))
+    print("Trade id: " + str(offer_id))
+    trade_energy = int(energy * BC_NUM_FACTOR)
+    print("Traded Energy: " + str(trade_energy))
     print(offer_id)
+    print(f'Trade seller {bc_interface.users[buyer].address}')
     tx_hash = bc_contract.functions.trade(
-        offer_id, int(energy * BC_NUM_FACTOR)
+        bytes(offer_id), trade_energy
     ).transact({"from": bc_interface.users[buyer].address})
     print("tx_hash: " + str(tx_hash))
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     print("tx_receipt: " + str(tx_receipt))
+    time.sleep(2)
     new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
-    print("new_trade_retval: " + str(new_trade_retval))
     if len(new_trade_retval) == 0:
+        while not web3.eth.syncing:
+            pass
         time.sleep(5)
-    print("new_trade_retval: " + str(new_trade_retval))
-    if len(new_trade_retval) == 0:
-        time.sleep(5)
-    print("new_trade_retval: " + str(new_trade_retval))
-    if len(new_trade_retval) == 0:
-        time.sleep(5)
-    print("new_trade_retval: " + str(new_trade_retval))
-    if len(new_trade_retval) == 0:
-        time.sleep(30)
+        new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
+
     print("new_trade_retval: " + str(new_trade_retval))
     offer_changed_retval = bc_contract.events \
         .OfferChanged() \

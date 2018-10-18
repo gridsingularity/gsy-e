@@ -152,13 +152,15 @@ class Market:
         self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
-        print(f'CONTRACT {self.area.name} {self.time_slot}')
+        # print(f'CONTRACT {self.area.name} {self.time_slot}')
         self.bc_contract = \
             create_market_contract(self.area.bc,
                                    self.area.config.duration.in_seconds(),
                                    [self._bc_listener]) \
             if self.area and self.area.bc \
             else None
+        from time import sleep
+        sleep(5)
         self.device_registry = DeviceRegistry.REGISTRY
 
     def add_listener(self, listener):
@@ -198,6 +200,9 @@ class Market:
         offer_id = create_new_offer(self.area.bc, self.bc_contract, energy, price, seller) \
             if self.bc_contract \
             else str(uuid.uuid4())
+
+        from time import sleep
+        sleep(10)
 
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer

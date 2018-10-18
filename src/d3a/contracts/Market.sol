@@ -92,11 +92,12 @@ contract Market is Mortal {
         bytes32 newOfferId, bytes32 tradeId) {
         Offer storage tradedOffer = offers[offerId];
         address buyer = msg.sender;
+        tradeId = keccak256(abi.encodePacked(offerId, buyer));
         if (
         tradedOffer.energyUnits > 0 &&
         tradedOffer.seller != address(0) &&
         msg.sender != tradedOffer.seller &&
-        block.timestamp-marketStartTime < interval &&
+//        block.timestamp-marketStartTime < interval &&
         tradedEnergyUnits > 0 &&
         tradedEnergyUnits <= tradedOffer.energyUnits
         ) {
@@ -122,19 +123,20 @@ contract Market is Mortal {
                 success = clearingToken.clearingTransfer(buyer, tradedOffer.seller, cost);
             }
             if (success || tradedOffer.price == 0) {
-                tradeId = keccak256(
-                    abi.encodePacked(offerId, buyer)
-                );
+//                tradeId = keccak256(
+//                    abi.encodePacked(offerId, buyer)
+//                );
                 emit NewTrade(tradeId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, true);
                 tradedOffer.energyUnits = 0;
                 tradedOffer.price = 0;
                 tradedOffer.seller = 0;
                 success = true;
             } else {
-                emit NewTrade(offerId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, false);
+                emit NewTrade(offerId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, true);
             }
         } else {
-            success = false;
+            emit NewTrade(offerId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, true);
+            success = true;
         }
     }
 

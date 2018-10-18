@@ -71,13 +71,14 @@ class BlockChainInterface:
                                            bytecode=contract_interface['bin'])
         print("contract: " + str(contract))
         print(f'filename {contract_name} {contract_filename}')
-        print(self.chain.personal.unlockAccount(self.chain.eth.accounts[0], 'testgsy'))
+        self.chain.personal.unlockAccount(self.chain.eth.accounts[0], 'testgsy')
         tx_hash = contract.constructor(*args).transact({'from': self.chain.eth.accounts[0]})
         contract_address = self.chain.eth.waitForTransactionReceipt(tx_hash).contractAddress
         contract = self.chain.eth.contract(address=contract_address,
                                            abi=contract_interface['abi'],
                                            ContractFactoryClass=Contract)
 
+        sleep(5)
         self.contracts[contract.address] = contract
         if id_:
             self.contracts[id_] = contract
