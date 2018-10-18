@@ -145,5 +145,5 @@ def trade_rates_break_even(context):
         for slot, market in area.past_markets.items():
             for trade in market.trades:
                 assert ConstSettings.StorageSettings.BREAK_EVEN_SELL <= \
-                       trade.offer.price / trade.offer.energy <= \
+                       round(trade.offer.price / trade.offer.energy, 8) <= \
                        ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

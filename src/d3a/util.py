@@ -202,7 +202,10 @@ available_simulation_scenarios = iterate_over_all_d3a_setup()
 
 
 def parseboolstring(thestring):
-    return thestring[0].upper() == 'T'
+    if thestring == "None":
+        return None
+    else:
+        return thestring[0].upper() == 'T'
 
 
 def read_settings_from_file(settings_file):
@@ -236,15 +239,17 @@ def read_settings_from_file(settings_file):
 
 def update_advanced_settings(advanced_settings):
     """
-    Updates ConstStettings class variables with advanced_settings.
+    Updates ConstSettings class variables with advanced_settings.
     If variable is not part of ConstSettings, an Exception is raised.
     """
-    for set_var, set_val in advanced_settings.items():
-        getattr(ConstSettings, set_var)
-        if isinstance(set_val, str):
-            setattr(ConstSettings, set_var, parseboolstring(set_val))
-        else:
-            setattr(ConstSettings, set_var, set_val)
+    for settings_class_name in advanced_settings.keys():
+        setting_class = getattr(ConstSettings, settings_class_name)
+        for set_var, set_val in advanced_settings[settings_class_name].items():
+            getattr(setting_class, set_var)
+            if isinstance(set_val, str):
+                setattr(setting_class, set_var, parseboolstring(set_val))
+            else:
+                setattr(setting_class, set_var, set_val)
 
 
 def generate_market_slot_list(area):
@@ -258,3 +263,29 @@ def generate_market_slot_list(area):
             area.config.slot_length)]:
         market_slots.append(slot_time)
     return market_slots
+
+
+def constsettings_to_dict():
+    const_settings = {}
+    for settings_class_name, settings_class in dict(ConstSettings.__dict__).items():
+        if not settings_class_name.startswith("__"):
+            for key, value in dict(settings_class.__dict__).items():
+                if not key.startswith("__"):
+                    if settings_class_name in const_settings.keys():
+                        const_settings[settings_class_name][key] = value
+                    else:
+                        const_settings[settings_class_name] = {key: value}
+    return const_settings
+
+#
+# def export_settings_to_json():
+#
+#     base_settings_str = '{ \n "basic_settings": { \n   "duration": "24h", \n   ' \
+#                         '"slot_length": "60m", \n   "tick_length": "60s", \n   ' \
+#                         '"market_count": 4, \n   "cloud_coverage": 0, \n   ' \
+#                         '"market_maker_rate": 30, \n   "iaa_fee": 1 \n },'
+#     constsettings_str = json.dumps({"advanced_settings": constsettings_to_dict()}, indent=2)
+#     settings_filename = os.path.join(d3a_path, "setup", "d3a_settings.json")
+#     with open(settings_filename, "w") as settings_file:
+#         settings_file.write(base_settings_str)
+#         settings_file.write(constsettings_str)
