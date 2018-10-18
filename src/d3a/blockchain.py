@@ -74,6 +74,7 @@ class BlockChainInterface:
         self.chain.personal.unlockAccount(self.chain.eth.accounts[0], 'testgsy')
         tx_hash = contract.constructor(*args).transact({'from': self.chain.eth.accounts[0]})
         contract_address = self.chain.eth.waitForTransactionReceipt(tx_hash).contractAddress
+        sleep(1)
         contract = self.chain.eth.contract(address=contract_address,
                                            abi=contract_interface['abi'],
                                            ContractFactoryClass=Contract)

@@ -1,5 +1,4 @@
 from web3 import Web3, HTTPProvider
-import time
 
 web3 = Web3(HTTPProvider("http://127.0.0.1:8545", request_kwargs={'timeout': 600}))
 
@@ -36,8 +35,20 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
     approve_retval = clearing_contract_instance.events\
         .ApproveClearingMember()\
         .processReceipt(tx_receipt)
-    from time import sleep
-    sleep(5)
+    a = web3.eth.syncing
+    while not a:
+        a = web3.eth.syncing
+    else:
+        highest_block = a["highestBlock"]
+        # print("Status: " + str(a))
+        # print("Highest Block: " + str(highest_block))
+        # print("Current Block: " + str(web3.eth.blockNumber))
+        while web3.eth.blockNumber < highest_block:
+            pass
+        # else:
+        #     print("Current Block: " +
+        #           str(web3.eth.blockNumber))
+
     assert len(approve_retval) > 0
     assert approve_retval[0]["args"]["approver"] == bc_interface.chain.eth.accounts[0]
     assert approve_retval[0]["args"]["market"] == market_address
@@ -53,9 +64,22 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
         bc_energy,
         int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash, timeout=200)
-    time.sleep(5)
+    a = web3.eth.syncing
+    while not a:
+        a = web3.eth.syncing
+    else:
+        highest_block = a["highestBlock"]
+        # print("Status: " + str(a))
+        # print("Highest Block: " + str(highest_block))
+        # print("Current Block: " + str(web3.eth.blockNumber))
+        while web3.eth.blockNumber < highest_block:
+            pass
+        # else:
+        #     print("Current Block: " +
+        #           str(web3.eth.blockNumber))
     offer_id = bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
-    print("Offer id: " + str(offer_id))
+    print("Offer id: " +
+          str(bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']))
     return offer_id
 
 
@@ -83,13 +107,21 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     print("tx_hash: " + str(tx_hash))
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     print("tx_receipt: " + str(tx_receipt))
-    time.sleep(2)
-    new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
-    if len(new_trade_retval) == 0:
-        while not web3.eth.syncing:
+    a = web3.eth.syncing
+    while not a:
+        a = web3.eth.syncing
+    else:
+        highest_block = a["highestBlock"]
+        # print("Status: " + str(a))
+        # print("Highest Block: " + str(highest_block))
+        # print("Current Block: " + str(web3.eth.blockNumber))
+        while web3.eth.blockNumber < highest_block:
             pass
-        time.sleep(5)
-        new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
+        # else:
+        #     print("Current Block: " +
+        #           str(web3.eth.blockNumber))
+
+    new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
 
     print("new_trade_retval: " + str(new_trade_retval))
     offer_changed_retval = bc_contract.events \
