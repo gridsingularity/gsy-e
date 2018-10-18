@@ -16,6 +16,3 @@ def export_default_settings_to_json_file():
     with open(settings_filename, "w") as settings_file:
         settings_file.write(base_settings_str)
         settings_file.write(constsettings_str[1::])  # remove leading '{'
-
-
-# export_default_settings_to_json_file()

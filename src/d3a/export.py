@@ -560,7 +560,11 @@ class BarGraph:
 
     @classmethod
     def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
-        xrange, data = cls.modify_time_axis(data, title)
+        try:
+            xrange, data = cls.modify_time_axis(data, title)
+        except ValueError:
+            return
+
         layout = go.Layout(
             barmode=barmode,
             title=title,

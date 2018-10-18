@@ -53,7 +53,7 @@ Feature: Run integration tests
      Then intermediate results are transmitted on every slot
      And final results are transmitted once
 
-  Scenario Outline: Run integration tests with settings file
+  Scenario: Run integration tests with settings file
      Given we have a scenario named default
      And d3a is installed
      When we run simulation on console with default settings file

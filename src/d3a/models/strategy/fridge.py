@@ -138,7 +138,8 @@ class FridgeStrategy(BaseStrategy):
                                       self.state.temperature)
                     self.log.info("cheapest price is is %s", cheapest_offer.price)
             except IndexError:
-                self.log.critical("Crap no offers available")
+                pass
+                # self.log.critical("Crap no offers available")
 
     def event_market_cycle(self):
         self.log.info("Temperature: %.2f", self.state.temperature)

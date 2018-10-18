@@ -225,12 +225,13 @@ def read_settings_from_file(settings_file):
                 settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
             "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
-                'cloud_coverage', advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
+                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
             "market_maker_rate": settings["basic_settings"].get(
-                'market_maker_rate', advanced_settings["DEFAULT_MARKET_MAKER_RATE"]),
+                'market_maker_rate', advanced_settings["GeneralSettings"]
+                ["DEFAULT_MARKET_MAKER_RATE"]),
             "iaa_fee": settings["basic_settings"].get(
                 'INTER_AREA_AGENT_FEE_PERCENTAGE',
-                advanced_settings["INTER_AREA_AGENT_FEE_PERCENTAGE"])
+                advanced_settings["IAASettings"]["FEE_PERCENTAGE"])
         }
         return simulation_settings, advanced_settings
     else:
@@ -276,16 +277,3 @@ def constsettings_to_dict():
                     else:
                         const_settings[settings_class_name] = {key: value}
     return const_settings
-
-#
-# def export_settings_to_json():
-#
-#     base_settings_str = '{ \n "basic_settings": { \n   "duration": "24h", \n   ' \
-#                         '"slot_length": "60m", \n   "tick_length": "60s", \n   ' \
-#                         '"market_count": 4, \n   "cloud_coverage": 0, \n   ' \
-#                         '"market_maker_rate": 30, \n   "iaa_fee": 1 \n },'
-#     constsettings_str = json.dumps({"advanced_settings": constsettings_to_dict()}, indent=2)
-#     settings_filename = os.path.join(d3a_path, "setup", "d3a_settings.json")
-#     with open(settings_filename, "w") as settings_file:
-#         settings_file.write(base_settings_str)
-#         settings_file.write(constsettings_str)
