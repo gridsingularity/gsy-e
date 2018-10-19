@@ -3,6 +3,7 @@ from math import isclose
 from d3a.export_unmatched_loads import export_unmatched_loads
 from d3a.models.strategy.const import ConstSettings
 from d3a.util import make_iaa_name
+from d3a import limit_float_precision
 
 RATE_THRESHOLD = 12
 
@@ -145,5 +146,5 @@ def trade_rates_break_even(context):
         for slot, market in area.past_markets.items():
             for trade in market.trades:
                 assert ConstSettings.StorageSettings.BREAK_EVEN_SELL <= \
-                       round(trade.offer.price / trade.offer.energy, 8) <= \
+                       limit_float_precision(trade.offer.price / trade.offer.energy) <= \
                        ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

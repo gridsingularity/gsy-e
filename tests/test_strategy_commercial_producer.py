@@ -43,7 +43,6 @@ class FakeMarket:
         return offer
 
     def balancing_offer(self, price, energy, seller, market=None):
-        print(price, energy, seller)
         offer = BalancingOffer('id', price, energy, seller, market)
         self.created_balancing_offers.append(offer)
         offer.id = 'id'
