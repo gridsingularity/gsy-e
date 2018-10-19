@@ -45,10 +45,11 @@ def start(scenario, settings):
             seconds=15 if 'tick_length' not in settings else settings['tick_length'].seconds
         ),
         market_count=settings.get('market_count', 1),
-        cloud_coverage=settings.get('cloud_coverage', ConstSettings.DEFAULT_PV_POWER_PROFILE),
-        market_maker_rate=settings.get('market_maker_rate',
-                                       str(ConstSettings.DEFAULT_MARKET_MAKER_RATE)),
-        iaa_fee=settings.get('iaa_fee', ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE)
+        cloud_coverage=settings.get('cloud_coverage',
+                                    ConstSettings.PVSettings.DEFAULT_POWER_PROFILE),
+        market_maker_rate=settings.get('market_maker_rate', str(
+            ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
+        iaa_fee=settings.get('iaa_fee', ConstSettings.IAASettings.FEE_PERCENTAGE)
     )
 
     if scenario is None:

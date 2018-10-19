@@ -20,12 +20,13 @@ class PVPredefinedStrategy(PVStrategy):
     """
     parameters = ('panel_count', 'risk')
 
-    def __init__(self, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
-                 min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
+    def __init__(self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK, panel_count: int=1,
+                 min_selling_rate: float=ConstSettings.PVSettings.MIN_SELLING_RATE,
                  cloud_coverage: int=None,
-                 initial_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION,
-                 energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE):
+                 initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+                 energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
+                 ENERGY_RATE_DECREASE_PER_UPDATE):
         """
         Constructor of PVPredefinedStrategy
         :param risk: PV risk parameter
@@ -63,7 +64,8 @@ class PVPredefinedStrategy(PVStrategy):
         # Need to refactor once we convert the config object to a singleton that is shared globally
         # in the simulation
         self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
+            (self.area.config.tick_length.seconds *
+             ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
 
     def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
         """
@@ -94,11 +96,13 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
     parameters = ('power_profile', 'risk', 'panel_count')
 
-    def __init__(self, power_profile, risk: int=ConstSettings.DEFAULT_RISK, panel_count: int=1,
-                 min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
-                 initial_rate_option: int=ConstSettings.INITIAL_PV_RATE_OPTION,
-                 energy_rate_decrease_option=ConstSettings.PV_RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE
+    def __init__(self, power_profile, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
+                 panel_count: int=1,
+                 min_selling_rate: float=ConstSettings.PVSettings.MIN_SELLING_RATE,
+                 initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+                 energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
+                 ENERGY_RATE_DECREASE_PER_UPDATE
                  ):
         """
         Constructor of PVUserProfileStrategy

@@ -3,6 +3,7 @@ from math import isclose
 from d3a.export_unmatched_loads import export_unmatched_loads
 from d3a.models.strategy.const import ConstSettings
 from d3a.util import make_iaa_name
+from d3a import limit_float_precision
 
 RATE_THRESHOLD = 12
 
@@ -92,7 +93,7 @@ def final_soc_full(context, soc_level):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
     if soc_level == '0':
-        soc_level = ConstSettings.STORAGE_MIN_ALLOWED_SOC * 100.0
+        soc_level = ConstSettings.StorageSettings.MIN_ALLOWED_SOC * 100.0
     final_soc = list(storage.strategy.state.charge_history.values())[-1]
     assert isclose(final_soc, float(soc_level))
 
@@ -144,6 +145,6 @@ def trade_rates_break_even(context):
     for area in [house1, house2, storage, load]:
         for slot, market in area.past_markets.items():
             for trade in market.trades:
-                assert ConstSettings.STORAGE_BREAK_EVEN_SELL <= \
-                       trade.offer.price / trade.offer.energy <= \
-                       ConstSettings.DEFAULT_MARKET_MAKER_RATE
+                assert ConstSettings.StorageSettings.BREAK_EVEN_SELL <= \
+                       limit_float_precision(trade.offer.price / trade.offer.energy) <= \
+                       ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

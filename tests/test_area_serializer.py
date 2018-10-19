@@ -91,7 +91,7 @@ def test_leaf_deserialization():
     fridge, pv = recovered.children
     assert isinstance(fridge, Fridge) and isinstance(pv, PV)
     assert pv.strategy.panel_count == 4 and pv.strategy.risk == 50
-    assert fridge.strategy.risk == ConstSettings.DEFAULT_RISK
+    assert fridge.strategy.risk == ConstSettings.GeneralSettings.DEFAULT_RISK
 
 
 @pytest.fixture

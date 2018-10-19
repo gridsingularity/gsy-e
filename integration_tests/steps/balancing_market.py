@@ -123,7 +123,8 @@ def match_balancing_trades_to_spot_trades(context, functor):
                 continue
             spot_energy = area_object.past_markets[slot].trades[0].offer.energy
             assert functor(isclose(abs(trade.offer.energy),
-                                   abs(spot_energy) * ConstSettings.BALANCING_SPOT_TRADE_RATIO)
+                                   abs(spot_energy) *
+                                   ConstSettings.BalancingSettings.SPOT_TRADE_RATIO)
                            for trade in market.trades)
 
 

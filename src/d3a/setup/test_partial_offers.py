@@ -13,7 +13,7 @@ from d3a.models.strategy.storage import StorageStrategy
 
 
 class ModifiedFridgeStrategy(FridgeStrategy):
-    def __init__(self, risk=ConstSettings.DEFAULT_RISK):
+    def __init__(self, risk=ConstSettings.GeneralSettings.DEFAULT_RISK):
         self.accept_count = 0
         super().__init__(risk)
 
@@ -59,7 +59,7 @@ def get_setup(config):
                      appliance=SimpleAppliance())
             ]),
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_range_wh=(5, 10), energy_price=30),
+                 strategy=CommercialStrategy(energy_rate=30),
                  appliance=SimpleAppliance())
         ],
         config=config

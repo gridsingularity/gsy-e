@@ -45,11 +45,11 @@ class BCUsers:
 
 class BlockChainInterface:
     def __init__(self, default_user_balance=10 ** 8):
-        if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN:
+        if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
             self._ganache_process = Popen(['ganache-cli', '-a', '50', '-e', '10000000000'],
                                           close_fds=False, stdout=DEVNULL, stderr=DEVNULL)
         sleep(2)
-        self.chain = Web3(HTTPProvider(ConstSettings.BLOCKCHAIN_URL))
+        self.chain = Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
         self.contracts = {}  # type: Dict[str, Contract]
         self.users = BCUsers(self.chain, self.contracts, default_user_balance)
         self.listeners = defaultdict(list)  # type: Dict[str, List[callable]]

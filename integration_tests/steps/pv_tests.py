@@ -36,7 +36,7 @@ def pv_price_decrease(context):
 
     slot_length = context.simulation.simulation_config.slot_length.seconds
     tick_length = context.simulation.simulation_config.tick_length.seconds
-    wait_time = tick_length * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
+    wait_time = tick_length * ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
     number_of_updates_per_slot = int(slot_length/wait_time)
 
     if pv.strategy.energy_rate_decrease_option.value == 1:

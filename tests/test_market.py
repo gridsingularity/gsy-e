@@ -30,7 +30,7 @@ class FakeArea:
         self.bc = False
         self.now = DateTime.now()
         DeviceRegistry.REGISTRY = device_registry_dict
-        ConstSettings.ENABLE_BALANCING_MARKET = True
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
 
 
 @pytest.yield_fixture

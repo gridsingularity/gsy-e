@@ -26,8 +26,8 @@ class FakePVStrategy:
 
 class FakeFridgeState:
     def __init__(self):
-        self.temperature = ConstSettings.FRIDGE_TEMPERATURE
-        self.max_temperature = ConstSettings.MAX_FRIDGE_TEMP
+        self.temperature = ConstSettings.FridgeSettings.TEMPERATURE
+        self.max_temperature = ConstSettings.FridgeSettings.MAX_TEMP
 
 
 class FakeFridgeStrategy:
@@ -167,7 +167,7 @@ def test_fridge_appliance_heats_up_when_open(fridge_fixture):
 # always buys energy if we have none and upper temperature constraint is violated
 
 def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
-    fridge_fixture.state.temperature = ConstSettings.MAX_FRIDGE_TEMP + 1
+    fridge_fixture.state.temperature = ConstSettings.FridgeSettings.MAX_TEMP + 1
     fridge_fixture.report_energy(0)
     assert fridge_fixture.area.reported_value < 0
 

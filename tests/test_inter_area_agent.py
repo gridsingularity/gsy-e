@@ -122,7 +122,7 @@ def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
 
 @pytest.fixture
 def iaa_bid():
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
     higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner'),
                                     Bid('id3', 0.5, 1, 'child', 'owner')])
@@ -135,7 +135,7 @@ def iaa_bid():
     iaa.owner.current_tick = 14
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_forwards_bids(iaa_bid):
@@ -163,7 +163,7 @@ def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
 
 @pytest.mark.parametrize("iaa_fee", [10, 0, 50, 75, 5, 2, 3])
 def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
     higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')])
     iaa = InterAreaAgent(owner=FakeArea('owner'),
@@ -174,7 +174,7 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
     assert iaa.higher_market.bid_count == 1
     assert iaa.higher_market.forwarded_bid.price / (1 + (iaa_fee / 100)) == \
         list(iaa.lower_market.bids.values())[-1].price
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(iaa_bid, called):
@@ -240,7 +240,7 @@ def iaa2():
 @pytest.fixture
 def iaa_double_sided():
     from d3a.models.strategy.const import ConstSettings
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
     higher_market = FakeMarket([], [])
@@ -250,7 +250,7 @@ def iaa_double_sided():
     iaa.engines[1]._match_offers_bids = lambda: None
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_event_trade_buys_accepted_offer(iaa2):
@@ -336,7 +336,7 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
 @pytest.fixture
 def iaa_double_sided_2():
     from d3a.models.strategy.const import ConstSettings
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
     higher_market = FakeMarket([], [])
@@ -344,7 +344,7 @@ def iaa_double_sided_2():
     iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_double_sided_performs_pay_as_bid_matching(iaa_double_sided_2):
