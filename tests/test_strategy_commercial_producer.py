@@ -16,6 +16,9 @@ class FakeArea:
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
 
+    def get_future_market_from_id(self, id):
+        return self.test_market
+
     @property
     def markets(self):
         return {"now": self.test_market}
@@ -31,6 +34,7 @@ class FakeArea:
 
 class FakeMarket:
     def __init__(self, count):
+        self.id = count
         self.count = count
         self.created_offers = []
         self.created_balancing_offers = []
@@ -133,7 +137,7 @@ def commercial_test2(area_test2):
 def test_event_trade(area_test2, commercial_test2):
     commercial_test2.event_activate()
     traded_offer = Offer(id='id', price=20, energy=1, seller='FakeArea',)
-    commercial_test2.event_trade(market=area_test2.test_market,
+    commercial_test2.event_trade(market_id=area_test2.test_market.id,
                                  trade=Trade(id='id',
                                              time='time',
                                              offer=traded_offer,
@@ -149,7 +153,7 @@ def test_on_offer_changed(area_test2, commercial_test2):
     commercial_test2.event_activate()
     existing_offer = Offer(id='id', price=20, energy=1, seller='FakeArea')
     new_offer = Offer(id='new_id', price=15, energy=0.75, seller='FakeArea')
-    commercial_test2.event_offer_changed(market=area_test2.test_market,
+    commercial_test2.event_offer_changed(market_id=area_test2.test_market.id,
                                          existing_offer=existing_offer,
                                          new_offer=new_offer)
     assert existing_offer.id in commercial_test2.offers.changed
@@ -162,12 +166,12 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
 
     commercial_test2.offers.post(existing_offer, area_test2.test_market)
     commercial_test2.offers.post(new_offer, area_test2.test_market)
-    commercial_test2.event_offer_changed(market=area_test2.test_market,
+    commercial_test2.event_offer_changed(market_id=area_test2.test_market.id,
                                          existing_offer=existing_offer,
                                          new_offer=new_offer)
     assert existing_offer.id in commercial_test2.offers.changed
     assert commercial_test2.offers.changed[existing_offer.id] == new_offer
-    commercial_test2.event_trade(market=area_test2.test_market,
+    commercial_test2.event_trade(market_id=area_test2.test_market.id,
                                  trade=Trade(id='id',
                                              time='time',
                                              offer=existing_offer,

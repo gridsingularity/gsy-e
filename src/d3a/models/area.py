@@ -133,8 +133,11 @@ class Area:
         except IndexError:
             return None
 
-    def get_future_market_from_timeslot(self, time_slot):
-        pass
+    def get_future_market_from_id(self, _id):
+        try:
+            return [m for m in self.markets.values() if m.id == _id][0]
+        except IndexError:
+            return None
 
     @property
     def current_slot(self):

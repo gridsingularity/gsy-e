@@ -105,17 +105,17 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.cap_price_strategy is False:
             self.decrease_energy_price_over_ticks(self.area.next_market)
 
-    def event_bid_deleted(self, *, market, bid):
+    def event_bid_deleted(self, *, market_id, bid):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             # Do not handle bid deletes on single sided markets
             return
-        if market != self.area.next_market:
+        if market_id != self.area.next_market.id:
             return
         if bid.buyer != self.owner.name:
             return
         self.remove_bid_from_pending(bid.id, self.area.next_market)
 
-    def event_bid_traded(self, *, market, bid_trade):
+    def event_bid_traded(self, *, market_id, bid_trade):
         if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
             # Do not handle bid trades on single sided markets
             assert False and "Invalid state, cannot receive a bid if single sided market" \
@@ -123,6 +123,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
         if bid_trade.offer.buyer != self.owner.name:
             return
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
 
         buffered_bid = next(filter(
             lambda b: b.id == bid_trade.offer.id, self.get_posted_bids(market)

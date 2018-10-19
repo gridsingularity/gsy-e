@@ -14,10 +14,15 @@ class FakeArea:
         self.name = name
         self.current_tick = 10
         self.balancing_spot_trade_ratio = ConstSettings.BALANCING_SPOT_TRADE_RATIO
+        self._fake_spot_market = FakeMarket([])
+
+    def get_future_market_from_id(self, id):
+        return self._fake_spot_market
 
 
 class FakeBalancingMarket:
     def __init__(self, sorted_offers):
+        self.id = 123
         self.sorted_offers = sorted_offers
         self.forwarded_offer_id = 'fwd'
         self.area = FakeArea("fake_area")
@@ -66,7 +71,7 @@ def test_baa_event_trade(baa):
     fake_spot_market = FakeMarket(15)
     fake_spot_market.set_time_slot(baa.lower_market.time_slot)
     baa.event_trade(trade=trade,
-                    market=fake_spot_market)
+                    market_id=fake_spot_market.id)
     assert baa.lower_market.unmatched_energy_upward == 0
     assert baa.lower_market.unmatched_energy_downward == 0
 
@@ -89,7 +94,8 @@ def test_baa_unmatched_event_trade(baa2):
                   'IAA owner')
     fake_spot_market = FakeMarket(15)
     fake_spot_market.set_time_slot(baa2.lower_market.time_slot)
+    baa2.owner._fake_spot_market = fake_spot_market
     baa2.event_trade(trade=trade,
-                     market=fake_spot_market)
+                     market_id=fake_spot_market.id)
     assert baa2.lower_market.unmatched_energy_upward != 0
     assert baa2.lower_market.unmatched_energy_downward != 0

@@ -22,6 +22,9 @@ class FakeArea():
         self.count = count
         self.test_market = FakeMarket(0)
 
+    def get_future_market_from_id(self, id):
+        return self.test_market
+
     @property
     def config(self):
         return DEFAULT_CONFIG
@@ -51,6 +54,7 @@ class FakeArea():
 class FakeMarket:
     def __init__(self, count):
         self.count = count
+        self.id = count
         self.created_offers = []
         self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A', market=self)}
 
@@ -154,7 +158,7 @@ def pv_test4(area_test3, called):
 
 
 def testing_event_trade(area_test3, pv_test4):
-    pv_test4.event_trade(market=area_test3.test_market,
+    pv_test4.event_trade(market_id=area_test3.test_market.id,
                          trade=Trade(id='id', time='time',
                                      offer=Offer(id='id', price=20, energy=1, seller='FakeArea'),
                                      seller=area_test3, buyer='buyer'
@@ -246,7 +250,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     pv_test6.event_market_cycle()
     assert market_test3.created_offers[0].energy == pv_test6.energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
-    pv_test6.event_trade(market=market_test3, trade=fake_trade)
+    pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     pv_test6.event_tick(area=area_test3)
     assert not market_test3.created_offers

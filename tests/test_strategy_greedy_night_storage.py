@@ -14,6 +14,9 @@ class FakeArea():
         self.past_market = FakeMarket(4)
         self.current_market = FakeMarket(0)
 
+    def get_future_market_from_id(self, id):
+        return self.current_market
+
     @property
     def markets(self):
         return {"Fake Market": FakeMarket(self.count)}
@@ -40,6 +43,7 @@ class FakeArea():
 class FakeMarket:
     def __init__(self, count):
         self.count = count
+        self.id = count
         self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'FakeArea', self),
                            'FakeArea', 'buyer'
                            )
@@ -221,7 +225,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_event_trade(storage_strategy_test3, area_test3):
-    storage_strategy_test3.event_trade(market=area_test3.current_market,
+    storage_strategy_test3.event_trade(market_id=area_test3.current_market.id,
                                        trade=area_test3.current_market.trade
                                        )
     # Check if trade is added to sold_offers dict

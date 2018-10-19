@@ -122,7 +122,7 @@ def test_offers_partial_offer(offer1, offers3):
     accepted_offer = Offer('id', 1, 1.8, offer1.seller, 'market')
     residual_offer = Offer('new_id', 1, 1.2, offer1.seller, 'market')
     trade = Trade('trade_id', pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, 'buyer')
-    offers3.on_offer_changed('market', offer1, residual_offer)
+    offers3.on_offer_changed(offer1, residual_offer)
     offers3.on_trade('market', trade)
     assert len(offers3.open_in_market('market')) == 2
     assert len(offers3.sold_in_market('market')) == 1

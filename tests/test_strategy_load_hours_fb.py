@@ -38,6 +38,9 @@ class FakeArea:
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
 
+    def get_future_market_from_id(self, id):
+        return self._next_market
+
     @property
     def config(self):
         return DEFAULT_CONFIG
@@ -71,6 +74,7 @@ class FakeArea:
 class FakeMarket:
     def __init__(self, count):
         self.count = count
+        self.id = count
         self.most_affordable_energy = 0.1551
         self.created_balancing_offers = []
         self.bids = {}
@@ -304,7 +308,7 @@ def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strat
     # Increase energy requirement to cover the energy from the bid
     load_hours_strategy_test5.energy_requirement_Wh[TIME] = 1000
     trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=partial)
-    load_hours_strategy_test5.event_bid_traded(market=trade_market, bid_trade=trade)
+    load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     if not partial:
         assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
@@ -333,7 +337,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     # Increase energy requirement to cover the energy from the bid + threshold
     load_hours_strategy_test5.energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009
     trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=True)
-    load_hours_strategy_test5.event_bid_traded(market=trade_market, bid_trade=trade)
+    load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
@@ -368,6 +372,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     balancing_fixture.event_activate()
     balancing_fixture.event_market_cycle()
+    balancing_fixture.event_balancing_market_cycle()
     expected_balancing_demand_energy = \
         balancing_fixture.balancing_energy_ratio.demand * \
         balancing_fixture.energy_per_slot_Wh
@@ -380,7 +385,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
 
     assert actual_balancing_demand_price == expected_balancing_demand_energy * 30
     selected_offer = area_test2.current_market.sorted_offers[0]
-    balancing_fixture.event_trade(market=area_test2.current_market,
+    balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',
                                               time=area_test2.now,
                                               offer=selected_offer,
