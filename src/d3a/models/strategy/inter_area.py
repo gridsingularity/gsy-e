@@ -323,14 +323,10 @@ class IAAEngine:
         # but by deleting the offered_offers entries
 
     def event_offer_changed(self, *, market_id, existing_offer, new_offer):
-        if self.owner.lower_market.id == market_id:
-            market = self.owner.lower_market
-        elif self.owner.higher_market.id == market_id:
-            market = self.owner.higher_market
-        elif self.owner.owner.get_future_market_from_id(market_id) is not None:
-            market = self.owner.owner.get_future_market_from_id(market_id)
-        else:
+        market = self.owner._get_market_from_market_id(market_id)
+        if market is None:
             return
+
         if market == self.markets.target and existing_offer.seller == self.owner.name:
             # one of our forwarded offers was split, so save the residual offer
             # for handling the upcoming trade event
@@ -413,6 +409,18 @@ class InterAreaAgent(BaseStrategy):
         """Prevent IAAEngines from trading their counterpart's bids"""
         return all(bid.id not in engine.forwarded_bids.keys() for engine in self.engines)
 
+    def _get_market_from_market_id(self, market_id):
+        if self.lower_market.id == market_id:
+            return self.lower_market
+        elif self.higher_market.id == market_id:
+            return self.higher_market
+        elif self.owner.get_future_market_from_id(market_id):
+            return self.owner.get_future_market_from_id(market_id)
+        elif self.owner.parent.get_future_market_from_id(market_id) is not None:
+            return self.owner.parent.get_future_market_from_id(market_id)
+        else:
+            return None
+
     def event_tick(self, *, area):
         if area != self.owner:
             # We're connected to both areas but only want tick events from our owner
@@ -462,15 +470,8 @@ class BalancingAgent(InterAreaAgent):
                                            self.lower_market.unmatched_energy_downward)
 
     def event_trade(self, *, market_id, trade):
-        if self.lower_market.id == market_id:
-            market = self.lower_market
-        elif self.higher_market.id == market_id:
-            market = self.higher_market
-        elif self.owner.get_future_market_from_id(market_id) is not None:
-            market = self.owner.get_future_market_from_id(market_id)
-        elif self.owner.parent.get_future_market_from_id(market_id) is not None:
-            market = self.owner.parent.get_future_market_from_id(market_id)
-        else:
+        market = self._get_market_from_market_id(market_id)
+        if market is None:
             return
 
         self._calculate_and_buy_balancing_energy(market, trade)
@@ -479,16 +480,11 @@ class BalancingAgent(InterAreaAgent):
     def event_bid_traded(self, *, market_id, bid_trade):
         if bid_trade.already_tracked:
             return
-        if self.lower_market.id == market_id:
-            market = self.lower_market
-        elif self.higher_market.id == market_id:
-            market = self.higher_market
-        elif self.owner.get_future_market_from_id(market_id):
-            market = self.owner.get_future_market_from_id(market_id)
-        elif self.owner.parent.get_future_market_from_id(market_id) is not None:
-            market = self.owner.parent.get_future_market_from_id(market_id)
-        else:
+
+        market = self._get_market_from_market_id(market_id)
+        if market is None:
             return
+
         self._calculate_and_buy_balancing_energy(market, bid_trade)
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 

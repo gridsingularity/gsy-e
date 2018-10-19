@@ -290,7 +290,7 @@ class Area:
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
-        if ConstSettings.ENABLE_BALANCING_MARKET or len(DeviceRegistry.REGISTRY.keys()) != 0:
+        if ConstSettings.ENABLE_BALANCING_MARKET and len(DeviceRegistry.REGISTRY.keys()) != 0:
             changed_balancing_market = \
                 self._create_future_markets(current_time=self.now, markets=self.balancing_markets,
                                             parent=self.parent,
