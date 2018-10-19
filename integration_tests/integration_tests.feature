@@ -18,6 +18,7 @@ Feature: Run integration tests
      | scenario               | duration | slot_length | tick_length |
      | integration_test_setup |    2     |      20     |      1      |
      | integration_test_setup |    4     |      10     |      5      |
+     |         default        |    24    |      60     |      60     |
      |         default_2      |    24    |      60     |      60     |
      |        default_2a      |    24    |      60     |      60     |
      |        default_2b      |    24    |      60     |      60     |
@@ -27,6 +28,7 @@ Feature: Run integration tests
      |    default_3_pv_only   |    24    |      60     |      60     |
      |        default_4       |    24    |      60     |      60     |
      |        default_5       |    24    |      60     |      60     |
+     |    default_appliance   |    24    |      60     |      60     |
      |        default_csv     |    24    |      60     |      60     |
 
   Scenario Outline: Simulation subscribes on the appropriate channels
