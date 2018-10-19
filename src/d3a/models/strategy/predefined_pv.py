@@ -3,9 +3,6 @@ Creates a PV that uses a profile as input for its power values, either predefine
 by the user.
 """
 import pathlib
-import d3a
-import inspect
-import os
 
 from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
 from d3a.util import generate_market_slot_list
@@ -13,10 +10,8 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.read_user_profile import read_profile_csv_to_dict, read_arbitrary_profile
 from d3a.models.strategy.read_user_profile import InputProfileTypes
+from d3a.util import d3a_path
 from typing import Dict
-
-
-d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 
 class PVPredefinedStrategy(PVStrategy):
@@ -60,7 +55,7 @@ class PVPredefinedStrategy(PVStrategy):
 
         for slot_time in generate_market_slot_list(self.area):
             self.energy_production_forecast_kWh[slot_time] = \
-                data[slot_time.format(PENDULUM_TIME_FORMAT)]
+                data[slot_time.format(PENDULUM_TIME_FORMAT)] * self.panel_count
             self.state.available_energy_kWh[slot_time] = \
                 self.energy_production_forecast_kWh[slot_time]
 
