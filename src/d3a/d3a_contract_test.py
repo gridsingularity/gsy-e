@@ -66,25 +66,46 @@ market_contract = web3.eth.contract(
 print("market_contract: " + str(market_contract))
 time.sleep(10)
 for i in range(10):
-    energy = 10000000
+    energy = 100
     print(web3.personal.unlockAccount(web3.eth.accounts[1], 'testgsy'))
     print(web3.eth.accounts[1])
 
     tx_hash = \
         market_contract.functions.offer(energy, 30*energy).transact({"from": web3.eth.accounts[1]})
     tx_receipt = web3.eth.waitForTransactionReceipt(tx_hash)
+    a = web3.eth.syncing
+    while not a:
+        a = web3.eth.syncing
+    else:
+        highest_block = a["highestBlock"]
+        # print("Status: " + str(a))
+        # print("Highest Block: " + str(highest_block))
+        # print("Current Block: " + str(web3.eth.blockNumber))
+        while web3.eth.blockNumber < highest_block:
+            pass
     event = market_contract.events.NewOffer().processReceipt(tx_receipt)
     # offer_id = bytes(str(offer_id), 'utf-8')
-    offer_id = event[0]['args']["offerId"]
-    print(offer_id)
-    seller = event[0]['args']["seller"]
-    print(seller)
-    time.sleep(10)
+    offer_id = market_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
+    print("ID Type: " + str(type(offer_id)))
+    print("Offer id: {} & Event: {}".
+          format(offer_id, market_contract.events.
+                 NewOffer().processReceipt(tx_receipt)[0]['args']))
+    get_offer = market_contract.functions.getOffer(offer_id).call()
+    print("Offer ID: {} & Details: {}".format(offer_id, get_offer))
 
     print(web3.personal.unlockAccount(web3.eth.accounts[2], 'testgsy'))
     tx_hash = market_contract.functions.trade(bytes(offer_id), int(10000)).\
         transact({"from": web3.eth.accounts[2]})
     tx_receipt = web3.eth.waitForTransactionReceipt(transaction_hash=tx_hash, timeout=120)
+    while not a:
+        a = web3.eth.syncing
+    else:
+        highest_block = a["highestBlock"]
+        # print("Status: " + str(a))
+        # print("Highest Block: " + str(highest_block))
+        # print("Current Block: " + str(web3.eth.blockNumber))
+        while web3.eth.blockNumber < highest_block:
+            pass
     trade_event = market_contract.events.NewTrade().processReceipt(tx_receipt)
     print("trade_event: " + str(trade_event))
     # event_filter = web3.eth.filter({"address": market_contract.address})

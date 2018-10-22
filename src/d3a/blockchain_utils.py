@@ -1,4 +1,5 @@
 from web3 import Web3, HTTPProvider
+import time
 
 web3 = Web3(HTTPProvider("http://127.0.0.1:8545", request_kwargs={'timeout': 600}))
 
@@ -58,6 +59,7 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
 
 def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     print(web3.personal.unlockAccount(bc_interface.users[seller].address, 'testgsy'))
+    print("Address: " + str(bc_interface.users[seller].address))
     bc_energy = int(energy * BC_NUM_FACTOR)
     print("Offered Energy: " + str(bc_energy))
     tx_hash = bc_contract.functions.offer(
@@ -78,9 +80,25 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
         #     print("Current Block: " +
         #           str(web3.eth.blockNumber))
     offer_id = bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
-    print("Offer id: " +
-          str(bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']))
-    return offer_id
+    print("ID Type: " + str(type(offer_id)))
+    print("Offer id: {} & Event: {}".format(offer_id, bc_contract.events.
+                                            NewOffer().processReceipt(tx_receipt)[0]['args']))
+    get_offer = bc_contract.functions.getOffer(offer_id).call()
+    print("Offer ID: {} & Details: {}".format(offer_id, get_offer))
+
+    def get_offer():
+        return bc_contract.functions.getOffer(offer_id).call() is not 0
+    assert wait_until_timeout_blocking(get_offer, timeout=20)
+    return bc_contract.functions.getOffer(offer_id).call()
+
+
+def wait_until_timeout_blocking(functor, timeout=10):
+    current_time = 0
+    polling_period = 0.01
+    while not functor() and current_time < timeout:
+        time.sleep(polling_period)
+        current_time += polling_period
+    return functor()
 
 
 def cancel_offer(bc_interface, bc_contract, offer_id, seller):

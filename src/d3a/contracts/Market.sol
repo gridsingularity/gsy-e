@@ -5,10 +5,10 @@ import "ClearingToken.sol";
 contract Market is Mortal {
 
     // holds the offerId -> Offer() mapping
-    mapping (bytes32 => Offer) private offers;
+    mapping (bytes32 => Offer) public offers;
 
     // Nonce counter to ensure unique offer ids
-    uint private offerNonce;
+    uint private offerNonce = 0;
 
     //mapping of the energy balances for market participants
     mapping (address => int256) private balances;
@@ -57,9 +57,13 @@ contract Market is Mortal {
         bool success,
         bytes32 id) = _offer(energyUnits, price, msg.sender);
         if (success) {
+            offers[offerId] = Offer(energyUnits, price, msg.sender);
             emit NewOffer(id, energyUnits, price, msg.sender);
+            offerId = id;
         }
-        offerId = id;
+        else {
+            offerId = bytes32(0);
+        }
     }
 
     /*
@@ -144,8 +148,8 @@ contract Market is Mortal {
      * @notice Gets the Offer tuple if given a valid offerid
      */
     function getOffer(bytes32 offerId) public view returns (uint, int, address) {
-        Offer retrievedOffer = offers[offerId];
-        return (retrievedOffer.energyUnits, retrievedOffer.price, retrievedOffer.seller);
+//        Offer retrievedOffer = offers[offerId];
+        return (offers[offerId].energyUnits, offers[offerId].price, offers[offerId].seller);
     }
 
     /*
@@ -166,8 +170,8 @@ contract Market is Mortal {
     private returns (bool success, bytes32 offerId) {
 
         if (energyUnits > 0) {
-            offerId = keccak256(
-                abi.encodePacked(energyUnits, price, seller, block.number, offerNonce++)
+            offerId = sha256(
+                abi.encode(energyUnits, price, seller, offerNonce++)
             );
             Offer storage newOffer = offers[offerId];
             newOffer.energyUnits = energyUnits;
