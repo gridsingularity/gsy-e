@@ -13,7 +13,7 @@ class FakeArea:
     def __init__(self, name):
         self.name = name
         self.current_tick = 10
-        self.balancing_spot_trade_ratio = ConstSettings.BALANCING_SPOT_TRADE_RATIO
+        self.balancing_spot_trade_ratio = ConstSettings.BalancingSettings.SPOT_TRADE_RATIO
 
 
 class FakeBalancingMarket:

@@ -32,9 +32,9 @@ DEFAULT_CONFIG = SimulationConfig(
     market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
-    cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
-    market_maker_rate=str(ConstSettings.DEFAULT_MARKET_MAKER_RATE),
-    iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
+    cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
+    market_maker_rate=str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
+    iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE
 )
 
 
@@ -46,7 +46,7 @@ class Area:
                  appliance: BaseAppliance = None,
                  config: SimulationConfig = None,
                  budget_keeper=None,
-                 balancing_spot_trade_ratio=ConstSettings.BALANCING_SPOT_TRADE_RATIO):
+                 balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -280,7 +280,8 @@ class Area:
                                               agent_class=InterAreaAgent,
                                               market_class=Market)
 
-        if ConstSettings.ENABLE_BALANCING_MARKET and len(DeviceRegistry.REGISTRY.keys()) != 0:
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
+                len(DeviceRegistry.REGISTRY.keys()) != 0:
             changed_balancing_market = \
                 self._create_future_markets(current_time=self.now, markets=self.balancing_markets,
                                             parent=self.parent,
@@ -291,12 +292,14 @@ class Area:
                                             if self.parent is not None else None,
                                             agent_class=BalancingAgent,
                                             market_class=BalancingMarket)
+        else:
+            changed_balancing_market = None
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
 
-        if not ConstSettings.ENABLE_BALANCING_MARKET:
+        if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             return
 
         # Force balancing_market cycle event in case this is the first market slot

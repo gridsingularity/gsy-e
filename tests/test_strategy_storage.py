@@ -21,7 +21,7 @@ DeviceRegistry.REGISTRY = {
     "FakeArea": (23, 25),
 }
 
-ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
+ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 
 class FakeArea():
@@ -82,9 +82,9 @@ class FakeArea():
                 market_count=4,
                 slot_length=Duration(minutes=15),
                 tick_length=Duration(seconds=15),
-                cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE,
-                market_maker_rate=ConstSettings.DEFAULT_MARKET_MAKER_RATE,
-                iaa_fee=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE
+                cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
+                market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+                iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE
                 )
 
 
@@ -426,7 +426,8 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
         storage_strategy_test7_2._calculate_price_decrease_rate(area_test7.current_market))
     new_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
     price_dec_per_slot = (area_test7.historical_avg_rate) * (1 - storage_strategy_test7_2.risk /
-                                                             ConstSettings.MAX_RISK)
+                                                             ConstSettings.
+                                                             GeneralSettings.MAX_RISK)
     price_updates_per_slot = int(area_test7.config.slot_length.seconds
                                  / storage_strategy_test7_2._decrease_price_every_nr_s)
     price_dec_per_update = price_dec_per_slot / price_updates_per_slot
@@ -456,7 +457,7 @@ def test_calculate_energy_amount_to_sell_respects_min_allowed_soc(storage_strate
                      - storage_strategy_test7_3.state.pledged_sell_kWh[time_slot]
                      - storage_strategy_test7_3.state.offered_sell_kWh[time_slot]
                      - storage_strategy_test7_3.state.capacity
-                     * ConstSettings.STORAGE_MIN_ALLOWED_SOC)
+                     * ConstSettings.StorageSettings.MIN_ALLOWED_SOC)
 
     assert energy_sell_dict[time_slot] == target_energy
 
@@ -501,11 +502,12 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
     assert abs(storage_strategy_test8.state.used_storage
                - storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot] -
                storage_strategy_test8.state.capacity *
-               ConstSettings.STORAGE_MIN_ALLOWED_SOC) < 0.0001
+               ConstSettings.StorageSettings.MIN_ALLOWED_SOC) < 0.0001
     assert storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot] == \
-        100 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+        100 - storage_strategy_test8.state.capacity * ConstSettings.StorageSettings.MIN_ALLOWED_SOC
+
     assert area_test8._markets_return["Fake Market"].created_offers[0].energy == \
-        100 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+        100 - storage_strategy_test8.state.capacity * ConstSettings.StorageSettings.MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(
         area_test8._markets_return["Fake Market"])
     ) > 0
@@ -521,7 +523,8 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
     storage_strategy_test8.event_market_cycle()
     sell_market = list(area_test8.markets.values())[0]
     assert storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot] == \
-        100.0 - storage_strategy_test8.state.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
+        100.0 - storage_strategy_test8.state.capacity * \
+        ConstSettings.StorageSettings.MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(
         area_test8._markets_return["Fake Market"])
     ) > 0

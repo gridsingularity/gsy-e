@@ -8,12 +8,12 @@ from d3a.models.strategy.const import ConstSettings
 
 def get_setup(config):
     # Two sided market
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
-    ConstSettings.MIN_PV_SELLING_RATE = 0
-    ConstSettings.DEFAULT_MARKET_MAKER_RATE = 30
-    ConstSettings.STORAGE_MIN_BUYING_RATE = 0
-    ConstSettings.STORAGE_BREAK_EVEN_BUY = 29.9
-    ConstSettings.STORAGE_BREAK_EVEN_SELL = 30
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.PVSettings.MIN_SELLING_RATE = 0
+    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
+    ConstSettings.StorageSettings.MIN_BUYING_RATE = 0
+    ConstSettings.StorageSettings.BREAK_EVEN_BUY = 29.9
+    ConstSettings.StorageSettings.BREAK_EVEN_SELL = 30
 
     area = Area(
         'Grid',
@@ -24,8 +24,8 @@ def get_setup(config):
                     Area('H1 Storage',
                          strategy=StorageStrategy(initial_capacity=0.6,
                                                   break_even=(
-                                                      ConstSettings.STORAGE_BREAK_EVEN_BUY,
-                                                      ConstSettings.STORAGE_BREAK_EVEN_SELL)
+                                                    ConstSettings.StorageSettings.BREAK_EVEN_BUY,
+                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)
                                                   ),
                          appliance=SwitchableAppliance()),
                 ]

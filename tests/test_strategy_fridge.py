@@ -47,23 +47,23 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', (10 * (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000)),
-                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (10 * (ConstSettings.FridgeSettings.MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.FridgeSettings.MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [Offer('id', 100000000,
-                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+                   (ConstSettings.FridgeSettings.MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
-            [Offer('id', (30 * (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000)),
-                   (ConstSettings.FRIDGE_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (30 * (ConstSettings.FridgeSettings.MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.FridgeSettings.MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [
 
              ],
-            [Offer('id', 10 * 50 * ConstSettings.FRIDGE_MIN_NEEDED_ENERGY,
-                   50 * ConstSettings.FRIDGE_MIN_NEEDED_ENERGY, 'A', self)]
+            [Offer('id', 10 * 50 * ConstSettings.FridgeSettings.MIN_NEEDED_ENERGY,
+                   50 * ConstSettings.FridgeSettings.MIN_NEEDED_ENERGY, 'A', self)]
         ]
         return offers[self.count]
 

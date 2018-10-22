@@ -10,6 +10,12 @@ TIME_FORMAT = "%H:%M"
 PENDULUM_TIME_FORMAT = "HH:mm"
 TIME_ZONE = "UTC"
 
+DEFAULT_PRECISION = 8
+
+
+def limit_float_precision(number):
+    return round(number, DEFAULT_PRECISION)
+
 
 def get_project_root():
     return os.path.dirname(d3a.__file__)

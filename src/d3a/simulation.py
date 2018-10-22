@@ -81,15 +81,16 @@ class Simulation:
         self._init_events()
 
     def _set_traversal_length(self):
-        if ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH is None:
+        if ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH is None:
             no_of_levels = self._get_setup_levels(self.area) + 1
             num_ticks_to_propagate = no_of_levels * 2
-            ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
+            ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
             time_to_propagate_minutes = num_ticks_to_propagate * \
                 self.simulation_config.tick_length.seconds / 60.
             log.error("Setup has {} levels, offers/bids need at least {} minutes "
                       "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
-                                                        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH,))
+                                                        ConstSettings.GeneralSettings.
+                                                        MAX_OFFER_TRAVERSAL_LENGTH,))
 
     def _get_setup_levels(self, area, level_count=0):
         level_count += 1

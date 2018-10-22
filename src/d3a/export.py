@@ -533,7 +533,7 @@ class BarGraph:
     def modify_time_axis(data: dict, title: str):
         """
         Changes timezone of pendulum x-values to 'UTC' and determines the list of days
-        in order to return the xrange for the plot
+        in order to return the time_range for the plot
         """
         day_set = set()
         for di in range(len(data)):
@@ -554,7 +554,11 @@ class BarGraph:
 
     @classmethod
     def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
-        xrange, data = cls.modify_time_axis(data, title)
+        try:
+            time_range, data = cls.modify_time_axis(data, title)
+        except ValueError:
+            return
+
         layout = go.Layout(
             barmode=barmode,
             title=title,
@@ -563,7 +567,7 @@ class BarGraph:
             ),
             xaxis=dict(
                 title=xtitle,
-                range=xrange
+                range=time_range
             ),
             font=dict(
                 size=16

@@ -30,7 +30,7 @@ def get_setup(config):
                 ]
             ),
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_price=30, energy_range_wh=(40, 100)))
+                 strategy=CommercialStrategy(energy_rate=30))
         ],
         config=config
     )

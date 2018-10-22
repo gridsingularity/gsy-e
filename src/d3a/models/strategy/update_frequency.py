@@ -27,7 +27,8 @@ class BidUpdateFrequencyMixin:
 
     @cached_property
     def _increase_frequency_s(self):
-        return self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
+        return self.area.config.tick_length.seconds * \
+               ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
 
     def post_first_bid(self, market, energy_Wh):
         # TODO: It will be safe to remove this check once we remove the event_market_cycle being
@@ -97,7 +98,8 @@ class OfferUpdateFrequencyMixin:
 
     def update_on_activate(self):
         self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds * ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
+            (self.area.config.tick_length.seconds *
+             ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
 
     def calculate_initial_sell_rate(self, current_time_h):
         if self.initial_rate_option is InitialRateOptions.HISTORICAL_AVG_RATE:
@@ -145,7 +147,7 @@ class OfferUpdateFrequencyMixin:
         if self.energy_rate_decrease_option is \
                 RateDecreaseOption.PERCENTAGE_BASED_ENERGY_RATE_DECREASE:
             price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot_str) * \
-                                 (1 - self.risk/ConstSettings.MAX_RISK)
+                                 (1 - self.risk/ConstSettings.GeneralSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s)
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot

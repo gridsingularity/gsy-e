@@ -5,6 +5,7 @@ from d3a.models.market import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.device_registry import DeviceRegistry
+from d3a.models.strategy.const import ConstSettings
 
 
 class FakeArea:
@@ -79,6 +80,8 @@ def test_balancing_offers_are_not_sent_to_all_markets_if_device_not_in_registry(
 
 def test_balancing_offers_are_sent_to_all_markets_if_device_in_registry(
         commercial_test1, area_test1):
+
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     commercial_test1.event_activate()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1

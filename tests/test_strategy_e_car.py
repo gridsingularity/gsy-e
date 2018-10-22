@@ -21,8 +21,8 @@ class FakeArea():
         #            (time_in_hour // self.config.slot_length) * self.config.slot_length
         #        )
         dt = pendulum.now(tz=TIME_ZONE)
-        times = [dt.at(ConstSettings.ARRIVAL_TIME, 0, 0, 0),
-                 dt.at(ConstSettings.DEPART_TIME, 0, 0, 0)]
+        times = [dt.at(ConstSettings.EcarSettings.ARRIVAL_TIME, 0, 0, 0),
+                 dt.at(ConstSettings.EcarSettings.DEPART_TIME, 0, 0, 0)]
         self.now = times[count]
 
     @property
@@ -103,12 +103,12 @@ def e_car_strategy_test1(area_test1, called):
     e.area = area_test1
     e.arrive = called
     e.arrival_times_not_reached = list(range(23))
-    e.arrival_times_not_reached.remove(ConstSettings.ARRIVAL_TIME)
+    e.arrival_times_not_reached.remove(ConstSettings.EcarSettings.ARRIVAL_TIME)
     return e
 
 
 def test_car_arrival(e_car_strategy_test1, area_test1):
-    e_car_strategy_test1.arrival_time = ConstSettings.ARRIVAL_TIME
+    e_car_strategy_test1.arrival_time = ConstSettings.EcarSettings.ARRIVAL_TIME
     e_car_strategy_test1.event_tick(area=area_test1)
     assert len(e_car_strategy_test1.arrive.calls) == 1
 
@@ -139,14 +139,14 @@ def e_car_strategy_test2(area_test2, called):
     e.buy_energy = Mock(return_value=None)
     e.sell_energy = lambda: None
     e.depart_times_not_reached = list(range(24))
-    e.depart_times_not_reached.remove(ConstSettings.DEPART_TIME)
-    e.depart_times_not_reached.remove(ConstSettings.ARRIVAL_TIME)
+    e.depart_times_not_reached.remove(ConstSettings.EcarSettings.DEPART_TIME)
+    e.depart_times_not_reached.remove(ConstSettings.EcarSettings.ARRIVAL_TIME)
     return e
 
 
 def test_car_depart(e_car_strategy_test2, area_test2):
     e_car_strategy_test2.connected_to_grid = True
-    e_car_strategy_test2.depart_time = ConstSettings.DEPART_TIME
+    e_car_strategy_test2.depart_time = ConstSettings.EcarSettings.DEPART_TIME
     e_car_strategy_test2.event_tick(area=area_test2)
     assert len(e_car_strategy_test2._remove_offers_on_depart.calls) == 1
     assert not e_car_strategy_test2.connected_to_grid
@@ -258,7 +258,7 @@ def test_ecar_constructor_handles_none_arrive_depart_values():
     from d3a.models.strategy.const import ConstSettings
     try:
         ecar = ECarStrategy(arrival_time=None, depart_time=None)
-        assert ecar.arrival_time == ConstSettings.ARRIVAL_TIME
-        assert ecar.depart_time == ConstSettings.DEPART_TIME
+        assert ecar.arrival_time == ConstSettings.EcarSettings.ARRIVAL_TIME
+        assert ecar.depart_time == ConstSettings.EcarSettings.DEPART_TIME
     except Exception:
         assert False

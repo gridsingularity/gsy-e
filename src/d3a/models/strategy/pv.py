@@ -20,12 +20,13 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     parameters = ('panel_count', 'risk')
 
     def __init__(
-        self, panel_count: int=1, risk: float=ConstSettings.DEFAULT_RISK,
-        min_selling_rate: float=ConstSettings.MIN_PV_SELLING_RATE,
-        initial_rate_option: float=ConstSettings.INITIAL_PV_RATE_OPTION,
-        energy_rate_decrease_option: int=ConstSettings.PV_RATE_DECREASE_OPTION,
-        energy_rate_decrease_per_update: float=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-        max_panel_power_W: float=ConstSettings.PV_MAX_PANEL_OUTPUT_W
+        self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,
+        min_selling_rate: float=ConstSettings.PVSettings.MIN_SELLING_RATE,
+        initial_rate_option: float=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+        energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
+        energy_rate_decrease_per_update:
+        float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+        max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
     ):
         self._validate_constructor_arguments(panel_count, risk, max_panel_power_W)
         BaseStrategy.__init__(self)

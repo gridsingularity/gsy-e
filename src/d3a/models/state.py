@@ -30,10 +30,10 @@ class LoadState:
 
 class FridgeState:
     def __init__(self):
-        self.temperature = ConstSettings.FRIDGE_TEMPERATURE
+        self.temperature = ConstSettings.FridgeSettings.TEMPERATURE
         self.temp_history = defaultdict(lambda: '-')
-        self.min_temperature = ConstSettings.MIN_FRIDGE_TEMP
-        self.max_temperature = ConstSettings.MAX_FRIDGE_TEMP
+        self.min_temperature = ConstSettings.FridgeSettings.MIN_TEMP
+        self.max_temperature = ConstSettings.FridgeSettings.MAX_TEMP
 
     @property
     def normalized_temperature(self):
@@ -55,8 +55,8 @@ class StorageState:
     def __init__(self,
                  initial_capacity=0.0,
                  initial_soc=None,
-                 capacity=ConstSettings.STORAGE_CAPACITY,
-                 max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
+                 capacity=ConstSettings.StorageSettings.CAPACITY,
+                 max_abs_battery_power=ConstSettings.StorageSettings.MAX_ABS_POWER,
                  loss_per_hour=0.01,
                  strategy=None):
         if initial_soc is not None:
@@ -142,10 +142,10 @@ class StorageState:
                                  self._battery_energy_per_slot)
             target_soc = (self.used_storage - self.pledged_sell_kWh[time_slot] -
                           self.offered_sell_kWh[time_slot] - clamped_energy) / self.capacity
-            if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
+            if ConstSettings.StorageSettings.MIN_ALLOWED_SOC > target_soc:
                 clamped_energy = max(0, self.used_storage + self.pledged_sell_kWh[time_slot] -
                                      self.offered_sell_kWh[time_slot] -
-                                     self.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC)
+                                     self.capacity * ConstSettings.StorageSettings.MIN_ALLOWED_SOC)
 
             storage_dict[time_slot] = clamped_energy
 

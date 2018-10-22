@@ -15,16 +15,19 @@ class ECarStrategy(StorageStrategy):
     parameters = ('risk', 'arrival_time', 'depart_time', 'initial_capacity',
                   'initial_charge', 'battery_capacity')
 
-    def __init__(self, risk=ConstSettings.DEFAULT_RISK, initial_capacity=0.0, initial_charge=None,
-                 initial_rate_option=ConstSettings.INITIAL_ESS_RATE_OPTION,
-                 energy_rate_decrease_option=ConstSettings.ESS_RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-                 battery_capacity=ConstSettings.STORAGE_CAPACITY,
-                 arrival_time=ConstSettings.ARRIVAL_TIME, depart_time=ConstSettings.DEPART_TIME):
+    def __init__(self, risk=ConstSettings.GeneralSettings.DEFAULT_RISK, initial_capacity=0.0,
+                 initial_charge=None,
+                 initial_rate_option=ConstSettings.StorageSettings.INITIAL_RATE_OPTION,
+                 energy_rate_decrease_option=ConstSettings.StorageSettings.RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
+                 ENERGY_RATE_DECREASE_PER_UPDATE,
+                 battery_capacity=ConstSettings.StorageSettings.CAPACITY,
+                 arrival_time=ConstSettings.EcarSettings.ARRIVAL_TIME,
+                 depart_time=ConstSettings.EcarSettings.DEPART_TIME):
         if arrival_time is None:
-            arrival_time = ConstSettings.ARRIVAL_TIME
+            arrival_time = ConstSettings.EcarSettings.ARRIVAL_TIME
         if depart_time is None:
-            depart_time = ConstSettings.DEPART_TIME
+            depart_time = ConstSettings.EcarSettings.DEPART_TIME
         if not 0 <= arrival_time <= 23 or not 0 <= depart_time <= 23:
             raise ValueError("Depart_time and arrival_time should be between 0 and 23.")
         if not arrival_time < depart_time:
