@@ -25,9 +25,9 @@ class BCUsers:
         self._default_balance = default_balance
 
     def __getitem__(self, username_or_addr):
-        from web3 import Web3, HTTPProvider
-        web3 = Web3(HTTPProvider("http://127.0.0.1:8545", request_kwargs={'timeout': 600}))
-        web3.personal.unlockAccount(web3.eth.accounts[0], 'testgsy')
+        # from web3 import Web3, HTTPProvider
+        # web3 = Web3(HTTPProvider("http://127.0.0.1:8545", request_kwargs={'timeout': 600}))
+        self._chain.personal.unlockAccount(self._chain.eth.accounts[0], 'testgsy')
 
         user = self._users.get(username_or_addr)
         if not user:
