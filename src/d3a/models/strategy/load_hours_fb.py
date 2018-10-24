@@ -144,8 +144,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         for market in self.active_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 2:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
-                    if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
-                            len(DeviceRegistry.REGISTRY.keys()):
+                    if self.is_eligible_for_balancing_market:
                         bid_energy = \
                             self.energy_requirement_Wh[market.time_slot] - \
                             self.balancing_energy_ratio.demand * \
