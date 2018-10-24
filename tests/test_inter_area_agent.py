@@ -2,6 +2,7 @@ import pytest
 
 import pendulum
 
+from d3a import TIME_FORMAT
 from d3a import TIME_ZONE
 from d3a.models.market import Offer, Trade, Bid
 from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo, OfferInfo
@@ -29,6 +30,7 @@ class FakeMarket:
         self.calls_bids_price = []
         self.area = FakeArea("fake_area")
         self.time_slot = pendulum.now(tz=TIME_ZONE)
+        self.time_slot_str = self.time_slot.strftime(TIME_FORMAT)
 
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot

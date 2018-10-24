@@ -142,11 +142,3 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if offer.id not in [trades.offer.id for trades in market.trades]:
             if offer.seller == self.owner.name:
                 self.state.available_energy_kWh[market.time_slot] -= offer.energy
-
-    def update_market_cycle_offers(self, min_selling_rate):
-        self.min_selling_rate = min_selling_rate
-        # increase energy rate for each market again, except for the newly created one
-        for market in list(self.area.markets.values()):
-            self._decrease_price_timepoint_s[market.time_slot] = self._decrease_price_every_nr_s
-        for market in list(self.area.markets.values())[:-1]:
-            self.reset_price_on_market_cycle(market)

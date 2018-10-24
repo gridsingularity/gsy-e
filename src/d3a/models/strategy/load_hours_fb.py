@@ -96,7 +96,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             acceptable_offer = self._find_acceptable_offer(market)
             if acceptable_offer and \
                     self.min_energy_rate[market.time_slot_str] <= \
-                    acceptable_offer.price / acceptable_offer.energy <= \
+                    round(acceptable_offer.price / acceptable_offer.energy, 8) <= \
                     self.max_energy_rate[market.time_slot_str]:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
                 current_day = self._get_day_of_timestamp(market.time_slot)
