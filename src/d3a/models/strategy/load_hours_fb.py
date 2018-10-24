@@ -67,8 +67,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     @property
     def active_markets(self):
         markets = []
-        for time, market in self.area.markets.items():
-            if self._allowed_operating_hours(time):
+        for market in self.area.all_markets:
+            if self._allowed_operating_hours(market.time_slot):
                 markets.append(market)
         return markets
 

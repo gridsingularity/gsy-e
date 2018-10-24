@@ -89,8 +89,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             raise ValueError("Break even point should be positive energy rate values.")
 
     def event_tick(self, *, area):
-        self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.markets.values()])
-        for market in self.area.markets.values():
+        self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+        for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self.buy_energy(market)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2:
@@ -150,8 +150,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         current_market = self.area.next_market
-        if self.area.past_markets:
-            past_market = list(self.area.past_markets.values())[-1]
+        past_market = self.area.last_past_market
+        if past_market:
             self.state.market_cycle(past_market.time_slot, current_market.time_slot)
         if self.state.used_storage > 0:
             self.sell_energy()
@@ -246,7 +246,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                     return
             return [most_expensive_market]
         else:
-            return list(self.area.markets.values())
+            return self.area.all_markets
 
     def calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:

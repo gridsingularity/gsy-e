@@ -24,7 +24,7 @@ class SimpleAppliance(BaseAppliance):
 
     def report_energy(self, energy):
         if energy:
-            self.area.report_accounting(
+            self.area.stats.report_accounting(
                 self.area.current_market,
                 self.owner.name, energy
             )

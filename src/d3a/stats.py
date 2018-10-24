@@ -46,7 +46,8 @@ def energy_bills(area, from_slot=None, to_slot=None):
                                spent=0.0, earned=0.0,
                                type=get_area_type_string(child))
               for child in area.children}
-    for slot, market in area.past_markets.items():
+    for market in area.past_markets:
+        slot = market.time_slot
         if (from_slot is None or slot >= from_slot) and (to_slot is None or slot < to_slot):
             for trade in market.trades:
                 buyer = area_name_from_area_or_iaa_name(trade.buyer)

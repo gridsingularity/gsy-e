@@ -68,7 +68,8 @@ def _accumulate_device_stats_to_area_stats(per_hour_device_data):
 def _calculate_area_stats(area):
     per_hour_device_data = {}
     # Iterate first through all the available market slots of the area
-    for current_slot, market in area.parent.past_markets.items():
+    for market in area.parent.past_markets:
+        current_slot = market.time_slot
         hour_data = per_hour_device_data.get(current_slot.hour, {"devices": {}})
         # Update hour data for the area, by accumulating slots in one hour
         per_hour_device_data[current_slot.hour] = \
