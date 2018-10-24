@@ -244,15 +244,15 @@ class ExportAndPlot:
         key = 'energy'
         title = 'Energy Trade Profile of {}'.format(market_name)
         data.extend(self._plot_energy_graph(self.trades, market_name, "sold_energy_lists",
-                                            "-seller", key))
+                                            "-seller", key, ENERGY_SELLER_SIGN_PLOTS))
         data.extend(self._plot_energy_graph(self.trades, market_name, "bought_energy_lists",
-                                            "-buyer", key))
+                                            "-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
         data.extend(self._plot_energy_graph(self.balancing_trades, market_name,
                                             "sold_energy_lists",
-                                            "-balancing-seller", key))
+                                            "-balancing-seller", key, ENERGY_SELLER_SIGN_PLOTS))
         data.extend(self._plot_energy_graph(self.balancing_trades, market_name,
                                             "bought_energy_lists",
-                                            "-balancing-buyer", key))
+                                            "-balancing-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
         if len(data) == 0:
             return
         if all([len(da.y) == 0 for da in data]):
@@ -264,12 +264,12 @@ class ExportAndPlot:
                                    'energy_profile_{}.html'.format(market_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
-    def _plot_energy_graph(self, trades, market_name, agent, agent_label, key):
+    def _plot_energy_graph(self, trades, market_name, agent, agent_label, key, scale_value):
         internal_data = []
         for trader in trades[market_name][agent].keys():
 
             graph_obj = BarGraph(trades[market_name][agent][trader], key)
-            graph_obj.graph_value(scale_value=ENERGY_SELLER_SIGN_PLOTS)
+            graph_obj.graph_value(scale_value=scale_value)
             data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
                               y=list(graph_obj.umHours.values()),
                               name=trader + agent_label)
@@ -539,7 +539,7 @@ class BarGraph:
     def modify_time_axis(data: dict, title: str):
         """
         Changes timezone of pendulum x-values to 'UTC' and determines the list of days
-        in order to return the xrange for the plot
+        in order to return the time_range for the plot
         """
         day_set = set()
         for di in range(len(data)):
@@ -560,7 +560,11 @@ class BarGraph:
 
     @classmethod
     def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
-        xrange, data = cls.modify_time_axis(data, title)
+        try:
+            time_range, data = cls.modify_time_axis(data, title)
+        except ValueError:
+            return
+
         layout = go.Layout(
             barmode=barmode,
             title=title,
@@ -569,7 +573,7 @@ class BarGraph:
             ),
             xaxis=dict(
                 title=xtitle,
-                range=xrange
+                range=time_range
             ),
             font=dict(
                 size=16

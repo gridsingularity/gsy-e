@@ -15,14 +15,13 @@ def ganachecli_command():
 
 @pytest.fixture(scope='session')
 def blockchain_fixture():
-    if ConstSettings.BLOCKCHAIN_START_LOCAL_CHAIN:
+    if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
         ganachecli, sleep_time = ganachecli_command()
         ganache_subprocess = Popen([ganachecli], close_fds=False)
         sleep(sleep_time)
     else:
         ganache_subprocess = None
-
-    yield Web3(HTTPProvider(ConstSettings.BLOCKCHAIN_URL))
+    yield Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
 
     if ganache_subprocess:
         ganache_subprocess.terminate()

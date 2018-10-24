@@ -387,16 +387,16 @@ def method_called(context, method):
       '{slot_length}, {tick_length}]')
 def run_sim_without_iaa_fee(context, scenario, total_duration, slot_length, tick_length):
     run_sim(context, scenario, total_duration, slot_length, tick_length,
-            ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE, market_count=1)
+            ConstSettings.IAASettings.FEE_PERCENTAGE, market_count=1)
 
 
 @when("we run the simulation with setup file {scenario} with two different market_counts")
 def run_sim_market_count(context, scenario):
-    run_sim(context, scenario, 24, 60, 60, ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE,
+    run_sim(context, scenario, 24, 60, 60, ConstSettings.IAASettings.FEE_PERCENTAGE,
             market_count=1)
     context.simulation_1 = context.simulation
 
-    run_sim(context, scenario, 24, 60, 60, ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE,
+    run_sim(context, scenario, 24, 60, 60, ConstSettings.IAASettings.FEE_PERCENTAGE,
             market_count=4)
     context.simulation_4 = context.simulation
 

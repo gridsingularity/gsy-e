@@ -20,10 +20,13 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'max_energy_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, daily_budget=None,
-                 min_energy_rate: Union[float, dict, str] = ConstSettings.LOAD_MIN_ENERGY_RATE,
-                 max_energy_rate: Union[float, dict, str] = ConstSettings.LOAD_MAX_ENERGY_RATE,
-                 balancing_energy_ratio: tuple = (ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
-                                                  ConstSettings.BALANCING_OFFER_SUPPLY_RATIO)):
+                 min_energy_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.MIN_ENERGY_RATE,
+                 max_energy_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.MAX_ENERGY_RATE,
+                 balancing_energy_ratio: tuple =
+                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
 
         BaseStrategy.__init__(self)
         self.min_energy_rate = read_arbitrary_profile(InputProfileTypes.RATE,
@@ -124,9 +127,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             if market.time_slot not in self.energy_requirement_Wh:
                 continue
 
-            if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self._one_sided_market_event_tick(market)
-            elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
                 self._double_sided_market_event_tick(market)
 
     def _allowed_operating_hours(self, time):
@@ -139,9 +142,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         for market in self.active_markets:
-            if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            if ConstSettings.IAASettings.MARKET_TYPE == 2:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
-                    if ConstSettings.ENABLE_BALANCING_MARKET and \
+                    if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                             len(DeviceRegistry.REGISTRY.keys()):
                         bid_energy = \
                             self.energy_requirement_Wh[market.time_slot] - \
@@ -190,7 +193,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         market = self.area.get_future_market_from_id(market_id)
         assert market is not None
 
-        if ConstSettings.BALANCING_FLEXIBLE_LOADS_SUPPORT:
+        if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
             # Load can only put supply_balancing_offers only when there is a trade in spot_market
             self._supply_balancing_offer(market, trade)
         super().event_trade(market_id=market_id, trade=trade)

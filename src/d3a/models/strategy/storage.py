@@ -18,18 +18,21 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
     parameters = ('risk', 'initial_capacity', 'initial_soc',
                   'battery_capacity', 'max_abs_battery_power')
 
-    def __init__(self, risk: int=ConstSettings.DEFAULT_RISK,
+    def __init__(self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
                  initial_capacity: float=0.0,
                  initial_soc: float=None,
-                 initial_rate_option: int=ConstSettings.INITIAL_ESS_RATE_OPTION,
-                 energy_rate_decrease_option: int=ConstSettings.ESS_RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update: float=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
-                 battery_capacity: float=ConstSettings.STORAGE_CAPACITY,
-                 max_abs_battery_power: float=ConstSettings.MAX_ABS_BATTERY_POWER,
-                 break_even: Union[tuple, dict]=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
-                             ConstSettings.STORAGE_BREAK_EVEN_SELL),
-                 balancing_energy_ratio: tuple=(ConstSettings.BALANCING_OFFER_DEMAND_RATIO,
-                                                ConstSettings.BALANCING_OFFER_SUPPLY_RATIO),
+                 initial_rate_option: int=ConstSettings.StorageSettings.INITIAL_RATE_OPTION,
+                 energy_rate_decrease_option:
+                 int=ConstSettings.StorageSettings.RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update:
+                 float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
+                 battery_capacity: float=ConstSettings.StorageSettings.CAPACITY,
+                 max_abs_battery_power: float=ConstSettings.StorageSettings.MAX_ABS_POWER,
+                 break_even: Union[tuple, dict]=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
+                             ConstSettings.StorageSettings.BREAK_EVEN_SELL),
+                 balancing_energy_ratio:
+                 tuple=(ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+                        ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
 
                  cap_price_strategy: bool=False):
         break_even = read_arbitrary_profile(InputProfileTypes.RATE, break_even)
@@ -45,7 +48,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
             InputProfileTypes.RATE,
-            ConstSettings.STORAGE_MIN_BUYING_RATE
+            ConstSettings.StorageSettings.MIN_BUYING_RATE
         )
         self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
         BidUpdateFrequencyMixin.__init__(self,
@@ -87,9 +90,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
     def event_tick(self, *, area):
         # Check if there are cheap offers to buy
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
             self.buy_energy()
-        elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+        elif ConstSettings.IAASettings.MARKET_TYPE == 2:
             if self.state.clamp_energy_to_buy_kWh() <= 0:
                 return
             if self.are_bids_posted(self.area.next_market):
@@ -106,7 +109,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.decrease_energy_price_over_ticks(self.area.next_market)
 
     def event_bid_deleted(self, *, market_id, bid):
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
             # Do not handle bid deletes on single sided markets
             return
         if market_id != self.area.next_market.id:
@@ -116,7 +119,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.remove_bid_from_pending(bid.id, self.area.next_market)
 
     def event_bid_traded(self, *, market_id, bid_trade):
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
             # Do not handle bid trades on single sided markets
             assert False and "Invalid state, cannot receive a bid if single sided market" \
                              " is globally configured."
@@ -160,7 +163,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 self.sell_energy()
             self.state.market_cycle(self.area)
 
-            if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
+            if ConstSettings.IAASettings.MARKET_TYPE == 2:
                 self.update_market_cycle_bids(final_rate=self.break_even[
                     self.area.now.strftime(TIME_FORMAT)][0])
                 if self.state.clamp_energy_to_buy_kWh() > 0:
@@ -245,7 +248,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.offers.post(offer, target_market)
 
     def select_market_to_sell(self):
-        if ConstSettings.STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:
+        if ConstSettings.StorageSettings.SELL_ON_MOST_EXPENSIVE_MARKET:
             # Sell on the most expensive market
             try:
                 max_rate = 0.0

@@ -95,7 +95,7 @@ def area_test1():
 
 @pytest.fixture()
 def pv_test1(area_test1):
-    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE)
+    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test1
     p.owner = area_test1
     return p
@@ -123,7 +123,7 @@ def market_test3(area_test3):
 
 @pytest.fixture()
 def pv_test3(area_test3):
-    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE)
+    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
@@ -148,7 +148,7 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
 
 @pytest.fixture()
 def pv_test4(area_test3, called):
-    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE)
+    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
@@ -194,7 +194,7 @@ def testing_trigger_risk(pv_test5):
 
 @pytest.fixture()
 def pv_test6(area_test3):
-    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.DEFAULT_PV_POWER_PROFILE)
+    p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {}

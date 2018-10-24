@@ -7,7 +7,7 @@ from d3a.models.strategy.pv import PVStrategy
 
 def get_setup(config):
     from d3a.models.strategy.const import ConstSettings
-    ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 1
+    ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 1
     area = Area(
         'Grid',
         [

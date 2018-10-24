@@ -7,9 +7,9 @@ from d3a.models.strategy.const import ConstSettings
 
 def get_setup(config):
     # Two sided market
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
-    ConstSettings.LOAD_MIN_ENERGY_RATE = 15
-    ConstSettings.LOAD_MAX_ENERGY_RATE = 35
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.LoadSettings.MIN_ENERGY_RATE = 15
+    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
 
     area = Area(
         'Grid',
@@ -29,8 +29,8 @@ def get_setup(config):
                         avg_power_W=100,
                         hrs_per_day=10,
                         hrs_of_day=list(range(8, 18)),
-                        min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
-                        max_energy_rate=ConstSettings.LOAD_MAX_ENERGY_RATE
+                        min_energy_rate=ConstSettings.LoadSettings.MIN_ENERGY_RATE,
+                        max_energy_rate=ConstSettings.LoadSettings.MAX_ENERGY_RATE
                     ), appliance=SwitchableAppliance()),
 
                 ]
