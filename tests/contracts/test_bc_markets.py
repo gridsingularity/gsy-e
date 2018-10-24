@@ -6,7 +6,6 @@ from eth_utils import to_bytes
 from d3a.util import get_cached_joined_contract_source
 from .token_fixtures import blockchain_fixture # NOQA
 
-
 @pytest.fixture # NOQA
 def _bc(blockchain_fixture):
     yield blockchain_fixture

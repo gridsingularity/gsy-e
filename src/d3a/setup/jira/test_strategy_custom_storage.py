@@ -45,7 +45,7 @@ class CustomStorageStrategy(StorageStrategy):
         """
         Sell on the most recent future market
         """
-        return self.area.next_market
+        return [self.area.next_market]
 
     def update_posted_bids_over_ticks(self, market):
         """

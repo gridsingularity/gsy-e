@@ -14,7 +14,7 @@ from d3a.device_registry import DeviceRegistry
 class TestAreaClass(unittest.TestCase):
 
     def setUp(self):
-        ConstSettings.ENABLE_BALANCING_MARKET = True
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
         DeviceRegistry.REGISTRY = {
             "H1 General Load": (33, 35),
             "H2 General Load": (33, 35),

@@ -18,7 +18,6 @@ Feature: Run integration tests
      | scenario               | duration | slot_length | tick_length |
      | integration_test_setup |    2     |      20     |      1      |
      | integration_test_setup |    4     |      10     |      5      |
-     |         default        |    24    |      60     |      60     |
      |         default_2      |    24    |      60     |      60     |
      |        default_2a      |    24    |      60     |      60     |
      |        default_2b      |    24    |      60     |      60     |
@@ -28,7 +27,6 @@ Feature: Run integration tests
      |    default_3_pv_only   |    24    |      60     |      60     |
      |        default_4       |    24    |      60     |      60     |
      |        default_5       |    24    |      60     |      60     |
-     |    default_appliance   |    24    |      60     |      60     |
      |        default_csv     |    24    |      60     |      60     |
 
   Scenario Outline: Simulation subscribes on the appropriate channels
@@ -53,11 +51,11 @@ Feature: Run integration tests
      Then intermediate results are transmitted on every slot
      And final results are transmitted once
 
-  Scenario Outline: Run integration tests with settings file
-     Given we have a scenario named default
+  Scenario: Run integration tests with settings file
+     Given we have a scenario named default_2a
      And d3a is installed
      When we run simulation on console with default settings file
-     Then we test the export functionality of default
+     Then we test the export functionality of default_2a
 
   Scenario: Simulation returns same results for different market counts
     Given we have a scenario named default_2a

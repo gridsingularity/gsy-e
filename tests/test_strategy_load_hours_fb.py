@@ -17,7 +17,7 @@ from d3a import TIME_ZONE
 from d3a.device_registry import DeviceRegistry
 
 
-ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
+ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=5)
 
@@ -125,7 +125,7 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
         # MAX_OFFER_TRAVERSAL_LENGTH should be set here, otherwise some tests fail
         # when only the load tests are executed. Works fine when all tests are executed
         # though
-        ConstSettings.MAX_OFFER_TRAVERSAL_LENGTH = 5
+        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 5
         self.appliance = MagicMock(spec=SimpleAppliance)
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
 
@@ -290,7 +290,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
 def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strategy_test5,
                                                                 called,
                                                                 partial):
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 2
 
     trade_market = load_hours_strategy_test5.area.next_market
     load_hours_strategy_test5.remove_bid_from_pending = called
@@ -315,13 +315,13 @@ def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strat
         assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 0
         assert load_hours_strategy_test5.get_posted_bids(trade_market) == [bid]
 
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_strategy_test5,
                                                                    market_test2,
                                                                    called):
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 2
 
     trade_market = load_hours_strategy_test5.area.next_market
     load_hours_strategy_test5.remove_bid_from_pending = called
@@ -340,7 +340,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
         repr(trade_market)
 
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 @pytest.fixture

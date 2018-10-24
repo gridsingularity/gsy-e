@@ -50,13 +50,13 @@ _setup_modules = available_simulation_scenarios
 @click.option('-s', '--slot-length', type=IntervalType('M:S'), default="15m", show_default=True,
               help="Length of a market slot")
 @click.option('-c', '--cloud_coverage', type=int,
-              default=ConstSettings.DEFAULT_PV_POWER_PROFILE, show_default=True,
+              default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
 @click.option('-r', '--market_maker_rate', type=str,
-              default=str(ConstSettings.DEFAULT_MARKET_MAKER_RATE), show_default=True,
-              help="Market maker rate")
+              default=str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
+              show_default=True, help="Market maker rate")
 @click.option('-f', '--iaa_fee', type=int,
-              default=ConstSettings.INTER_AREA_AGENT_FEE_PERCENTAGE, show_default=True,
+              default=ConstSettings.IAASettings.FEE_PERCENTAGE, show_default=True,
               help="Inter-Area-Agent Fee in percentage")
 @click.option('-m', '--market-count', type=int, default=1, show_default=True,
               help="Number of tradable market slots into the future")
@@ -64,7 +64,7 @@ _setup_modules = available_simulation_scenarios
               help="REST-API server listening interface")
 @click.option('-p', '--port', type=int, default=5000, show_default=True,
               help="REST-API server listening port")
-@click.option('--setup', 'setup_module_name', default="default",
+@click.option('--setup', 'setup_module_name', default="default_2a",
               help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
 @click.option('-g', '--settings_file', default=None,
@@ -105,7 +105,7 @@ def run(interface, port, setup_module_name, settings_file, slowdown, seed, pause
             simulation_config = SimulationConfig(**config_params)
 
         api_url = "http://{}:{}/api".format(interface, port)
-        ConstSettings.ENABLE_BALANCING_MARKET = enable_bm
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = enable_bm
         simulation = Simulation(
             setup_module_name=setup_module_name,
             simulation_config=simulation_config,

@@ -1,47 +1,78 @@
 {
-  "basic_settings": {
-    "duration": "24h",
-    "slot_length": "60m",
-    "tick_length": "60s",
-    "market_count": 4,
-    "cloud_coverage": 0,
-    "market_maker_rate": 30,
-    "iaa_fee": 1
-  },
+ "basic_settings": {
+   "duration": "24h",
+   "slot_length": "60m",
+   "tick_length": "60s",
+   "market_count": 4,
+   "cloud_coverage": 0,
+   "market_maker_rate": 30,
+   "iaa_fee": 1
+ },
   "advanced_settings": {
-    "MAX_RISK": 100,
-    "DEFAULT_RISK": 50,
-    "DEFAULT_MARKET_MAKER_RATE": 30,
-    "MIN_FRIDGE_TEMP": 4.0,
-    "MAX_FRIDGE_TEMP": 8.0,
-    "FRIDGE_TEMPERATURE": 6.0,
-    "FRIDGE_MIN_NEEDED_ENERGY": 10,
-    "STORAGE_CAPACITY": 1.2,
-    "MAX_ABS_BATTERY_POWER": 1.2,
-    "INITIAL_ESS_RATE_OPTION": 2,
-    "ESS_RATE_DECREASE_OPTION": 1,
-    "STORAGE_BREAK_EVEN_SELL": 25,
-    "STORAGE_BREAK_EVEN_BUY": 25,
-    "STORAGE_MIN_ALLOWED_SOC": 0.1,
-    "STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET": "False",
-    "MIN_PV_SELLING_RATE": 0,
-    "LOAD_MIN_ENERGY_RATE": 0,
-    "LOAD_MAX_ENERGY_RATE": 35,
-    "INITIAL_PV_RATE_OPTION": 1,
-    "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
-    "DEFAULT_PV_POWER_PROFILE": 0,
-    "PV_MAX_PANEL_OUTPUT_W": 160,
-    "EARTH_TEMP": 6.0,
-    "MAX_STORAGE_TEMP": 55.0,
-    "MIN_STORAGE_TEMP": 30.0,
-    "INITIAL_PUMP_STORAGE_TEMP": 30.0,
-    "PUMP_MIN_NEEDED_ENERGY": 50,
-    "PUMP_MIN_TEMP_INCREASE": 2,
-    "ARRIVAL_TIME": 1,
-    "DEPART_TIME": 23,
-    "MIN_HOUSEHOLD_CONSUMPTION": 70,
-    "MAX_OFFER_TRAVERSAL_LENGTH": 10,
-    "INTER_AREA_AGENT_FEE_PERCENTAGE": 1,
-    "INTER_AREA_AGENT_MARKET_TYPE": 1
+    "GeneralSettings": {
+      "MAX_RISK": 100,
+      "DEFAULT_RISK": 50,
+      "DEFAULT_MARKET_MAKER_RATE": 30,
+      "MAX_OFFER_TRAVERSAL_LENGTH": null,
+      "ENERGY_RATE_DECREASE_PER_UPDATE": 1
+    },
+    "FridgeSettings": {
+      "MAX_TEMP": 8.0,
+      "MIN_TEMP": 4.0,
+      "TEMPERATURE": 6.0,
+      "MIN_NEEDED_ENERGY": 10
+    },
+    "StorageSettings": {
+      "CAPACITY": 1.2,
+      "MAX_ABS_POWER": 5,
+      "INITIAL_RATE_OPTION": 2,
+      "RATE_DECREASE_OPTION": 1,
+      "BREAK_EVEN_SELL": 25,
+      "BREAK_EVEN_BUY": 24.9,
+      "MIN_BUYING_RATE": 24.9,
+      "MIN_ALLOWED_SOC": 0.1,
+      "SELL_ON_MOST_EXPENSIVE_MARKET": false
+    },
+    "LoadSettings": {
+      "MIN_ENERGY_RATE": 0,
+      "MAX_ENERGY_RATE": 35
+    },
+    "PVSettings": {
+      "MIN_SELLING_RATE": 0,
+      "INITIAL_RATE_OPTION": 2,
+      "RATE_DECREASE_OPTION": 1,
+      "DEFAULT_POWER_PROFILE": 0,
+      "MAX_PANEL_OUTPUT_W": 160
+    },
+    "HeatpumpSettings": {
+      "EARTH_TEMP": 6.0,
+      "MAX_STORAGE_TEMP": 55.0,
+      "MIN_STORAGE_TEMP": 30.0,
+      "INITIAL_STORAGE_TEMP": 30.0,
+      "MIN_NEEDED_ENERGY": 50,
+      "MIN_TEMP_INCREASE": 2
+    },
+    "EcarSettings": {
+      "ARRIVAL_TIME": 1,
+      "DEPART_TIME": 23
+    },
+    "PredefinedLoadSettings": {
+      "MIN_HOUSEHOLD_CONSUMPTION": 70
+    },
+    "IAASettings": {
+      "FEE_PERCENTAGE": 1,
+      "MARKET_TYPE": 1
+    },
+    "BlockchainSettings": {
+      "URL": "http://127.0.0.1:8545",
+      "START_LOCAL_CHAIN": true
+    },
+    "BalancingSettings": {
+      "ENABLE_BALANCING_MARKET": false,
+      "SPOT_TRADE_RATIO": 0.2,
+      "OFFER_DEMAND_RATIO": 0.1,
+      "OFFER_SUPPLY_RATIO": 0.1,
+      "FLEXIBLE_LOADS_SUPPORT": true
+    }
   }
 }

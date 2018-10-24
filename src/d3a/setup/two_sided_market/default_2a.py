@@ -11,12 +11,12 @@ from d3a.models.strategy.const import ConstSettings
 
 def get_setup(config):
 
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
-    ConstSettings.LOAD_MIN_ENERGY_RATE = 35
-    ConstSettings.LOAD_MAX_ENERGY_RATE = 35
-    ConstSettings.STORAGE_MIN_BUYING_RATE = 24.99
-    ConstSettings.STORAGE_BREAK_EVEN_BUY = 25
-    ConstSettings.STORAGE_BREAK_EVEN_SELL = 25.01
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.LoadSettings.MIN_ENERGY_RATE = 35
+    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
+    ConstSettings.StorageSettings.MIN_BUYING_RATE = 24.99
+    ConstSettings.StorageSettings.BREAK_EVEN_BUY = 25
+    ConstSettings.StorageSettings.BREAK_EVEN_SELL = 25.01
 
     area = Area(
         'Grid',
@@ -32,13 +32,13 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(
                         initial_capacity=0.6,
-                        break_even=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
-                                    ConstSettings.STORAGE_BREAK_EVEN_SELL)),
+                        break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
+                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage2', strategy=StorageStrategy(
                         initial_capacity=0.6,
-                        break_even=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
-                                    ConstSettings.STORAGE_BREAK_EVEN_SELL)),
+                        break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
+                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -50,7 +50,7 @@ def get_setup(config):
                         hrs_per_day=4,
                         hrs_of_day=list(
                             range(12, 16)),
-                        min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
+                        min_energy_rate=ConstSettings.LoadSettings.MIN_ENERGY_RATE,
                         max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVStrategy(4, 0),
@@ -62,7 +62,7 @@ def get_setup(config):
                 avg_power_W=100,
                 hrs_per_day=24,
                 hrs_of_day=list(range(0, 24)),
-                min_energy_rate=ConstSettings.LOAD_MIN_ENERGY_RATE,
+                min_energy_rate=ConstSettings.LoadSettings.MIN_ENERGY_RATE,
                 max_energy_rate=35),
                  appliance=SwitchableAppliance())
             # Area('Commercial Energy Producer',

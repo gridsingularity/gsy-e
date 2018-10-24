@@ -359,14 +359,11 @@ class Market:
 
         trade_id = self._handle_blockchain_trade_event(offer, buyer,
                                                        original_offer, residual_offer)
-        trade = Trade(trade_id, time, offer, offer.seller, buyer,
-                      residual_offer, price_drop)
+        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
         if self.area and self.area.bc:
             self._trades_by_id[trade_id] = trade
 
         self._update_stats_after_trade(trade, offer, buyer)
-
-        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
         log.warning(f"[TRADE][{self.time_slot_str}] {trade}")
 
         # FIXME: Needs to be triggered by blockchain event

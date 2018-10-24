@@ -15,7 +15,7 @@ class FridgeAppliance(SwitchableMixin, SimpleAppliance):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.state = None
-        self.force_cool_energy = - ConstSettings.FRIDGE_MIN_NEEDED_ENERGY
+        self.force_cool_energy = - ConstSettings.FridgeSettings.MIN_NEEDED_ENERGY
         self.cooling_gain = 0
         self.door_open_loss = 0
         self.temp_change = 0

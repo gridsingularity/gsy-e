@@ -1,4 +1,3 @@
-import os
 import select
 import sys
 import termios
@@ -16,6 +15,10 @@ from d3a import get_project_root
 from d3a import setup as d3a_setup
 from d3a.models.strategy.const import ConstSettings
 
+import d3a
+import inspect
+import os
+d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 log = getLogger(__name__)
 
@@ -199,7 +202,14 @@ available_simulation_scenarios = iterate_over_all_d3a_setup()
 
 
 def parseboolstring(thestring):
-    return thestring[0].upper() == 'T'
+    if thestring == "None":
+        return None
+    elif thestring[0].upper() == 'T':
+        return True
+    elif thestring[0].upper() == 'F':
+        return False
+    else:
+        return thestring
 
 
 def read_settings_from_file(settings_file):
@@ -219,12 +229,13 @@ def read_settings_from_file(settings_file):
                 settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
             "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
-                'cloud_coverage', advanced_settings["DEFAULT_PV_POWER_PROFILE"]),
+                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
             "market_maker_rate": settings["basic_settings"].get(
-                'market_maker_rate', advanced_settings["DEFAULT_MARKET_MAKER_RATE"]),
+                'market_maker_rate', advanced_settings["GeneralSettings"]
+                ["DEFAULT_MARKET_MAKER_RATE"]),
             "iaa_fee": settings["basic_settings"].get(
                 'INTER_AREA_AGENT_FEE_PERCENTAGE',
-                advanced_settings["INTER_AREA_AGENT_FEE_PERCENTAGE"])
+                advanced_settings["IAASettings"]["FEE_PERCENTAGE"])
         }
         return simulation_settings, advanced_settings
     else:
@@ -233,15 +244,17 @@ def read_settings_from_file(settings_file):
 
 def update_advanced_settings(advanced_settings):
     """
-    Updates ConstStettings class variables with advanced_settings.
+    Updates ConstSettings class variables with advanced_settings.
     If variable is not part of ConstSettings, an Exception is raised.
     """
-    for set_var, set_val in advanced_settings.items():
-        getattr(ConstSettings, set_var)
-        if isinstance(set_val, str):
-            setattr(ConstSettings, set_var, parseboolstring(set_val))
-        else:
-            setattr(ConstSettings, set_var, set_val)
+    for settings_class_name in advanced_settings.keys():
+        setting_class = getattr(ConstSettings, settings_class_name)
+        for set_var, set_val in advanced_settings[settings_class_name].items():
+            getattr(setting_class, set_var)
+            if isinstance(set_val, str):
+                setattr(setting_class, set_var, parseboolstring(set_val))
+            else:
+                setattr(setting_class, set_var, set_val)
 
 
 def generate_market_slot_list(area):
@@ -255,3 +268,16 @@ def generate_market_slot_list(area):
             area.config.slot_length)]:
         market_slots.append(slot_time)
     return market_slots
+
+
+def constsettings_to_dict():
+    const_settings = {}
+    for settings_class_name, settings_class in dict(ConstSettings.__dict__).items():
+        if not settings_class_name.startswith("__"):
+            for key, value in dict(settings_class.__dict__).items():
+                if not key.startswith("__"):
+                    if settings_class_name in const_settings.keys():
+                        const_settings[settings_class_name][key] = value
+                    else:
+                        const_settings[settings_class_name] = {key: value}
+    return const_settings

@@ -6,14 +6,14 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a.models.strategy.e_car import ECarStrategy
 from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
+from d3a.models.strategy.deprecated.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
 
 class ModifiedFridgeStrategy(FridgeStrategy):
-    def __init__(self, risk=ConstSettings.DEFAULT_RISK):
+    def __init__(self, risk=ConstSettings.GeneralSettings.DEFAULT_RISK):
         self.accept_count = 0
         super().__init__(risk)
 
@@ -59,7 +59,7 @@ def get_setup(config):
                      appliance=SimpleAppliance())
             ]),
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_range_wh=(5, 10), energy_price=30),
+                 strategy=CommercialStrategy(energy_rate=30),
                  appliance=SimpleAppliance())
         ],
         config=config

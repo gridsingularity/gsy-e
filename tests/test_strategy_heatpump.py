@@ -43,12 +43,12 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', (10 * (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000)),
-                   (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
+            [Offer('id', (10 * (ConstSettings.HeatpumpSettings.MIN_NEEDED_ENERGY / 1000)),
+                   (ConstSettings.HeatpumpSettings.MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ],
             [Offer('id', 100000000,
-                   (ConstSettings.PUMP_MIN_NEEDED_ENERGY / 1000), 'A', self
+                   (ConstSettings.HeatpumpSettings.MIN_NEEDED_ENERGY / 1000), 'A', self
                    )
              ]
         ]

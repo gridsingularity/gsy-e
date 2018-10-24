@@ -6,7 +6,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.strategy.predefined_pv import d3a_path
+from d3a.util import d3a_path
 import os
 
 

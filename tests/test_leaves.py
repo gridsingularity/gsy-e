@@ -15,7 +15,7 @@ def test_fridge_leaf():
 
 def test_fridge_leaf_default_risk():
     leaf = Fridge(name="fridge")
-    assert leaf.strategy.risk == ConstSettings.DEFAULT_RISK
+    assert leaf.strategy.risk == ConstSettings.GeneralSettings.DEFAULT_RISK
 
 
 def test_commercial_producer_leaf():
