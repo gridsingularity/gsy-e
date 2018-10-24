@@ -2,6 +2,8 @@ from random import random
 from typing import Union
 from collections import defaultdict
 from d3a.models.events import MarketEvent, AreaEvent
+from d3a.models.strategy.inter_area import InterAreaAgent, BalancingAgent
+from d3a.models.appliance.inter_area import InterAreaAppliance
 
 
 class AreaDispatcher:
@@ -75,3 +77,42 @@ class AreaDispatcher:
             self.area.strategy.event_listener(event_type, **kwargs)
         if self.area.appliance:
             self.area.appliance.event_listener(event_type, **kwargs)
+
+    def create_area_agents(self, is_spot_market, market):
+        if not self.area.parent:
+            return
+        if self.area.strategy:
+            return
+
+        if is_spot_market:
+            if market.time_slot in self.interarea_agents or \
+                    market.time_slot not in self.area.parent._markets.markets:
+                return
+            # Only connect an InterAreaAgent if we have a parent, a corresponding
+            # timeframe market exists in the parent and we have no strategy
+            iaa = InterAreaAgent(
+                owner=self.area,
+                higher_market=self.area.parent._markets.markets[market.time_slot],
+                lower_market=market,
+                transfer_fee_pct=self.area.config.iaa_fee
+            )
+            # Attach agent to own IAA list
+            self.interarea_agents[market.time_slot].append(iaa)
+            # And also to parents to allow events to flow form both markets
+            self.area.parent.dispatcher.interarea_agents[market.time_slot].append(iaa)
+        else:
+            if market.time_slot in self.balancing_agents or \
+                    market.time_slot not in self.area.parent._markets.balancing_markets:
+                return
+            ba = BalancingAgent(
+                owner=self.area,
+                higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
+                lower_market=market,
+                transfer_fee_pct=self.area.config.iaa_fee
+            )
+            self.balancing_agents[market.time_slot].append(ba)
+            self.area.parent.dispatcher.balancing_agents[market.time_slot].append(ba)
+
+        if self.area.parent:
+            # Add inter area appliance to report energy
+            self.area.appliance = InterAreaAppliance(self.area.parent, self.area)

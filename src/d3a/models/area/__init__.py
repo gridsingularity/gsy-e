@@ -130,7 +130,7 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_spot_markets(now, self.parent, self.dispatcher)
+        changed = self._markets.create_future_markets(now, True)
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self._markets.past_markets.keys()) == 0) and _trigger_event:
@@ -138,9 +138,7 @@ class Area:
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_balancing_markets(
-                self.now, self.parent, self.dispatcher
-            )
+            changed_balancing_market = self._markets.create_future_markets(now, False)
         else:
             changed_balancing_market = None
 

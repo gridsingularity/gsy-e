@@ -1,8 +1,5 @@
 from d3a.models.market import Market, BalancingMarket
-from d3a.models.appliance.inter_area import InterAreaAppliance
 from collections import OrderedDict
-# TODO remove IAA and BA from here to the dispatcher
-from d3a.models.strategy.inter_area import InterAreaAgent, BalancingAgent
 
 
 class AreaMarkets:
@@ -50,8 +47,10 @@ class AreaMarkets:
                 self._area.log.debug("Moving {t:%H:%M} {m} to past"
                                      .format(t=timeframe, m=past_markets[timeframe].area.name))
 
-    def _create_future_markets(self, current_time, markets, parent, parent_markets,
-                               area_agent, parent_area_agent, agent_class, market_class):
+    def create_future_markets(self, current_time, is_spot_market):
+        markets = self.markets if is_spot_market else self.balancing_markets
+        market_class = Market if is_spot_market else BalancingMarket
+
         changed = False
         for offset in (self._area.config.slot_length * i
                        for i in range(self._area.config.market_count)):
@@ -62,23 +61,8 @@ class AreaMarkets:
                     timeframe, self._area,
                     notification_listener=self._area.dispatcher.broadcast_callback
                 )
-                if market not in area_agent:
-                    if parent and timeframe in parent_markets and not self._area.strategy:
-                        # Only connect an InterAreaAgent if we have a parent, a corresponding
-                        # timeframe market exists in the parent and we have no strategy
-                        iaa = agent_class(
-                            owner=self._area,
-                            higher_market=parent_markets[timeframe],
-                            lower_market=market,
-                            transfer_fee_pct=self._area.config.iaa_fee
-                        )
-                        # Attach agent to own IAA list
-                        area_agent[timeframe].append(iaa)
-                        # And also to parents to allow events to flow form both markets
-                        parent_area_agent[timeframe].append(iaa)
-                        if parent:
-                            # Add inter area appliance to report energy
-                            self.appliance = InterAreaAppliance(parent, self._area)
+
+                self._area.dispatcher.create_area_agents(is_spot_market, market)
                 markets[timeframe] = market
                 changed = True
                 self._area.log.debug("Adding {t:{format}} market".format(
@@ -88,29 +72,3 @@ class AreaMarkets:
                     else "%H:%M:%S"
                 ))
         return changed
-
-    def create_spot_markets(self, now, parent, dispatcher):
-        return self._create_future_markets(
-            current_time=now, markets=self.markets,
-            parent=parent,
-            parent_markets=parent._markets.markets
-            if parent is not None else None,
-            area_agent=dispatcher.interarea_agents,
-            parent_area_agent=parent.dispatcher.interarea_agents
-            if parent is not None else None,
-            agent_class=InterAreaAgent,
-            market_class=Market
-        )
-
-    def create_balancing_markets(self, now, parent, dispatcher):
-        return self._create_future_markets(
-            current_time=now, markets=self.balancing_markets,
-            parent=parent,
-            parent_markets=parent._markets.balancing_markets
-            if parent is not None else None,
-            area_agent=dispatcher.balancing_agents,
-            parent_area_agent=parent.dispatcher.balancing_agents
-            if parent is not None else None,
-            agent_class=BalancingAgent,
-            market_class=BalancingMarket
-        )
