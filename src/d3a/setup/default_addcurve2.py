@@ -28,7 +28,7 @@ def get_setup(config):
             #         #      appliance=SwitchableAppliance()),
             #         # Area('H1 Storage1', strategy=StorageStrategy(battery_capacity_kWh=1.2,
             #         #                                              initial_charge=40,
-            #         #                                              max_abs_battery_power_W=1.2),
+            #         #                                              max_abs_battery_power_kW=1.2),
             #         #      appliance=SwitchableAppliance()),
             #
             #     ]

@@ -72,11 +72,11 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(risk=10, initial_capacity_kWh=0.6,
                                                                  break_even=break_even_profile,
-                                                                 max_abs_battery_power_W=5.0),
+                                                                 max_abs_battery_power_kW=5.0),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage2', strategy=StorageStrategy(risk=10, initial_capacity_kWh=0.6,
                                                                  break_even=break_even_profile_2,
-                                                                 max_abs_battery_power_W=5.0),
+                                                                 max_abs_battery_power_kW=5.0),
                          appliance=SwitchableAppliance()),
                 ]
             ),

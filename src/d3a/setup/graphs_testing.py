@@ -55,7 +55,7 @@ def get_setup(config):
                                  strategy=StorageStrategy(risk=10,
                                                           initial_capacity_kWh=0.6,
                                                           break_even=(26.99, 27.01),
-                                                          max_abs_battery_power_W=5.0),
+                                                          max_abs_battery_power_kW=5.0),
                                  appliance=SwitchableAppliance()),
                         ]
                     ),
@@ -66,7 +66,7 @@ def get_setup(config):
                                  strategy=StorageStrategy(risk=10,
                                                           initial_capacity_kWh=0.6,
                                                           break_even=(26.99, 27.01),
-                                                          max_abs_battery_power_W=5.0),
+                                                          max_abs_battery_power_kW=5.0),
                                  appliance=SwitchableAppliance()),
                             Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                                hrs_per_day=23,

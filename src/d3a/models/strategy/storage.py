@@ -20,7 +20,7 @@ BalancingSettings = ConstSettings.BalancingSettings
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
     parameters = ('risk', 'initial_capacity_kWh', 'initial_soc',
-                  'battery_capacity_kWh', 'max_abs_battery_power_W')
+                  'battery_capacity_kWh', 'max_abs_battery_power_kW')
 
     def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
                  initial_capacity_kWh: float=StorageSettings.MIN_ALLOWED_SOC *
@@ -31,7 +31,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  energy_rate_decrease_per_update:
                  float=GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
                  battery_capacity_kWh: float=StorageSettings.CAPACITY,
-                 max_abs_battery_power_W: float=StorageSettings.MAX_ABS_POWER,
+                 max_abs_battery_power_kW: float=StorageSettings.MAX_ABS_POWER,
                  break_even: Union[tuple, dict]=(StorageSettings.BREAK_EVEN_BUY,
                              StorageSettings.BREAK_EVEN_SELL),
                  balancing_energy_ratio: tuple=(BalancingSettings.OFFER_DEMAND_RATIO,
@@ -62,7 +62,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.state = StorageState(initial_capacity_kWh=initial_capacity_kWh,
                                   initial_soc=initial_soc,
                                   capacity=battery_capacity_kWh,
-                                  max_abs_battery_power_W=max_abs_battery_power_W,
+                                  max_abs_battery_power_kW=max_abs_battery_power_kW,
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.cap_price_strategy = cap_price_strategy

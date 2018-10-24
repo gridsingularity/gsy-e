@@ -36,7 +36,7 @@ def get_setup(config):
                     Area('H1 Storage',
                          strategy=StorageStrategy(initial_capacity_kWh=1.1,
                                                   battery_capacity_kWh=10,
-                                                  max_abs_battery_power_W=5,
+                                                  max_abs_battery_power_kW=5,
                                                   break_even=(
                                                     ConstSettings.StorageSettings.BREAK_EVEN_BUY,
                                                     ConstSettings.StorageSettings.BREAK_EVEN_SELL)

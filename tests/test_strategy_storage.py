@@ -154,7 +154,7 @@ def area_test1():
 
 @pytest.fixture()
 def storage_strategy_test1(area_test1, called):
-    s = StorageStrategy(max_abs_battery_power_W=2.01)
+    s = StorageStrategy(max_abs_battery_power_kW=2.01)
     s.owner = area_test1
     s.area = area_test1
     s.accept_offer = called
@@ -180,7 +180,7 @@ def area_test2():
 
 @pytest.fixture()
 def storage_strategy_test2(area_test2, called):
-    s = StorageStrategy(max_abs_battery_power_W=2.01)
+    s = StorageStrategy(max_abs_battery_power_kW=2.01)
     s.owner = area_test2
     s.area = area_test2
     s.accept_offer = called
@@ -220,7 +220,7 @@ def area_test3():
 
 @pytest.fixture()
 def storage_strategy_test3(area_test3, called):
-    s = StorageStrategy(max_abs_battery_power_W=2.01)
+    s = StorageStrategy(max_abs_battery_power_kW=2.01)
     s.owner = area_test3
     s.area = area_test3
     s.accept_offer = called
@@ -236,7 +236,7 @@ def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3)
 
 @pytest.fixture()
 def storage_strategy_test_buy_energy(area_test3, called):
-    s = StorageStrategy(max_abs_battery_power_W=20.01)
+    s = StorageStrategy(max_abs_battery_power_kW=20.01)
     s.owner = area_test3
     s.area = area_test3
     s.accept_offer = called
@@ -368,7 +368,7 @@ def area_test7():
 @pytest.fixture()
 def storage_strategy_test7(area_test7):
     s = StorageStrategy(initial_capacity_kWh=3.0, battery_capacity_kWh=3.01,
-                        max_abs_battery_power_W=5.21, initial_rate_option=2, break_even=(31, 32))
+                        max_abs_battery_power_kW=5.21, initial_rate_option=2, break_even=(31, 32))
     s.owner = area_test7
     s.area = area_test7
     return s
@@ -398,7 +398,7 @@ def test_calculate_initial_sell_energy_rate_lower_bound(storage_strategy_test7):
 @pytest.fixture()
 def storage_strategy_test7_1(area_test7):
     s = StorageStrategy(initial_capacity_kWh=3.0, battery_capacity_kWh=3.01,
-                        max_abs_battery_power_W=5.21, initial_rate_option=2, break_even=(26, 27))
+                        max_abs_battery_power_kW=5.21, initial_rate_option=2, break_even=(26, 27))
     s.owner = area_test7
     s.area = area_test7
     return s
@@ -415,7 +415,7 @@ def test_calculate_initial_sell_energy_rate_upper_bound(storage_strategy_test7_1
 @pytest.fixture()
 def storage_strategy_test7_2(area_test7):
     s = StorageStrategy(initial_capacity_kWh=3.0, battery_capacity_kWh=3.01,
-                        max_abs_battery_power_W=5.21, initial_rate_option=1, break_even=(16, 17))
+                        max_abs_battery_power_kW=5.21, initial_rate_option=1, break_even=(16, 17))
     s.owner = area_test7
     s.area = area_test7
     s.offers.posted = {Offer('id', 30, 1, 'FakeArea',
@@ -445,7 +445,7 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
 @pytest.fixture()
 def storage_strategy_test7_3(area_test7):
     s = StorageStrategy(initial_capacity_kWh=1.0, battery_capacity_kWh=5.01,
-                        max_abs_battery_power_W=5.21, initial_rate_option=1, break_even=(16, 17))
+                        max_abs_battery_power_kW=5.21, initial_rate_option=1, break_even=(16, 17))
     s.owner = area_test7
     s.area = area_test7
     s.offers.posted = {Offer('id', 30, 1, 'FakeArea',
@@ -497,7 +497,7 @@ def area_test8():
 @pytest.fixture()
 def storage_strategy_test8(area_test8):
     s = StorageStrategy(initial_capacity_kWh=100, battery_capacity_kWh=101,
-                        max_abs_battery_power_W=401)
+                        max_abs_battery_power_kW=401)
     s.owner = area_test8
     s.area = area_test8
     return s
@@ -601,7 +601,7 @@ def area_test11():
 @pytest.fixture()
 def storage_strategy_test11(area_test11, called):
     s = StorageStrategy(battery_capacity_kWh=100, initial_capacity_kWh=50,
-                        max_abs_battery_power_W=1)
+                        max_abs_battery_power_kW=1)
     s.owner = area_test11
     s.area = area_test11
     s.accept_offer = called
@@ -658,7 +658,7 @@ def market_test7():
 @pytest.fixture()
 def storage_strategy_test12(area_test12):
     s = StorageStrategy(battery_capacity_kWh=5, initial_capacity_kWh=2.5,
-                        max_abs_battery_power_W=5,
+                        max_abs_battery_power_kW=5,
                         break_even=(16.99, 17.01),
                         cap_price_strategy=True)
     s.owner = area_test12
@@ -694,7 +694,7 @@ def market_test13():
 @pytest.fixture()
 def storage_strategy_test13(area_test13, called):
     s = StorageStrategy(battery_capacity_kWh=5, initial_capacity_kWh=2.5,
-                        max_abs_battery_power_W=5, break_even=(34, 35.1))
+                        max_abs_battery_power_kW=5, break_even=(34, 35.1))
     s.owner = area_test13
     s.area = area_test13
     s.accept_offer = called

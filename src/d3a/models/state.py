@@ -59,7 +59,7 @@ class StorageState:
                  initial_capacity_kWh=StorageSettings.MIN_ALLOWED_SOC * StorageSettings.CAPACITY,
                  initial_soc=None,
                  capacity=StorageSettings.CAPACITY,
-                 max_abs_battery_power_W=StorageSettings.MAX_ABS_POWER,
+                 max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
                  loss_per_hour=0.01,
                  strategy=None):
 
@@ -73,7 +73,7 @@ class StorageState:
 
         self.capacity = capacity
         self.loss_per_hour = loss_per_hour
-        self.max_abs_battery_power_W = max_abs_battery_power_W
+        self.max_abs_battery_power_kW = max_abs_battery_power_kW
 
         # storage capacity, that is already sold:
         self.pledged_sell_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
@@ -120,7 +120,7 @@ class StorageState:
                                 + self.offered_buy_kWh[time_slot])
 
     def set_battery_energy_per_slot(self, slot_length):
-        self._battery_energy_per_slot = self.max_abs_battery_power_W * \
+        self._battery_energy_per_slot = self.max_abs_battery_power_kW * \
                                         (slot_length / duration(hours=1))
 
     def has_battery_reached_max_power(self, energy, time_slot):

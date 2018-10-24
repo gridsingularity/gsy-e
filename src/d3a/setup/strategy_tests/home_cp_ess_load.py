@@ -33,7 +33,7 @@ def get_setup(config):
                                                                  energy_rate_decrease_option=2,
                                                                  energy_rate_decrease_per_update=7,
                                                                  battery_capacity_kWh=1.2,
-                                                                 max_abs_battery_power_W=0.05,
+                                                                 max_abs_battery_power_kW=0.05,
                                                                  break_even=(16, 17.01)),
                          appliance=SwitchableAppliance()),
 

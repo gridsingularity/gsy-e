@@ -34,7 +34,7 @@ def get_setup(config):
                                                                  energy_rate_decrease_option=2,
                                                                  energy_rate_decrease_per_update=7,
                                                                  battery_capacity_kWh=1.2,
-                                                                 max_abs_battery_power_W=5,
+                                                                 max_abs_battery_power_kW=5,
                                                                  break_even=(12, 17.01)),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
