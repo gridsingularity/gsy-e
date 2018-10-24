@@ -22,7 +22,7 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage',
-                         strategy=StorageStrategy(initial_capacity=0.6,
+                         strategy=StorageStrategy(initial_capacity_kWh=0.6,
                                                   break_even=(
                                                     ConstSettings.StorageSettings.BREAK_EVEN_BUY,
                                                     ConstSettings.StorageSettings.BREAK_EVEN_SELL)

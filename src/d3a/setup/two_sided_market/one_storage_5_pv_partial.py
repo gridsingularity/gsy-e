@@ -34,9 +34,9 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage',
-                         strategy=StorageStrategy(initial_capacity=1.1,
-                                                  battery_capacity=10,
-                                                  max_abs_battery_power=5,
+                         strategy=StorageStrategy(initial_capacity_kWh=1.1,
+                                                  battery_capacity_kWh=10,
+                                                  max_abs_battery_power_W=5,
                                                   break_even=(
                                                     ConstSettings.StorageSettings.BREAK_EVEN_BUY,
                                                     ConstSettings.StorageSettings.BREAK_EVEN_SELL)

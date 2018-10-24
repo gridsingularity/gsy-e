@@ -30,9 +30,9 @@ def get_setup(config):
                                                                            range(0, 18)),
                                                                        max_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.6),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_capacity=0.6),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_capacity_kWh=0.6),
                          appliance=SwitchableAppliance()),
                 ]
             ),

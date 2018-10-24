@@ -2,7 +2,9 @@ from collections import defaultdict
 from pendulum import duration
 
 from d3a.models.strategy.const import ConstSettings
+from d3a import limit_float_precision
 
+StorageSettings = ConstSettings.StorageSettings
 
 # Complex device models should be split in three classes each:
 #
@@ -17,6 +19,7 @@ from d3a.models.strategy.const import ConstSettings
 #   cloud_cover in PVAppliance)
 # - If a device has no state, maybe it doesn't need its own appliance class either;
 #   SimpleAppliance may do.
+
 
 class PVState:
     def __init__(self):
@@ -53,20 +56,24 @@ class FridgeState:
 
 class StorageState:
     def __init__(self,
-                 initial_capacity=0.0,
+                 initial_capacity_kWh=StorageSettings.MIN_ALLOWED_SOC * StorageSettings.CAPACITY,
                  initial_soc=None,
-                 capacity=ConstSettings.StorageSettings.CAPACITY,
-                 max_abs_battery_power=ConstSettings.StorageSettings.MAX_ABS_POWER,
+                 capacity=StorageSettings.CAPACITY,
+                 max_abs_battery_power_W=StorageSettings.MAX_ABS_POWER,
                  loss_per_hour=0.01,
                  strategy=None):
+
         if initial_soc is not None:
-            if initial_capacity:
-                strategy.log.warning("Ignoring initial_capacity parameter since "
+            if initial_capacity_kWh:
+                strategy.log.warning("Ignoring initial_capacity_kWh parameter since "
                                      "initial_soc has also been given.")
-            initial_capacity = capacity * initial_soc / 100
+                initial_capacity_kWh = capacity * initial_soc / 100
+            else:
+                initial_capacity_kWh = StorageSettings.MIN_ALLOWED_SOC * capacity
+
         self.capacity = capacity
         self.loss_per_hour = loss_per_hour
-        self.max_abs_battery_power = max_abs_battery_power
+        self.max_abs_battery_power_W = max_abs_battery_power_W
 
         # storage capacity, that is already sold:
         self.pledged_sell_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
@@ -83,7 +90,7 @@ class StorageState:
         self.used_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
         self.energy_to_buy_dict = defaultdict(lambda: 0.)
 
-        self._used_storage = initial_capacity
+        self._used_storage = initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
 
     @property
@@ -113,7 +120,7 @@ class StorageState:
                                 + self.offered_buy_kWh[time_slot])
 
     def set_battery_energy_per_slot(self, slot_length):
-        self._battery_energy_per_slot = self.max_abs_battery_power * \
+        self._battery_energy_per_slot = self.max_abs_battery_power_W * \
                                         (slot_length / duration(hours=1))
 
     def has_battery_reached_max_power(self, energy, time_slot):
@@ -133,21 +140,17 @@ class StorageState:
         for time_slot in market_slot_time_list:
             accumulated_pledged += self.pledged_sell_kWh[time_slot]
             accumulated_offered += self.offered_sell_kWh[time_slot]
-        energy = round((self.used_storage - accumulated_pledged - accumulated_offered) /
-                       len(market_slot_time_list), 10)
 
+        energy = limit_float_precision((self.used_storage
+                                        - accumulated_pledged
+                                        - accumulated_offered
+                                        - StorageSettings.MIN_ALLOWED_SOC * self.capacity))
         storage_dict = {}
         for time_slot in market_slot_time_list:
-            clamped_energy = min(energy, self.max_offer_energy_kWh(time_slot),
-                                 self._battery_energy_per_slot)
-            target_soc = (self.used_storage - self.pledged_sell_kWh[time_slot] -
-                          self.offered_sell_kWh[time_slot] - clamped_energy) / self.capacity
-            if ConstSettings.StorageSettings.MIN_ALLOWED_SOC > target_soc:
-                clamped_energy = max(0, self.used_storage + self.pledged_sell_kWh[time_slot] -
-                                     self.offered_sell_kWh[time_slot] -
-                                     self.capacity * ConstSettings.StorageSettings.MIN_ALLOWED_SOC)
-
-            storage_dict[time_slot] = clamped_energy
+            storage_dict[time_slot] = min(
+                                        limit_float_precision(energy / len(market_slot_time_list)),
+                                        self.max_offer_energy_kWh(time_slot),
+                                        self._battery_energy_per_slot)
 
         return storage_dict
 
@@ -162,10 +165,10 @@ class StorageState:
         for time_slot in market_slot_time_list:
             accumulated_bought += self.pledged_buy_kWh[time_slot]
             accumulated_sought += self.offered_buy_kWh[time_slot]
-        energy = round((self.capacity
-                        - self.used_storage
-                        - accumulated_bought
-                        - accumulated_sought) / len(market_slot_time_list), 10)
+        energy = limit_float_precision((self.capacity
+                                        - self.used_storage
+                                        - accumulated_bought
+                                        - accumulated_sought) / len(market_slot_time_list))
 
         for time_slot in market_slot_time_list:
             clamped_energy = min(energy, self.max_buy_energy_kWh(time_slot),
@@ -178,11 +181,13 @@ class StorageState:
         Sanity check of the state variables.
         """
         charge = 100.0 * self.used_storage / self.capacity
-        assert 0 <= round(charge, 10) <= 100
-        assert 0 <= round(self.offered_sell_kWh[time_slot], 10) <= self.capacity
-        assert 0 <= round(self.pledged_sell_kWh[time_slot], 10) <= self.capacity
-        assert 0 <= round(self.pledged_buy_kWh[time_slot], 10) <= self.capacity
-        assert 0 <= round(self.offered_buy_kWh[time_slot], 10) <= self.capacity
+        max_value = self.capacity - ConstSettings.StorageSettings.MIN_ALLOWED_SOC * self.capacity
+
+        assert ConstSettings.StorageSettings.MIN_ALLOWED_SOC*100 <= round(charge, 4) <= 100
+        assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
+        assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
+        assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
+        assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value
 
     def lose(self, proportion):
         self._used_storage *= 1.0 - proportion
