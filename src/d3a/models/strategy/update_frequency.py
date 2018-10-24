@@ -39,7 +39,7 @@ class BidUpdateFrequencyMixin:
         if not all(bid.buyer != self.owner.name for bid in self.area.next_market.bids.values()):
             self.owner.log.warning(f"There is already another bid posted on the market, therefore"
                                    f" do not repost another first bid.")
-            return
+            return None
         return self.post_bid(
             market,
             energy_Wh * self._initial_rate_profile[market.time_slot_str] / 1000.0,
@@ -132,8 +132,8 @@ class OfferUpdateFrequencyMixin:
             try:
                 iterated_market.delete_offer(offer.id)
                 new_offer = iterated_market.offer(
-                    (offer.price - (offer.energy *
-                                    decrease_rate_per_tick)),
+                    round(offer.price - (offer.energy *
+                          decrease_rate_per_tick), 10),
                     offer.energy,
                     self.owner.name
                 )
@@ -158,8 +158,11 @@ class OfferUpdateFrequencyMixin:
 
     def update_market_cycle_offers(self, min_selling_rate):
         self.min_selling_rate = min_selling_rate
-        self._decrease_price_timepoint_s[self.area.next_market.time_slot] = \
-            self._decrease_price_every_nr_s
+        # increase energy rate for each market again, except for the newly created one
+        for market in list(self.area.markets.values()):
+            self._decrease_price_timepoint_s[market.time_slot] = self._decrease_price_every_nr_s
+        for market in list(self.area.markets.values())[:-1]:
+            self.reset_price_on_market_cycle(market)
 
     def reset_price_on_market_cycle(self, market):
         if market not in self.offers.open.values():

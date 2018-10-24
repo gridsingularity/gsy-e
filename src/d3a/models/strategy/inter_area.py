@@ -241,7 +241,8 @@ class IAAEngine:
                 )
             except OfferNotFoundException:
                 raise OfferNotFoundException()
-            self.owner.log.info("Offer accepted %s", trade_source)
+            self.owner.log.info(
+                f"[{self.markets.source.time_slot_str}] Offer accepted {trade_source}")
 
             if residual_info is not None:
                 # connect residual of the forwarded offer to that of the source offer

@@ -14,7 +14,6 @@ from d3a.models.appliance.switchable import SwitchableAppliance # NOQA
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.e_car import ECarStrategy  # NOQA
 from d3a.models.strategy.fridge import FridgeStrategy  # NOQA
-from d3a.models.strategy.greedy_night_storage import NightStorageStrategy  # NOQA
 from d3a.models.strategy.heatpump import HeatPumpStrategy  # NOQA
 from d3a.models.strategy.inter_area import InterAreaAgent  # NOQA
 from d3a.models.strategy.permanent import PermanentLoadStrategy  # NOQA
