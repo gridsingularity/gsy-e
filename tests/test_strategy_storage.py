@@ -24,7 +24,7 @@ DeviceRegistry.REGISTRY = {
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
 
-class FakeArea():
+class FakeArea:
     def __init__(self, count):
         self.appliance = None
         self.name = 'FakeArea'
@@ -37,6 +37,9 @@ class FakeArea():
         self.test_balancing_market = FakeMarket(1)
 
     log = getLogger(__name__)
+
+    def get_future_market_from_id(self, id):
+        return self.next_market
 
     @property
     def markets(self):
@@ -91,6 +94,7 @@ class FakeArea():
 class FakeMarket:
     def __init__(self, count):
         self.count = count
+        self.id = count
         self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'FakeArea', self),
                            'FakeArea', 'buyer'
                            )
@@ -99,6 +103,7 @@ class FakeMarket:
                        'id2': Offer('id2', 20, 0.5, 'A', self),
                        'id3': Offer('id3', 20, 1, 'A', self),
                        'id4': Offer('id4', 19, 5.1, 'A', self)}
+        self.bids = {}
         self.created_balancing_offers = []
 
     @property
@@ -343,7 +348,9 @@ def storage_strategy_test6(area_test6, market_test6, called):
 
 
 def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
-    storage_strategy_test6.event_trade(market=market_test6, trade=market_test6.trade)
+    storage_strategy_test6.area.get_future_market_from_id = \
+        lambda _id: market_test6 if _id == market_test6.id else None
+    storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
     assert market_test6.trade.offer in \
         storage_strategy_test6.offers.sold_in_market(market_test6)
     assert market_test6.trade.offer not in storage_strategy_test6.offers.open
@@ -692,7 +699,7 @@ def storage_strategy_test13(area_test13, called):
 
 
 def test_storage_event_trade(storage_strategy_test11, market_test13):
-    storage_strategy_test11.event_trade(market=market_test13, trade=market_test13.trade)
+    storage_strategy_test11.event_trade(market_id=market_test13.id, trade=market_test13.trade)
     assert storage_strategy_test11.state.pledged_sell_kWh[market_test13.time_slot] == \
         market_test13.trade.offer.energy
     assert storage_strategy_test11.state.offered_sell_kWh[
@@ -704,6 +711,7 @@ def test_balancing_offers_are_not_created_if_device_not_in_registry(
     DeviceRegistry.REGISTRY = {}
     storage_strategy_test13.event_activate()
     storage_strategy_test13.event_market_cycle()
+    storage_strategy_test13.event_balancing_market_cycle()
     assert len(area_test13.test_balancing_market.created_balancing_offers) == 0
 
 
@@ -712,8 +720,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     storage_strategy_test13.event_activate()
     storage_strategy_test13.event_market_cycle()
+    storage_strategy_test13.event_balancing_market_cycle()
     storage_slot_market = list(storage_strategy_test13.area.markets.values())[0]
-
     assert len(area_test13.test_balancing_market.created_balancing_offers) == 2
     actual_balancing_demand_energy = \
         area_test13.test_balancing_market.created_balancing_offers[0].energy

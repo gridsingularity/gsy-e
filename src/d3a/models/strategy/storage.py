@@ -108,16 +108,33 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             if self.cap_price_strategy is False:
                 self.decrease_energy_price_over_ticks(market)
 
-    def event_trade(self, *, market, trade):
-        super().event_trade(market=market, trade=trade)
+    def event_trade(self, *, market_id, trade):
+        market = self.area.get_future_market_from_id(market_id)
+        super().event_trade(market_id=market_id, trade=trade)
         if trade.offer.seller == self.owner.name:
             self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy
             self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
 
-    def event_bid_traded(self, *, market, bid_trade):
+    def event_bid_deleted(self, *, market_id, bid):
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            # Do not handle bid deletes on single sided markets
+            return
+        if market_id != self.area.next_market.id:
+            return
+        if bid.buyer != self.owner.name:
+            return
+        self.remove_bid_from_pending(bid.id, self.area.next_market)
+
+    def event_bid_traded(self, *, market_id, bid_trade):
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            # Do not handle bid trades on single sided markets
+            assert False and "Invalid state, cannot receive a bid if single sided market" \
+                             " is globally configured."
 
         if bid_trade.offer.buyer != self.owner.name:
             return
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
 
         buffered_bid = next(filter(
             lambda b: b.id == bid_trade.offer.id, self.get_posted_bids(market)
@@ -148,10 +165,11 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 self.post_first_bid(current_market, energy_kWh * 1000.0)
                 self.state.offered_buy_kWh[current_market.time_slot] += energy_kWh
 
-        # Balancing Offers
+    def event_balancing_market_cycle(self):
         if not self.is_eligible_for_balancing_market:
             return
 
+        current_market = self.area.next_market
         free_storage = self.state.free_storage(current_market.time_slot)
         if free_storage > 0:
             charge_energy = self.balancing_energy_ratio.demand * free_storage
