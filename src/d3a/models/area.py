@@ -289,7 +289,8 @@ class Area:
         # Force market cycle event in case this is the first market slot
         if (changed or len(self.past_markets.keys()) == 0) and _trigger_event:
             self._broadcast_notification(AreaEvent.MARKET_CYCLE)
-
+        if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            return
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
             changed_balancing_market = \
