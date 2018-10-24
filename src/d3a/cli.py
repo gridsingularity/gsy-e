@@ -64,7 +64,7 @@ _setup_modules = available_simulation_scenarios
               help="REST-API server listening interface")
 @click.option('-p', '--port', type=int, default=5000, show_default=True,
               help="REST-API server listening port")
-@click.option('--setup', 'setup_module_name', default="default",
+@click.option('--setup', 'setup_module_name', default="default_2a",
               help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
 @click.option('-g', '--settings_file', default=None,

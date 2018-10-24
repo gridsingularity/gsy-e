@@ -281,9 +281,10 @@ def run_d3a_with_settings_file(context):
     context.export_path = os.path.join(context.simdir, "default")
     os.makedirs(context.export_path, exist_ok=True)
     os.system("d3a -l FATAL run -g {settings_file} --export --export-path={export_path} "
-              "--exit-on-finish".format(export_path=context.export_path,
-                                        settings_file=os.path.join(
-                                            d3a_path, "setup", "d3a-settings.json")))
+              "--setup default_2a --exit-on-finish".format(export_path=context.export_path,
+                                                           settings_file=os.path.join(
+                                                               d3a_path, "setup",
+                                                               "d3a-settings.json")))
 
 
 @then('we test the export functionality of {scenario}')
