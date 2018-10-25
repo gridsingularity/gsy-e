@@ -17,9 +17,9 @@ from d3a.models.strategy.const import ConstSettings
 
 from d3a.device_registry import DeviceRegistry
 device_registry_dict = {
-    "A": {"balancing rates": (23, 25)},
-    "someone": {"balancing rates": (23, 25)},
-    "seller": {"balancing rates": (23, 25)},
+    "A": {"balancing rates": (33, 35)},
+    "someone": {"balancing rates": (33, 35)},
+    "seller": {"balancing rates": (33, 35)},
 }
 
 

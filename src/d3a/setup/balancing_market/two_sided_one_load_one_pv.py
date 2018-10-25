@@ -8,7 +8,7 @@ from d3a.device_registry import DeviceRegistry
 
 
 device_registry_dict = {
-    "H1 General Load": (22, 25),
+    "H1 General Load": (32, 35),
 }
 
 
