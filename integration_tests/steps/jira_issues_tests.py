@@ -34,7 +34,7 @@ def same_seller_buyer_name_check(context):
     trades = [
         trade
         for area in areas
-        for slot, market in area.past_markets
+        for market in area.past_markets
         for trade in market.trades
     ]
 
@@ -94,9 +94,9 @@ def check_matching_trades(context):
 
     for market in grid.all_markets:
         timeslot = market.time_slot
-        assert house1.get_markets(timeslot)
-        grid_trades = grid.get_markets(timeslot).trades
-        house_trades = house1.get_markets(timeslot).trades
+        assert house1.get_market(timeslot)
+        grid_trades = grid.get_market(timeslot).trades
+        house_trades = house1.get_market(timeslot).trades
         assert len(grid_trades) == len(house_trades)
         assert all(
             any(t.offer.energy == th.offer.energy and t.buyer == th.seller for th in house_trades)

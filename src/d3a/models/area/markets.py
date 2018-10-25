@@ -22,7 +22,7 @@ class AreaMarkets:
 
     @property
     def all_spot_markets(self):
-        return self.spot_markets.extend(self.past_spot_markets)
+        return self.spot_markets + self.past_spot_markets
 
     def rotate_markets(self, current_time, stats):
         # Move old and current markets & balancing_markets to
