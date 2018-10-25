@@ -26,5 +26,6 @@ class SimpleAppliance(BaseAppliance):
         if energy:
             self.area.stats.report_accounting(
                 self.area.current_market,
-                self.owner.name, energy
+                self.owner.name, energy,
+                self.area.now
             )

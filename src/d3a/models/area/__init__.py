@@ -66,9 +66,9 @@ class Area:
             self.budget_keeper.area = self
         self._bc = None  # type: BlockChainInterface
         # TODO: Remove all self references from dependent classes
-        self.stats = AreaStats(self)
-        self.dispatcher = AreaDispatcher(self)
         self._markets = AreaMarkets(self)
+        self.stats = AreaStats(self._markets)
+        self.dispatcher = AreaDispatcher(self)
 
     def activate(self, bc=None):
         if bc:

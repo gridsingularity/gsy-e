@@ -12,6 +12,18 @@ class AreaMarkets:
         self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
 
+    @property
+    def spot_markets(self):
+        return list(self.markets.values())
+
+    @property
+    def past_spot_markets(self):
+        return list(self.past_markets.values())
+
+    @property
+    def all_spot_markets(self):
+        return self.spot_markets.extend(self.past_spot_markets)
+
     def rotate_markets(self, current_time, stats):
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
@@ -23,7 +35,7 @@ class AreaMarkets:
             self._market_rotation(current_time=current_time, markets=self.balancing_markets,
                                   past_markets=self.past_balancing_markets,
                                   area_agent=self._area.dispatcher.balancing_agents)
-        stats.update_accumulated(self.past_markets)
+        stats.update_accumulated()
 
     @property
     def market_with_most_expensive_offer(self):
