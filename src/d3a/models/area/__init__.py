@@ -218,6 +218,25 @@ class Area:
         return list(self._markets.markets.values())
 
     @property
+    def past_markets(self):
+        return list(self._markets.past_markets.values())
+
+    @property
+    def balancing_markets(self):
+        return list(self._markets.balancing_markets.values())
+
+    @property
+    def past_balancing_markets(self):
+        return list(self._markets.past_balancing_markets.values())
+
+    @property
+    def market_with_most_expensive_offer(self):
+        # In case of a tie, max returns the first market occurrence in order to
+        # satisfy the most recent market slot
+        return max(self.all_markets,
+                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
+
+    @property
     def next_market(self):
         """Returns the 'current' market (i.e. the one currently 'running')"""
         try:
@@ -245,14 +264,6 @@ class Area:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:
             return None
-
-    @property
-    def past_balancing_markets(self):
-        return list(self._markets.past_balancing_markets.values())
-
-    @property
-    def past_markets(self):
-        return list(self._markets.past_markets.values())
 
     @cached_property
     def available_triggers(self):

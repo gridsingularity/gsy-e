@@ -17,9 +17,9 @@ def _calculate_stats_for_single_device(hour_data, area, current_slot):
         desired_energy_Wh = area.strategy.energy
     else:
         return hour_data
-    traded_energy_kWh = area.parent.past_markets[current_slot].traded_energy[area.name] \
-        if (current_slot in area.parent.past_markets) and \
-           (area.name in area.parent.past_markets[current_slot].traded_energy) \
+    selected_market = next(m for m in area.parent.past_markets if m.time_slot == current_slot)
+    traded_energy_kWh = selected_market.traded_energy[area.name] \
+        if selected_market is not None and (area.name in selected_market.traded_energy) \
         else 0.0
     # Different sign conventions, hence the +
     deficit = desired_energy_Wh + traded_energy_kWh * 1000.0

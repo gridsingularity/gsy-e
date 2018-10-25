@@ -37,13 +37,6 @@ class AreaMarkets:
                                   area_agent=self._area.dispatcher.balancing_agents)
         stats.update_accumulated()
 
-    @property
-    def market_with_most_expensive_offer(self):
-        # In case of a tie, max returns the first market occurrence in order to
-        # satisfy the most recent market slot
-        return max(self.markets.values(),
-                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
-
     def _market_rotation(self, current_time, markets, past_markets, area_agent):
         first = True
         for timeframe in list(markets.keys()):

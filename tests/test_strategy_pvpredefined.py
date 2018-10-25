@@ -47,8 +47,8 @@ class FakeArea():
         return 30
 
     @property
-    def markets(self):
-        return {TIME: self.test_market}
+    def all_markets(self):
+        return [self.test_market]
 
 
 class FakeMarket:
