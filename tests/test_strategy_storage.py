@@ -41,6 +41,9 @@ class FakeArea:
     def get_future_market_from_id(self, id):
         return self.next_market
 
+    def get_balancing_market(self, time):
+        return self.test_balancing_market
+
     @property
     def last_past_market(self):
         return self.past_market

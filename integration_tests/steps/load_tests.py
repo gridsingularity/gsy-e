@@ -28,11 +28,11 @@ def check_traded_energy_rate(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: "H1 DefinedLoad" in x.name, house.children))
 
-    for slot, market in house.past_markets.items():
+    for market in house.past_markets:
         for trade in market.trades:
             if trade.buyer == load.name:
                 assert (trade.offer.price / trade.offer.energy) < \
-                       load.strategy.max_energy_rate[slot.strftime(TIME_FORMAT)]
+                       load.strategy.max_energy_rate[market.time_slot.strftime(TIME_FORMAT)]
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')
@@ -41,7 +41,8 @@ def check_user_pv_dict_profile(context):
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house.children))
     from d3a.setup.strategy_tests.user_profile_load_dict import user_profile
 
-    for slot, market in house.past_markets.items():
+    for market in house.past_markets:
+        slot = market.time_slot
         if slot.hour in user_profile.keys():
             assert load.strategy.state.desired_energy_Wh[slot] == user_profile[slot.hour] / \
                    (duration(hours=1) / house.config.slot_length)
@@ -72,7 +73,7 @@ def check_min_user_rate_profile_dict(context):
     load1 = next(filter(lambda x: x.name == "H1 General Load 1", house.children))
     load2 = next(filter(lambda x: x.name == "H1 General Load 2", house.children))
 
-    for slot, market in house.past_markets.items():
+    for market in house.past_markets:
         assert len(market.trades) > 0
         for trade in market.trades:
             if trade.buyer == load1.name:

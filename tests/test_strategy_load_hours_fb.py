@@ -70,6 +70,9 @@ class FakeArea:
     def balancing_markets(self):
         return {self._next_market.time_slot: self.test_balancing_market}
 
+    def get_balancing_market(self, time):
+        return self.test_balancing_market
+
     @property
     def next_market(self):
         return self._next_market

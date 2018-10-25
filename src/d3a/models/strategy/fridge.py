@@ -27,7 +27,7 @@ class FridgeStrategy(BaseStrategy):
         return self.state.temperature
 
     def event_activate(self):
-        self.open_spot_markets = list(self.area.markets.values())
+        self.open_spot_markets = self.area.all_markets
 
     def event_tick(self, *, area):
         self.state.tick(self.area)
@@ -40,7 +40,7 @@ class FridgeStrategy(BaseStrategy):
         # Assuming a linear correlation between accepted price and risk
         median_risk = ConstSettings.GeneralSettings.MAX_RISK / 2
         # The threshold buying price depends on historical market data
-        min_historical_price, max_historical_price = self.area.historical_min_max_price
+        min_historical_price, max_historical_price = self.area.stats.historical_min_max_price
         average_market_price = self.area.historical_avg_rate
 
         # deviation_from_average is the value that determines the deviation (in percentage of
@@ -147,4 +147,4 @@ class FridgeStrategy(BaseStrategy):
         # (AKA the most recent of the past markets) don't update the fridge state
         if self.area.current_market is not None:
             self.state.market_cycle(self.area)
-        self.open_spot_markets = list(self.area.markets.values())
+        self.open_spot_markets = self.area.all_markets

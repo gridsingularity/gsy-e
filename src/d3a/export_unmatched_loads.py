@@ -17,7 +17,7 @@ def _calculate_stats_for_single_device(hour_data, area, current_slot):
         desired_energy_Wh = area.strategy.energy
     else:
         return hour_data
-    selected_market = next(m for m in area.parent.past_markets if m.time_slot == current_slot)
+    selected_market = area.parent.get_past_market(current_slot)
     traded_energy_kWh = selected_market.traded_energy[area.name] \
         if selected_market is not None and (area.name in selected_market.traded_energy) \
         else 0.0

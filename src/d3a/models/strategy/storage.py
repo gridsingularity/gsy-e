@@ -176,17 +176,17 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
             if charge_energy != 0 and charge_price != 0:
                 # committing to start charging when required
-                self.area.balancing_markets[self.area.now].balancing_offer(charge_price,
-                                                                           -charge_energy,
-                                                                           self.owner.name)
+                self.area.get_balancing_market(self.area.now).balancing_offer(charge_price,
+                                                                              -charge_energy,
+                                                                              self.owner.name)
         if self.state.used_storage > 0:
             discharge_energy = self.balancing_energy_ratio.supply * self.state.used_storage
             discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
             # committing to start discharging when required
             if discharge_energy != 0 and discharge_price != 0:
-                self.area.balancing_markets[self.area.now].balancing_offer(discharge_price,
-                                                                           discharge_energy,
-                                                                           self.owner.name)
+                self.area.get_balancing_market(self.area.now).balancing_offer(discharge_price,
+                                                                              discharge_energy,
+                                                                              self.owner.name)
 
     def buy_energy(self, market):
         max_affordable_offer_rate = self.break_even[market.time_slot_str][0]
@@ -233,7 +233,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             # Sell on the most expensive market
             try:
                 max_rate = 0.0
-                most_expensive_market = list(self.area.markets.values())[0]
+                most_expensive_market = self.area.all_markets[0]
                 for market in self.area.markets.values():
                     if len(market.sorted_offers) > 0 and \
                        market.sorted_offers[0].price / market.sorted_offers[0].energy > max_rate:

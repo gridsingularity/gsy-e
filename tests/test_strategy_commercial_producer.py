@@ -21,12 +21,12 @@ class FakeArea:
         return self.test_market
 
     @property
-    def markets(self):
-        return {"now": self.test_market}
+    def all_markets(self):
+        return [self.test_market]
 
     @property
     def balancing_markets(self):
-        return {"now": self.test_balancing_market, "now+1": self.test_balancing_market_2}
+        return [self.test_balancing_market, self.test_balancing_market_2]
 
     @property
     def config(self):

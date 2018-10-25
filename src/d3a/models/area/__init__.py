@@ -221,6 +221,15 @@ class Area:
     def past_markets(self):
         return list(self._markets.past_markets.values())
 
+    def get_market(self, timeslot):
+        return self._markets.markets[timeslot]
+
+    def get_past_market(self, timeslot):
+        return self._markets.past_markets[timeslot]
+
+    def get_balancing_market(self, timeslot):
+        return self._markets.balancing_markets[timeslot]
+
     @property
     def balancing_markets(self):
         return list(self._markets.balancing_markets.values())

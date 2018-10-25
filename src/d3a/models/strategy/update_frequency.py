@@ -52,7 +52,7 @@ class BidUpdateFrequencyMixin:
         self._increase_rate_timepoint_s = self._increase_frequency_s
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         # decrease energy rate for each market again, except for the newly created one
-        for market in list(self.area.markets.values())[:-1]:
+        for market in self.area.all_markets[:-1]:
             self._update_posted_bids(market, current_tick_number)
 
     def _update_posted_bids(self, market, current_tick_number):
