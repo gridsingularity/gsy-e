@@ -65,8 +65,7 @@ class Area:
         if budget_keeper:
             self.budget_keeper.area = self
         self._bc = None  # type: BlockChainInterface
-        # TODO: Remove all self references from dependent classes
-        self._markets = AreaMarkets(self)
+        self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
         self.dispatcher = AreaDispatcher(self)
 
@@ -124,13 +123,13 @@ class Area:
             ((time_in_hour // self.config.slot_length) * self.config.slot_length)
 
         self.log.info("Cycling markets")
-        self._markets.rotate_markets(now, self.stats)
+        self._markets.rotate_markets(now, self.stats, self.dispatcher)
 
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now, True)
+        changed = self._markets.create_future_markets(now, True, self)
 
         # Force market cycle event in case this is the first market slot
         if (changed or len(self._markets.past_markets.keys()) == 0) and _trigger_event:
@@ -141,7 +140,7 @@ class Area:
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(now, False)
+            changed_balancing_market = self._markets.create_future_markets(now, False, self)
         else:
             changed_balancing_market = None
 
