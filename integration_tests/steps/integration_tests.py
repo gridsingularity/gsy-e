@@ -108,8 +108,8 @@ def pv_profile_scenario(context):
                     {
                         "name": "H2 Storage",
                         "type": "Storage",
-                        "initial_capacity": 5,
-                        "battery_capacity": 12.5,
+                        "initial_capacity_kWh": 5,
+                        "battery_capacity_kWh": 12.5,
                     },
                     {
                         "name": "H2 Fridge 1",
@@ -161,8 +161,8 @@ def load_profile_scenario(context):
             {
               "name": "H2 Storage",
               "type": "Storage",
-              "initial_capacity": 5,
-              "battery_capacity": 12.5,
+              "initial_capacity_kWh": 5,
+              "battery_capacity_kWh": 12.5,
             },
             {
               "name": "H2 Fridge 1",

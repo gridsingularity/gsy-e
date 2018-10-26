@@ -13,31 +13,34 @@ from d3a.device_registry import DeviceRegistry
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
+StorageSettings = ConstSettings.StorageSettings
+GeneralSettings = ConstSettings.GeneralSettings
+BalancingSettings = ConstSettings.BalancingSettings
+
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
-    parameters = ('risk', 'initial_capacity', 'initial_soc',
-                  'battery_capacity', 'max_abs_battery_power')
+    parameters = ('risk', 'initial_capacity_kWh', 'initial_soc',
+                  'battery_capacity_kWh', 'max_abs_battery_power_kW')
 
-    def __init__(self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
-                 initial_capacity: float=0.0,
+    def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
+                 initial_capacity_kWh: float=StorageSettings.MIN_ALLOWED_SOC *
+                                             StorageSettings.CAPACITY,
                  initial_soc: float=None,
-                 initial_rate_option: int=ConstSettings.StorageSettings.INITIAL_RATE_OPTION,
-                 energy_rate_decrease_option:
-                 int=ConstSettings.StorageSettings.RATE_DECREASE_OPTION,
+                 initial_rate_option: int=StorageSettings.INITIAL_RATE_OPTION,
+                 energy_rate_decrease_option: int=StorageSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update:
-                 float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
-                 battery_capacity: float=ConstSettings.StorageSettings.CAPACITY,
-                 max_abs_battery_power: float=ConstSettings.StorageSettings.MAX_ABS_POWER,
-                 break_even: Union[tuple, dict]=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                             ConstSettings.StorageSettings.BREAK_EVEN_SELL),
-                 balancing_energy_ratio:
-                 tuple=(ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                        ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
+                 float=GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
+                 battery_capacity_kWh: float=StorageSettings.CAPACITY,
+                 max_abs_battery_power_kW: float=StorageSettings.MAX_ABS_POWER,
+                 break_even: Union[tuple, dict]=(StorageSettings.BREAK_EVEN_BUY,
+                             StorageSettings.BREAK_EVEN_SELL),
+                 balancing_energy_ratio: tuple=(BalancingSettings.OFFER_DEMAND_RATIO,
+                                                BalancingSettings.OFFER_SUPPLY_RATIO),
 
                  cap_price_strategy: bool=False):
         break_even = read_arbitrary_profile(InputProfileTypes.RATE, break_even)
-        self._validate_constructor_arguments(risk, initial_capacity,
-                                             initial_soc, battery_capacity, break_even)
+        self._validate_constructor_arguments(risk, initial_capacity_kWh,
+                                             initial_soc, battery_capacity_kWh, break_even)
         self.break_even = break_even
 
         self.min_selling_rate = list(break_even.values())[0][1]
@@ -48,7 +51,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
             InputProfileTypes.RATE,
-            ConstSettings.StorageSettings.MIN_BUYING_RATE
+            StorageSettings.MIN_BUYING_RATE
         )
         self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
         BidUpdateFrequencyMixin.__init__(self,
@@ -56,10 +59,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                          final_rate_profile=self.max_buying_rate_profile)
 
         self.risk = risk
-        self.state = StorageState(initial_capacity=initial_capacity,
+        self.state = StorageState(initial_capacity_kWh=initial_capacity_kWh,
                                   initial_soc=initial_soc,
-                                  capacity=battery_capacity,
-                                  max_abs_battery_power=max_abs_battery_power,
+                                  capacity=battery_capacity_kWh,
+                                  max_abs_battery_power_kW=max_abs_battery_power_kW,
                                   loss_per_hour=0.0,
                                   strategy=self)
         self.cap_price_strategy = cap_price_strategy
@@ -71,17 +74,19 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.update_on_activate()
 
     @staticmethod
-    def _validate_constructor_arguments(risk, initial_capacity, initial_soc,
-                                        battery_capacity, break_even):
-        if battery_capacity < 0:
+    def _validate_constructor_arguments(risk, initial_capacity_kWh, initial_soc,
+                                        battery_capacity_kWh, break_even):
+        if battery_capacity_kWh < 0:
             raise ValueError("Battery capacity should be a positive integer")
-        if initial_soc and not 0 <= initial_soc <= 100:
-            raise ValueError("Initial charge is a percentage value, should be between 0 and 100.")
+        if initial_soc and not StorageSettings.MIN_ALLOWED_SOC <= initial_soc <= 100:
+            raise ValueError("Initial charge is a percentage value, should be between "
+                             "MIN_ALLOWED_SOC and 100.")
         if not 0 <= risk <= 100:
             raise ValueError("Risk is a percentage value, should be between 0 and 100.")
-        if initial_capacity and not 0 <= initial_capacity <= battery_capacity:
+        if initial_capacity_kWh and not StorageSettings.MIN_ALLOWED_SOC * battery_capacity_kWh \
+           <= initial_capacity_kWh <= battery_capacity_kWh:
             raise ValueError("Initial capacity should be between 0 and "
-                             "battery_capacity parameter.")
+                             "battery_capacity_kWh parameter.")
         if any(be[1] <= be[0] for _, be in break_even.items()):
             raise ValueError("Break even point for sell energy is lower than buy energy.")
         if any(break_even_point[0] < 0 or break_even_point[1] < 0
@@ -219,7 +224,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             energy = energy_sell_dict[market.time_slot]
             if not self.state.has_battery_reached_max_power(-energy, market.time_slot):
                 if energy > 0.0:
-
                     offer = market.offer(
                         energy * selling_rate,
                         energy,
@@ -229,7 +233,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                     self.state.offered_sell_kWh[market.time_slot] += offer.energy
 
     def select_market_to_sell(self):
-        if ConstSettings.StorageSettings.SELL_ON_MOST_EXPENSIVE_MARKET:
+        if StorageSettings.SELL_ON_MOST_EXPENSIVE_MARKET:
             # Sell on the most expensive market
             try:
                 max_rate = 0.0
