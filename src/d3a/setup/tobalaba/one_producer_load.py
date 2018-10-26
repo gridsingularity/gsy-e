@@ -5,9 +5,11 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.permanent import PermanentLoadStrategy
 # from d3a.models.appliance.pv import PVAppliance
 # from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.const import ConstSettings
 
 
 def get_setup(config):
+    ConstSettings.BlockchainSettings.START_LOCAL_CHAIN = 3
     area = Area(
         'Grid',
         [

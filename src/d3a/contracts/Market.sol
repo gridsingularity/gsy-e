@@ -136,11 +136,10 @@ contract Market is Mortal {
                 tradedOffer.seller = 0;
                 success = true;
             } else {
-                emit NewTrade(offerId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, true);
+                emit NewTrade(offerId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, false);
             }
         } else {
-            emit NewTrade(offerId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, true);
-            success = true;
+            success = false;
         }
     }
 

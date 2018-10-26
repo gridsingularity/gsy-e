@@ -9,6 +9,7 @@ from time import sleep
 
 from d3a.util import get_cached_joined_contract_source
 from d3a.models.strategy.const import ConstSettings
+from d3a.util import wait_until_timeout_blocking
 
 
 log = getLogger(__name__)
@@ -49,11 +50,28 @@ class BCUsers:
 
 class BlockChainInterface:
     def __init__(self, default_user_balance=10 ** 8):
-        if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
+        if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN == 2:
+            print("Ganache")
             self._ganache_process = Popen(['ganache-cli', '-a', '50', '-e', '10000000000'],
                                           close_fds=False, stdout=DEVNULL, stderr=DEVNULL)
+        elif ConstSettings.BlockchainSettings.START_LOCAL_CHAIN == 3:
+            print("Tobalaba")
+            self._ganache_process = \
+                Popen(['parity', '--chain', 'tobalaba', '--jsonrpc-apis=all',
+                       '--jsonrpc-cors=all'],
+                      close_fds=False, stdout=DEVNULL, stderr=DEVNULL)
         sleep(2)
         self.chain = Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
+
+        def get_peers():
+            return self.chain.net.peerCount
+
+        assert wait_until_timeout_blocking(get_peers, timeout=20)
+
+        # while self.chain.net.peerCount > 1:
+        #     sleep(2)
+        #     print("Waiting for peers")
+        print("Peers: " + str(self.chain.net.peerCount))
         self.contracts = {}  # type: Dict[str, Contract]
         self.users = BCUsers(self.chain, self.contracts, default_user_balance)
         self.listeners = defaultdict(list)  # type: Dict[str, List[callable]]

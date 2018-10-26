@@ -1,4 +1,5 @@
-import time
+# import time
+from d3a.util import wait_until_timeout_blocking
 
 
 BC_NUM_FACTOR = 10 ** 10
@@ -85,15 +86,6 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
 
     assert wait_until_timeout_blocking(get_offer, timeout=20)
     return offer_id
-
-
-def wait_until_timeout_blocking(functor, timeout=10):
-    current_time = 0
-    polling_period = 0.01
-    while not functor() and current_time < timeout:
-        time.sleep(polling_period)
-        current_time += polling_period
-    return functor()
 
 
 def cancel_offer(bc_interface, bc_contract, offer_id, seller):
