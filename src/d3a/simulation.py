@@ -64,6 +64,7 @@ class Simulation:
         self.api_url = api_url
         self.setup_module_name = setup_module_name
         self.use_bc = use_bc
+        print("BC status: " + str(self.use_bc))
         self.is_stopped = False
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id)

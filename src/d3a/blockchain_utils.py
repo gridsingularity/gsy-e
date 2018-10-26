@@ -1,5 +1,5 @@
 # import time
-from d3a.util import wait_until_timeout_blocking
+from d3a import wait_until_timeout_blocking
 
 
 BC_NUM_FACTOR = 10 ** 10
@@ -82,6 +82,7 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     # return offer_id
 
     def get_offer():
+        print("Waiting for offers")
         return bc_contract.functions.getOffer(offer_id).call() is not 0
 
     assert wait_until_timeout_blocking(get_offer, timeout=20)

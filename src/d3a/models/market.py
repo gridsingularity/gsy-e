@@ -160,8 +160,10 @@ class Market:
                                    [self._bc_listener]) \
             if self.area and self.area.bc \
             else None
-        from time import sleep
-        sleep(5)
+        # from time import sleep
+        # sleep(5)
+        print("MarketBc Status: " + str(self.bc_contract))
+
         self.device_registry = DeviceRegistry.REGISTRY
 
     def add_listener(self, listener):
@@ -202,8 +204,8 @@ class Market:
             if self.bc_contract \
             else str(uuid.uuid4())
 
-        from time import sleep
-        sleep(10)
+        # from time import sleep
+        # sleep(10)
 
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer

@@ -9,7 +9,7 @@ from time import sleep
 
 from d3a.util import get_cached_joined_contract_source
 from d3a.models.strategy.const import ConstSettings
-from d3a.util import wait_until_timeout_blocking
+from d3a import wait_until_timeout_blocking
 
 
 log = getLogger(__name__)
@@ -64,6 +64,7 @@ class BlockChainInterface:
         self.chain = Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
 
         def get_peers():
+            print("Getting peers")
             return self.chain.net.peerCount
 
         assert wait_until_timeout_blocking(get_peers, timeout=20)

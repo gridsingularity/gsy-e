@@ -1,4 +1,5 @@
 import os
+import time
 
 import d3a
 
@@ -19,3 +20,13 @@ def limit_float_precision(number):
 
 def get_project_root():
     return os.path.dirname(d3a.__file__)
+
+
+def wait_until_timeout_blocking(functor, timeout=10):
+    print("wait_until_timeout_blocking")
+    current_time = 0
+    polling_period = 0.01
+    while not functor() and current_time < timeout:
+        time.sleep(polling_period)
+        current_time += polling_period
+    return functor()
