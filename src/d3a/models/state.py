@@ -57,7 +57,7 @@ class FridgeState:
 
 class StorageState:
     def __init__(self,
-                 initial_capacity_kWh=StorageSettings.MIN_ALLOWED_SOC * StorageSettings.CAPACITY,
+                 initial_capacity_kWh=None,
                  initial_soc=None,
                  capacity=StorageSettings.CAPACITY,
                  max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
