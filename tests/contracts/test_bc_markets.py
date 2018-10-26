@@ -84,8 +84,6 @@ def base_state_contract(_bc):
 
 def test_approver(base_state_contract, _bc):
     clearing_contract, clearing_address, market_contract, market_address = base_state_contract
-    print(clearing_contract.functions.getApprover().call())
-    print(_bc.eth.accounts[0])
     assert clearing_contract.functions.getApprover().call() == _bc.eth.accounts[0]
 
 

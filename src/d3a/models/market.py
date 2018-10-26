@@ -153,16 +153,12 @@ class Market:
         self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
-        # print(f'CONTRACT {self.area.name} {self.time_slot}')
         self.bc_contract = \
             create_market_contract(self.area.bc,
                                    self.area.config.duration.in_seconds(),
                                    [self._bc_listener]) \
             if self.area and self.area.bc \
             else None
-        # from time import sleep
-        # sleep(5)
-        print("MarketBc Status: " + str(self.bc_contract))
 
         self.device_registry = DeviceRegistry.REGISTRY
 
@@ -203,9 +199,6 @@ class Market:
         offer_id = create_new_offer(self.area.bc, self.bc_contract, energy, price, seller) \
             if self.bc_contract \
             else str(uuid.uuid4())
-
-        # from time import sleep
-        # sleep(10)
 
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
@@ -385,8 +378,6 @@ class Market:
 
             if residual_offer is not None:
                 if new_offer_id is None:
-                    print(trade_id)
-                    print(new_offer_id)
                     raise InvalidTrade("Blockchain and local residual offers are out of sync")
                 residual_offer.id = str(new_offer_id)
                 residual_offer.real_id = new_offer_id

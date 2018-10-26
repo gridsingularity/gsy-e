@@ -12,6 +12,4 @@ def test_validate_all_setup_scenarios_are_available():
                 module_name = os.path.join(path, name[:-3]).\
                     replace(root_path, '').replace("/", ".")
                 file_list.append(module_name)
-    print(set(file_list))
-    print(set(available_simulation_scenarios))
     assert set(file_list) == set(available_simulation_scenarios)

@@ -7,9 +7,8 @@ from web3.contract import Contract
 from subprocess import Popen, DEVNULL
 from time import sleep
 
-from d3a.util import get_cached_joined_contract_source
+from d3a.util import get_cached_joined_contract_source, wait_until_timeout_blocking
 from d3a.models.strategy.const import ConstSettings
-from d3a import wait_until_timeout_blocking
 from d3a.blockchain_utils import unlock_account
 
 
@@ -27,9 +26,7 @@ class BCUsers:
         self._default_balance = default_balance
 
     def __getitem__(self, username_or_addr):
-        # from web3 import Web3, HTTPProvider
-        # web3 = Web3(HTTPProvider("http://127.0.0.1:8545", request_kwargs={'timeout': 600}))
-        self._chain.personal.unlockAccount(self._chain.eth.accounts[0], 'testgsy')
+        unlock_account(self._chain, self._chain.eth.accounts[0])
 
         user = self._users.get(username_or_addr)
         if not user:
@@ -52,20 +49,20 @@ class BCUsers:
 class BlockChainInterface:
     def __init__(self, default_user_balance=10 ** 8):
         if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
-            print("Ganache")
             self._ganache_process = Popen(['ganache-cli', '-a', '50', '-e', '10000000000'],
                                           close_fds=False, stdout=DEVNULL, stderr=DEVNULL)
             self.chain = Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
-            print("Chain: " + str(self.chain))
+            log.info("Launching Ganache Blockchain")
 
         else:
             self.chain = Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
+            log.info("Connected to Remote Blockchain")
 
             def get_peers():
-                print("Getting peers")
                 return self.chain.net.peerCount
 
             assert wait_until_timeout_blocking(get_peers, timeout=20)
+            log.info("Number of Peers: '%s'", self.chain.net.peerCount)
 
         self.contracts = {}  # type: Dict[str, Contract]
         self.users = BCUsers(self.chain, self.contracts, default_user_balance)
@@ -76,15 +73,11 @@ class BlockChainInterface:
 
         log.debug("Initializing contract '%s'", contract_name)
         compiled_sol = compile_source(get_cached_joined_contract_source(contract_filename))
-        # print("compiled_sol: " + str(compiled_sol))
         contract_interface = compiled_sol['<stdin>:' + contract_name]
-        # print("contract_interface: " + str(contract_interface))
 
         contract = self.chain.eth.contract(abi=contract_interface['abi'],
                                            bytecode=contract_interface['bin'])
-        print("contract: " + str(contract))
-        print(f'filename {contract_name} {contract_filename}')
-        unlock_account(self, self.chain.eth.accounts[0])
+        unlock_account(self.chain, self.chain.eth.accounts[0])
         tx_hash = contract.constructor(*args).transact({'from': self.chain.eth.accounts[0]})
         contract_address = self.chain.eth.waitForTransactionReceipt(tx_hash).contractAddress
         sleep(1)
