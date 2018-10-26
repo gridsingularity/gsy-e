@@ -1,6 +1,7 @@
 from collections import defaultdict
 from pendulum import duration
 
+from math import isclose
 from d3a.models.strategy.const import ConstSettings
 from d3a import limit_float_precision
 
@@ -67,9 +68,7 @@ class StorageState:
             if initial_capacity_kWh:
                 strategy.log.warning("Ignoring initial_capacity_kWh parameter since "
                                      "initial_soc has also been given.")
-                initial_capacity_kWh = capacity * initial_soc / 100
-            else:
-                initial_capacity_kWh = StorageSettings.MIN_ALLOWED_SOC * capacity
+            initial_capacity_kWh = capacity * initial_soc / 100
 
         self.capacity = capacity
         self.loss_per_hour = loss_per_hour
@@ -141,16 +140,16 @@ class StorageState:
             accumulated_pledged += self.pledged_sell_kWh[time_slot]
             accumulated_offered += self.offered_sell_kWh[time_slot]
 
-        energy = limit_float_precision((self.used_storage
-                                        - accumulated_pledged
-                                        - accumulated_offered
-                                        - StorageSettings.MIN_ALLOWED_SOC * self.capacity))
+        energy = self.used_storage \
+            - accumulated_pledged \
+            - accumulated_offered \
+            - StorageSettings.MIN_ALLOWED_SOC * self.capacity
         storage_dict = {}
         for time_slot in market_slot_time_list:
-            storage_dict[time_slot] = min(
-                                        limit_float_precision(energy / len(market_slot_time_list)),
-                                        self.max_offer_energy_kWh(time_slot),
-                                        self._battery_energy_per_slot)
+            storage_dict[time_slot] = limit_float_precision(min(
+                                                            energy / len(market_slot_time_list),
+                                                            self.max_offer_energy_kWh(time_slot),
+                                                            self._battery_energy_per_slot))
 
         return storage_dict
 
@@ -171,8 +170,8 @@ class StorageState:
                                         - accumulated_sought) / len(market_slot_time_list))
 
         for time_slot in market_slot_time_list:
-            clamped_energy = min(energy, self.max_buy_energy_kWh(time_slot),
-                                 self._battery_energy_per_slot)
+            clamped_energy = limit_float_precision(
+                min(energy, self.max_buy_energy_kWh(time_slot), self._battery_energy_per_slot))
 
             self.energy_to_buy_dict[time_slot] = clamped_energy
 
@@ -180,10 +179,11 @@ class StorageState:
         """
         Sanity check of the state variables.
         """
-        charge = 100.0 * self.used_storage / self.capacity
+        charge = limit_float_precision(self.used_storage / self.capacity)
         max_value = self.capacity - ConstSettings.StorageSettings.MIN_ALLOWED_SOC * self.capacity
 
-        assert ConstSettings.StorageSettings.MIN_ALLOWED_SOC*100 <= round(charge, 4) <= 100
+        assert ConstSettings.StorageSettings.MIN_ALLOWED_SOC < charge or \
+            isclose(ConstSettings.StorageSettings.MIN_ALLOWED_SOC, charge, rel_tol=1e-06)
         assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
