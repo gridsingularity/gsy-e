@@ -142,18 +142,34 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         for market in self.active_markets:
-            self._demand_balancing_offer(market)
             if ConstSettings.IAASettings.MARKET_TYPE == 2:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
-                    self.post_first_bid(market, self.energy_requirement_Wh[market.time_slot])
+                    if self.is_eligible_for_balancing_market:
+                        bid_energy = \
+                            self.energy_requirement_Wh[market.time_slot] - \
+                            self.balancing_energy_ratio.demand * \
+                            self.state.desired_energy_Wh[market.time_slot]
+                    else:
+                        bid_energy = self.energy_requirement_Wh[market.time_slot]
+                    self.post_first_bid(market, bid_energy)
                 self.update_market_cycle_bids()
 
-    def event_bid_deleted(self, *, market, bid):
+    def event_balancing_market_cycle(self):
+        for market in self.active_markets:
+            self._demand_balancing_offer(market)
+
+    def event_bid_deleted(self, *, market_id, bid):
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
+
         if bid.buyer != self.owner.name:
             return
         self.remove_bid_from_pending(bid.id, market)
 
-    def event_bid_traded(self, *, market, bid_trade):
+    def event_bid_traded(self, *, market_id, bid_trade):
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
+
         if bid_trade.buyer != self.owner.name:
             return
 
@@ -170,13 +186,16 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 self.remove_bid_from_pending(bid_trade.offer.id, market)
             assert self.energy_requirement_Wh[market.time_slot] >= -0.00001
 
-        super().event_bid_traded(market=market, bid_trade=bid_trade)
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
-    def event_trade(self, *, market, trade):
+    def event_trade(self, *, market_id, trade):
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
+
         if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
             # Load can only put supply_balancing_offers only when there is a trade in spot_market
             self._supply_balancing_offer(market, trade)
-        super().event_trade(market=market, trade=trade)
+        super().event_trade(market_id=market_id, trade=trade)
 
     # committing to increase its consumption when required
     def _demand_balancing_offer(self, market):

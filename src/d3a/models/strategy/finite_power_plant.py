@@ -39,7 +39,7 @@ class FinitePowerPlant(CommercialStrategy):
             return
         super().event_activate()
 
-    def event_trade(self, *, market, trade):
+    def event_trade(self, *, market_id, trade):
         # Disable offering more energy than the initial offer, in order to adhere to the max
         # available power.
         pass
