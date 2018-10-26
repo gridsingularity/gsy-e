@@ -23,7 +23,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                   'battery_capacity_kWh', 'max_abs_battery_power_kW')
 
     def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
-                 initial_capacity_kWh: float=StorageSettings.MIN_ALLOWED_SOC *
+                 initial_capacity_kWh: float=None
                                              StorageSettings.CAPACITY,
                  initial_soc: float=None,
                  initial_rate_option: int=StorageSettings.INITIAL_RATE_OPTION,

@@ -13,8 +13,8 @@ from d3a.models.strategy.const import ConstSettings
 device_registry_dict = {
     "H1 General Load": (33, 35),
     "H2 General Load": (33, 35),
-    "H1 Storage1": (23, 25),
-    "H1 Storage2": (23, 25),
+    "H1 Storage1": (33, 35),
+    "H1 Storage2": (33, 35),
 }
 
 
