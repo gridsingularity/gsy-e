@@ -8,11 +8,11 @@ class AreaStats:
     def update_accumulated(self):
         self._accumulated_past_price = sum(
             market.accumulated_trade_price
-            for market in self._markets.past_spot_markets
+            for market in self._markets.past_markets.values()
         )
         self._accumulated_past_energy = sum(
             market.accumulated_trade_energy
-            for market in self._markets.past_spot_markets
+            for market in self._markets.past_markets.values()
         )
 
     @property
@@ -33,11 +33,11 @@ class AreaStats:
     def historical_avg_rate(self):
         price = sum(
             market.accumulated_trade_price
-            for market in self._markets.spot_markets
+            for market in self._markets.markets.values()
         ) + self._accumulated_past_price
         energy = sum(
             market.accumulated_trade_energy
-            for market in self._markets.spot_markets
+            for market in self._markets.markets.values()
         ) + self._accumulated_past_energy
         return price / energy if energy else 0
 
@@ -65,6 +65,6 @@ class AreaStats:
     @property
     def cheapest_offers(self):
         cheapest_offers = []
-        for market in self._markets.spot_markets:
+        for market in self._markets.markets.values():
             cheapest_offers.extend(market.sorted_offers[0:1])
         return cheapest_offers

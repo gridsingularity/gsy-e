@@ -13,16 +13,8 @@ class AreaMarkets:
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
 
     @property
-    def spot_markets(self):
-        return list(self.markets.values())
-
-    @property
-    def past_spot_markets(self):
-        return list(self.past_markets.values())
-
-    @property
     def all_spot_markets(self):
-        return self.spot_markets + self.past_spot_markets
+        return list(self.markets.values()) + list(self.past_markets.values())
 
     def rotate_markets(self, current_time, stats):
         # Move old and current markets & balancing_markets to
