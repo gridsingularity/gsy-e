@@ -1,6 +1,3 @@
-from enum import Enum
-
-
 class ConstSettings:
 
     class GeneralSettings:
@@ -98,13 +95,8 @@ class ConstSettings:
         MARKET_TYPE = 1
 
     class BlockchainSettings:
-        class MarketOption(Enum):
-            PYTHON_BASED = 1
-            GANACHE_BLOCKCHAIN = 2
-            TOBALABA_BLOCKCHAIN = 3
-
         URL = "http://127.0.0.1:8545"
-        START_LOCAL_CHAIN = MarketOption.PYTHON_BASED
+        START_LOCAL_CHAIN = True
 
     class BalancingSettings:
         ENABLE_BALANCING_MARKET = False

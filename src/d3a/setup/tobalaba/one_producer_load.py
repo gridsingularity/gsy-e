@@ -9,7 +9,7 @@ from d3a.models.strategy.const import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.BlockchainSettings.START_LOCAL_CHAIN = 3
+    ConstSettings.BlockchainSettings.START_LOCAL_CHAIN = False
     area = Area(
         'Grid',
         [

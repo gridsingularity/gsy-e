@@ -1,5 +1,6 @@
 # import time
 from d3a import wait_until_timeout_blocking
+from d3a.models.strategy.const import ConstSettings
 
 
 BC_NUM_FACTOR = 10 ** 10
@@ -14,6 +15,9 @@ class InvalidBlockchainTrade(Exception):
 
 
 def _wait_for_node_synchronization(bc_interface):
+    if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
+        return
+
     node_status = bc_interface.chain.eth.syncing
     while not node_status:
         node_status = bc_interface.chain.eth.syncing
@@ -41,8 +45,7 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
     )
     clearing_contract_instance = bc_interface.contracts['ClearingToken']
     market_address = contract.address
-
-    bc_interface.chain.personal.unlockAccount(bc_interface.chain.eth.accounts[0], 'testgsy')
+    unlock_account(bc_interface, bc_interface.chain.eth.accounts[0])
     tx_hash = clearing_contract_instance.functions\
         .globallyApprove(market_address, 10 ** 18)\
         .transact({'from': bc_interface.chain.eth.accounts[0]})
@@ -59,13 +62,14 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
 
 
 def create_new_offer(bc_interface, bc_contract, energy, price, seller):
-    print(bc_interface.chain.personal.unlockAccount(bc_interface.users[seller].address, 'testgsy'))
+    unlock_account(bc_interface, bc_interface.users[seller].address)
     print("Address: " + str(bc_interface.users[seller].address))
     bc_energy = int(energy * BC_NUM_FACTOR)
     print("Offered Energy: " + str(bc_energy))
     tx_hash = bc_contract.functions.offer(
         bc_energy,
         int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
+
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash, timeout=200)
     _wait_for_node_synchronization(bc_interface)
     offer_id = bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
@@ -90,7 +94,7 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
 
 
 def cancel_offer(bc_interface, bc_contract, offer_id, seller):
-    bc_interface.chain.personal.unlockAccount(bc_interface.users[seller].address, 'testgsy')
+    unlock_account(bc_interface, bc_interface.users[seller].address)
     bc_interface.chain.eth.waitForTransactionReceipt(
         bc_contract.functions.cancel(offer_id).transact(
             {"from": bc_interface.users[seller].address}
@@ -99,7 +103,7 @@ def cancel_offer(bc_interface, bc_contract, offer_id, seller):
 
 
 def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
-    bc_interface.chain.personal.unlockAccount(bc_interface.users[buyer].address, 'testgsy')
+    unlock_account(bc_interface, bc_interface.users[buyer].address)
     print("Balance: " + str(bc_interface.chain.eth.getBalance(bc_interface.users[buyer].address)))
     print("Buyer: " + str(buyer))
     print("Trade id: " + str(offer_id))
@@ -110,7 +114,9 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     print(f'Trade seller {bc_interface.users[buyer].address}')
     tx_hash = bc_contract.functions.trade(offer_id, trade_energy).\
         transact({"from": bc_interface.users[buyer].address})
-    print("tx_hash: " + str(tx_hash))
+    tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
+
+    print("tx_hash_trade: " + str(tx_hash_hex))
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     print("tx_receipt: " + str(tx_receipt))
     _wait_for_node_synchronization(bc_interface)
@@ -136,3 +142,8 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
         if len(offer_changed_retval) > 0 \
         else None
     return trade_id, new_offer_id
+
+
+def unlock_account(bc_interface, address):
+    if not ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
+        bc_interface.chain.personal.unlockAccount(address, 'testgsy')
