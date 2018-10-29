@@ -25,7 +25,7 @@ def get_setup(config):
                                                              'resources', 'LOAD_DATA_1.csv'),
                              max_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity=0.4),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.4),
                          appliance=SwitchableAppliance()),
 
                 ]

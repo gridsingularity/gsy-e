@@ -20,12 +20,12 @@ def get_setup(config):
                 [
 
                     Area('H1 Storage1', strategy=StorageStrategy(
-                                                                 initial_capacity=2,
+                                                                 initial_capacity_kWh=2,
                                                                  initial_rate_option=2,
                                                                  energy_rate_decrease_option=2,
                                                                  energy_rate_decrease_per_update=3,
-                                                                 battery_capacity=5,
-                                                                 max_abs_battery_power=5,
+                                                                 battery_capacity_kWh=5,
+                                                                 max_abs_battery_power_kW=5,
                                                                  break_even=(16.99, 17.01)),
                          appliance=SwitchableAppliance()),
                 ]

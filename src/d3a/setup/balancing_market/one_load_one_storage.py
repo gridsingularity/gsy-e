@@ -32,8 +32,8 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    Area('H2 Storage', strategy=StorageStrategy(initial_capacity=49.0,
-                                                                battery_capacity=50.0),
+                    Area('H2 Storage', strategy=StorageStrategy(initial_capacity_kWh=49.0,
+                                                                battery_capacity_kWh=50.0),
                          appliance=SwitchableAppliance()),
                 ]
             ),

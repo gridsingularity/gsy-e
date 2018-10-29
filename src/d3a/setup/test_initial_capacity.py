@@ -11,7 +11,7 @@ def get_setup(config):
         [
             Area('Fridge', strategy=FridgeStrategy(), appliance=FridgeAppliance()),
             Area('Storage',
-                 strategy=StorageStrategy(initial_capacity=5.0),
+                 strategy=StorageStrategy(initial_capacity_kWh=5.0),
                  appliance=SimpleAppliance())
         ],
         config=config
