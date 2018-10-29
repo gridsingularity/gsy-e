@@ -12,16 +12,16 @@ class ECarStrategy(StorageStrategy):
                 help="E-Car departs and stops participating in market"),
     ]
 
-    parameters = ('risk', 'arrival_time', 'depart_time', 'initial_capacity',
-                  'initial_charge', 'battery_capacity')
+    parameters = ('risk', 'arrival_time', 'depart_time', 'initial_capacity_kWh',
+                  'initial_charge', 'battery_capacity_kWh')
 
-    def __init__(self, risk=ConstSettings.GeneralSettings.DEFAULT_RISK, initial_capacity=0.0,
+    def __init__(self, risk=ConstSettings.GeneralSettings.DEFAULT_RISK, initial_capacity_kWh=0.0,
                  initial_charge=None,
                  initial_rate_option=ConstSettings.StorageSettings.INITIAL_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.StorageSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
                  ENERGY_RATE_DECREASE_PER_UPDATE,
-                 battery_capacity=ConstSettings.StorageSettings.CAPACITY,
+                 battery_capacity_kWh=ConstSettings.StorageSettings.CAPACITY,
                  arrival_time=ConstSettings.EcarSettings.ARRIVAL_TIME,
                  depart_time=ConstSettings.EcarSettings.DEPART_TIME):
         if arrival_time is None:
@@ -32,9 +32,9 @@ class ECarStrategy(StorageStrategy):
             raise ValueError("Depart_time and arrival_time should be between 0 and 23.")
         if not arrival_time < depart_time:
             raise ValueError("Arrival time should be less than depart time.")
-        super().__init__(risk, initial_capacity, initial_charge,
+        super().__init__(risk, initial_capacity_kWh, initial_charge,
                          initial_rate_option, energy_rate_decrease_option,
-                         energy_rate_decrease_per_update, battery_capacity)
+                         energy_rate_decrease_per_update, battery_capacity_kWh)
         self.arrival_time = arrival_time
         self.depart_time = depart_time
         self.connected_to_grid = False

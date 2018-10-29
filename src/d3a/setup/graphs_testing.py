@@ -51,20 +51,22 @@ def get_setup(config):
                     Area(
                         'House 3',
                         [
-                            Area('H3 Storage', strategy=StorageStrategy(risk=10,
-                                                                        initial_capacity=0.6,
-                                                                        break_even=(26.99, 27.01),
-                                                                        max_abs_battery_power=5.0),
+                            Area('H3 Storage',
+                                 strategy=StorageStrategy(risk=10,
+                                                          initial_capacity_kWh=0.6,
+                                                          break_even=(26.99, 27.01),
+                                                          max_abs_battery_power_kW=5.0),
                                  appliance=SwitchableAppliance()),
                         ]
                     ),
                     Area(
                         'House 4',
                         [
-                            Area('H4 Storage', strategy=StorageStrategy(risk=10,
-                                                                        initial_capacity=0.6,
-                                                                        break_even=(26.99, 27.01),
-                                                                        max_abs_battery_power=5.0),
+                            Area('H4 Storage',
+                                 strategy=StorageStrategy(risk=10,
+                                                          initial_capacity_kWh=0.6,
+                                                          break_even=(26.99, 27.01),
+                                                          max_abs_battery_power_kW=5.0),
                                  appliance=SwitchableAppliance()),
                             Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                                hrs_per_day=23,

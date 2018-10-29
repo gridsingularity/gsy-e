@@ -20,7 +20,7 @@ def get_setup(config):
                  strategy=PVStrategy(6, 80),
                  appliance=PVAppliance()),
             Area('H2 Storage',
-                 strategy=StorageStrategy(initial_capacity=60),
+                 strategy=StorageStrategy(initial_capacity_kWh=60),
                  appliance=SimpleAppliance())
         ]) for i in range(1, 1000)],
          Area('Commercial Energy Producer',
