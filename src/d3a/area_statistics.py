@@ -346,7 +346,7 @@ def export_cumulative_grid_balancing_trades(area):
     return {
         "unit": "kWh",
         "areas": sorted(accumulated_trades.keys()),
-        "cumulative-grid-trades": [
+        "cumulative-grid-balancing-trades": [
             # Append first produced energy for all areas
             _generate_produced_energy_entries(accumulated_trades),
             # Then self consumption energy for all areas
