@@ -1,4 +1,4 @@
-# import time
+import time
 from d3a.util import wait_until_timeout_blocking
 from d3a.models.strategy.const import ConstSettings
 from logging import getLogger
@@ -48,6 +48,7 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
         .globallyApprove(market_address, 10 ** 18)\
         .transact({'from': bc_interface.chain.eth.accounts[0]})
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
+    time.sleep(0.5)
     approve_retval = clearing_contract_instance.events\
         .ApproveClearingMember()\
         .processReceipt(tx_receipt)
@@ -66,7 +67,7 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
         bc_energy,
         int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
     tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
-    log.info("tx_hash of New Offer '%s'", tx_hash_hex)
+    log.info(f"tx_hash of New Offer {tx_hash_hex}")
 
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash, timeout=200)
     _wait_for_node_synchronization(bc_interface)
@@ -94,7 +95,7 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     tx_hash = bc_contract.functions.trade(offer_id, trade_energy).\
         transact({"from": bc_interface.users[buyer].address})
     tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
-    log.info("tx_hash of Trade '%s'", tx_hash_hex)
+    log.info(f"tx_hash of Trade {tx_hash_hex}")
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     _wait_for_node_synchronization(bc_interface)
 
@@ -124,4 +125,4 @@ def unlock_account(chain, address):
     if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
         return
     else:
-        chain.personal.unlockAccount(address, 'testgsy')
+        chain.personal.unlockAccount(address, ConstSettings.BlockchainSettings.ACCOUNT_PASSWORD)

@@ -5,7 +5,7 @@ import "ClearingToken.sol";
 contract Market is Mortal {
 
     // holds the offerId -> Offer() mapping
-    mapping (bytes32 => Offer) public offers;
+    mapping (bytes32 => Offer) private offers;
 
     // Nonce counter to ensure unique offer ids
     uint private offerNonce = 0;
@@ -101,6 +101,7 @@ contract Market is Mortal {
         tradedOffer.energyUnits > 0 &&
         tradedOffer.seller != address(0) &&
         msg.sender != tradedOffer.seller &&
+//        "Needs to be uncommented once network latency issue is solved"
 //        block.timestamp-marketStartTime < interval &&
         tradedEnergyUnits > 0 &&
         tradedEnergyUnits <= tradedOffer.energyUnits

@@ -62,7 +62,7 @@ class BlockChainInterface:
                 return self.chain.net.peerCount
 
             assert wait_until_timeout_blocking(get_peers, timeout=20)
-            log.info("Number of Peers: '%s'", self.chain.net.peerCount)
+            log.info(f"Number of Peers: {self.chain.net.peerCount}")
 
         self.contracts = {}  # type: Dict[str, Contract]
         self.users = BCUsers(self.chain, self.contracts, default_user_balance)
@@ -80,12 +80,13 @@ class BlockChainInterface:
         unlock_account(self.chain, self.chain.eth.accounts[0])
         tx_hash = contract.constructor(*args).transact({'from': self.chain.eth.accounts[0]})
         contract_address = self.chain.eth.waitForTransactionReceipt(tx_hash).contractAddress
-        sleep(1)
+        sleep(0.5)
         contract = self.chain.eth.contract(address=contract_address,
                                            abi=contract_interface['abi'],
                                            ContractFactoryClass=Contract)
-
-        sleep(5)
+        sleep(0.5)
+        log.info(f"Token Contract Address: {contract_address}")
+        log.info(f"Token Contract ABI: {contract_interface['abi']}")
         self.contracts[contract.address] = contract
         if id_:
             self.contracts[id_] = contract
