@@ -344,12 +344,41 @@ def _api_app(simulation: Simulation):
     def cumulative_grid_trades():
         return simulation.endpoint_buffer.cumulative_grid_trades
 
+    @app.route("/cumulative-grid-balancing-trades", methods=['GET'])
+    @lock_flask_endpoint
+    def cumulative_grid_balancing_trades():
+        return simulation.endpoint_buffer.cumulative_grid_balancing_trades
+
     @app.route("/<area_slug>/tree-summary")
     def tree_summary(area_slug):
         return simulation.endpoint_buffer.tree_summary[area_slug]
 
     @app.route("/<area_slug>/bills")
     def bills(area_slug):
+        area = _get_area(area_slug)
+
+        def slot_query_param(name):
+            if name in request.args:
+                try:
+                    return pendulum.parse(request.args[name])
+                except pendulum.parsing.exceptions.ParserError:
+                    area.log.error(
+                        'Could not parse timestamp %s, using default for bill computation' %
+                        request.args[name])
+            return None
+
+        from_slot = slot_query_param('from')
+        to_slot = slot_query_param('to')
+        result = energy_bills(area, from_slot, to_slot)
+        result = OrderedDict(sorted(result.items()))
+        if from_slot:
+            result['from'] = str(from_slot)
+        if to_slot:
+            result['to'] = str(to_slot)
+        return result
+
+    @app.route("/<area_slug>/balancing_energy_bills")
+    def balancing_energy_bills(area_slug):
         area = _get_area(area_slug)
 
         def slot_query_param(name):

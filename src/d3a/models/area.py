@@ -72,7 +72,7 @@ class Area:
             self.budget_keeper.area = self
         # Children trade in `markets`
         self.markets = OrderedDict()  # type: Dict[DateTime, Market]
-        self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
+        self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMar
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]

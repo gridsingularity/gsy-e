@@ -1,5 +1,5 @@
-from d3a.area_statistics import export_cumulative_grid_trades, export_cumulative_loads, \
-    export_price_energy_day
+from d3a.area_statistics import export_cumulative_grid_trades, \
+    export_cumulative_grid_balancing_trades, export_cumulative_loads, export_price_energy_day
 from d3a.export_unmatched_loads import export_unmatched_loads
 from d3a.stats import energy_bills
 from d3a.util import make_iaa_name
@@ -26,6 +26,7 @@ class SimulationEndpointBuffer:
         self.cumulative_loads = {}
         self.price_energy_day = {}
         self.cumulative_grid_trades = {}
+        self.cumulative_grid_balancing_trades = {}
         self.tree_summary = {}
         self.bills = {}
         self.results = {}
@@ -41,6 +42,7 @@ class SimulationEndpointBuffer:
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day,
             "cumulative_grid_trades": self.cumulative_grid_trades,
+            "cumulative_grid_balancing_trades": self.cumulative_grid_balancing_trades,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status
@@ -60,6 +62,7 @@ class SimulationEndpointBuffer:
             "price-energy-day": export_price_energy_day(area)
         }
         self.cumulative_grid_trades = export_cumulative_grid_trades(area)
+        self.cumulative_grid_balancing_trades = export_cumulative_grid_balancing_trades(area)
         self._update_bills(area)
         self._update_tree_summary(area)
         # Disabling buffering these expensive endpoints for now, since the UI does not use them
