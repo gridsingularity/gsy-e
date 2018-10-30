@@ -76,7 +76,7 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     def get_offer():
         return bc_contract.functions.getOffer(offer_id).call() is not 0
 
-    assert wait_until_timeout_blocking(get_offer, timeout=20)
+    wait_until_timeout_blocking(get_offer, timeout=20)
     return offer_id
 
 

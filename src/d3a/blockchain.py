@@ -58,10 +58,7 @@ class BlockChainInterface:
             self.chain = Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
             log.info("Connected to Remote Blockchain")
 
-            def get_peers():
-                return self.chain.net.peerCount
-
-            assert wait_until_timeout_blocking(get_peers, timeout=20)
+            wait_until_timeout_blocking(lambda: self.chain.net.peerCount > 0, timeout=20)
             log.info(f"Number of Peers: {self.chain.net.peerCount}")
 
         self.contracts = {}  # type: Dict[str, Contract]
