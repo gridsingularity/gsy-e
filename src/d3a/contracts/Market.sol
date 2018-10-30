@@ -52,7 +52,7 @@ contract Market is Mortal {
      * @param energyUnits the units of energy offered generally in KWh.
      * @param price the price of each unit.
      */
-    function offer(uint energyUnits, int price) public returns (bytes32 offerId) {
+    function offer(uint energyUnits, int price) public {
         (
         bool success,
         bytes32 id) = _offer(energyUnits, price, msg.sender);
