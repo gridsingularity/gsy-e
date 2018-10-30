@@ -67,8 +67,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
     @property
     def active_markets(self):
         markets = []
-        for time, market in self.area.markets.items():
-            if self._allowed_operating_hours(time):
+        for market in self.area.all_markets:
+            if self._allowed_operating_hours(market.time_slot):
                 markets.append(market)
         return markets
 
@@ -208,7 +208,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         self.energy_requirement_Wh[market.time_slot] -= ramp_up_energy
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
-            self.area.balancing_markets[market.time_slot]. \
+            self.area.get_balancing_market(market.time_slot). \
                 balancing_offer(ramp_up_price,
                                 -ramp_up_energy,
                                 self.owner.name)
@@ -221,9 +221,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             return
         ramp_down_energy = self.balancing_energy_ratio.supply * trade.offer.energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy
-        self.area.balancing_markets[market.time_slot].balancing_offer(ramp_down_price,
-                                                                      ramp_down_energy,
-                                                                      self.owner.name)
+        self.area.get_balancing_market(market.time_slot).balancing_offer(ramp_down_price,
+                                                                         ramp_down_energy,
+                                                                         self.owner.name)
 
 
 class CellTowerLoadHoursStrategy(LoadHoursStrategy):

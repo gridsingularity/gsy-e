@@ -17,9 +17,9 @@ def _calculate_stats_for_single_device(hour_data, area, current_slot):
         desired_energy_Wh = area.strategy.energy
     else:
         return hour_data
-    traded_energy_kWh = area.parent.past_markets[current_slot].traded_energy[area.name] \
-        if (current_slot in area.parent.past_markets) and \
-           (area.name in area.parent.past_markets[current_slot].traded_energy) \
+    selected_market = area.parent.get_past_market(current_slot)
+    traded_energy_kWh = selected_market.traded_energy[area.name] \
+        if selected_market is not None and (area.name in selected_market.traded_energy) \
         else 0.0
     # Different sign conventions, hence the +
     deficit = desired_energy_Wh + traded_energy_kWh * 1000.0
@@ -68,7 +68,8 @@ def _accumulate_device_stats_to_area_stats(per_hour_device_data):
 def _calculate_area_stats(area):
     per_hour_device_data = {}
     # Iterate first through all the available market slots of the area
-    for current_slot, market in area.parent.past_markets.items():
+    for market in area.parent.past_markets:
+        current_slot = market.time_slot
         hour_data = per_hour_device_data.get(current_slot.hour, {"devices": {}})
         # Update hour data for the area, by accumulating slots in one hour
         per_hour_device_data[current_slot.hour] = \

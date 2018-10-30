@@ -42,6 +42,10 @@ class FakeArea:
         return self._next_market
 
     @property
+    def all_markets(self):
+        return list(self.markets.values())
+
+    @property
     def config(self):
         return DEFAULT_CONFIG
 
@@ -65,6 +69,9 @@ class FakeArea:
     @property
     def balancing_markets(self):
         return {self._next_market.time_slot: self.test_balancing_market}
+
+    def get_balancing_market(self, time):
+        return self.test_balancing_market
 
     @property
     def next_market(self):
@@ -246,7 +253,7 @@ def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
 def test_active_markets(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
     assert load_hours_strategy_test1.active_markets == \
-        [list(load_hours_strategy_test1.area.markets.values())[0]]
+        load_hours_strategy_test1.area.all_markets
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):

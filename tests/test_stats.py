@@ -24,6 +24,7 @@ class FakeArea:
 class FakeMarket:
     def __init__(self, trades):
         self.trades = trades
+        self.time_slot = 15
 
 
 class FakeOffer:
@@ -89,20 +90,20 @@ def grid():
     return FakeArea('grid', children=[
         FakeArea('house1',
                  children=[FakeArea('fridge'), FakeArea('pv')],
-                 past_markets={1: FakeMarket((_trade(2, 'fridge', 2, 'pv'),
-                                              _trade(3, 'fridge', 1, 'iaa'))),
-                               2: FakeMarket((_trade(1, 'fridge', 2, 'pv'),))}),
+                 past_markets=[FakeMarket((_trade(2, 'fridge', 2, 'pv'),
+                                           _trade(3, 'fridge', 1, 'iaa'))),
+                               FakeMarket((_trade(1, 'fridge', 2, 'pv'),))]),
         FakeArea('house2',
                  children=[FakeArea('e-car')],
-                 past_markets={1: FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
-                                             _trade(1, 'e-car', 8, 'iaa'),
-                                             _trade(3, 'iaa', 5, 'e-car'))),
-                               2: FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))}),
+                 past_markets=[FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
+                                           _trade(1, 'e-car', 8, 'iaa'),
+                                           _trade(3, 'iaa', 5, 'e-car'))),
+                               FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))]),
         FakeArea('commercial')
-    ], past_markets={
-        1: FakeMarket((_trade(2, 'house2', 12, 'commercial'),)),
-        2: FakeMarket((_trade(1, 'house2', 1, 'commercial'),))
-    })
+    ], past_markets=[
+        FakeMarket((_trade(2, 'house2', 12, 'commercial'),)),
+        FakeMarket((_trade(1, 'house2', 1, 'commercial'),))
+    ])
 
 
 def test_energy_bills(grid):
@@ -123,9 +124,9 @@ def grid2():
     return FakeArea(
         'street',
         children=[house1, house2],
-        past_markets={1: FakeMarket(
+        past_markets=[FakeMarket(
             (_trade(2, make_iaa_name(house1), 3, make_iaa_name(house2)),)
-        )}
+        )]
     )
 
 

@@ -21,15 +21,17 @@ class InterAreaAppliance(SimpleAppliance):
                 return
         if not self.area_market:
             self.area_market = self.area.current_market
-        self.owner.report_accounting(
+        self.owner.stats.report_accounting(
             self.own_market,
             self.own_name,
-            self.slot_energy(self.own_market) / self.area.config.ticks_per_slot
+            self.slot_energy(self.own_market) / self.area.config.ticks_per_slot,
+            self.owner.now
         )
-        self.area.report_accounting(
+        self.area.stats.report_accounting(
             self.area_market,
             self.own_name,
-            -1 * self.slot_energy(self.area_market) / self.area.config.ticks_per_slot
+            -1 * self.slot_energy(self.area_market) / self.area.config.ticks_per_slot,
+            self.area.now
         )
 
     def slot_energy(self, market):
