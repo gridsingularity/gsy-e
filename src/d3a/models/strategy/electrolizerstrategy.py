@@ -41,7 +41,7 @@ class ElectrolizerStrategy(StorageStrategy):
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         current_market = self.area.next_market
         if self.area.past_markets:
-            past_market = list(self.area.past_markets.values())[-1]
+            past_market = self.area.last_past_market
             self.state.market_cycle(past_market.time_slot, current_market.time_slot)
 
         if (self.state.used_storage - self.load_profile_kWh[current_market.time_slot_str]) >= 0:
