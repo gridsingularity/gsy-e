@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer
@@ -11,11 +12,14 @@ class FakeCurrentMarket:
         self.time_slot = time_slot
 
 
-class FakeArea():
+class FakeArea:
     def __init__(self, count):
         self.appliance = None
         self.name = 'FakeArea'
         self.count = count
+        self.stats = Mock()
+        self.stats.historical_min_max_price = self.historical_min_max_price
+        self.stats.historical_avg_rate = self.historical_avg_rate
 
     @property
     def config(self):
@@ -88,7 +92,7 @@ def fridge_strategy_test1(market_test1, area_test1, called):
     f = FridgeStrategy()
     f.owner = area_test1
     f.area = area_test1
-    f.area.markets = {'next market': market_test1}
+    f.area.all_markets = [market_test1]
     f.open_spot_markets = [market_test1]
     f.accept_offer = called
 
@@ -121,7 +125,7 @@ def fridge_strategy_test2(market_test2, area_test2, called):
     f = FridgeStrategy()
     f.owner = area_test2
     f.area = area_test2
-    f.area.markets = {'next market': market_test2}
+    f.area.all_markets = [market_test2]
     f.state.temperature = 4
     f.accept_offer = called
     return f
@@ -154,7 +158,7 @@ def fridge_strategy_test3(market_test3, area_test3, called):
     f.owner = area_test3
     f.area = area_test3
     f.state.temperature = 7.9
-    f.area.markets = {'next market': market_test3}
+    f.area.all_markets = [market_test3]
     f.accept_offer = called
     return f
 
@@ -208,7 +212,7 @@ def fridge_strategy_test4(market_test4, area_test4, called):
     f = FridgeStrategy()
     f.owner = area_test4
     f.area = area_test4
-    f.area.markets = {'next market': market_test4}
+    f.area.all_markets = [market_test4]
     f.accept_offer = called
     return f
 
@@ -236,7 +240,7 @@ def fridge_strategy_test5(market_test5, area_test5, called):
     f.next_market = market_test5
     f.owner = area_test5
     f.area = area_test5
-    f.area.markets = {'next market': market_test5}
+    f.area.all_markets = [market_test5]
     f.accept_offer = called
     return f
 

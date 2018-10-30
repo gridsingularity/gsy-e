@@ -2,13 +2,18 @@ from copy import deepcopy
 from collections import defaultdict
 
 import pytest
+from unittest.mock import MagicMock
 
 from d3a.models.appliance.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import DEFAULT_CONFIG
+from d3a.models.area.stats import AreaStats
 from d3a.models.strategy.const import ConstSettings
+
+from pendulum import DateTime
+from d3a import TIME_ZONE
 
 
 class FakeSwitchableStrategy:
@@ -91,13 +96,19 @@ class FakeArea:
     def __init__(self):
         self.reported_value = None
         self.is_nighttime = False
+        self.stats = MagicMock(spec=AreaStats)
+        self.stats.report_accounting = self.report_accounting
 
-    def report_accounting(self, market, owner, value):
+    def report_accounting(self, market, owner, value, time):
         self.reported_value = value
 
     @property
     def config(self):
         return DEFAULT_CONFIG
+
+    @property
+    def now(self):
+        return DateTime.now(tz=TIME_ZONE)
 
     @property
     def current_market(self):

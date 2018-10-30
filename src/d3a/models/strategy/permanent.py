@@ -17,7 +17,7 @@ class PermanentLoadStrategy(BaseStrategy):
 
     def event_tick(self, *, area):
         try:
-            for i, market in enumerate(area.markets.values()):
+            for i, market in enumerate(area.all_markets):
                 if i + 1 > self.pre_buy_range:
                     break
                 if market in self.bought_in_market:
