@@ -6,7 +6,6 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.load_hours_fb import CellTowerLoadHoursStrategy
 from d3a.util import area_name_from_area_or_iaa_name, make_iaa_name
 
-
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
 prices_pv_stor_energy = namedtuple('prices_pv_stor_energy', ['price', 'pv_energ', 'stor_energ'])
 
@@ -28,7 +27,8 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
                 (isinstance(child.strategy, StorageStrategy) or
                  isinstance(child.strategy, PVStrategy) or
                  isinstance(child.strategy, InterAreaAgent)):
-            for slot, market in child.parent.past_markets.items():
+            for market in child.parent.past_markets:
+                slot = market.time_slot
                 if slot.hour not in load_price_lists.keys():
                     load_price_lists[slot.hour] = loads_avg_prices(load=[], price=[])
                 load_price_lists[slot.hour].load.append(abs(market.traded_energy[child.name]))
@@ -46,7 +46,8 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
 
 def gather_prices_pv_stor_energ(area, price_energ_lists):
     for child in area.children:
-        for slot, market in child.parent.past_markets.items():
+        for market in child.parent.past_markets:
+            slot = market.time_slot
             slot_time_str = "%02d:00" % slot.hour
             if slot_time_str not in price_energ_lists.keys():
                 price_energ_lists[slot_time_str] = prices_pv_stor_energy(price=[],
@@ -112,7 +113,7 @@ def _accumulate_cell_tower_trades(cell_tower, grid, accumulated_trades):
         "consumedFrom": defaultdict(int),
         "spentTo": defaultdict(int),
     }
-    for slot, market in grid.past_markets.items():
+    for market in grid.past_markets:
         for trade in market.trades:
             if trade.buyer == cell_tower.name:
                 sell_id = area_name_from_area_or_iaa_name(trade.seller)
@@ -133,7 +134,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
         }
     house_IAA_name = make_iaa_name(house)
     child_names = [c.name for c in house.children]
-    for slot, market in house.past_markets.items():
+    for market in house.past_markets:
         for trade in market.trades:
             if area_name_from_area_or_iaa_name(trade.seller) in child_names and \
                     area_name_from_area_or_iaa_name(trade.buyer) in child_names:
@@ -146,7 +147,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
                 accumulated_trades[house.name]["earned"] += trade.offer.price
                 accumulated_trades[house.name]["produced"] -= trade.offer.energy
 
-    for slot, market in grid.past_markets.items():
+    for market in grid.past_markets:
         for trade in market.trades:
             if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
                 seller_id = area_name_from_area_or_iaa_name(trade.seller)
@@ -273,7 +274,7 @@ def export_price_energy_day(area):
             "av_price": round(mean(trades.price) if len(trades.price) > 0 else 0, 2),
             "min_price": round(min(trades.price) if len(trades.price) > 0 else 0, 2),
             "max_price": round(max(trades.price) if len(trades.price) > 0 else 0, 2),
-            "cum_pv_gen": round(-1*sum(trades.pv_energ), 2),
+            "cum_pv_gen": round(-1 * sum(trades.pv_energ), 2),
             "cum_stor_prof": round(sum(trades.stor_energ), 2)
         } for ii, (hour, trades) in enumerate(price_lists.items())
     ]

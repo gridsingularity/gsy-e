@@ -13,7 +13,7 @@ def storages_pv_min_selling_rate(context):
     storage2 = list(filter(lambda x: "Storage2" in x.name, house1.children))[0]
     pv = list(filter(lambda x: "PV" in x.name, house2.children))[0]
 
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
         for trade in market.trades:
             # Storage 2 should never buy due to break even point being lower than the
             # PV min selling rate
@@ -22,7 +22,7 @@ def storages_pv_min_selling_rate(context):
                 # Storage 1 should buy energy offers with rate more than the PV min sell rate
                 assert trade.offer.price / trade.offer.energy >= pv.strategy.min_selling_rate
 
-    for slot, market in house2.past_markets.items():
+    for market in house2.past_markets:
         assert all(trade.seller == pv.name for trade in market.trades)
         assert all(trade.offer.price / trade.offer.energy >= pv.strategy.min_selling_rate
                    for trade in market.trades)
@@ -40,7 +40,8 @@ def pv_price_decrease(context):
     number_of_updates_per_slot = int(slot_length/wait_time)
 
     if pv.strategy.energy_rate_decrease_option.value == 1:
-        for slot, market in house.past_markets.items():
+        for market in house.past_markets:
+            slot = market.time_slot
             price_dec_per_slot =\
                 market_maker_rate[slot.format(PENDULUM_TIME_FORMAT)] * (1 - pv.strategy.risk / 100)
             price_dec_per_update = price_dec_per_slot / number_of_updates_per_slot
@@ -57,9 +58,10 @@ def pv_price_decrease(context):
                                 for i in range(number_of_updates_per_slot + 1)])
 
     elif pv.strategy.energy_rate_decrease_option.value == 2:
-        for slot, market in house.past_markets.items():
+        for market in house.past_markets:
+            slot = market.time_slot
             price_dec_per_slot = number_of_updates_per_slot \
-                                 * pv.strategy.energy_rate_decrease_per_update
+                * pv.strategy.energy_rate_decrease_per_update
             for id, offer in market.offers.items():
                 assert isclose(
                     (offer.price / offer.energy),
@@ -83,7 +85,8 @@ def pv_const_energy(context):
                                    context.simulation.simulation_config.tick_length.seconds)
     market_maker_rate = context.simulation.simulation_config.market_maker_rate
 
-    for slot, market in house.past_markets.items():
+    for market in house.past_markets:
+        slot = market.time_slot
         for id, offer in market.offers.items():
             if offer.seller == pv.name:
                 assert isclose(
@@ -101,7 +104,7 @@ def load_buys_200_W(context, power_W):
 
     max_desired_energy = float(power_W) * (house1.config.slot_length / duration(hours=1)) / 1000.0
     total_energy_per_slot = []
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
         total_energy = sum(trade.offer.energy
                            for trade in market.trades
                            if trade.buyer == load.name)

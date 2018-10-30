@@ -20,7 +20,7 @@ def configure_default_2a_registry(context):
 def check_device_registry(context):
     from d3a.setup.balancing_market.test_device_registry import device_registry_dict
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    for slot, market in house.past_markets.items():
+    for market in house.past_markets:
         assert market.device_registry == device_registry_dict
 
 
@@ -36,7 +36,7 @@ def number_of_balancing_trades(context, area, b_trade_nr, s_trade_nr):
     s_trade_nr = int(s_trade_nr)
     area_object = next(filter(lambda x: x.name == area, context.simulation.area.children))
 
-    for slot, market in area_object.past_balancing_markets.items():
+    for market in area_object.past_balancing_markets:
         if len(market.trades) == 0:
             continue
         reduced_trades = reduce(
@@ -45,7 +45,7 @@ def number_of_balancing_trades(context, area, b_trade_nr, s_trade_nr):
             0
         )
         assert b_trade_nr == reduced_trades
-        assert len(area_object.past_markets[slot].trades) == s_trade_nr
+        assert len(area_object._markets.past_markets[market.time_slot].trades) == s_trade_nr
 
 
 @then('balancing market of {area} has {r_trade_nr} reserve trades and {s_trade_nr} spot trades')
@@ -54,7 +54,7 @@ def number_of_reserve_trades(context, area, r_trade_nr, s_trade_nr):
     s_trade_nr = int(s_trade_nr)
     area_object = next(filter(lambda x: x.name == area, context.simulation.area.children))
 
-    for slot, market in area_object.past_balancing_markets.items():
+    for market in area_object.past_balancing_markets:
         if len(market.trades) == 0:
             continue
         reduced_reserve_trades = reduce(
@@ -64,12 +64,12 @@ def number_of_reserve_trades(context, area, r_trade_nr, s_trade_nr):
         )
 
         assert r_trade_nr == reduced_reserve_trades
-        assert len(area_object.past_markets[slot].trades) == s_trade_nr
+        assert len(area_object._markets.past_markets[market.time_slot].trades) == s_trade_nr
 
 
 @then('grid has 1 balancing trade from house 1 to house 2')
 def grid_has_balancing_trade_h1_h2(context):
-    for slot, market in context.simulation.area.past_balancing_markets.items():
+    for market in context.simulation.area.past_balancing_markets:
         if len(market.trades) == 0:
             continue
 
@@ -77,13 +77,13 @@ def grid_has_balancing_trade_h1_h2(context):
         assert market.trades[0].buyer == "BA House 2"
         assert market.trades[0].seller == "BA House 1"
 
-        assert len(context.simulation.area.past_markets[slot].trades) == 1
+        assert len(context.simulation.area._markets.past_markets[market.time_slot].trades) == 1
 
 
 @then('grid has {b_t_count} balancing trades from house 1 to house 2')
 def grid_has_balancing_trades_h1_h2(context, b_t_count):
     b_t_count = int(b_t_count)
-    for slot, market in context.simulation.area.past_balancing_markets.items():
+    for market in context.simulation.area.past_balancing_markets:
         if len(market.trades) == 0:
             continue
 
@@ -91,7 +91,8 @@ def grid_has_balancing_trades_h1_h2(context, b_t_count):
         assert market.trades[0].buyer == "BA House 2"
         assert market.trades[0].seller == "BA House 1"
 
-        assert len(context.simulation.area.past_markets[slot].trades) == int(b_t_count / 2)
+        past_market = context.simulation.area._markets.past_markets[market.time_slot]
+        assert len(past_market.trades) == int(b_t_count / 2)
 
 
 @then('all trades follow the device registry {device_name} rate for supply and demand')
@@ -104,12 +105,12 @@ def follow_device_registry_energy_rate(context, device_name):
 
     assert all(int(round(trade.offer.price / trade.offer.energy, 2)) == int(negative_energy_rate)
                for device in [house1, house2, context.simulation.area]
-               for slot, market in device.past_balancing_markets.items()
+               for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy < 0)
 
     assert all(int(round(trade.offer.price / trade.offer.energy, 2)) == int(positive_energy_rate)
                for device in [house1, house2, context.simulation.area]
-               for slot, market in device.past_balancing_markets.items()
+               for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy > 0)
 
 
@@ -118,10 +119,11 @@ def match_balancing_trades_to_spot_trades(context, functor):
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
 
     for area_object in [house1, house2]:
-        for slot, market in area_object.past_balancing_markets.items():
+        for market in area_object.past_balancing_markets:
             if len(market.trades) == 0:
                 continue
-            spot_energy = area_object.past_markets[slot].trades[0].offer.energy
+            past_market = area_object._markets.past_markets[market.time_slot]
+            spot_energy = past_market.trades[0].offer.energy
             assert functor(isclose(abs(trade.offer.energy),
                                    abs(spot_energy) *
                                    ConstSettings.BalancingSettings.SPOT_TRADE_RATIO)
@@ -150,12 +152,12 @@ def follow_device_registry_energy_rate_or(context, device1, device2):
 
     assert all(int(round(trade.offer.price / trade.offer.energy, 2)) in negative_energy_rate
                for device in [house1, house2, context.simulation.area]
-               for slot, market in device.past_balancing_markets.items()
+               for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy < 0)
 
     assert all(int(round(trade.offer.price / trade.offer.energy, 2)) in positive_energy_rate
                for device in [house1, house2, context.simulation.area]
-               for slot, market in device.past_balancing_markets.items()
+               for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy > 0)
 
 
@@ -166,10 +168,10 @@ def balancing_trades_on_all_markets(context):
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
     assert all(len(market.trades) > 0
                for area in [grid, house1, house2]
-               for _, market in area.past_markets.items())
+               for market in area.past_markets)
     assert all(len(market.trades) > 0
                for area in [grid, house1, house2]
-               for _, market in area.past_balancing_markets.items())
+               for market in area.past_balancing_markets)
 
 
 @then('there are balancing trades on some markets')
@@ -179,4 +181,4 @@ def balancing_trades_exist_on_a_market(context):
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
     assert any(len(market.trades) > 0
                for area in [grid, house1, house2]
-               for _, market in area.past_balancing_markets.items())
+               for market in area.past_balancing_markets)

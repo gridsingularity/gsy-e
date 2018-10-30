@@ -128,16 +128,16 @@ class ExportAndPlot:
                 writer = csv.writer(csv_file)
                 writer.writerow(labels)
                 out_dict = dict((key, {}) for key in out_keys)
-                for slot, market in past_markets.items():
+                for market in past_markets:
                     for trade in market.trades:
-                        row = (slot,) + trade._to_csv()
+                        row = (market.time_slot,) + trade._to_csv()
                         writer.writerow(row)
                         for ii, ks in enumerate(out_keys):
                             node = slugify(row[out_keys_ids[ii]], to_lower=True)
                             if node not in out_dict[ks]:
                                 out_dict[ks][node] = dict(
-                                    (key, 0) for key in area.past_markets.keys())
-                            out_dict[ks][node][slot] += row[4]
+                                    (m.time_slot, 0) for m in area.past_markets)
+                            out_dict[ks][node][market.time_slot] += row[4]
         except OSError:
             _log.exception("Could not export area trades")
 
@@ -154,7 +154,7 @@ class ExportAndPlot:
         """
         labels = ("slot", "rate [ct./kWh]", "energy [kWh]", "seller")
         for i, child in enumerate(area.children):
-            for slot, market in area.past_markets.items():
+            for market in area.past_markets:
                 for trade in market.trades:
                     buyer_slug = slugify(trade.buyer, to_lower=True)
                     seller_slug = slugify(trade.seller, to_lower=True)
@@ -163,7 +163,7 @@ class ExportAndPlot:
                     if seller_slug not in self.seller_trades:
                         self.seller_trades[seller_slug] = dict((key, []) for key in labels)
                     else:
-                        values = (slot, ) + \
+                        values = (market.time_slot, ) + \
                                  (round(trade.offer.price/trade.offer.energy, 4),
                                   (trade.offer.energy * -1),) + \
                                  (slugify(trade.seller, to_lower=True),)
@@ -421,8 +421,7 @@ class ExportUpperLevelData(ExportData):
                 'total trade volume [EUR]']
 
     def rows(self):
-        markets = self.area.past_markets
-        return [self._row(slot, markets[slot]) for slot in markets]
+        return [self._row(m.time_slot, m) for m in self.area.past_markets]
 
     def _row(self, slot, market):
         return [slot,
@@ -444,8 +443,7 @@ class ExportBalancingData:
                 'avg demand balancing trade rate [ct./kWh]']
 
     def rows(self):
-        markets = self.area.past_balancing_markets
-        return [self._row(slot, markets[slot]) for slot in markets]
+        return [self._row(m.time_slot, m) for m in self.area.past_balancing_markets]
 
     def _row(self, slot, market):
         return [slot,
@@ -474,8 +472,7 @@ class ExportLeafData(ExportData):
         return []
 
     def rows(self):
-        markets = self.area.parent.past_markets
-        return [self._row(slot, markets[slot]) for slot in markets]
+        return [self._row(m.time_slot, m) for m in self.area.parent.past_markets]
 
     def _traded(self, market):
         return market.traded_energy[self.area.name]

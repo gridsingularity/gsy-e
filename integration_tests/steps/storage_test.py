@@ -9,7 +9,7 @@ def check_storage_prices(context):
     storage = list(filter(lambda x: x.name == "H1 Storage1", house1.children))[0]
     trades_sold = []
     trades_bought = []
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
         for trade in market.trades:
             if trade.seller in ["H1 Storage1"]:
                 trades_sold.append(trade)
@@ -32,7 +32,8 @@ def step_impl(context):
                           ("H1 Storage2", break_even_profile_2)]:
         trades_sold = []
         trades_bought = []
-        for slot, market in house1.past_markets.items():
+        for market in house1.past_markets:
+            slot = market.time_slot
             for trade in market.trades:
                 if slot.hour in profile.keys():
                     if trade.seller == name:
@@ -53,7 +54,7 @@ def check_storage_sell_prices(context):
     storage = list(filter(lambda x: x.name == "H1 Storage1", house1.children))[0]
     trades_sold = []
     trades_bought = []
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
         for trade in market.trades:
             if trade.seller == storage.name:
                 trades_sold.append(trade)
@@ -69,7 +70,8 @@ def check_capacity_dependant_sell_rate(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     storage = list(filter(lambda x: x.name == "H1 Storage1", house1.children))[0]
     trades_sold = []
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
+        slot = market.time_slot
         for trade in market.trades:
             if trade.seller == storage.name:
                 trades_sold.append(trade)
@@ -91,7 +93,8 @@ def check_custom_storage(context):
     price_dec_per_slot = 0.1 * int(context.simulation.simulation_config.slot_length.seconds /
                                    context.simulation.simulation_config.tick_length.seconds)
     trades_sold = []
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
+        slot = market.time_slot
         for id, offer in market.offers.items():
             if offer.seller in storage.name:
                 assert isclose((offer.price / offer.energy),

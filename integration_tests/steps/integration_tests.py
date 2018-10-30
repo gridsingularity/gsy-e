@@ -552,7 +552,7 @@ def test_finite_plant_energy_rate(context, plant_name):
     finite = list(filter(lambda x: x.name == plant_name,
                          grid.children))[0]
     trades_sold = []
-    for slot, market in grid.past_markets.items():
+    for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
@@ -568,7 +568,7 @@ def test_infinite_plant_energy_rate(context, plant_name):
     finite = list(filter(lambda x: x.name == plant_name,
                          grid.children))[0]
     trades_sold = []
-    for slot, market in grid.past_markets.items():
+    for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
@@ -586,7 +586,7 @@ def test_finite_plant_max_power(context, plant_name):
     finite = list(filter(lambda x: x.name == plant_name,
                          grid.children))[0]
 
-    for slot, market in grid.past_markets.items():
+    for market in grid.past_markets:
         trades_sold = []
         for trade in market.trades:
             assert trade.buyer is not finite.name
@@ -602,7 +602,7 @@ def test_pv_initial_pv_rate_option(context):
     grid = context.simulation.area
     house = list(filter(lambda x: x.name == "House", grid.children))[0]
 
-    for slot, market in house.past_markets.items():
+    for market in house.past_markets:
         for trade in market.trades:
             assert isclose(trade.offer.price / trade.offer.energy,
                            grid.config.market_maker_rate[market.time_slot_str])
@@ -612,7 +612,7 @@ def test_pv_initial_pv_rate_option(context):
 def test_sim_market_count(context):
     grid_1 = context.simulation_1.area
     grid_4 = context.simulation_4.area
-    for slot, market_1 in grid_1.past_markets.items():
-        market_4 = grid_4.past_markets[slot]
+    for market_1 in grid_1.past_markets:
+        market_4 = grid_4.get_past_market(market_1.time_slot)
         for area in market_1.traded_energy.keys():
             assert isclose(market_1.traded_energy[area], market_4.traded_energy[area])

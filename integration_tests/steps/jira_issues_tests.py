@@ -20,7 +20,7 @@ def average_trade_rate_constant(context):
     for area in areas:
         trade_rates = [
             trade.offer.price / trade.offer.energy
-            for slot, market in area.past_markets.items()
+            for market in area.past_markets
             for trade in market.trades
         ]
 
@@ -34,7 +34,7 @@ def same_seller_buyer_name_check(context):
     trades = [
         trade
         for area in areas
-        for slot, market in area.past_markets.items()
+        for market in area.past_markets
         for trade in market.trades
     ]
 
@@ -48,14 +48,14 @@ def storage_commercial_trades(context):
 
     storage_trades = [
         trade
-        for slot, market in house1.past_markets.items()
+        for market in house1.past_markets
         for trade in market.trades
         if trade.buyer == "H1 Storage1"
     ]
 
     commercial_trades = [
         trade
-        for slot, market in context.simulation.area.past_markets.items()
+        for market in context.simulation.area.past_markets
         for trade in market.trades
         if trade.seller == "Commercial Energy Producer"
     ]
@@ -79,7 +79,7 @@ def step_impl(context):
 
     storage_trades = [
         trade
-        for slot, market in storage.past_markets.items()
+        for market in storage.past_markets
         for trade in market.trades
         if trade.buyer == "H1 Storage1"
     ]
@@ -92,10 +92,11 @@ def check_matching_trades(context):
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     grid = context.simulation.area
 
-    for timeslot, market in grid.markets.items():
-        assert timeslot in house1.markets.keys()
-        grid_trades = grid.markets[timeslot].trades
-        house_trades = house1.markets[timeslot].trades
+    for market in grid.all_markets:
+        timeslot = market.time_slot
+        assert house1.get_market(timeslot)
+        grid_trades = grid.get_market(timeslot).trades
+        house_trades = house1.get_market(timeslot).trades
         assert len(grid_trades) == len(house_trades)
         assert all(
             any(t.offer.energy == th.offer.energy and t.buyer == th.seller for th in house_trades)
@@ -112,10 +113,11 @@ def no_unmatched_loads(context):
 def pv_produces_same_amount_of_energy_day(context):
     house2 = [child for child in context.simulation.area.children if child.name == "House 2"][0]
 
-    for timeslot, base_market in house2.past_markets.items():
-
-        same_time_markets = [market for time, market in house2.past_markets.items()
-                             if time.hour == timeslot.hour and time.minute == timeslot.minute]
+    for base_market in house2.past_markets:
+        timeslot = base_market.time_slot
+        same_time_markets = [market for market in house2.past_markets
+                             if market.time_slot.hour == timeslot.hour and
+                             market.time_slot.minute == timeslot.minute]
         same_time_markets_energy = [sum(trade.offer.energy
                                         for trade in market.trades
                                         if trade.seller == "H2 PV")
@@ -125,9 +127,11 @@ def pv_produces_same_amount_of_energy_day(context):
 
 
 def _assert_sum_of_energy_is_same_for_same_time(area, load_name):
-    for timeslot, base_market in area.past_markets.items():
-        same_time_markets = [market for time, market in area.past_markets.items()
-                             if time.hour == timeslot.hour and time.minute == timeslot.minute]
+    for base_market in area.past_markets:
+        timeslot = base_market.time_slot
+        same_time_markets = [market for market in area.past_markets
+                             if market.time_slot.hour == timeslot.hour and
+                             market.time_slot.minute == timeslot.minute]
         same_time_markets_energy = [sum(trade.offer.energy
                                         for trade in market.trades
                                         if trade.buyer == load_name)
@@ -146,10 +150,10 @@ def loads_consume_same_amount_of_energy_day(context):
 
 
 def _assert_hours_of_day(area, device):
-    for timeslot, market in area.past_markets.items():
+    for market in area.past_markets:
         total_energy = sum(trade.offer.energy
                            for trade in market.trades if trade.buyer == device.name)
-        if timeslot.hour not in device.strategy.hrs_of_day:
+        if market.time_slot.hour not in device.strategy.hrs_of_day:
             assert isclose(total_energy, 0.0)
         else:
             assert isclose(total_energy, device.strategy.energy_per_slot_Wh / 1000.0)

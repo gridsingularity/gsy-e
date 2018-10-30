@@ -30,7 +30,7 @@ class FinitePowerPlant(CommercialStrategy):
         return max_available_power_kW
 
     def _markets_to_offer_on_activate(self):
-        return list(self.area.markets.values())[:-1]
+        return self.area.all_markets[:-1]
 
     def event_activate(self):
         self.energy_per_slot_kWh = ureg.kWh * \
@@ -45,7 +45,7 @@ class FinitePowerPlant(CommercialStrategy):
         pass
 
     def event_market_cycle(self):
-        target_market_time = list(self.area.markets.keys())[-1]
+        target_market_time = (self.area.all_markets[-1]).time_slot
         self.energy_per_slot_kWh = ureg.kWh * \
             self.max_available_power_kW[target_market_time.hour].m / \
             (duration(hours=1) / self.area.config.slot_length)
