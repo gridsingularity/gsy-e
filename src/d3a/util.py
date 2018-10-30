@@ -286,10 +286,8 @@ def constsettings_to_dict():
 
 def wait_until_timeout_blocking(functor, timeout=10, polling_period=0.01):
     current_time = 0.0
-    polling_period = polling_period
     while not functor() and current_time < timeout:
         start_time = time.time()
         time.sleep(polling_period)
-        end_time = time.time()
-        current_time += end_time - start_time
+        current_time += time.time() - start_time
     assert functor()

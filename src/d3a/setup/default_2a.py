@@ -48,8 +48,7 @@ def get_setup(config):
                                                                    max_energy_rate=35),
                  appliance=SwitchableAppliance()),
             # Area('Commercial Energy Producer',
-            #      strategy=FinitePowerPlant(energy_rate=30,
-            #                                max_available_power_kW=10000000),
+            #      strategy=CommercialStrategy(energy_rate=30),
             #      appliance=SimpleAppliance()
             #      ),
 
