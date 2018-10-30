@@ -1,4 +1,3 @@
-import time
 from d3a.util import wait_until_timeout_blocking
 from d3a.models.strategy.const import ConstSettings
 from logging import getLogger
@@ -48,7 +47,6 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
         .globallyApprove(market_address, 10 ** 18)\
         .transact({'from': bc_interface.chain.eth.accounts[0]})
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
-    time.sleep(0.5)
     approve_retval = clearing_contract_instance.events\
         .ApproveClearingMember()\
         .processReceipt(tx_receipt)
@@ -69,14 +67,14 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
     log.info(f"tx_hash of New Offer {tx_hash_hex}")
 
-    tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash, timeout=200)
+    tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     _wait_for_node_synchronization(bc_interface)
     offer_id = bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
 
-    def get_offer():
+    def offer_retrieved():
         return bc_contract.functions.getOffer(offer_id).call() is not 0
 
-    wait_until_timeout_blocking(get_offer, timeout=20)
+    wait_until_timeout_blocking(offer_retrieved, timeout=20)
     return offer_id
 
 

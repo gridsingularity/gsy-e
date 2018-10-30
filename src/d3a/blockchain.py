@@ -5,7 +5,6 @@ from web3 import Web3, HTTPProvider
 from solc import compile_source
 from web3.contract import Contract
 from subprocess import Popen, DEVNULL
-from time import sleep
 
 from d3a.util import get_cached_joined_contract_source, wait_until_timeout_blocking
 from d3a.models.strategy.const import ConstSettings
@@ -77,13 +76,13 @@ class BlockChainInterface:
         unlock_account(self.chain, self.chain.eth.accounts[0])
         tx_hash = contract.constructor(*args).transact({'from': self.chain.eth.accounts[0]})
         contract_address = self.chain.eth.waitForTransactionReceipt(tx_hash).contractAddress
-        sleep(0.5)
+        wait_until_timeout_blocking(lambda: self.chain.eth.waitForTransactionReceipt(tx_hash).
+                                    contractAddress is not None, timeout=20)
         contract = self.chain.eth.contract(address=contract_address,
                                            abi=contract_interface['abi'],
                                            ContractFactoryClass=Contract)
-        sleep(0.5)
-        log.info(f"Token Contract Address: {contract_address}")
-        log.info(f"Token Contract ABI: {contract_interface['abi']}")
+        log.info(f"{contract_name} SmartContract deployed with Address: {contract_address} "
+                 f"& ABI: {contract_interface['abi']}")
         self.contracts[contract.address] = contract
         if id_:
             self.contracts[id_] = contract

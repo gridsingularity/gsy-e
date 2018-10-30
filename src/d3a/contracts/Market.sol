@@ -57,12 +57,7 @@ contract Market is Mortal {
         bool success,
         bytes32 id) = _offer(energyUnits, price, msg.sender);
         if (success) {
-            offers[offerId] = Offer(energyUnits, price, msg.sender);
             emit NewOffer(id, energyUnits, price, msg.sender);
-            offerId = id;
-        }
-        else {
-            offerId = bytes32(0);
         }
     }
 
@@ -96,7 +91,6 @@ contract Market is Mortal {
         bytes32 newOfferId, bytes32 tradeId) {
         Offer storage tradedOffer = offers[offerId];
         address buyer = msg.sender;
-        tradeId = keccak256(abi.encodePacked(offerId, buyer));
         if (
         tradedOffer.energyUnits > 0 &&
         tradedOffer.seller != address(0) &&
@@ -128,9 +122,9 @@ contract Market is Mortal {
                 success = clearingToken.clearingTransfer(buyer, tradedOffer.seller, cost);
             }
             if (success || tradedOffer.price == 0) {
-//                tradeId = keccak256(
-//                    abi.encodePacked(offerId, buyer)
-//                );
+                tradeId = keccak256(
+                    abi.encodePacked(offerId, buyer)
+                );
                 emit NewTrade(tradeId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, true);
                 tradedOffer.energyUnits = 0;
                 tradedOffer.price = 0;
@@ -148,7 +142,6 @@ contract Market is Mortal {
      * @notice Gets the Offer tuple if given a valid offerid
      */
     function getOffer(bytes32 offerId) public view returns (uint, int, address) {
-//        Offer retrievedOffer = offers[offerId];
         return (offers[offerId].energyUnits, offers[offerId].price, offers[offerId].seller);
     }
 
@@ -170,18 +163,17 @@ contract Market is Mortal {
     private returns (bool success, bytes32 offerId) {
 
         if (energyUnits > 0) {
-            offerId = sha256(
+            offerId = keccak256(
                 abi.encode(energyUnits, price, seller, offerNonce++)
             );
-            Offer storage newOffer = offers[offerId];
-            newOffer.energyUnits = energyUnits;
-            newOffer.price = price;
-            newOffer.seller = seller;
+            offers[offerId] = Offer(energyUnits, price, msg.sender);
+            offers[offerId].energyUnits = energyUnits;
+            offers[offerId].price = price;
+            offers[offerId].seller = seller;
             success = true;
         } else {
             success = false;
-            offerId = "";
+            offerId = bytes32(0);
         }
     }
-
 }
