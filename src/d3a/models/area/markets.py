@@ -1,4 +1,10 @@
-from d3a.models.market import Market, BalancingMarket
+from pendulum import DateTime # noqa
+from typing import Dict, List, Set, Union  # noqa
+
+from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
+from d3a.models.market.one_sided import OneSidedMarket
+from d3a.models.market.balancing import BalancingMarket
+from d3a.models.strategy.const import ConstSettings
 from collections import OrderedDict
 
 
@@ -6,10 +12,10 @@ class AreaMarkets:
     def __init__(self, area_log):
         # Children trade in `markets`
         self.log = area_log
-        self.markets = OrderedDict()  # type: Dict[DateTime, Market]
+        self.markets = OrderedDict()  # type: Dict[DateTime, OneSidedMarket]
         self.balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
         # Past markets
-        self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
+        self.past_markets = OrderedDict()  # type: Dict[DateTime, OneSidedMarket]
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
 
     @property
@@ -46,7 +52,13 @@ class AreaMarkets:
 
     def create_future_markets(self, current_time, is_spot_market, area):
         markets = self.markets if is_spot_market else self.balancing_markets
-        market_class = Market if is_spot_market else BalancingMarket
+        if is_spot_market:
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                market_class = OneSidedMarket
+            else:
+                market_class = TwoSidedPayAsBid
+        else:
+            market_class = BalancingMarket
 
         changed = False
         for offset in (area.config.slot_length * i
