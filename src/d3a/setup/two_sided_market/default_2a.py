@@ -31,12 +31,12 @@ def get_setup(config):
                                                                        max_energy_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(
-                        initial_capacity=0.6,
+                        initial_capacity_kWh=0.6,
                         break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
                                     ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage2', strategy=StorageStrategy(
-                        initial_capacity=0.6,
+                        initial_capacity_kWh=0.6,
                         break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
                                     ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
                          appliance=SwitchableAppliance()),

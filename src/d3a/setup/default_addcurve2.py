@@ -26,9 +26,9 @@ def get_setup(config):
             #         #                     'src/d3a/resources/LOAD_DATA_1.csv').expanduser()),
             #         #      # max_energy_rate=35),
             #         #      appliance=SwitchableAppliance()),
-            #         # Area('H1 Storage1', strategy=StorageStrategy(battery_capacity=1.2,
+            #         # Area('H1 Storage1', strategy=StorageStrategy(battery_capacity_kWh=1.2,
             #         #                                              initial_charge=40,
-            #         #                                              max_abs_battery_power=1.2),
+            #         #                                              max_abs_battery_power_kW=1.2),
             #         #      appliance=SwitchableAppliance()),
             #
             #     ]

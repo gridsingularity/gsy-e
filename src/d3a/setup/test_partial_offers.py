@@ -37,7 +37,7 @@ def get_setup(config):
             ]),
             Area('House 2', [
                 Area('H2 Storage',
-                     strategy=StorageStrategy(initial_capacity=5.0),
+                     strategy=StorageStrategy(initial_capacity_kWh=5.0),
                      appliance=SimpleAppliance()),
                 Area('H2 ECar', strategy=ECarStrategy(), appliance=SimpleAppliance()),
                 Area('H2 Fridge', strategy=ModifiedFridgeStrategy(), appliance=FridgeAppliance())
