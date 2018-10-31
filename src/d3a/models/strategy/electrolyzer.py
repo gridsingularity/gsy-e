@@ -4,17 +4,17 @@ from d3a.models.strategy.read_user_profile import InputProfileTypes
 from d3a import TIME_FORMAT
 
 
-class ElectrolizerStrategy(StorageStrategy):
+class ElectrolyzerStrategy(StorageStrategy):
 
     def __init__(self, discharge_profile,
-                 conversion_factor_kWh_kg: float=50.0,
+                 conversion_factor_kg_to_kWh: float=50.0,
                  reservoir_capacity_kg: float=56.0,
                  reservoir_initial_capacity_kg: float= 5.6,
                  production_rate_kg_h: float=1.):
 
-        initial_capacity_kWh = reservoir_initial_capacity_kg * conversion_factor_kWh_kg
-        capacity_kWh = reservoir_capacity_kg * conversion_factor_kWh_kg
-        production_rate_kW = production_rate_kg_h * conversion_factor_kWh_kg
+        initial_capacity_kWh = reservoir_initial_capacity_kg * conversion_factor_kg_to_kWh
+        capacity_kWh = reservoir_capacity_kg * conversion_factor_kg_to_kWh
+        production_rate_kW = production_rate_kg_h * conversion_factor_kg_to_kWh
 
         super().__init__(0, initial_capacity_kWh=initial_capacity_kWh,
                          battery_capacity_kWh=capacity_kWh,
@@ -23,7 +23,7 @@ class ElectrolizerStrategy(StorageStrategy):
                          break_even=(31, 32))
 
         self.discharge_profile = discharge_profile
-        self.conversion_factor_kWh_kg = conversion_factor_kWh_kg
+        self.conversion_factor_kWh_kg = conversion_factor_kg_to_kWh
         self.load_profile_kWh = {}
 
     def event_activate(self):
