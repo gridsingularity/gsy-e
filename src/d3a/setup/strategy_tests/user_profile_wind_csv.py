@@ -1,20 +1,17 @@
 """
-Setup file for displaying PVPredefinedStrategy.
+Setup file for displaying WindUserProfileStrategy.
 """
 from d3a.models.appliance.pv import PVAppliance
-# from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-# from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.predefined_wind import WindUserProfileStrategy
-# from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
 from d3a.util import d3a_path
 import os
 
 
 """
-PVUserProfileStrategy Strategy requires power_profile, risk, panel count &
+WindUserProfileStrategy Strategy requires power_profile, risk &
 lower selling rate threshold.
 """
 
