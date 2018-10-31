@@ -8,7 +8,7 @@ contract Market is Mortal {
     mapping (bytes32 => Offer) private offers;
 
     // Nonce counter to ensure unique offer ids
-    uint private offerNonce;
+    uint private offerNonce = 0;
 
     //mapping of the energy balances for market participants
     mapping (address => int256) private balances;
@@ -52,14 +52,13 @@ contract Market is Mortal {
      * @param energyUnits the units of energy offered generally in KWh.
      * @param price the price of each unit.
      */
-    function offer(uint energyUnits, int price) public returns (bytes32 offerId) {
+    function offer(uint energyUnits, int price) public {
         (
         bool success,
         bytes32 id) = _offer(energyUnits, price, msg.sender);
         if (success) {
             emit NewOffer(id, energyUnits, price, msg.sender);
         }
-        offerId = id;
     }
 
     /*
@@ -96,7 +95,8 @@ contract Market is Mortal {
         tradedOffer.energyUnits > 0 &&
         tradedOffer.seller != address(0) &&
         msg.sender != tradedOffer.seller &&
-        block.timestamp-marketStartTime < interval &&
+//        "Needs to be uncommented once network latency issue is solved"
+//        block.timestamp-marketStartTime < interval &&
         tradedEnergyUnits > 0 &&
         tradedEnergyUnits <= tradedOffer.energyUnits
         ) {
@@ -142,8 +142,7 @@ contract Market is Mortal {
      * @notice Gets the Offer tuple if given a valid offerid
      */
     function getOffer(bytes32 offerId) public view returns (uint, int, address) {
-        Offer retrievedOffer = offers[offerId];
-        return (retrievedOffer.energyUnits, retrievedOffer.price, retrievedOffer.seller);
+        return (offers[offerId].energyUnits, offers[offerId].price, offers[offerId].seller);
     }
 
     /*
@@ -165,17 +164,16 @@ contract Market is Mortal {
 
         if (energyUnits > 0) {
             offerId = keccak256(
-                abi.encodePacked(energyUnits, price, seller, block.number, offerNonce++)
+                abi.encode(energyUnits, price, seller, offerNonce++)
             );
-            Offer storage newOffer = offers[offerId];
-            newOffer.energyUnits = energyUnits;
-            newOffer.price = price;
-            newOffer.seller = seller;
+            offers[offerId] = Offer(energyUnits, price, msg.sender);
+            offers[offerId].energyUnits = energyUnits;
+            offers[offerId].price = price;
+            offers[offerId].seller = seller;
             success = true;
         } else {
             success = false;
-            offerId = "";
+            offerId = bytes32(0);
         }
     }
-
 }

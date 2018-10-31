@@ -97,6 +97,7 @@ class ConstSettings:
     class BlockchainSettings:
         URL = "http://127.0.0.1:8545"
         START_LOCAL_CHAIN = True
+        ACCOUNT_PASSWORD = "testgsy"
 
     class BalancingSettings:
         ENABLE_BALANCING_MARKET = False
