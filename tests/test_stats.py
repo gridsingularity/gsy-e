@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 
-from d3a.models.market import Trade
+from d3a.models.market.market_structures import Trade
 from d3a.stats import (
     energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
 )

@@ -4,7 +4,7 @@ from logging import getLogger
 
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.exceptions import BidNotFound, InvalidBid, InvalidTrade
-from d3a.models.market.offer_bid_trade import Bid, Trade
+from d3a.models.market.market_structures import Bid, Trade
 from d3a.models.events import MarketEvent
 
 log = getLogger(__name__)

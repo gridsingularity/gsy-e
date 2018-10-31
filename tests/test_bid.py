@@ -1,4 +1,4 @@
-from d3a.models.market import Bid
+from d3a.models.market.market_structures import Bid
 
 
 def test_offer_id_stringified():

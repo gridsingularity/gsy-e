@@ -6,7 +6,7 @@ from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
 from d3a.models.strategy.const import ConstSettings
 from d3a.util import make_iaa_name, make_ba_name
 from d3a import TIME_FORMAT
-from d3a.models.market.offer_bid_trade import Bid
+from d3a.models.market.market_structures import Bid
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))

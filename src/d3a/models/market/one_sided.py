@@ -4,7 +4,7 @@ from logging import getLogger
 from pendulum import DateTime
 
 from d3a.models.events import MarketEvent
-from d3a.models.market.offer_bid_trade import Offer, Trade
+from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade

@@ -1,7 +1,7 @@
 import pytest
 import sys
 
-from d3a.models.market import Offer, Trade, BalancingOffer
+from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.device_registry import DeviceRegistry
