@@ -159,6 +159,7 @@ class Market:
                                    [self._bc_listener]) \
             if self.area and self.area.bc \
             else None
+
         self.device_registry = DeviceRegistry.REGISTRY
 
     def add_listener(self, listener):

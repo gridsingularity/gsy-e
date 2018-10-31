@@ -65,7 +65,8 @@
     },
     "BlockchainSettings": {
       "URL": "http://127.0.0.1:8545",
-      "START_LOCAL_CHAIN": true
+      "START_LOCAL_CHAIN": true,
+      "ACCOUNT_PASSWORD": "testgsy"
     },
     "BalancingSettings": {
       "ENABLE_BALANCING_MARKET": false,
