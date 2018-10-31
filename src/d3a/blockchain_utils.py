@@ -71,10 +71,8 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     _wait_for_node_synchronization(bc_interface)
     offer_id = bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
 
-    def offer_retrieved():
-        return bc_contract.functions.getOffer(offer_id).call() is not 0
-
-    wait_until_timeout_blocking(offer_retrieved, timeout=20)
+    wait_until_timeout_blocking(lambda: bc_contract.functions.getOffer(offer_id).call() is not 0,
+                                timeout=20)
     return offer_id
 
 

@@ -81,8 +81,7 @@ class BlockChainInterface:
         contract = self.chain.eth.contract(address=contract_address,
                                            abi=contract_interface['abi'],
                                            ContractFactoryClass=Contract)
-        log.info(f"{contract_name} SmartContract deployed with Address: {contract_address} "
-                 f"& ABI: {contract_interface['abi']}")
+        log.info(f"{contract_name} SmartContract deployed with Address: {contract_address}")
         self.contracts[contract.address] = contract
         if id_:
             self.contracts[id_] = contract
