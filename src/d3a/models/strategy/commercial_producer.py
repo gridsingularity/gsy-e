@@ -22,21 +22,22 @@ class CommercialStrategy(BaseStrategy):
         # That's usually an init function but the markets aren't open during the init call
         for market in self._markets_to_offer_on_activate():
             self.offer_energy(market)
-
         for market in self.area.balancing_markets:
             self._offer_balancing_energy(market)
 
     def event_market_cycle(self):
-        # Post new offers only on first time_slot:
-        if self.area.last_past_market:
-            self.place_initial_offers()
-        # Post new offers
-        market = self.area.all_markets[-1]
-        self.offer_energy(market)
 
-        if len(self.area.balancing_markets) > 0:
-            balancing_market = self.area.balancing_markets[-1]
-            self._offer_balancing_energy(balancing_market)
+        if not self.area.last_past_market:
+            # Post new offers only on first time_slot:
+            self.place_initial_offers()
+        else:
+            # Post new offers
+            market = self.area.all_markets[-1]
+            self.offer_energy(market)
+
+            if len(self.area.balancing_markets) > 0:
+                balancing_market = self.area.balancing_markets[-1]
+                self._offer_balancing_energy(balancing_market)
 
     def offer_energy(self, market):
         energy_rate = self.area.config.market_maker_rate[market.time_slot_str] \
