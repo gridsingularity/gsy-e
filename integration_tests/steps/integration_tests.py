@@ -67,7 +67,7 @@ def hour_profile_of_market_maker_rate(context, scenario):
     from d3a.models.strategy.read_user_profile import InputProfileTypes
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
     context._market_maker_rate = \
-        read_arbitrary_profile(InputProfileTypes.RATE, setup_file_module.market_maker_rate)
+        read_arbitrary_profile(InputProfileTypes.IDENTITY, setup_file_module.market_maker_rate)
     assert context._market_maker_rate is not None
 
 

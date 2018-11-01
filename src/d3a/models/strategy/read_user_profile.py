@@ -14,7 +14,7 @@ from d3a import TIME_FORMAT
 
 
 class InputProfileTypes(Enum):
-    RATE = 1
+    IDENTITY = 1
     POWER = 2
 
 
@@ -89,7 +89,7 @@ def read_profile_csv_to_dict(profile_type: InputProfileTypes,
     :return: a mapping from time to energy values in kWh
     """
     profile_data = _readCSV(profile_path)
-    if profile_type == InputProfileTypes.RATE:
+    if profile_type == InputProfileTypes.IDENTITY:
         return _fill_gaps_in_rate_profile(profile_data)
     elif profile_type == InputProfileTypes.POWER:
         return _calculate_energy_from_power_profile(

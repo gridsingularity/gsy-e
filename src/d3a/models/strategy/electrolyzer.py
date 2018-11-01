@@ -10,7 +10,7 @@ class ElectrolyzerStrategy(StorageStrategy):
                  conversion_factor_kg_to_kWh: float=50.0,
                  reservoir_capacity_kg: float=56.0,
                  reservoir_initial_capacity_kg: float= 5.6,
-                 production_rate_kg_h: float=1.):
+                 production_rate_kg_h: float=1.0):
 
         initial_capacity_kWh = reservoir_initial_capacity_kg * conversion_factor_kg_to_kWh
         capacity_kWh = reservoir_capacity_kg * conversion_factor_kg_to_kWh
@@ -30,7 +30,7 @@ class ElectrolyzerStrategy(StorageStrategy):
         super().event_activate()
 
         load_profile_raw = read_arbitrary_profile(
-            InputProfileTypes.RATE,
+            InputProfileTypes.IDENTITY,
             self.discharge_profile,
             slot_length=self.area.config.slot_length)
 

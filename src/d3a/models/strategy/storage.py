@@ -42,7 +42,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
-        break_even = read_arbitrary_profile(InputProfileTypes.RATE, break_even)
+        break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh, break_even,
                                              min_allowed_soc)
@@ -55,7 +55,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                            energy_rate_decrease_per_update)
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
-            InputProfileTypes.RATE,
+            InputProfileTypes.IDENTITY,
             StorageSettings.MIN_BUYING_RATE
         )
         self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
