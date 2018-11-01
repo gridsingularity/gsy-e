@@ -3,7 +3,7 @@ import pytest
 from uuid import uuid4
 
 from d3a.models.events import OfferEvent
-from d3a.models.market import Offer, BalancingOffer
+from d3a.models.market.market_structures import Offer, BalancingOffer
 
 
 @pytest.mark.parametrize("offer", [Offer, BalancingOffer])

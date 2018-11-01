@@ -3,7 +3,7 @@ import pytest
 import pendulum
 from d3a import TIME_ZONE
 from d3a.exceptions import InvalidBalancingTradeException
-from d3a.models.market import BalancingOffer, BalancingTrade, Offer, Trade
+from d3a.models.market.market_structures import BalancingOffer, BalancingTrade, Offer, Trade
 from d3a.models.strategy.inter_area import BalancingAgent
 from d3a.models.strategy.const import ConstSettings
 from tests.test_inter_area_agent import FakeMarket

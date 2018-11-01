@@ -5,7 +5,7 @@ from pendulum import DateTime
 
 from d3a import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.market import Offer, Trade
+from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.const import ConstSettings
 from d3a import TIME_FORMAT
