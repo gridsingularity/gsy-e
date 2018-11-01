@@ -29,26 +29,21 @@ class FinitePowerPlant(CommercialStrategy):
             raise ValueError("Max available power should be positive.")
         return max_available_power_kW
 
-    def _markets_to_offer_on_activate(self):
-        return self.area.all_markets[:-1]
-
-    def event_activate(self):
-        self.energy_per_slot_kWh = ureg.kWh * \
-            self.max_available_power_kW[0].m / (duration(hours=1) / self.area.config.slot_length)
-        if self.energy_per_slot_kWh.m <= 0.0:
-            return
-        super().event_activate()
-
     def event_trade(self, *, market_id, trade):
         # Disable offering more energy than the initial offer, in order to adhere to the max
         # available power.
         pass
 
     def event_market_cycle(self):
-        target_market_time = (self.area.all_markets[-1]).time_slot
-        self.energy_per_slot_kWh = ureg.kWh * \
-            self.max_available_power_kW[target_market_time.hour].m / \
+        if not self.area.last_past_market:
+            max_available_power_kW = self.max_available_power_kW[0].m
+        else:
+            target_market_time = (self.area.all_markets[-1]).time_slot
+            max_available_power_kW = self.max_available_power_kW[target_market_time.hour].m
+
+        self.energy_per_slot_kWh = ureg.kWh * max_available_power_kW / \
             (duration(hours=1) / self.area.config.slot_length)
         if self.energy_per_slot_kWh.m <= 0.0:
             return
+
         super().event_market_cycle()

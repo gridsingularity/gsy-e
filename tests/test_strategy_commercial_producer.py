@@ -1,7 +1,7 @@
 import pytest
 import sys
 
-from d3a.models.market import Offer, Trade, BalancingOffer
+from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.device_registry import DeviceRegistry
@@ -16,6 +16,7 @@ class FakeArea:
         self.test_market = FakeMarket(0)
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
+        self._past_markets = {}
 
     def get_future_market_from_id(self, id):
         return self.test_market
@@ -31,6 +32,13 @@ class FakeArea:
     @property
     def config(self):
         return DEFAULT_CONFIG
+
+    @property
+    def last_past_market(self):
+        try:
+            return list(self._past_markets.values())[-1]
+        except IndexError:
+            return None
 
 
 class FakeMarket:
@@ -69,8 +77,10 @@ def commercial_test1(area_test1):
     return c
 
 
-def testing_event_activate(commercial_test1, area_test1):
+def testing_offer_is_created_at_first_market_not_on_activate(commercial_test1, area_test1):
     commercial_test1.event_activate()
+    assert len(area_test1.test_market.created_offers) == 0
+    commercial_test1.event_market_cycle()
     assert len(area_test1.test_market.created_offers) == 1
     assert area_test1.test_market.created_offers[0].energy == sys.maxsize
 
@@ -88,6 +98,7 @@ def test_balancing_offers_are_sent_to_all_markets_if_device_in_registry(
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     commercial_test1.event_activate()
+    commercial_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
     assert area_test1.test_balancing_market.created_balancing_offers[0].energy == sys.maxsize
     assert area_test1.test_balancing_market.created_balancing_offers[0].price == sys.maxsize * 40
@@ -111,7 +122,7 @@ def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registr
         commercial_test1, area_test1):
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
     commercial_test1.event_market_cycle()
-    assert len(area_test1.test_balancing_market.created_balancing_offers) == 0
+    assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
     assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == \
         sys.maxsize
@@ -139,6 +150,7 @@ def commercial_test2(area_test2):
 
 def test_event_trade(area_test2, commercial_test2):
     commercial_test2.event_activate()
+    commercial_test2.event_market_cycle()
     traded_offer = Offer(id='id', price=20, energy=1, seller='FakeArea',)
     commercial_test2.event_trade(market_id=area_test2.test_market.id,
                                  trade=Trade(id='id',
@@ -215,7 +227,7 @@ def commercial_test3(area_test3):
 def testing_event_market_cycle(commercial_test3, area_test3):
     commercial_test3.event_activate()
     commercial_test3.event_market_cycle()
-    assert len(area_test3.test_market.created_offers) == 2
+    assert len(area_test3.test_market.created_offers) == 1
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
 
 

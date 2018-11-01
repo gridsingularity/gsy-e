@@ -4,7 +4,7 @@ import pendulum
 
 from d3a import TIME_FORMAT
 from d3a import TIME_ZONE
-from d3a.models.market import Offer, Trade, Bid
+from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo, OfferInfo
 from d3a.models.strategy.const import ConstSettings
 
