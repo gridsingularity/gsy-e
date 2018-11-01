@@ -69,7 +69,6 @@ class ConstSettings:
         # Default value 1 stands for percentage/RISK based energy rate decrease
         # Option 2, use the constant energy rate decrease
         RATE_DECREASE_OPTION = 1
-        DEFAULT_POWER_PROFILE = 0  # sunny
         MAX_WIND_TURBINE_OUTPUT_W = 160
 
     class HeatpumpSettings:
