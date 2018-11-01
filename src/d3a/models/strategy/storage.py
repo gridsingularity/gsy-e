@@ -37,10 +37,15 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  balancing_energy_ratio: tuple=(BalancingSettings.OFFER_DEMAND_RATIO,
                                                 BalancingSettings.OFFER_SUPPLY_RATIO),
 
-                 cap_price_strategy: bool=False):
-        break_even = read_arbitrary_profile(InputProfileTypes.RATE, break_even)
+                 cap_price_strategy: bool=False,
+                 min_allowed_soc=None):
+
+        if min_allowed_soc is None:
+            min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
+        break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
-                                             initial_soc, battery_capacity_kWh, break_even)
+                                             initial_soc, battery_capacity_kWh, break_even,
+                                             min_allowed_soc)
         self.break_even = break_even
 
         self.min_selling_rate = list(break_even.values())[0][1]
@@ -50,7 +55,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                            energy_rate_decrease_per_update)
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
-            InputProfileTypes.RATE,
+            InputProfileTypes.IDENTITY,
             StorageSettings.MIN_BUYING_RATE
         )
         self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
@@ -64,7 +69,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                   capacity=battery_capacity_kWh,
                                   max_abs_battery_power_kW=max_abs_battery_power_kW,
                                   loss_per_hour=0.0,
-                                  strategy=self)
+                                  strategy=self,
+                                  min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
@@ -75,17 +81,18 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity_kWh, initial_soc,
-                                        battery_capacity_kWh, break_even):
+                                        battery_capacity_kWh, break_even, min_allowed_soc):
         if battery_capacity_kWh < 0:
             raise ValueError("Battery capacity should be a positive integer")
-        if initial_soc and not StorageSettings.MIN_ALLOWED_SOC <= initial_soc <= 100:
+        if initial_soc and not min_allowed_soc <= initial_soc <= 100:
             raise ValueError("Initial charge is a percentage value, should be between "
                              "MIN_ALLOWED_SOC and 100.")
         if not 0 <= risk <= 100:
             raise ValueError("Risk is a percentage value, should be between 0 and 100.")
-        if initial_capacity_kWh and not StorageSettings.MIN_ALLOWED_SOC * battery_capacity_kWh \
+        min_allowed_capacity = min_allowed_soc * battery_capacity_kWh
+        if initial_capacity_kWh and not min_allowed_capacity \
            <= initial_capacity_kWh <= battery_capacity_kWh:
-            raise ValueError("Initial capacity should be between 0 and "
+            raise ValueError(f"Initial capacity should be between min_allowed_capacity and "
                              "battery_capacity_kWh parameter.")
         if any(be[1] <= be[0] for _, be in break_even.items()):
             raise ValueError("Break even point for sell energy is lower than buy energy.")
