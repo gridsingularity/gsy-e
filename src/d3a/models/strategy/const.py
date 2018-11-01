@@ -59,6 +59,19 @@ class ConstSettings:
         DEFAULT_POWER_PROFILE = 0  # sunny
         MAX_PANEL_OUTPUT_W = 160
 
+    class WindSettings:
+        # This price should be just above the marginal costs for a Wind Power Plant - unit is cent
+        MIN_SELLING_RATE = 0
+        # Option 1, use the historical market average
+        # Default value 2 stands for market maker rate
+        INITIAL_RATE_OPTION = 2
+        # Energy rate decrease option for unsold WindPower offers
+        # Default value 1 stands for percentage/RISK based energy rate decrease
+        # Option 2, use the constant energy rate decrease
+        RATE_DECREASE_OPTION = 1
+        DEFAULT_POWER_PROFILE = 0  # sunny
+        MAX_WIND_TURBINE_OUTPUT_W = 160
+
     class HeatpumpSettings:
         # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)
         EARTH_TEMP = 6.0
