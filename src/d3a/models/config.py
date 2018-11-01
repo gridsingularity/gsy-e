@@ -67,5 +67,5 @@ class SimulationConfig:
         Reads market_maker_rate from arbitrary input types
         """
         market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
-        self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.RATE,
+        self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                         market_maker_rate_parsed)

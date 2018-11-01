@@ -29,9 +29,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
 
         BaseStrategy.__init__(self)
-        self.min_energy_rate = read_arbitrary_profile(InputProfileTypes.RATE,
+        self.min_energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                       min_energy_rate)
-        self.max_energy_rate = read_arbitrary_profile(InputProfileTypes.RATE,
+        self.max_energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                       max_energy_rate)
         BidUpdateFrequencyMixin.__init__(self,
                                          initial_rate_profile=self.min_energy_rate,
