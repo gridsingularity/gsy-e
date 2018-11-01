@@ -9,7 +9,7 @@ from fabric.operations import local, run
 from fabric.state import env
 from fabric.tasks import execute
 from fabric.utils import abort, puts
-
+from default_settings_to_json_file import export_default_settings_to_json_file
 
 SOLIUM_VERSION = '0.2.2'
 HERE = Path().resolve()
@@ -164,7 +164,6 @@ def sync():
         local('pip install --no-deps -e .')
     _post_check()
 
-    from default_settings_to_json_file import export_default_settings_to_json_file
     export_default_settings_to_json_file()
 
 
