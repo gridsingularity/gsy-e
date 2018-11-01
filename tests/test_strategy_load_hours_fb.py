@@ -10,7 +10,7 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a import TIME_FORMAT
 from d3a import TIME_ZONE
 from d3a.device_registry import DeviceRegistry

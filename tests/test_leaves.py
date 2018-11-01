@@ -3,7 +3,7 @@ from d3a.models.area import Area
 from d3a.models.leaves import Fridge, CommercialProducer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 def test_fridge_leaf():

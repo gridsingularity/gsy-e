@@ -7,10 +7,10 @@ from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
 from d3a.models.leaves import Fridge, PV
 from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.simple import OfferStrategy
+from d3a.models.strategy.deprecated.simple import OfferStrategy
 
 
 def test_area_with_children_roundtrip():

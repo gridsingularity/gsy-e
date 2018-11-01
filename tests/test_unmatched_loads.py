@@ -7,7 +7,7 @@ from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.state import LoadState
-from d3a.models.strategy.permanent import PermanentLoadStrategy
+from d3a.models.strategy.deprecated.permanent import PermanentLoadStrategy
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 

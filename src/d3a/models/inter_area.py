@@ -3,7 +3,7 @@ from typing import Dict, Set  # noqa
 
 from d3a.exceptions import MarketException, OfferNotFoundException, BidNotFound
 from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.util import make_iaa_name, make_ba_name
 from d3a import TIME_FORMAT
 from d3a.models.market.market_structures import Bid

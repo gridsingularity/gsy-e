@@ -1,7 +1,7 @@
 from behave import then
 from math import isclose
 from pendulum import duration
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a import PENDULUM_TIME_FORMAT
 
 
