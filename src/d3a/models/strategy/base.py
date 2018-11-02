@@ -4,7 +4,8 @@ from typing import Set, List, Dict, Any, Union  # noqa
 
 from d3a.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.events import EventMixin, TriggerMixin, Trigger, AreaEvent, MarketEvent
+from d3a.events.event_structures import TriggerMixin, Trigger, AreaEvent, MarketEvent
+from d3a.events import EventMixin
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a.models.strategy.const import ConstSettings

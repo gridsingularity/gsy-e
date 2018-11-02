@@ -5,7 +5,7 @@ import pytest
 from pendulum import DateTime
 
 from d3a import TIME_ZONE
-from d3a.models.events import MarketEvent
+from d3a.events.event_structures import MarketEvent
 from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule

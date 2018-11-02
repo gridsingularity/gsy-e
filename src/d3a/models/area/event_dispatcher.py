@@ -1,7 +1,7 @@
 from random import random
 from typing import Union
 from collections import defaultdict
-from d3a.models.events import MarketEvent, AreaEvent
+from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.inter_area import InterAreaAgent, BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
 

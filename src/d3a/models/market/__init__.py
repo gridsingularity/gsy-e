@@ -10,7 +10,7 @@ from terminaltables.other_tables import SingleTable
 
 from d3a import TIME_ZONE, TIME_FORMAT
 from d3a.exceptions import InvalidTrade
-from d3a.models.events import MarketEvent
+from d3a.events.event_structures import MarketEvent
 from d3a.blockchain_utils import create_market_contract, trade_offer
 from d3a.device_registry import DeviceRegistry
 
