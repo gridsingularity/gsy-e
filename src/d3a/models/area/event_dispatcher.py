@@ -82,12 +82,11 @@ class AreaDispatcher:
     def select_agent_class(is_spot_market):
         if is_spot_market:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                market_class = OneSidedAgent
+                return OneSidedAgent
             else:
-                market_class = TwoSidedPayAsBidAgent
+                return TwoSidedPayAsBidAgent
         else:
-            market_class = BalancingAgent
-        return market_class
+            return BalancingAgent
 
     def create_area_agents(self, is_spot_market, market):
         if not self.area.parent:

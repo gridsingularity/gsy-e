@@ -55,12 +55,11 @@ class AreaMarkets:
     def select_market_class(is_spot_market):
         if is_spot_market:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                market_class = OneSidedMarket
+                return OneSidedMarket
             else:
-                market_class = TwoSidedPayAsBid
+                return TwoSidedPayAsBid
         else:
-            market_class = BalancingMarket
-        return market_class
+            return BalancingMarket
 
     def create_future_markets(self, current_time, is_spot_market, area):
         markets = self.markets if is_spot_market else self.balancing_markets
