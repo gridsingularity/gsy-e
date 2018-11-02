@@ -108,6 +108,11 @@ class Market:
                     raise InvalidTrade("Blockchain and local residual offers are out of sync")
                 residual_offer.id = str(new_offer_id)
                 residual_offer.real_id = new_offer_id
+                self._notify_listeners(
+                    MarketEvent.OFFER_CHANGED,
+                    existing_offer=original_offer,
+                    new_offer=residual_offer
+                )
         else:
             trade_id = str(uuid.uuid4())
         return trade_id, residual_offer

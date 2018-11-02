@@ -7,9 +7,6 @@ contract Market is Mortal {
     // holds the offerId -> Offer() mapping
     mapping (bytes32 => Offer) private offers;
 
-    // Nonce counter to ensure unique offer ids
-    uint private offerNonce = 0;
-
     //mapping of the energy balances for market participants
     mapping (address => int256) private balances;
 
@@ -164,7 +161,7 @@ contract Market is Mortal {
 
         if (energyUnits > 0) {
             offerId = keccak256(
-                abi.encode(energyUnits, price, seller, offerNonce++)
+                abi.encode(energyUnits, price, seller, clearingToken.getAndIncreaseNonce())
             );
             offers[offerId] = Offer(energyUnits, price, msg.sender);
             offers[offerId].energyUnits = energyUnits;
