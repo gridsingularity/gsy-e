@@ -1,11 +1,10 @@
 import json
 import os
 
-from d3a.util import d3a_path
-from d3a.util import constsettings_to_dict
-
 
 def export_default_settings_to_json_file():
+    from d3a.util import d3a_path
+    from d3a.util import constsettings_to_dict
 
     base_settings_str = '{ \n "basic_settings": { \n   "duration": "24h", \n   ' \
                         '"slot_length": "60m", \n   "tick_length": "60s", \n   ' \
