@@ -3,7 +3,7 @@ import os
 from time import sleep
 from subprocess import Popen
 from web3 import Web3, HTTPProvider
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 def ganachecli_command():

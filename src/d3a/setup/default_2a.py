@@ -4,7 +4,7 @@ from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy
 # from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours_fb import CellTowerLoadHoursStrategy, LoadHoursStrategy
+from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 

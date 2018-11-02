@@ -2,7 +2,7 @@ from collections import defaultdict
 from pendulum import duration
 
 from math import isclose
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a import limit_float_precision
 
 StorageSettings = ConstSettings.StorageSettings

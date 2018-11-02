@@ -1,7 +1,7 @@
 import math
 
 from d3a.exceptions import MarketException
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.models.strategy.storage import StorageStrategy
 
 

@@ -1,5 +1,5 @@
 from behave import then
-from d3a.models.strategy.read_user_profile import _readCSV
+from d3a.models.read_user_profile import _readCSV
 from d3a import PENDULUM_TIME_FORMAT
 
 

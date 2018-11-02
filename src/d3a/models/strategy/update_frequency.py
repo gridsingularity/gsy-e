@@ -4,7 +4,7 @@ from typing import Dict  # noqa
 from pendulum import Time # noqa
 
 from d3a.exceptions import MarketException
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 class InitialRateOptions(Enum):

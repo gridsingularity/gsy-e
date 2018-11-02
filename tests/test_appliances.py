@@ -1,15 +1,12 @@
-from copy import deepcopy
 from collections import defaultdict
 
 import pytest
 from unittest.mock import MagicMock
 
-from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.area.stats import AreaStats
-from d3a.models.strategy.const import ConstSettings
 
 from pendulum import DateTime
 from d3a import TIME_ZONE
@@ -26,25 +23,6 @@ class FakePVStrategy:
 
     def __init__(self):
         self.panel_count = 1
-
-
-class FakeFridgeState:
-    def __init__(self):
-        self.temperature = ConstSettings.FridgeSettings.TEMPERATURE
-        self.max_temperature = ConstSettings.FridgeSettings.MAX_TEMP
-
-
-class FakeFridgeStrategy:
-    @property
-    def fridge_temp(self):
-        return self.temperature
-
-    @property
-    def state(self):
-        return FakeFridgeState()
-
-    def post(self, **data):
-        pass
 
 
 class FakeCustomProfileStrategy:
@@ -123,63 +101,6 @@ class FakeArea:
         else:
             return int(36000 / DEFAULT_CONFIG.tick_length.in_seconds())
             # 10 AM so the output of the PV is >0
-
-
-@pytest.fixture
-def fridge_fixture():
-    fridge = FridgeAppliance()
-    fridge.area = FakeArea()
-    fridge_strategy = FakeFridgeStrategy()
-    fridge.owner = FakeOwnerWithStrategy(fridge_strategy)
-    fridge.state = FakeFridgeState()
-    fridge.event_activate()
-    return fridge
-
-
-# door is closed by default and can be opened/closed by class-specfic triggers
-
-def test_fridge_appliance_door(fridge_fixture):
-    assert not fridge_fixture.is_door_open
-    fridge_fixture.fire_trigger("open")
-    assert fridge_fixture.is_door_open
-    fridge_fixture.fire_trigger("close")
-    assert not fridge_fixture.is_door_open
-
-
-# reports traded surplus energy
-
-def test_fridge_appliance_report_energy_surplus(fridge_fixture):
-    test_energy = 10
-    fridge_fixture.report_energy(test_energy)
-    assert fridge_fixture.area.reported_value > 0
-
-
-# no report if there is no surplus or deficit
-
-def test_fridge_appliance_report_energy_balanced(fridge_fixture):
-    fridge_fixture.report_energy(0)
-    assert fridge_fixture.area.reported_value is None
-
-
-# temperature rises when the door is open
-
-def test_fridge_appliance_heats_up_when_open(fridge_fixture):
-    open_fridge = deepcopy(fridge_fixture)
-    open_fridge.trigger_open()
-    open_fridge.event_activate()
-    fridge_fixture.event_activate()
-    fridge_fixture.report_energy(0)
-    open_fridge.report_energy(0)
-    assert open_fridge.temperature + open_fridge.temp_change \
-        > fridge_fixture.temperature + fridge_fixture.temp_change
-
-
-# always buys energy if we have none and upper temperature constraint is violated
-
-def test_fridge_appliance_report_energy_too_warm(fridge_fixture):
-    fridge_fixture.state.temperature = ConstSettings.FridgeSettings.MAX_TEMP + 1
-    fridge_fixture.report_energy(0)
-    assert fridge_fixture.area.reported_value < 0
 
 
 @pytest.fixture
