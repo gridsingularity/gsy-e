@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.state import LoadState
 from d3a.models.config import SimulationConfig

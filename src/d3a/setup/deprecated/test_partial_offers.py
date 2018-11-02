@@ -7,7 +7,7 @@ from d3a.models.const import ConstSettings
 from d3a.models.strategy.deprecated.e_car import ECarStrategy
 from d3a.models.strategy.deprecated.fridge import FridgeStrategy
 from d3a.models.strategy.deprecated.greedy_night_storage import NightStorageStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 
