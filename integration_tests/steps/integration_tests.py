@@ -7,11 +7,11 @@ from pendulum import duration
 from behave import given, when, then
 
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.read_user_profile import read_arbitrary_profile, _readCSV
+from d3a.models.read_user_profile import read_arbitrary_profile, _readCSV
 from d3a.simulation import Simulation
 from d3a.util import d3a_path
 from d3a import PENDULUM_TIME_FORMAT
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.export_unmatched_loads import export_unmatched_loads
 
 
@@ -64,7 +64,7 @@ def json_string_profile(context, device):
 @given('we have a profile of market_maker_rate for {scenario}')
 def hour_profile_of_market_maker_rate(context, scenario):
     import importlib
-    from d3a.models.strategy.read_user_profile import InputProfileTypes
+    from d3a.models.read_user_profile import InputProfileTypes
     setup_file_module = importlib.import_module("d3a.setup.{}".format(scenario))
     context._market_maker_rate = \
         read_arbitrary_profile(InputProfileTypes.IDENTITY, setup_file_module.market_maker_rate)
@@ -91,8 +91,9 @@ def pv_profile_scenario(context):
                 "children": [
                     {
                         "name": "H1 Load",
-                        "type": "PermanentLoad",
-                        "energy": 100
+                        "type": "LoadHours",
+                        "avg_power_W": 400,
+                        "hrs_per_day": 24
                     },
                     {
                         "name": "H1 PV",
@@ -110,11 +111,7 @@ def pv_profile_scenario(context):
                         "type": "Storage",
                         "initial_capacity_kWh": 5,
                         "battery_capacity_kWh": 12.5,
-                    },
-                    {
-                        "name": "H2 Fridge 1",
-                        "type": "Fridge"
-                    },
+                    }
                 ]
             }
         ]
@@ -163,11 +160,7 @@ def load_profile_scenario(context):
               "type": "Storage",
               "initial_capacity_kWh": 5,
               "battery_capacity_kWh": 12.5,
-            },
-            {
-              "name": "H2 Fridge 1",
-              "type": "Fridge"
-            },
+            }
           ]
         }
       ]
@@ -299,7 +292,7 @@ def test_export_data_csv(context, scenario):
 @then('we test that config parameters are correctly parsed for {scenario}'
       ' [{cloud_coverage}, {iaa_fee}]')
 def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):
-    from d3a.models.strategy.read_user_profile import default_profile_dict
+    from d3a.models.read_user_profile import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
     assert len(context.simulation.simulation_config.market_maker_rate) == 24 * 60
     assert len(default_profile_dict().keys()) == len(context.simulation.simulation_config.

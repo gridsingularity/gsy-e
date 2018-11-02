@@ -2,7 +2,7 @@ import pytest
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market import Offer, Trade
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 
 

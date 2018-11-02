@@ -9,7 +9,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.device_registry import DeviceRegistry
 
 

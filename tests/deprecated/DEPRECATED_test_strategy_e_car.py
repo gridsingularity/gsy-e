@@ -5,8 +5,8 @@ from unittest.mock import Mock
 from d3a import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
-from d3a.models.strategy.const import ConstSettings
-from d3a.models.strategy.e_car import ECarStrategy
+from d3a.models.const import ConstSettings
+from d3a.models.strategy.deprecated.e_car import ECarStrategy
 
 
 class FakeArea():
@@ -255,7 +255,7 @@ def test_ecar_constructor_rejects_invalid_parameters():
 
 
 def test_ecar_constructor_handles_none_arrive_depart_values():
-    from d3a.models.strategy.const import ConstSettings
+    from d3a.models.const import ConstSettings
     try:
         ecar = ECarStrategy(arrival_time=None, depart_time=None)
         assert ecar.arrival_time == ConstSettings.EcarSettings.ARRIVAL_TIME

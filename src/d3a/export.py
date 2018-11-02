@@ -10,8 +10,7 @@ from slugify import slugify
 
 from d3a import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade
-from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
@@ -461,9 +460,7 @@ class ExportLeafData(ExportData):
                 ] + self._specific_labels()
 
     def _specific_labels(self):
-        if isinstance(self.area.strategy, FridgeStrategy):
-            return ['temperature [°C]']
-        elif isinstance(self.area.strategy, StorageStrategy):
+        if isinstance(self.area.strategy, StorageStrategy):
             return ['bought [kWh]', 'sold [kWh]', 'charge [kWh]', 'offered [kWh]', 'charge [%]']
         elif isinstance(self.area.strategy, LoadHoursStrategy):
             return ['desired energy [kWh]', 'deficit [kWh]']
@@ -483,9 +480,7 @@ class ExportLeafData(ExportData):
                 ] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
-        if isinstance(self.area.strategy, FridgeStrategy):
-            return [self.area.strategy.temp_history[slot]]
-        elif isinstance(self.area.strategy, (StorageStrategy)):
+        if isinstance(self.area.strategy, (StorageStrategy)):
             s = self.area.strategy.state
             return [market.bought_energy(self.area.name),
                     market.sold_energy(self.area.name),

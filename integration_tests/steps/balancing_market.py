@@ -3,7 +3,7 @@ from math import isclose
 from functools import reduce
 from d3a.device_registry import DeviceRegistry
 from d3a.util import make_ba_name
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 @given('we have configured all the balancing_market.default_2a devices in the registry')

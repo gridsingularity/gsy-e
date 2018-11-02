@@ -5,8 +5,8 @@ import pendulum
 from d3a import TIME_FORMAT
 from d3a import TIME_ZONE
 from d3a.models.market.market_structures import Offer, Trade, Bid
-from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo, OfferInfo
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.inter_area import InterAreaAgent, BidInfo, OfferInfo
+from d3a.models.const import ConstSettings
 
 
 class FakeArea:
@@ -247,7 +247,7 @@ def iaa2():
 
 @pytest.fixture
 def iaa_double_sided():
-    from d3a.models.strategy.const import ConstSettings
+    from d3a.models.const import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
@@ -343,7 +343,7 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
 
 @pytest.fixture
 def iaa_double_sided_2():
-    from d3a.models.strategy.const import ConstSettings
+    from d3a.models.const import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
