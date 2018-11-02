@@ -1,13 +1,13 @@
 from collections import defaultdict, namedtuple
 from logging import getLogger
-from typing import Dict, List, Mapping, Optional  # noqa
+from typing import Dict, List, Optional  # noqa
 from web3 import Web3, HTTPProvider
 from solc import compile_source
 from web3.contract import Contract
 from subprocess import Popen, DEVNULL
 
 from d3a.util import get_cached_joined_contract_source, wait_until_timeout_blocking
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.blockchain_utils import unlock_account
 
 

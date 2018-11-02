@@ -4,10 +4,9 @@ from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.state import LoadState
-from d3a.models.strategy.permanent import PermanentLoadStrategy
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 
@@ -16,10 +15,13 @@ class TestUnmatchedLoad(unittest.TestCase):
 
     def setUp(self):
         self.appliance = MagicMock(spec=SimpleAppliance)
+
         self.strategy1 = MagicMock(spec=LoadHoursStrategy)
         self.strategy1.state = MagicMock(spec=LoadState)
         self.strategy1.state.desired_energy_Wh = {}
-        self.strategy2 = MagicMock(spec=PermanentLoadStrategy)
+        self.strategy2 = MagicMock(spec=LoadHoursStrategy)
+        self.strategy2.state = MagicMock(spec=LoadState)
+        self.strategy2.state.desired_energy_Wh = {}
         self.strategy3 = MagicMock(spec=DefinedLoadStrategy)
         self.strategy3.state = MagicMock(spec=LoadState)
         self.strategy3.state.desired_energy_Wh = {}
@@ -40,7 +42,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy2.energy = 100
+            self.strategy2.state.desired_energy_Wh[timeslot] = 100
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.traded_energy = {"load1": -0.101, "load2": -0.101}
@@ -58,7 +60,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy2.energy = 100
+            self.strategy2.state.desired_energy_Wh[timeslot] = 100
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.traded_energy = {"load1": -0.09, "load2": -0.07}
@@ -75,7 +77,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy2.energy = 100
+            self.strategy2.state.desired_energy_Wh[timeslot] = 100
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot
             mock_market.traded_energy = {"load1": -0.09, "load2": -0.101}
@@ -96,7 +98,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         for i in range(1, 11):
             timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
             self.strategy1.state.desired_energy_Wh[timeslot] = 100
-            self.strategy2.energy = 100
+            self.strategy2.state.desired_energy_Wh[timeslot] = 100
 
             mock_market = MagicMock(spec=Market)
             mock_market.time_slot = timeslot

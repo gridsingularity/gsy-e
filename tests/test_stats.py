@@ -6,7 +6,7 @@ from d3a.stats import (
     energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
 )
 from d3a.util import make_iaa_name
-from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy import BaseStrategy
 
 
 class FakeArea:

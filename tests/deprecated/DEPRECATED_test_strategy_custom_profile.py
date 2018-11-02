@@ -3,7 +3,7 @@ import pytest
 from pendulum import duration, DateTime
 
 from d3a.models.area import DEFAULT_CONFIG
-from d3a.models.strategy.custom_profile import CustomProfileStrategy, \
+from d3a.models.strategy.deprecated.custom_profile import CustomProfileStrategy, \
     CustomProfileIrregularTimes, custom_profile_strategy_from_csv
 
 

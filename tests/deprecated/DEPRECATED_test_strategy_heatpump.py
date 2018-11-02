@@ -2,8 +2,8 @@ import pytest
 
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer
-from d3a.models.strategy.const import ConstSettings
-from d3a.models.strategy.heatpump import HeatPumpStrategy
+from d3a.models.const import ConstSettings
+from d3a.models.strategy.deprecated.heatpump import HeatPumpStrategy
 
 
 class FakeArea():

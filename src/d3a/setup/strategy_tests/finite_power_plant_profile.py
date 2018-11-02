@@ -5,7 +5,7 @@ Setup file for displaying the finite power plant strategy using a power profile.
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 """
 Power profile for the finite power plant. It will produce 0.1 kW from 00:00-07:45, 0.15 kW

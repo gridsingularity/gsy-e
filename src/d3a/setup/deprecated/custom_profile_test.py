@@ -4,8 +4,8 @@ from d3a.models.appliance.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.custom_profile import custom_profile_strategy_from_list
-from d3a.models.strategy.fridge import FridgeStrategy
+from d3a.models.strategy.deprecated.custom_profile import custom_profile_strategy_from_list
+from d3a.models.strategy.deprecated.fridge import FridgeStrategy
 from d3a.models.strategy.pv import PVStrategy
 
 

@@ -2,8 +2,8 @@ from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.const import ConstSettings
 
 
 def get_setup(config):
@@ -11,7 +11,7 @@ def get_setup(config):
     area = Area(
         'Grid',
         [
-            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=25,
+            Area('Cell Tower', strategy=LoadHoursStrategy(avg_power_W=50,
                                                           hrs_per_day=24),
                  appliance=SwitchableAppliance()),
             Area('Commercial Energy Producer',

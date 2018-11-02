@@ -1,7 +1,7 @@
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.permanent import PermanentLoadStrategy
+from d3a.models.strategy.deprecated.permanent import PermanentLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 

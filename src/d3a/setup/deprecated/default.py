@@ -4,10 +4,10 @@ from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.e_car import ECarStrategy
-from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.heatpump import HeatPumpStrategy
-from d3a.models.strategy.permanent import PermanentLoadStrategy
+from d3a.models.strategy.deprecated.e_car import ECarStrategy
+from d3a.models.strategy.deprecated.fridge import FridgeStrategy
+from d3a.models.strategy.deprecated.heatpump import HeatPumpStrategy
+from d3a.models.strategy.deprecated.permanent import PermanentLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 

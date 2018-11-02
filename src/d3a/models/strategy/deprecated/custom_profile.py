@@ -9,7 +9,7 @@ from typing import Dict  # noqa
 from pendulum import duration, parse
 from pendulum import Time  # noqa
 
-from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy import BaseStrategy
 
 
 class CustomProfile:
