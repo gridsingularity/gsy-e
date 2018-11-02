@@ -418,7 +418,7 @@ class ExportUpperLevelData(ExportData):
                 'max trade rate [ct./kWh]',
                 '# trades',
                 'total energy traded [kWh]',
-                'total trade volume [EUR]']
+                'total trade volume [EURO ct.]']
 
     def rows(self):
         return [self._row(m.time_slot, m) for m in self.area.past_markets]

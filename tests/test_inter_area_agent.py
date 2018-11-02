@@ -5,7 +5,10 @@ import pendulum
 from d3a import TIME_FORMAT
 from d3a import TIME_ZONE
 from d3a.models.market.market_structures import Offer, Trade, Bid
-from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo, OfferInfo
+from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
+from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
+from d3a.models.strategy.area_agents.one_sided_engine import OfferInfo
 from d3a.models.strategy.const import ConstSettings
 
 
@@ -94,10 +97,10 @@ def iaa():
     lower_market = FakeMarket([Offer('id', 1, 1, 'other')])
     higher_market = FakeMarket([Offer('id2', 3, 3, 'owner'), Offer('id3', 0.5, 1, 'owner')])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner,
-                         higher_market=higher_market,
-                         lower_market=lower_market,
-                         transfer_fee_pct=5)
+    iaa = OneSidedAgent(owner=owner,
+                        higher_market=higher_market,
+                        lower_market=lower_market,
+                        transfer_fee_pct=5)
     iaa.event_tick(area=iaa.owner)
     iaa.owner.current_tick = 14
     iaa.event_tick(area=iaa.owner)
@@ -134,10 +137,10 @@ def iaa_bid():
     higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner'),
                                     Bid('id3', 0.5, 1, 'child', 'owner')])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner,
-                         higher_market=higher_market,
-                         lower_market=lower_market,
-                         transfer_fee_pct=5)
+    iaa = TwoSidedPayAsBidAgent(owner=owner,
+                                higher_market=higher_market,
+                                lower_market=lower_market,
+                                transfer_fee_pct=5)
     iaa.event_tick(area=iaa.owner)
     iaa.owner.current_tick = 14
     iaa.event_tick(area=iaa.owner)
@@ -173,10 +176,10 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
     higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')])
-    iaa = InterAreaAgent(owner=FakeArea('owner'),
-                         higher_market=higher_market,
-                         lower_market=lower_market,
-                         transfer_fee_pct=iaa_fee)
+    iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
+                                higher_market=higher_market,
+                                lower_market=lower_market,
+                                transfer_fee_pct=iaa_fee)
     iaa.event_tick(area=iaa.owner)
     assert iaa.higher_market.bid_count == 1
     assert iaa.higher_market.forwarded_bid.price / (1 + (iaa_fee / 100)) == \
@@ -238,7 +241,7 @@ def iaa2():
     higher_market = FakeMarket([], m_id=234)
     owner = FakeArea('owner')
     owner.future_market = lower_market
-    iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    iaa = OneSidedAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
     iaa.event_tick(area=iaa.owner)
     iaa.owner.current_tick += 2
     iaa.event_tick(area=iaa.owner)
@@ -253,7 +256,8 @@ def iaa_double_sided():
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
     higher_market = FakeMarket([], [])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
+                                higher_market=higher_market)
     iaa.engines[0]._match_offers_bids = lambda: None
     iaa.engines[1]._match_offers_bids = lambda: None
     iaa.event_tick(area=iaa.owner)
@@ -349,7 +353,8 @@ def iaa_double_sided_2():
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
     higher_market = FakeMarket([], [])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
+                                higher_market=higher_market)
     iaa.event_tick(area=iaa.owner)
     yield iaa
     ConstSettings.IAASettings.MARKET_TYPE = 1

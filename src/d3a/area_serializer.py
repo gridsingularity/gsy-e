@@ -15,7 +15,7 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.e_car import ECarStrategy  # NOQA
 from d3a.models.strategy.fridge import FridgeStrategy  # NOQA
 from d3a.models.strategy.heatpump import HeatPumpStrategy  # NOQA
-from d3a.models.strategy.inter_area import InterAreaAgent  # NOQA
+from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # NOQA
 from d3a.models.strategy.permanent import PermanentLoadStrategy  # NOQA
 from d3a.models.strategy.predef_load_household import PredefLoadHouseholdStrategy  # NOQA
 from d3a.models.strategy.predef_load_prob import PredefLoadProbStrategy  # NOQA
