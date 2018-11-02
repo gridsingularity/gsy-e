@@ -11,13 +11,14 @@ ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 class IAAEngine:
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
-                 owner: "InterAreaAgent", balancing_agent):
+                 owner: "InterAreaAgent"):
         self.name = name
         self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
         self.transfer_fee_pct = transfer_fee_pct
         self.owner = owner
-        self.balancing_agent = balancing_agent
+        from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
+        self._balancing_agent = isinstance(owner, BalancingAgent)
 
         self.offer_age = {}  # type: Dict[str, int]
         # Offer.id -> OfferInfo
@@ -35,7 +36,7 @@ class IAAEngine:
             offer.price + (offer.price * (self.transfer_fee_pct / 100)),
             offer.energy,
             self.owner.name,
-            self.balancing_agent
+            self._balancing_agent
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info

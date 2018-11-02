@@ -5,11 +5,10 @@ from d3a.util import make_iaa_name
 
 class OneSidedAgent(InterAreaAgent):
     def __init__(self, *, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1, balancing_agent=False,
-                 engine_type=IAAEngine):
+                 transfer_fee_pct=1, min_offer_age=1, engine_type=IAAEngine):
         super().__init__(engine_type=engine_type, owner=owner, higher_market=higher_market,
                          lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
-                         min_offer_age=min_offer_age, balancing_agent=balancing_agent)
+                         min_offer_age=min_offer_age)
         self.name = make_iaa_name(owner)
 
     def usable_offer(self, offer):

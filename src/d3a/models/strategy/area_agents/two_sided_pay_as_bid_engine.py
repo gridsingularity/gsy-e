@@ -8,9 +8,8 @@ BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
 class TwoSidedPayAsBidEngine(IAAEngine):
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
-                 owner: "InterAreaAgent", balancing_agent):
-        super().__init__(name, market_1, market_2, min_offer_age, transfer_fee_pct, owner,
-                         balancing_agent)
+                 owner: "InterAreaAgent"):
+        super().__init__(name, market_1, market_2, min_offer_age, transfer_fee_pct, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
 
     def _forward_bid(self, bid):

@@ -8,7 +8,7 @@ class BalancingAgent(OneSidedAgent):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
         super().__init__(owner=owner, higher_market=higher_market,
                          lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
-                         min_offer_age=min_offer_age, balancing_agent=True)
+                         min_offer_age=min_offer_age)
         self.name = make_ba_name(self.owner)
 
     def event_tick(self, *, area):

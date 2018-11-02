@@ -7,7 +7,7 @@ class InterAreaAgent(BaseStrategy):
                   'min_offer_age')
 
     def __init__(self, *, engine_type, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1, balancing_agent=False):
+                 transfer_fee_pct=1, min_offer_age=1):
         """
         Equalize markets
 
@@ -19,13 +19,12 @@ class InterAreaAgent(BaseStrategy):
         """
         super().__init__()
         self.owner = owner
-        self.balancing_agent = balancing_agent
 
         self.engines = [
             engine_type('High -> Low', higher_market, lower_market, min_offer_age,
-                        transfer_fee_pct, self, balancing_agent),
+                        transfer_fee_pct, self),
             engine_type('Low -> High', lower_market, higher_market, min_offer_age,
-                        transfer_fee_pct, self, balancing_agent),
+                        transfer_fee_pct, self),
         ]
 
         self.time_slot = higher_market.time_slot.strftime(TIME_FORMAT)
