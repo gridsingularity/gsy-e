@@ -91,8 +91,9 @@ def pv_profile_scenario(context):
                 "children": [
                     {
                         "name": "H1 Load",
-                        "type": "PermanentLoad",
-                        "energy": 100
+                        "type": "LoadHours",
+                        "avg_power_W": 400,
+                        "hrs_per_day": 24
                     },
                     {
                         "name": "H1 PV",
@@ -110,11 +111,7 @@ def pv_profile_scenario(context):
                         "type": "Storage",
                         "initial_capacity_kWh": 5,
                         "battery_capacity_kWh": 12.5,
-                    },
-                    {
-                        "name": "H2 Fridge 1",
-                        "type": "Fridge"
-                    },
+                    }
                 ]
             }
         ]
