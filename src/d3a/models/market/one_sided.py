@@ -6,6 +6,7 @@ from pendulum import DateTime
 from d3a.models.events import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
+from d3a.models.market.market_bc_interface import handle_blockchain_trade_event
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade
 from d3a.blockchain.utils import create_new_offer, cancel_offer
@@ -124,8 +125,8 @@ class OneSidedMarket(Market):
                                          key=lambda o: o.price / o.energy)
             raise
 
-        trade_id = self._handle_blockchain_trade_event(offer, buyer,
-                                                       original_offer, residual_offer)
+        trade_id = handle_blockchain_trade_event(self, offer, buyer,
+                                                 original_offer, residual_offer)
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
         if self.area and self.area.bc:
             self._trades_by_id[trade_id] = trade

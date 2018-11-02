@@ -36,6 +36,10 @@ class BlockChainInterface:
         self.contracts = {}  # type: Dict[str, Contract]
         self.users = BCUsers(self.chain, self.contracts, default_user_balance)
         self.listeners = defaultdict(list)  # type: Dict[str, List[callable]]
+        self.init_contract("ClearingToken.sol", "ClearingToken", [10 ** 10,
+                                                                  "ClearingToken", 0,
+                                                                  "CT"],
+                           id_='ClearingToken')
 
     def init_contract(self, contract_filename: str, contract_name: str,
                       args: list, listeners: Optional[List] = None, id_: str = None):
