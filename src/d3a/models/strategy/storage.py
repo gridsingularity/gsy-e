@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
-from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy import BaseStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile
@@ -20,7 +20,8 @@ BalancingSettings = ConstSettings.BalancingSettings
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
     parameters = ('risk', 'initial_capacity_kWh', 'initial_soc',
-                  'battery_capacity_kWh', 'max_abs_battery_power_kW')
+                  'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
+                  )
 
     def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
                  initial_capacity_kWh: float=StorageSettings.MIN_ALLOWED_SOC *

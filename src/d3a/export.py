@@ -10,7 +10,7 @@ from slugify import slugify
 
 from d3a import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade
-from d3a.models.strategy.fridge import FridgeStrategy
+from d3a.models.strategy.deprecated.fridge import FridgeStrategy
 from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy

@@ -4,7 +4,7 @@ from unittest.mock import Mock
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer
 from d3a.models.const import ConstSettings
-from d3a.models.strategy.fridge import FridgeStrategy
+from d3a.models.strategy.deprecated.fridge import FridgeStrategy
 
 
 class FakeCurrentMarket:

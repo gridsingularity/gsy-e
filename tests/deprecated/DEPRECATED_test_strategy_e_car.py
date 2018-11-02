@@ -6,7 +6,7 @@ from d3a import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.const import ConstSettings
-from d3a.models.strategy.e_car import ECarStrategy
+from d3a.models.strategy.deprecated.e_car import ECarStrategy
 
 
 class FakeArea():

@@ -163,11 +163,7 @@ def load_profile_scenario(context):
               "type": "Storage",
               "initial_capacity_kWh": 5,
               "battery_capacity_kWh": 12.5,
-            },
-            {
-              "name": "H2 Fridge 1",
-              "type": "Fridge"
-            },
+            }
           ]
         }
       ]

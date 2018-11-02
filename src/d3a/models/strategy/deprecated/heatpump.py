@@ -1,5 +1,5 @@
 from d3a.exceptions import MarketException
-from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy import BaseStrategy
 from d3a.models.const import ConstSettings
 
 
