@@ -3,9 +3,9 @@ from pendulum import duration, Duration
 
 from d3a.exceptions import D3AException
 from d3a.util import format_interval
-from d3a.models.strategy.const import ConstSettings
-from d3a.models.strategy.read_user_profile import read_arbitrary_profile
-from d3a.models.strategy.read_user_profile import InputProfileTypes
+from d3a.models.const import ConstSettings
+from d3a.models.read_user_profile import read_arbitrary_profile
+from d3a.models.read_user_profile import InputProfileTypes
 
 
 class SimulationConfig:

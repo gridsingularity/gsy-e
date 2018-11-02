@@ -1,7 +1,7 @@
 import sys
 from d3a.models.strategy import ureg, Q_
 
-from d3a.models.strategy.base import BaseStrategy
+from d3a.models.strategy import BaseStrategy
 from d3a.device_registry import DeviceRegistry
 
 

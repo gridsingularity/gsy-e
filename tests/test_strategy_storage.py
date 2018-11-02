@@ -10,7 +10,7 @@ from d3a import TIME_ZONE
 from d3a.models.strategy import ureg, Q_
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.models.config import SimulationConfig
 from d3a import TIME_FORMAT
 from d3a.device_registry import DeviceRegistry
@@ -626,7 +626,7 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
 
 
 def test_storage_populates_break_even_profile_correctly():
-    from d3a.models.strategy.read_user_profile import default_profile_dict
+    from d3a.models.read_user_profile import default_profile_dict
     s = StorageStrategy(break_even=(22, 23))
     assert all([be[0] == 22 and be[1] == 23 for _, be in s.break_even.items()])
     assert set(s.break_even.keys()) == set(default_profile_dict().keys())

@@ -4,7 +4,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.device_registry import DeviceRegistry
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 device_registry_dict = {

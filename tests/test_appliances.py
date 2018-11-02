@@ -10,7 +10,7 @@ from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.area.stats import AreaStats
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 from pendulum import DateTime
 from d3a import TIME_ZONE

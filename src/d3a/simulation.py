@@ -23,7 +23,7 @@ from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 log = getLogger(__name__)

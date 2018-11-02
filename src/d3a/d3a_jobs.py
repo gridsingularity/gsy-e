@@ -8,7 +8,7 @@ from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.simulation import Simulation
 from d3a.web import start_web
 from d3a.util import available_simulation_scenarios
