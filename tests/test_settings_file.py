@@ -3,7 +3,7 @@ import unittest
 
 from d3a.util import IntervalType
 from d3a.util import d3a_path
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.util import read_settings_from_file
 from d3a.util import update_advanced_settings
 from d3a.models.config import SimulationConfig

@@ -10,7 +10,7 @@ from colorlog.colorlog import ColoredFormatter
 
 from d3a.exceptions import D3AException
 from d3a.models.config import SimulationConfig
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.simulation import Simulation
 from d3a.util import IntervalType, available_simulation_scenarios
 from d3a.web import start_web

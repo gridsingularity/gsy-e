@@ -1,13 +1,13 @@
 from behave import then
 from pendulum import duration
-from d3a.setup.strategy_tests import user_profile_load_csv, user_profile_load_dict # NOQA
+from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a import TIME_FORMAT
 from d3a.export_unmatched_loads import export_unmatched_loads
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as csv')
 def check_load_profile_csv(context):
-    from d3a.models.strategy.read_user_profile import _readCSV
+    from d3a.models.read_user_profile import _readCSV
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))
     input_profile = _readCSV(user_profile_load_csv.profile_path)

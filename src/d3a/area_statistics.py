@@ -1,9 +1,9 @@
 from collections import namedtuple, defaultdict, OrderedDict
 from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.inter_area import InterAreaAgent
+from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.load_hours_fb import CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy
 from d3a.util import area_name_from_area_or_iaa_name, make_iaa_name
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])

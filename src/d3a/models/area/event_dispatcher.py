@@ -2,15 +2,18 @@ from random import random
 from typing import Union
 from collections import defaultdict
 from d3a.models.events import MarketEvent, AreaEvent
-from d3a.models.strategy.inter_area import InterAreaAgent, BalancingAgent
+from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
+from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
+from d3a.models.const import ConstSettings
 
 
 class AreaDispatcher:
     def __init__(self, area):
         self.listeners = []
         self._inter_area_agents = \
-            defaultdict(list)  # type: Dict[DateTime, List[InterAreaAgent]]
+            defaultdict(list)  # type: Dict[DateTime, List[OneSidedAgent]]
         self._balancing_agents = \
             defaultdict(list)  # type: Dict[DateTime, List[BalancingAgent]]
         self.area = area
@@ -75,11 +78,23 @@ class AreaDispatcher:
         if self.area.appliance:
             self.area.appliance.event_listener(event_type, **kwargs)
 
+    @staticmethod
+    def select_agent_class(is_spot_market):
+        if is_spot_market:
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                return OneSidedAgent
+            else:
+                return TwoSidedPayAsBidAgent
+        else:
+            return BalancingAgent
+
     def create_area_agents(self, is_spot_market, market):
         if not self.area.parent:
             return
         if self.area.strategy:
             return
+
+        agent_class = self.select_agent_class(is_spot_market)
 
         if is_spot_market:
             if market.time_slot in self.interarea_agents or \
@@ -87,7 +102,7 @@ class AreaDispatcher:
                 return
             # Only connect an InterAreaAgent if we have a parent, a corresponding
             # timeframe market exists in the parent and we have no strategy
-            iaa = InterAreaAgent(
+            iaa = agent_class(
                 owner=self.area,
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
@@ -101,7 +116,7 @@ class AreaDispatcher:
             if market.time_slot in self.balancing_agents or \
                     market.time_slot not in self.area.parent._markets.balancing_markets:
                 return
-            ba = BalancingAgent(
+            ba = agent_class(
                 owner=self.area,
                 higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
                 lower_market=market,

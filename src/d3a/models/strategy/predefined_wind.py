@@ -1,7 +1,7 @@
 """
 Creates a WindStrategy that uses a profile as input for its power values.
 """
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy
 
 

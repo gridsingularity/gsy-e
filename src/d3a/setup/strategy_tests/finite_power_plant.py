@@ -5,7 +5,7 @@ Setup file for displaying the finite power plant strategy.
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 """
 The finite power plant strategy requires an energy rate value, which will be used for the lifetime
