@@ -14,7 +14,7 @@ from datetime import timedelta
 
 from d3a import get_project_root
 from d3a import setup as d3a_setup
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 import d3a
 import inspect

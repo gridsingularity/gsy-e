@@ -16,12 +16,6 @@
       "MAX_OFFER_TRAVERSAL_LENGTH": null,
       "ENERGY_RATE_DECREASE_PER_UPDATE": 1
     },
-    "FridgeSettings": {
-      "MAX_TEMP": 8.0,
-      "MIN_TEMP": 4.0,
-      "TEMPERATURE": 6.0,
-      "MIN_NEEDED_ENERGY": 10
-    },
     "StorageSettings": {
       "CAPACITY": 1.2,
       "MAX_ABS_POWER": 5,
@@ -44,20 +38,11 @@
       "DEFAULT_POWER_PROFILE": 0,
       "MAX_PANEL_OUTPUT_W": 160
     },
-    "HeatpumpSettings": {
-      "EARTH_TEMP": 6.0,
-      "MAX_STORAGE_TEMP": 55.0,
-      "MIN_STORAGE_TEMP": 30.0,
-      "INITIAL_STORAGE_TEMP": 30.0,
-      "MIN_NEEDED_ENERGY": 50,
-      "MIN_TEMP_INCREASE": 2
-    },
-    "EcarSettings": {
-      "ARRIVAL_TIME": 1,
-      "DEPART_TIME": 23
-    },
-    "PredefinedLoadSettings": {
-      "MIN_HOUSEHOLD_CONSUMPTION": 70
+    "WindSettings": {
+      "MIN_SELLING_RATE": 0,
+      "INITIAL_RATE_OPTION": 2,
+      "RATE_DECREASE_OPTION": 1,
+      "MAX_WIND_TURBINE_OUTPUT_W": 160
     },
     "IAASettings": {
       "FEE_PERCENTAGE": 1,

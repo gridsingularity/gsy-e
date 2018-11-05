@@ -1,4 +1,4 @@
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 """
 Example file for CustomLoadStrategy.

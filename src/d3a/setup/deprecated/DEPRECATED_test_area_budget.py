@@ -3,7 +3,7 @@ from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.fridge import FridgeStrategy
+from d3a.models.strategy.deprecated.fridge import FridgeStrategy
 from d3a.models.strategy.pv import PVStrategy
 
 

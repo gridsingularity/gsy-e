@@ -9,7 +9,7 @@ from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
 from d3a.models.strategy.area_agents.one_sided_engine import OfferInfo
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 class FakeArea:
@@ -250,7 +250,7 @@ def iaa2():
 
 @pytest.fixture
 def iaa_double_sided():
-    from d3a.models.strategy.const import ConstSettings
+    from d3a.models.const import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
@@ -347,7 +347,7 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
 
 @pytest.fixture
 def iaa_double_sided_2():
-    from d3a.models.strategy.const import ConstSettings
+    from d3a.models.const import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])

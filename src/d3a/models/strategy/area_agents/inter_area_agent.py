@@ -1,4 +1,4 @@
-from d3a.models.strategy.base import BaseStrategy, _TradeLookerUpper
+from d3a.models.strategy import BaseStrategy, _TradeLookerUpper
 from d3a import TIME_FORMAT
 
 

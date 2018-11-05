@@ -4,7 +4,7 @@ Setup file for displaying the infinite power plant strategy.
 
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.appliance.simple import SimpleAppliance
 

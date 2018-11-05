@@ -1,11 +1,11 @@
 from pendulum import DateTime # noqa
-from typing import Dict, List, Set, Union  # noqa
+from typing import Dict  # noqa
 
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market import Market # noqa
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from collections import OrderedDict
 
 

@@ -6,7 +6,7 @@ from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 class AreaDispatcher:
