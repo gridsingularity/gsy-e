@@ -1,6 +1,6 @@
 from pendulum import duration
 
-from d3a.models.appliance.custom_profile import CustomProfileAppliance
+from d3a.models.appliance.deprecated.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.deprecated.fridge import FridgeAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
