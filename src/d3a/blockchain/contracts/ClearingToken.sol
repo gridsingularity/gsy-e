@@ -12,6 +12,8 @@ contract ClearingToken is IOUToken, Owned {
     // list of all the clearing members
     address[] public clearingMembers;
 
+    uint256 private offerNonce;
+
     constructor(
         uint128 _initialAmount,
         string _tokenName,
@@ -23,6 +25,12 @@ contract ClearingToken is IOUToken, Owned {
         _decimalUnits,
         _tokenSymbol
     ) {
+        offerNonce = 0;
+    }
+
+    //Added here to generate unique OfferID
+    function getAndIncreaseNonce() public returns (uint256 nonce) {
+        return offerNonce++;
     }
 
     // event
