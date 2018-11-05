@@ -5,7 +5,6 @@ from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy import BaseStrategy
 from d3a.models.appliance.simple import SimpleAppliance # NOQA
 
-from d3a.models.appliance.fridge import FridgeAppliance  # NOQA
 from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
 from d3a.models.appliance.pv import PVAppliance  # NOQA
 from d3a.models.appliance.switchable import SwitchableAppliance # NOQA
