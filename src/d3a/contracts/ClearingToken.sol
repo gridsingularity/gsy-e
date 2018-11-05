@@ -28,6 +28,7 @@ contract ClearingToken is IOUToken, Owned {
         offerNonce = 0;
     }
 
+    //Added here to generate unique OfferID
     function getAndIncreaseNonce() public returns (uint256 nonce) {
         return offerNonce++;
     }
