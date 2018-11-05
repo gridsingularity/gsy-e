@@ -62,7 +62,9 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
 
 
 def create_new_offer(bc_interface, bc_contract, energy, price, seller):
-    if bc_contract:
+    if not bc_contract:
+        return str(uuid.uuid4())
+    else:
         unlock_account(bc_interface.chain, bc_interface.users[seller].address)
         bc_energy = int(energy * BC_NUM_FACTOR)
         tx_hash = bc_contract.functions.offer(
@@ -78,10 +80,8 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
         wait_until_timeout_blocking(lambda:
                                     bc_contract.functions.getOffer(offer_id).call() is not 0,
                                     timeout=20)
-    else:
-        offer_id = str(uuid.uuid4())
 
-    return offer_id
+        return offer_id
 
 
 def cancel_offer(bc_interface, bc_contract, offer_id, seller):

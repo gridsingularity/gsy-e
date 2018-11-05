@@ -1,3 +1,4 @@
+import random
 import uuid
 from collections import defaultdict
 from logging import getLogger
@@ -30,6 +31,7 @@ class Market(BlockhainMarket):
         self.offers = {}  # type: Dict[str, Offer]
         self.offers_deleted = {}  # type: Dict[str, Offer]
         self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
+        self.notification_listeners = []
         self.bids = {}  # type: Dict[str, Bid]
         self.trades = []  # type: List[Trade]
         # Store trades temporarily until bc event has fired
@@ -50,8 +52,19 @@ class Market(BlockhainMarket):
         self._sorted_offers = []
         self.accumulated_trade_price = 0
         self.accumulated_trade_energy = 0
+        if notification_listener:
+            self.notification_listeners.append(notification_listener)
+
         self.device_registry = DeviceRegistry.REGISTRY
         super().__init__(area)
+
+    def add_listener(self, listener):
+        self.notification_listeners.append(listener)
+
+    def _notify_listeners(self, event, **kwargs):
+        # Deliver notifications in random order to ensure fairness
+        for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
+            listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):
         # FIXME: The following updates need to be done in response to the BC event
