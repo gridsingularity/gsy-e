@@ -1,4 +1,3 @@
-import random
 import uuid
 from collections import defaultdict
 from logging import getLogger
@@ -9,9 +8,8 @@ from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
 from d3a import TIME_ZONE, TIME_FORMAT
-from d3a.blockchain.utils import create_market_contract
 from d3a.device_registry import DeviceRegistry
-from d3a.models.market.market_bc_interface import bc_listener
+from d3a.models.market.market_bc_interface import BlockhainMarket
 
 
 log = getLogger(__name__)
@@ -20,9 +18,8 @@ log = getLogger(__name__)
 OFFER_PRICE_THRESHOLD = 0.00001
 
 
-class Market:
+class Market(BlockhainMarket):
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
-        self.area = area
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
         self.time_slot_str = time_slot.strftime(TIME_FORMAT) \
@@ -34,7 +31,6 @@ class Market:
         self.offers_deleted = {}  # type: Dict[str, Offer]
         self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
         self.bids = {}  # type: Dict[str, Bid]
-        self.notification_listeners = []
         self.trades = []  # type: List[Trade]
         # Store trades temporarily until bc event has fired
         self._trades_by_id = {}  # type: Dict[str, Trade]
@@ -54,23 +50,8 @@ class Market:
         self._sorted_offers = []
         self.accumulated_trade_price = 0
         self.accumulated_trade_energy = 0
-        if notification_listener:
-            self.notification_listeners.append(notification_listener)
-        self.bc_contract = \
-            create_market_contract(self.area.bc,
-                                   self.area.config.duration.in_seconds(),
-                                   [bc_listener(self)]) \
-            if self.area and self.area.bc \
-            else None
         self.device_registry = DeviceRegistry.REGISTRY
-
-    def add_listener(self, listener):
-        self.notification_listeners.append(listener)
-
-    def _notify_listeners(self, event, **kwargs):
-        # Deliver notifications in random order to ensure fairness
-        for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
-            listener(event, market_id=self.id, **kwargs)
+        super().__init__(area)
 
     def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):
         # FIXME: The following updates need to be done in response to the BC event

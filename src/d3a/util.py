@@ -176,6 +176,7 @@ def get_contract_path(contract_name):
         contract_name = contract_name[:-4]
     contract_path = os.path.join(
         get_project_root(),
+        'blockchain',
         'contracts',
         "{}.sol".format(contract_name)
     )

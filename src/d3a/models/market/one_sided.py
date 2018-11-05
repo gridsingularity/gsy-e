@@ -6,7 +6,7 @@ from pendulum import DateTime
 from d3a.models.events import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
-from d3a.models.market.market_bc_interface import handle_blockchain_trade_event
+# from d3a.models.market.market_bc_interface import handle_blockchain_trade_event
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade
 from d3a.blockchain.utils import create_new_offer, cancel_offer
@@ -27,10 +27,7 @@ class OneSidedMarket(Market):
         if energy <= 0:
             raise InvalidOffer()
 
-        offer_id = create_new_offer(self.area.bc, self.bc_contract, energy, price, seller) \
-            if self.bc_contract \
-            else str(uuid.uuid4())
-
+        offer_id = create_new_offer(self.area.bc, self.bc_contract, energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
@@ -47,10 +44,9 @@ class OneSidedMarket(Market):
 
         offer = self.offers.pop(offer_or_id, None)
 
-        if self.bc_contract and offer is not None:
-            cancel_offer(self.area.bc, self.bc_contract, offer.real_id, offer.seller)
-            # Hold on to deleted offer until bc event is processed
-            self.offers_deleted[offer_or_id] = offer
+        cancel_offer(self.area.bc, self.bc_contract, offer.real_id, offer.seller)
+        # Hold on to deleted offer until bc event is processed
+        self.offers_deleted[offer_or_id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self._update_min_max_avg_offer_prices()
         if not offer:
@@ -125,8 +121,9 @@ class OneSidedMarket(Market):
                                          key=lambda o: o.price / o.energy)
             raise
 
-        trade_id = handle_blockchain_trade_event(self, offer, buyer,
-                                                 original_offer, residual_offer)
+        trade_id = \
+            self.handle_blockchain_trade_event(offer, buyer,
+                                               original_offer, residual_offer)
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
         if self.area and self.area.bc:
             self._trades_by_id[trade_id] = trade

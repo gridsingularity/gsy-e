@@ -1,6 +1,8 @@
 from d3a.util import wait_until_timeout_blocking
 from d3a.models.const import ConstSettings
 from logging import getLogger
+from time import sleep
+import uuid
 
 
 log = getLogger(__name__)
@@ -28,6 +30,7 @@ def _wait_for_node_synchronization(bc_interface):
         highest_block = node_status["highestBlock"]
         while bc_interface.chain.eth.blockNumber < highest_block:
             pass
+    sleep(0.1)
 
 
 def create_market_contract(bc_interface, duration_s, listeners=[]):
@@ -59,30 +62,36 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
 
 
 def create_new_offer(bc_interface, bc_contract, energy, price, seller):
-    unlock_account(bc_interface.chain, bc_interface.users[seller].address)
-    bc_energy = int(energy * BC_NUM_FACTOR)
-    tx_hash = bc_contract.functions.offer(
-        bc_energy,
-        int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
-    tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
-    log.info(f"tx_hash of New Offer {tx_hash_hex}")
+    if bc_contract:
+        unlock_account(bc_interface.chain, bc_interface.users[seller].address)
+        bc_energy = int(energy * BC_NUM_FACTOR)
+        tx_hash = bc_contract.functions.offer(
+            bc_energy,
+            int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
+        tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
+        log.info(f"tx_hash of New Offer {tx_hash_hex}")
 
-    tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
-    _wait_for_node_synchronization(bc_interface)
-    offer_id = bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
+        tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
+        _wait_for_node_synchronization(bc_interface)
+        offer_id = bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
 
-    wait_until_timeout_blocking(lambda: bc_contract.functions.getOffer(offer_id).call() is not 0,
-                                timeout=20)
+        wait_until_timeout_blocking(lambda:
+                                    bc_contract.functions.getOffer(offer_id).call() is not 0,
+                                    timeout=20)
+    else:
+        offer_id = str(uuid.uuid4())
+
     return offer_id
 
 
 def cancel_offer(bc_interface, bc_contract, offer_id, seller):
-    unlock_account(bc_interface.chain, bc_interface.users[seller].address)
-    bc_interface.chain.eth.waitForTransactionReceipt(
-        bc_contract.functions.cancel(offer_id).transact(
-            {"from": bc_interface.users[seller].address}
+    if bc_contract and offer_id:
+        unlock_account(bc_interface.chain, bc_interface.users[seller].address)
+        bc_interface.chain.eth.waitForTransactionReceipt(
+            bc_contract.functions.cancel(offer_id).transact(
+                {"from": bc_interface.users[seller].address}
+            )
         )
-    )
 
 
 def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
@@ -121,4 +130,8 @@ def unlock_account(chain, address):
     if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
         return
     else:
-        chain.personal.unlockAccount(address, ConstSettings.BlockchainSettings.ACCOUNT_PASSWORD)
+        log.info(f"Account: {address})")
+        unlock = \
+            chain.personal.unlockAccount(address,
+                                         ConstSettings.BlockchainSettings.ACCOUNT_PASSWORD)
+        log.info(f"Unlocking: {unlock}")
