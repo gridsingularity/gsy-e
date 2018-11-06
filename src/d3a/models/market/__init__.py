@@ -10,7 +10,6 @@ from terminaltables.other_tables import SingleTable
 
 from d3a import TIME_ZONE, TIME_FORMAT
 from d3a.device_registry import DeviceRegistry
-from d3a.models.market.market_bc_interface import BlockhainMarket
 
 
 log = getLogger(__name__)
@@ -19,8 +18,9 @@ log = getLogger(__name__)
 OFFER_PRICE_THRESHOLD = 0.00001
 
 
-class Market(BlockhainMarket):
+class Market:
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+        self.area = area
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
         self.time_slot_str = time_slot.strftime(TIME_FORMAT) \
@@ -56,7 +56,6 @@ class Market(BlockhainMarket):
             self.notification_listeners.append(notification_listener)
 
         self.device_registry = DeviceRegistry.REGISTRY
-        super().__init__(area)
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)

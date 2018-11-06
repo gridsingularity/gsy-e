@@ -6,10 +6,8 @@ from pendulum import DateTime
 from d3a.models.events import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
-# from d3a.models.market.market_bc_interface import handle_blockchain_trade_event
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade
-from d3a.blockchain.utils import create_new_offer, cancel_offer
 
 log = getLogger(__name__)
 
@@ -17,7 +15,12 @@ log = getLogger(__name__)
 class OneSidedMarket(Market):
 
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+        self.area = area
         super().__init__(time_slot, area, notification_listener, readonly)
+        if self.area and self.area.bc:
+            self.bc_contract = \
+                self.area.bc.create_market_contract(self.area.config.duration.in_seconds(),
+                                                    [self.area.bc.bc_listener()])
 
     def offer(self, price: float, energy: float, seller: str,
               balancing_agent: bool=False) -> Offer:
@@ -27,7 +30,7 @@ class OneSidedMarket(Market):
         if energy <= 0:
             raise InvalidOffer()
 
-        offer_id = create_new_offer(self.area.bc, self.bc_contract, energy, price, seller)
+        offer_id = self.area.bc.create_new_offer(self.bc_contract, energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
@@ -45,7 +48,7 @@ class OneSidedMarket(Market):
         offer = self.offers.pop(offer_or_id, None)
 
         if self.bc_contract and offer is not None:
-            cancel_offer(self.area.bc, self.bc_contract, offer.real_id, offer.seller)
+            self.area.bc.cancel_offer(self.bc_contract, offer.real_id, offer.seller)
             # Hold on to deleted offer until bc event is processed
             self.offers_deleted[offer_or_id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
@@ -105,11 +108,11 @@ class OneSidedMarket(Market):
                     else:
                         self._sorted_offers = sorted(self.offers.values(),
                                                      key=lambda o: o.price / o.energy)
-                        self._notify_listeners(
-                            MarketEvent.OFFER_CHANGED,
-                            existing_offer=original_offer,
-                            new_offer=residual_offer
-                        )
+                    self._notify_listeners(
+                        MarketEvent.OFFER_CHANGED,
+                        existing_offer=original_offer,
+                        new_offer=residual_offer
+                    )
                 elif energy > offer.energy:
                     raise InvalidTrade("Energy can't be greater than offered energy")
                 else:
@@ -123,8 +126,8 @@ class OneSidedMarket(Market):
             raise
 
         trade_id = \
-            self.handle_blockchain_trade_event(offer, buyer,
-                                               original_offer, residual_offer)
+            self.area.bc.handle_blockchain_trade_event(offer, buyer, self.bc_contract,
+                                                       original_offer, residual_offer)
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
         if self.area and self.area.bc:
             self._trades_by_id[trade_id] = trade
