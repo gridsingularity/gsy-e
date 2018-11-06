@@ -128,10 +128,10 @@ class StorageState:
 
     def has_battery_reached_max_power(self, energy, time_slot):
         return limit_float_precision(abs(energy
-                                     - self.pledged_sell_kWh[time_slot]
-                                     - self.offered_sell_kWh[time_slot]
-                                     + self.pledged_buy_kWh[time_slot]
-                                     + self.offered_buy_kWh[time_slot])) > \
+                                     + self.pledged_sell_kWh[time_slot]
+                                     + self.offered_sell_kWh[time_slot]
+                                     - self.pledged_buy_kWh[time_slot]
+                                     - self.offered_buy_kWh[time_slot])) > \
                self._battery_energy_per_slot
 
     def clamp_energy_to_sell_kWh(self, market_slot_time_list):
@@ -175,8 +175,8 @@ class StorageState:
 
         for time_slot in market_slot_time_list:
             clamped_energy = limit_float_precision(
-                min(energy, self.max_buy_energy_kWh(time_slot)))
-
+                min(energy, self.max_buy_energy_kWh(time_slot), self._battery_energy_per_slot))
+            clamped_energy = max(clamped_energy, 0)
             self.energy_to_buy_dict[time_slot] = clamped_energy
 
     def check_state(self, time_slot):
