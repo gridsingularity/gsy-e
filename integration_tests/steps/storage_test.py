@@ -83,7 +83,7 @@ def check_capacity_dependant_sell_rate(context):
                           market_maker_rate[slot.strftime(TIME_FORMAT)], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
-    assert len(trades_sold) > 0
+    assert len(trades_sold) == len(house1.past_markets)
 
 
 @then("the storage offers and buys energy as expected at expected prices")

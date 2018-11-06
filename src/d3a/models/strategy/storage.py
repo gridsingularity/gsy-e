@@ -163,10 +163,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         current_market = self.area.next_market
         past_market = self.area.last_past_market
+
         self.state.market_cycle(
             past_market.time_slot if past_market else current_market.time_slot,
             current_market.time_slot
         )
+
         if self.state.used_storage > 0:
             self.sell_energy()
 
@@ -279,8 +281,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.state.charge_history[market.time_slot] is '-':
             soc = self.state.used_storage / self.state.capacity
         else:
-            soc = self.state.charge_history[market.time_slot]
-
+            soc = self.state.charge_history[market.time_slot] / 100.0
         max_selling_rate = self._max_selling_rate(market)
         break_even_sell = self.break_even[market.time_slot_str][1]
         if max_selling_rate < break_even_sell:
