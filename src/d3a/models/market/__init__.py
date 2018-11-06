@@ -29,13 +29,10 @@ class Market:
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
-        self.offers_deleted = {}  # type: Dict[str, Offer]
-        self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
         self.notification_listeners = []
         self.bids = {}  # type: Dict[str, Bid]
         self.trades = []  # type: List[Trade]
         # Store trades temporarily until bc event has fired
-        self._trades_by_id = {}  # type: Dict[str, Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
         self.traded_energy = defaultdict(int)
         # Store actual energy consumption in a nested dict in the form of

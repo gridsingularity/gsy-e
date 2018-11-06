@@ -2,11 +2,7 @@ from d3a.models.const import ConstSettings
 from logging import getLogger
 from time import sleep
 
-
 log = getLogger(__name__)
-
-
-BC_NUM_FACTOR = 10 ** 10
 
 
 def wait_for_node_synchronization(bc_interface):
