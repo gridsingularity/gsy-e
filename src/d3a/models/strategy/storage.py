@@ -160,12 +160,13 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
-
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         current_market = self.area.next_market
         past_market = self.area.last_past_market
-        if past_market:
-            self.state.market_cycle(past_market.time_slot, current_market.time_slot)
+        self.state.market_cycle(
+            past_market.time_slot if past_market else current_market.time_slot,
+            current_market.time_slot
+        )
         if self.state.used_storage > 0:
             self.sell_energy()
 
