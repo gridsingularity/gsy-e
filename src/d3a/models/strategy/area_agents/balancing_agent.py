@@ -1,4 +1,4 @@
-from d3a.util import make_ba_name, make_iaa_name
+from d3a.d3a_core.util import make_ba_name, make_iaa_name
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 
 

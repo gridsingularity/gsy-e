@@ -1,8 +1,8 @@
 from behave import given, then
 from math import isclose
 from functools import reduce
-from d3a.device_registry import DeviceRegistry
-from d3a.util import make_ba_name
+from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.util import make_ba_name
 from d3a.models.const import ConstSettings
 
 

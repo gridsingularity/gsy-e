@@ -1,6 +1,6 @@
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
-from d3a.util import make_iaa_name
+from d3a.d3a_core.util import make_iaa_name
 
 
 class OneSidedAgent(InterAreaAgent):

@@ -1,4 +1,4 @@
-from d3a.util import wait_until_timeout_blocking
+from d3a.d3a_core.util import wait_until_timeout_blocking
 from d3a.models.const import ConstSettings
 from logging import getLogger
 

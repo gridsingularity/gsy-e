@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from d3a.area_serializer import area_to_string, area_from_string
+from d3a.d3a_core.area_serializer import area_to_string, area_from_string
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
 from d3a.models.leaves import PV

@@ -1,4 +1,4 @@
-from d3a.exceptions import MarketException
+from d3a.d3a_core.exceptions import MarketException
 from d3a.models.events import Trigger
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.storage import StorageStrategy

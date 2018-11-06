@@ -1,5 +1,5 @@
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.util import make_iaa_name
+from d3a.d3a_core.util import make_iaa_name
 
 
 class InterAreaAppliance(SimpleAppliance):

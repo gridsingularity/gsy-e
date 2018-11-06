@@ -10,14 +10,15 @@ from hypothesis import strategies as st
 from hypothesis.control import assume
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, precondition, rule
 
-from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade, InvalidBalancingTradeException, InvalidBid, BidNotFound, DeviceNotInRegistryError
+from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
+    OfferNotFoundException, InvalidTrade, InvalidBalancingTradeException, InvalidBid, \
+    BidNotFound, DeviceNotInRegistryError
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.const import ConstSettings
 
-from d3a.device_registry import DeviceRegistry
+from d3a.d3a_core.device_registry import DeviceRegistry
 device_registry_dict = {
     "A": {"balancing rates": (33, 35)},
     "someone": {"balancing rates": (33, 35)},

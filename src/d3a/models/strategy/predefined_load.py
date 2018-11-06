@@ -2,7 +2,7 @@
 Create a load that uses a profile as input for its power values
 """
 import sys
-from d3a.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a import TIME_FORMAT
 from d3a.models.read_user_profile import read_arbitrary_profile

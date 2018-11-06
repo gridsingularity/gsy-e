@@ -5,12 +5,12 @@ by the user.
 import pathlib
 
 from d3a import TIME_FORMAT, PENDULUM_TIME_FORMAT
-from d3a.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.read_user_profile import read_profile_csv_to_dict, read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
-from d3a.util import d3a_path
+from d3a.d3a_core.util import d3a_path
 from typing import Dict
 
 

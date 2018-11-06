@@ -2,17 +2,17 @@ import random
 import uuid
 from collections import defaultdict
 from logging import getLogger
-from typing import Dict, List, Set, Union  # noqa
+from typing import Dict, List  # noqa
 import sys
 
 from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
 from d3a import TIME_ZONE, TIME_FORMAT
-from d3a.exceptions import InvalidTrade
+from d3a.d3a_core.exceptions import InvalidTrade
 from d3a.models.events import MarketEvent
 from d3a.blockchain_utils import create_market_contract, trade_offer
-from d3a.device_registry import DeviceRegistry
+from d3a.d3a_core.device_registry import DeviceRegistry
 
 
 BC_EVENT_MAP = {

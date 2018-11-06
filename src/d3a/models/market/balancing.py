@@ -1,5 +1,5 @@
 import uuid
-from typing import Dict, List, Set, Union  # noqa
+from typing import Union  # noqa
 from pendulum import DateTime
 from logging import getLogger
 
@@ -7,9 +7,9 @@ from d3a.models.market.market_structures import Offer
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.events import MarketEvent
 from d3a.models.market.market_structures import BalancingOffer, BalancingTrade
-from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidBalancingTradeException, DeviceNotInRegistryError
-from d3a.device_registry import DeviceRegistry
+from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
+    OfferNotFoundException, InvalidBalancingTradeException, DeviceNotInRegistryError
+from d3a.d3a_core.device_registry import DeviceRegistry
 
 log = getLogger(__name__)
 

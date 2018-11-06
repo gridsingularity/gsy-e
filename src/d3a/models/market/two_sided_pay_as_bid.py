@@ -1,9 +1,9 @@
 import uuid
-from typing import Dict, List, Set, Union  # noqa
+from typing import Union  # noqa
 from logging import getLogger
 
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.exceptions import BidNotFound, InvalidBid, InvalidTrade
+from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
 from d3a.models.market.market_structures import Bid, Trade
 from d3a.models.events import MarketEvent
 

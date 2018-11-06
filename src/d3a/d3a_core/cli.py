@@ -8,14 +8,14 @@ from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 
 
-from d3a.exceptions import D3AException
+from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.simulation import Simulation
-from d3a.util import IntervalType, available_simulation_scenarios
-from d3a.web import start_web
-from d3a.util import read_settings_from_file
-from d3a.util import update_advanced_settings
+from d3a.d3a_core.simulation import Simulation
+from d3a.d3a_core.util import IntervalType, available_simulation_scenarios
+from d3a.d3a_core.web import start_web
+from d3a.d3a_core.util import read_settings_from_file
+from d3a.d3a_core.util import update_advanced_settings
 
 log = getLogger(__name__)
 

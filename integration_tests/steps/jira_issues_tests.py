@@ -1,6 +1,6 @@
 from behave import then
 from math import isclose
-from d3a.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.export_unmatched_loads import export_unmatched_loads
 
 
 def get_areas_from_2_house_grid(context):
