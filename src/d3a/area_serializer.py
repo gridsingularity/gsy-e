@@ -4,9 +4,7 @@ from d3a.models.area import Area # NOQA
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy import BaseStrategy
 from d3a.models.appliance.simple import SimpleAppliance # NOQA
-from d3a.models.appliance.appliance import Appliance
 
-from d3a.models.appliance.fridge import FridgeAppliance  # NOQA
 from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
 from d3a.models.appliance.pv import PVAppliance  # NOQA
 from d3a.models.appliance.switchable import SwitchableAppliance # NOQA
@@ -29,7 +27,7 @@ class AreaEncoder(json.JSONEncoder):
             return self._encode_area(obj)
         elif isinstance(obj, Leaf):
             return self._encode_leaf(obj)
-        elif isinstance(obj, (BaseStrategy, SimpleAppliance, Appliance, BudgetKeeper)):
+        elif isinstance(obj, (BaseStrategy, SimpleAppliance, BudgetKeeper)):
             return self._encode_subobject(obj)
 
     def _encode_area(self, area):

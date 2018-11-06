@@ -3,7 +3,7 @@ from collections import defaultdict
 import pytest
 from unittest.mock import MagicMock
 
-from d3a.models.appliance.custom_profile import CustomProfileAppliance
+from d3a.models.appliance.deprecated.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import DEFAULT_CONFIG
