@@ -1,4 +1,4 @@
-from d3a.models.appliance.fridge import FridgeAppliance
+from d3a.models.appliance.deprecated.fridge import FridgeAppliance
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.deprecated.fridge import FridgeStrategy
