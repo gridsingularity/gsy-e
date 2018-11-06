@@ -19,8 +19,8 @@ def get_setup(config):
                                           discharge_profile=electrolizer_profile_file,
                                           conversion_factor_kg_to_kWh=50,
                                           reservoir_capacity_kg=56.0,
-                                          reservoir_initial_capacity_kg=2.1,
-                                          production_rate_kg_h=1.5
+                                          reservoir_initial_capacity_kg=10,
+                                          production_rate_kg_h=2.8
                     ), appliance=SwitchableAppliance()),
 
             Area('PV', strategy=PVPredefinedStrategy(panel_count=1, risk=80),
