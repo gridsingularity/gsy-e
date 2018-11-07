@@ -32,11 +32,8 @@ class MarketBlockchainInterface:
         if not self.bc_interface:
             return str(uuid.uuid4())
         else:
-            for i in range(5):
-                offer_id = create_new_offer(self.bc_interface, self.bc_contract,
-                                            energy, price, seller)
-                if offer_id != 0:
-                    break
+            offer_id = create_new_offer(self.bc_interface, self.bc_contract,
+                                        energy, price, seller)
         return offer_id
 
     def cancel_offer(self, offer):
@@ -53,12 +50,9 @@ class MarketBlockchainInterface:
         if not self.bc_interface:
             return str(uuid.uuid4()), residual_offer
 
-        for i in range(5):
-            trade_id, new_offer_id = trade_offer(
-                self.bc_interface, self.bc_contract, offer.real_id, offer.energy, buyer
-            )
-            if trade_id != 0 and new_offer_id != 0:
-                break
+        trade_id, new_offer_id = trade_offer(
+            self.bc_interface, self.bc_contract, offer.real_id, offer.energy, buyer
+        )
 
         if residual_offer is not None:
             if new_offer_id is None:

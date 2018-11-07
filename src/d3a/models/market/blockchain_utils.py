@@ -50,7 +50,6 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
 
 
 def create_new_offer(bc_interface, bc_contract, energy, price, seller):
-    log.info('Create new offer')
     unlock_account(bc_interface.chain, bc_interface.users[seller].address)
     bc_energy = int(energy * BC_NUM_FACTOR)
     tx_hash = bc_contract.functions.offer(
@@ -63,11 +62,27 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     wait_for_node_synchronization(bc_interface)
     offer_id = \
         bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
+    if offer_id == 0:
+        for i in range(5):
+            log.info('Retying -> OFFER')
+            unlock_account(bc_interface.chain, bc_interface.users[seller].address)
+            bc_energy = int(energy * BC_NUM_FACTOR)
+            tx_hash = bc_contract.functions.offer(
+                bc_energy,
+                int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
+            tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
+            log.info(f"tx_hash of New Offer {tx_hash_hex}")
+
+            tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
+            wait_for_node_synchronization(bc_interface)
+            offer_id = \
+                bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
+            if offer_id != 0:
+                break
 
     wait_until_timeout_blocking(lambda:
                                 bc_contract.functions.getOffer(offer_id).call() is not 0,
                                 timeout=20)
-    log.info('End create new offer')
     return offer_id
 
 
@@ -83,25 +98,31 @@ def cancel_offer(bc_interface, bc_contract, offer):
 
 
 def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
-    log.info('Create trade offer')
-
     unlock_account(bc_interface.chain, bc_interface.users[buyer].address)
-    log.info('After unlock')
     trade_energy = int(energy * BC_NUM_FACTOR)
     tx_hash = bc_contract.functions.trade(offer_id, trade_energy). \
         transact({"from": bc_interface.users[buyer].address})
-    log.info('After transaction')
     tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
     log.info(f"tx_hash of Trade {tx_hash_hex}")
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     wait_for_node_synchronization(bc_interface)
-    # new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
-
-    wait_until_timeout_blocking(lambda: len(bc_contract.events.NewTrade().
-                                            processReceipt(tx_receipt)) != 0,
-                                timeout=20)
-
     new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
+
+    if len(new_trade_retval) == 0:
+        for i in range(5):
+            log.info('Retrying -> TRADE')
+
+            unlock_account(bc_interface.chain, bc_interface.users[buyer].address)
+            trade_energy = int(energy * BC_NUM_FACTOR)
+            tx_hash = bc_contract.functions.trade(offer_id, trade_energy). \
+                transact({"from": bc_interface.users[buyer].address})
+            tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
+            log.info(f"tx_hash of Trade {tx_hash_hex}")
+            tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
+            wait_for_node_synchronization(bc_interface)
+            new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
+            if len(new_trade_retval) != 0:
+                break
 
     offer_changed_retval = bc_contract.events \
         .OfferChanged() \
