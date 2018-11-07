@@ -17,7 +17,6 @@ class BCUsers:
         self._default_balance = default_balance
 
     def __getitem__(self, username_or_addr):
-        unlock_account(self._chain, self._chain.eth.accounts[0])
 
         user = self._users.get(username_or_addr)
         if not user:
@@ -25,6 +24,8 @@ class BCUsers:
                 raise KeyError("User with address {} doesn't exist".format(username_or_addr))
             self._users[username_or_addr] = user = self._mk_user(username_or_addr)
             self._users[user.address] = user
+
+            unlock_account(self._chain, self._chain.eth.accounts[0])
             self._chain.eth.waitForTransactionReceipt(
                 self._contracts["ClearingToken"].functions
                 .globallyApprove(user.address, self._default_balance)
