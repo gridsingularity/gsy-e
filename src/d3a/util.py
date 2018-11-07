@@ -108,7 +108,6 @@ class ContractJoiner(object):
 
         out = []
         if contract_file.name in self.seen:
-            print('Skipping duplicate {}'.format(contract_file.name))
             return []
 
         self.seen.add(contract_file.name)

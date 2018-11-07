@@ -87,14 +87,12 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     wait_for_node_synchronization(bc_interface)
     new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
-    print(f"new_trade_retval: {new_trade_retval}")
 
     wait_until_timeout_blocking(lambda: len(bc_contract.events.NewTrade().
                                             processReceipt(tx_receipt)) != 0,
                                 timeout=20)
 
     new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
-    print(f"new_trade_retval: {new_trade_retval}")
 
     offer_changed_retval = bc_contract.events \
         .OfferChanged() \
