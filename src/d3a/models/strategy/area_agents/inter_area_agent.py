@@ -1,5 +1,5 @@
 from d3a.models.strategy import BaseStrategy, _TradeLookerUpper
-from d3a import TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 
 
 class InterAreaAgent(BaseStrategy):

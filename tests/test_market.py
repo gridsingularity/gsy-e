@@ -4,7 +4,7 @@ from collections import defaultdict
 import pytest
 from pendulum import DateTime
 
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 from d3a.models.events import MarketEvent
 from hypothesis import strategies as st
 from hypothesis.control import assume

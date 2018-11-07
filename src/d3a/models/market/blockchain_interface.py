@@ -3,7 +3,7 @@ import uuid
 from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
     cancel_offer, trade_offer
 from d3a.models.events import MarketEvent
-from d3a.exceptions import InvalidTrade
+from d3a.d3a_core.exceptions import InvalidTrade
 
 
 BC_EVENT_MAP = {

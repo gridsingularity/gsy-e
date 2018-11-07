@@ -8,7 +8,7 @@ from pendulum import DateTime
 from slugify import slugify
 
 from d3a.blockchain import BlockChainInterface
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.config import SimulationConfig
@@ -17,7 +17,7 @@ from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.util import TaggedLogWrapper
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a import TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.markets import AreaMarkets

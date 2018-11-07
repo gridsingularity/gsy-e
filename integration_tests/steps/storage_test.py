@@ -1,6 +1,6 @@
 from behave import then
 from math import isclose
-from d3a import TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 
 
 @then('the storage devices buy and sell energy respecting the break even prices')

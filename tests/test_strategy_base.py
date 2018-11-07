@@ -2,7 +2,7 @@ import pytest
 
 import pendulum
 
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BaseStrategy, Offers
 from d3a.models.market.market_structures import Offer, Trade, Bid

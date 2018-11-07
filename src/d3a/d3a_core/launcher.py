@@ -9,7 +9,7 @@ from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 

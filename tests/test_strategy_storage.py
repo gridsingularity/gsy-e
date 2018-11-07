@@ -6,13 +6,13 @@ from logging import getLogger
 from math import isclose
 
 # from d3a.models.area import DEFAULT_CONFIG
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 from d3a.models.strategy import ureg, Q_
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.config import SimulationConfig
-from d3a import TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 DeviceRegistry.REGISTRY = {
     "A": (23, 25),

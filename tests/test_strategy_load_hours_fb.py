@@ -11,8 +11,8 @@ from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trad
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.const import ConstSettings
-from d3a import TIME_FORMAT
-from d3a import TIME_ZONE
+from d3a.constants import TIME_FORMAT
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 

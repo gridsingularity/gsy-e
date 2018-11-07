@@ -10,7 +10,7 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.area.stats import AreaStats
 
 from pendulum import DateTime
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 
 
 class FakeSwitchableStrategy:

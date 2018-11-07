@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from pendulum import DateTime
 
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.d3a_core.util import make_iaa_name

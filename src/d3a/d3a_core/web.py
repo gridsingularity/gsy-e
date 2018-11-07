@@ -14,7 +14,7 @@ from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
-from d3a import TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.simulation import Simulation, page_lock
 from d3a.d3a_core.stats import (
     energy_bills

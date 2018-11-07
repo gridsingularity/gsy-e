@@ -8,7 +8,7 @@ import sys
 from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
-from d3a import TIME_ZONE, TIME_FORMAT
+from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 

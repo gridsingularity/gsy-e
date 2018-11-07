@@ -14,7 +14,7 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.blockchain import BlockChainInterface
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import SimulationException, D3AException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
