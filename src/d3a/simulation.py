@@ -23,7 +23,7 @@ from d3a import setup as d3a_setup  # noqa
 from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 
 log = getLogger(__name__)
@@ -128,17 +128,6 @@ class Simulation:
         self.bc = None  # type: BlockChainInterface
         if self.use_bc:
             self.bc = BlockChainInterface()
-            self.clearing_token = self.bc.init_contract(
-                "ClearingToken.sol",
-                "ClearingToken",
-                [
-                    10 ** 10,
-                    "ClearingToken",
-                    0,
-                    "CT"
-                ],
-                id_='ClearingToken'
-            )
         log.info("Starting simulation with config %s", self.simulation_config)
 
         self._set_traversal_length()

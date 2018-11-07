@@ -3,11 +3,11 @@ from collections import namedtuple
 
 from d3a.exceptions import MarketException
 from d3a.models.state import StorageState
-from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.strategy import BaseStrategy
+from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin
-from d3a.models.strategy.read_user_profile import read_arbitrary_profile
-from d3a.models.strategy.read_user_profile import InputProfileTypes
+from d3a.models.read_user_profile import read_arbitrary_profile
+from d3a.models.read_user_profile import InputProfileTypes
 from d3a import TIME_FORMAT
 from d3a.device_registry import DeviceRegistry
 
@@ -20,7 +20,8 @@ BalancingSettings = ConstSettings.BalancingSettings
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
     parameters = ('risk', 'initial_capacity_kWh', 'initial_soc',
-                  'battery_capacity_kWh', 'max_abs_battery_power_kW')
+                  'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
+                  )
 
     def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
                  initial_capacity_kWh: float=StorageSettings.MIN_ALLOWED_SOC *
@@ -159,12 +160,15 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
-
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         current_market = self.area.next_market
         past_market = self.area.last_past_market
-        if past_market:
-            self.state.market_cycle(past_market.time_slot, current_market.time_slot)
+
+        self.state.market_cycle(
+            past_market.time_slot if past_market else current_market.time_slot,
+            current_market.time_slot
+        )
+
         if self.state.used_storage > 0:
             self.sell_energy()
 
@@ -277,8 +281,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.state.charge_history[market.time_slot] is '-':
             soc = self.state.used_storage / self.state.capacity
         else:
-            soc = self.state.charge_history[market.time_slot]
-
+            soc = self.state.charge_history[market.time_slot] / 100.0
         max_selling_rate = self._max_selling_rate(market)
         break_even_sell = self.break_even[market.time_slot_str][1]
         if max_selling_rate < break_even_sell:

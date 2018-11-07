@@ -6,9 +6,9 @@ from pendulum import DateTime
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
+from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidTrade
-from d3a.blockchain_utils import create_new_offer, cancel_offer
 
 log = getLogger(__name__)
 
@@ -16,7 +16,9 @@ log = getLogger(__name__)
 class OneSidedMarket(Market):
 
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+        self.area = area
         super().__init__(time_slot, area, notification_listener, readonly)
+        self.bc_interface = MarketBlockchainInterface(area)
 
     def offer(self, price: float, energy: float, seller: str,
               balancing_agent: bool=False) -> Offer:
@@ -26,10 +28,7 @@ class OneSidedMarket(Market):
         if energy <= 0:
             raise InvalidOffer()
 
-        offer_id = create_new_offer(self.area.bc, self.bc_contract, energy, price, seller) \
-            if self.bc_contract \
-            else str(uuid.uuid4())
-
+        offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
@@ -46,10 +45,8 @@ class OneSidedMarket(Market):
 
         offer = self.offers.pop(offer_or_id, None)
 
-        if self.bc_contract and offer is not None:
-            cancel_offer(self.area.bc, self.bc_contract, offer.real_id, offer.seller)
-            # Hold on to deleted offer until bc event is processed
-            self.offers_deleted[offer_or_id] = offer
+        self.bc_interface.cancel_offer(offer)
+
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self._update_min_max_avg_offer_prices()
         if not offer:
@@ -102,16 +99,15 @@ class OneSidedMarket(Market):
                     log.info(f"[OFFER][CHANGED][{self.time_slot_str}] "
                              f"{original_offer} -> {residual_offer}")
                     offer = accepted_offer
-                    if self.area and self.area.bc:
-                        self.offers_changed[offer.id] = (original_offer, residual_offer)
-                    else:
-                        self._sorted_offers = sorted(self.offers.values(),
-                                                     key=lambda o: o.price / o.energy)
-                        self._notify_listeners(
-                            MarketEvent.OFFER_CHANGED,
-                            existing_offer=original_offer,
-                            new_offer=residual_offer
-                        )
+
+                    self.bc_interface.change_offer(offer, original_offer, residual_offer)
+                    self._sorted_offers = sorted(self.offers.values(),
+                                                 key=lambda o: o.price / o.energy)
+                    self._notify_listeners(
+                        MarketEvent.OFFER_CHANGED,
+                        existing_offer=original_offer,
+                        new_offer=residual_offer
+                    )
                 elif energy > offer.energy:
                     raise InvalidTrade("Energy can't be greater than offered energy")
                 else:
@@ -124,11 +120,12 @@ class OneSidedMarket(Market):
                                          key=lambda o: o.price / o.energy)
             raise
 
-        trade_id = self._handle_blockchain_trade_event(offer, buyer,
-                                                       original_offer, residual_offer)
+        trade_id, residual_offer = \
+            self.bc_interface.handle_blockchain_trade_event(
+                offer, buyer, original_offer, residual_offer
+            )
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
-        if self.area and self.area.bc:
-            self._trades_by_id[trade_id] = trade
+        self.bc_interface.track_trade_event(trade)
 
         self._update_stats_after_trade(trade, offer, buyer)
         log.warning(f"[TRADE][{self.time_slot_str}] {trade}")

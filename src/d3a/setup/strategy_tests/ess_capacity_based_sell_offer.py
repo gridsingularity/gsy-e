@@ -1,7 +1,7 @@
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 
 '''
@@ -25,9 +25,9 @@ def get_setup(config):
                                                                            range(0, 24)),
                                                                        max_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=5,
-                                                                 battery_capacity_kWh=5,
-                                                                 max_abs_battery_power_kW=5,
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=6,
+                                                                 battery_capacity_kWh=6,
+                                                                 max_abs_battery_power_kW=6,
                                                                  break_even=(16.99, 17.01),
                                                                  cap_price_strategy=True),
                          appliance=SwitchableAppliance()),

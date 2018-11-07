@@ -14,7 +14,7 @@ from datetime import timedelta
 
 from d3a import get_project_root
 from d3a import setup as d3a_setup
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 import d3a
 import inspect
@@ -108,7 +108,6 @@ class ContractJoiner(object):
 
         out = []
         if contract_file.name in self.seen:
-            print('Skipping duplicate {}'.format(contract_file.name))
             return []
 
         self.seen.add(contract_file.name)
@@ -176,6 +175,7 @@ def get_contract_path(contract_name):
         contract_name = contract_name[:-4]
     contract_path = os.path.join(
         get_project_root(),
+        'blockchain',
         'contracts',
         "{}.sol".format(contract_name)
     )

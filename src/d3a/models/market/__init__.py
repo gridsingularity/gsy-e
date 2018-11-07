@@ -9,18 +9,8 @@ from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
 from d3a import TIME_ZONE, TIME_FORMAT
-from d3a.exceptions import InvalidTrade
-from d3a.events.event_structures import MarketEvent
-from d3a.blockchain_utils import create_market_contract, trade_offer
 from d3a.device_registry import DeviceRegistry
 
-
-BC_EVENT_MAP = {
-    b"NewOffer": MarketEvent.OFFER,
-    b"CancelOffer": MarketEvent.OFFER_DELETED,
-    b"NewTrade": MarketEvent.TRADE,
-    b"OfferChanged": MarketEvent.OFFER_CHANGED
-}
 
 log = getLogger(__name__)
 
@@ -39,13 +29,10 @@ class Market:
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
-        self.offers_deleted = {}  # type: Dict[str, Offer]
-        self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
-        self.bids = {}  # type: Dict[str, Bid]
         self.notification_listeners = []
+        self.bids = {}  # type: Dict[str, Bid]
         self.trades = []  # type: List[Trade]
         # Store trades temporarily until bc event has fired
-        self._trades_by_id = {}  # type: Dict[str, Trade]
         self.ious = defaultdict(lambda: defaultdict(int))
         self.traded_energy = defaultdict(int)
         # Store actual energy consumption in a nested dict in the form of
@@ -64,58 +51,16 @@ class Market:
         self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
-        self.bc_contract = \
-            create_market_contract(self.area.bc,
-                                   self.area.config.duration.in_seconds(),
-                                   [self._bc_listener]) \
-            if self.area and self.area.bc \
-            else None
+
         self.device_registry = DeviceRegistry.REGISTRY
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
 
-    def _bc_listener(self, event):
-        # TODO: Disabled for now, should be added once event driven blockchain transaction
-        # handling is introduced
-        # event_type = BC_EVENT_MAP[event['_event_type']]
-        # kwargs = {}
-        # if event_type is MarketEvent.OFFER:
-        #     kwargs['offer'] = self.offers[event['offerId']]
-        # elif event_type is MarketEvent.OFFER_DELETED:
-        #     kwargs['offer'] = self.offers_deleted.pop(event['offerId'])
-        # elif event_type is MarketEvent.OFFER_CHANGED:
-        #     existing_offer, new_offer = self.offers_changed.pop(event['oldOfferId'])
-        #     kwargs['existing_offer'] = existing_offer
-        #     kwargs['new_offer'] = new_offer
-        # elif event_type is MarketEvent.TRADE:
-        #     kwargs['trade'] = self._trades_by_id.pop(event['tradeId'])
-        # self._notify_listeners(event_type, **kwargs)
-        return
-
     def _notify_listeners(self, event, **kwargs):
         # Deliver notifications in random order to ensure fairness
         for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
             listener(event, market_id=self.id, **kwargs)
-
-    def _handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
-        if self.bc_contract:
-            trade_id, new_offer_id = trade_offer(self.area.bc, self.bc_contract, offer.real_id,
-                                                 offer.energy, buyer)
-
-            if residual_offer is not None:
-                if new_offer_id is None:
-                    raise InvalidTrade("Blockchain and local residual offers are out of sync")
-                residual_offer.id = str(new_offer_id)
-                residual_offer.real_id = new_offer_id
-                self._notify_listeners(
-                    MarketEvent.OFFER_CHANGED,
-                    existing_offer=original_offer,
-                    new_offer=residual_offer
-                )
-        else:
-            trade_id = str(uuid.uuid4())
-        return trade_id, residual_offer
 
     def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):
         # FIXME: The following updates need to be done in response to the BC event

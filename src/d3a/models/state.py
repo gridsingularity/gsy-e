@@ -2,7 +2,7 @@ from collections import defaultdict
 from pendulum import duration
 
 from math import isclose
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 from d3a import limit_float_precision
 
 StorageSettings = ConstSettings.StorageSettings
@@ -119,20 +119,19 @@ class StorageState:
                                  - self.offered_sell_kWh[time_slot]
 
     def max_buy_energy_kWh(self, time_slot):
-        return self.capacity - (self.used_storage
-                                + self.pledged_buy_kWh[time_slot]
-                                + self.offered_buy_kWh[time_slot])
+        return self._battery_energy_per_slot - self.pledged_buy_kWh[time_slot] \
+                                             - self.offered_buy_kWh[time_slot]
 
     def set_battery_energy_per_slot(self, slot_length):
         self._battery_energy_per_slot = self.max_abs_battery_power_kW * \
                                         (slot_length / duration(hours=1))
 
     def has_battery_reached_max_power(self, energy, time_slot):
-        return abs(energy
-                   + self.pledged_sell_kWh[time_slot]
-                   + self.offered_sell_kWh[time_slot]
-                   - self.pledged_buy_kWh[time_slot]
-                   - self.offered_buy_kWh[time_slot]) > \
+        return limit_float_precision(abs(energy
+                                     + self.pledged_sell_kWh[time_slot]
+                                     + self.offered_sell_kWh[time_slot]
+                                     - self.pledged_buy_kWh[time_slot]
+                                     - self.offered_buy_kWh[time_slot])) > \
                self._battery_energy_per_slot
 
     def clamp_energy_to_sell_kWh(self, market_slot_time_list):
@@ -177,7 +176,7 @@ class StorageState:
         for time_slot in market_slot_time_list:
             clamped_energy = limit_float_precision(
                 min(energy, self.max_buy_energy_kWh(time_slot), self._battery_energy_per_slot))
-
+            clamped_energy = max(clamped_energy, 0)
             self.energy_to_buy_dict[time_slot] = clamped_energy
 
     def check_state(self, time_slot):

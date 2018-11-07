@@ -1,6 +1,6 @@
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.read_user_profile import read_arbitrary_profile
-from d3a.models.strategy.read_user_profile import InputProfileTypes
+from d3a.models.read_user_profile import read_arbitrary_profile
+from d3a.models.read_user_profile import InputProfileTypes
 from d3a import TIME_FORMAT
 
 
@@ -29,12 +29,12 @@ class ElectrolyzerStrategy(StorageStrategy):
     def event_activate(self):
         super().event_activate()
 
-        load_profile_raw = read_arbitrary_profile(
+        load_profile_raw_kg = read_arbitrary_profile(
             InputProfileTypes.IDENTITY,
             self.discharge_profile,
             slot_length=self.area.config.slot_length)
 
-        for key, value in load_profile_raw.items():
+        for key, value in load_profile_raw_kg.items():
             self.load_profile_kWh[key] = value * self.conversion_factor_kWh_kg
 
     def event_market_cycle(self):

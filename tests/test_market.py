@@ -15,7 +15,7 @@ from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundE
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.const import ConstSettings
 
 from d3a.device_registry import DeviceRegistry
 device_registry_dict = {

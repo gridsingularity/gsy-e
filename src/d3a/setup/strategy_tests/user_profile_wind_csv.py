@@ -5,7 +5,7 @@ from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.predefined_wind import WindUserProfileStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.util import d3a_path
 import os
 

@@ -23,7 +23,7 @@ class BalancingMarket(OneSidedMarket):
         self.accumulated_demand_balancing_trade_price = 0
         self.accumulated_demand_balancing_trade_energy = 0
 
-        OneSidedMarket.__init__(self, time_slot, area, notification_listener, readonly)
+        super().__init__(time_slot, area, notification_listener, readonly)
 
     def offer(self, price: float, energy: float, seller: str, balancing_agent: bool=False):
         return self.balancing_offer(price, energy, seller, balancing_agent)
