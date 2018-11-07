@@ -108,7 +108,6 @@ class ContractJoiner(object):
 
         out = []
         if contract_file.name in self.seen:
-            print('Skipping duplicate {}'.format(contract_file.name))
             return []
 
         self.seen.add(contract_file.name)
@@ -176,6 +175,7 @@ def get_contract_path(contract_name):
         contract_name = contract_name[:-4]
     contract_path = os.path.join(
         get_project_root(),
+        'blockchain',
         'contracts',
         "{}.sol".format(contract_name)
     )
