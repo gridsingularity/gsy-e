@@ -12,7 +12,7 @@ from d3a import TIME_ZONE
 from d3a.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
 from d3a.models.config import SimulationConfig
-from d3a.models.events import TriggerMixin
+from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
 from d3a.util import TaggedLogWrapper
 from d3a.models.const import ConstSettings
