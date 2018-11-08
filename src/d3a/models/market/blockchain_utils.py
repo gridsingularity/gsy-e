@@ -2,7 +2,6 @@ from logging import getLogger
 
 from d3a.util import wait_until_timeout_blocking
 from d3a.blockchain.utils import unlock_account, wait_for_node_synchronization
-from time import sleep
 
 log = getLogger(__name__)
 
@@ -38,7 +37,7 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
         .transact({'from': bc_interface.chain.eth.accounts[0]})
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     status = tx_receipt["status"]
-    print(f"tx_receipt Status: {status}")
+    log.info(f"tx_receipt Status: {status}")
     approve_retval = clearing_contract_instance.events \
         .ApproveClearingMember() \
         .processReceipt(tx_receipt)
@@ -47,7 +46,6 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
     assert approve_retval[0]["args"]["approver"] == bc_interface.chain.eth.accounts[0]
     assert approve_retval[0]["args"]["market"] == market_address
     assert approve_retval[0]["event"] == "ApproveClearingMember"
-    sleep(5)
     return contract
 
 
@@ -62,7 +60,7 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
 
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     status = tx_receipt["status"]
-    print(f"tx_receipt Status: {status}")
+    log.info(f"tx_receipt Status: {status}")
     if status == 0:
         return create_new_offer(bc_interface, bc_contract, energy, price, seller)
     else:
@@ -73,7 +71,6 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
         wait_until_timeout_blocking(lambda:
                                     bc_contract.functions.getOffer(offer_id).call() is not 0,
                                     timeout=20)
-        sleep(5)
         return offer_id
 
 
@@ -84,7 +81,6 @@ def cancel_offer(bc_interface, bc_contract, offer):
             {"from": bc_interface.users[offer.seller].address}
         )
     )
-    sleep(5)
 
 
 def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
@@ -96,19 +92,12 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     log.info(f"tx_hash of Trade {tx_hash_hex}")
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     status = tx_receipt["status"]
-    print(f"tx_receipt Status: {status}")
+    log.info(f"tx_receipt Status: {status}")
     if status == 0:
         log.info(f"Redispatching trade offer 0 receipt")
         return trade_offer(bc_interface, bc_contract, offer_id, energy, buyer)
     else:
         wait_for_node_synchronization(bc_interface)
-        sleep(5)
-        new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
-        #
-        # wait_until_timeout_blocking(lambda: len(bc_contract.events.NewTrade().
-        #                                         processReceipt(tx_receipt)) != 0,
-        #                             timeout=20)
-
         new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
 
         offer_changed_retval = bc_contract.events \
