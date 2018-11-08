@@ -1,6 +1,6 @@
 from d3a.models.appliance.mixins import SwitchableMixin
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.events import Trigger
+from d3a.events.event_structures import Trigger
 
 
 class PVAppliance(SwitchableMixin, SimpleAppliance):

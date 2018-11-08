@@ -1,4 +1,7 @@
-class ConstSettings:
+from d3a.models.const import ConstSettings
+
+
+class ConstSettings(ConstSettings):
 
     class HeatpumpSettings:
         # This is the season depended temperature of the earth in 2-3m depth (Between 4C and 10C)
