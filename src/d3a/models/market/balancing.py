@@ -25,12 +25,12 @@ class BalancingMarket(OneSidedMarket):
 
         super().__init__(time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str, balancing_agent: bool=False):
-        return self.balancing_offer(price, energy, seller, balancing_agent)
+    def offer(self, price: float, energy: float, seller: str):
+        assert False
 
     def balancing_offer(self, price: float, energy: float,
-                        seller: str, balancing_agent: bool=False) -> BalancingOffer:
-        if seller not in DeviceRegistry.REGISTRY.keys() and not balancing_agent:
+                        seller: str, from_agent: bool=False) -> BalancingOffer:
+        if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
         if self.readonly:

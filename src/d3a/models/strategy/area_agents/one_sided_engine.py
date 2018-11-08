@@ -17,8 +17,6 @@ class IAAEngine:
         self.min_offer_age = min_offer_age
         self.transfer_fee_pct = transfer_fee_pct
         self.owner = owner
-        from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
-        self._balancing_agent = isinstance(owner, BalancingAgent)
 
         self.offer_age = {}  # type: Dict[str, int]
         # Offer.id -> OfferInfo
@@ -35,8 +33,7 @@ class IAAEngine:
         forwarded_offer = self.markets.target.offer(
             offer.price + (offer.price * (self.transfer_fee_pct / 100)),
             offer.energy,
-            self.owner.name,
-            self._balancing_agent
+            self.owner.name
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -211,3 +208,19 @@ class IAAEngine:
             # Do not delete the forwarded offer entries for the case of residual offers
             if existing_offer.seller != new_offer.seller:
                 self._delete_forwarded_offer_entries(offer_info.source_offer)
+
+
+class BalancingEngine(IAAEngine):
+
+    def _forward_offer(self, offer, offer_id):
+        forwarded_balancing_offer = self.markets.target.balancing_offer(
+            offer.price + (offer.price * (self.transfer_fee_pct / 100)),
+            offer.energy,
+            self.owner.name,
+            True
+        )
+        offer_info = OfferInfo(offer, forwarded_balancing_offer)
+        self.forwarded_offers[forwarded_balancing_offer.id] = offer_info
+        self.forwarded_offers[offer_id] = offer_info
+        self.owner.log.debug(f"Forwarding balancing offer {offer} to {forwarded_balancing_offer}")
+        return forwarded_balancing_offer
