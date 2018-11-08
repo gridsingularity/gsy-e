@@ -20,6 +20,9 @@ class OneSidedMarket(Market):
         super().__init__(time_slot, area, notification_listener, readonly)
         self.bc_interface = MarketBlockchainInterface(area)
 
+    def balancing_offer(self, price, energy, seller, from_agent):
+        assert False
+
     def offer(self, price: float, energy: float, seller: str) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
