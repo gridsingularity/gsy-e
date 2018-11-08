@@ -1,4 +1,4 @@
-from d3a.models.events import Trigger
+from d3a.events.event_structures import Trigger
 
 
 class SwitchableMixin:

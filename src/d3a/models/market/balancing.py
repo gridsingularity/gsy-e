@@ -5,7 +5,7 @@ from logging import getLogger
 
 from d3a.models.market.market_structures import Offer
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.models.events import MarketEvent
+from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import BalancingOffer, BalancingTrade
 from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
     InvalidBalancingTradeException, DeviceNotInRegistryError

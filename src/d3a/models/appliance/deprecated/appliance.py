@@ -8,7 +8,7 @@ from pendulum import duration
 import math
 import random
 
-from d3a.models.events import Trigger
+from d3a.events.event_structures import Trigger
 
 
 log = getLogger(__name__)
