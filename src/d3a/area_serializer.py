@@ -99,3 +99,13 @@ def area_from_dict(description, config=None):
 def area_from_string(string, config=None):
     """Recover area from its json string representation"""
     return area_from_dict(json.loads(string), config)
+
+
+def are_all_areas_unique(area, list_of_areas=set()):
+    assert area.name not in list_of_areas
+    list_of_areas.add(area.name)
+
+    for child in area.children:
+        list_of_areas = are_all_areas_unique(child, list_of_areas)
+
+    return list_of_areas
