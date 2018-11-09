@@ -9,14 +9,11 @@ Feature: Run integration tests
      | scenario |
      | integration_test_setup |
 
-  Scenario Outline: Test offers, bids and balancing offers are exported
+  Scenario: Test offers, bids and balancing offers are exported
      Given we have a scenario named two_sided_market/with_balancing_market
      And d3a is installed
      When we run the d3a simulation on console with two_sided_market.with_balancing_market
      Then there are files with offers and bids for every area
-  Examples: Scenarios
-     | scenario |
-     | integration_test_setup |
 
   Scenario Outline: Run general integration tests for simulation
      Given we have a scenario named <scenario>
