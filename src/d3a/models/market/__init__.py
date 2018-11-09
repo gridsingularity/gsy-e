@@ -2,14 +2,14 @@ import random
 import uuid
 from collections import defaultdict
 from logging import getLogger
-from typing import Dict, List, Set, Union  # noqa
+from typing import Dict, List  # noqa
 import sys
 
 from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
-from d3a import TIME_ZONE, TIME_FORMAT
-from d3a.device_registry import DeviceRegistry
+from d3a.constants import TIME_ZONE, TIME_FORMAT
+from d3a.d3a_core.device_registry import DeviceRegistry
 
 
 log = getLogger(__name__)

@@ -12,7 +12,6 @@ from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
 
-from d3a import get_project_root
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
 
@@ -174,7 +173,7 @@ def get_contract_path(contract_name):
     if contract_name.endswith(".sol"):
         contract_name = contract_name[:-4]
     contract_path = os.path.join(
-        get_project_root(),
+        d3a.get_project_root(),
         'blockchain',
         'contracts',
         "{}.sol".format(contract_name)

@@ -14,12 +14,12 @@ from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
 import d3a
-from d3a import TIME_FORMAT
-from d3a.simulation import Simulation, page_lock
-from d3a.stats import (
+from d3a.constants import TIME_FORMAT
+from d3a.d3a_core.simulation import Simulation, page_lock
+from d3a.d3a_core.stats import (
     energy_bills
 )
-from d3a.util import make_iaa_name, simulation_info
+from d3a.d3a_core.util import make_iaa_name, simulation_info
 
 
 _NO_VALUE = {

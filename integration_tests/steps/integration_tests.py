@@ -8,11 +8,11 @@ from behave import given, when, then
 
 from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, _readCSV
-from d3a.simulation import Simulation
-from d3a.util import d3a_path
-from d3a import PENDULUM_TIME_FORMAT
+from d3a.d3a_core.simulation import Simulation
+from d3a.d3a_core.util import d3a_path
+from d3a.constants import PENDULUM_TIME_FORMAT
 from d3a.models.const import ConstSettings
-from d3a.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.export_unmatched_loads import export_unmatched_loads
 
 
 @given('we have a scenario named {scenario}')

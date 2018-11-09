@@ -4,7 +4,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 from d3a.models.strategy.electrolyzer import ElectrolyzerStrategy
-from d3a.util import d3a_path
+from d3a.d3a_core.util import d3a_path
 import os
 
 electrolizer_profile_file = os.path.join(d3a_path, "resources",
