@@ -2,7 +2,7 @@ import random
 
 from collections import defaultdict, namedtuple
 from typing import Dict, List, Set, Union  # noqa
-from d3a.models.events import OfferEvent
+from d3a.events.event_structures import OfferEvent
 
 
 class Offer:

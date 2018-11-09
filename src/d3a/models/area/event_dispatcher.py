@@ -1,7 +1,7 @@
 from random import random
 from typing import Union
 from collections import defaultdict
-from d3a.models.events import MarketEvent, AreaEvent
+from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent

@@ -1,7 +1,7 @@
 from d3a.models.appliance.mixins import SwitchableMixin
 from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.events import Trigger
-from d3a.models.const import ConstSettings
+from d3a.events.event_structures import Trigger
+from d3a.models.strategy.deprecated.DEPRECATED_const import ConstSettings
 
 
 class FridgeAppliance(SwitchableMixin, SimpleAppliance):
