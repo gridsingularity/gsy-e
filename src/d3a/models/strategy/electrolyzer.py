@@ -1,7 +1,7 @@
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
-from d3a import TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 
 
 class ElectrolyzerStrategy(StorageStrategy):

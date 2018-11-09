@@ -9,10 +9,10 @@ from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.simulation import Simulation
-from d3a.web import start_web
-from d3a.util import available_simulation_scenarios
-from d3a.util import update_advanced_settings
+from d3a.d3a_core.simulation import Simulation
+from d3a.d3a_core.web import start_web
+from d3a.d3a_core.util import available_simulation_scenarios
+from d3a.d3a_core.util import update_advanced_settings
 
 
 @job('d3a')

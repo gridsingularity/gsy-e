@@ -2,7 +2,7 @@ import pendulum
 import pytest
 
 from unittest.mock import Mock
-from d3a import TIME_ZONE, TIME_FORMAT
+from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.const import ConstSettings

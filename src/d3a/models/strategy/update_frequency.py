@@ -3,7 +3,7 @@ from cached_property import cached_property
 from typing import Dict  # noqa
 from pendulum import Time # noqa
 
-from d3a.exceptions import MarketException
+from d3a.d3a_core.exceptions import MarketException
 from d3a.models.const import ConstSettings
 
 

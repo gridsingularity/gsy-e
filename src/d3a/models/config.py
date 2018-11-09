@@ -1,8 +1,8 @@
 import ast
 from pendulum import duration, Duration
 
-from d3a.exceptions import D3AException
-from d3a.util import format_interval
+from d3a.d3a_core.exceptions import D3AException
+from d3a.d3a_core.util import format_interval
 from d3a.models.const import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes

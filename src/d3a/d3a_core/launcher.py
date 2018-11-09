@@ -9,7 +9,7 @@ from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
@@ -28,7 +28,7 @@ class Launcher:
         self.port = port_min
         self.port_max = 5009
         self.max_delay = timedelta(seconds=max_delay_seconds)
-        self.command = [sys.executable, 'src/d3a/d3a_jobs.py']
+        self.command = [sys.executable, 'src/d3a/d3a_core/d3a_jobs.py']
 
     def run(self):
         self._start_worker()

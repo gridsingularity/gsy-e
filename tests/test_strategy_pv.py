@@ -3,12 +3,12 @@ import pendulum
 import uuid
 from pendulum import DateTime
 
-from d3a import TIME_ZONE
+from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.const import ConstSettings
-from d3a import TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today().at(hour=10, minute=45, second=2)

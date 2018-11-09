@@ -1,4 +1,4 @@
-from d3a.util import available_simulation_scenarios
+from d3a.d3a_core.util import available_simulation_scenarios
 from d3a import setup as d3a_setup
 import os
 

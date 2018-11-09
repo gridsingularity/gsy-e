@@ -1,5 +1,5 @@
 import uuid
-from typing import Dict, List, Set, Union  # noqa
+from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
 
@@ -7,8 +7,8 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
-from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade
+from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
+    OfferNotFoundException, InvalidTrade
 
 log = getLogger(__name__)
 

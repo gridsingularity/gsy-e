@@ -1,4 +1,4 @@
-from d3a.area_serializer import area_from_dict
+from d3a.d3a_core.area_serializer import area_from_dict
 
 
 def get_setup(config):
