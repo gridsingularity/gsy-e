@@ -73,7 +73,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             offer.price = offer.energy * (bid.price / bid.energy)
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
-                                    buyer=self.owner.name,
+                                    buyer=bid.buyer,
                                     energy=selected_energy,
                                     price_drop=True)
             self._delete_forwarded_offer_entries(offer)
