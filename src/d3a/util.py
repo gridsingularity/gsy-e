@@ -293,14 +293,11 @@ def wait_until_timeout_blocking(functor, timeout=10, polling_period=0.01):
     assert functor()
 
 
-MAX_RETRIES = 3
-
-
 def retry_function(functor, retry_count, *args, **kwargs):
     try:
         return functor(*args, **kwargs)
     except AssertionError as e:
-        print(f"RETRYING FOR THE {retry_count+1} TIME")
-        if retry_count >= MAX_RETRIES:
+        log.info(f"Retrying action {functor.__name__} for the {retry_count+1} time.")
+        if retry_count >= ConstSettings.GeneralSettings.MAX_RETRIES:
             raise e
         return retry_function(functor, retry_count+1, *args, **kwargs)
