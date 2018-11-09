@@ -4,8 +4,7 @@ from d3a.constants import DEFAULT_PRECISION
 
 
 def get_project_root():
-    import d3a
-    return os.path.dirname(d3a.__file__)
+    return os.path.dirname(__file__)
 
 
 def limit_float_precision(number):
