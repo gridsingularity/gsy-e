@@ -24,6 +24,7 @@ from d3a.util import NonBlockingConsole, format_interval
 from d3a.endpoint_buffer import SimulationEndpointBuffer
 from d3a.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
+from d3a.area_serializer import are_all_areas_unique
 
 
 log = getLogger(__name__)
@@ -131,6 +132,8 @@ class Simulation:
         log.info("Starting simulation with config %s", self.simulation_config)
 
         self._set_traversal_length()
+
+        are_all_areas_unique(self.area, set())
 
         self.area.activate(self.bc)
 
