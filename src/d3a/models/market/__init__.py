@@ -29,8 +29,10 @@ class Market:
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
+        self.offer_history = []  # type: List[Offer]
         self.notification_listeners = []
         self.bids = {}  # type: Dict[str, Bid]
+        self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
         # Store trades temporarily until bc event has fired
         self.ious = defaultdict(lambda: defaultdict(int))

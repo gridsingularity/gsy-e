@@ -21,6 +21,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self)
         self.bids[bid.id] = bid
+        self.bid_history.append(bid)
         log.info(f"[BID][NEW][{self.time_slot_str}] {bid}")
         return bid
 

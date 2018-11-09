@@ -32,6 +32,7 @@ class OneSidedMarket(Market):
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        self.offer_history.append(offer)
         log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
