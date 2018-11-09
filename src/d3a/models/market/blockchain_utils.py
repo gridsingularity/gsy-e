@@ -1,6 +1,6 @@
 from logging import getLogger
 
-from d3a.util import wait_until_timeout_blocking
+from d3a.util import wait_until_timeout_blocking, retry_function
 from d3a.blockchain.utils import unlock_account, wait_for_node_synchronization
 
 log = getLogger(__name__)
@@ -50,20 +50,19 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
 
 
 def create_new_offer(bc_interface, bc_contract, energy, price, seller):
-    unlock_account(bc_interface.chain, bc_interface.users[seller].address)
-    bc_energy = int(energy * BC_NUM_FACTOR)
-    tx_hash = bc_contract.functions.offer(
-        bc_energy,
-        int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
-    tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
-    log.info(f"tx_hash of New Offer {tx_hash_hex}")
+    def create_offer_retries(bc_interface, bc_contract, energy, price, seller):
+        unlock_account(bc_interface.chain, bc_interface.users[seller].address)
+        bc_energy = int(energy * BC_NUM_FACTOR)
+        tx_hash = bc_contract.functions.offer(
+            bc_energy,
+            int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
+        tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
+        log.info(f"tx_hash of New Offer {tx_hash_hex}")
 
-    tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
-    status = tx_receipt["status"]
-    log.info(f"tx_receipt Status: {status}")
-    if status == 0:
-        return create_new_offer(bc_interface, bc_contract, energy, price, seller)
-    else:
+        tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
+        status = tx_receipt["status"]
+        log.info(f"tx_receipt Status: {status}")
+        assert status > 0
         wait_for_node_synchronization(bc_interface)
         offer_id = \
             bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
@@ -72,6 +71,9 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
                                     bc_contract.functions.getOffer(offer_id).call() is not 0,
                                     timeout=20)
         return offer_id
+
+    return retry_function(create_offer_retries, 0,
+                          bc_interface, bc_contract, energy, price, seller)
 
 
 def cancel_offer(bc_interface, bc_contract, offer):
@@ -84,19 +86,18 @@ def cancel_offer(bc_interface, bc_contract, offer):
 
 
 def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
-    unlock_account(bc_interface.chain, bc_interface.users[buyer].address)
-    trade_energy = int(energy * BC_NUM_FACTOR)
-    tx_hash = bc_contract.functions.trade(offer_id, trade_energy). \
-        transact({"from": bc_interface.users[buyer].address})
-    tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
-    log.info(f"tx_hash of Trade {tx_hash_hex}")
-    tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
-    status = tx_receipt["status"]
-    log.info(f"tx_receipt Status: {status}")
-    if status == 0:
-        log.info(f"Redispatching trade offer 0 receipt")
-        return trade_offer(bc_interface, bc_contract, offer_id, energy, buyer)
-    else:
+    def trade_offer_retries(bc_interface, bc_contract, offer_id, energy, buyer):
+        unlock_account(bc_interface.chain, bc_interface.users[buyer].address)
+        trade_energy = int(energy * BC_NUM_FACTOR)
+        tx_hash = bc_contract.functions.trade(offer_id, trade_energy). \
+            transact({"from": bc_interface.users[buyer].address})
+        tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
+        log.info(f"tx_hash of Trade {tx_hash_hex}")
+        tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
+        status = tx_receipt["status"]
+        log.info(f"tx_receipt Status: {status}")
+        assert status > 0
+
         wait_for_node_synchronization(bc_interface)
         new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
 
@@ -118,3 +119,6 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
             if len(offer_changed_retval) > 0 \
             else None
         return trade_id, new_offer_id
+
+    return retry_function(trade_offer_retries, 0,
+                          bc_interface, bc_contract, offer_id, energy, buyer)
