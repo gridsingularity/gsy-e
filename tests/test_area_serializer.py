@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from d3a.area_serializer import area_to_string, area_from_string
+from d3a.area_serializer import area_to_string, area_from_string, are_all_areas_unique
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
 from d3a.models.leaves import PV
@@ -128,3 +128,32 @@ def test_budget_keeper_roundtrip(budget_keeper_fixture):
     recovered = area_from_string(budget_keeper_fixture)
     assert recovered.budget_keeper.budget == 100.0
     assert recovered.budget_keeper.days_per_period == 30
+
+
+def test_area_does_not_allow_duplicate_subarea_names():
+    area = Area(
+        'Grid',
+        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
+         Area('House 1', children=[Area('H2 General Load'), Area('H2 PV1')])],
+    )
+
+    with pytest.raises(AssertionError):
+        are_all_areas_unique(area, set())
+
+    area = Area(
+        'Grid',
+        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
+         Area('House 2', children=[Area('H1 General Load'), Area('H2 PV1')])],
+    )
+
+    with pytest.raises(AssertionError):
+        are_all_areas_unique(area, set())
+
+    area = Area(
+        'Grid',
+        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
+         Area('House 2', children=[Area('H2 General Load'), Area('H2 PV1')])],
+    )
+
+    # Does not raise an assertion
+    are_all_areas_unique(area, set())
