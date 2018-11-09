@@ -10,7 +10,7 @@ from pendulum import duration
 from statistics import mean
 from typing import Dict
 from itertools import product
-from d3a import TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 
 
 class InputProfileTypes(Enum):

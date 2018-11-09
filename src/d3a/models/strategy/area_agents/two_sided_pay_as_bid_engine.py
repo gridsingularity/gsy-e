@@ -1,6 +1,6 @@
 from collections import namedtuple
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
-from d3a.exceptions import BidNotFound, MarketException
+from d3a.d3a_core.exceptions import BidNotFound, MarketException
 from d3a.models.market.market_structures import Bid
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))

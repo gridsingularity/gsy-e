@@ -2,8 +2,8 @@ import pytest
 
 import pendulum
 
-from d3a import TIME_FORMAT
-from d3a import TIME_ZONE
+from d3a.constants import TIME_FORMAT
+from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent

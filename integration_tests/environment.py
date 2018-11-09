@@ -19,8 +19,8 @@ before_tag(context, tag), after_tag(context, tag)
 # from behave import use_step_matcher
 # step_matcher("cfparse")
 
-from d3a.device_registry import DeviceRegistry
-from d3a.util import update_advanced_settings, constsettings_to_dict
+from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
 
 
 def before_scenario(context, scenario):

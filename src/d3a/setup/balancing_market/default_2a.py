@@ -6,7 +6,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.device_registry import DeviceRegistry
+from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.const import ConstSettings
 
 

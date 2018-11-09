@@ -1,6 +1,6 @@
 from behave import then
 from d3a.models.read_user_profile import _readCSV
-from d3a import PENDULUM_TIME_FORMAT
+from d3a.constants import PENDULUM_TIME_FORMAT
 
 
 @then('the UserProfileWind follows the Wind profile of csv')

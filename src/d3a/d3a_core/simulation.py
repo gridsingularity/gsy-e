@@ -14,16 +14,17 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.blockchain import BlockChainInterface
-from d3a import TIME_ZONE
-from d3a.exceptions import SimulationException, D3AException
-from d3a.export import ExportAndPlot
+from d3a.constants import TIME_ZONE
+from d3a.d3a_core.exceptions import SimulationException, D3AException
+from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
-from d3a.util import NonBlockingConsole, format_interval
-from d3a.endpoint_buffer import SimulationEndpointBuffer
-from d3a.redis_communication import RedisSimulationCommunication
+from d3a.d3a_core.util import NonBlockingConsole, format_interval
+from d3a.d3a_core.endpoint_buffer import SimulationEndpointBuffer
+from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.area_serializer import are_all_areas_unique
 
 
 log = getLogger(__name__)
@@ -131,6 +132,8 @@ class Simulation:
         log.info("Starting simulation with config %s", self.simulation_config)
 
         self._set_traversal_length()
+
+        are_all_areas_unique(self.area, set())
 
         self.area.activate(self.bc)
 

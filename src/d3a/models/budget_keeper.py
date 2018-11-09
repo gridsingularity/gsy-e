@@ -4,7 +4,7 @@ from typing import Dict  # noqa
 from pendulum import duration
 
 from d3a.models.area import Area
-from d3a.util import make_iaa_name
+from d3a.d3a_core.util import make_iaa_name
 
 
 class BudgetKeeper:

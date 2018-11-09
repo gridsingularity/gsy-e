@@ -2,7 +2,7 @@ from behave import then
 from math import isclose
 from pendulum import duration
 from d3a.models.const import ConstSettings
-from d3a import PENDULUM_TIME_FORMAT
+from d3a.constants import PENDULUM_TIME_FORMAT
 
 
 @then('the storages buy energy for no more than the min PV selling rate')
