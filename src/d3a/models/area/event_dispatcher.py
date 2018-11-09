@@ -4,6 +4,7 @@ from collections import defaultdict
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
+from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.const import ConstSettings
@@ -83,8 +84,10 @@ class AreaDispatcher:
         if is_spot_market:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 return OneSidedAgent
-            else:
+            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
                 return TwoSidedPayAsBidAgent
+            elif ConstSettings.IAASettings.MARKET_TYPE == 3:
+                return TwoSidedPayAsClearAgent
         else:
             return BalancingAgent
 

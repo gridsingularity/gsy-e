@@ -57,7 +57,8 @@ class OneSidedMarket(Market):
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: DateTime = None, price_drop: bool = False) -> Trade:
+                     time: DateTime = None, price_drop: bool = False,
+                     clear_rate: int = None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -81,9 +82,14 @@ class OneSidedMarket(Market):
                     accepted_offer_id = offer.id \
                         if self.area is None or self.area.bc is None \
                         else offer.real_id
+                    if clear_rate is not None:
+                        energy_rate = clear_rate
+                    else:
+                        energy_rate = offer.price / offer.energy
+
                     accepted_offer = Offer(
                         accepted_offer_id,
-                        offer.price / offer.energy * energy,
+                        energy_rate * energy,
                         energy,
                         offer.seller,
                         offer.market

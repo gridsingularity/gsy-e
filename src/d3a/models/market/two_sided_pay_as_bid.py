@@ -35,7 +35,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   price_drop: bool = True):
+                   price_drop: bool = True, clear_rate: int = None):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
@@ -52,14 +52,16 @@ class TwoSidedPayAsBid(OneSidedMarket):
             if energy < market_bid.energy:
                 # Partial bidding
                 residual = True
-                energy_rate = market_bid.price / market_bid.energy
+                if clear_rate is not None:
+                    energy_rate = clear_rate
+                else:
+                    energy_rate = market_bid.price / market_bid.energy
                 final_price = energy * energy_rate
                 residual_energy = market_bid.energy - energy
-                residual_price = residual_energy * energy_rate
+                residual_price = residual_energy * (market_bid.price / market_bid.energy)
                 self.bid(residual_price, residual_energy, buyer, seller, bid.id)
                 bid = Bid(bid.id, final_price, energy,
                           buyer, seller, self)
-
             trade = Trade(str(uuid.uuid4()), self._now,
                           bid, seller, buyer, residual, price_drop=price_drop,
                           already_tracked=already_tracked)
