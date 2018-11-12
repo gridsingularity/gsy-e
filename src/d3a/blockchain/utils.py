@@ -1,4 +1,5 @@
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.util import wait_until_timeout_blocking
 from logging import getLogger
 from time import sleep
 
@@ -9,13 +10,9 @@ def wait_for_node_synchronization(bc_interface):
     if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
         return
 
-    node_status = bc_interface.chain.eth.syncing
-    while not node_status:
-        node_status = bc_interface.chain.eth.syncing
-    else:
-        highest_block = node_status["highestBlock"]
-        while bc_interface.chain.eth.blockNumber < highest_block:
-            pass
+    wait_until_timeout_blocking(lambda: bc_interface.chain.eth.syncing is not False, timeout=120)
+    highest_block = bc_interface.chain.eth.syncing["highestBlock"]
+    wait_until_timeout_blocking(lambda: bc_interface.chain.eth.blockNumber >= highest_block)
     sleep(0.1)
 
 
