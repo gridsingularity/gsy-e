@@ -1,7 +1,7 @@
 from logging import getLogger
 
 from d3a.d3a_core.exceptions import D3AException
-from d3a.d3a_core.util import wait_until_timeout_blocking, retry_function
+from d3a.d3a_core.util import retry_function
 from d3a.blockchain.utils import unlock_account, wait_for_node_synchronization
 
 log = getLogger(__name__)
@@ -67,10 +67,6 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
         wait_for_node_synchronization(bc_interface)
         offer_id = \
             bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
-
-        wait_until_timeout_blocking(lambda:
-                                    bc_contract.functions.getOffer(offer_id).call() is not 0,
-                                    timeout=20)
         log.info(f"offer_id: {offer_id}")
         assert offer_id is not 0
         return offer_id
@@ -102,7 +98,14 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
         assert status > 0
 
         wait_for_node_synchronization(bc_interface)
+
         new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
+        if not new_trade_retval[0]['args']['success']:
+            raise InvalidBlockchainTrade(f"Invalid blockchain trade. Transaction return "
+                                         f"value {new_trade_retval}")
+
+        trade_id = new_trade_retval[0]['args']['tradeId']
+
         offer_changed_retval = bc_contract.events \
             .OfferChanged() \
             .processReceipt(tx_receipt)
@@ -112,11 +115,6 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
             raise InvalidBlockchainOffer(f"Invalid blockchain offer changed. Transaction return "
                                          f"value {offer_changed_retval}")
 
-        if not new_trade_retval[0]['args']['success']:
-            raise InvalidBlockchainTrade(f"Invalid blockchain trade. Transaction return "
-                                         f"value {new_trade_retval}")
-
-        trade_id = new_trade_retval[0]['args']['tradeId']
         new_offer_id = offer_changed_retval[0]['args']['newOfferId'] \
             if len(offer_changed_retval) > 0 \
             else None
