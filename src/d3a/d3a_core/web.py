@@ -11,7 +11,7 @@ from werkzeug.wsgi import DispatcherMiddleware
 import d3a
 from d3a.d3a_core.simulation import Simulation, page_lock
 
-from d3a.d3a_core.rest_endpoints import area_endpoint_stats, market_endpoint_stats, \
+from d3a.d3a_core.sim_results.rest_endpoints import area_endpoint_stats, market_endpoint_stats, \
     markets_endpoints_stats, market_results_endpoint_stats, bills_endpoint_stats, simulation_info,\
     url_for
 
