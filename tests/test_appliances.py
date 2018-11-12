@@ -3,7 +3,6 @@ from collections import defaultdict
 import pytest
 from unittest.mock import MagicMock
 
-from d3a.models.appliance.deprecated.custom_profile import CustomProfileAppliance
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import DEFAULT_CONFIG
@@ -156,19 +155,3 @@ def test_pv_appliance_cloud_cover(pv_fixture):
     pv_fixture.cloud_duration = 0
     pv_fixture.report_energy(1)
     assert pv_fixture.area.reported_value == 1
-
-
-@pytest.fixture
-def custom_profile_fixture(called):
-    fixture = CustomProfileAppliance()
-    fixture.area = FakeArea()
-    fixture.owner = FakeOwnerWithStrategyAndMarket(FakeCustomProfileStrategy(33.0, 30.0))
-    fixture.event_activate()
-    fixture.log.warning = called
-    return fixture
-
-
-def test_custom_profile_appliance_lacking_energy_warning(custom_profile_fixture):
-    custom_profile_fixture.owner.strategy.bought_val = 26.0
-    custom_profile_fixture.event_market_cycle()
-    assert len(custom_profile_fixture.log.warning.calls) == 1
