@@ -1,5 +1,6 @@
 from logging import getLogger
 
+from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import wait_until_timeout_blocking, retry_function
 from d3a.blockchain.utils import unlock_account, wait_for_node_synchronization
 
@@ -9,11 +10,11 @@ log = getLogger(__name__)
 BC_NUM_FACTOR = 10 ** 10
 
 
-class InvalidBlockchainOffer(Exception):
+class InvalidBlockchainOffer(D3AException):
     pass
 
 
-class InvalidBlockchainTrade(Exception):
+class InvalidBlockchainTrade(D3AException):
     pass
 
 
@@ -70,6 +71,8 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
         wait_until_timeout_blocking(lambda:
                                     bc_contract.functions.getOffer(offer_id).call() is not 0,
                                     timeout=20)
+        log.info(f"offer_id: {offer_id}")
+        assert offer_id is not 0
         return offer_id
 
     return retry_function(create_offer_retries, 0,
@@ -100,7 +103,6 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
 
         wait_for_node_synchronization(bc_interface)
         new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
-
         offer_changed_retval = bc_contract.events \
             .OfferChanged() \
             .processReceipt(tx_receipt)

@@ -14,6 +14,7 @@ from datetime import timedelta
 
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.exceptions import D3AException
 
 import d3a
 import inspect
@@ -295,7 +296,7 @@ def wait_until_timeout_blocking(functor, timeout=10, polling_period=0.01):
 def retry_function(functor, retry_count, *args, **kwargs):
     try:
         return functor(*args, **kwargs)
-    except AssertionError as e:
+    except (AssertionError, D3AException) as e:
         log.info(f"Retrying action {functor.__name__} for the {retry_count+1} time.")
         if retry_count >= ConstSettings.GeneralSettings.MAX_RETRIES:
             raise e
