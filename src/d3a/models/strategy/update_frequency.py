@@ -56,6 +56,7 @@ class BidUpdateFrequencyMixin:
             self._update_posted_bids(market, current_tick_number)
 
     def _update_posted_bids(self, market, current_tick_number):
+        print(f"_update_posted_bids")
         existing_bids = list(self.get_posted_bids(market))
         for bid in existing_bids:
             if bid.id in market.bids.keys():
@@ -68,6 +69,7 @@ class BidUpdateFrequencyMixin:
                           bid.energy)
 
     def update_posted_bids_over_ticks(self, market):
+        print(f"update_posted_bids_over_ticks")
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds

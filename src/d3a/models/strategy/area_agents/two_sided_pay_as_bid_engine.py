@@ -68,7 +68,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         self.forwarded_bids.pop(bid_info.source_bid.id, None)
 
     def _match_offers_bids(self):
-        print(f"Bid & Offer: {self._perform_pay_as_bid_matching()}")
         for bid, offer in self._perform_pay_as_bid_matching():
             selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
             offer.price = offer.energy * (bid.price / bid.energy)

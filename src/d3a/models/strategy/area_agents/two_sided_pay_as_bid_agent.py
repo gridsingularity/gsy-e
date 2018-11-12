@@ -4,7 +4,7 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSided
 
 class TwoSidedPayAsBidAgent(OneSidedAgent):
 
-    def __init__(self, *, owner, higher_market, lower_market,
+    def __init__(self, *, engine_type, owner, higher_market, lower_market,
                  transfer_fee_pct=1, min_offer_age=1):
         super().__init__(engine_type=TwoSidedPayAsBidEngine, owner=owner,
                          higher_market=higher_market, lower_market=lower_market,

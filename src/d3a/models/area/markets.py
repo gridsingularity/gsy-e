@@ -60,6 +60,8 @@ class AreaMarkets:
             elif ConstSettings.IAASettings.MARKET_TYPE == 2:
                 return TwoSidedPayAsBid
             elif ConstSettings.IAASettings.MARKET_TYPE == 3:
+                print(f"ConstSettings.IAASettings.MARKET_TYPE: "
+                      f"{ConstSettings.IAASettings.MARKET_TYPE}")
                 return TwoSidedPayAsClear
         else:
             return BalancingMarket
@@ -88,4 +90,6 @@ class AreaMarkets:
                            if area.config.slot_length.total_seconds() > 60
                     else "%H:%M:%S"
                 ))
+                print(f"market_class: {market_class}")
+                print(f"New market: {market}")
         return changed

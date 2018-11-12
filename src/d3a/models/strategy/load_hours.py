@@ -117,7 +117,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         return (time_slot - self._simulation_start_timestamp).days
 
     def _double_sided_market_event_tick(self, market):
+        print(f"_double_sided_market_event_tick")
         if self.are_bids_posted(market):
+            print(f"self.are_bids_posted")
             self.update_posted_bids_over_ticks(market)
 
     def event_tick(self, *, area):
@@ -129,7 +131,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self._one_sided_market_event_tick(market)
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+                    ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self._double_sided_market_event_tick(market)
 
     def _allowed_operating_hours(self, time):
