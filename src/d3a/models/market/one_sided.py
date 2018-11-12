@@ -20,9 +20,10 @@ class OneSidedMarket(Market):
         super().__init__(time_slot, area, notification_listener, readonly)
         self.bc_interface = MarketBlockchainInterface(area)
 
-    def offer(self, price: float, energy: float, seller: str,
-              balancing_agent: bool=False) -> Offer:
-        assert balancing_agent is False
+    def balancing_offer(self, price, energy, seller, from_agent):
+        assert False
+
+    def offer(self, price: float, energy: float, seller: str) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -32,6 +33,7 @@ class OneSidedMarket(Market):
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        self.offer_history.append(offer)
         log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
