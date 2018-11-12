@@ -232,7 +232,7 @@ class Simulation:
                                 self._handle_input(console, diff_slowdown)
 
                         with page_lock:
-                            self.endpoint_buffer.update(self.area, self.status)
+                            self.endpoint_buffer.update_stats(self.area, self.status)
                             self.redis_connection.publish_intermediate_results(
                                 self.endpoint_buffer
                             )

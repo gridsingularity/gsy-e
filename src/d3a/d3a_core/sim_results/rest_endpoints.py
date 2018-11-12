@@ -9,7 +9,7 @@ from flask import abort
 
 from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.util import make_iaa_name, format_interval
-from d3a.d3a_core.stats import energy_bills
+from d3a.d3a_core.sim_results.stats import energy_bills
 
 
 def area_endpoint_stats(area):
