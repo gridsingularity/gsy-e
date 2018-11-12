@@ -1,9 +1,9 @@
 import uuid
-from typing import Dict, List, Set, Union  # noqa
+from typing import Union  # noqa
 from logging import getLogger
 
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.exceptions import BidNotFound, InvalidBid, InvalidTrade
+from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
 from d3a.models.market.market_structures import Bid, Trade
 from d3a.events.event_structures import MarketEvent
 
@@ -21,6 +21,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self)
         self.bids[bid.id] = bid
+        self.bid_history.append(bid)
         log.info(f"[BID][NEW][{self.time_slot_str}] {bid}")
         return bid
 

@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import Dict, Set  # noqa
 
-from d3a.exceptions import MarketException, OfferNotFoundException
+from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
 
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))

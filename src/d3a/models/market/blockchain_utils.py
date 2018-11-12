@@ -1,6 +1,6 @@
 from logging import getLogger
 
-from d3a.util import wait_until_timeout_blocking, retry_function
+from d3a.d3a_core.util import wait_until_timeout_blocking, retry_function
 from d3a.blockchain.utils import unlock_account, wait_for_node_synchronization
 
 log = getLogger(__name__)

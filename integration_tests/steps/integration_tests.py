@@ -8,11 +8,11 @@ from behave import given, when, then
 
 from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, _readCSV
-from d3a.simulation import Simulation
-from d3a.util import d3a_path
-from d3a import PENDULUM_TIME_FORMAT
+from d3a.d3a_core.simulation import Simulation
+from d3a.d3a_core.util import d3a_path
+from d3a.constants import PENDULUM_TIME_FORMAT
 from d3a.models.const import ConstSettings
-from d3a.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.export_unmatched_loads import export_unmatched_loads
 
 
 @given('we have a scenario named {scenario}')
@@ -287,6 +287,23 @@ def test_export_data_csv(context, scenario):
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}: {file} ".format(path=context.export_path,
                                                                     file=data_fn))
+
+
+@then('there are files with offers and bids for every area')
+def test_offer_bid_files(context):
+    base_path = os.path.join(context.export_path, "*")
+    file_list = [os.path.join(base_path, 'grid-offers.csv'),
+                 os.path.join(base_path, 'grid-bids.csv'),
+                 os.path.join(base_path, 'grid-balancing-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-bids.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-balancing-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-bids.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-balancing-offers.csv')]
+
+    assert all(len(glob.glob(f)) == 1 for f in file_list)
+    assert all(len(open(glob.glob(f)[0]).readlines()) > 1 for f in file_list)
 
 
 @then('we test that config parameters are correctly parsed for {scenario}'

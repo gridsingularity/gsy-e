@@ -2,14 +2,14 @@ import random
 import uuid
 from collections import defaultdict
 from logging import getLogger
-from typing import Dict, List, Set, Union  # noqa
+from typing import Dict, List  # noqa
 import sys
 
 from pendulum import DateTime
 from terminaltables.other_tables import SingleTable
 
-from d3a import TIME_ZONE, TIME_FORMAT
-from d3a.device_registry import DeviceRegistry
+from d3a.constants import TIME_ZONE, TIME_FORMAT
+from d3a.d3a_core.device_registry import DeviceRegistry
 
 
 log = getLogger(__name__)
@@ -29,8 +29,10 @@ class Market:
         self.readonly = readonly
         # offer-id -> Offer
         self.offers = {}  # type: Dict[str, Offer]
+        self.offer_history = []  # type: List[Offer]
         self.notification_listeners = []
         self.bids = {}  # type: Dict[str, Bid]
+        self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
         # Store trades temporarily until bc event has fired
         self.ious = defaultdict(lambda: defaultdict(int))

@@ -1,5 +1,5 @@
 import uuid
-from typing import Dict, List, Set, Union  # noqa
+from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
 
@@ -7,8 +7,8 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
-from d3a.exceptions import InvalidOffer, MarketReadOnlyException, OfferNotFoundException, \
-    InvalidTrade
+from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
+    OfferNotFoundException, InvalidTrade
 
 log = getLogger(__name__)
 
@@ -32,6 +32,7 @@ class OneSidedMarket(Market):
         offer = Offer(offer_id, price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        self.offer_history.append(offer)
         log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
         self._notify_listeners(MarketEvent.OFFER, offer=offer)

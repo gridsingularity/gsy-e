@@ -3,8 +3,9 @@ from solc import compile_source
 from web3.contract import Contract
 from eth_utils import to_bytes
 
-from d3a.util import get_cached_joined_contract_source
-from .token_fixtures import blockchain_fixture # NOQA
+from d3a.d3a_core.util import get_cached_joined_contract_source
+from tests.contracts.token_fixtures import blockchain_fixture # NOQA
+
 
 @pytest.fixture # NOQA
 def _bc(blockchain_fixture):

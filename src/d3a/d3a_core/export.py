@@ -8,8 +8,8 @@ import pendulum
 import shutil
 from slugify import slugify
 
-from d3a import TIME_ZONE
-from d3a.models.market.market_structures import Trade, BalancingTrade
+from d3a.constants import TIME_ZONE
+from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.pv import PVStrategy
@@ -104,6 +104,33 @@ class ExportAndPlot:
             self.trades[area.slug.replace(' ', '_')] = self._export_area_energy(area, directory)
             self.balancing_trades[area.slug.replace(' ', '_')] = \
                 self._export_area_energy(area, directory, True)
+            self._export_area_offers_bids(area, directory, "offers",
+                                          Offer, "offers", area.past_markets)
+            self._export_area_offers_bids(area, directory, "bids",
+                                          Bid, "bids", area.past_markets)
+            self._export_area_offers_bids(area, directory, "balancing-offers",
+                                          BalancingOffer, "offers",
+                                          area.past_balancing_markets)
+
+    def _export_area_offers_bids(self, area, directory, file_suffix, offer_type,
+                                 market_member, past_markets):
+        """
+        Exports files containing individual offers, bids or balancing offers
+        (*-bids/offers/balancing-offers.csv files)
+        return: dict[out_keys]
+        """
+        file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
+        labels = ("slot",) + offer_type._csv_fields()
+        try:
+            with open(file_path, 'w') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(labels)
+                for market in past_markets:
+                    for offer in getattr(market, market_member).values():
+                        row = (market.time_slot,) + offer._to_csv()
+                        writer.writerow(row)
+        except OSError:
+            _log.exception("Could not export area balancing offers")
 
     def _export_area_energy(self, area: Area, directory: dir, balancing_area: bool = False):
         """
