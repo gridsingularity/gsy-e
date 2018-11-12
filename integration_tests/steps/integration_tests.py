@@ -289,6 +289,23 @@ def test_export_data_csv(context, scenario):
                                                                     file=data_fn))
 
 
+@then('there are files with offers and bids for every area')
+def test_offer_bid_files(context):
+    base_path = os.path.join(context.export_path, "*")
+    file_list = [os.path.join(base_path, 'grid-offers.csv'),
+                 os.path.join(base_path, 'grid-bids.csv'),
+                 os.path.join(base_path, 'grid-balancing-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-bids.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-balancing-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-bids.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-balancing-offers.csv')]
+
+    assert all(len(glob.glob(f)) == 1 for f in file_list)
+    assert all(len(open(glob.glob(f)[0]).readlines()) > 1 for f in file_list)
+
+
 @then('we test that config parameters are correctly parsed for {scenario}'
       ' [{cloud_coverage}, {iaa_fee}]')
 def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):

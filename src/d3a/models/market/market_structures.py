@@ -45,6 +45,14 @@ class Offer:
         """
         self._call_listeners(OfferEvent.ACCEPTED, market=market, trade=trade)
 
+    @classmethod
+    def _csv_fields(cls):
+        return 'id', 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'seller'
+
+    def _to_csv(self):
+        rate = round(self.price / self.energy, 4)
+        return self.id, rate, self.energy, self.price, self.seller
+
 
 class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market'))):
     def __new__(cls, id, price, energy, buyer, seller, market=None):
@@ -62,6 +70,14 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market
             "{{{s.id!s:.6s}}} [{s.buyer}] [{s.seller}] "
             "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.price / self.energy)
         )
+
+    @classmethod
+    def _csv_fields(cls):
+        return 'id', 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'buyer'
+
+    def _to_csv(self):
+        rate = round(self.price / self.energy, 4)
+        return self.id, rate, self.energy, self.price, self.buyer
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
