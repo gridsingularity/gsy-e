@@ -104,12 +104,16 @@ class ExportAndPlot:
             self.trades[area.slug.replace(' ', '_')] = self._export_area_energy(area, directory)
             self.balancing_trades[area.slug.replace(' ', '_')] = \
                 self._export_area_energy(area, directory, True)
-            self._export_area_offers_bids(area, directory, "offers", Offer, "offers")
-            self._export_area_offers_bids(area, directory, "bids", Bid, "bids")
+            self._export_area_offers_bids(area, directory, "offers",
+                                          Offer, "offers", area.past_markets)
+            self._export_area_offers_bids(area, directory, "bids",
+                                          Bid, "bids", area.past_markets)
             self._export_area_offers_bids(area, directory, "balancing-offers",
-                                          BalancingOffer, "offers")
+                                          BalancingOffer, "offers",
+                                          area.past_balancing_markets)
 
-    def _export_area_offers_bids(self, area, directory, file_suffix, offer_type, market_member):
+    def _export_area_offers_bids(self, area, directory, file_suffix, offer_type,
+                                 market_member, past_markets):
         """
         Exports files containing individual offers, bids or balancing offers
         (*-bids/offers/balancing-offers.csv files)
@@ -117,7 +121,6 @@ class ExportAndPlot:
         """
         file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
         labels = ("slot",) + offer_type._csv_fields()
-        past_markets = area.past_markets
         try:
             with open(file_path, 'w') as csv_file:
                 writer = csv.writer(csv_file)
