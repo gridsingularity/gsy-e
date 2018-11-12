@@ -50,7 +50,7 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
     return contract
 
 
-@retry_function()
+@retry_function(max_retries=3)
 def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     unlock_account(bc_interface.chain, bc_interface.users[seller].address)
     bc_energy = int(energy * BC_NUM_FACTOR)
@@ -85,7 +85,7 @@ def cancel_offer(bc_interface, bc_contract, offer):
     )
 
 
-@retry_function()
+@retry_function(max_retries=3)
 def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     unlock_account(bc_interface.chain, bc_interface.users[buyer].address)
     trade_energy = int(energy * BC_NUM_FACTOR)

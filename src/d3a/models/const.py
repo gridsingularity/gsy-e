@@ -10,8 +10,6 @@ class ConstSettings:
         # This parameter is modified by the Simulation class
         MAX_OFFER_TRAVERSAL_LENGTH = None
         ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
-        # Maximum number of retries
-        MAX_RETRIES = 3
 
     class StorageSettings:
         # Unit is kWh
