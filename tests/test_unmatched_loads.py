@@ -1,5 +1,5 @@
 from pendulum import duration, DateTime
-from d3a.d3a_core.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
