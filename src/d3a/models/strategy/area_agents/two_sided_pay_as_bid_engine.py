@@ -54,7 +54,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
                    offer.price / offer.energy <= bid.price / bid.energy and \
-                   offer.seller != self.owner.name and \
                    offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
                     yield bid, offer
@@ -80,7 +79,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
 
             self.markets.source.accept_bid(bid,
                                            selected_energy,
-                                           seller=offer.seller,
+                                           seller=bid.seller,
                                            buyer=bid.buyer,
                                            already_tracked=True,
                                            price_drop=True)
