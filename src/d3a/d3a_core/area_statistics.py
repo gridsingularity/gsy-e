@@ -170,19 +170,6 @@ def _accumulate_grid_trades(area, accumulated_trades):
     return accumulated_trades
 
 
-def area_name_to_id(area_name, grid):
-    for child in grid.children:
-        if child.name == area_name:
-            return child.area_id
-        elif child.children == []:
-            continue
-        else:
-            res = area_name_to_id(area_name, child)
-            if res is not None:
-                return res
-    return None
-
-
 def _generate_produced_energy_entries(accumulated_trades):
     # Create produced energy results (negative axis)
     produced_energy = [{
