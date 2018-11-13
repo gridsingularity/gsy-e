@@ -8,7 +8,7 @@ from flask_cors import CORS
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware
 
-import d3a
+from d3a.constants import VERSION
 from d3a.d3a_core.simulation import Simulation, page_lock
 
 from d3a.d3a_core.sim_results.rest_endpoints import area_endpoint_stats, market_endpoint_stats, \
@@ -215,7 +215,7 @@ def _api_app(simulation: Simulation):
 
     @app.after_request
     def modify_server_header(response):
-        response.headers['Server'] = "d3a/{}".format(d3a.VERSION)
+        response.headers['Server'] = "d3a/{}".format(VERSION)
         return response
 
     return app
