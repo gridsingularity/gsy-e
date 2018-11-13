@@ -6,15 +6,12 @@ import plotly as py
 import plotly.graph_objs as go
 import pendulum
 import shutil
-from slugify import slugify
 
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.area import Area
+from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+
 
 _log = logging.getLogger(__name__)
 
@@ -32,7 +29,7 @@ class ExportAndPlot:
 
     def __init__(self, root_area: Area, path: str, subdir: str):
         self.area = root_area
-
+        self.export_data = FileExportEndpoints(root_area)
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -57,8 +54,6 @@ class ExportAndPlot:
         """Wrapping function, executes all export and plotting functions"""
 
         self._export_area_with_children(self.area, self.directory)
-        self._get_buyer_seller_trades(self.area)
-
         self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
         self.plot_energy_profile(self.area, self.plot_dir)
         self.plot_all_unmatched_loads()
@@ -83,31 +78,29 @@ class ExportAndPlot:
 
     def _export_area_with_children(self, area: Area, directory: dir):
         """
-        Gets a self.stats and self.trades and writes them to csv files
-        Runs _export_area_energy and _export_area_flat
+        Uses the FileExportEndpoints object and writes them to csv files
+        Runs _export_area_energy and _export_area_stats_csv_file
         """
         if area.children:
             subdirectory = pathlib.Path(directory, area.slug.replace(' ', '_'))
             subdirectory.mkdir(exist_ok=True, parents=True)
             for child in area.children:
                 self._export_area_with_children(child, subdirectory)
-        self.stats[area.slug.replace(' ', '_')] = self._export_area_flat(area, directory, False)
-        self.balancing_stats[area.slug.replace(' ', '_')] = \
-            self._export_area_flat(area, directory, True)
+        self._export_area_stats_csv_file(area, directory, balancing=False)
+        self._export_area_stats_csv_file(area, directory, balancing=True)
         if area.children:
-            self.trades[area.slug.replace(' ', '_')] = self._export_area_energy(area, directory)
-            self.balancing_trades[area.slug.replace(' ', '_')] = \
-                self._export_area_energy(area, directory, True)
-            self._export_area_offers_bids(area, directory, "offers",
-                                          Offer, "offers", area.past_markets)
-            self._export_area_offers_bids(area, directory, "bids",
-                                          Bid, "bids", area.past_markets)
-            self._export_area_offers_bids(area, directory, "balancing-offers",
-                                          BalancingOffer, "offers",
-                                          area.past_balancing_markets)
+            self._export_trade_csv_files(area, directory, balancing=False)
+            self._export_trade_csv_files(area, directory, balancing=True)
+            self._export_area_offers_bids_csv_files(area, directory, "offers",
+                                                    Offer, "offers", area.past_markets)
+            self._export_area_offers_bids_csv_files(area, directory, "bids",
+                                                    Bid, "bids", area.past_markets)
+            self._export_area_offers_bids_csv_files(area, directory, "balancing-offers",
+                                                    BalancingOffer, "offers",
+                                                    area.past_balancing_markets)
 
-    def _export_area_offers_bids(self, area, directory, file_suffix, offer_type,
-                                 market_member, past_markets):
+    def _export_area_offers_bids_csv_files(self, area, directory, file_suffix,
+                                           offer_type, market_member, past_markets):
         """
         Exports files containing individual offers, bids or balancing offers
         (*-bids/offers/balancing-offers.csv files)
@@ -126,15 +119,13 @@ class ExportAndPlot:
         except OSError:
             _log.exception("Could not export area balancing offers")
 
-    def _export_area_energy(self, area: Area, directory: dir, balancing_area: bool = False):
+    def _export_trade_csv_files(self, area: Area, directory: dir, balancing: bool = False):
         """
         Exports files containing individual trades  (*-trades.csv  files)
         return: dict[out_keys]
         """
 
-        out_keys = ("sold_energy", "bought_energy")
-        out_keys_ids = (5, 6)
-        if balancing_area:
+        if balancing:
             file_path = self._file_path(directory, "{}-balancing-trades".format(area.slug))
             labels = ("slot",) + BalancingTrade._csv_fields()
             past_markets = area.past_balancing_markets
@@ -147,52 +138,34 @@ class ExportAndPlot:
             with open(file_path, 'w') as csv_file:
                 writer = csv.writer(csv_file)
                 writer.writerow(labels)
-                out_dict = dict((key, {}) for key in out_keys)
                 for market in past_markets:
                     for trade in market.trades:
                         row = (market.time_slot,) + trade._to_csv()
                         writer.writerow(row)
-                        for ii, ks in enumerate(out_keys):
-                            node = slugify(row[out_keys_ids[ii]], to_lower=True)
-                            if node not in out_dict[ks]:
-                                out_dict[ks][node] = dict(
-                                    (m.time_slot, 0) for m in area.past_markets)
-                            out_dict[ks][node][market.time_slot] += row[4]
         except OSError:
             _log.exception("Could not export area trades")
 
-        for ks in out_keys:
-            out_dict[ks + "_lists"] = dict((ki, {}) for ki in out_dict[ks].keys())
-            for node in out_dict[ks].keys():
-                out_dict[ks + "_lists"][node]["slot"] = list(out_dict[ks][node].keys())
-                out_dict[ks + "_lists"][node]["energy"] = list(out_dict[ks][node].values())
-        return out_dict
-
-    def _export_area_flat(self, area: Area, directory: dir, balancing: bool):
+    def _export_area_stats_csv_file(self, area: Area, directory: dir, balancing: bool):
         """
         Exports stats (*.csv files)
         """
+
+        area_name = area.slug
         if balancing:
-            data = ExportBalancingData(area)
-            area_name = area.slug + "-balancing"
-        else:
-            data = ExportData.create(area)
-            area_name = area.slug
+            area_name += "-balancing"
+        data = self.export_data.generate_market_export_data(area, balancing)
         rows = data.rows()
-        if rows:
-            try:
-                with open(self._file_path(directory, area_name), 'w') as csv_file:
-                    writer = csv.writer(csv_file)
-                    labels = data.labels()
-                    writer.writerow(labels)
-                    out_dict = dict((key, []) for key in labels)
-                    for row in rows:
-                        writer.writerow(row)
-                        for ii, ri in enumerate(labels):
-                            out_dict[ri].append(row[ii])
-                return out_dict
-            except Exception as ex:
-                _log.error("Could not export area data: %s" % str(ex))
+        if not rows:
+            return
+
+        try:
+            with open(self._file_path(directory, area_name), 'w') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(data.labels())
+                for row in rows:
+                    writer.writerow(row)
+        except Exception as ex:
+            _log.error("Could not export area data: %s" % str(ex))
 
     def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
         """
@@ -210,7 +183,7 @@ class ExportAndPlot:
         """
         Plots trade partner pie graph for the sell tower.
         """
-        higt = TradeHistory(self.buyer_trades, load)
+        higt = TradeHistory(self.export_data.buyer_trades, load)
         higt.arrange_data()
         mkdir_from_str(plot_dir)
         higt.plot_pie_chart("Energy Trade Partners for {}".format(load),
@@ -237,15 +210,17 @@ class ExportAndPlot:
         ytitle = 'Energy [kWh]'
         key = 'energy'
         title = 'Energy Trade Profile of {}'.format(market_name)
-        data.extend(self._plot_energy_graph(self.trades, market_name, "sold_energy_lists",
+        data.extend(self._plot_energy_graph(self.export_data.traded_energy,
+                                            market_name, "sold_energy_lists",
                                             "-seller", key, ENERGY_SELLER_SIGN_PLOTS))
-        data.extend(self._plot_energy_graph(self.trades, market_name, "bought_energy_lists",
+        data.extend(self._plot_energy_graph(self.export_data.traded_energy,
+                                            market_name, "bought_energy_lists",
                                             "-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
-        data.extend(self._plot_energy_graph(self.balancing_trades, market_name,
-                                            "sold_energy_lists",
+        data.extend(self._plot_energy_graph(self.export_data.balancing_traded_energy,
+                                            market_name, "sold_energy_lists",
                                             "-balancing-seller", key, ENERGY_SELLER_SIGN_PLOTS))
-        data.extend(self._plot_energy_graph(self.balancing_trades, market_name,
-                                            "bought_energy_lists",
+        data.extend(self._plot_energy_graph(self.export_data.balancing_traded_energy,
+                                            market_name, "bought_energy_lists",
                                             "-balancing-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
         if len(data) == 0:
             return
@@ -281,11 +256,11 @@ class ExportAndPlot:
         xtitle = 'Time'
         ytitle = 'Energy (kWh)'
         barmode = 'stack'
-        load_list = [child_key for child_key in self.stats.keys()
-                     if unmatched_key in self.stats[child_key].keys()]
+        load_list = [child_key for child_key in self.export_data.csv_file_stats.keys()
+                     if unmatched_key in self.export_data.csv_file_stats[child_key].keys()]
 
         for li in load_list:
-            graph_obj = BarGraph(self.stats[li], unmatched_key)
+            graph_obj = BarGraph(self.export_data.csv_file_stats[li], unmatched_key)
             if sum(graph_obj.dataset[unmatched_key]) < 1e-10:
                 continue
             graph_obj.graph_value()
@@ -308,7 +283,7 @@ class ExportAndPlot:
         storage_key = 'charge [%]'
         new_subdir = os.path.join(subdir, area.slug)
         storage_list = [child.slug for child in area.children
-                        if storage_key in self.stats[child.slug].keys()]
+                        if storage_key in self.export_data.csv_file_stats[child.slug].keys()]
         if storage_list is not []:
             self._plot_ess_soc_history(storage_list, new_subdir, area.slug)
         for child in area.children:
@@ -328,7 +303,7 @@ class ExportAndPlot:
         ytitle = 'Charge [%]'
 
         for si in storage_list:
-            graph_obj = BarGraph(self.stats[si], storage_key)
+            graph_obj = BarGraph(self.export_data.csv_file_stats[si], storage_key)
             graph_obj.graph_value()
             data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
                                   y=list(graph_obj.umHours.values()),
@@ -366,16 +341,23 @@ class ExportAndPlot:
         key = 'avg trade rate [ct./kWh]'
         title = 'Average Trade Price {}'.format(area_list[0])
         for area_name in area_list:
-            data.append(self._plot_avg_trade_graph(self.stats, area_name, key, area_name))
-            if self.balancing_stats[area_name.lower()] is not None:
+            data.append(
+                self._plot_avg_trade_graph(self.export_data.csv_file_stats,
+                                           area_name, key, area_name)
+            )
+            if self.export_data.csv_file_balancing_stats[area_name.lower()] is not None:
                 area_name_balancing = area_name.lower() + "-demand-balancing-trades"
-                data.append(self._plot_avg_trade_graph(self.balancing_stats, area_name,
-                                                       'avg demand balancing trade rate [ct./kWh]',
-                                                       area_name_balancing))
+                data.append(self._plot_avg_trade_graph(
+                    self.export_data.csv_file_balancing_stats, area_name,
+                    'avg demand balancing trade rate [ct./kWh]',
+                    area_name_balancing)
+                )
                 area_name_balancing = area_name.lower() + "-supply-balancing-trades"
-                data.append(self._plot_avg_trade_graph(self.balancing_stats, area_name,
-                                                       'avg supply balancing trade rate [ct./kWh]',
-                                                       area_name_balancing))
+                data.append(self._plot_avg_trade_graph(
+                    self.export_data.csv_file_balancing_stats, area_name,
+                    'avg supply balancing trade rate [ct./kWh]',
+                    area_name_balancing)
+                )
 
         if all([len(da.y) == 0 for da in data]):
             return
@@ -391,110 +373,6 @@ class ExportAndPlot:
                               y=list(graph_obj.umHours.values()),
                               name=label.lower())
         return data_obj
-
-
-class ExportData:
-    def __init__(self, area):
-        self.area = area
-
-    @staticmethod
-    def create(area):
-        return ExportUpperLevelData(area) if len(area.children) > 0 else ExportLeafData(area)
-
-
-class ExportUpperLevelData(ExportData):
-    def __init__(self, area):
-        super(ExportUpperLevelData, self).__init__(area)
-
-    def labels(self):
-        return ['slot',
-                'avg trade rate [ct./kWh]',
-                'min trade rate [ct./kWh]',
-                'max trade rate [ct./kWh]',
-                '# trades',
-                'total energy traded [kWh]',
-                'total trade volume [EURO ct.]']
-
-    def rows(self):
-        return [self._row(m.time_slot, m) for m in self.area.past_markets]
-
-    def _row(self, slot, market):
-        return [slot,
-                market.avg_trade_price,
-                market.min_trade_price,
-                market.max_trade_price,
-                len(market.trades),
-                sum(trade.offer.energy for trade in market.trades),
-                sum(trade.offer.price for trade in market.trades)]
-
-
-class ExportBalancingData:
-    def __init__(self, area):
-        self.area = area
-
-    def labels(self):
-        return ['slot',
-                'avg supply balancing trade rate [ct./kWh]',
-                'avg demand balancing trade rate [ct./kWh]']
-
-    def rows(self):
-        return [self._row(m.time_slot, m) for m in self.area.past_balancing_markets]
-
-    def _row(self, slot, market):
-        return [slot,
-                market.avg_supply_balancing_trade_rate,
-                market.avg_demand_balancing_trade_rate]
-
-
-class ExportLeafData(ExportData):
-    def __init__(self, area):
-        super(ExportLeafData, self).__init__(area)
-
-    def labels(self):
-        return ['slot',
-                'energy traded [kWh]',
-                ] + self._specific_labels()
-
-    def _specific_labels(self):
-        if isinstance(self.area.strategy, StorageStrategy):
-            return ['bought [kWh]', 'sold [kWh]', 'charge [kWh]', 'offered [kWh]', 'charge [%]']
-        elif isinstance(self.area.strategy, LoadHoursStrategy):
-            return ['desired energy [kWh]', 'deficit [kWh]']
-        elif isinstance(self.area.strategy, PVStrategy):
-            return ['produced to trade [kWh]', 'not sold [kWh]', 'forecast / generation [kWh]']
-        return []
-
-    def rows(self):
-        return [self._row(m.time_slot, m) for m in self.area.parent.past_markets]
-
-    def _traded(self, market):
-        return market.traded_energy[self.area.name]
-
-    def _row(self, slot, market):
-        return [slot,
-                self._traded(market),
-                ] + self._specific_row(slot, market)
-
-    def _specific_row(self, slot, market):
-        if isinstance(self.area.strategy, (StorageStrategy)):
-            s = self.area.strategy.state
-            return [market.bought_energy(self.area.name),
-                    market.sold_energy(self.area.name),
-                    s.charge_history_kWh[slot],
-                    s.offered_history[slot],
-                    s.charge_history[slot]]
-        elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
-                                             DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
-            desired = self.area.strategy.state.desired_energy_Wh[slot] / 1000
-            return [desired, self._traded(market) + desired]
-        elif isinstance(self.area.strategy, PVStrategy):
-            produced = market.actual_energy_agg.get(self.area.name, 0)
-            return [produced,
-                    round(produced - self._traded(market), 4),
-                    self.area.strategy.energy_production_forecast_kWh[slot] *
-                    self.area.strategy.panel_count
-                    ]
-        return []
 
 
 class BarGraph:

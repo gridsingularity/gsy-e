@@ -1,5 +1,5 @@
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
-from d3a.d3a_core.area_statistics import get_area_type_string
+from d3a.d3a_core.sim_results.area_statistics import get_area_type_string
 
 
 def recursive_current_markets(area):
