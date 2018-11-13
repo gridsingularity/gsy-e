@@ -205,9 +205,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def are_bids_posted(self, market):
         if market not in self._bids:
-            print(f"False")
             return False
-        print(f"True")
         return len(self._bids[market]) > 0
 
     def get_posted_bids(self, market):

@@ -66,7 +66,7 @@ class ConstSettings:
         # Market type option
         # Default value 1 stands for single sided market
         # Option 2 stands for double sided pay as bid market
-        # Option 3 stands for double sided pay as bid market
+        # Option 3 stands for double sided pay as clear market
         MARKET_TYPE = 1
 
     class BlockchainSettings:
