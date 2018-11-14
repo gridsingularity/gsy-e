@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from pendulum import DateTime
+from datetime import timedelta
 
 import sys
 
@@ -42,7 +43,7 @@ class Launcher:
         enqueued = self.queue.jobs
         if enqueued:
             earliest = min(job.enqueued_at for job in enqueued)
-            if datetime.now(tz=TIME_ZONE)-earliest >= self.max_delay:
+            if DateTime.now(tz=TIME_ZONE)-earliest >= self.max_delay:
                 return True
         return False
 
