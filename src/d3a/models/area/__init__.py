@@ -149,8 +149,8 @@ class Area:
                 and _trigger_event:
             self.dispatcher.broadcast_balancing_market_cycle()
 
-    def tick(self):
-        if self.current_tick % self.config.ticks_per_slot == 0:
+    def tick(self, is_root_area=False):
+        if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()
         self.dispatcher.broadcast_tick(area=self)
         self.current_tick += 1
