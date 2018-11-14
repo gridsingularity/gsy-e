@@ -1,16 +1,13 @@
-from pendulum import DateTime
-from datetime import timedelta
-
 import sys
-
 import os
-
 import click
+
+from datetime import datetime, timedelta
 from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
-from d3a.constants import TIME_ZONE
+
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
@@ -27,7 +24,7 @@ class Launcher:
         self.interface = interface
         self.host = host
         self.port = port_min
-        self.port_max = 5009
+        self.port_max = port_max
         self.max_delay = timedelta(seconds=max_delay_seconds)
         self.command = [sys.executable, 'src/d3a/d3a_core/d3a_jobs.py']
 
@@ -43,7 +40,7 @@ class Launcher:
         enqueued = self.queue.jobs
         if enqueued:
             earliest = min(job.enqueued_at for job in enqueued)
-            if DateTime.now(tz=TIME_ZONE)-earliest >= self.max_delay:
+            if datetime.now()-earliest >= self.max_delay:
                 return True
         return False
 
