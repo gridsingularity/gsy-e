@@ -36,7 +36,7 @@ class BidUpdateFrequencyMixin:
         # should be only bid from a device to a market at all times, which will be replaced if
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
-        if not all(bid.buyer != self.owner.name for bid in self.area.next_market.bids.values()):
+        if not all(bid.buyer != self.owner.name for bid in market.bids.values()):
             self.owner.log.warning(f"There is already another bid posted on the market, therefore"
                                    f" do not repost another first bid.")
             return None
@@ -46,14 +46,17 @@ class BidUpdateFrequencyMixin:
             energy_Wh / 1000.0
         )
 
-    def update_market_cycle_bids(self, final_rate=None):
+    def update_market_cycle_bids(self, final_rate=None, market=None):
         if final_rate is not None:
             self._final_rate = final_rate
         self._increase_rate_timepoint_s = self._increase_frequency_s
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         # decrease energy rate for each market again, except for the newly created one
-        for market in self.area.all_markets[:-1]:
+        if market is not None:
             self._update_posted_bids(market, current_tick_number)
+        else:
+            for market in self.area.all_markets[:-1]:
+                self._update_posted_bids(market, current_tick_number)
 
     def _update_posted_bids(self, market, current_tick_number):
         existing_bids = list(self.get_posted_bids(market))
