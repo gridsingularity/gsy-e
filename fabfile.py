@@ -2,12 +2,10 @@ import os
 from pathlib import Path
 from platform import system
 
-import time
 from fabric.colors import blue, green, yellow
-from fabric.context_managers import hide, settings, cd
-from fabric.decorators import task, hosts, parallel
-from fabric.operations import local, run
-from fabric.state import env
+from fabric.context_managers import hide, settings
+from fabric.decorators import task, hosts
+from fabric.operations import local
 from fabric.tasks import execute
 from fabric.utils import abort, puts
 from default_settings_to_json_file import export_default_settings_to_json_file
@@ -15,29 +13,6 @@ from default_settings_to_json_file import export_default_settings_to_json_file
 SOLIUM_VERSION = '0.2.2'
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
-
-env.use_ssh_config = True
-env.hosts = [
-    'root@207.154.205.41',
-    'gsy@gsy-d3a-demo.local',
-]
-
-HOST_CONFIG = {
-    '207.154.205.41': {
-        'port': "9000",
-        'session_name': "d3a",
-        'd3a_options': "-t 30s --paused",
-        'trigger_pause': True
-    },
-    'gsy-d3a-demo.local': {
-        'port': "5000",
-        'session_name': "simulation",
-        'd3a_options': "-t 10s --slowdown 5 --reset-on-finish --reset-on-finish-wait 10s",
-        'trigger_pause': False
-    },
-}
-
-HOST_CONFIG['10.51.21.251'] = HOST_CONFIG['gsy-d3a-demo.local']
 
 
 def _ensure_solium():
@@ -175,20 +150,3 @@ def reqs():
     """'compile' then 'sync'"""
     execute(compile)
     execute(sync)
-
-
-@task()
-@parallel
-def deploy():
-    conf = HOST_CONFIG[env.host]
-    with cd('d3a'):
-        run("git pull")
-        run("docker build -t d3a .")
-        with settings(warn_only=True):
-            run("docker stop d3a")
-        run('tmux new -d -s {c[session_name]} '
-            '"docker run --rm --name d3a -it -p {c[port]}:5000 -v $(pwd)/.d3a:/app/.d3a '
-            'd3a -l ERROR run {c[d3a_options]}"'.format(c=conf))
-        time.sleep(5)
-        if conf['trigger_pause']:
-            run("curl -X POST http://localhost:{c[port]}/api/pause".format(c=conf))
