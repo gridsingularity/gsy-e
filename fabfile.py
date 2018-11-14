@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from platform import system
 
 import time
 from fabric.colors import blue, green, yellow
@@ -117,9 +118,10 @@ def _pre_check():
 
 
 def _post_check():
-    _ensure_solium()
-    _ensure_ganache_cli()
-    _ensure_solidity_compiler()
+    if "Darwin" in system():
+        _ensure_solium()
+        _ensure_ganache_cli()
+        _ensure_solidity_compiler()
     _ensure_pre_commit()
 
 
