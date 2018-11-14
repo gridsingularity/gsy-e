@@ -23,7 +23,7 @@ class BidUpdateFrequencyMixin:
                  final_rate_profile):
         self._initial_rate_profile = initial_rate_profile
         self._final_rate_profile = final_rate_profile
-        self._increase_rate_timepoint_s = 0
+        self._increase_rate_timepoint_s = {}
 
     @cached_property
     def _increase_frequency_s(self):
@@ -46,17 +46,16 @@ class BidUpdateFrequencyMixin:
             energy_Wh / 1000.0
         )
 
-    def update_market_cycle_bids(self, final_rate=None, market=None):
+    def update_market_cycle_bids(self, final_rate=None):
         if final_rate is not None:
             self._final_rate = final_rate
-        self._increase_rate_timepoint_s = self._increase_frequency_s
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
+
+        for market in self.area.all_markets:
+            self._increase_rate_timepoint_s[market.time_slot] = self._increase_frequency_s
         # decrease energy rate for each market again, except for the newly created one
-        if market is not None:
+        for market in self.area.all_markets[:-1]:
             self._update_posted_bids(market, current_tick_number)
-        else:
-            for market in self.area.all_markets[:-1]:
-                self._update_posted_bids(market, current_tick_number)
 
     def _update_posted_bids(self, market, current_tick_number):
         existing_bids = list(self.get_posted_bids(market))
@@ -74,8 +73,8 @@ class BidUpdateFrequencyMixin:
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
-        if elapsed_seconds > self._increase_rate_timepoint_s:
-            self._increase_rate_timepoint_s += self._increase_frequency_s
+        if elapsed_seconds > self._increase_rate_timepoint_s[market.time_slot]:
+            self._increase_rate_timepoint_s[market.time_slot] += self._increase_frequency_s
             self._update_posted_bids(market, current_tick_number)
 
     def _get_current_energy_rate(self, current_tick, market):

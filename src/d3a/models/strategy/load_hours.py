@@ -153,8 +153,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                         bid_energy = self.energy_requirement_Wh[market.time_slot]
                     if not self.are_bids_posted(market):
                         self.post_first_bid(market, bid_energy)
-                    else:
-                        self.update_market_cycle_bids(market=market)
+        self.update_market_cycle_bids()
 
     def event_balancing_market_cycle(self):
         for market in self.active_markets:
