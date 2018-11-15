@@ -154,23 +154,6 @@ def format_interval(interval, show_day=True):
     return template.format(i=interval)
 
 
-def simulation_info(simulation):
-    current_time = format_interval(
-        simulation.area.current_tick * simulation.area.config.tick_length,
-        show_day=False
-    )
-    return {
-        'config': simulation.area.config.as_dict(),
-        'finished': simulation.finished,
-        'aborted': simulation.is_stopped,
-        'current_tick': simulation.area.current_tick,
-        'current_time': current_time,
-        'current_date': simulation.area.now.format('%Y-%m-%d'),
-        'paused': simulation.paused,
-        'slowdown': simulation.slowdown
-    }
-
-
 def get_contract_path(contract_name):
     if contract_name.endswith(".sol"):
         contract_name = contract_name[:-4]
