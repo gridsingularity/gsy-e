@@ -1,9 +1,15 @@
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import wait_until_timeout_blocking
 from logging import getLogger
+from d3a.d3a_core.exceptions import D3AException
+
 import time
 
 log = getLogger(__name__)
+
+
+class BlockchainTimeoutException(D3AException):
+    pass
 
 
 def wait_for_node_synchronization(bc_interface):
@@ -16,7 +22,8 @@ def wait_for_node_synchronization(bc_interface):
     while not node_status and (time.time() < (current_time + time_out)):
         node_status = bc_interface.chain.eth.syncing
         if time.time() >= (current_time + time_out):
-            raise Exception('Syncing to blockchain failed after timeout: {time_out} secs')
+            raise BlockchainTimeoutException(f"Syncing to blockchain failed after "
+                                             f"timeout: {time_out} secs")
     highest_block = node_status["highestBlock"]
     wait_until_timeout_blocking(lambda: bc_interface.chain.eth.blockNumber >= highest_block)
     time.sleep(0.1)

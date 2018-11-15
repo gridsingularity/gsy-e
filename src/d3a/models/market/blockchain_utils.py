@@ -65,12 +65,14 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
     log.info(f"tx_receipt Status: {status}")
     assert status > 0
     wait_for_node_synchronization(bc_interface)
-    offer_id = \
-        bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
 
-    wait_until_timeout_blocking(lambda:
-                                bc_contract.functions.getOffer(offer_id).call() is not 0,
-                                timeout=20)
+    def get_offer_id():
+        return bc_contract.events.NewOffer().processReceipt(tx_receipt)[0]['args']["offerId"]
+
+    wait_until_timeout_blocking(lambda: get_offer_id() is not 0, timeout=20)
+
+    offer_id = get_offer_id()
+
     log.info(f"offer_id: {offer_id}")
     assert offer_id is not 0
     return offer_id
