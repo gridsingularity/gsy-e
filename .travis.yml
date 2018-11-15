@@ -5,7 +5,6 @@ branches:
   only:
   - master
 
-
 jobs:
  include:
    - python: 3.6
@@ -28,7 +27,3 @@ jobs:
      env: TOXENV=solium
      install: .support/travis-install.sh
      script: .support/travis-run.sh
-
-notifications:
-  webhooks:
-    - secure: "a5LGP3NNt8YaYwKf/4mCWb+/tp+EZFfGO7pKMAcm6pMKf/169UCS3EKiWaNsZQvwOS6NZCKNfx+CfQU+d6NLfv3FHeJ15eWm6xAZRJLqbAo7y5E8lloXCchrsRxbe6MaTeJVyNeG9u32Hn1cGV0PkthIkqBiPLRK6vdy3JJX5xueLaB+KXtZ8OyIjzSB9EODPRDqUiPFTDGOcnVkduxBmZ4wOkEtDmm9IbvOZamIaGnSC/zh07lqTl357w+S+IyDyMJXsup4+ZSdb0TnYZsysvdaNjvIC4MINXu6YdMJ6WP8DnVQip+t/3PleEXPh382WJyPy6ip8m4mEZHA8vMNa3vx0bjjavwpsIBC13oHIHi2PAFIEWTuuLqpRG6DLxoXh9MGzZH996waaab3F9FKlIr9IwMVdEQE/1oczyUwDRZUHEU1tZZmWHHOooEh0JjKvAomNW/1rbELr7/C5GjwAl+XJWRKpj54S1QZZUmKzFSrzKasyZW52Wk12D803yA2HnDk7WKw6AuBAwjruQFZHQFj/X56lxp89NNwiuiRQq1MslutB+Ftl/vf7WUokukUtOfffBghUZ/kFgokmaRnZh/lzqu9gRcLf9g6GqSgDR+ZRWcpRsOIVOlGTQFSvx7JzkpUIBKFktAoFUx+csyUQS6hjpmL/VQpqdNWvEdv+94="
