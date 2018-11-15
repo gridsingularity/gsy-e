@@ -168,3 +168,10 @@ def loads_adhere_to_hours_of_day_multiday(context):
 
     _assert_hours_of_day(house1, h1_load)
     _assert_hours_of_day(house2, h2_load)
+
+
+@then('there should be a reported SOC of 0.1 on the first market')
+def reported_soc_zero_on_first_slot(context):
+    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
+    electro = [child for child in house1.children if child.name == "H1 Electrolyser"][0]
+    assert isclose(list(electro.strategy.state.charge_history.values())[0], 10.0)
