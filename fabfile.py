@@ -141,8 +141,6 @@ def sync():
         local('pip install --no-deps -e .')
     _post_check()
 
-    export_default_settings_to_json_file()
-
 
 @task
 @hosts('localhost')
@@ -150,3 +148,9 @@ def reqs():
     """'compile' then 'sync'"""
     execute(compile)
     execute(sync)
+
+
+@task
+@hosts('localhost')
+def write_default_settings_file():
+    export_default_settings_to_json_file()
