@@ -14,7 +14,7 @@
       "DEFAULT_RISK": 50,
       "DEFAULT_MARKET_MAKER_RATE": 30,
       "MAX_OFFER_TRAVERSAL_LENGTH": null,
-      "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
+      "ENERGY_RATE_DECREASE_PER_UPDATE": 1
     },
     "StorageSettings": {
       "CAPACITY": 1.2,
