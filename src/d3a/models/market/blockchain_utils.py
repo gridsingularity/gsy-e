@@ -100,6 +100,14 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
 
     wait_for_node_synchronization(bc_interface)
     new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
+    if len(new_trade_retval) == 0:
+        wait_until_timeout_blocking(lambda:
+                                    len(bc_contract.events.NewTrade().processReceipt(tx_receipt))
+                                    is not 0,
+                                    timeout=20)
+        new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
+        print(f"new_trade_retval after retry: {new_trade_retval}")
+
     offer_changed_retval = bc_contract.events \
         .OfferChanged() \
         .processReceipt(tx_receipt)

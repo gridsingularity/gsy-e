@@ -16,7 +16,7 @@ def wait_for_node_synchronization(bc_interface):
     while not node_status and (time.time() < (current_time + time_out)):
         node_status = bc_interface.chain.eth.syncing
         if time.time() >= (current_time + time_out):
-            raise Exception('Syncing to blockchain failed')
+            raise Exception('Syncing to blockchain failed after timeout: {time_out} secs')
     highest_block = node_status["highestBlock"]
     wait_until_timeout_blocking(lambda: bc_interface.chain.eth.blockNumber >= highest_block)
     time.sleep(0.1)
