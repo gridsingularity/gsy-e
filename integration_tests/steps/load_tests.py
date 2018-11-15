@@ -2,7 +2,7 @@ from behave import then
 from pendulum import duration
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.constants import TIME_FORMAT
-from d3a.d3a_core.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as csv')
