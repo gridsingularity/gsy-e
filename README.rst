@@ -8,13 +8,21 @@ decentralized, democratized and digitized energy system.
 
 See whitepaper here: <https://to-be-replaced-by-the-real.url>
 
+Code of Conduct
+===============
+Please refer to: https://github.com/gridsingularity/d3a/blob/master/CODE_OF_CONDUCT.md
+
+How to contribute:
+==================
+Please refer to: https://github.com/gridsingularity/d3a/blob/master/CONTRIBUTING.md
+
 
 Basic setup
 ===========
 
 (For instructions using `Docker`_ see below)
 
-After cloning this project setup a Python 3.5 virtualenv and install `fabric3`_::
+After cloning this project setup a Python 3.6 virtualenv and install `fabric3`_::
 
     ~# pip install fabric3
 
@@ -58,7 +66,6 @@ s   Save current state of simulation to file (see below for resuming)
 `-` Decrease 'slowdown' factor
 === =======
 
-All of these commands are also available via the `REST-API`_ (see below).
 
 
 Resuming a previously saved run
@@ -83,33 +90,13 @@ To update the pinned requirements use the following command::
 
 
 
-There is also a command to compile and sync in one step::
+sThere is also a command to compile and sync in one step::
 
     ~# fab reqs
 
 
 _`pip-tools`: https://github.com/nvie/pip-tools
 _`fabric3`: https://pypi.python.org/pypi/Fabric3
-
-
-Development model
------------------
-
-For everything that goes beyond fixing typos or simple whitespace changes we
-use feature branches and corresponding PRs on Github.
-
-To start work on something new create a branch of the form
-`feature/<feature_name>`, push it to Github and create a PR for this branch.
-If it's not yet ready to be merged please mark it with `WIP` in the title of
-the PR.
-
-Before merging, PRs should be reviewed by another team member.
-
-Please write tests for new features (see below) and ensure that we maintain a
-decent test coverage. Currently `coverage.py`_ is configured to require a
-coverage of 80% or greater.
-
-_`coverage.py`: https://coverage.rtfd.org
 
 
 Testing
@@ -133,93 +120,31 @@ following command (change into repository folder first)::
 
     ~# docker build -t d3a .
 
-
 After building is complete you can run the image with::
 
-    ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a
-
+    ~# docker run --rm -it d3a
 
 Command line parameters can be given normally after the image name::
 
-    ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a --help
-    ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a run --help
-    ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a run --setup default_2a -t15s
+    ~# docker run --rm d3a --help
+    ~# docker run --rm d3a run --help
+    ~# docker run --rm d3a run --setup default_2a -t15s
+
+There is also a handy script that deals with the building of the image and running the provided command::
+
+    ~# ./run_d3a_on_docker.sh "$docker_command" $export_path
+
+where you can provide the d3a_command and export path where the simulation results are stored.
+For example::
+
+    ~# ./run_d3a_on_docker.sh "d3a -l ERROR run --setup default_2a -t 15s" $HOME/d3a-simulation
+
+builds a d3a docker image (if not already present),
+runs the simulation with setup-file default_2a, tick-length 15s
+and stores the simulation output data into $HOME/d3a-simulation.
 
 
 _`docker`: https://docker.io
 
 
-REST-API
-========
 
-The application provides a rest API (listening on http://localhost:5000/api by
-default).
-
-The API contains a browsable HTML interface that is shown by default when
-accessing the endpoints via a browser. Otherwise JSON is returned.
-
-All places in the API where energy values are shown negative values denote
-bought energy and positive ones sold energy.
-
-The structure is as follows::
-
-    /api                                [GET]
-      |
-      -/pause                           [GET, POST]
-      |
-      -/reset                           [POST]
-      |
-      -/save                            [POST]
-      |
-      -/slowdown                        [GET, POST]
-      |
-      -/<area-slug>                     [GET]
-         |
-         -/markets                      [GET]
-         |
-         -/market/<absolute-timestmap>  [GET]
-         |
-         -/market/<relative-time>       [GET]
-         |
-         -/trigger/<trigger-name>       [POST]
-
-
-The top level (`/api`) returns a summary of the simulation configuration as
-well as the area structure.
-
-There are four endpoints to control the simulation. In details these are:
-
-======== =======
-Endpoint Purpose
-======== =======
-pause    Pause / unpause the simulation
-reset    Reset the simulation and restart the current run
-save     Save the current state of the simulation to a file
-slowdown Adjust 'slowdown' parameter to control the simulation speed
-======== =======
-
-The `/<area-slug>` endpoints contains genral information about the area in
-question as well as lists all markets this area contains.
-
-The `/<area-slug>/markets` endpoint returns an abbreviated overview of all
-markets with aggregated data per market.
-
-Detailed information about a market including all offers and trades is
-available at the `/<area-slug>/market/<absolute-timestmap>` and
-`/<area-slug>/market/<relative-time>` endpoints.
-
-The `/<area-slug>/trigger/<trigger-name>` endpoints allow triggering events
-within the areas. Which events are available is listed in the corresponding
-`/<area-slug>` endpoint under the `available_triggers` key.
-
-The absolute timestamps are what is linked from the `url` fields of the various
-other endpoints. They are of the form 'YYYY-MM-DDTHH:MM:SS+01:00' where the
-date part is the current day and the time the simulated market time slot.
-
-The relative adressing allows to always specify a market relative to the
-'current' simulation time. The allowed values are:
-
-* negative integers - Returns the "past" markets in decending order (most
-  recent first)
-* the string 'current' - Returns the currently executing market
-* positive integers - Returns future markets in ascending order (zero based)
