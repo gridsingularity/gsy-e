@@ -4,6 +4,7 @@ from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
 
+
 log = getLogger(__name__)
 
 
