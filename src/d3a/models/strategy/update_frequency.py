@@ -115,6 +115,8 @@ class OfferUpdateFrequencyMixin:
             raise ValueError("Initial rate option should be one of the InitialRateOptions.")
 
     def decrease_energy_price_over_ticks(self, market):
+        if market.time_slot not in self._decrease_price_timepoint_s:
+            self._decrease_price_timepoint_s[market.time_slot] = 0
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds

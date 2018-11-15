@@ -131,22 +131,19 @@ class Area:
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(now, True, self)
 
-        # Force market cycle event in case this is the first market slot
-        if (changed or len(self._markets.past_markets.keys()) == 0) and _trigger_event:
-            self.dispatcher.broadcast_market_cycle()
-
-        if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-            return
-
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
             changed_balancing_market = self._markets.create_future_markets(now, False, self)
         else:
             changed_balancing_market = None
 
+        # Force market cycle event in case this is the first market slot
+        if (changed or len(self._markets.past_markets.keys()) == 0) and _trigger_event:
+            self.dispatcher.broadcast_market_cycle()
+
         # Force balancing_market cycle event in case this is the first market slot
         if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
-                and _trigger_event:
+                and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
 
     def tick(self, is_root_area=False):
