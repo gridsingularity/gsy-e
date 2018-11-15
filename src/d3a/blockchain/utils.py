@@ -1,7 +1,7 @@
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import wait_until_timeout_blocking
 from logging import getLogger
-from time import sleep
+import time
 
 log = getLogger(__name__)
 
@@ -10,10 +10,16 @@ def wait_for_node_synchronization(bc_interface):
     if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
         return
 
-    wait_until_timeout_blocking(lambda: bc_interface.chain.eth.syncing is not False, timeout=120)
-    highest_block = bc_interface.chain.eth.syncing["highestBlock"]
+    node_status = bc_interface.chain.eth.syncing
+    current_time = time.time()
+    time_out = ConstSettings.BlockchainSettings.TIMEOUT
+    while not node_status and (time.time() < (current_time + time_out)):
+        node_status = bc_interface.chain.eth.syncing
+        if time.time() >= (current_time + time_out):
+            raise Exception('Syncing to blockchain failed')
+    highest_block = node_status["highestBlock"]
     wait_until_timeout_blocking(lambda: bc_interface.chain.eth.blockNumber >= highest_block)
-    sleep(0.1)
+    time.sleep(0.1)
 
 
 def unlock_account(chain, address):
