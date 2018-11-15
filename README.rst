@@ -2,6 +2,13 @@
 d3a: GridSingularity AreaManager PoC
 ====================================
 
+The D3A is a blockchain-based, distributed energy market model developed by Grid Singularity with
+the objective of supporting the Energy Web Foundation (EWF) mission to enable a decarbonized,
+decentralized, democratized and digitized energy system.
+
+See whitepaper here: <https://to-be-replaced-by-the-real.url>
+
+
 Basic setup
 ===========
 
@@ -122,7 +129,7 @@ Docker
 ------
 
 The repository contains a `docker`_ Dockerfile. To build an image use the
-following command::
+following command (change into repository folder first)::
 
     ~# docker build -t d3a .
 
@@ -136,6 +143,7 @@ Command line parameters can be given normally after the image name::
 
     ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a --help
     ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a run --help
+    ~# docker run --rm -it -p 5000:5000 -v $(pwd)/.d3a:/app/.d3a d3a run --setup default_2a -t15s
 
 
 _`docker`: https://docker.io
