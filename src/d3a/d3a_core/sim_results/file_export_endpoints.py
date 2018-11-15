@@ -10,8 +10,8 @@ class FileExportEndpoints:
     def __init__(self, area):
         self.traded_energy = {}
         self.balancing_traded_energy = {}
-        self.csv_file_stats = {}
-        self.csv_file_balancing_stats = {}
+        self.plot_stats = {}
+        self.plot_balancing_stats = {}
         self.buyer_trades = {}
         self.seller_trades = {}
         self._populate_area_children_data(area)
@@ -20,7 +20,7 @@ class FileExportEndpoints:
         if area.children:
             for child in area.children:
                 self._populate_area_children_data(child)
-        self.update_csv_file_stats(area)
+        self.update_plot_stats(area)
         self._get_buyer_seller_trades(area)
         if area.children:
             self.update_sold_bought_energy(area)
@@ -42,9 +42,9 @@ class FileExportEndpoints:
                 out_dict[label].append(row[ii])
         return out_dict
 
-    def update_csv_file_stats(self, area):
-        self.csv_file_stats[area.slug] = self._get_stats_from_market_data(area, False)
-        self.csv_file_balancing_stats[area.slug] = self._get_stats_from_market_data(area, True)
+    def update_plot_stats(self, area):
+        self.plot_stats[area.slug] = self._get_stats_from_market_data(area, False)
+        self.plot_balancing_stats[area.slug] = self._get_stats_from_market_data(area, True)
 
     def _calculate_devices_sold_bought_energy(self, area, past_markets):
         out_dict = {"sold_energy": {}, "bought_energy": {}}

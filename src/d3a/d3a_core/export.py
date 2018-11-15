@@ -256,11 +256,11 @@ class ExportAndPlot:
         xtitle = 'Time'
         ytitle = 'Energy (kWh)'
         barmode = 'stack'
-        load_list = [child_key for child_key in self.export_data.csv_file_stats.keys()
-                     if unmatched_key in self.export_data.csv_file_stats[child_key].keys()]
+        load_list = [child_key for child_key in self.export_data.plot_stats.keys()
+                     if unmatched_key in self.export_data.plot_stats[child_key].keys()]
 
         for li in load_list:
-            graph_obj = BarGraph(self.export_data.csv_file_stats[li], unmatched_key)
+            graph_obj = BarGraph(self.export_data.plot_stats[li], unmatched_key)
             if sum(graph_obj.dataset[unmatched_key]) < 1e-10:
                 continue
             graph_obj.graph_value()
@@ -283,7 +283,7 @@ class ExportAndPlot:
         storage_key = 'charge [%]'
         new_subdir = os.path.join(subdir, area.slug)
         storage_list = [child.slug for child in area.children
-                        if storage_key in self.export_data.csv_file_stats[child.slug].keys()]
+                        if storage_key in self.export_data.plot_stats[child.slug].keys()]
         if storage_list is not []:
             self._plot_ess_soc_history(storage_list, new_subdir, area.slug)
         for child in area.children:
@@ -303,7 +303,7 @@ class ExportAndPlot:
         ytitle = 'Charge [%]'
 
         for si in storage_list:
-            graph_obj = BarGraph(self.export_data.csv_file_stats[si], storage_key)
+            graph_obj = BarGraph(self.export_data.plot_stats[si], storage_key)
             graph_obj.graph_value()
             data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
                                   y=list(graph_obj.umHours.values()),
@@ -342,19 +342,19 @@ class ExportAndPlot:
         title = 'Average Trade Price {}'.format(area_list[0])
         for area_name in area_list:
             data.append(
-                self._plot_avg_trade_graph(self.export_data.csv_file_stats,
+                self._plot_avg_trade_graph(self.export_data.plot_stats,
                                            area_name, key, area_name)
             )
-            if self.export_data.csv_file_balancing_stats[area_name.lower()] is not None:
+            if self.export_data.plot_balancing_stats[area_name.lower()] is not None:
                 area_name_balancing = area_name.lower() + "-demand-balancing-trades"
                 data.append(self._plot_avg_trade_graph(
-                    self.export_data.csv_file_balancing_stats, area_name,
+                    self.export_data.plot_balancing_stats, area_name,
                     'avg demand balancing trade rate [ct./kWh]',
                     area_name_balancing)
                 )
                 area_name_balancing = area_name.lower() + "-supply-balancing-trades"
                 data.append(self._plot_avg_trade_graph(
-                    self.export_data.csv_file_balancing_stats, area_name,
+                    self.export_data.plot_balancing_stats, area_name,
                     'avg supply balancing trade rate [ct./kWh]',
                     area_name_balancing)
                 )
