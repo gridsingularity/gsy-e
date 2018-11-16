@@ -83,7 +83,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                                            buyer=bid.buyer,
                                            already_tracked=True,
                                            price_drop=True)
-            self._delete_forwarded_bid_entries(bid)
 
     def tick(self, *, area):
         super().tick(area=area)
@@ -91,7 +90,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         for bid_id, bid in self.markets.source.bids.items():
             if bid_id not in self.forwarded_bids and \
                     self.owner.usable_bid(bid) and \
-                    self.owner.name != bid.seller:
+                    self.owner.name != bid.buyer:
                 self._forward_bid(bid)
 
         self._match_offers_bids()

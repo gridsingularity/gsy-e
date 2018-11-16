@@ -11,9 +11,11 @@ from pendulum import duration
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
+from functools import wraps
 
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.exceptions import D3AException
 
 import d3a
 import inspect
@@ -152,23 +154,6 @@ def format_interval(interval, show_day=True):
     return template.format(i=interval)
 
 
-def simulation_info(simulation):
-    current_time = format_interval(
-        simulation.area.current_tick * simulation.area.config.tick_length,
-        show_day=False
-    )
-    return {
-        'config': simulation.area.config.as_dict(),
-        'finished': simulation.finished,
-        'aborted': simulation.is_stopped,
-        'current_tick': simulation.area.current_tick,
-        'current_time': current_time,
-        'current_date': simulation.area.now.format('%Y-%m-%d'),
-        'paused': simulation.paused,
-        'slowdown': simulation.slowdown
-    }
-
-
 def get_contract_path(contract_name):
     if contract_name.endswith(".sol"):
         contract_name = contract_name[:-4]
@@ -290,3 +275,22 @@ def wait_until_timeout_blocking(functor, timeout=10, polling_period=0.01):
         time.sleep(polling_period)
         current_time += time.time() - start_time
     assert functor()
+
+
+def retry_function(max_retries=3):
+    def decorator_with_max_retries(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            return recursive_retry(f, 0, max_retries, *args, **kwargs)
+        return wrapped
+    return decorator_with_max_retries
+
+
+def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
+    try:
+        return functor(*args, **kwargs)
+    except (AssertionError, D3AException) as e:
+        log.info(f"Retrying action {functor.__name__} for the {retry_count+1} time.")
+        if retry_count >= max_retries:
+            raise e
+        return recursive_retry(functor, retry_count+1, max_retries, *args, **kwargs)

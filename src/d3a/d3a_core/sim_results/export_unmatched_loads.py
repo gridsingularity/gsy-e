@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.d3a_core.area_statistics import get_area_type_string
+from d3a.d3a_core.sim_results.area_statistics import get_area_type_string
 
 
 DEFICIT_THRESHOLD_Wh = 0.0001
