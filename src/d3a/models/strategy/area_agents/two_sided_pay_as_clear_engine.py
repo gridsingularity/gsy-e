@@ -35,40 +35,75 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         cumulative_bids[math.floor(sorted_bids[0].price/sorted_bids[0].energy)] = \
             sorted_bids[0].energy
         for i in range(len(sorted_bids)):
-            try:
+            if len(sorted_bids) <= 1 or i == (len(sorted_bids) - 1):
+                print(f"breaking")
+                break
+            if cumulative_bids.get([math.floor(sorted_bids[i+1].price / sorted_bids[i+1].energy)])\
+                    is not None:
                 cumulative_bids[math.floor(sorted_bids[i+1].price / sorted_bids[i+1].energy)] += \
-                    sorted_bids[0].energy
-            except KeyError:
+                    sorted_bids[i].energy
+            else:
                 cumulative_bids[math.floor(sorted_bids[i+1].price / sorted_bids[i+1].energy)] = \
-                    sorted_bids[0].energy
+                    sorted_bids[i].energy
 
         cumulative_offers = {}  # type: Dict[rate, cumulative_supply]
         cumulative_offers[math.floor(sorted_offers[0].price/sorted_offers[0].energy)] = \
             sorted_offers[0].energy
 
         for i in range(len(sorted_offers)):
-            try:
+            if len(sorted_offers) <= 1 or i == (len(sorted_offers) - 1):
+                print(f"breaking")
+                break
+            if cumulative_offers.\
+                    get(math.floor(sorted_offers[i+1].price / sorted_offers[i+1].energy))\
+                    is not None:
                 cumulative_offers[math.floor(sorted_offers[i+1].price /
                                              sorted_offers[i+1].energy)] += \
-                    sorted_offers[0].energy
-            except KeyError:
+                    sorted_offers[i].energy
+                print(f"sorted_offers[{i}].energy: {sorted_offers[i].energy}")
+            else:
                 cumulative_offers[math.floor(sorted_offers[i+1].price /
                                              sorted_offers[i+1].energy)] = \
-                    sorted_offers[0].energy
+                    sorted_offers[i].energy
 
         max_rate = int(max(math.floor(sorted_offers[-1].price / sorted_offers[-1].energy),
                        math.floor(sorted_bids[0].price / sorted_bids[0].energy)))
 
-        for i in range(max_rate):
-            try:
-                supply = cumulative_offers[i]
-                demand = cumulative_bids[i]
-                if demand > supply:
-                    continue
+        for i in range(max_rate+1):
+            if cumulative_offers.get(i) is None:
+                if i == 0:
+                    cumulative_offers[i] = 0
                 else:
-                    print(f"MCP: {i}")
-                    return i
-            except IndexError:
+                    cumulative_offers[i] = cumulative_offers[i-1]
+            else:
+                if i == 0:
+                    pass
+                else:
+                    cumulative_offers[i] = cumulative_offers[i] + cumulative_offers[i-1]
+            print(f"supply@{i}: {cumulative_offers.get(i)}")
+
+        for i in range((max_rate), 0, -1):
+            if cumulative_bids.get(i) is None:
+                if i == max_rate:
+                    cumulative_bids[i] = 0
+                else:
+                    cumulative_bids[i] = 0
+            else:
+                if i == max_rate:
+                    pass
+                else:
+                    cumulative_bids[i] = cumulative_bids[i] + cumulative_bids[i+1]
+
+            print(f"demand@{i}: {cumulative_bids.get(i)}")
+
+        for i in range(1, max_rate+1):
+            supply = cumulative_offers[i]
+            demand = cumulative_bids[i]
+            if supply > demand:
+                print(f"MCP: {i}")
+                return i
+                # Also write an algorithm for
+            else:
                 continue
 
     def _match_offers_bids(self):
