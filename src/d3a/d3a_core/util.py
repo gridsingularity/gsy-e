@@ -11,9 +11,11 @@ from pendulum import duration
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
+from functools import wraps
 
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.exceptions import D3AException
 
 import d3a
 import inspect
@@ -273,3 +275,22 @@ def wait_until_timeout_blocking(functor, timeout=10, polling_period=0.01):
         time.sleep(polling_period)
         current_time += time.time() - start_time
     assert functor()
+
+
+def retry_function(max_retries=3):
+    def decorator_with_max_retries(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            return recursive_retry(f, 0, max_retries, *args, **kwargs)
+        return wrapped
+    return decorator_with_max_retries
+
+
+def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
+    try:
+        return functor(*args, **kwargs)
+    except (AssertionError, D3AException) as e:
+        log.info(f"Retrying action {functor.__name__} for the {retry_count+1} time.")
+        if retry_count >= max_retries:
+            raise e
+        return recursive_retry(functor, retry_count+1, max_retries, *args, **kwargs)

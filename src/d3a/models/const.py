@@ -72,6 +72,7 @@ class ConstSettings:
         URL = "http://127.0.0.1:8545"
         START_LOCAL_CHAIN = True
         ACCOUNT_PASSWORD = "testgsy"
+        TIMEOUT = 30  # in seconds
 
     class BalancingSettings:
         ENABLE_BALANCING_MARKET = False

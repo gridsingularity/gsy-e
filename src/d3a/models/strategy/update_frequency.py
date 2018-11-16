@@ -23,7 +23,7 @@ class BidUpdateFrequencyMixin:
                  final_rate_profile):
         self._initial_rate_profile = initial_rate_profile
         self._final_rate_profile = final_rate_profile
-        self._increase_rate_timepoint_s = 0
+        self._increase_rate_timepoint_s = {}
 
     @cached_property
     def _increase_frequency_s(self):
@@ -36,7 +36,7 @@ class BidUpdateFrequencyMixin:
         # should be only bid from a device to a market at all times, which will be replaced if
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
-        if not all(bid.buyer != self.owner.name for bid in self.area.next_market.bids.values()):
+        if not all(bid.buyer != self.owner.name for bid in market.bids.values()):
             self.owner.log.warning(f"There is already another bid posted on the market, therefore"
                                    f" do not repost another first bid.")
             return None
@@ -49,8 +49,10 @@ class BidUpdateFrequencyMixin:
     def update_market_cycle_bids(self, final_rate=None):
         if final_rate is not None:
             self._final_rate = final_rate
-        self._increase_rate_timepoint_s = self._increase_frequency_s
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
+
+        for market in self.area.all_markets:
+            self._increase_rate_timepoint_s[market.time_slot] = self._increase_frequency_s
         # decrease energy rate for each market again, except for the newly created one
         for market in self.area.all_markets[:-1]:
             self._update_posted_bids(market, current_tick_number)
@@ -71,8 +73,8 @@ class BidUpdateFrequencyMixin:
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
-        if elapsed_seconds > self._increase_rate_timepoint_s:
-            self._increase_rate_timepoint_s += self._increase_frequency_s
+        if elapsed_seconds > self._increase_rate_timepoint_s[market.time_slot]:
+            self._increase_rate_timepoint_s[market.time_slot] += self._increase_frequency_s
             self._update_posted_bids(market, current_tick_number)
 
     def _get_current_energy_rate(self, current_tick, market):
@@ -115,6 +117,8 @@ class OfferUpdateFrequencyMixin:
             raise ValueError("Initial rate option should be one of the InitialRateOptions.")
 
     def decrease_energy_price_over_ticks(self, market):
+        if market.time_slot not in self._decrease_price_timepoint_s:
+            self._decrease_price_timepoint_s[market.time_slot] = 0
         # Decrease the selling price over the ticks in a slot
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
