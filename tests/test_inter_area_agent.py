@@ -421,9 +421,6 @@ def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
     assert bid.energy == 10
     assert bid.price == 12
 
-    assert len(low_high_engine.forwarded_bids.keys()) == 0
-    assert len(low_high_engine.forwarded_offers.keys()) == 0
-
 
 @pytest.fixture
 def iaa3(iaa2):

@@ -21,7 +21,7 @@ from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.d3a_core.util import NonBlockingConsole, format_interval
-from d3a.d3a_core.endpoint_buffer import SimulationEndpointBuffer
+from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.area_serializer import are_all_areas_unique
@@ -220,7 +220,7 @@ class Simulation:
                             )
 
                             with page_lock:
-                                self.area.tick()
+                                self.area.tick(is_root_area=True)
 
                             tick_length = time.monotonic() - tick_start
                             if self.slowdown and tick_length < tick_lengths_s:
@@ -232,7 +232,7 @@ class Simulation:
                                 self._handle_input(console, diff_slowdown)
 
                         with page_lock:
-                            self.endpoint_buffer.update(self.area, self.status)
+                            self.endpoint_buffer.update_stats(self.area, self.status)
                             self.redis_connection.publish_intermediate_results(
                                 self.endpoint_buffer
                             )

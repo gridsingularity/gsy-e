@@ -72,6 +72,8 @@ class AreaDispatcher:
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:
             self.area.tick()
+        if event_type is AreaEvent.MARKET_CYCLE:
+            self.area._cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.area.activate()
         if self.area.strategy:

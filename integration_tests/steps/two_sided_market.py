@@ -1,11 +1,12 @@
 from behave import then
 from math import isclose
-from d3a.d3a_core.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import make_iaa_name
 from d3a import limit_float_precision
 
-RATE_THRESHOLD = 12
+RATE_LOWER_THRESHOLD = 14
+RATE_UPPER_THRESHOLD = 16
 
 
 @then('the load has no unmatched loads')
@@ -51,6 +52,10 @@ def device_partially_fulfill_bid(context, device):
                    for trade in house2.get_past_market(slot).trades)
         assert all(trade.seller in pv_names
                    for trade in house2.get_past_market(slot).trades)
+        assert all(RATE_LOWER_THRESHOLD <
+                   trade.offer.price / trade.offer.energy <
+                   RATE_UPPER_THRESHOLD
+                   for trade in market.trades)
 
 
 @then('the PV always provides constant power according to load demand')
@@ -119,8 +124,8 @@ def energy_rate_average_between_min_and_max_ess_pv(context):
             if trade.seller == pv.name:
                 pv_rates_set.add(trade.offer.price / trade.offer.energy)
 
-    assert all([RATE_THRESHOLD < rate for rate in storage_rates_set])
-    assert all([RATE_THRESHOLD < rate for rate in pv_rates_set])
+    assert all([RATE_LOWER_THRESHOLD < rate < RATE_UPPER_THRESHOLD for rate in storage_rates_set])
+    assert all([RATE_LOWER_THRESHOLD < rate < RATE_UPPER_THRESHOLD for rate in pv_rates_set])
 
 
 @then('the storage is never buying energy and is always selling energy')

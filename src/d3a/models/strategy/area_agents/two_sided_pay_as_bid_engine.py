@@ -54,7 +54,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
                    offer.price / offer.energy <= bid.price / bid.energy and \
-                   offer.seller != self.owner.name and \
                    offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
                     yield bid, offer
@@ -73,18 +72,17 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             offer.price = offer.energy * (bid.price / bid.energy)
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
-                                    buyer=self.owner.name,
+                                    buyer=bid.buyer,
                                     energy=selected_energy,
                                     price_drop=True)
             self._delete_forwarded_offer_entries(offer)
 
             self.markets.source.accept_bid(bid,
                                            selected_energy,
-                                           seller=offer.seller,
+                                           seller=bid.seller,
                                            buyer=bid.buyer,
                                            already_tracked=True,
                                            price_drop=True)
-            self._delete_forwarded_bid_entries(bid)
 
     def tick(self, *, area):
         super().tick(area=area)
@@ -92,7 +90,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         for bid_id, bid in self.markets.source.bids.items():
             if bid_id not in self.forwarded_bids and \
                     self.owner.usable_bid(bid) and \
-                    self.owner.name != bid.seller:
+                    self.owner.name != bid.buyer:
                 self._forward_bid(bid)
 
         self._match_offers_bids()

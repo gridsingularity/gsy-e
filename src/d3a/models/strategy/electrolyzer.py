@@ -42,7 +42,9 @@ class ElectrolyzerStrategy(StorageStrategy):
         current_market = self.area.next_market
         if self.area.past_markets:
             past_market = self.area.last_past_market
-            self.state.market_cycle(past_market.time_slot, current_market.time_slot)
+        else:
+            past_market = current_market
+        self.state.market_cycle(past_market.time_slot, current_market.time_slot)
 
         if (self.state.used_storage - self.load_profile_kWh[current_market.time_slot_str]) >= 0:
             self.state._used_storage -= self.load_profile_kWh[current_market.time_slot_str]

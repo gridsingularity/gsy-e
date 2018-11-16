@@ -77,8 +77,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
             trade = Trade(str(uuid.uuid4()), self._now,
                           bid, seller, buyer, residual, price_drop=price_drop,
                           already_tracked=already_tracked)
-            self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
+
             if not already_tracked:
+                self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
                 log.warning(f"[TRADE][BID][{self.time_slot_str}] {trade}")
 
             self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
