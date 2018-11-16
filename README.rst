@@ -90,7 +90,7 @@ To update the pinned requirements use the following command::
 
 
 
-sThere is also a command to compile and sync in one step::
+There is also a command to compile and sync in one step::
 
     ~# fab reqs
 
@@ -120,9 +120,11 @@ following command (change into repository folder first)::
 
     ~# docker build -t d3a .
 
+
 After building is complete you can run the image with::
 
     ~# docker run --rm -it d3a
+
 
 Command line parameters can be given normally after the image name::
 
@@ -130,18 +132,22 @@ Command line parameters can be given normally after the image name::
     ~# docker run --rm d3a run --help
     ~# docker run --rm d3a run --setup default_2a -t15s
 
+
 There is also a handy script that deals with the building of the image and running the provided command::
 
     ~# ./run_d3a_on_docker.sh "$docker_command" $export_path
+
 
 where you can provide the d3a_command and export path where the simulation results are stored.
 For example::
 
     ~# ./run_d3a_on_docker.sh "d3a -l ERROR run --setup default_2a -t 15s" $HOME/d3a-simulation
 
+
 builds a d3a docker image (if not already present),
 runs the simulation with setup-file default_2a, tick-length 15s
 and stores the simulation output data into $HOME/d3a-simulation.
+If no export_path is provided, simulation results will be stored in $HOME/d3a-simulation.
 
 
 _`docker`: https://docker.io

@@ -6,8 +6,6 @@
 
 * If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/gridsingularity/d3a/issues/new). Be sure to include a **title and clear description**, as much relevant information as possible, and a **code sample** or an **executable test case** demonstrating the expected behavior that is not occurring.
 
-* If possible, use the relevant bug report templates to create the issue. Simply copy the content of the appropriate template into a .rb file, make the necessary changes to demonstrate the issue, and **paste the content into the issue description**:
-
 
 #### **Did you write a patch that fixes a bug?**
 
@@ -17,7 +15,7 @@
 
 #### **Did you fix whitespace, format code, or make a purely cosmetic patch?**
 
-Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of Rails will generally not be accepted.
+Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the D3A will generally not be accepted.
 
 #### **Do you intend to add a new feature or change an existing one?**
 
@@ -25,9 +23,11 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 * Do not open an issue on GitHub until you have collected positive feedback about the change. GitHub issues are primarily intended for bug reports and fixes.
 
-#### **Do you have questions about the source code?**
+#### **Do you have questions about the source code or the functionality of D3A?**
 
-* Ask any question about how to use Ruby on Rails in the [d3a mailing list](linktomailinglist).
+* Consult our Wiki [D3A Wiki page](linkto confluence)
+
+* If thinks are still unclear: Ask any question about how to use D3A in the [d3a mailing list](linktomailinglist).
 
 
 Thanks! :heart: :heart: :heart:

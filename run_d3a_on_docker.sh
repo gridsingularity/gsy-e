@@ -15,7 +15,6 @@ if [ "$1" = "" ]; then
 else
     d3a_command=$1
 fi
-#d3a_command="${d3a_command//d3a/}"
 
 if [ "$2" = "" ]; then
     export_path="$HOME/d3a-simulation"
