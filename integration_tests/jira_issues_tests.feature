@@ -30,3 +30,9 @@ Feature: Jira Issues Tests
      Then pv produces the same energy on each corresponding time slot regardless of the day
      And all loads consume the same energy on each corresponding time slot regardless of the day
      And all loads adhere to the hours of day configuration
+
+   Scenario: D3ASIM-780, Electrolyser does not report 0 soc on first market slot
+     Given we have a scenario named jira/d3asim_780
+     And d3a is installed
+     When we run the d3a simulation with jira.d3asim_780 [24, 60, 60]
+     Then there should be a reported SOC of 0.1 on the first market

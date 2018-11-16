@@ -1,6 +1,6 @@
 from behave import then
 from math import isclose
-from d3a.d3a_core.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import make_iaa_name
 from d3a import limit_float_precision

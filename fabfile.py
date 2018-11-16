@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from platform import system
 
 from fabric.colors import blue, green, yellow
 from fabric.context_managers import hide, settings
@@ -92,9 +93,10 @@ def _pre_check():
 
 
 def _post_check():
-    _ensure_solium()
-    _ensure_ganache_cli()
-    _ensure_solidity_compiler()
+    if "Darwin" in system():
+        _ensure_solium()
+        _ensure_ganache_cli()
+        _ensure_solidity_compiler()
     _ensure_pre_commit()
 
 
@@ -139,8 +141,6 @@ def sync():
         local('pip install --no-deps -e .')
     _post_check()
 
-    export_default_settings_to_json_file()
-
 
 @task
 @hosts('localhost')
@@ -148,3 +148,9 @@ def reqs():
     """'compile' then 'sync'"""
     execute(compile)
     execute(sync)
+
+
+@task
+@hosts('localhost')
+def write_default_settings_file():
+    export_default_settings_to_json_file()
