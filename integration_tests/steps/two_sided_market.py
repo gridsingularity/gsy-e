@@ -5,8 +5,8 @@ from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import make_iaa_name
 from d3a import limit_float_precision
 
-RATE_LOWER_THRESHOLD = 14
-RATE_UPPER_THRESHOLD = 16
+RATE_LOWER_THRESHOLD = 13
+RATE_UPPER_THRESHOLD = 18
 
 
 @then('the load has no unmatched loads')
