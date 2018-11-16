@@ -220,7 +220,7 @@ class Simulation:
                             )
 
                             with page_lock:
-                                self.area.tick()
+                                self.area.tick(is_root_area=True)
 
                             tick_length = time.monotonic() - tick_start
                             if self.slowdown and tick_length < tick_lengths_s:
