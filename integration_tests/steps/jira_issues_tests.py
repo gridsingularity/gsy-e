@@ -175,3 +175,25 @@ def reported_soc_zero_on_first_slot(context):
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     electro = [child for child in house1.children if child.name == "H1 Electrolyser"][0]
     assert isclose(list(electro.strategy.state.charge_history.values())[0], 10.0)
+
+
+@then('there should be trades on all markets using the max load rate')
+def trades_on_all_markets_max_load_rate(context):
+    grid = context.simulation.area
+    house1 = [child for child in grid.children if child.name == "House 1"][0]
+    load1 = [child for child in house1.children if child.name == "H1 General Load"][0]
+    max_rate = load1.strategy.max_energy_rate
+
+    for market in grid.past_markets:
+        assert len(market.trades) == 1
+        assert all(t.seller == "Commercial Energy Producer" for t in market.trades)
+        assert all(t.buyer == "IAA House 1" for t in market.trades)
+        assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot_str])
+                   for t in market.trades)
+
+    for market in house1.past_markets:
+        assert len(market.trades) == 1
+        assert all(t.seller == "IAA House 1" for t in market.trades)
+        assert all(t.buyer == "H1 General Load" for t in market.trades)
+        assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot_str])
+                   for t in market.trades)
