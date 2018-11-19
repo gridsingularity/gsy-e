@@ -8,7 +8,7 @@ from d3a.models.const import ConstSettings
 
 def ganachecli_command():
     if "GANACHE_BINARY" in os.environ:
-        return os.environ["GANACHE_BINARY"], 8
+        return os.environ["GANACHE_BINARY"], 5
     else:
         return 'ganache-cli', 2
 
