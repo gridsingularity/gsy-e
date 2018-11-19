@@ -11,7 +11,7 @@ from d3a.models.const import ConstSettings
 
 def get_setup(config):
 
-    ConstSettings.IAASettings.MARKET_TYPE = 3
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 35
     ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
