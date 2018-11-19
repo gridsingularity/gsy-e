@@ -9,6 +9,8 @@ class ConstSettings:
         DEFAULT_MARKET_MAKER_RATE = 30  # 0.3 Eur
         # This parameter is modified by the Simulation class
         MAX_OFFER_TRAVERSAL_LENGTH = None
+        # Number of times Market clearing rate has to be calculated per slot
+        MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
         ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
 
     class StorageSettings:

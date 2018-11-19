@@ -2,6 +2,7 @@ from collections import namedtuple
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSidedPayAsBidEngine
 import math
 from logging import getLogger
+from d3a.models.const import ConstSettings
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
@@ -124,6 +125,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     self.owner.name != bid.seller:
                 self._forward_bid(bid)
         current_tick_number = area.current_tick % area.config.ticks_per_slot
+        self.mcp_update_point = \
+            area.config.ticks_per_slot / \
+            ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
         # to decide clearing frequency
-        if current_tick_number % 500 == 0:
+        if current_tick_number % int(self.mcp_update_point) == 0:
             self._match_offers_bids()
+            self.mcp_update_point += self.mcp_update_point
