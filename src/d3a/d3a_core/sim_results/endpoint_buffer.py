@@ -22,6 +22,7 @@ class SimulationEndpointBuffer:
         self.cumulative_loads = {}
         self.price_energy_day = {}
         self.cumulative_grid_trades = {}
+        self.cumulative_grid_balancing_trades = {}
         self.tree_summary = {}
         self.bills = {}
 
@@ -51,7 +52,9 @@ class SimulationEndpointBuffer:
             "load-unit": "kWh",
             "price-energy-day": export_price_energy_day(area)
         }
-        self.cumulative_grid_trades = export_cumulative_grid_trades(area)
+        self.cumulative_grid_trades = export_cumulative_grid_trades(area, "past_markets")
+        self.cumulative_grid_balancing_trades = \
+            export_cumulative_grid_trades(area, "past_balancing_markets")
         self._update_bills(area)
         self._update_tree_summary(area)
 

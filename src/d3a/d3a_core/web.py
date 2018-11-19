@@ -191,6 +191,11 @@ def _api_app(simulation: Simulation):
     def cumulative_grid_trades():
         return simulation.endpoint_buffer.cumulative_grid_trades
 
+    @app.route("/cumulative-grid-balancing-trades", methods=['GET'])
+    @lock_flask_endpoint
+    def cumulative_grid_balancing_trades():
+        return simulation.endpoint_buffer.cumulative_grid_balancing_trades
+
     @app.route("/<area_slug>/tree-summary")
     def tree_summary(area_slug):
         return simulation.endpoint_buffer.tree_summary[area_slug]
