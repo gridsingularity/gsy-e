@@ -36,3 +36,9 @@ Feature: Jira Issues Tests
      And d3a is installed
      When we run the d3a simulation with jira.d3asim_780 [24, 60, 60]
      Then there should be a reported SOC of 0.1 on the first market
+
+   Scenario: D3ASIM-778, load reaches maximum price before the end of the market slot
+     Given we have a scenario named jira/d3asim_778
+     And d3a is installed
+     When we run the simulation with setup file jira.d3asim_778 and parameters [24, 15, 15, 0, 1]
+     Then there should be trades on all markets using the max load rate

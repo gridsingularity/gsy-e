@@ -28,7 +28,7 @@ class BidUpdateFrequencyMixin:
     @cached_property
     def _increase_frequency_s(self):
         return self.area.config.tick_length.seconds * \
-               ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1
+               ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH
 
     def post_first_bid(self, market, energy_Wh):
         # TODO: It will be safe to remove this check once we remove the event_market_cycle being
@@ -78,7 +78,9 @@ class BidUpdateFrequencyMixin:
             self._update_posted_bids(market, current_tick_number)
 
     def _get_current_energy_rate(self, current_tick, market):
-        percentage_of_rate = current_tick / self.area.config.ticks_per_slot
+        total_ticks = (self.area.config.ticks_per_slot -
+                       ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH)
+        percentage_of_rate = max(min(current_tick / total_ticks, 1.0), 0.0)
         rate_range = self._final_rate_profile[market.time_slot_str] - \
             self._initial_rate_profile[market.time_slot_str]
         return rate_range * percentage_of_rate + self._initial_rate_profile[market.time_slot_str]
