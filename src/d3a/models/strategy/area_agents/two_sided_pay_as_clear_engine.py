@@ -1,8 +1,11 @@
 from collections import namedtuple
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSidedPayAsBidEngine
 import math
+from logging import getLogger
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
+
+log = getLogger(__name__)
 
 
 class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
@@ -10,121 +13,107 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                  owner: "InterAreaAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, transfer_fee_pct, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
+        self.sorted_bids = []
+        self.sorted_offers = []
+
+    def _sorting(self, obj, reverse_order=False):
+        if reverse_order:
+            # Sorted bids in descending order
+            return list(reversed(sorted(
+                obj.values(),
+                key=lambda b: b.price / b.energy)))
+
+        else:
+            # Sorted bids in ascending order
+            return list(sorted(
+                obj.values(),
+                key=lambda b: b.price / b.energy))
+
+    def _descrete_point_curve(self, obj):
+        cumulative = {}
+        cumulative[math.floor(obj[0].price/obj[0].energy)] = \
+            obj[0].energy
+        for i in range(len(obj)):
+            if len(obj) <= 1 or i == (len(obj) - 1):
+                break
+            if cumulative.get(math.floor(obj[i+1].price / obj[i+1].energy))\
+                    is not None:
+                cumulative[math.floor(obj[i+1].price / obj[i+1].energy)] += \
+                    obj[i].energy
+            else:
+                cumulative[math.floor(obj[i+1].price / obj[i+1].energy)] = \
+                    obj[i].energy
+        return cumulative
+
+    def _smooth_descrete_point_curve(self, obj, limit, asc_order=True):
+        if asc_order:
+            for i in range(limit+1):
+                if obj.get(i) is None:
+                    if i == 0:
+                        obj[i] = 0
+                    else:
+                        obj[i] = obj[i-1]
+                else:
+                    if i == 0:
+                        pass
+                    else:
+                        obj[i] = obj[i] + obj[i-1]
+        else:
+            for i in range((limit), 0, -1):
+                if obj.get(i) is None:
+                    if i == limit:
+                        obj[i] = 0
+                    else:
+                        obj[i] = obj[i+1]
+                else:
+                    if i == limit:
+                        pass
+                    else:
+                        obj[i] = obj[i] + obj[i + 1]
+        return obj
 
     def _perform_pay_as_clear_matching(self):
+        self.sorted_bids = self._sorting(self.markets.source.bids, True)
+        self.sorted_offers = self._sorting(self.markets.source.offers)
 
-        # Sorted bids in descending order
-        sorted_bids = list(reversed(sorted(
-            self.markets.source.bids.values(),
-            key=lambda b: b.price / b.energy)))
-
-        print(f"Sorted Bids: {sorted_bids}")
-
-        # Sorted offers in ascending order
-        sorted_offers = list(sorted(
-            self.markets.source.offers.values(),
-            key=lambda o: o.price / o.energy))
-
-        print(f"Sorted Offers: {sorted_offers}")
-
-        if len(sorted_bids) == 0 or len(sorted_offers) == 0:
-            print(f"SKIP")
+        if len(self.sorted_bids) == 0 or len(self.sorted_offers) == 0:
             return
 
-        cumulative_bids = {}  # type: Dict[rate, cumulative_demand]
-        cumulative_bids[math.floor(sorted_bids[0].price/sorted_bids[0].energy)] = \
-            sorted_bids[0].energy
-        for i in range(len(sorted_bids)):
-            if len(sorted_bids) <= 1 or i == (len(sorted_bids) - 1):
-                print(f"breaking")
-                break
-            if cumulative_bids.get([math.floor(sorted_bids[i+1].price / sorted_bids[i+1].energy)])\
-                    is not None:
-                cumulative_bids[math.floor(sorted_bids[i+1].price / sorted_bids[i+1].energy)] += \
-                    sorted_bids[i].energy
-            else:
-                cumulative_bids[math.floor(sorted_bids[i+1].price / sorted_bids[i+1].energy)] = \
-                    sorted_bids[i].energy
+        cumulative_bids = self._descrete_point_curve(self.sorted_bids)
+        cumulative_offers = self._descrete_point_curve(self.sorted_offers)
 
-        cumulative_offers = {}  # type: Dict[rate, cumulative_supply]
-        cumulative_offers[math.floor(sorted_offers[0].price/sorted_offers[0].energy)] = \
-            sorted_offers[0].energy
+        max_rate = \
+            int(max(math.floor(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
+                    math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)))
 
-        for i in range(len(sorted_offers)):
-            if len(sorted_offers) <= 1 or i == (len(sorted_offers) - 1):
-                print(f"breaking")
-                break
-            if cumulative_offers.\
-                    get(math.floor(sorted_offers[i+1].price / sorted_offers[i+1].energy))\
-                    is not None:
-                cumulative_offers[math.floor(sorted_offers[i+1].price /
-                                             sorted_offers[i+1].energy)] += \
-                    sorted_offers[i].energy
-                print(f"sorted_offers[{i}].energy: {sorted_offers[i].energy}")
-            else:
-                cumulative_offers[math.floor(sorted_offers[i+1].price /
-                                             sorted_offers[i+1].energy)] = \
-                    sorted_offers[i].energy
-
-        max_rate = int(max(math.floor(sorted_offers[-1].price / sorted_offers[-1].energy),
-                       math.floor(sorted_bids[0].price / sorted_bids[0].energy)))
-
-        for i in range(max_rate+1):
-            if cumulative_offers.get(i) is None:
-                if i == 0:
-                    cumulative_offers[i] = 0
-                else:
-                    cumulative_offers[i] = cumulative_offers[i-1]
-            else:
-                if i == 0:
-                    pass
-                else:
-                    cumulative_offers[i] = cumulative_offers[i] + cumulative_offers[i-1]
-            print(f"supply@{i}: {cumulative_offers.get(i)}")
-
-        for i in range((max_rate), 0, -1):
-            if cumulative_bids.get(i) is None:
-                if i == max_rate:
-                    cumulative_bids[i] = 0
-                else:
-                    cumulative_bids[i] = 0
-            else:
-                if i == max_rate:
-                    pass
-                else:
-                    cumulative_bids[i] = cumulative_bids[i] + cumulative_bids[i+1]
-
-            print(f"demand@{i}: {cumulative_bids.get(i)}")
+        cumulative_offers = self._smooth_descrete_point_curve(cumulative_offers, max_rate)
+        cumulative_bids = self._smooth_descrete_point_curve(cumulative_bids, max_rate, False)
 
         for i in range(1, max_rate+1):
-            supply = cumulative_offers[i]
-            demand = cumulative_bids[i]
-            if supply > demand:
-                print(f"MCP: {i}")
+            if cumulative_offers[i] > cumulative_bids[i]:
                 return i
                 # Also write an algorithm for
             else:
                 continue
 
     def _match_offers_bids(self):
-        self._perform_pay_as_clear_matching()
-        # for bid, offer in self._perform_pay_as_bid_matching():
-        #     selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-        #     offer.price = offer.energy * (bid.price / bid.energy)
-        #     self.owner.accept_offer(market=self.markets.source,
-        #                             offer=offer,
-        #                             buyer=self.owner.name,
-        #                             energy=selected_energy,
-        #                             price_drop=True)
-        #     self._delete_forwarded_offer_entries(offer)
-        #
-        #     self.markets.source.accept_bid(bid,
-        #                                    selected_energy,
-        #                                    seller=offer.seller,
-        #                                    buyer=bid.buyer,
-        #                                    already_tracked=True,
-        #                                    price_drop=True)
-        #     self._delete_forwarded_bid_entries(bid)
+        clearing_rate = self._perform_pay_as_clear_matching()
+        if clearing_rate is not None:
+            log.warning(f"Market Clearing Rate: {clearing_rate}")
+            for bid in self.sorted_bids:
+                if (bid.price/bid.energy) >= clearing_rate:
+                    # AttributeError: can't set attribute. Reason ?
+                    # bid.price = bid.energy * clearing_rate
+                    self.markets.source.accept_bid(bid,
+                                                   already_tracked=True,
+                                                   price_drop=True)
+            for offer in self.sorted_offers:
+                if (math.floor(offer.price/offer.energy)) <= clearing_rate:
+                    offer.price = offer.energy * clearing_rate
+                    self.owner.accept_offer(market=self.markets.source,
+                                            offer=offer,
+                                            buyer=self.owner.name,
+                                            price_drop=True)
 
     def tick(self, *, area):
         super().tick(area=area)
@@ -135,6 +124,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     self.owner.name != bid.seller:
                 self._forward_bid(bid)
         current_tick_number = area.current_tick % area.config.ticks_per_slot
+        # to decide clearing frequency
         if current_tick_number % 500 == 0:
-            print(f"_match_offers_bids")
             self._match_offers_bids()
