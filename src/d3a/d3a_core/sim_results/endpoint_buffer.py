@@ -40,7 +40,7 @@ class SimulationEndpointBuffer:
 
     def update_stats(self, area, simulation_status):
         self.status = simulation_status
-        self.unmatched_loads = {"unmatched_loads": export_unmatched_loads(area)}
+        self.unmatched_loads = {"unmatched_loads": export_unmatched_loads(area, all_devices=True)}
         self.cumulative_loads = {
             "price-currency": "Euros",
             "load-unit": "kWh",
@@ -51,7 +51,7 @@ class SimulationEndpointBuffer:
             "load-unit": "kWh",
             "price-energy-day": export_price_energy_day(area)
         }
-        self.cumulative_grid_trades = export_cumulative_grid_trades(area)
+        self.cumulative_grid_trades = export_cumulative_grid_trades(area, all_devices=True)
         self._update_bills(area)
         self._update_tree_summary(area)
 

@@ -87,10 +87,10 @@ def _is_cell_tower_node(area):
     return isinstance(area.strategy, CellTowerLoadHoursStrategy)
 
 
-def _recurse_area_tree(area):
+def _recurse_area_tree(area, area_select_function):
     unmatched_loads = {}
     for child in area.children:
-        if _is_house_node(child) or _is_cell_tower_node(child):
+        if area_select_function(child):
             # Need to iterate, because the area has been marked as a house or cell tower
             unmatched_loads[child.name] = _calculate_area_stats(child)
         elif child.children is None:
@@ -99,13 +99,24 @@ def _recurse_area_tree(area):
             continue
         else:
             # Recurse even further. Merge new results with existing ones
-            unmatched_loads = {**unmatched_loads, **_recurse_area_tree(child)}
+            unmatched_loads = {**unmatched_loads,
+                               **_recurse_area_tree(child, area_select_function)}
     return unmatched_loads
 
 
-def export_unmatched_loads(area):
+def select_house_or_cell_tower(area):
+    return _is_house_node(area) or _is_cell_tower_node(area)
+
+
+def select_house_or_load(area):
+    return _is_house_node(area) or isinstance(area.strategy, LoadHoursStrategy)
+
+
+def export_unmatched_loads(area, all_devices=False):
     unmatched_loads_result = {}
-    area_tree = _recurse_area_tree(area)
+
+    area_select_function = select_house_or_load if all_devices else select_house_or_cell_tower
+    area_tree = _recurse_area_tree(area, area_select_function)
     # Calculate overall metrics for the whole grid
     unmatched_loads_result["unmatched_load_count"] = \
         sum([v["unmatched_load_count"] for k, v in area_tree.items()])

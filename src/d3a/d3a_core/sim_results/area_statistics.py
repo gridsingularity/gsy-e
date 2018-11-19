@@ -3,7 +3,7 @@ from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
@@ -104,10 +104,14 @@ def _is_cell_tower_node(area):
     return isinstance(area.strategy, CellTowerLoadHoursStrategy)
 
 
-def _accumulate_cell_tower_trades(cell_tower, grid, accumulated_trades):
-    accumulated_trades[cell_tower.name] = {
-        "type": "cell_tower",
-        "id": cell_tower.area_id,
+def _is_load_node(area):
+    return isinstance(area.strategy, LoadHoursStrategy)
+
+
+def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
+    accumulated_trades[load.name] = {
+        "type": "cell_tower" if is_cell_tower else "load",
+        "id": load.area_id,
         "produced": 0.0,
         "earned": 0.0,
         "consumedFrom": defaultdict(int),
@@ -115,10 +119,10 @@ def _accumulate_cell_tower_trades(cell_tower, grid, accumulated_trades):
     }
     for market in grid.past_markets:
         for trade in market.trades:
-            if trade.buyer == cell_tower.name:
+            if trade.buyer == load.name:
                 sell_id = area_name_from_area_or_iaa_name(trade.seller)
-                accumulated_trades[cell_tower.name]["consumedFrom"][sell_id] += trade.offer.energy
-                accumulated_trades[cell_tower.name]["spentTo"][sell_id] += trade.offer.price
+                accumulated_trades[load.name]["consumedFrom"][sell_id] += trade.offer.energy
+                accumulated_trades[load.name]["spentTo"][sell_id] += trade.offer.price
     return accumulated_trades
 
 
@@ -159,7 +163,9 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
 def _accumulate_grid_trades(area, accumulated_trades):
     for child in area.children:
         if _is_cell_tower_node(child):
-            accumulated_trades = _accumulate_cell_tower_trades(child, area, accumulated_trades)
+            accumulated_trades = _accumulate_load_trades(
+                child, area, accumulated_trades, is_cell_tower=True
+            )
         elif _is_house_node(child):
             accumulated_trades = _accumulate_house_trades(child, area, accumulated_trades)
         elif child.children == []:
@@ -167,6 +173,25 @@ def _accumulate_grid_trades(area, accumulated_trades):
             continue
         else:
             accumulated_trades = _accumulate_grid_trades(child, accumulated_trades)
+    return accumulated_trades
+
+
+def _accumulate_grid_trades_all_devices(area, accumulated_trades):
+    for child in area.children:
+        if _is_cell_tower_node(child):
+            accumulated_trades = _accumulate_load_trades(
+                child, area, accumulated_trades, is_cell_tower=True
+            )
+        if _is_load_node(child):
+            accumulated_trades = _accumulate_load_trades(
+                child, area, accumulated_trades, is_cell_tower=False
+            )
+        elif child.children == []:
+            # Leaf node, no need for calculating cumulative trades, continue iteration
+            continue
+        else:
+            accumulated_trades = _accumulate_house_trades(child, area, accumulated_trades)
+            accumulated_trades = _accumulate_grid_trades_all_devices(child, accumulated_trades)
     return accumulated_trades
 
 
@@ -236,8 +261,10 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
     return consumption_rows
 
 
-def export_cumulative_grid_trades(area):
-    accumulated_trades = _accumulate_grid_trades(area, {})
+def export_cumulative_grid_trades(area, all_devices=False):
+    accumulated_trades = _accumulate_grid_trades_all_devices(area, {}) \
+        if all_devices \
+        else _accumulate_grid_trades(area, {})
     return {
         "unit": "kWh",
         "areas": sorted(accumulated_trades.keys()),
