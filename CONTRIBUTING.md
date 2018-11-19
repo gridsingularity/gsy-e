@@ -11,7 +11,8 @@
 
 * Open a new GitHub pull request with the patch.
 
-* Ensure the PR description clearly describes the problem and solution. Include the relevant issue number if applicable.
+* Ensure the Pull Request description clearly describes the problem and solution. Include the relevant issue number if applicable.
+
 
 #### **Did you fix whitespace, format code, or make a purely cosmetic patch?**
 
@@ -27,7 +28,7 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 * Consult our Wiki [D3A Wiki page](linkto confluence)
 
-* If thinks are still unclear: Ask any question about how to use D3A in the [d3a mailing list](linktomailinglist).
+* If things are still unclear: Ask any question about how to use D3A in the [d3a mailing list](linktomailinglist).
 
 
 Thanks! :heart: :heart: :heart:

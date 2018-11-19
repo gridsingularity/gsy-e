@@ -1,5 +1,5 @@
 ====================================
-d3a: GridSingularity AreaManager PoC
+d3a: Hierarchical Autonomous Area Agent
 ====================================
 
 The D3A is a blockchain-based, distributed energy market model developed by Grid Singularity with
