@@ -31,10 +31,10 @@ class SimulationEndpointBuffer:
         return {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
-            **self.unmatched_loads,
+            **self.unmatched_loads_redis,
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day,
-            "cumulative_grid_trades": self.cumulative_grid_trades,
+            "cumulative_grid_trades": self.cumulative_grid_trades_redis,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status
