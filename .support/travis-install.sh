@@ -5,7 +5,7 @@ if [ "$TOXENV" == "solium" ] || [ "$TOXENV" == "py36" ] || [ "$TOXENV" == "travi
     nvm install stable
     nvm use stable
     npm install -g solium@1.1.8
-    npm install --prefix $HOME ganache-cli
+    npm install --prefix $HOME ganache-cli@6.1.8
     which ganache-cli
 fi
 
