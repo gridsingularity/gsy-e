@@ -122,7 +122,7 @@ def _accumulate_cell_tower_trades(cell_tower, grid, accumulated_trades):
     return accumulated_trades
 
 
-def _accumulate_house_trades(house, grid, accumulated_trades):
+def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types):
     if house.name not in accumulated_trades:
         accumulated_trades[house.name] = {
             "type": "house",
@@ -134,7 +134,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
         }
     house_IAA_name = make_iaa_name(house)
     child_names = [c.name for c in house.children]
-    for market in house.past_markets:
+    for market in getattr(house, past_market_types):
         for trade in market.trades:
             if area_name_from_area_or_iaa_name(trade.seller) in child_names and \
                     area_name_from_area_or_iaa_name(trade.buyer) in child_names:
@@ -147,7 +147,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
                 accumulated_trades[house.name]["earned"] += trade.offer.price
                 accumulated_trades[house.name]["produced"] -= trade.offer.energy
 
-    for market in grid.past_markets:
+    for market in getattr(grid, past_market_types):
         for trade in market.trades:
             if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
                 seller_id = area_name_from_area_or_iaa_name(trade.seller)
@@ -156,12 +156,13 @@ def _accumulate_house_trades(house, grid, accumulated_trades):
     return accumulated_trades
 
 
-def _accumulate_grid_trades(area, accumulated_trades):
+def _accumulate_grid_trades(area, accumulated_trades, past_market_types):
     for child in area.children:
         if _is_cell_tower_node(child):
             accumulated_trades = _accumulate_cell_tower_trades(child, area, accumulated_trades)
         elif _is_house_node(child):
-            accumulated_trades = _accumulate_house_trades(child, area, accumulated_trades)
+            accumulated_trades = \
+                _accumulate_house_trades(child, area, accumulated_trades, past_market_types)
         elif child.children == []:
             # Leaf node, no need for calculating cumulative trades, continue iteration
             continue
@@ -236,8 +237,8 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
     return consumption_rows
 
 
-def export_cumulative_grid_trades(area):
-    accumulated_trades = _accumulate_grid_trades(area, {})
+def export_cumulative_grid_trades(area, past_market_types):
+    accumulated_trades = _accumulate_grid_trades(area, {}, past_market_types)
     return {
         "unit": "kWh",
         "areas": sorted(accumulated_trades.keys()),
