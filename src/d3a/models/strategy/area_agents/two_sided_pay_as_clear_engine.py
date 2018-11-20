@@ -30,7 +30,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 obj.values(),
                 key=lambda b: b.price / b.energy))
 
-    def _descrete_point_curve(self, obj):
+    def _discrete_point_curve(self, obj):
         cumulative = {}
         cumulative[math.floor(obj[0].price/obj[0].energy)] = \
             obj[0].energy
@@ -46,7 +46,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     obj[i].energy
         return cumulative
 
-    def _smooth_descrete_point_curve(self, obj, limit, asc_order=True):
+    def _smooth_discrete_point_curve(self, obj, limit, asc_order=True):
         if asc_order:
             for i in range(limit+1):
                 if obj.get(i) is None:
@@ -80,15 +80,15 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         if len(self.sorted_bids) == 0 or len(self.sorted_offers) == 0:
             return
 
-        cumulative_bids = self._descrete_point_curve(self.sorted_bids)
-        cumulative_offers = self._descrete_point_curve(self.sorted_offers)
+        cumulative_bids = self._discrete_point_curve(self.sorted_bids)
+        cumulative_offers = self._discrete_point_curve(self.sorted_offers)
 
         max_rate = \
             int(max(math.floor(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
                     math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)))
 
-        cumulative_offers = self._smooth_descrete_point_curve(cumulative_offers, max_rate)
-        cumulative_bids = self._smooth_descrete_point_curve(cumulative_bids, max_rate, False)
+        cumulative_offers = self._smooth_discrete_point_curve(cumulative_offers, max_rate)
+        cumulative_bids = self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
 
         for i in range(1, max_rate+1):
             if cumulative_offers[i] > cumulative_bids[i]:
