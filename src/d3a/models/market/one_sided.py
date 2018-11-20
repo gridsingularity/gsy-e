@@ -22,7 +22,7 @@ class OneSidedMarket(Market):
 
     def __repr__(self):  # pragma: no cover
         return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
-            .format(" {:%H:%M}".format(self.time_slot_str),
+            .format(" {}".format(self.time_slot_str),
                     len(self.offers),
                     sum(o.energy for o in self.offers.values()),
                     sum(o.price for o in self.offers.values()),
