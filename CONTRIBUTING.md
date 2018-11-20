@@ -37,7 +37,7 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 By contributing to D3A, you agree that your contributions will be licensed under the [GPLv3 License](../LICENSE).
 
-Each contributor has to sign our Contributor License Agreement. The purpose of the CLA is to ensure that the guardian of a project's outputs has the necessary ownership or grants of rights over all contributions to allow them to distribute under the chosen license. You can read and sign our full Contributor License Agreement at [cla.parity.com](https://cla.parity.com) before submitting a pull request.
+Each contributor has to sign our Contributor License Agreement. The purpose of the CLA is to ensure that the guardian of a project's outputs has the necessary ownership or grants of rights over all contributions to allow them to distribute under the chosen license. You can read and sign our full Contributor License Agreement at [contributor_license_url](contributor_license_url) before submitting a pull request.
 
 
 Thanks! :heart: :heart: :heart:
