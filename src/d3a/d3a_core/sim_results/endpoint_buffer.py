@@ -55,7 +55,8 @@ class SimulationEndpointBuffer:
         self.cumulative_grid_trades = export_cumulative_grid_trades(area, "past_markets")
         self.cumulative_grid_balancing_trades = \
             export_cumulative_grid_trades(area, "past_balancing_markets")
-        self._update_bills(area)
+        self.energy_bills = self._update_bills(area, "past_markets")
+        self.balancing_energy_bills = self._update_bills(area, "past_balancing_markets")
         self._update_tree_summary(area)
 
     def _update_tree_summary(self, area):
@@ -76,6 +77,6 @@ class SimulationEndpointBuffer:
             if child.children != []:
                 self._update_tree_summary(child)
 
-    def _update_bills(self, area):
-        result = energy_bills(area)
+    def _update_bills(self, area, past_market_types):
+        result = energy_bills(area, past_market_types)
         self.bills = OrderedDict(sorted(result.items()))

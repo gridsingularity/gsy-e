@@ -39,13 +39,13 @@ def area_endpoint_stats(area):
         'markets': [
             {
                 'type': type_,
-                'time_slot': time.format(TIME_FORMAT),
+                'time_slot': market.time_slot.format(TIME_FORMAT),
                 'url': url_for('market', area_slug=area.slug,
-                               market_time=time),
+                               market_time=market.time_slot),
                 'trade_count': len(market.trades),
                 'offer_count': len(market.offers)
             }
-            for type_, (time, market)
+            for type_, market
             in _market_progression(area)
         ],
     }
@@ -162,8 +162,8 @@ def market_results_endpoint_stats(area, market):
     }
 
 
-def bills_endpoint_stats(area, from_slot, to_slot):
-    result = energy_bills(area, from_slot, to_slot)
+def bills_endpoint_stats(area, past_market_types, from_slot, to_slot):
+    result = energy_bills(area, past_market_types, from_slot, to_slot)
     result = OrderedDict(sorted(result.items()))
     if from_slot:
         result['from'] = str(from_slot)
@@ -198,26 +198,26 @@ _NO_VALUE = {
 
 def _get_market(area, market_time):
     if market_time == 'current':
-        market = list(area.past_markets.values())[-1]
+        market = list(area.past_markets)[-1]
         type_ = 'current'
     elif market_time.isdigit():
-        market = list(area.markets.values())[int(market_time)]
+        market = list(area.markets)[int(market_time)]
         type_ = 'open'
     elif market_time[0] == '-' and market_time[1:].isdigit():
-        market = list(area.past_markets.values())[int(market_time)]
+        market = list(area.past_markets)[int(market_time)]
         type_ = 'closed'
     else:
         time = pendulum.parse(market_time)
         try:
-            market = area.markets[time]
+            market = area._markets.markets[time]
             type_ = 'open'
         except KeyError:
             try:
-                market = area.past_markets[time]
+                market = area._markets.past_markets[time]
             except KeyError:
                 return abort(404)
             type_ = 'closed'
-            if market.time_slot == list(area.past_markets.keys())[-1]:
+            if market.time_slot == list(area._markets.past_markets.keys())[-1]:
                 type_ = 'current'
     return market, type_
 
@@ -233,11 +233,11 @@ def _market_progression(area):
                 repeat('closed', times=len(area.past_markets) - 1),
                 ('current',)
             ),
-            list(area.past_markets.items())
+            list(area.past_markets)
         ),
         zip(
             repeat('open'),
-            list(area.markets.items())
+            list(area.all_markets)
         )
     )
 

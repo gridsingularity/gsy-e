@@ -200,8 +200,8 @@ def _api_app(simulation: Simulation):
     def tree_summary(area_slug):
         return simulation.endpoint_buffer.tree_summary[area_slug]
 
-    @app.route("/<area_slug>/bills")
-    def bills(area_slug):
+    @app.route("/<area_slug>/<energy_bills>")
+    def bills(area_slug, energy_bills):
         area = _get_area(area_slug)
 
         def slot_query_param(name):
@@ -216,7 +216,11 @@ def _api_app(simulation: Simulation):
 
         from_slot = slot_query_param('from')
         to_slot = slot_query_param('to')
-        return bills_endpoint_stats(area, from_slot, to_slot)
+
+        if energy_bills == "bills":
+            return bills_endpoint_stats(area, "past_markets", from_slot, to_slot)
+        elif energy_bills == "balancing_energy_bills":
+            return bills_endpoint_stats(area, "past_balancing_markets", from_slot, to_slot)
 
     @app.after_request
     def modify_server_header(response):

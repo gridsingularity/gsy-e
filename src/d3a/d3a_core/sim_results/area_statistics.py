@@ -147,7 +147,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
                 accumulated_trades[house.name]["earned"] += trade.offer.price
                 accumulated_trades[house.name]["produced"] -= trade.offer.energy
 
-    for market in grid.past_markets:
+    for market in getattr(grid, past_market_types):
         for trade in market.trades:
             if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
                 seller_id = area_name_from_area_or_iaa_name(trade.seller)
