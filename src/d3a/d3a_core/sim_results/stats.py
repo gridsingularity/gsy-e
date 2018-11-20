@@ -34,7 +34,7 @@ def total_avg_trade_price(markets):
     )
 
 
-def energy_bills(area, from_slot=None, to_slot=None):
+def energy_bills(area, past_market_types, from_slot=None, to_slot=None):
     """
     Return a bill for each of area's children with total energy bought
     and sold (in kWh) and total money earned and spent (in cents).
@@ -46,7 +46,7 @@ def energy_bills(area, from_slot=None, to_slot=None):
                                spent=0.0, earned=0.0,
                                type=get_area_type_string(child))
               for child in area.children}
-    for market in area.past_markets:
+    for market in getattr(area, past_market_types):
         slot = market.time_slot
         if (from_slot is None or slot >= from_slot) and (to_slot is None or slot < to_slot):
             for trade in market.trades:
@@ -59,7 +59,7 @@ def energy_bills(area, from_slot=None, to_slot=None):
                     result[seller]['sold'] += trade.offer.energy
                     result[seller]['earned'] += trade.offer.price
     for child in area.children:
-        child_result = energy_bills(child, from_slot, to_slot)
+        child_result = energy_bills(child, past_market_types, from_slot, to_slot)
         if child_result is not None:
             result[child.name]['children'] = child_result
     return result
