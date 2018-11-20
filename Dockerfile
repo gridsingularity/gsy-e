@@ -1,6 +1,4 @@
-FROM python:3.5
-
-MAINTAINER Ulrich Petri <ulrich@gridsingularity.com>
+FROM python:3.6
 
 ADD . /app
 
