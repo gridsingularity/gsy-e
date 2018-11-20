@@ -64,11 +64,15 @@ class TwoSidedPayAsBid(OneSidedMarket):
             if energy < market_bid.energy:
                 # Partial bidding
                 residual = True
+                # For the residual bid we use the market rate, in order to not affect
+                # rate increase algorithm.
                 energy_rate = market_bid.price / market_bid.energy
-                final_price = energy * energy_rate
                 residual_energy = market_bid.energy - energy
                 residual_price = residual_energy * energy_rate
                 self.bid(residual_price, residual_energy, buyer, seller, bid.id)
+                # For the accepted bid we use the 'clearing' rate from the bid
+                # input argument.
+                final_price = energy * (bid.price / bid.energy)
                 bid = Bid(bid.id, final_price, energy,
                           buyer, seller, self)
             trade = Trade(str(uuid.uuid4()), self._now,

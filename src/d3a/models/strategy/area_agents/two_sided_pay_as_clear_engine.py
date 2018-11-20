@@ -103,10 +103,18 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             log.warning(f"Market Clearing Rate: {clearing_rate}")
             for bid in self.sorted_bids:
                 if (bid.price/bid.energy) >= clearing_rate:
-                    self.markets.source.accept_clearing_bid(clear_rate=clearing_rate,
-                                                            bid=bid,
-                                                            already_tracked=True,
-                                                            price_drop=True)
+                    self.markets.source.accept_bid(
+                        bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
+                        energy=bid.energy,
+                        seller=self.owner.name,
+                        already_tracked=True,
+                        price_drop=True
+                    )
+
+                    # self.markets.source.accept_clearing_bid(clear_rate=clearing_rate,
+                    #                                         bid=bid,
+                    #                                         already_tracked=True,
+                    #                                         price_drop=True)
             for offer in self.sorted_offers:
                 if (math.floor(offer.price/offer.energy)) <= clearing_rate:
                     offer.price = offer.energy * clearing_rate
