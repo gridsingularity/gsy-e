@@ -18,17 +18,26 @@
 
 Changes that are cosmetic in nature and do not add anything substantial to the stability, functionality, or testability of the D3A will generally not be accepted.
 
+
 #### **Do you intend to add a new feature or change an existing one?**
 
 * Suggest your change in an email to d3a@gridsingularity.com
 
 * Do not open an issue on GitHub until you have collected positive feedback about the change. GitHub issues are primarily intended for bug reports and fixes.
 
+
 #### **Do you have questions about the source code or the functionality of D3A?**
 
 * Consult our Wiki [D3A Wiki page](https://gridsingularity.atlassian.net/wiki/x/d4D5Mg)
 
 * If things are still unclear: Ask any question about how to use D3A in the [d3a mailing list](linktomailinglist).
+
+
+#### **License**
+
+By contributing to D3A, you agree that your contributions will be licensed under the [GPLv3 License](../LICENSE).
+
+Each contributor has to sign our Contributor License Agreement. The purpose of the CLA is to ensure that the guardian of a project's outputs has the necessary ownership or grants of rights over all contributions to allow them to distribute under the chosen license. You can read and sign our full Contributor License Agreement at [contributor_license_url](contributor_license_url) before submitting a pull request.
 
 
 Thanks! :heart: :heart: :heart:
