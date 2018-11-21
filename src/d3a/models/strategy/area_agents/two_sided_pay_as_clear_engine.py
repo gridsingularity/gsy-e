@@ -16,6 +16,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
         self.sorted_bids = []
         self.sorted_offers = []
+        self.clearing_rate = []  # type: List[int]
 
     def _sorting(self, obj, reverse_order=False):
         if reverse_order:
@@ -91,7 +92,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         cumulative_bids = self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
 
         for i in range(1, max_rate+1):
-            if cumulative_offers[i] > cumulative_bids[i]:
+            if cumulative_offers[i] >= cumulative_bids[i]:
                 return i
                 # Also write an algorithm for
             else:
@@ -101,6 +102,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         clearing_rate = self._perform_pay_as_clear_matching()
         if clearing_rate is not None:
             log.warning(f"Market Clearing Rate: {clearing_rate}")
+            self.clearing_rate.append(clearing_rate)
             for bid in self.sorted_bids:
                 if (bid.price/bid.energy) >= clearing_rate:
                     self.markets.source.accept_bid(
@@ -110,11 +112,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                         already_tracked=True,
                         price_drop=True
                     )
-
-                    # self.markets.source.accept_clearing_bid(clear_rate=clearing_rate,
-                    #                                         bid=bid,
-                    #                                         already_tracked=True,
-                    #                                         price_drop=True)
             for offer in self.sorted_offers:
                 if (math.floor(offer.price/offer.energy)) <= clearing_rate:
                     offer.price = offer.energy * clearing_rate
