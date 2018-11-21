@@ -53,6 +53,28 @@ class TestUnmatchedLoad(unittest.TestCase):
         assert unmatched_loads["unmatched_load_count"] == 0
         assert unmatched_loads["all_loads_met"]
 
+    def test_export_unmatched_loads_support_the_all_devices_parameter(self):
+        house1 = Area("House1", [self.area1, self.area2])
+        self.grid = Area("Grid", [house1, self.area3])
+        self.grid._markets.past_markets = {}
+        for i in range(1, 11):
+            timeslot = DateTime(2018, 1, 1, 12+i, 0, 0)
+            self.strategy1.state.desired_energy_Wh[timeslot] = 100
+            self.strategy2.state.desired_energy_Wh[timeslot] = 100
+            self.strategy3.state.desired_energy_Wh[timeslot] = 100
+            mock_market = MagicMock(spec=Market)
+            mock_market.time_slot = timeslot
+            mock_market.traded_energy = {"load1": -0.101, "load2": -0.101, "load3": -0.07}
+            house1._markets.past_markets[timeslot] = mock_market
+            self.grid._markets.past_markets[timeslot] = mock_market
+
+        unmatched_loads = export_unmatched_loads(self.grid, all_devices=True)
+        print(unmatched_loads)
+        assert self.area3.name in unmatched_loads["areas"]
+        assert unmatched_loads["areas"][self.area3.name]["unmatched_load_count"] == 10
+        assert unmatched_loads["unmatched_load_count"] == 10
+        assert not unmatched_loads["all_loads_met"]
+
     def test_export_unmatched_loads_is_reported_correctly_for_all_loads_unmatched(self):
         house1 = Area("House1", [self.area1, self.area2])
         self.grid = Area("Grid", [house1])
