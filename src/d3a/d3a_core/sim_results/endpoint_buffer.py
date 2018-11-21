@@ -19,21 +19,24 @@ class SimulationEndpointBuffer:
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.unmatched_loads = {}
+        self.unmatched_loads_redis = {}
         self.cumulative_loads = {}
         self.price_energy_day = {}
         self.cumulative_grid_trades = {}
+        self.cumulative_grid_trades_redis = {}
         self.cumulative_grid_balancing_trades = {}
         self.tree_summary = {}
         self.bills = {}
+        self.balancing_energy_bills = {}
 
     def generate_result_report(self):
         return {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
-            **self.unmatched_loads,
+            **self.unmatched_loads_redis,
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day,
-            "cumulative_grid_trades": self.cumulative_grid_trades,
+            "cumulative_grid_trades": self.cumulative_grid_trades_redis,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status
@@ -41,7 +44,10 @@ class SimulationEndpointBuffer:
 
     def update_stats(self, area, simulation_status):
         self.status = simulation_status
-        self.unmatched_loads = {"unmatched_loads": export_unmatched_loads(area)}
+
+        self.unmatched_loads_redis = {"unmatched_loads": export_unmatched_loads(area)}
+        self.unmatched_loads = {"unmatched_loads": export_unmatched_loads(area, all_devices=True)}
+
         self.cumulative_loads = {
             "price-currency": "Euros",
             "load-unit": "kWh",
@@ -52,11 +58,16 @@ class SimulationEndpointBuffer:
             "load-unit": "kWh",
             "price-energy-day": export_price_energy_day(area)
         }
-        self.cumulative_grid_trades = export_cumulative_grid_trades(area, "past_markets")
+
+        self.cumulative_grid_trades_redis = export_cumulative_grid_trades(area, "past_markets")
+        self.cumulative_grid_trades = export_cumulative_grid_trades(
+            area, "past_markets", all_devices=True
+        )
         self.cumulative_grid_balancing_trades = \
             export_cumulative_grid_trades(area, "past_balancing_markets")
-        self.energy_bills = self._update_bills(area, "past_markets")
+        self.bills = self._update_bills(area, "past_markets")
         self.balancing_energy_bills = self._update_bills(area, "past_balancing_markets")
+
         self._update_tree_summary(area)
 
     def _update_tree_summary(self, area):
@@ -79,4 +90,4 @@ class SimulationEndpointBuffer:
 
     def _update_bills(self, area, past_market_types):
         result = energy_bills(area, past_market_types)
-        self.bills = OrderedDict(sorted(result.items()))
+        return OrderedDict(sorted(result.items()))
