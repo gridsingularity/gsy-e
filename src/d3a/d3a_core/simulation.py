@@ -6,6 +6,8 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
+import json
+import os
 
 from pendulum import DateTime
 from pendulum import duration
@@ -254,8 +256,11 @@ class Simulation:
                     if not self.exit_on_finish:
                         log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
-                        ExportAndPlot(self.area, self.export_path,
-                                      DateTime.now(tz=TIME_ZONE).isoformat())
+                        export = ExportAndPlot(self.area, self.export_path,
+                                               DateTime.now(tz=TIME_ZONE).isoformat())
+                        json_file = os.path.join(export.directory, "data.json")
+                        with open(json_file, 'w') as outfile:
+                            json.dump(self.endpoint_buffer.generate_result_report(), outfile)
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
