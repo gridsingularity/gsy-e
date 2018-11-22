@@ -18,6 +18,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         self.sorted_offers = []
         self.clearing_rate = []  # type: List[int]
 
+    def __repr__(self):
+        return "<TwoSidedPayAsClearEngine [{s.owner.name}] {s.name} " \
+               "{s.markets.source.time_slot:%H:%M}>".format(s=self)
+
     def _sorting(self, obj, reverse_order=False):
         if reverse_order:
             # Sorted bids in descending order
