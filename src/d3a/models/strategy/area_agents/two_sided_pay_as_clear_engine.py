@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSidedPayAsBidEngine
 import math
 from logging import getLogger
@@ -36,46 +36,23 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 key=lambda b: b.price / b.energy))
 
     def _discrete_point_curve(self, obj):
-        cumulative = {}
-        cumulative[math.floor(obj[0].price/obj[0].energy)] = \
-            obj[0].energy
+        cumulative = defaultdict(int)
+        rate = math.floor(obj[0].price/obj[0].energy)
+        cumulative[rate] = obj[0].energy
         for i in range(len(obj)):
             if len(obj) <= 1 or i == (len(obj) - 1):
                 break
-            if cumulative.get(math.floor(obj[i+1].price / obj[i+1].energy))\
-                    is not None:
-                cumulative[math.floor(obj[i+1].price / obj[i+1].energy)] += \
-                    obj[i].energy
-            else:
-                cumulative[math.floor(obj[i+1].price / obj[i+1].energy)] = \
-                    obj[i].energy
+            rate = math.floor(obj[i+1].price / obj[i+1].energy)
+            cumulative[rate] += obj[i].energy
         return cumulative
 
     def _smooth_discrete_point_curve(self, obj, limit, asc_order=True):
         if asc_order:
             for i in range(limit+1):
-                if obj.get(i) is None:
-                    if i == 0:
-                        obj[i] = 0
-                    else:
-                        obj[i] = obj[i-1]
-                else:
-                    if i == 0:
-                        pass
-                    else:
-                        obj[i] = obj[i] + obj[i-1]
+                obj[i] = obj.get(i, 0) + obj.get(i-1, 0)
         else:
             for i in range((limit), 0, -1):
-                if obj.get(i) is None:
-                    if i == limit:
-                        obj[i] = 0
-                    else:
-                        obj[i] = obj[i+1]
-                else:
-                    if i == limit:
-                        pass
-                    else:
-                        obj[i] = obj[i] + obj[i + 1]
+                obj[i] = obj.get(i, 0) + obj.get(i+1, 0)
         return obj
 
     def _perform_pay_as_clear_matching(self):
@@ -107,8 +84,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         if clearing_rate is not None:
             log.warning(f"Market Clearing Rate: {clearing_rate}")
             self.clearing_rate.append(clearing_rate)
+            cumulative_traded_bids = 0
             for bid in self.sorted_bids:
                 if (bid.price/bid.energy) >= clearing_rate:
+                    cumulative_traded_bids += bid.energy
                     self.markets.source.accept_bid(
                         bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
                         energy=bid.energy,
@@ -116,13 +95,25 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                         already_tracked=True,
                         price_drop=True
                     )
+            cumulative_traded_offers = 0
             for offer in self.sorted_offers:
-                if (math.floor(offer.price/offer.energy)) <= clearing_rate:
+                if (math.floor(offer.price/offer.energy)) <= clearing_rate and \
+                        (cumulative_traded_bids - (cumulative_traded_offers - offer.energy)) > 0:
                     offer.price = offer.energy * clearing_rate
-                    self.owner.accept_offer(market=self.markets.source,
-                                            offer=offer,
-                                            buyer=self.owner.name,
-                                            price_drop=True)
+                    self.markets.source.accept_offer(offer_or_id=offer,
+                                                     buyer=self.owner.name,
+                                                     energy=offer.energy,
+                                                     price_drop=True)
+                    cumulative_traded_offers += offer.energy
+                elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
+                        (cumulative_traded_bids - cumulative_traded_offers) > 0:
+                    residual_energy = cumulative_traded_bids - cumulative_traded_offers
+                    offer.price = offer.energy * clearing_rate
+                    self.markets.source.accept_offer(offer_or_id=offer,
+                                                     buyer=self.owner.name,
+                                                     energy=residual_energy,
+                                                     price_drop=True)
+                    cumulative_traded_offers += residual_energy
 
     def tick(self, *, area):
         super().tick(area=area)
@@ -139,4 +130,3 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         # to decide clearing frequency
         if current_tick_number % int(self.mcp_update_point) == 0:
             self._match_offers_bids()
-            self.mcp_update_point += self.mcp_update_point
