@@ -434,7 +434,7 @@ def test_iaa_double_sided_performs_pay_as_clear_matching(iaa_double_sided_pay_as
          Bid('bid_id6', bid[5], 1, 'B', 'S'),
          Bid('bid_id7', bid[6], 1, 'B', 'S')]
 
-    matched = low_high_engine._perform_pay_as_clear_matching()
+    matched = low_high_engine._perform_pay_as_clear_matching()[0]
     assert matched == MCP
 
 

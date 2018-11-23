@@ -74,46 +74,62 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
 
         for i in range(1, max_rate+1):
             if cumulative_offers[i] >= cumulative_bids[i]:
-                return i
-                # Also write an algorithm for
+                return i, cumulative_bids[i]
             else:
                 continue
 
     def _match_offers_bids(self):
-        clearing_rate = self._perform_pay_as_clear_matching()
-        if clearing_rate is not None:
-            log.warning(f"Market Clearing Rate: {clearing_rate}")
-            self.clearing_rate.append(clearing_rate)
-            cumulative_traded_bids = 0
-            for bid in self.sorted_bids:
-                if (bid.price/bid.energy) >= clearing_rate:
-                    cumulative_traded_bids += bid.energy
-                    self.markets.source.accept_bid(
-                        bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
-                        energy=bid.energy,
-                        seller=self.owner.name,
-                        already_tracked=True,
-                        price_drop=True
-                    )
-            cumulative_traded_offers = 0
-            for offer in self.sorted_offers:
-                if (math.floor(offer.price/offer.energy)) <= clearing_rate and \
-                        (cumulative_traded_bids - (cumulative_traded_offers - offer.energy)) > 0:
-                    offer.price = offer.energy * clearing_rate
-                    self.markets.source.accept_offer(offer_or_id=offer,
-                                                     buyer=self.owner.name,
-                                                     energy=offer.energy,
-                                                     price_drop=True)
-                    cumulative_traded_offers += offer.energy
-                elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
-                        (cumulative_traded_bids - cumulative_traded_offers) > 0:
-                    residual_energy = cumulative_traded_bids - cumulative_traded_offers
-                    offer.price = offer.energy * clearing_rate
-                    self.markets.source.accept_offer(offer_or_id=offer,
-                                                     buyer=self.owner.name,
-                                                     energy=residual_energy,
-                                                     price_drop=True)
-                    cumulative_traded_offers += residual_energy
+        clearing = self._perform_pay_as_clear_matching()
+        if clearing is None:
+            return
+        clearing_rate, clearing_energy = clearing
+        log.info(f"Market Clearing Rate: {clearing_rate} & Clearing Energy: {clearing_energy} ")
+        self.clearing_rate.append(clearing_rate)
+        cumulative_traded_bids = 0
+        for bid in self.sorted_bids:
+            if cumulative_traded_bids >= clearing_energy:
+                break
+            elif (bid.price/bid.energy) >= clearing_rate and \
+                    (clearing_energy - cumulative_traded_bids) >= bid.energy:
+                cumulative_traded_bids += bid.energy
+                self.markets.source.accept_bid(
+                    bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
+                    energy=bid.energy,
+                    seller=self.owner.name,
+                    already_tracked=True,
+                    price_drop=True
+                )
+            elif (bid.price/bid.energy) >= clearing_rate and \
+                    (clearing_energy - cumulative_traded_bids) <= bid.energy:
+                cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
+                self.markets.source.accept_bid(
+                    bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
+                    energy=(clearing_energy - cumulative_traded_bids),
+                    seller=self.owner.name,
+                    already_tracked=True,
+                    price_drop=True
+                )
+
+        cumulative_traded_offers = 0
+        for offer in self.sorted_offers:
+            if cumulative_traded_offers >= clearing_energy:
+                break
+            elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
+                    (clearing_energy - cumulative_traded_offers) >= offer.energy:
+                offer.price = offer.energy * clearing_rate
+                self.markets.source.accept_offer(offer_or_id=offer,
+                                                 buyer=self.owner.name,
+                                                 energy=offer.energy,
+                                                 price_drop=True)
+                cumulative_traded_offers += offer.energy
+            elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
+                    (clearing_energy - cumulative_traded_offers) <= offer.energy:
+                offer.price = offer.energy * clearing_rate
+                self.markets.source.accept_offer(offer_or_id=offer,
+                                                 buyer=self.owner.name,
+                                                 energy=offer.energy,
+                                                 price_drop=True)
+                cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
 
     def tick(self, *, area):
         super().tick(area=area)
@@ -127,6 +143,5 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         self.mcp_update_point = \
             area.config.ticks_per_slot / \
             ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
-        # to decide clearing frequency
         if current_tick_number % int(self.mcp_update_point) == 0:
             self._match_offers_bids()
