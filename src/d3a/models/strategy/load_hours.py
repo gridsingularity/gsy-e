@@ -48,6 +48,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         self.energy_requirement_Wh = {}  # type: Dict[Time, float]
         self.hrs_per_day = {}  # type: Dict[int, int]
 
+        if hrs_of_day is None:
+            hrs_of_day = list(range(24))
+
         # be a parameter on the constructor or if we want to deal in percentages
         if hrs_per_day is None:
             hrs_per_day = len(hrs_of_day)

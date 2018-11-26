@@ -52,6 +52,8 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
 
     timestr_solar_array = list(profile_data_W.keys())
     solar_power_input_W = list(profile_data_W.values())
+    # Ensures that the power values are going to be floats, not strings.
+    solar_power_input_W = [float(dp) for dp in solar_power_input_W]
     time0 = datetime.utcfromtimestamp(0)
     time_solar_array = [
         (datetime.strptime(ti, TIME_FORMAT) - time0).seconds
@@ -97,6 +99,10 @@ def read_profile_csv_to_dict(profile_type: InputProfileTypes,
         )
 
 
+def create_energy_from_power_profile(profile_data_W, slot_length):
+    return _calculate_energy_from_power_profile(profile_data_W, slot_length)
+
+
 def _fill_gaps_in_rate_profile(rate_profile_input: Dict) -> Dict:
     """
     Fills time steps, where no rate is provided, with the rate value of the
@@ -112,7 +118,7 @@ def _fill_gaps_in_rate_profile(rate_profile_input: Dict) -> Dict:
             strftime(TIME_FORMAT)
 
         if time_str in rate_profile_input.keys():
-            current_rate = rate_profile_input[time_str]
+            current_rate = float(rate_profile_input[time_str])
         rate_profile[time_str] = current_rate
 
     return rate_profile

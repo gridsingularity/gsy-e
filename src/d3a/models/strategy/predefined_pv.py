@@ -8,7 +8,8 @@ from d3a.constants import TIME_FORMAT, PENDULUM_TIME_FORMAT
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.const import ConstSettings
-from d3a.models.read_user_profile import read_profile_csv_to_dict, read_arbitrary_profile
+from d3a.models.read_user_profile import read_profile_csv_to_dict, read_arbitrary_profile, \
+    create_energy_from_power_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.d3a_core.util import d3a_path
 from typing import Dict
@@ -73,11 +74,15 @@ class PVPredefinedStrategy(PVStrategy):
     def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
         """
         Reads profile data from the predefined power profiles. Reads config and constructor
-        parameters and selects the appropriate rpedefined profile.
+        parameters and selects the appropriate predefined profile.
         :return: key value pairs of time to energy in kWh
         """
         if self._power_profile_index is None:
-            self._power_profile_index = self.owner.config.cloud_coverage
+            if self.owner.config.pv_user_profile is not None:
+                return create_energy_from_power_profile(self.area.config.pv_user_profile,
+                                                        self.area.config.slot_length)
+            else:
+                self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
             profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv')
         elif self._power_profile_index == 1:  # 1:partial
