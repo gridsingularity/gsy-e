@@ -20,6 +20,17 @@ class OneSidedMarket(Market):
         super().__init__(time_slot, area, notification_listener, readonly)
         self.bc_interface = MarketBlockchainInterface(area)
 
+    def __repr__(self):  # pragma: no cover
+        return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
+            .format(" {}".format(self.time_slot_str),
+                    len(self.offers),
+                    sum(o.energy for o in self.offers.values()),
+                    sum(o.price for o in self.offers.values()),
+                    len(self.trades),
+                    self.accumulated_trade_energy,
+                    self.accumulated_trade_price
+                    )
+
     def balancing_offer(self, price, energy, seller, from_agent):
         assert False
 
@@ -83,9 +94,10 @@ class OneSidedMarket(Market):
                     accepted_offer_id = offer.id \
                         if self.area is None or self.area.bc is None \
                         else offer.real_id
+
                     accepted_offer = Offer(
                         accepted_offer_id,
-                        offer.price / offer.energy * energy,
+                        (offer.price / offer.energy) * energy,
                         energy,
                         offer.seller,
                         offer.market

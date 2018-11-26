@@ -76,3 +76,4 @@ class SimulationConfig:
         market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
         self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                         market_maker_rate_parsed)
+        self.market_maker_rate = {k: float(v) for k, v in self.market_maker_rate.items()}
