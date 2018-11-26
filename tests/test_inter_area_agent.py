@@ -4,9 +4,11 @@ import pendulum
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
+from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
+from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
 from d3a.models.strategy.area_agents.one_sided_engine import OfferInfo
 from d3a.models.const import ConstSettings
@@ -17,6 +19,10 @@ class FakeArea:
         self.name = name
         self.current_tick = 10
         self.future_market = None
+
+    @property
+    def config(self):
+        return DEFAULT_CONFIG
 
     def get_future_market_from_id(self, id):
         return self.future_market
@@ -384,6 +390,52 @@ def test_iaa_double_sided_performs_pay_as_bid_matching(iaa_double_sided_2):
     assert bid.price == 12
     assert bid.energy == 10
     assert offer == list(iaa_double_sided_2.lower_market.offers.values())[0]
+
+
+@pytest.fixture
+def iaa_double_sided_pay_as_clear():
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 3
+    lower_market = FakeMarket(sorted_offers=[],
+                              bids=[])
+    higher_market = FakeMarket([], [])
+    owner = FakeArea('owner')
+    iaa = TwoSidedPayAsClearAgent(owner=owner, lower_market=lower_market,
+                                  higher_market=higher_market)
+    iaa.event_tick(area=iaa.owner)
+    yield iaa
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+@pytest.mark.parametrize("offer, bid, MCP", [
+    ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4),
+    ([8, 9, 10, 11, 12, 13, 14], [8, 9, 10, 11, 12, 13, 14], 11),
+    ([2, 3, 3, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7], 5),
+])
+def test_iaa_double_sided_performs_pay_as_clear_matching(iaa_double_sided_pay_as_clear,
+                                                         offer, bid, MCP):
+    low_high_engine = \
+        next(filter(lambda e: e.name == "Low -> High", iaa_double_sided_pay_as_clear.engines))
+    iaa_double_sided_pay_as_clear.lower_market.sorted_offers = \
+        [Offer('id1', offer[0], 1, 'other'),
+         Offer('id2', offer[1], 1, 'other'),
+         Offer('id3', offer[2], 1, 'other'),
+         Offer('id4', offer[3], 1, 'other'),
+         Offer('id5', offer[4], 1, 'other'),
+         Offer('id6', offer[5], 1, 'other'),
+         Offer('id7', offer[6], 1, 'other')]
+
+    iaa_double_sided_pay_as_clear.lower_market._bids = \
+        [Bid('bid_id1', bid[0], 1, 'B', 'S'),
+         Bid('bid_id2', bid[1], 1, 'B', 'S'),
+         Bid('bid_id3', bid[2], 1, 'B', 'S'),
+         Bid('bid_id4', bid[3], 1, 'B', 'S'),
+         Bid('bid_id5', bid[4], 1, 'B', 'S'),
+         Bid('bid_id6', bid[5], 1, 'B', 'S'),
+         Bid('bid_id7', bid[6], 1, 'B', 'S')]
+
+    matched = low_high_engine._perform_pay_as_clear_matching()[0]
+    assert matched == MCP
 
 
 def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
