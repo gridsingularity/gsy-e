@@ -258,7 +258,7 @@ class Simulation:
                     if self.export_on_finish:
                         export = ExportAndPlot(self.area, self.export_path,
                                                DateTime.now(tz=TIME_ZONE).isoformat())
-                        json_dir = os.path.join(export.directory, "json_dir")
+                        json_dir = os.path.join(export.directory, "aggregated_results")
                         mkdir_from_str(json_dir)
                         for key, value in self.endpoint_buffer.generate_result_report().items():
                             json_file = os.path.join(json_dir, key)
