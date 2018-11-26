@@ -39,9 +39,7 @@ class SimulationConfig:
             else read_arbitrary_profile(InputProfileTypes.POWER,
                                         ast.literal_eval(pv_user_profile),
                                         self.slot_length)
-        self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                        ast.literal_eval(market_maker_rate),
-                                                        self.slot_length)
+        self.read_market_maker_rate(market_maker_rate)
 
         if iaa_fee is None:
             self.iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
@@ -70,3 +68,11 @@ class SimulationConfig:
             for k, v in self.__dict__.items()
             if k in fields
         }
+
+    def read_market_maker_rate(self, market_maker_rate):
+        """
+        Reads market_maker_rate from arbitrary input types
+        """
+        market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
+        self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                        market_maker_rate_parsed)

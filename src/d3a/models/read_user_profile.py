@@ -118,7 +118,7 @@ def _fill_gaps_in_rate_profile(rate_profile_input: Dict) -> Dict:
             strftime(TIME_FORMAT)
 
         if time_str in rate_profile_input.keys():
-            current_rate = float(rate_profile_input[time_str])
+            current_rate = rate_profile_input[time_str]
         rate_profile[time_str] = current_rate
 
     return rate_profile
