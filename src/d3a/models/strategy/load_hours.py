@@ -132,7 +132,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self._one_sided_market_event_tick(market)
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+                    ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self._double_sided_market_event_tick(market)
 
     def _allowed_operating_hours(self, time):
@@ -145,7 +146,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         for market in self.active_markets:
-            if ConstSettings.IAASettings.MARKET_TYPE == 2:
+            if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+                    ConstSettings.IAASettings.MARKET_TYPE == 3:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
                     if self.is_eligible_for_balancing_market:
                         bid_energy = \
