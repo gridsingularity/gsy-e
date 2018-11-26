@@ -48,3 +48,6 @@ class OneSidedAgent(InterAreaAgent):
             engine.event_offer_changed(market_id=market_id,
                                        existing_offer=existing_offer,
                                        new_offer=new_offer)
+
+    def __repr__(self):
+        return "<OneSidedAgent {s.name} {s.time_slot}>".format(s=self)

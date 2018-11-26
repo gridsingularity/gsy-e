@@ -12,6 +12,10 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         super().__init__(name, market_1, market_2, min_offer_age, transfer_fee_pct, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
 
+    def __repr__(self):
+        return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
+               "{s.markets.source.time_slot:%H:%M}>".format(s=self)
+
     def _forward_bid(self, bid):
         if bid.buyer == self.markets.target.area.name and \
            bid.seller == self.markets.source.area.name:
