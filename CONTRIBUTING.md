@@ -30,7 +30,7 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 * Consult our Wiki [D3A Wiki page](https://gridsingularity.atlassian.net/wiki/x/d4D5Mg)
 
-* If things are still unclear: Ask any question about how to use D3A in the [d3a mailing list](linktomailinglist).
+* If things are still unclear: Ask any question about how to use D3A in the [D3A mailing list](https://groups.io/g/d3a).
 
 
 #### **License**
