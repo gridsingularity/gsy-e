@@ -6,6 +6,8 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
+import json
+import os
 
 from pendulum import DateTime
 from pendulum import duration
@@ -16,7 +18,7 @@ from ptpython.repl import embed
 from d3a.blockchain import BlockChainInterface
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import SimulationException, D3AException
-from d3a.d3a_core.export import ExportAndPlot
+from d3a.d3a_core.export import ExportAndPlot, mkdir_from_str
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
@@ -254,8 +256,14 @@ class Simulation:
                     if not self.exit_on_finish:
                         log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
-                        ExportAndPlot(self.area, self.export_path,
-                                      DateTime.now(tz=TIME_ZONE).isoformat())
+                        export = ExportAndPlot(self.area, self.export_path,
+                                               DateTime.now(tz=TIME_ZONE).isoformat())
+                        json_dir = os.path.join(export.directory, "aggregated_results")
+                        mkdir_from_str(json_dir)
+                        for key, value in self.endpoint_buffer.generate_result_report().items():
+                            json_file = os.path.join(json_dir, key)
+                            with open(json_file, 'w') as outfile:
+                                json.dump(value, outfile)
                     if self.use_repl:
                         self._start_repl()
                     elif self.reset_on_finish:
