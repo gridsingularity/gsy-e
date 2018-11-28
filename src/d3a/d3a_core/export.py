@@ -23,6 +23,7 @@ import plotly as py
 import plotly.graph_objs as go
 import pendulum
 import shutil
+import json
 
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
@@ -44,9 +45,10 @@ def mkdir_from_str(directory: str, exist_ok=True, parents=True):
 
 class ExportAndPlot:
 
-    def __init__(self, root_area: Area, path: str, subdir: str):
+    def __init__(self, root_area: Area, path: str, subdir: str, endpoint_buffer):
         self.area = root_area
         self.export_data = FileExportEndpoints(root_area)
+        self.endpoint_buffer = endpoint_buffer
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -61,6 +63,15 @@ class ExportAndPlot:
             os.makedirs(self.plot_dir)
 
         self.export()
+        self.export_json_data(self.directory)
+
+    def export_json_data(self, directory: dir):
+        json_dir = os.path.join(directory, "aggregated_results")
+        mkdir_from_str(json_dir)
+        for key, value in self.endpoint_buffer.generate_json_report().items():
+            json_file = os.path.join(json_dir, key)
+            with open(json_file, 'w') as outfile:
+                json.dump(value, outfile)
 
     @staticmethod
     def _file_path(directory: dir, slug: str):
