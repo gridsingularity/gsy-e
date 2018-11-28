@@ -23,7 +23,7 @@ jobs:
        fi
 # allow solium failure until issues #55 and #65 are fixed
  allow_failures:
-   - python: 3.5
+   - python: 3.6
      env: TOXENV=solium
      install: .support/travis-install.sh
      script: .support/travis-run.sh
