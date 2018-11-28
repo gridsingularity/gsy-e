@@ -1,7 +1,20 @@
 """
-Create a load that uses a profile as input for its power values
-"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 from typing import Union
 
 from d3a.models.const import ConstSettings
@@ -10,6 +23,10 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.constants import TIME_FORMAT
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
+
+"""
+Create a load that uses a profile as input for its power values
+"""
 
 
 class DefinedLoadStrategy(LoadHoursStrategy):

@@ -16,7 +16,7 @@ VERSION = '1.0.0a0'
 
 setup(
     name="d3a",
-    description="GridSingularity AreaManager PoC",
+    description="GridSingularity AreaManager",
     long_description=README,
     author='GridSingularity',
     author_email='info@gridsingularity.com',
