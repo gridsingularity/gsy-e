@@ -20,7 +20,12 @@ from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
+from d3a.models.strategy.predefined_wind import WindUserProfileStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
+from d3a.models.strategy.electrolyzer import ElectrolyzerStrategy
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
@@ -122,7 +127,18 @@ def _is_cell_tower_node(area):
 
 
 def _is_load_node(area):
-    return isinstance(area.strategy, LoadHoursStrategy)
+    return isinstance(area.strategy, (LoadHoursStrategy, CellTowerLoadHoursStrategy,
+                                      ElectrolyzerStrategy))
+
+
+def _is_producer_node(area):
+    return isinstance(area.strategy, (PVStrategy, PVUserProfileStrategy,
+                                      PVPredefinedStrategy, WindUserProfileStrategy,
+                                      CommercialStrategy, FinitePowerPlant))
+
+
+def _is_prosumer_node(area):
+    return isinstance(area.strategy, StorageStrategy)
 
 
 def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
