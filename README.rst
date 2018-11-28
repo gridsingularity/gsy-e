@@ -6,7 +6,6 @@ The D3A is a blockchain-based, distributed energy market model developed by Grid
 the objective of supporting the Energy Web Foundation (EWF) mission to enable a decarbonized,
 decentralized, democratized and digitized energy system.
 
-See whitepaper here: <https://to-be-replaced-by-the-real.url>
 
 Code of Conduct
 ===============
