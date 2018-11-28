@@ -10,7 +10,8 @@ from d3a.models.read_user_profile import InputProfileTypes
 
 class SimulationConfig:
     def __init__(self, duration: duration, slot_length: duration, tick_length: duration,
-                 market_count: int, cloud_coverage: int, market_maker_rate, iaa_fee: int):
+                 market_count: int, cloud_coverage: int, market_maker_rate, iaa_fee: int,
+                 pv_user_profile=None):
         self.duration = duration
         self.slot_length = slot_length
         self.tick_length = tick_length
@@ -33,8 +34,13 @@ class SimulationConfig:
         else:
             raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
 
-        self.market_maker_rate = {}
+        self.pv_user_profile = None \
+            if pv_user_profile is None \
+            else read_arbitrary_profile(InputProfileTypes.POWER,
+                                        ast.literal_eval(pv_user_profile),
+                                        self.slot_length)
         self.read_market_maker_rate(market_maker_rate)
+
         if iaa_fee is None:
             self.iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
         else:
@@ -49,6 +55,7 @@ class SimulationConfig:
             "market_count='{s.market_count}', "
             "ticks_per_slot='{s.ticks_per_slot}', "
             "cloud_coverage='{s.cloud_coverage}', "
+            "pv_user_profile='{s.pv_user_profile}'. "
             "market_maker_rate='{s.market_maker_rate}', "
             ")>"
         ).format(s=self)
@@ -69,3 +76,4 @@ class SimulationConfig:
         market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
         self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                         market_maker_rate_parsed)
+        self.market_maker_rate = {k: float(v) for k, v in self.market_maker_rate.items()}

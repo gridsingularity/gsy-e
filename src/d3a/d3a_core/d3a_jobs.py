@@ -47,6 +47,7 @@ def start(scenario, settings):
         market_count=settings.get('market_count', 1),
         cloud_coverage=settings.get('cloud_coverage',
                                     ConstSettings.PVSettings.DEFAULT_POWER_PROFILE),
+        pv_user_profile=settings.get('pv_user_profile', None),
         market_maker_rate=settings.get('market_maker_rate', str(
             ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
         iaa_fee=settings.get('iaa_fee', ConstSettings.IAASettings.FEE_PERCENTAGE)
