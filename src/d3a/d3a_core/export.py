@@ -33,6 +33,8 @@ from d3a.d3a_core.sim_results.area_statistics import _is_house_node, \
     _is_load_node, _is_prosumer_node
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 
 
 _log = logging.getLogger(__name__)
@@ -54,6 +56,9 @@ class ExportAndPlot:
         self.export_data = FileExportEndpoints(root_area)
         self.endpoint_buffer = endpoint_buffer
         self.area_performance_index = dict()
+        self.cep_device = list()
+        self.cep_energy = 0
+        self.accumlated_trade_energy = 0
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -76,6 +81,10 @@ class ExportAndPlot:
         json_file = os.path.join(json_dir, "KPI")
         with open(json_file, 'w') as outfile:
             json.dump(self.area_performance_index, outfile)
+        json_file = os.path.join(json_dir, "non-renewable-share")
+        with open(json_file, 'w') as outfile:
+            cep_share = self.cep_energy / self.accumlated_trade_energy
+            json.dump(cep_share, outfile)
 
         for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key)
@@ -123,6 +132,19 @@ class ExportAndPlot:
             subdirectory.mkdir(exist_ok=True, parents=True)
             for child in area.children:
                 self._export_area_with_children(child, subdirectory)
+                if isinstance(child.strategy, (CommercialStrategy, FinitePowerPlant)):
+                    self.cep_device.append(child.name)
+                    for markets in area.past_markets:
+                        for trade in markets.trades:
+                            if trade.offer.seller not in self.cep_device:
+                                continue
+                            self.cep_energy += trade.offer.energy
+                if _is_load_node(child) or _is_prosumer_node(child):
+                    for markets in area.past_markets:
+                        for trade in markets.trades:
+                            if trade.buyer is child.name:
+                                self.accumlated_trade_energy += trade.offer.energy
+
         self._export_area_stats_csv_file(area, directory, balancing=False)
         self._export_area_stats_csv_file(area, directory, balancing=True)
         if area.children:
