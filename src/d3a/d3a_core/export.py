@@ -83,10 +83,9 @@ class ExportAndPlot:
             cep_share = self.cep_energy / self.accumlated_trade_energy
             self.area_performance_index["global-non-renewable-energy-share"] = cep_share
             json.dump(self.area_performance_index, outfile)
-        # json_file = os.path.join(json_dir, "non-renewable-share")
-        # with open(json_file, 'w') as outfile:
-        #     cep_share = self.cep_energy / self.accumlated_trade_energy
-        #     json.dump(cep_share, outfile)
+        json_file = os.path.join(json_dir, "trade-detail")
+        with open(json_file, 'w') as outfile:
+            json.dump(self.endpoint_buffer.trade_details, outfile)
 
         for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key)

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
-    export_cumulative_loads, export_price_energy_day
+    export_cumulative_loads, export_price_energy_day, generate_inter_area_trade_details
 from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 from d3a.d3a_core.sim_results.stats import energy_bills
 from collections import OrderedDict
@@ -45,6 +45,7 @@ class SimulationEndpointBuffer:
         self.tree_summary = {}
         self.bills = {}
         self.balancing_energy_bills = {}
+        self.trade_details = {}
 
     def generate_result_report(self):
         return {
@@ -99,6 +100,7 @@ class SimulationEndpointBuffer:
         self.balancing_energy_bills = self._update_bills(area, "past_balancing_markets")
 
         self._update_tree_summary(area)
+        self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 
     def _update_tree_summary(self, area):
         price_energy_list = export_price_energy_day(area)

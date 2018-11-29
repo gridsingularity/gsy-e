@@ -642,7 +642,4 @@ def test_sim_market_count(context):
     for market_1 in grid_1.past_markets:
         market_4 = grid_4.get_past_market(market_1.time_slot)
         for area in market_1.traded_energy.keys():
-            if not isclose(market_1.traded_energy[area], market_4.traded_energy[area]):
-                print(market_1.trades)
-                print(market_4.trades)
-                assert False
+            assert isclose(market_1.traded_energy[area], market_4.traded_energy[area])
