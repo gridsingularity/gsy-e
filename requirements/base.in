@@ -16,6 +16,7 @@ py-solc
 python-rex
 tablib
 terminaltables
+redis==2.10.6
 rq
 requests
 web3
