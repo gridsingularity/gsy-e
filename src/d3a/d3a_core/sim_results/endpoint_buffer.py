@@ -67,7 +67,7 @@ class SimulationEndpointBuffer:
             **self.unmatched_loads_redis,
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day,
-            "cumulative_grid_trades": self.cumulative_grid_trades_redis,
+            "cumulative_grid_trades": self.cumulative_grid_trades,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status
