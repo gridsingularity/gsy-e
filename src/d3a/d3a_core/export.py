@@ -78,13 +78,13 @@ class ExportAndPlot:
     def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
-        json_file = os.path.join(json_dir, "KPI")
-        with open(json_file, 'w') as outfile:
+        kpi_file = os.path.join(json_dir, "KPI")
+        with open(kpi_file, 'w') as outfile:
             cep_share = self.cep_energy / self.accumlated_trade_energy
             self.area_performance_index["global-non-renewable-energy-share"] = cep_share
             json.dump(self.area_performance_index, outfile)
-        json_file = os.path.join(json_dir, "trade-detail")
-        with open(json_file, 'w') as outfile:
+        trade_file = os.path.join(json_dir, "trade-detail")
+        with open(trade_file, 'w') as outfile:
             json.dump(self.endpoint_buffer.trade_details, outfile)
 
         for key, value in self.endpoint_buffer.generate_json_report().items():
