@@ -28,13 +28,7 @@ import json
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
-from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.sim_results.area_statistics import _is_house_node, \
-    _is_load_node, _is_prosumer_node
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
 
 
 _log = logging.getLogger(__name__)
@@ -55,10 +49,7 @@ class ExportAndPlot:
         self.area = root_area
         self.export_data = FileExportEndpoints(root_area)
         self.endpoint_buffer = endpoint_buffer
-        self.area_performance_index = dict()
-        self.cep_device = list()
-        self.cep_energy = 0
-        self.accumlated_trade_energy = 0
+        self.kpi = KPI()
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -80,9 +71,9 @@ class ExportAndPlot:
         mkdir_from_str(json_dir)
         kpi_file = os.path.join(json_dir, "KPI")
         with open(kpi_file, 'w') as outfile:
-            cep_share = self.cep_energy / self.accumlated_trade_energy
-            self.area_performance_index["global-non-renewable-energy-share"] = cep_share
-            json.dump(self.area_performance_index, outfile)
+            cep_share = self.kpi.cep_energy / self.kpi.total_energy
+            self.kpi.performance_index["global-non-renewable-energy-share"] = cep_share
+            json.dump(self.kpi.performance_index, outfile)
         trade_file = os.path.join(json_dir, "trade-detail")
         with open(trade_file, 'w') as outfile:
             json.dump(self.endpoint_buffer.trade_details, outfile)
@@ -131,26 +122,14 @@ class ExportAndPlot:
         if area.children:
             subdirectory = pathlib.Path(directory, area.slug.replace(' ', '_'))
             subdirectory.mkdir(exist_ok=True, parents=True)
+            self.kpi.accumulated_trade_energy(area)
             for child in area.children:
                 self._export_area_with_children(child, subdirectory)
-                if isinstance(child.strategy, (CommercialStrategy, FinitePowerPlant)):
-                    self.cep_device.append(child.name)
-                    for markets in area.past_markets:
-                        for trade in markets.trades:
-                            if trade.offer.seller not in self.cep_device:
-                                continue
-                            self.cep_energy += trade.offer.energy
-                if _is_load_node(child) or _is_prosumer_node(child):
-                    for markets in area.past_markets:
-                        for trade in markets.trades:
-                            if trade.buyer is child.name:
-                                self.accumlated_trade_energy += trade.offer.energy
 
         self._export_area_stats_csv_file(area, directory, balancing=False)
         self._export_area_stats_csv_file(area, directory, balancing=True)
         if area.children:
-            self.area_performance_index[area.name] = \
-                self._export_house_pv_self_consumption(area)
+            self.kpi.area_performance_index(area)
             self._export_trade_csv_files(area, directory, balancing=False)
             self._export_trade_csv_files(area, directory, balancing=True)
             self._export_area_offers_bids_csv_files(area, directory, "offers",
@@ -160,44 +139,6 @@ class ExportAndPlot:
             self._export_area_offers_bids_csv_files(area, directory, "balancing-offers",
                                                     BalancingOffer, "offers",
                                                     area.past_balancing_markets)
-
-    def _export_house_pv_self_consumption(self, area):
-        house_pv_device = list()
-        house_load_device = list()
-        trade_by_pv = 0
-        total_energy_bought = 0
-        traded_from_pv = 0
-        if not _is_house_node(area):
-            return
-        for child in area.children:
-            if isinstance(child.strategy,
-                          (PVStrategy, PVUserProfileStrategy, PVPredefinedStrategy)):
-                house_pv_device.append(child.name)
-            elif _is_load_node(child) or _is_prosumer_node(child):
-                house_load_device.append(child.name)
-
-        for markets in area.past_markets:
-            for trade in markets.trades:
-                # Total Electricity traded by house device
-                if trade.buyer in house_load_device:
-                    total_energy_bought += trade.offer.energy
-                # Electricity produced by PV
-                if trade.offer.seller in house_pv_device:
-                    trade_by_pv += trade.offer.energy
-                # PV electricity self_consumption
-                if trade.offer.seller in house_pv_device and trade.buyer in house_load_device:
-                    traded_from_pv += trade.offer.energy
-
-        if trade_by_pv != 0:
-            self_consumption_within_house = traded_from_pv / trade_by_pv
-        else:
-            self_consumption_within_house = 0
-        if total_energy_bought != 0:
-            self_sufficiency = traded_from_pv / total_energy_bought
-        else:
-            self_sufficiency = 0
-        return {"self_consumption_within_house": self_consumption_within_house,
-                "self_sufficiency": self_sufficiency}
 
     def _export_area_offers_bids_csv_files(self, area, directory, file_suffix,
                                            offer_type, market_member, past_markets):
