@@ -13,7 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-pragma solidity 0.4.25;
+pragma solidity 0.5.1;
 import "IOUToken.sol";
 import "Mortal.sol";
 
@@ -31,9 +31,9 @@ contract ClearingToken is IOUToken, Owned {
 
     constructor(
         uint128 _initialAmount,
-        string _tokenName,
+        string memory _tokenName,
         uint8 _decimalUnits,
-        string _tokenSymbol
+        string memory _tokenSymbol
     ) public IOUToken(
         _initialAmount,
         _tokenName,
@@ -105,7 +105,7 @@ contract ClearingToken is IOUToken, Owned {
     /*
      * @notice Gets all approved markets in the contracts
      */
-    function getApprovedMarkets() public view returns (address[]) {
+    function getApprovedMarkets() public view returns (address[] memory) {
         return clearingMembers;
     }
 
