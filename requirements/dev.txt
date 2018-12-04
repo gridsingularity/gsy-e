@@ -68,7 +68,6 @@ pluggy==0.7.1             # via tox
 pre-commit==1.11.1
 prompt-toolkit==2.0.5     # via ptpython
 ptpython==2.0.2
-py-solc==3.2.0
 py==1.6.0                 # via tox
 pyasn1==0.4.4             # via paramiko
 pycparser==2.19           # via cffi
@@ -87,7 +86,6 @@ requests==2.20.1
 retrying==1.3.3
 rlp==1.0.3
 rq==0.12.0
-semantic-version==2.6.0
 six==1.11.0
 tablib==0.12.1
 terminaltables==3.1.0

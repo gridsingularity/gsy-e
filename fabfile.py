@@ -94,10 +94,10 @@ def _ensure_ganache_cli():
 
 def _ensure_solidity_compiler():
     solidity_version = local('solc --version')
-    # Smart contracts depend on solc v0.4.25
-    if "0.4.25" not in solidity_version:
+    # Smart contracts depend on solc v0.5.1
+    if "0.5.1" not in solidity_version:
         local('brew install https://raw.githubusercontent.com/ethereum/'
-              'homebrew-ethereum/f26f126820e5f47c3ed7ec6d5e6e046707443d87/solidity.rb')
+              'homebrew-ethereum/8e6c5a613cd822e92cb5a239f3ef7c8576b60d90/solidity.rb')
 
 
 def _pre_check():
@@ -156,6 +156,8 @@ def sync():
             )
         )
         local('pip install --no-deps -e .')
+        # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
+        local('pip install git+https://github.com/Jonasmpi/py-solc.git')
     _post_check()
 
 
