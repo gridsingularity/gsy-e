@@ -13,11 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-pragma solidity 0.4.25;
+pragma solidity 0.5.;
 
 
 contract Owned {
-    address owner;
+    address payable owner;
 
     modifier onlyowner() {
         if (msg.sender == owner) {

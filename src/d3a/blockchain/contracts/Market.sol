@@ -13,7 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-pragma solidity 0.4.25;
+pragma solidity 0.5.1;
 import "ClearingToken.sol";
 
 
@@ -42,7 +42,7 @@ contract Market is Mortal {
     // The interval of time for which market can be used for trading
     uint private interval;
 
-    constructor(address clearingTokenAddress, uint _interval) public {
+    constructor(address payable clearingTokenAddress, uint _interval) public {
         clearingToken = ClearingToken(clearingTokenAddress);
         interval = _interval;
         marketStartTime = block.timestamp;
@@ -83,7 +83,7 @@ contract Market is Mortal {
             emit CancelOffer(cancelledOffer.energyUnits, cancelledOffer.price, cancelledOffer.seller);
             cancelledOffer.energyUnits = 0;
             cancelledOffer.price = 0;
-            cancelledOffer.seller = 0;
+            cancelledOffer.seller = address(0);
             success = true;
         } else {
             success = false;
@@ -140,7 +140,7 @@ contract Market is Mortal {
                 emit NewTrade(tradeId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, true);
                 tradedOffer.energyUnits = 0;
                 tradedOffer.price = 0;
-                tradedOffer.seller = 0;
+                tradedOffer.seller = address(0);
                 success = true;
             } else {
                 emit NewTrade(offerId, buyer, tradedOffer.seller, tradedEnergyUnits, tradedOffer.price, false);
