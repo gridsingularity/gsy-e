@@ -12,7 +12,8 @@ pendulum
 pint
 pip-tools
 plotly
-py-solc
+# TODO: Deactivating solidity compiler due to bug
+# py-solc
 python-rex
 tablib
 terminaltables
