@@ -23,7 +23,6 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.d3a_core.sim_results.area_statistics import _is_house_node, \
     _is_load_node, _is_prosumer_node
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 
@@ -221,26 +220,33 @@ class ExportLeafData(ExportData):
 class KPI:
     def __init__(self):
         self.performance_index = dict()
-        self.cep_device = list()
-        self.cep_energy = 0
-        self.total_energy = 0
+        self._cep_device = list()
+        self._cep_energy = 0
+        self._total_energy = 0
 
-    def accumulated_trade_energy(self, area):
+    def __repr__(self):
+        return f"KPI: {self.performance_index}"
+
+    def _accumulated_trade_energy(self, area):
         for child in area.children:
             if isinstance(child.strategy, (CommercialStrategy, FinitePowerPlant)):
-                self.cep_device.append(child.name)
-                for markets in area.past_markets:
-                    for trade in markets.trades:
-                        if trade.offer.seller not in self.cep_device:
-                            continue
-                        self.cep_energy += trade.offer.energy
-            if _is_load_node(child) or _is_prosumer_node(child):
-                for markets in area.past_markets:
-                    for trade in markets.trades:
-                        if trade.buyer is child.name:
-                            self.total_energy += trade.offer.energy
+                self._cep_device.append(child.name)
+                self._accumulate_energy(area, child, True)
+            elif _is_load_node(child) or _is_prosumer_node(child):
+                self._accumulate_energy(area, child, False)
 
-    def export_house_pv_self_consumption(self, area):
+    def _accumulate_energy(self, area, child, is_cep: bool):
+        for markets in area.past_markets:
+            for trade in markets.trades:
+                if is_cep:
+                    if trade.offer.seller not in self._cep_device:
+                        continue
+                    self._cep_energy += trade.offer.energy
+                else:
+                    if trade.buyer is child.name:
+                        self._total_energy += trade.offer.energy
+
+    def _export_house_pv_self_consumption(self, area):
         house_pv_device = list()
         house_load_device = list()
         trade_by_pv = 0
@@ -249,8 +255,7 @@ class KPI:
         if not _is_house_node(area):
             return
         for child in area.children:
-            if isinstance(child.strategy,
-                          (PVStrategy, PVUserProfileStrategy, PVPredefinedStrategy)):
+            if isinstance(child.strategy, PVStrategy):
                 house_pv_device.append(child.name)
             elif _is_load_node(child) or _is_prosumer_node(child):
                 house_load_device.append(child.name)
@@ -275,9 +280,13 @@ class KPI:
             self_sufficiency = traded_from_pv / total_energy_bought
         else:
             self_sufficiency = 0
+
         return {"self_consumption_within_house": self_consumption_within_house,
                 "self_sufficiency": self_sufficiency}
 
     def area_performance_index(self, area):
+        self._accumulated_trade_energy(area)
         self.performance_index[area.name] = \
-            self.export_house_pv_self_consumption(area)
+            self._export_house_pv_self_consumption(area)
+        cep_share = self._cep_energy / self._total_energy
+        self.performance_index["global-non-renewable-energy-share"] = cep_share

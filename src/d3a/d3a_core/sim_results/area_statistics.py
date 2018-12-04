@@ -136,7 +136,7 @@ def _is_prosumer_node(area):
 
 def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
     accumulated_trades[load.name] = {
-        "type": load.name,
+        "type": "cell_tower" if is_cell_tower else "load",
         "id": load.area_id,
         "produced": 0.0,
         "earned": 0.0,
@@ -154,7 +154,6 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
 
 def _accumulate_producer_trades(load, grid, accumulated_trades):
     accumulated_trades[load.name] = {
-        "type": load.name,
         "id": load.area_id,
         "produced": 0.0,
         "earned": 0.0,
@@ -172,7 +171,7 @@ def _accumulate_producer_trades(load, grid, accumulated_trades):
 def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types):
     if house.name not in accumulated_trades:
         accumulated_trades[house.name] = {
-            "type": house.name,
+            "type": "house",
             "id": house.area_id,
             "produced": 0.0,
             "earned": 0.0,

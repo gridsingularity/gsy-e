@@ -71,8 +71,6 @@ class ExportAndPlot:
         mkdir_from_str(json_dir)
         kpi_file = os.path.join(json_dir, "KPI")
         with open(kpi_file, 'w') as outfile:
-            cep_share = self.kpi.cep_energy / self.kpi.total_energy
-            self.kpi.performance_index["global-non-renewable-energy-share"] = cep_share
             json.dump(self.kpi.performance_index, outfile)
         trade_file = os.path.join(json_dir, "trade-detail")
         with open(trade_file, 'w') as outfile:
@@ -122,7 +120,6 @@ class ExportAndPlot:
         if area.children:
             subdirectory = pathlib.Path(directory, area.slug.replace(' ', '_'))
             subdirectory.mkdir(exist_ok=True, parents=True)
-            self.kpi.accumulated_trade_energy(area)
             for child in area.children:
                 self._export_area_with_children(child, subdirectory)
 
@@ -130,6 +127,7 @@ class ExportAndPlot:
         self._export_area_stats_csv_file(area, directory, balancing=True)
         if area.children:
             self.kpi.area_performance_index(area)
+            # self.kpi.accumulated_trade_energy(area)
             self._export_trade_csv_files(area, directory, balancing=False)
             self._export_trade_csv_files(area, directory, balancing=True)
             self._export_area_offers_bids_csv_files(area, directory, "offers",
