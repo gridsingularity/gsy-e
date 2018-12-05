@@ -31,6 +31,7 @@ class ConstSettings:
         # Number of times Market clearing rate has to be calculated per slot
         MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
         ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
+        SETUP_FILE_PATH = None  # Default path of the available setup files
 
     class StorageSettings:
         # Max battery capacity in kWh.
