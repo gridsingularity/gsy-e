@@ -86,7 +86,6 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.grid._markets.past_markets[timeslot] = mock_market
 
         unmatched_loads = export_unmatched_loads(self.grid, all_devices=True)
-        print(unmatched_loads)
         assert self.area3.name in unmatched_loads["areas"]
         assert unmatched_loads["areas"][self.area3.name]["unmatched_load_count"] == 10
         assert unmatched_loads["unmatched_load_count"] == 10

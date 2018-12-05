@@ -36,13 +36,13 @@ BalancingSettings = ConstSettings.BalancingSettings
 
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
-    parameters = ('risk', 'initial_capacity_kWh', 'initial_soc',
+    parameters = ('risk', 'initial_capacity_kWh', 'initial_soc', 'initial_rate_option',
+                  'energy_rate_decrease_option', 'energy_rate_decrease_per_update',
                   'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
                   )
 
     def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
-                 initial_capacity_kWh: float=StorageSettings.MIN_ALLOWED_SOC *
-                                             StorageSettings.CAPACITY,
+                 initial_capacity_kWh: float=None,
                  initial_soc: float=None,
                  initial_rate_option: int=StorageSettings.INITIAL_RATE_OPTION,
                  energy_rate_decrease_option: int=StorageSettings.RATE_DECREASE_OPTION,
@@ -57,6 +57,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
                  cap_price_strategy: bool=False,
                  min_allowed_soc=None):
+
+        if type(break_even) == list:
+            break_even = tuple(break_even)
 
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
