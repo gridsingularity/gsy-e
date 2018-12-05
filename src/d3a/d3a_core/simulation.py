@@ -118,7 +118,14 @@ class Simulation:
 
     def _load_setup_module(self):
         try:
-            self.setup_module = import_module(".{}".format(self.setup_module_name), 'd3a.setup')
+
+            if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None:
+                self.setup_module = import_module(".{}".format(self.setup_module_name),
+                                                  'd3a.setup')
+            else:
+                import sys
+                sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
+                self.setup_module = import_module("{}".format(self.setup_module_name))
             log.info("Using setup module '%s'", self.setup_module_name)
         except ImportError as ex:
             raise SimulationException(
