@@ -20,6 +20,7 @@ from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name
 
@@ -125,6 +126,14 @@ def _is_load_node(area):
     return isinstance(area.strategy, LoadHoursStrategy)
 
 
+def _is_producer_node(area):
+    return isinstance(area.strategy, (PVStrategy, CommercialStrategy))
+
+
+def _is_prosumer_node(area):
+    return isinstance(area.strategy, StorageStrategy)
+
+
 def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
     accumulated_trades[load.name] = {
         "type": "cell_tower" if is_cell_tower else "load",
@@ -140,6 +149,22 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
                 sell_id = area_name_from_area_or_iaa_name(trade.seller)
                 accumulated_trades[load.name]["consumedFrom"][sell_id] += trade.offer.energy
                 accumulated_trades[load.name]["spentTo"][sell_id] += trade.offer.price
+    return accumulated_trades
+
+
+def _accumulate_producer_trades(load, grid, accumulated_trades):
+    accumulated_trades[load.name] = {
+        "id": load.area_id,
+        "produced": 0.0,
+        "earned": 0.0,
+        "consumedFrom": defaultdict(int),
+        "spentTo": defaultdict(int),
+    }
+    for market in grid.past_markets:
+        for trade in market.trades:
+            if trade.offer.seller == load.name:
+                accumulated_trades[load.name]["produced"] += trade.offer.energy
+                accumulated_trades[load.name]["earned"] += trade.offer.price
     return accumulated_trades
 
 
@@ -206,6 +231,10 @@ def _accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_ty
             accumulated_trades = _accumulate_load_trades(
                 child, area, accumulated_trades, is_cell_tower=False
             )
+        if _is_producer_node(child):
+            accumulated_trades = _accumulate_producer_trades(
+                child, area, accumulated_trades)
+
         elif child.children == []:
             # Leaf node, no need for calculating cumulative trades, continue iteration
             continue
@@ -285,6 +314,19 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
     return consumption_rows
 
 
+def generate_inter_area_trade_details(area, past_market_types):
+    accumulated_trades = _accumulate_grid_trades_all_devices(area, {}, past_market_types)
+    trade_details = dict()
+    for area_name, area_data in accumulated_trades.items():
+        total_energy = 0
+        for name, energy in area_data["consumedFrom"].items():
+            total_energy += energy
+        for name, energy in area_data["consumedFrom"].items():
+            area_data["consumedFrom"][name] = str((energy / total_energy) * 100) + "%"
+        trade_details[area_name] = area_data
+    return trade_details
+
+
 def export_cumulative_grid_trades(area, past_market_types, all_devices=False):
     accumulated_trades = _accumulate_grid_trades_all_devices(area, {}, past_market_types) \
         if all_devices \
@@ -299,7 +341,6 @@ def export_cumulative_grid_trades(area, past_market_types, all_devices=False):
             _generate_self_consumption_entries(accumulated_trades),
             # Then consumption entries for intra-house trades
             *_generate_intraarea_consumption_entries(accumulated_trades)]
-
     }
 
 
