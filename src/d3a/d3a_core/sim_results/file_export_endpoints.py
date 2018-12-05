@@ -284,9 +284,12 @@ class KPI:
         return {"self_consumption_within_house": self_consumption_within_house,
                 "self_sufficiency": self_sufficiency}
 
-    def area_performance_index(self, area):
+    def update_kpis_from_area(self, area):
         self._accumulated_trade_energy(area)
         self.performance_index[area.name] = \
             self._export_house_pv_self_consumption(area)
-        cep_share = self._cep_energy / self._total_energy
+        if self._total_energy is not 0:
+            cep_share = self._cep_energy / self._total_energy
+        else:
+            cep_share = 0
         self.performance_index["global-non-renewable-energy-share"] = cep_share

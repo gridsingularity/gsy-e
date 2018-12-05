@@ -126,8 +126,7 @@ class ExportAndPlot:
         self._export_area_stats_csv_file(area, directory, balancing=False)
         self._export_area_stats_csv_file(area, directory, balancing=True)
         if area.children:
-            self.kpi.area_performance_index(area)
-            # self.kpi.accumulated_trade_energy(area)
+            self.kpi.update_kpis_from_area(area)
             self._export_trade_csv_files(area, directory, balancing=False)
             self._export_trade_csv_files(area, directory, balancing=True)
             self._export_area_offers_bids_csv_files(area, directory, "offers",
