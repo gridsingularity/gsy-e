@@ -37,7 +37,8 @@ class PVPredefinedStrategy(PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-    parameters = ('panel_count', 'risk')
+    parameters = ('panel_count', 'risk', 'min_selling_rate', 'energy_rate_decrease_option',
+                  'energy_rate_decrease_per_update')
 
     def __init__(self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK, panel_count: int=1,
                  min_selling_rate: float=ConstSettings.PVSettings.MIN_SELLING_RATE,
@@ -120,7 +121,8 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ('power_profile', 'risk', 'panel_count')
+    parameters = ('panel_count', 'risk', 'min_selling_rate', 'energy_rate_decrease_option',
+                  'energy_rate_decrease_per_update', 'power_profile')
 
     def __init__(self, power_profile, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
                  panel_count: int=1,
