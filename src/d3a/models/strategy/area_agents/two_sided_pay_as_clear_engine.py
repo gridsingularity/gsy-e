@@ -100,7 +100,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         if clearing is None:
             return
         clearing_rate, clearing_energy = clearing
-        log.info(f"Market Clearing Rate: {clearing_rate} & Clearing Energy: {clearing_energy} ")
+        log.info(f"[AREA]: {self.owner.name} ||| [ENGINE]: {self.name} ||| MCR: {clearing_rate} "
+                 f"||| Clearing Energy: {clearing_energy} ")
         self.clearing_rate.append(clearing_rate)
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:
@@ -127,6 +128,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     price_drop=True
                 )
                 cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
+            self._delete_forwarded_bid_entries(bid)
 
         cumulative_traded_offers = 0
         for offer in self.sorted_offers:
@@ -150,6 +152,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         energy=offer.energy,
                                         price_drop=True)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
+            self._delete_forwarded_offer_entries(offer)
 
     def tick(self, *, area):
         super().tick(area=area)

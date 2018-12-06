@@ -66,8 +66,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
                    price_drop: bool = True):
         market_bid = self.bids.pop(bid.id, None)
-        print(f"demand_energy: {energy}")
-        print(f"market_bid.energy: {market_bid.energy}")
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
 
