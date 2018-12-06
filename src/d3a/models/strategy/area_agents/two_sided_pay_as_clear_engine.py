@@ -100,8 +100,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         if clearing is None:
             return
         clearing_rate, clearing_energy = clearing
-        log.info(f"[AREA]: {self.owner.name} ||| [ENGINE]: {self.name} ||| MCR: {clearing_rate} "
-                 f"||| Clearing Energy: {clearing_energy} ")
+        self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
+                            f"||| Clearing Energy: {clearing_energy} ")
         self.clearing_rate.append(clearing_rate)
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:
@@ -118,7 +118,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     price_drop=True
                 )
             elif (bid.price/bid.energy) >= clearing_rate and \
-                    ((clearing_energy - cumulative_traded_bids) <= bid.energy and not 0):
+                    (0 < (clearing_energy - cumulative_traded_bids) <= bid.energy):
 
                 self.markets.source.accept_bid(
                     bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
