@@ -168,6 +168,8 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
         if isinstance(daily_profile, str):
             # JSON
             input_profile = ast.literal_eval(daily_profile)
+            # Remove filename entry to support d3a-web profiles
+            input_profile.pop("filename", None)
             input_profile = {k: float(v) for k, v in input_profile.items()}
 
         elif isinstance(list(daily_profile.keys())[0], str):
