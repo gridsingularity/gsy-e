@@ -192,7 +192,10 @@ def get_cached_joined_contract_source(contract_name):
 
 def iterate_over_all_d3a_setup():
     module_list = []
-    for loader, module_name, is_pkg in walk_packages(d3a_setup.__path__):
+    d3a_modules_path = d3a_setup.__path__ \
+        if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None \
+        else [ConstSettings.GeneralSettings.SETUP_FILE_PATH]
+    for loader, module_name, is_pkg in walk_packages(d3a_modules_path):
         if is_pkg:
             loader.find_module(module_name).load_module(module_name)
         else:

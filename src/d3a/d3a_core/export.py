@@ -23,11 +23,12 @@ import plotly as py
 import plotly.graph_objs as go
 import pendulum
 import shutil
+import json
 
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
-from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
+from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
 
 
 _log = logging.getLogger(__name__)
@@ -44,9 +45,11 @@ def mkdir_from_str(directory: str, exist_ok=True, parents=True):
 
 class ExportAndPlot:
 
-    def __init__(self, root_area: Area, path: str, subdir: str):
+    def __init__(self, root_area: Area, path: str, subdir: str, endpoint_buffer):
         self.area = root_area
         self.export_data = FileExportEndpoints(root_area)
+        self.endpoint_buffer = endpoint_buffer
+        self.kpi = KPI()
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -61,6 +64,22 @@ class ExportAndPlot:
             os.makedirs(self.plot_dir)
 
         self.export()
+        self.export_json_data(self.directory)
+
+    def export_json_data(self, directory: dir):
+        json_dir = os.path.join(directory, "aggregated_results")
+        mkdir_from_str(json_dir)
+        kpi_file = os.path.join(json_dir, "KPI")
+        with open(kpi_file, 'w') as outfile:
+            json.dump(self.kpi.performance_index, outfile)
+        trade_file = os.path.join(json_dir, "trade-detail")
+        with open(trade_file, 'w') as outfile:
+            json.dump(self.endpoint_buffer.trade_details, outfile)
+
+        for key, value in self.endpoint_buffer.generate_json_report().items():
+            json_file = os.path.join(json_dir, key)
+            with open(json_file, 'w') as outfile:
+                json.dump(value, outfile)
 
     @staticmethod
     def _file_path(directory: dir, slug: str):
@@ -103,9 +122,11 @@ class ExportAndPlot:
             subdirectory.mkdir(exist_ok=True, parents=True)
             for child in area.children:
                 self._export_area_with_children(child, subdirectory)
+
         self._export_area_stats_csv_file(area, directory, balancing=False)
         self._export_area_stats_csv_file(area, directory, balancing=True)
         if area.children:
+            self.kpi.update_kpis_from_area(area)
             self._export_trade_csv_files(area, directory, balancing=False)
             self._export_trade_csv_files(area, directory, balancing=True)
             self._export_area_offers_bids_csv_files(area, directory, "offers",
