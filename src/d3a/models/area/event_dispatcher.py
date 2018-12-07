@@ -61,6 +61,8 @@ class AreaDispatcher:
         return self._broadcast_notification
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+        if not self.area.events.is_connected:
+            return
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
@@ -93,9 +95,9 @@ class AreaDispatcher:
             self.area._cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.area.activate()
-        if self.area.strategy:
+        if self.area.strategy and self.area.events.is_device_operational:
             self.area.strategy.event_listener(event_type, **kwargs)
-        if self.area.appliance:
+        if self.area.appliance and self.area.events.is_device_operational:
             self.area.appliance.event_listener(event_type, **kwargs)
 
     @staticmethod
