@@ -18,9 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.area.events import DisconnectAreaEvent
+from d3a.models.area.events import DisableAreaEvent, EnableAreaEvent
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 
@@ -30,17 +29,14 @@ def get_setup(config):
         children=[
             Area(
                 'House 1',
-                event_list=[DisconnectAreaEvent(12)],
+                event_list=[DisableAreaEvent(12), EnableAreaEvent(16)],
                 children=[
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       max_energy_rate=27),
-                         appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=15,
-                                                                 battery_capacity_kWh=30),
-                         appliance=SwitchableAppliance()),
+                                                                       max_energy_rate=35),
+                         appliance=SwitchableAppliance())
                 ]
             ),
             Area('Commercial Energy Producer',

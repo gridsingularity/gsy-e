@@ -61,7 +61,7 @@ class AreaDispatcher:
         return self._broadcast_notification
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-        if not self.area.events.is_connected:
+        if not self.area.events.is_enabled:
             return
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
@@ -72,6 +72,8 @@ class AreaDispatcher:
                 # exclude past IAAs
                 continue
 
+            if not self.area.events.is_connected:
+                break
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         # Also broadcast to BAs. Again in random order
@@ -80,6 +82,8 @@ class AreaDispatcher:
                 # exclude past BAs
                 continue
 
+            if not self.area.events.is_connected:
+                break
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         for listener in self.listeners:
@@ -95,9 +99,9 @@ class AreaDispatcher:
             self.area._cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.area.activate()
-        if self.area.strategy and self.area.events.is_device_operational:
+        if self.area.strategy and self.area.events.is_connected and self.area.events.is_enabled:
             self.area.strategy.event_listener(event_type, **kwargs)
-        if self.area.appliance and self.area.events.is_device_operational:
+        if self.area.appliance and self.area.events.is_connected and self.area.events.is_enabled:
             self.area.appliance.event_listener(event_type, **kwargs)
 
     @staticmethod
@@ -116,6 +120,8 @@ class AreaDispatcher:
         if not self.area.parent:
             return
         if self.area.strategy:
+            return
+        if not self.area.parent.events.is_connected:
             return
 
         agent_class = self.select_agent_class(is_spot_market)

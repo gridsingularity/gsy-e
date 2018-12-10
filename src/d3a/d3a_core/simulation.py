@@ -379,7 +379,7 @@ class Simulation:
         if self.paused:
             start = time.monotonic()
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
-            self.endpoint_buffer.update(self.area, self.status)
+            self.endpoint_buffer.update_stats(self.area, self.status)
             self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
             while self.paused and not self.interrupt.is_set():
                 self._handle_input(console, 0.1)
