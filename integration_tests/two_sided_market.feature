@@ -41,3 +41,9 @@ Feature: Two sided market tests
     And d3a is installed
     When we run the simulation with setup file two_sided_market.user_min_rate_profile_load_dict and parameters [24, 15, 15, 1, 4]
     Then LoadHoursStrategy buys energy with rates equal to the min rate profile
+
+  Scenario: LoadHoursStrategy buys energy in the min energy rate
+    Given we have a scenario named two_sided_market/one_cep_one_load
+    And d3a is installed
+    When we run the simulation with setup file two_sided_market.one_cep_one_load and parameters [24, 15, 15, 0, 4]
+    Then LoadHoursStrategy buys energy at the max_energy_rate
