@@ -38,6 +38,7 @@ from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.markets import AreaMarkets
+from d3a.models.area.events import Events
 
 log = getLogger(__name__)
 
@@ -61,7 +62,8 @@ class Area:
                  appliance: BaseAppliance = None,
                  config: SimulationConfig = None,
                  budget_keeper=None,
-                 balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO):
+                 balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
+                 event_list=[]):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -77,7 +79,7 @@ class Area:
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
-
+        self.events = Events(event_list)
         self.budget_keeper = budget_keeper
         if budget_keeper:
             self.budget_keeper.area = self
@@ -164,6 +166,7 @@ class Area:
             self.dispatcher.broadcast_balancing_market_cycle()
 
     def tick(self, is_root_area=False):
+        self.events.update_events(self.now)
         if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()
         self.dispatcher.broadcast_tick(area=self)
