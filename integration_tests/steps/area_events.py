@@ -49,8 +49,6 @@ def load_uses_battery_before(context, hour):
     for market in house1.past_markets:
         if market.time_slot.hour >= hour:
             continue
-        print(market.time_slot.hour)
-        print(market.trades)
         assert len(market.trades) == 1
         assert all(t.seller == "IAA House 1" and t.buyer == "H1 General Load"
                    for t in market.trades)
@@ -83,3 +81,50 @@ def battery_not_charge(context, start_hour, end_hour):
         assert len(market.trades) == 1
         assert market.trades[0].seller == "H1 Storage1" and \
             market.trades[0].buyer == "H1 General Load"
+
+
+@then('load consumes less than {energy} kWh between {start_time}:00 and {end_time}:00')
+def load_consumes_less_than_between(context, energy, start_time, end_time):
+    start_time = int(start_time)
+    end_time = int(end_time)
+    energy = float(energy)
+
+    for market in context.simulation.area.past_markets:
+        if not start_time <= market.time_slot.hour < end_time:
+            continue
+        assert market.trades[0].seller == "IAA House 1" and \
+            market.trades[0].buyer == "Grid Load"
+        assert market.trades[0].offer.energy <= energy
+
+
+@then('load consumes {energy} kWh before {hour}:00')
+def load_consumes_before(context, energy, hour):
+    hour = int(hour)
+    energy = float(energy)
+
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+
+    for market in house1.past_markets:
+        if market.time_slot.hour >= hour:
+            continue
+        assert len(market.trades) == 1
+        assert market.trades[0].seller == "IAA House 1" and \
+            market.trades[0].buyer == "H1 General Load"
+        assert market.trades[0].offer.energy == energy
+
+
+@then('load consumes {energy} kWh between {start_time}:00 and {end_time}:00')
+def load_consumes_between(context, energy, start_time, end_time):
+    start_time = int(start_time)
+    end_time = int(end_time)
+    energy = float(energy)
+
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+
+    for market in house1.past_markets:
+        if not start_time <= market.time_slot.hour < end_time:
+            continue
+        assert len(market.trades) == 1
+        assert market.trades[0].seller == "IAA House 1" and \
+            market.trades[0].buyer == "H1 General Load"
+        assert market.trades[0].offer.energy == energy

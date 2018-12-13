@@ -1,5 +1,5 @@
 from d3a.models.area.event_types import EnableAreaEvent, DisableAreaEvent, ConnectAreaEvent, \
-    DisconnectAreaEvent, DisableIntervalAreaEvent, DisconnectIntervalAreaEvent
+    DisconnectAreaEvent, DisableIntervalAreaEvent, DisconnectIntervalAreaEvent, StrategyEvents
 
 
 class IndividualEvents:
@@ -63,7 +63,8 @@ class ConnectDisconnectEvents:
 
 
 class Events:
-    def __init__(self, event_list):
+    def __init__(self, event_list, strategy):
+        self.strategy = strategy
         self.enable_disable_events = EnableDisableEvents(
             [e for e in event_list if type(e) in [DisableAreaEvent, EnableAreaEvent]],
             [e for e in event_list if type(e) is DisableIntervalAreaEvent],
@@ -74,9 +75,13 @@ class Events:
             [e for e in event_list if type(e) is DisconnectIntervalAreaEvent],
         )
 
-    def update_events(self, current_time):
+        self.strategy_events = [e for e in event_list if type(e) == StrategyEvents]
+
+    def update_events(self, current_time, strategy=None):
         self.enable_disable_events.update_events(current_time)
         self.connect_disconnect_events.update_events(current_time)
+        for ev in self.strategy_events:
+            ev.tick(current_time, self.strategy)
 
     @property
     def is_enabled(self):

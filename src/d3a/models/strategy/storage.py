@@ -54,7 +54,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                              StorageSettings.BREAK_EVEN_SELL),
                  balancing_energy_ratio: tuple=(BalancingSettings.OFFER_DEMAND_RATIO,
                                                 BalancingSettings.OFFER_SUPPLY_RATIO),
-
                  cap_price_strategy: bool=False,
                  min_allowed_soc=None):
 
