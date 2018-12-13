@@ -39,25 +39,20 @@ def no_trades_between(context, start_hour, end_hour):
                if start_hour <= market.time_slot.hour < end_hour)
 
 
-@then('load uses battery energy and battery charges from grid before {hour}:00')
+@then('load and battery use energy from grid before {hour}:00')
 def load_uses_battery_before(context, hour):
-    # TODO: Should be changed once https://gridsingularity.atlassian.net/browse/D3ASIM-852
-    # is fixed
     hour = int(hour)
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
 
     for market in house1.past_markets:
         if market.time_slot.hour >= hour:
             continue
-        assert len(market.trades) == 1
-        assert all(t.seller == "IAA House 1" and t.buyer == "H1 General Load"
-                   for t in market.trades)
+        assert len(market.trades) == 2
+        assert all(t.seller == "IAA House 1" for t in market.trades)
 
 
-@then('load uses battery energy and battery charges from grid after {hour}:00')
+@then('load and battery use energy from grid after {hour}:00')
 def load_uses_battery_after(context, hour):
-    # TODO: Should be changed once https://gridsingularity.atlassian.net/browse/D3ASIM-852
-    # is fixed
     hour = int(hour)
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
 
