@@ -49,8 +49,6 @@ def load_uses_battery_before(context, hour):
     for market in house1.past_markets:
         if market.time_slot.hour >= hour:
             continue
-        print(market.time_slot.hour)
-        print(market.trades)
         assert len(market.trades) == 1
         assert all(t.seller == "IAA House 1" and t.buyer == "H1 General Load"
                    for t in market.trades)
