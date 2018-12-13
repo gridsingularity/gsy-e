@@ -30,3 +30,10 @@ Feature: Storage tests
    When we run the d3a simulation with jira.d3asim_639_custom_storage [24, 15, 30]
    Then the storage offers and buys energy as expected at expected prices
 
+  Scenario: Storage buys and offers energy in the same market slot
+   Given we have a scenario named strategy_tests/storage_buys_and_offers
+   And d3a is installed
+   When we run the d3a simulation with strategy_tests.storage_buys_and_offers [24, 60, 60]
+   Then the SOC reaches 100% within the first 2 market slots
+
+

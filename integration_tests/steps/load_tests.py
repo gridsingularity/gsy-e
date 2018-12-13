@@ -19,6 +19,7 @@ from behave import then
 from pendulum import duration
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.constants import TIME_FORMAT
+from math import isclose
 from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 
 
@@ -101,3 +102,18 @@ def check_min_user_rate_profile_dict(context):
                        int(load2.strategy.min_energy_rate[market.time_slot_str])
             else:
                 assert False, "All trades should be bought by load1 or load2, no other consumer."
+
+
+@then('LoadHoursStrategy buys energy at the max_energy_rate')
+def check_bid_update_frequency(context):
+    house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    load1 = next(filter(lambda x: x.name == "H1 General Load", house.children))
+
+    for market in house.past_markets:
+        assert len(market.trades) > 0
+        for trade in market.trades:
+            if trade.buyer == load1.name:
+                assert isclose((trade.offer.price / trade.offer.energy),
+                               (load1.strategy.max_energy_rate[market.time_slot_str]))
+            else:
+                assert False, "All trades should be bought by load1, no other consumer."
