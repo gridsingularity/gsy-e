@@ -464,6 +464,9 @@ class BarGraph:
             return
 
         layout = go.Layout(
+            autosize=False,
+            width=1200,
+            height=700,
             barmode=barmode,
             title=title,
             yaxis=dict(
