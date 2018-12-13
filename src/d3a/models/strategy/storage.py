@@ -235,7 +235,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                     and (offer.price / offer.energy) < max_affordable_offer_rate:
                 try:
                     max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
-                    if not self.state.has_battery_reached_max_power(max_energy, market.time_slot):
+                    if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
                         self.accept_offer(market, offer, energy=max_energy)
                         self.state.pledged_buy_kWh[market.time_slot] += max_energy
                         return True
@@ -253,7 +253,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         for market in markets_to_sell:
             selling_rate = self.calculate_selling_rate(market)
             energy = energy_sell_dict[market.time_slot]
-            if not self.state.has_battery_reached_max_power(-energy, market.time_slot):
+            if not self.state.has_battery_reached_max_power(energy, market.time_slot):
                 if energy > 0.0:
                     offer = market.offer(
                         energy * selling_rate,
