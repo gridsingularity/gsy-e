@@ -92,14 +92,6 @@ def _ensure_ganache_cli():
         local('npm install --global ganache-cli')
 
 
-def _ensure_solidity_compiler():
-    solidity_version = local('solc --version')
-    # Smart contracts depend on solc v0.5.1
-    if "0.5.1" not in solidity_version:
-        local('brew install https://raw.githubusercontent.com/ethereum/'
-              'homebrew-ethereum/8e6c5a613cd822e92cb5a239f3ef7c8576b60d90/solidity.rb')
-
-
 def _pre_check():
     _ensure_venv()
     with hide('running', 'stdout'):
@@ -113,7 +105,6 @@ def _post_check():
     if "Darwin" in system():
         _ensure_solium()
         _ensure_ganache_cli()
-        _ensure_solidity_compiler()
     _ensure_pre_commit()
 
 

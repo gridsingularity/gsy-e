@@ -129,3 +129,12 @@ def check_custom_storage(context):
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) > 0
+
+
+@then("the SOC reaches 100% within the first {num_slots} market slots")
+def check_soc(context, num_slots):
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    storage = list(filter(lambda x: x.name == "H1 Storage1", house1.children))[0]
+    list_of_charge = list(storage.strategy.state.charge_history.values())
+
+    assert all([charge == 100.0 for charge in list_of_charge[int(num_slots)::]])
