@@ -122,7 +122,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
            <= initial_capacity_kWh <= battery_capacity_kWh:
             raise ValueError(f"Initial capacity should be between min_allowed_capacity and "
                              "battery_capacity_kWh parameter.")
-        if any(be[1] <= be[0] for _, be in break_even.items()):
+        if any(be[1] < be[0] for _, be in break_even.items()):
             raise ValueError("Break even point for sell energy is lower than buy energy.")
         if any(break_even_point[0] < 0 or break_even_point[1] < 0
                for _, break_even_point in break_even.items()):
