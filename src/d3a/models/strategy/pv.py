@@ -46,7 +46,8 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
         max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
     ):
-        self._validate_constructor_arguments(panel_count, risk, max_panel_power_W)
+        self._validate_constructor_arguments(panel_count, risk, max_panel_power_W,
+                                             initial_selling_rate)
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            initial_selling_rate,
@@ -61,12 +62,15 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.state = PVState()
 
     @staticmethod
-    def _validate_constructor_arguments(panel_count, risk, max_panel_output_W):
+    def _validate_constructor_arguments(panel_count, risk, max_panel_output_W,
+                                        initial_selling_rate):
         if not (0 <= risk <= 100 and panel_count >= 1):
             raise ValueError("Risk is a percentage value, should be "
                              "between 0 and 100, panel_count should be positive.")
         if max_panel_output_W < 0:
             raise ValueError("Max panel output in Watts should always be positive.")
+        if initial_selling_rate < 0:
+            raise ValueError("Initial selling rate must be greater equal 0.")
 
     def event_activate(self):
         # This gives us a pendulum object with today 0 o'clock

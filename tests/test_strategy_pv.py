@@ -442,3 +442,32 @@ def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
     pv_test9.event_activate()
     pv_test9.event_market_cycle()
     assert len(market_test9.created_offers) == len(area_test9.all_markets)
+
+
+"""TEST10"""
+
+
+@pytest.fixture()
+def area_test10():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def market_test10():
+    return FakeMarket(0)
+
+
+@pytest.fixture()
+def pv_strategy_test10(area_test10, called):
+    s = PVStrategy(initial_selling_rate=25, initial_rate_option=3)
+    s.owner = area_test10
+    s.area = area_test10
+    s.accept_offer = called
+    return s
+
+
+def test_initial_selling_rate(pv_strategy_test10, area_test10):
+    pv_strategy_test10.event_activate()
+    pv_strategy_test10.event_market_cycle()
+    created_offer = area_test10.all_markets[0].created_offers[0]
+    assert created_offer.price/created_offer.energy == 25

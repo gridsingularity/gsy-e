@@ -109,7 +109,7 @@ class OfferUpdateFrequencyMixin:
 
     def __init__(self,
                  initial_rate_option,
-                 initial_rate,
+                 initial_selling_rate,
                  energy_rate_decrease_option,
                  energy_rate_decrease_per_update,
                  ):
@@ -119,7 +119,7 @@ class OfferUpdateFrequencyMixin:
         self._decrease_price_timepoint_s = {}  # type: Dict[Time, float]
         self._decrease_price_every_nr_s = 0
         self.min_selling_rate = 0
-        self.initial_rate = initial_rate
+        self.initial_selling_rate = initial_selling_rate
 
     def update_on_activate(self):
         self._decrease_price_every_nr_s = \
@@ -135,7 +135,7 @@ class OfferUpdateFrequencyMixin:
         elif self.initial_rate_option is InitialRateOptions.MARKET_MAKER_RATE:
             return self.area.config.market_maker_rate[current_time_h]
         elif self.initial_rate_option is InitialRateOptions.CUSTOM_RATE:
-            return self.initial_rate
+            return self.initial_selling_rate
         else:
             raise ValueError("Initial rate option should be one of the InitialRateOptions.")
 
