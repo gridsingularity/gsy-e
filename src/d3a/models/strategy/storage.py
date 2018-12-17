@@ -45,6 +45,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  initial_capacity_kWh: float=None,
                  initial_soc: float=None,
                  initial_rate_option: int=StorageSettings.INITIAL_RATE_OPTION,
+                 initial_selling_rate:
+                 float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  energy_rate_decrease_option: int=StorageSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update:
                  float=GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
@@ -72,6 +74,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.min_selling_rate = list(break_even.values())[0][1]
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
+                                           initial_selling_rate,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
         # Normalize min/max buying rate profiles before passing to the bid mixin

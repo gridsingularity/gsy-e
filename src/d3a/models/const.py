@@ -41,6 +41,7 @@ class ConstSettings:
         # Initial ESS rate calculation for every market slot, before rate reduction per tick
         # Option 1, use the historical market average
         # Default value 2 stands for market maker rate
+        # Option 3, use the initial_selling_rate
         INITIAL_RATE_OPTION = 2
         # Energy rate decrease option for unsold ESS offers
         # Default value 1 stands for percentage/RISK based energy rate decrease
@@ -71,6 +72,7 @@ class ConstSettings:
         MIN_SELLING_RATE = 0
         # Option 1, use the historical market average
         # Default value 2 stands for market maker rate
+        # Option 3, use the initial_selling_rate
         INITIAL_RATE_OPTION = 2
         # Energy rate decrease option for unsold PV offers
         # Default value 1 stands for percentage/RISK based energy rate decrease

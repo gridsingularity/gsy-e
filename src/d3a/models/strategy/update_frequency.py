@@ -27,6 +27,7 @@ from d3a.models.const import ConstSettings
 class InitialRateOptions(Enum):
     HISTORICAL_AVG_RATE = 1
     MARKET_MAKER_RATE = 2
+    CUSTOM_RATE = 3
 
 
 class RateDecreaseOption(Enum):
@@ -108,8 +109,9 @@ class OfferUpdateFrequencyMixin:
 
     def __init__(self,
                  initial_rate_option,
+                 initial_rate,
                  energy_rate_decrease_option,
-                 energy_rate_decrease_per_update
+                 energy_rate_decrease_per_update,
                  ):
         self.initial_rate_option = InitialRateOptions(initial_rate_option)
         self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
@@ -117,6 +119,7 @@ class OfferUpdateFrequencyMixin:
         self._decrease_price_timepoint_s = {}  # type: Dict[Time, float]
         self._decrease_price_every_nr_s = 0
         self.min_selling_rate = 0
+        self.initial_rate = initial_rate
 
     def update_on_activate(self):
         self._decrease_price_every_nr_s = \
@@ -131,6 +134,8 @@ class OfferUpdateFrequencyMixin:
                 return self.area.historical_avg_rate
         elif self.initial_rate_option is InitialRateOptions.MARKET_MAKER_RATE:
             return self.area.config.market_maker_rate[current_time_h]
+        elif self.initial_rate_option is InitialRateOptions.CUSTOM_RATE:
+            return self.initial_rate
         else:
             raise ValueError("Initial rate option should be one of the InitialRateOptions.")
 
