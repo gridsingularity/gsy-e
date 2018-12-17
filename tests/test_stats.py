@@ -1,12 +1,29 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import pytest
 from unittest.mock import MagicMock
 
-from d3a.models.market import Trade
-from d3a.stats import (
-    energy_bills, primary_unit_prices, recursive_current_markets, total_avg_trade_price
-)
-from d3a.util import make_iaa_name
-from d3a.models.strategy.base import BaseStrategy
+from d3a.models.market.market_structures import Trade
+from d3a.d3a_core.sim_results.stats import energy_bills, primary_unit_prices, \
+    recursive_current_markets, total_avg_trade_price
+
+from d3a.d3a_core.util import make_iaa_name
+from d3a.models.strategy import BaseStrategy
 
 
 class FakeArea:
@@ -24,6 +41,7 @@ class FakeArea:
 class FakeMarket:
     def __init__(self, trades):
         self.trades = trades
+        self.time_slot = 15
 
 
 class FakeOffer:
@@ -89,24 +107,24 @@ def grid():
     return FakeArea('grid', children=[
         FakeArea('house1',
                  children=[FakeArea('fridge'), FakeArea('pv')],
-                 past_markets={1: FakeMarket((_trade(2, 'fridge', 2, 'pv'),
-                                              _trade(3, 'fridge', 1, 'iaa'))),
-                               2: FakeMarket((_trade(1, 'fridge', 2, 'pv'),))}),
+                 past_markets=[FakeMarket((_trade(2, 'fridge', 2, 'pv'),
+                                           _trade(3, 'fridge', 1, 'iaa'))),
+                               FakeMarket((_trade(1, 'fridge', 2, 'pv'),))]),
         FakeArea('house2',
                  children=[FakeArea('e-car')],
-                 past_markets={1: FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
-                                             _trade(1, 'e-car', 8, 'iaa'),
-                                             _trade(3, 'iaa', 5, 'e-car'))),
-                               2: FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))}),
+                 past_markets=[FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
+                                           _trade(1, 'e-car', 8, 'iaa'),
+                                           _trade(3, 'iaa', 5, 'e-car'))),
+                               FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))]),
         FakeArea('commercial')
-    ], past_markets={
-        1: FakeMarket((_trade(2, 'house2', 12, 'commercial'),)),
-        2: FakeMarket((_trade(1, 'house2', 1, 'commercial'),))
-    })
+    ], past_markets=[
+        FakeMarket((_trade(2, 'house2', 12, 'commercial'),)),
+        FakeMarket((_trade(1, 'house2', 1, 'commercial'),))
+    ])
 
 
 def test_energy_bills(grid):
-    result = energy_bills(grid)
+    result = energy_bills(grid, "past_markets")
     assert result['house2']['bought'] == result['commercial']['sold'] == 13
     assert result['house2']['spent'] == result['commercial']['earned'] == 3
     assert result['commercial']['spent'] == result['commercial']['bought'] == 0
@@ -123,12 +141,12 @@ def grid2():
     return FakeArea(
         'street',
         children=[house1, house2],
-        past_markets={1: FakeMarket(
+        past_markets=[FakeMarket(
             (_trade(2, make_iaa_name(house1), 3, make_iaa_name(house2)),)
-        )}
+        )]
     )
 
 
 def test_energy_bills_finds_iaas(grid2):
-    result = energy_bills(grid2)
+    result = energy_bills(grid2, "past_markets")
     assert result['house1']['bought'] == result['house2']['sold'] == 3

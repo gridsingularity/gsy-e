@@ -1,17 +1,28 @@
-from d3a.models.appliance.fridge import FridgeAppliance
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.e_car import ECarStrategy
-from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.greedy_night_storage import NightStorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.permanent import PermanentLoadStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.strategy.heatpump import HeatPumpStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
@@ -46,23 +57,6 @@ class CommercialProducer(Leaf):
     strategy_type = CommercialStrategy
 
 
-class ECar(Leaf):
-    strategy_type = ECarStrategy
-
-
-class Fridge(Leaf):
-    strategy_type = FridgeStrategy
-    appliance_type = FridgeAppliance
-
-
-class NightStorage(Leaf):
-    strategy_type = NightStorageStrategy
-
-
-class PermanentLoad(Leaf):
-    strategy_type = PermanentLoadStrategy
-
-
 class PV(Leaf):
     strategy_type = PVStrategy
     appliance_type = PVAppliance
@@ -81,10 +75,6 @@ class PVProfile(Leaf):
 class LoadProfile(Leaf):
     strategy_type = DefinedLoadStrategy
     appliance_type = SwitchableAppliance
-
-
-class Heatpump(Leaf):
-    strategy_type = HeatPumpStrategy
 
 
 class Storage(Leaf):

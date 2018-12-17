@@ -1,3 +1,20 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 from pendulum import duration
 from d3a.models.strategy import ureg, Q_
 from d3a.models.strategy.commercial_producer import CommercialStrategy
@@ -29,26 +46,21 @@ class FinitePowerPlant(CommercialStrategy):
             raise ValueError("Max available power should be positive.")
         return max_available_power_kW
 
-    def _markets_to_offer_on_activate(self):
-        return list(self.area.markets.values())[:-1]
-
-    def event_activate(self):
-        self.energy_per_slot_kWh = ureg.kWh * \
-            self.max_available_power_kW[0].m / (duration(hours=1) / self.area.config.slot_length)
-        if self.energy_per_slot_kWh.m <= 0.0:
-            return
-        super().event_activate()
-
-    def event_trade(self, *, market, trade):
+    def event_trade(self, *, market_id, trade):
         # Disable offering more energy than the initial offer, in order to adhere to the max
         # available power.
         pass
 
     def event_market_cycle(self):
-        target_market_time = list(self.area.markets.keys())[-1]
-        self.energy_per_slot_kWh = ureg.kWh * \
-            self.max_available_power_kW[target_market_time.hour].m / \
+        if not self.area.last_past_market:
+            max_available_power_kW = self.max_available_power_kW[0].m
+        else:
+            target_market_time = (self.area.all_markets[-1]).time_slot
+            max_available_power_kW = self.max_available_power_kW[target_market_time.hour].m
+
+        self.energy_per_slot_kWh = ureg.kWh * max_available_power_kW / \
             (duration(hours=1) / self.area.config.slot_length)
         if self.energy_per_slot_kWh.m <= 0.0:
             return
+
         super().event_market_cycle()

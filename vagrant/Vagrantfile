@@ -16,7 +16,7 @@ Vagrant.configure("2") do |config|
     export REPO=gridsingularity/d3a
     export BRANCH=master
 
-    git clone -b ${BRANCH} https://gsydev:f91220d94bb884c6175f67070b0ff0e2ee542710@github.com/${REPO}.git /app
+    git clone -b ${BRANCH} https://github.com/gridsingularity/d3a /app
     cd /app
     pip3 install --upgrade setuptools
     pip3 install -r/app/requirements/dev.txt &&  pip3 install -e .

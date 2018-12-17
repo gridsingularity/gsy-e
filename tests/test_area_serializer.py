@@ -1,16 +1,30 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import json
 import pytest
 
-from d3a.area_serializer import area_to_string, area_from_string
-from d3a.models.appliance.fridge import FridgeAppliance
+from d3a.d3a_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
-from d3a.models.leaves import Fridge, PV
-from d3a.models.strategy.fridge import FridgeStrategy
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.leaves import PV
+from d3a.models.const import ConstSettings
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.simple import OfferStrategy
 
 
 def test_area_with_children_roundtrip():
@@ -25,18 +39,18 @@ def test_area_with_children_roundtrip():
 
 
 def test_encode_strategy_appliance():
-    area = Area("child", [], FridgeStrategy(), FridgeAppliance())
+    area = Area("child", [], PVStrategy(), PVAppliance())
     area_dict = json.loads(area_to_string(area))
     assert 'children' not in area_dict
-    assert area_dict['strategy']['type'] == 'FridgeStrategy'
-    assert area_dict['appliance']['type'] == 'FridgeAppliance'
+    assert area_dict['strategy']['type'] == 'PVStrategy'
+    assert area_dict['appliance']['type'] == 'PVAppliance'
 
 
 def test_strategy_appliance_roundtrip():
-    area = Area("child", [], FridgeStrategy(), FridgeAppliance())
+    area = Area("child", [], PVStrategy(), PVAppliance())
     recovered = area_from_string(area_to_string(area))
-    assert type(recovered.strategy) is FridgeStrategy
-    assert type(recovered.appliance) is FridgeAppliance
+    assert type(recovered.strategy) is PVStrategy
+    assert type(recovered.appliance) is PVAppliance
 
 
 def test_raises_unknown_class():
@@ -53,22 +67,21 @@ def test_strategy_roundtrip_with_params():
 
 
 def test_non_attr_param():
-    area1 = Area('area1', [], OfferStrategy(price_fraction_choice=(1, 10)))
+    area1 = Area('area1', [], PVStrategy())
     recovered1 = area_from_string(area_to_string(area1))
-    assert recovered1.strategy.price_fraction == [1, 10]
+    assert recovered1.strategy.min_selling_rate == ConstSettings.PVSettings.MIN_SELLING_RATE
 
 
 @pytest.fixture
 def appliance_fixture():
-    child1 = Area('child1', appliance=FridgeAppliance(initially_on=False))
+    child1 = Area('child1', appliance=PVAppliance(initially_on=False))
     child2 = Area('child2', appliance=PVAppliance())
     return area_to_string(Area('parent', [child1, child2]))
 
 
 def test_appliance(appliance_fixture):
     area_dict = json.loads(appliance_fixture)
-    assert area_dict['children'][0]['appliance']['type'] == 'FridgeAppliance'
-    assert area_dict['children'][1]['appliance']['kwargs']['initially_on']
+    assert area_dict['children'][0]['appliance']['type'] == 'PVAppliance'
 
 
 def test_appliance_roundtrip(appliance_fixture):
@@ -82,39 +95,42 @@ def test_leaf_deserialization():
         '''{
              "name": "house",
              "children":[
-                 {"name": "fridge", "type": "Fridge"},
-                 {"name": "pv", "type": "PV", "panel_count": 4, "risk": 50}
+                 {"name": "pv1", "type": "PV", "panel_count": 4, "risk": 50},
+                 {"name": "pv2", "type": "PV", "panel_count": 1, "risk": 10}
              ]
            }
         '''
     )
-    fridge, pv = recovered.children
-    assert isinstance(fridge, Fridge) and isinstance(pv, PV)
-    assert pv.strategy.panel_count == 4 and pv.strategy.risk == 50
-    assert fridge.strategy.risk == ConstSettings.DEFAULT_RISK
+    pv1, pv2 = recovered.children
+    assert isinstance(pv1, PV)
+    assert pv1.strategy.panel_count == 4 and pv1.strategy.risk == 50
+    assert isinstance(pv2, PV)
+    assert pv2.strategy.panel_count == 1 and pv2.strategy.risk == 10
 
 
 @pytest.fixture
 def fixture_with_leaves():
-    area = Area("house", [Fridge("fridge"), PV("pv", panel_count=4, risk=10)])
+    area = Area("house", [PV("pv1", panel_count=1, risk=5), PV("pv2", panel_count=4, risk=10)])
     return area_to_string(area)
 
 
 def test_leaf_serialization(fixture_with_leaves):
     description = json.loads(fixture_with_leaves)
-    assert description['children'][0]['type'] == 'Fridge'
+    assert description['children'][0]['type'] == 'PV'
+    assert description['children'][0]['panel_count'] == 1
+    assert description['children'][1]['type'] == 'PV'
     assert description['children'][1]['panel_count'] == 4
 
 
 def test_roundtrip_with_leaf(fixture_with_leaves):
     recovered = area_from_string(fixture_with_leaves)
-    assert isinstance(recovered.children[0], Fridge)
+    assert isinstance(recovered.children[0].strategy, PVStrategy)
     assert isinstance(recovered.children[1].strategy, PVStrategy)
 
 
 @pytest.fixture
 def budget_keeper_fixture():
-    child = Area('child', appliance=FridgeAppliance())
+    child = Area('child', appliance=PVAppliance())
     budget_keeper = BudgetKeeper(budget=100.0, days_per_period=30)
     return area_to_string(Area('parent', [child], budget_keeper=budget_keeper))
 
@@ -129,3 +145,32 @@ def test_budget_keeper_roundtrip(budget_keeper_fixture):
     recovered = area_from_string(budget_keeper_fixture)
     assert recovered.budget_keeper.budget == 100.0
     assert recovered.budget_keeper.days_per_period == 30
+
+
+def test_area_does_not_allow_duplicate_subarea_names():
+    area = Area(
+        'Grid',
+        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
+         Area('House 1', children=[Area('H2 General Load'), Area('H2 PV1')])],
+    )
+
+    with pytest.raises(AssertionError):
+        are_all_areas_unique(area, set())
+
+    area = Area(
+        'Grid',
+        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
+         Area('House 2', children=[Area('H1 General Load'), Area('H2 PV1')])],
+    )
+
+    with pytest.raises(AssertionError):
+        are_all_areas_unique(area, set())
+
+    area = Area(
+        'Grid',
+        [Area('House 1', children=[Area('H1 General Load'), Area('H1 PV1')]),
+         Area('House 2', children=[Area('H2 General Load'), Area('H2 PV1')])],
+    )
+
+    # Does not raise an assertion
+    are_all_areas_unique(area, set())

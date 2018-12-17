@@ -1,20 +1,53 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import pytest
 
-from datetime import datetime
+import pendulum
 
-from d3a.models.market import Offer, Trade, Bid
-from d3a.models.strategy.inter_area import InterAreaAgent, BidInfo, OfferInfo
-from d3a.models.strategy.const import ConstSettings
+from d3a.constants import TIME_FORMAT
+from d3a.constants import TIME_ZONE
+from d3a.models.area import DEFAULT_CONFIG
+from d3a.models.market.market_structures import Offer, Trade, Bid
+from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
+from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
+from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
+from d3a.models.strategy.area_agents.one_sided_engine import OfferInfo
+from d3a.models.const import ConstSettings
 
 
 class FakeArea:
     def __init__(self, name):
         self.name = name
         self.current_tick = 10
+        self.future_market = None
+
+    @property
+    def config(self):
+        return DEFAULT_CONFIG
+
+    def get_future_market_from_id(self, id):
+        return self.future_market
 
 
 class FakeMarket:
-    def __init__(self, sorted_offers, bids=[]):
+    def __init__(self, sorted_offers, bids=[], m_id=123):
+        self.id = m_id
         self.sorted_offers = sorted_offers
         self._bids = bids
         self.offer_count = 0
@@ -27,6 +60,11 @@ class FakeMarket:
         self.calls_bids = []
         self.calls_bids_price = []
         self.area = FakeArea("fake_area")
+        self.time_slot = pendulum.now(tz=TIME_ZONE)
+        self.time_slot_str = self.time_slot.strftime(TIME_FORMAT)
+
+    def set_time_slot(self, timeslot):
+        self.time_slot = timeslot
 
     @property
     def offers(self):
@@ -35,10 +73,6 @@ class FakeMarket:
     @property
     def bids(self):
         return {bid.id: bid for bid in self._bids}
-
-    @property
-    def time_slot(self):
-        return datetime.now()
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, price_drop=False):
         self.calls_energy.append(energy)
@@ -51,7 +85,7 @@ class FakeMarket:
         else:
             return Trade('trade_id', time, offer, offer.seller, buyer)
 
-    def accept_bid(self, bid, energy, seller, buyer=None, track_bid=True, *,
+    def accept_bid(self, bid, energy, seller, buyer=None, already_tracked=True, *,
                    time=None, price_drop=True):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
@@ -70,7 +104,7 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller):
+    def offer(self, price, energy, seller, agent=False):
         self.offer_count += 1
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller, market=self)
         return self.forwarded_offer
@@ -86,10 +120,10 @@ def iaa():
     lower_market = FakeMarket([Offer('id', 1, 1, 'other')])
     higher_market = FakeMarket([Offer('id2', 3, 3, 'owner'), Offer('id3', 0.5, 1, 'owner')])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner,
-                         higher_market=higher_market,
-                         lower_market=lower_market,
-                         transfer_fee_pct=5)
+    iaa = OneSidedAgent(owner=owner,
+                        higher_market=higher_market,
+                        lower_market=lower_market,
+                        transfer_fee_pct=5)
     iaa.event_tick(area=iaa.owner)
     iaa.owner.current_tick = 14
     iaa.event_tick(area=iaa.owner)
@@ -111,30 +145,30 @@ def test_iaa_forwarded_offers_complied_to_transfer_fee_percentage(iaa):
 def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
     iaa.lower_market.delete_offer = called
     iaa.event_trade(trade=Trade('trade_id',
-                                datetime.now(),
+                                pendulum.now(tz=TIME_ZONE),
                                 iaa.higher_market.offers['id3'],
                                 'owner',
                                 'someone_else'),
-                    market=iaa.higher_market)
+                    market_id=iaa.higher_market.id)
     assert len(iaa.lower_market.delete_offer.calls) == 1
 
 
 @pytest.fixture
 def iaa_bid():
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
     higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner'),
                                     Bid('id3', 0.5, 1, 'child', 'owner')])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner,
-                         higher_market=higher_market,
-                         lower_market=lower_market,
-                         transfer_fee_pct=5)
+    iaa = TwoSidedPayAsBidAgent(owner=owner,
+                                higher_market=higher_market,
+                                lower_market=lower_market,
+                                transfer_fee_pct=5)
     iaa.event_tick(area=iaa.owner)
     iaa.owner.current_tick = 14
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_forwards_bids(iaa_bid):
@@ -162,29 +196,29 @@ def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
 
 @pytest.mark.parametrize("iaa_fee", [10, 0, 50, 75, 5, 2, 3])
 def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
     higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')])
-    iaa = InterAreaAgent(owner=FakeArea('owner'),
-                         higher_market=higher_market,
-                         lower_market=lower_market,
-                         transfer_fee_pct=iaa_fee)
+    iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
+                                higher_market=higher_market,
+                                lower_market=lower_market,
+                                transfer_fee_pct=iaa_fee)
     iaa.event_tick(area=iaa.owner)
     assert iaa.higher_market.bid_count == 1
     assert iaa.higher_market.forwarded_bid.price / (1 + (iaa_fee / 100)) == \
         list(iaa.lower_market.bids.values())[-1].price
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(iaa_bid, called):
     iaa_bid.lower_market.delete_bid = called
     iaa_bid.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         iaa_bid.higher_market.bids['id3'],
                         'someone_else',
                         'owner'),
-        market=iaa_bid.higher_market)
+        market_id=iaa_bid.higher_market.id)
     assert len(iaa_bid.lower_market.delete_bid.calls) == 1
 
 
@@ -193,7 +227,7 @@ def test_iaa_event_trade_bid_does_not_delete_forwarded_bid_of_counterpart(iaa_bi
     high_to_low_engine = iaa_bid.engines[1]
     high_to_low_engine.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         iaa_bid.higher_market.bids['id3'],
                         seller='owner',
                         buyer='someone_else'))
@@ -211,7 +245,7 @@ def test_iaa_event_trade_bid_does_not_update_forwarded_bids_on_partial(iaa_bid, 
     low_to_high_engine.forwarded_bids[target_bid.id] = bidinfo
     low_to_high_engine.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         low_to_high_engine.markets.target.bids[target_bid.id],
                         seller='someone_else',
                         buyer='owner',
@@ -226,10 +260,11 @@ def test_iaa_event_trade_bid_does_not_update_forwarded_bids_on_partial(iaa_bid, 
 
 @pytest.fixture
 def iaa2():
-    lower_market = FakeMarket([Offer('id', 2, 2, 'other')])
-    higher_market = FakeMarket([])
+    lower_market = FakeMarket([Offer('id', 2, 2, 'other')], m_id=123)
+    higher_market = FakeMarket([], m_id=234)
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    owner.future_market = lower_market
+    iaa = OneSidedAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
     iaa.event_tick(area=iaa.owner)
     iaa.owner.current_tick += 2
     iaa.event_tick(area=iaa.owner)
@@ -238,27 +273,28 @@ def iaa2():
 
 @pytest.fixture
 def iaa_double_sided():
-    from d3a.models.strategy.const import ConstSettings
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
     higher_market = FakeMarket([], [])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
+                                higher_market=higher_market)
     iaa.engines[0]._match_offers_bids = lambda: None
     iaa.engines[1]._match_offers_bids = lambda: None
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_event_trade_buys_accepted_offer(iaa2):
     iaa2.event_trade(trade=Trade('trade_id',
-                                 datetime.now(),
+                                 pendulum.now(tz=TIME_ZONE),
                                  iaa2.higher_market.forwarded_offer,
                                  'owner',
                                  'someone_else'),
-                     market=iaa2.higher_market)
+                     market_id=iaa2.higher_market.id)
     assert len(iaa2.lower_market.calls_energy) == 1
 
 
@@ -267,12 +303,12 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
         iaa_double_sided.higher_market.forwarded_bid._replace(price=20)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         iaa_double_sided.higher_market.forwarded_bid,
                         'owner',
                         'someone_else',
                         price_drop=False),
-        market=iaa_double_sided.higher_market)
+        market_id=iaa_double_sided.higher_market.id)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
 
     assert iaa_double_sided.higher_market.forwarded_bid.price == 20.0
@@ -284,12 +320,12 @@ def test_iaa_event_bid_trade_reduces_bid_price(iaa_double_sided):
         iaa_double_sided.higher_market.forwarded_bid._replace(price=20.2)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         iaa_double_sided.higher_market.forwarded_bid,
                         'owner',
                         'someone_else',
                         price_drop=True),
-        market=iaa_double_sided.higher_market)
+        market_id=iaa_double_sided.higher_market.id)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
     assert iaa_double_sided.higher_market.forwarded_bid.price == 20.2
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 20.0
@@ -299,12 +335,12 @@ def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
     total_offer = iaa2.higher_market.forwarded_offer
     accepted_offer = Offer(total_offer.id, total_offer.price, 1, total_offer.seller)
     iaa2.event_trade(trade=Trade('trade_id',
-                                 datetime.now(),
+                                 pendulum.now(tz=TIME_ZONE),
                                  accepted_offer,
                                  'owner',
                                  'someone_else',
                                  'residual_offer'),
-                     market=iaa2.higher_market)
+                     market_id=iaa2.higher_market.id)
     assert iaa2.lower_market.calls_energy[0] == 1
 
 
@@ -313,12 +349,12 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
     accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer, total_bid.seller)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
-                        datetime.now(),
+                        pendulum.now(tz=TIME_ZONE),
                         accepted_bid,
                         'owner',
                         'someone_else',
                         'residual_offer'),
-        market=iaa_double_sided.higher_market)
+        market_id=iaa_double_sided.higher_market.id)
     assert iaa_double_sided.lower_market.calls_energy_bids[0] == 1
 
 
@@ -326,7 +362,7 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
     full_offer = iaa2.lower_market.sorted_offers[0]
     iaa2.usable_offer = lambda s: True
     residual_offer = Offer('residual', 2, 1.4, 'other')
-    iaa2.event_offer_changed(market=iaa2.lower_market,
+    iaa2.event_offer_changed(market_id=iaa2.lower_market.id,
                              existing_offer=full_offer,
                              new_offer=residual_offer)
     assert iaa2.higher_market.forwarded_offer.energy == 1.4
@@ -334,16 +370,17 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
 
 @pytest.fixture
 def iaa_double_sided_2():
-    from d3a.models.strategy.const import ConstSettings
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 2
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')])
     higher_market = FakeMarket([], [])
     owner = FakeArea('owner')
-    iaa = InterAreaAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
+    iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
+                                higher_market=higher_market)
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.INTER_AREA_AGENT_MARKET_TYPE = 1
+    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_double_sided_performs_pay_as_bid_matching(iaa_double_sided_2):
@@ -370,6 +407,52 @@ def test_iaa_double_sided_performs_pay_as_bid_matching(iaa_double_sided_2):
     assert bid.price == 12
     assert bid.energy == 10
     assert offer == list(iaa_double_sided_2.lower_market.offers.values())[0]
+
+
+@pytest.fixture
+def iaa_double_sided_pay_as_clear():
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 3
+    lower_market = FakeMarket(sorted_offers=[],
+                              bids=[])
+    higher_market = FakeMarket([], [])
+    owner = FakeArea('owner')
+    iaa = TwoSidedPayAsClearAgent(owner=owner, lower_market=lower_market,
+                                  higher_market=higher_market)
+    iaa.event_tick(area=iaa.owner)
+    yield iaa
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+@pytest.mark.parametrize("offer, bid, MCP", [
+    ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4),
+    ([8, 9, 10, 11, 12, 13, 14], [8, 9, 10, 11, 12, 13, 14], 11),
+    ([2, 3, 3, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7], 5),
+])
+def test_iaa_double_sided_performs_pay_as_clear_matching(iaa_double_sided_pay_as_clear,
+                                                         offer, bid, MCP):
+    low_high_engine = \
+        next(filter(lambda e: e.name == "Low -> High", iaa_double_sided_pay_as_clear.engines))
+    iaa_double_sided_pay_as_clear.lower_market.sorted_offers = \
+        [Offer('id1', offer[0], 1, 'other'),
+         Offer('id2', offer[1], 1, 'other'),
+         Offer('id3', offer[2], 1, 'other'),
+         Offer('id4', offer[3], 1, 'other'),
+         Offer('id5', offer[4], 1, 'other'),
+         Offer('id6', offer[5], 1, 'other'),
+         Offer('id7', offer[6], 1, 'other')]
+
+    iaa_double_sided_pay_as_clear.lower_market._bids = \
+        [Bid('bid_id1', bid[0], 1, 'B', 'S'),
+         Bid('bid_id2', bid[1], 1, 'B', 'S'),
+         Bid('bid_id3', bid[2], 1, 'B', 'S'),
+         Bid('bid_id4', bid[3], 1, 'B', 'S'),
+         Bid('bid_id5', bid[4], 1, 'B', 'S'),
+         Bid('bid_id6', bid[5], 1, 'B', 'S'),
+         Bid('bid_id7', bid[6], 1, 'B', 'S')]
+
+    matched = low_high_engine._perform_pay_as_clear_matching()[0]
+    assert matched == MCP
 
 
 def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
@@ -407,24 +490,21 @@ def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
     assert bid.energy == 10
     assert bid.price == 12
 
-    assert len(low_high_engine.forwarded_bids.keys()) == 0
-    assert len(low_high_engine.forwarded_offers.keys()) == 0
-
 
 @pytest.fixture
 def iaa3(iaa2):
     fwd_offer = iaa2.higher_market.forwarded_offer
     fwd_residual = Offer('res_fwd', fwd_offer.price, 1, fwd_offer.seller)
-    iaa2.event_offer_changed(market=iaa2.higher_market,
+    iaa2.event_offer_changed(market_id=iaa2.higher_market.id,
                              existing_offer=fwd_offer,
                              new_offer=fwd_residual)
     iaa2.event_trade(trade=Trade('trade_id',
-                                 datetime.now(),
+                                 pendulum.now(tz=TIME_ZONE),
                                  Offer(fwd_offer.id, fwd_offer.price, 1, fwd_offer.seller),
                                  'owner',
                                  'someone_else',
                                  fwd_residual),
-                     market=iaa2.higher_market)
+                     market_id=iaa2.higher_market.id)
     return iaa2
 
 

@@ -1,34 +1,72 @@
-from typing import Union
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
 
-from d3a.exceptions import MarketException
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+from typing import Union
+from collections import namedtuple
+
+from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import StorageState
-from d3a.models.strategy.base import BaseStrategy
-from d3a.models.strategy.const import ConstSettings
+from d3a.models.strategy import BaseStrategy
+from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin
-from d3a.models.strategy.mixins import ReadProfileMixin
-from d3a.models.strategy.mixins import InputProfileTypes
-from d3a import TIME_FORMAT
+from d3a.models.read_user_profile import read_arbitrary_profile
+from d3a.models.read_user_profile import InputProfileTypes
+from d3a.constants import TIME_FORMAT
+from d3a.d3a_core.device_registry import DeviceRegistry
+
+BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
+
+StorageSettings = ConstSettings.StorageSettings
+GeneralSettings = ConstSettings.GeneralSettings
+BalancingSettings = ConstSettings.BalancingSettings
 
 
 class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
-    parameters = ('risk', 'initial_capacity', 'initial_soc',
-                  'battery_capacity', 'max_abs_battery_power')
+    parameters = ('risk', 'initial_capacity_kWh', 'initial_soc', 'initial_rate_option',
+                  'energy_rate_decrease_option', 'energy_rate_decrease_per_update',
+                  'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
+                  )
 
-    def __init__(self, risk: int=ConstSettings.DEFAULT_RISK,
-                 initial_capacity: float=0.0,
+    def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
+                 initial_capacity_kWh: float=None,
                  initial_soc: float=None,
-                 initial_rate_option: int=ConstSettings.INITIAL_ESS_RATE_OPTION,
-                 energy_rate_decrease_option: int=ConstSettings.ESS_RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update: float=ConstSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
-                 battery_capacity: float=ConstSettings.STORAGE_CAPACITY,
-                 max_abs_battery_power: float=ConstSettings.MAX_ABS_BATTERY_POWER,
-                 break_even: Union[tuple, dict]=(ConstSettings.STORAGE_BREAK_EVEN_BUY,
-                             ConstSettings.STORAGE_BREAK_EVEN_SELL),
+                 initial_rate_option: int=StorageSettings.INITIAL_RATE_OPTION,
+                 energy_rate_decrease_option: int=StorageSettings.RATE_DECREASE_OPTION,
+                 energy_rate_decrease_per_update:
+                 float=GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
+                 battery_capacity_kWh: float=StorageSettings.CAPACITY,
+                 max_abs_battery_power_kW: float=StorageSettings.MAX_ABS_POWER,
+                 break_even: Union[tuple, dict]=(StorageSettings.BREAK_EVEN_BUY,
+                             StorageSettings.BREAK_EVEN_SELL),
+                 balancing_energy_ratio: tuple=(BalancingSettings.OFFER_DEMAND_RATIO,
+                                                BalancingSettings.OFFER_SUPPLY_RATIO),
 
-                 cap_price_strategy: bool=False):
-        break_even = ReadProfileMixin.read_arbitrary_profile(InputProfileTypes.RATE, break_even)
-        self._validate_constructor_arguments(risk, initial_capacity,
-                                             initial_soc, battery_capacity, break_even)
+                 cap_price_strategy: bool=False,
+                 min_allowed_soc=None):
+
+        if type(break_even) == list:
+            break_even = tuple(break_even)
+
+        if min_allowed_soc is None:
+            min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
+        break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
+        self._validate_constructor_arguments(risk, initial_capacity_kWh,
+                                             initial_soc, battery_capacity_kWh, break_even,
+                                             min_allowed_soc)
         self.break_even = break_even
 
         self.min_selling_rate = list(break_even.values())[0][1]
@@ -36,30 +74,40 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
+        # Normalize min/max buying rate profiles before passing to the bid mixin
+        self.min_buying_rate_profile = read_arbitrary_profile(
+            InputProfileTypes.IDENTITY,
+            StorageSettings.MIN_BUYING_RATE
+        )
+        self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
         BidUpdateFrequencyMixin.__init__(self,
-                                         initial_rate=ConstSettings.STORAGE_MIN_BUYING_RATE,
-                                         final_rate=ConstSettings.STORAGE_BREAK_EVEN_BUY)
+                                         initial_rate_profile=self.min_buying_rate_profile,
+                                         final_rate_profile=self.max_buying_rate_profile)
 
         self.risk = risk
-        self.state = StorageState(initial_capacity=initial_capacity,
+        self.state = StorageState(initial_capacity_kWh=initial_capacity_kWh,
                                   initial_soc=initial_soc,
-                                  capacity=battery_capacity,
-                                  max_abs_battery_power=max_abs_battery_power,
+                                  capacity=battery_capacity_kWh,
+                                  max_abs_battery_power_kW=max_abs_battery_power_kW,
                                   loss_per_hour=0.0,
-                                  strategy=self)
+                                  strategy=self,
+                                  min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
+        self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
     def event_activate(self):
+        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
     @staticmethod
-    def _validate_constructor_arguments(risk, initial_capacity, initial_soc,
-                                        battery_capacity, break_even):
-        if battery_capacity < 0:
+    def _validate_constructor_arguments(risk, initial_capacity_kWh, initial_soc,
+                                        battery_capacity_kWh, break_even, min_allowed_soc):
+        if battery_capacity_kWh < 0:
             raise ValueError("Battery capacity should be a positive integer")
-        if initial_soc and not 0 <= initial_soc <= 100:
-            raise ValueError("Initial charge is a percentage value, should be between 0 and 100.")
+        if initial_soc and not min_allowed_soc <= initial_soc <= 100:
+            raise ValueError("Initial charge is a percentage value, should be between "
+                             "MIN_ALLOWED_SOC and 100.")
         if not 0 <= risk <= 100:
             raise ValueError("Risk is a percentage value, should be between 0 and 100.")
         if initial_capacity and not 0 <= initial_capacity <= battery_capacity:
@@ -72,165 +120,166 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             raise ValueError("Break even point should be positive energy rate values.")
 
     def event_tick(self, *, area):
-        # Check if there are cheap offers to buy
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
-            self.buy_energy()
-        elif ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            if self.state.clamp_energy_to_buy_kWh() <= 0:
-                return
-            if self.are_bids_posted(self.area.next_market):
-                self.update_posted_bids(self.area.next_market)
-            else:
-                # TODO: Refactor this to reuse all markets
-                self.post_first_bid(
-                    self.area.next_market,
-                    self.state.clamp_energy_to_buy_kWh() * 1000.0
-                )
+        self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+        for market in self.area.all_markets:
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                self.buy_energy(market)
+            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
 
-        self.state.tick(area)  # To incorporate battery energy loss over time
-        if self.cap_price_strategy is False:
-            self.decrease_energy_price_over_ticks()
+                if self.are_bids_posted(market):
+                    self.update_posted_bids_over_ticks(market)
+                else:
+                    energy_kWh = self.state.energy_to_buy_dict[market.time_slot]
+                    if energy_kWh > 0:
+                        first_bid = self.post_first_bid(market, energy_kWh * 1000.0)
+                        if first_bid is not None:
+                            self.state.offered_buy_kWh[market.time_slot] += first_bid.energy
 
-    def event_bid_deleted(self, *, market, bid):
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+            self.state.tick(area, market.time_slot)
+            if self.cap_price_strategy is False:
+                self.decrease_energy_price_over_ticks(market)
+
+    def event_trade(self, *, market_id, trade):
+        market = self.area.get_future_market_from_id(market_id)
+        super().event_trade(market_id=market_id, trade=trade)
+        if trade.offer.seller == self.owner.name:
+            self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy
+            self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
+
+    def event_bid_deleted(self, *, market_id, bid):
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
             # Do not handle bid deletes on single sided markets
             return
-        if market != self.area.next_market:
+        if market_id != self.area.next_market.id:
             return
         if bid.buyer != self.owner.name:
             return
         self.remove_bid_from_pending(bid.id, self.area.next_market)
 
-    def event_bid_traded(self, *, market, bid_trade):
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 1:
+    def event_bid_traded(self, *, market_id, bid_trade):
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
             # Do not handle bid trades on single sided markets
             assert False and "Invalid state, cannot receive a bid if single sided market" \
                              " is globally configured."
 
         if bid_trade.offer.buyer != self.owner.name:
             return
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
 
         buffered_bid = next(filter(
             lambda b: b.id == bid_trade.offer.id, self.get_posted_bids(market)
         ))
 
         if bid_trade.offer.buyer == buffered_bid.buyer:
-            # Update energy requirement and clean up the pending bid buffer
-            self.state.update_energy_per_slot(-bid_trade.offer.energy, market.time_slot)
-            self.state.block_storage(bid_trade.offer.energy)
             # Do not remove bid in case the trade is partial
             self.add_bid_to_bought(bid_trade.offer, market, remove_bid=not bid_trade.residual)
+            self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer.energy
+            self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
-        if self.area.past_markets:
-            past_market = list(self.area.past_markets.values())[-1]
-        else:
-            if self.state.used_storage > 0:
-                self.sell_energy()
-            return
-        # if energy in this slot was bought: update the storage
-        for bought in self.offers.bought_in_market(past_market):
-            self.state.fill_blocked_storage(bought.energy)
-            self.sell_energy(energy=bought.energy)
-        for traded in self.get_traded_bids_from_market(past_market):
-            self.state.fill_blocked_storage(traded.energy)
-        # if energy in this slot was sold: update the storage
-        for sold in self.offers.sold_in_market(past_market):
-            self.state.sold_offered_storage(sold.energy)
-        # Check if Storage posted offer in that market that has not been bought
-        # If so try to sell the offer again
-        for offer in self.offers.open_in_market(past_market):
-            self.sell_energy(offer.energy, open_offer=True)
-            self.offers.sold_offer(offer.id, past_market)
-        # sell remaining capacity too (e. g. initial capacity)
+        current_market = self.area.next_market
+        past_market = self.area.last_past_market
+
+        self.state.market_cycle(
+            past_market.time_slot if past_market else current_market.time_slot,
+            current_market.time_slot
+        )
+
         if self.state.used_storage > 0:
             self.sell_energy()
-        self.state.market_cycle(self.area)
 
-        if ConstSettings.INTER_AREA_AGENT_MARKET_TYPE == 2:
-            self.update_market_cycle_bids(self.break_even[self.area.now.strftime(TIME_FORMAT)][0])
-            if self.state.clamp_energy_to_buy_kWh() > 0:
-                self.post_first_bid(
-                    self.area.next_market,
-                    self.state.clamp_energy_to_buy_kWh() * 1000.0
-                )
+        if ConstSettings.IAASettings.MARKET_TYPE == 2:
+            self.state.clamp_energy_to_buy_kWh([current_market.time_slot])
+            self.update_market_cycle_bids(final_rate=self.break_even[
+                self.area.now.strftime(TIME_FORMAT)][0])
+            energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
+            if energy_kWh > 0:
+                self.post_first_bid(current_market, energy_kWh * 1000.0)
+                self.state.offered_buy_kWh[current_market.time_slot] += energy_kWh
 
-    def buy_energy(self):
-        # Here starts the logic if energy should be bought
-        # Iterating over all offers in every open market
-        for market in self.area.markets.values():
-            max_affordable_offer_rate = self.break_even[market.time_slot_str][0]
-            for offer in market.sorted_offers:
-                if offer.seller == self.owner.name:
-                    # Don't buy our own offer
-                    continue
-                # Check if storage has free capacity and if the price is cheap enough
-                if self.state.free_storage > 0.0 \
-                        and (offer.price / offer.energy) < max_affordable_offer_rate:
-                    # Try to buy the energy
-                    try:
-                        if not self.state.has_battery_reached_max_power(market.time_slot):
-                            max_energy = self.calculate_energy_to_buy(offer.energy)
-                            self.accept_offer(market, offer, energy=max_energy)
-                            self.state.update_energy_per_slot(-max_energy, market.time_slot)
-                            self.state.block_storage(max_energy)
-                            return True
+    def event_balancing_market_cycle(self):
+        if not self.is_eligible_for_balancing_market:
+            return
 
-                    except MarketException:
-                        # Offer already gone etc., try next one.
-                        return False
-                else:
+        current_market = self.area.next_market
+        free_storage = self.state.free_storage(current_market.time_slot)
+        if free_storage > 0:
+            charge_energy = self.balancing_energy_ratio.demand * free_storage
+            charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
+            if charge_energy != 0 and charge_price != 0:
+                # committing to start charging when required
+                self.area.get_balancing_market(self.area.now).balancing_offer(charge_price,
+                                                                              -charge_energy,
+                                                                              self.owner.name)
+        if self.state.used_storage > 0:
+            discharge_energy = self.balancing_energy_ratio.supply * self.state.used_storage
+            discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
+            # committing to start discharging when required
+            if discharge_energy != 0 and discharge_price != 0:
+                self.area.get_balancing_market(self.area.now).balancing_offer(discharge_price,
+                                                                              discharge_energy,
+                                                                              self.owner.name)
+
+    def buy_energy(self, market):
+        max_affordable_offer_rate = self.break_even[market.time_slot_str][0]
+        for offer in market.sorted_offers:
+            if offer.seller == self.owner.name:
+                # Don't buy our own offer
+                continue
+            # Check if storage has free capacity and if the price is cheap enough
+            if self.state.free_storage(market.time_slot) > 0.0 \
+                    and (offer.price / offer.energy) < max_affordable_offer_rate:
+                try:
+                    max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
+                    if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
+                        self.accept_offer(market, offer, energy=max_energy)
+                        self.state.pledged_buy_kWh[market.time_slot] += max_energy
+                        return True
+
+                except MarketException:
+                    # Offer already gone etc., try next one.
                     return False
+            else:
+                return False
 
-    def sell_energy(self, energy=None, open_offer=False):
-        target_market = self.select_market_to_sell()
-        selling_rate = self.calculate_selling_rate(target_market)
-        # If there is not enough available energy for this timeslot, then return 0 energy
-        if self.state.has_battery_reached_max_power(target_market.time_slot):
-            energy = 0.0
-        energy = self.calculate_energy_to_sell(energy, target_market)
-
-        if energy > 0.0:
-            offer = target_market.offer(
-                energy * selling_rate,
-                energy,
-                self.owner.name
-            )
-            self.state.update_energy_per_slot(energy, target_market.time_slot)
-
-            # Update only for new offers
-            # Offers that were open before should not be updated
-            if not open_offer:
-                self.state.offer_storage(energy)
-            self.offers.post(offer, target_market)
+    def sell_energy(self):
+        markets_to_sell = self.select_market_to_sell()
+        energy_sell_dict = self.state.clamp_energy_to_sell_kWh(
+            [ma.time_slot for ma in markets_to_sell])
+        for market in markets_to_sell:
+            selling_rate = self.calculate_selling_rate(market)
+            energy = energy_sell_dict[market.time_slot]
+            if not self.state.has_battery_reached_max_power(energy, market.time_slot):
+                if energy > 0.0:
+                    offer = market.offer(
+                        energy * selling_rate,
+                        energy,
+                        self.owner.name
+                    )
+                    self.offers.post(offer, market)
+                    self.state.offered_sell_kWh[market.time_slot] += offer.energy
 
     def select_market_to_sell(self):
-        if ConstSettings.STORAGE_SELL_ON_MOST_EXPENSIVE_MARKET:
+        if StorageSettings.SELL_ON_MOST_EXPENSIVE_MARKET:
             # Sell on the most expensive market
             try:
                 max_rate = 0.0
-                most_expensive_market = list(self.area.markets.values())[0]
-                for m in self.area.markets.values():
-                    if len(m.sorted_offers) > 0 and \
-                            m.sorted_offers[0].price / m.sorted_offers[0].energy > max_rate:
-                        max_rate = m.sorted_offers[0].price / m.sorted_offers[0].energy
-                        most_expensive_market = m
+                most_expensive_market = self.area.all_markets[0]
+                for market in self.area.markets.values():
+                    if len(market.sorted_offers) > 0 and \
+                       market.sorted_offers[0].price / market.sorted_offers[0].energy > max_rate:
+                        max_rate = market.sorted_offers[0].price / market.sorted_offers[0].energy
+                        most_expensive_market = market
             except IndexError:
                 try:
                     most_expensive_market = self.area.current_market
                 except StopIteration:
                     return
-            return most_expensive_market
+            return [most_expensive_market]
         else:
-            # Sell on the most recent future market
-            return self.area.next_market
-
-    def calculate_energy_to_buy(self, energy):
-        return self.state.clamp_energy_to_buy_kWh(energy)
-
-    def calculate_energy_to_sell(self, energy, target_market):
-        return self.state.clamp_energy_to_sell_kWh(energy, target_market.time_slot)
+            return self.area.all_markets
 
     def calculate_selling_rate(self, market):
         if self.cap_price_strategy is True:
@@ -250,8 +299,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.state.charge_history[market.time_slot] is '-':
             soc = self.state.used_storage / self.state.capacity
         else:
-            soc = self.state.charge_history[market.time_slot]
-
+            soc = self.state.charge_history[market.time_slot] / 100.0
         max_selling_rate = self._max_selling_rate(market)
         break_even_sell = self.break_even[market.time_slot_str][1]
         if max_selling_rate < break_even_sell:

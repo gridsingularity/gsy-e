@@ -1,10 +1,32 @@
 """
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+from typing import Union
+
+from d3a.models.const import ConstSettings
+from d3a.d3a_core.util import generate_market_slot_list
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.constants import TIME_FORMAT
+from d3a.models.read_user_profile import read_arbitrary_profile
+from d3a.models.read_user_profile import InputProfileTypes
+
+"""
 Create a load that uses a profile as input for its power values
 """
-import sys
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy
-from d3a.models.strategy.mixins import ReadProfileMixin
-from d3a.models.strategy.mixins import InputProfileTypes
 
 
 class DefinedLoadStrategy(LoadHoursStrategy):
@@ -12,9 +34,17 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
     """
-    parameters = ('daily_load_profile', 'max_energy_rate')
+    parameters = ('daily_load_profile', 'max_energy_rate', 'min_energy_rate',
+                  'balancing_energy_ratio')
 
-    def __init__(self, daily_load_profile, max_energy_rate: float =sys.maxsize):
+    def __init__(self, daily_load_profile,
+                 min_energy_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.MIN_ENERGY_RATE,
+                 max_energy_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.MAX_ENERGY_RATE,
+                 balancing_energy_ratio: tuple =
+                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
         """
         Constructor of DefinedLoadStrategy
         :param daily_load_profile: input profile for a day. Can be either a csv file path,
@@ -24,7 +54,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         accept
         """
         super().__init__(0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
-                         max_energy_rate=max_energy_rate)
+                         max_energy_rate=max_energy_rate, min_energy_rate=min_energy_rate,
+                         balancing_energy_ratio=balancing_energy_ratio)
         self.daily_load_profile = daily_load_profile
         self.load_profile = {}
 
@@ -34,7 +65,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for each slot.
         :return: None
         """
-        self.load_profile = ReadProfileMixin.read_arbitrary_profile(
+        self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self.daily_load_profile,
             slot_length=self.area.config.slot_length)
@@ -45,12 +76,16 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self.energy_requirement_Wh = 0
-        if self.load_profile[self.area.next_market.time_slot_str] != 0:
-            # TODO: Refactor energy_requirement_Wh to denote unit Wh
-            self.energy_requirement_Wh = \
-                self.load_profile[self.area.next_market.time_slot_str] * 1000.0
-        self.state.record_desired_energy(self.area, self.energy_requirement_Wh)
+        self._simulation_start_timestamp = self.area.now
+        self.hrs_per_day = {day: self._initial_hrs_per_day
+                            for day in range(self.area.config.duration.days + 1)}
+
+        for slot_time in generate_market_slot_list(self.area):
+            if self._allowed_operating_hours(slot_time.hour):
+                self.energy_requirement_Wh[slot_time] = \
+                    self.load_profile[slot_time.strftime(TIME_FORMAT)] * 1000
+                self.state.desired_energy_Wh[slot_time] = \
+                    self.load_profile[slot_time.strftime(TIME_FORMAT)] * 1000
 
     def _operating_hours(self, energy):
         """

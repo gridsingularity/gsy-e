@@ -1,17 +1,46 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 from pendulum import duration, DateTime
 from collections import OrderedDict
 from unittest.mock import MagicMock
 import unittest
 from d3a.models.area import Area
+from d3a.models.area.markets import AreaMarkets
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.config import SimulationConfig
-from d3a.models.market import Market, Offer
+from d3a.models.market import Market
+from d3a.models.market.market_structures import Offer
+from d3a.models.const import ConstSettings
+from d3a.d3a_core.device_registry import DeviceRegistry
 
 
 class TestAreaClass(unittest.TestCase):
 
     def setUp(self):
+        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
+        DeviceRegistry.REGISTRY = {
+            "H1 General Load": (33, 35),
+            "H2 General Load": (33, 35),
+            "H1 Storage1": (23, 25),
+            "H1 Storage2": (23, 25),
+        }
+
         self.appliance = MagicMock(spec=SimpleAppliance)
         self.strategy = MagicMock(spec=StorageStrategy)
         self.config = MagicMock(spec=SimulationConfig)
@@ -25,10 +54,11 @@ class TestAreaClass(unittest.TestCase):
         pass
 
     def test_markets_are_cycled_according_to_market_count(self):
+        self.area._bc = False
         for i in range(2, 100):
             self.config.market_count = i
             self.area._cycle_markets(False, False)
-            assert len(self.area.markets) == i
+            assert len(self.area.all_markets) == i
 
     def test_market_with_most_expensive_offer(self):
         m1 = MagicMock(spec=Market)
@@ -47,7 +77,8 @@ class TestAreaClass(unittest.TestCase):
         markets[DateTime(2018, 1, 1, 12, 0, 0)] = m1
         markets[DateTime(2018, 1, 1, 12, 15, 0)] = m2
         markets[DateTime(2018, 1, 1, 12, 30, 0)] = m3
-        self.area.markets = markets
+        self.area._markets = MagicMock(spec=AreaMarkets)
+        self.area._markets.markets = markets
         m1.sorted_offers = [o1, o1]
         m2.sorted_offers = [o2, o2]
         m3.sorted_offers = [o3, o3]
@@ -60,3 +91,18 @@ class TestAreaClass(unittest.TestCase):
         o2.price = 19
         o3.price = 20
         assert self.area.market_with_most_expensive_offer is m3
+
+    def test_cycle_markets(self):
+        self.area = Area(name="Street", children=[Area(name="House")])
+        self.area.parent = Area(name="GRID")
+        self.area.config.market_count = 5
+        self.area.activate()
+        assert len(self.area.all_markets) == 5
+
+        assert len(self.area.balancing_markets) == 5
+        self.area.current_tick = 900
+        self.area.tick(is_root_area=True)
+        assert len(self.area.past_markets) == 1
+        assert len(self.area.past_balancing_markets) == 1
+        assert len(self.area.all_markets) == 5
+        assert len(self.area.balancing_markets) == 5

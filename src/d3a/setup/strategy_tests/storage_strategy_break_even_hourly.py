@@ -1,17 +1,34 @@
 """
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+from d3a.models.appliance.switchable import SwitchableAppliance
+from d3a.models.area import Area
+from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.appliance.pv import PVAppliance
+from d3a.models.strategy.pv import PVStrategy
+
+"""
 To validate the break even hourly profile the backend plot Energy Trade Profile Of House 1
 is required. The energy rates for the storages are displayed in this plot, and these rates
 should adhere to the break even hourly profiles that are defined in this module.
 Tip: It's interesting to see the change in results from changing the initial_pv_rate_option
 between 1(historical average prices) and 2(market maker price).
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
-from d3a.models.area import Area
-from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours_fb import LoadHoursStrategy, CellTowerLoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.strategy.pv import PVStrategy
-
 
 # Hourly profiles for the break even points. Index of the dictionary is the hour of day,
 # first element is the break even buy price and second element the break even sell price.
@@ -70,13 +87,13 @@ def get_setup(config):
                                                                            range(12, 18)),
                                                                        max_energy_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(risk=10, initial_capacity=0.6,
+                    Area('H1 Storage1', strategy=StorageStrategy(risk=10, initial_capacity_kWh=0.6,
                                                                  break_even=break_even_profile,
-                                                                 max_abs_battery_power=5.0),
+                                                                 max_abs_battery_power_kW=5.0),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(risk=10, initial_capacity=0.6,
+                    Area('H1 Storage2', strategy=StorageStrategy(risk=10, initial_capacity_kWh=0.6,
                                                                  break_even=break_even_profile_2,
-                                                                 max_abs_battery_power=5.0),
+                                                                 max_abs_battery_power_kW=5.0),
                          appliance=SwitchableAppliance()),
                 ]
             ),

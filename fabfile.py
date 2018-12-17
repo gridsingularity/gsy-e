@@ -1,42 +1,35 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import os
 from pathlib import Path
+from platform import system
 
-import time
 from fabric.colors import blue, green, yellow
-from fabric.context_managers import hide, settings, cd
-from fabric.decorators import task, hosts, parallel
-from fabric.operations import local, run
-from fabric.state import env
+from fabric.context_managers import hide, settings
+from fabric.decorators import task, hosts
+from fabric.operations import local
 from fabric.tasks import execute
 from fabric.utils import abort, puts
-
+from default_settings_to_json_file import export_default_settings_to_json_file
 
 SOLIUM_VERSION = '0.2.2'
 HERE = Path().resolve()
 REQ_DIR = HERE / 'requirements'
-
-env.use_ssh_config = True
-env.hosts = [
-    'root@207.154.205.41',
-    'gsy@gsy-d3a-demo.local',
-]
-
-HOST_CONFIG = {
-    '207.154.205.41': {
-        'port': "9000",
-        'session_name': "d3a",
-        'd3a_options': "-t 30s --paused",
-        'trigger_pause': True
-    },
-    'gsy-d3a-demo.local': {
-        'port': "5000",
-        'session_name': "simulation",
-        'd3a_options': "-t 10s --slowdown 5 --reset-on-finish --reset-on-finish-wait 10s",
-        'trigger_pause': False
-    },
-}
-
-HOST_CONFIG['10.51.21.251'] = HOST_CONFIG['gsy-d3a-demo.local']
 
 
 def _ensure_solium():
@@ -93,6 +86,12 @@ def _ensure_pip_tools():
             local("pip install pip-tools")
 
 
+def _ensure_ganache_cli():
+    error_code = os.system('ganache-cli --version > /dev/null')
+    if error_code != 0:
+        local('npm install --global ganache-cli')
+
+
 def _pre_check():
     _ensure_venv()
     with hide('running', 'stdout'):
@@ -103,7 +102,9 @@ def _pre_check():
 
 
 def _post_check():
-    _ensure_solium()
+    if "Darwin" in system():
+        _ensure_solium()
+        _ensure_ganache_cli()
     _ensure_pre_commit()
 
 
@@ -146,6 +147,8 @@ def sync():
             )
         )
         local('pip install --no-deps -e .')
+        # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
+        local('pip install git+https://github.com/Jonasmpi/py-solc.git')
     _post_check()
 
 
@@ -157,18 +160,7 @@ def reqs():
     execute(sync)
 
 
-@task()
-@parallel
-def deploy():
-    conf = HOST_CONFIG[env.host]
-    with cd('d3a'):
-        run("git pull")
-        run("docker build -t d3a .")
-        with settings(warn_only=True):
-            run("docker stop d3a")
-        run('tmux new -d -s {c[session_name]} '
-            '"docker run --rm --name d3a -it -p {c[port]}:5000 -v $(pwd)/.d3a:/app/.d3a '
-            'd3a -l ERROR run {c[d3a_options]}"'.format(c=conf))
-        time.sleep(5)
-        if conf['trigger_pause']:
-            run("curl -X POST http://localhost:{c[port]}/api/pause".format(c=conf))
+@task
+@hosts('localhost')
+def write_default_settings_file():
+    export_default_settings_to_json_file()

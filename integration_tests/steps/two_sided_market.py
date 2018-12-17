@@ -1,10 +1,29 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 from behave import then
 from math import isclose
-from d3a.export_unmatched_loads import export_unmatched_loads
-from d3a.models.strategy.const import ConstSettings
-from d3a.util import make_iaa_name
+from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
+from d3a.models.const import ConstSettings
+from d3a.d3a_core.util import make_iaa_name
+from d3a import limit_float_precision
 
-RATE_THRESHOLD = 12
+RATE_LOWER_THRESHOLD = 13
+RATE_UPPER_THRESHOLD = 18
 
 
 @then('the load has no unmatched loads')
@@ -28,7 +47,8 @@ def device_partially_fulfill_bid(context, device):
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
     pvs = list(filter(lambda x: "H2 PV" in x.name, house2.children))
 
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
+        slot = market.time_slot
         if len(market.trades) == 0:
             continue
 
@@ -36,19 +56,23 @@ def device_partially_fulfill_bid(context, device):
         assert len(market.trades) == 5
         assert all(trade.buyer == load_or_storage.name for trade in market.trades)
         assert all(trade.seller == make_iaa_name(house1)
-                   for trade in house1.past_markets[slot].trades)
-        assert len(grid.past_markets[slot].trades) == 5
+                   for trade in house1.get_past_market(slot).trades)
+        assert len(grid.get_past_market(slot).trades) == 5
         assert all(trade.buyer == make_iaa_name(house1)
-                   for trade in grid.past_markets[slot].trades)
+                   for trade in grid.get_past_market(slot).trades)
         assert all(trade.seller == make_iaa_name(house2)
-                   for trade in grid.past_markets[slot].trades)
+                   for trade in grid.get_past_market(slot).trades)
 
         pv_names = [pv.name for pv in pvs]
-        assert len(grid.past_markets[slot].trades) == 5
+        assert len(grid.get_past_market(slot).trades) == 5
         assert all(trade.buyer == make_iaa_name(house2)
-                   for trade in house2.past_markets[slot].trades)
+                   for trade in house2.get_past_market(slot).trades)
         assert all(trade.seller in pv_names
-                   for trade in house2.past_markets[slot].trades)
+                   for trade in house2.get_past_market(slot).trades)
+        assert all(RATE_LOWER_THRESHOLD <
+                   trade.offer.price / trade.offer.energy <
+                   RATE_UPPER_THRESHOLD
+                   for trade in market.trades)
 
 
 @then('the PV always provides constant power according to load demand')
@@ -61,12 +85,12 @@ def pv_constant_power(context):
 
     load_energies_set = set()
     pv_energies_set = set()
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
         for trade in market.trades:
             if trade.buyer == load.name:
                 load_energies_set.add(trade.offer.energy)
 
-    for slot, market in house2.past_markets.items():
+    for market in house2.past_markets:
         for trade in market.trades:
             if trade.seller == pv.name:
                 pv_energies_set.add(trade.offer.energy)
@@ -76,36 +100,12 @@ def pv_constant_power(context):
     assert load_energies_set == pv_energies_set
 
 
-@then('the energy rate for all the trades is the mean of max and min load/pv rate')
-def energy_rate_average_between_min_and_max_load_pv(context):
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    load = next(filter(lambda x: "H1 General Load" in x.name, house1.children))
-
-    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
-    pvs = list(filter(lambda x: "H2 PV" in x.name, house2.children))
-
-    load_rates_set = set()
-    pv_rates_set = set()
-    for slot, market in house1.past_markets.items():
-        for trade in market.trades:
-            if trade.buyer == load.name:
-                load_rates_set.add(trade.offer.price / trade.offer.energy)
-
-    for slot, market in house2.past_markets.items():
-        for trade in market.trades:
-            if any(trade.seller == pv.name for pv in pvs):
-                pv_rates_set.add(trade.offer.price / trade.offer.energy)
-
-    assert all([RATE_THRESHOLD < rate for rate in load_rates_set])
-    assert all([RATE_THRESHOLD < rate for rate in pv_rates_set])
-
-
 @then('the storage is never selling energy')
 def storage_never_selling(context):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
 
-    for slot, market in storage.past_markets.items():
+    for market in storage.past_markets:
         for trade in market.trades:
             assert trade.seller != storage.name
             assert trade.buyer == storage.name
@@ -116,7 +116,7 @@ def final_soc_full(context, soc_level):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
     if soc_level == '0':
-        soc_level = ConstSettings.STORAGE_MIN_ALLOWED_SOC * 100.0
+        soc_level = ConstSettings.StorageSettings.MIN_ALLOWED_SOC * 100.0
     final_soc = list(storage.strategy.state.charge_history.values())[-1]
     assert isclose(final_soc, float(soc_level))
 
@@ -131,18 +131,18 @@ def energy_rate_average_between_min_and_max_ess_pv(context):
 
     storage_rates_set = set()
     pv_rates_set = set()
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
         for trade in market.trades:
             if trade.buyer == storage.name:
                 storage_rates_set.add(trade.offer.price / trade.offer.energy)
 
-    for slot, market in house2.past_markets.items():
+    for market in house2.past_markets:
         for trade in market.trades:
             if trade.seller == pv.name:
                 pv_rates_set.add(trade.offer.price / trade.offer.energy)
 
-    assert all([RATE_THRESHOLD < rate for rate in storage_rates_set])
-    assert all([RATE_THRESHOLD < rate for rate in pv_rates_set])
+    assert all([RATE_LOWER_THRESHOLD < rate < RATE_UPPER_THRESHOLD for rate in storage_rates_set])
+    assert all([RATE_LOWER_THRESHOLD < rate < RATE_UPPER_THRESHOLD for rate in pv_rates_set])
 
 
 @then('the storage is never buying energy and is always selling energy')
@@ -150,7 +150,7 @@ def storage_never_buys_always_sells(context):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
 
-    for slot, market in house1.past_markets.items():
+    for market in house1.past_markets:
         for trade in market.trades:
             assert trade.buyer != storage.name
             assert trade.seller == storage.name
@@ -166,8 +166,8 @@ def trade_rates_break_even(context):
     load = next(filter(lambda x: "H2 General Load" in x.name, house2.children))
 
     for area in [house1, house2, storage, load]:
-        for slot, market in area.past_markets.items():
+        for market in area.past_markets:
             for trade in market.trades:
-                assert ConstSettings.STORAGE_BREAK_EVEN_SELL <= \
-                       trade.offer.price / trade.offer.energy <= \
-                       ConstSettings.DEFAULT_MARKET_MAKER_RATE
+                assert ConstSettings.StorageSettings.BREAK_EVEN_SELL <= \
+                       limit_float_precision(trade.offer.price / trade.offer.energy) <= \
+                       ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

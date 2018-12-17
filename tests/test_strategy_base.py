@@ -1,14 +1,32 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import pytest
 
-from datetime import datetime
+import pendulum
 
-from d3a.exceptions import MarketException
-from d3a.models.strategy.base import BaseStrategy, Offers
-from d3a.models.market import Offer, Trade, Bid
+from d3a.constants import TIME_ZONE
+from d3a.d3a_core.exceptions import MarketException
+from d3a.models.strategy import BaseStrategy, Offers
+from d3a.models.market.market_structures import Offer, Trade, Bid
 
 
 class FakeLog:
-    def warn(self, *args):
+    def warning(self, *args):
         pass
 
     def error(self, *args):
@@ -120,8 +138,8 @@ def offers3(offer1):
 def test_offers_partial_offer(offer1, offers3):
     accepted_offer = Offer('id', 1, 1.8, offer1.seller, 'market')
     residual_offer = Offer('new_id', 1, 1.2, offer1.seller, 'market')
-    trade = Trade('trade_id', datetime.now(), accepted_offer, offer1.seller, 'buyer')
-    offers3.on_offer_changed('market', offer1, residual_offer)
+    trade = Trade('trade_id', pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, 'buyer')
+    offers3.on_offer_changed(offer1, residual_offer)
     offers3.on_trade('market', trade)
     assert len(offers3.open_in_market('market')) == 2
     assert len(offers3.sold_in_market('market')) == 1

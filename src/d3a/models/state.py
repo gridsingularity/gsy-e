@@ -1,8 +1,28 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 from collections import defaultdict
 from pendulum import duration
 
-from d3a.models.strategy.const import ConstSettings
+from math import isclose
+from d3a.models.const import ConstSettings
+from d3a import limit_float_precision
 
+StorageSettings = ConstSettings.StorageSettings
 
 # Complex device models should be split in three classes each:
 #
@@ -19,21 +39,22 @@ from d3a.models.strategy.const import ConstSettings
 #   SimpleAppliance may do.
 
 
+class PVState:
+    def __init__(self):
+        self.available_energy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+
+
 class LoadState:
     def __init__(self):
-        self.desired_energy = defaultdict(lambda: 0)
-
-    def record_desired_energy(self, area, energy):
-        time_slot = area.next_market.time_slot
-        self.desired_energy[time_slot] = energy
+        self.desired_energy_Wh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
 
 
 class FridgeState:
     def __init__(self):
-        self.temperature = ConstSettings.FRIDGE_TEMPERATURE
+        self.temperature = ConstSettings.FridgeSettings.TEMPERATURE
         self.temp_history = defaultdict(lambda: '-')
-        self.min_temperature = ConstSettings.MIN_FRIDGE_TEMP
-        self.max_temperature = ConstSettings.MAX_FRIDGE_TEMP
+        self.min_temperature = ConstSettings.FridgeSettings.MIN_TEMP
+        self.max_temperature = ConstSettings.FridgeSettings.MAX_TEMP
 
     @property
     def normalized_temperature(self):
@@ -53,120 +74,158 @@ class FridgeState:
 
 class StorageState:
     def __init__(self,
-                 initial_capacity=0.0,
+                 initial_capacity_kWh=None,
                  initial_soc=None,
-                 capacity=ConstSettings.STORAGE_CAPACITY,
-                 max_abs_battery_power=ConstSettings.MAX_ABS_BATTERY_POWER,
+                 capacity=StorageSettings.CAPACITY,
+                 max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
                  loss_per_hour=0.01,
-                 strategy=None):
-        self._blocked_storage = 0.0
-        self._offered_storage = 0.0
-        self._battery_energy_per_slot = 0.0
+                 strategy=None,
+                 min_allowed_soc=None):
+
         if initial_soc is not None:
-            if initial_capacity:
-                strategy.log.warning("Ignoring initial_capacity parameter since "
+            if initial_capacity_kWh:
+                strategy.log.warning("Ignoring initial_capacity_kWh parameter since "
                                      "initial_soc has also been given.")
-            initial_capacity = capacity * initial_soc / 100
-        self._used_storage = initial_capacity
+            initial_capacity_kWh = capacity * initial_soc / 100
+        if initial_soc is None and initial_capacity_kWh is None:
+            initial_capacity_kWh = StorageSettings.MIN_ALLOWED_SOC * StorageSettings.CAPACITY
+
+        if min_allowed_soc is None:
+            min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
+        self.min_allowed_soc = min_allowed_soc
+
         self.capacity = capacity
-        self.max_abs_battery_power = max_abs_battery_power
         self.loss_per_hour = loss_per_hour
-        self.offered_history = defaultdict(lambda: '-')
-        self.used_history = defaultdict(lambda: '-')
-        self.charge_history = defaultdict(lambda: '-')
-        self.charge_history_kWh = defaultdict(lambda: '-')
-        self._traded_energy_per_slot = defaultdict(lambda: 0.0)  # type: Dict[DateTime, float]
+        self.max_abs_battery_power_kW = max_abs_battery_power_kW
 
-    @property
-    def blocked_storage(self):
-        return self._blocked_storage
+        # storage capacity, that is already sold:
+        self.pledged_sell_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        # storage capacity, that has been offered (but not traded yet):
+        self.offered_sell_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        # energy, that has been bought:
+        self.pledged_buy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        # energy, that the storage wants to buy (but not traded yet):
+        self.offered_buy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
 
-    @property
-    def offered_storage(self):
-        return self._offered_storage
+        self.charge_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
+        self.charge_history_kWh = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
+        self.offered_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
+        self.used_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
+        self.energy_to_buy_dict = defaultdict(lambda: 0.)
+
+        self._used_storage = initial_capacity_kWh
+        self._battery_energy_per_slot = 0.0
 
     @property
     def used_storage(self):
+        """
+        Current stored energy
+        """
         return self._used_storage
 
-    @property
-    def free_storage(self):
-        in_use = self._blocked_storage + self._offered_storage + self._used_storage
+    def free_storage(self, time_slot):
+        """
+        Storage, that has not been promised or occupied
+        """
+        in_use = self._used_storage \
+            - self.pledged_sell_kWh[time_slot] \
+            + self.pledged_buy_kWh[time_slot] \
+            + self.offered_buy_kWh[time_slot]
         return self.capacity - in_use
 
-    def market_cycle(self, area):
-        self.used_history[area.current_market.time_slot] = self._used_storage
-        self.offered_history[area.current_market.time_slot] = self._offered_storage
-        charge = 100.0 * (self._used_storage + self._offered_storage) / self.capacity
-        self.charge_history[area.current_market.time_slot] = charge
-        self.charge_history_kWh[area.current_market.time_slot] = \
-            self._used_storage + self._offered_storage
+    def max_offer_energy_kWh(self, time_slot):
+        return self.used_storage - self.pledged_sell_kWh[time_slot] \
+                                 - self.offered_sell_kWh[time_slot]
 
-    def tick(self, area):
-        self.lose(self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
-        free = self.free_storage / self.capacity
-        if free < 0.2:
-            area.log.info("Storage reached more than 80% Battery: {}%".format(
-                str((1 - free) * 100)))
+    def max_buy_energy_kWh(self, time_slot):
+        return self._battery_energy_per_slot - self.pledged_buy_kWh[time_slot] \
+                                             - self.offered_buy_kWh[time_slot]
 
     def set_battery_energy_per_slot(self, slot_length):
-        self._battery_energy_per_slot = self.max_abs_battery_power * \
-                                        (slot_length/duration(hours=1))
+        self._battery_energy_per_slot = self.max_abs_battery_power_kW * \
+                                        (slot_length / duration(hours=1))
 
-    def has_battery_reached_max_power(self, time_slot):
-        return abs(self.traded_energy_per_slot(time_slot)) >= \
+    def has_battery_reached_max_power(self, energy, time_slot):
+        return limit_float_precision(abs(energy
+                                     + self.pledged_sell_kWh[time_slot]
+                                     + self.offered_sell_kWh[time_slot]
+                                     - self.pledged_buy_kWh[time_slot]
+                                     - self.offered_buy_kWh[time_slot])) > \
                self._battery_energy_per_slot
 
-    def clamp_energy_to_buy_kWh(self, energy=None):
-        # If no energy is passed, try to buy energy to fill up the battery
-        if energy is None:
-            energy = self.free_storage
-        return min(self._battery_energy_per_slot, self.free_storage, energy)
+    def clamp_energy_to_sell_kWh(self, market_slot_time_list):
+        """
+        Determines available energy to sell for each active market and returns a dict[TIME, FLOAT]
+        """
+        accumulated_pledged = 0
+        accumulated_offered = 0
+        for time_slot in market_slot_time_list:
+            accumulated_pledged += self.pledged_sell_kWh[time_slot]
+            accumulated_offered += self.offered_sell_kWh[time_slot]
 
-    def clamp_energy_to_sell_kWh(self, energy, time_slot):
-        # If no energy is passed, try to sell all the Energy left in the storage
-        if energy is None:
-            energy = self.used_storage
+        energy = self.used_storage \
+            - accumulated_pledged \
+            - accumulated_offered \
+            - self.min_allowed_soc * self.capacity
+        storage_dict = {}
+        for time_slot in market_slot_time_list:
+            storage_dict[time_slot] = limit_float_precision(min(
+                                                            energy / len(market_slot_time_list),
+                                                            self.max_offer_energy_kWh(time_slot),
+                                                            self._battery_energy_per_slot))
 
-        # Limit energy according to the maximum battery power
-        clamped_energy = min(energy,
-                             (self._battery_energy_per_slot -
-                              self.traded_energy_per_slot(time_slot)))
-        # Limit energy to respect minimum allowed battery SOC
-        target_soc = (self.used_storage + self.offered_storage - clamped_energy) / self.capacity
-        if ConstSettings.STORAGE_MIN_ALLOWED_SOC > target_soc:
-            clamped_energy = self.used_storage + self.offered_storage - \
-                             self.capacity * ConstSettings.STORAGE_MIN_ALLOWED_SOC
-        return clamped_energy
+        return storage_dict
 
-    def traded_energy_per_slot(self, slot):
-        return self._traded_energy_per_slot[slot]
+    def clamp_energy_to_buy_kWh(self, market_slot_time_list):
+        """
+        Determines amount of energy that can be bought for each active market and writes it to
+        self.energy_to_buy_dict
+        """
 
-    # it increase positively while charging and negatively while discharging
-    def update_energy_per_slot(self, energy, slot):
-        self._traded_energy_per_slot[slot] += energy
+        accumulated_bought = 0
+        accumulated_sought = 0
+        for time_slot in market_slot_time_list:
+            accumulated_bought += self.pledged_buy_kWh[time_slot]
+            accumulated_sought += self.offered_buy_kWh[time_slot]
+        energy = limit_float_precision((self.capacity
+                                        - self.used_storage
+                                        - accumulated_bought
+                                        - accumulated_sought) / len(market_slot_time_list))
 
-    def block_storage(self, energy):
-        self._blocked_storage += energy
+        for time_slot in market_slot_time_list:
+            clamped_energy = limit_float_precision(
+                min(energy, self.max_buy_energy_kWh(time_slot), self._battery_energy_per_slot))
+            clamped_energy = max(clamped_energy, 0)
+            self.energy_to_buy_dict[time_slot] = clamped_energy
 
-    def offer_storage(self, energy):
-        assert energy <= self._used_storage + 1e-6, 'Used storage exceeded.'
-        self._used_storage -= energy
-        self._offered_storage += energy
-
-    def fill_blocked_storage(self, energy):
-        assert energy <= self._blocked_storage + 1e-6, 'Blocked storage exceeded.'
-        self._blocked_storage -= energy
-        self._used_storage += energy
-
-    def sold_offered_storage(self, energy):
-        assert energy <= self._offered_storage + 1e-6, 'Sale exceeds offered storage.'
-        self._offered_storage -= energy
+    def check_state(self, time_slot):
+        """
+        Sanity check of the state variables.
+        """
+        charge = limit_float_precision(self.used_storage / self.capacity)
+        max_value = self.capacity - self.min_allowed_soc * self.capacity
+        assert self.min_allowed_soc < charge or \
+            isclose(self.min_allowed_soc, charge, rel_tol=1e-06)
+        assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
+        assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
+        assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
+        assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value
 
     def lose(self, proportion):
         self._used_storage *= 1.0 - proportion
 
-    def remove_offered(self, energy):
-        assert energy <= self._offered_storage + 1e-6, 'Offered storage exceeded.'
-        self._offered_storage -= energy
-        self._used_storage += energy
+    def tick(self, area, time_slot):
+        self.check_state(time_slot)
+        self.lose(self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
+
+    def market_cycle(self, past_time_slot, time_slot):
+        """
+        Simulate actual Energy flow by removing pledged storage and added baought energy to the
+        used_storage
+        """
+        self._used_storage -= self.pledged_sell_kWh[past_time_slot]
+        self._used_storage += self.pledged_buy_kWh[past_time_slot]
+
+        self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
+        self.charge_history_kWh[time_slot] = self.used_storage
+        self.offered_history[time_slot] = self.offered_sell_kWh[time_slot]

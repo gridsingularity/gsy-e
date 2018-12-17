@@ -1,12 +1,30 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import pytest
 
 from collections import namedtuple
 
 from pendulum import DateTime
 
+from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.budget_keeper import BudgetKeeper
-from d3a.util import make_iaa_name
+from d3a.d3a_core.util import make_iaa_name
 
 
 FakeOffer = namedtuple('FakeOffer', 'price seller')
@@ -57,7 +75,7 @@ class FakeArea:
 
     @property
     def now(self):
-        return DateTime.now()
+        return DateTime.now(tz=TIME_ZONE)
 
     @property
     def current_market(self):

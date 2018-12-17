@@ -16,7 +16,7 @@ VERSION = '1.0.0a0'
 
 setup(
     name="d3a",
-    description="GridSingularity AreaManager PoC",
+    description="GridSingularity AreaManager",
     long_description=README,
     author='GridSingularity',
     author_email='info@gridsingularity.com',
@@ -28,7 +28,7 @@ setup(
     install_requires=REQUIREMENTS,
     entry_points={
         'console_scripts': [
-            'd3a = d3a.cli:main',
+            'd3a = d3a.d3a_core.cli:main',
         ]
     },
     zip_safe=False,
