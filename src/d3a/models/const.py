@@ -28,7 +28,7 @@ class ConstSettings:
         # Maximum number of area hierarchies. If None, this parameter will be
         # automatically calculated.
         MAX_OFFER_TRAVERSAL_LENGTH = None
-        # Number of times Market cwlearing rate has to be calculated per slot
+        # Number of times Market clearing rate has to be calculated per slot
         MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
         ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
         SETUP_FILE_PATH = None  # Default path of the available setup files
