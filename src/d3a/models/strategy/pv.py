@@ -59,17 +59,22 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.state = PVState()
 
     @staticmethod
-    def _validate_constructor_arguments(panel_count=None, risk=None, max_panel_output_W=None):
+    def _validate_constructor_arguments(panel_count=None, risk=None,
+                                        max_panel_output_W=None, min_selling_rate=None):
         if not ((risk is None or 0 <= risk <= 100) and
                 (panel_count is None or panel_count >= 1)):
             raise ValueError("Risk is a percentage value, should be "
                              "between 0 and 100, panel_count should be positive.")
         if max_panel_output_W is not None and max_panel_output_W < 0:
             raise ValueError("Max panel output in Watts should always be positive.")
+        if min_selling_rate is not None and min_selling_rate < 0:
+            raise ValueError("Min selling rate should be positive.")
 
     def area_reconfigure_event(self, **kw):
+        assert all(k in self.parameters for k in kw.keys())
         self._validate_constructor_arguments(kw.get('panel_count', None), kw.get('risk', None),
-                                             kw.get('max_panel_power_W', None))
+                                             kw.get('max_panel_power_W', None),
+                                             kw.get('min_selling_rate', None))
         for name, value in kw.items():
             setattr(self, name, value)
         self.produced_energy_forecast_kWh()
