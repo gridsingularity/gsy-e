@@ -217,7 +217,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
                                        pv_test3._calculate_price_decrease_rate(
                                            area_test3.test_market))
     new_offer = list(pv_test3.offers.posted.keys())[-1]
-    assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.MIN_SELLING_RATE
+    assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.FINAL_SELLING_RATE
 
 
 """TEST 4"""

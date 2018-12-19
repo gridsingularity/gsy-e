@@ -33,14 +33,14 @@
       "MAX_ENERGY_RATE": 35
     },
     "PVSettings": {
-      "MIN_SELLING_RATE": 0,
+      "FINAL_SELLING_RATE": 0,
       "INITIAL_RATE_OPTION": 2,
       "RATE_DECREASE_OPTION": 1,
       "DEFAULT_POWER_PROFILE": 0,
       "MAX_PANEL_OUTPUT_W": 160
     },
     "WindSettings": {
-      "MIN_SELLING_RATE": 0,
+      "FINAL_SELLING_RATE": 0,
       "INITIAL_RATE_OPTION": 2,
       "RATE_DECREASE_OPTION": 1,
       "MAX_WIND_TURBINE_OUTPUT_W": 160

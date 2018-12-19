@@ -38,7 +38,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
     def __init__(
         self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,
-        min_selling_rate: float=ConstSettings.PVSettings.MIN_SELLING_RATE,
+        final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
         initial_rate_option: float=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
         initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
         energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
@@ -57,7 +57,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.panel_count = panel_count
         self.max_panel_power_W = max_panel_power_W
         self.midnight = None
-        self.min_selling_rate = min_selling_rate
+        self.final_selling_rate = final_selling_rate
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
@@ -80,7 +80,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.produced_energy_forecast_kWh()
 
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
-        energy_rate = max(initial_sell_rate, self.min_selling_rate)
+        energy_rate = max(initial_sell_rate, self.final_selling_rate)
         rounded_energy_rate = round(energy_rate, 2)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
@@ -131,7 +131,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self.update_market_cycle_offers(self.min_selling_rate)
+        self.update_market_cycle_offers(self.final_selling_rate)
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
