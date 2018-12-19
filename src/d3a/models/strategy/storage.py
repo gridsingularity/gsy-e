@@ -22,7 +22,8 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import StorageState
 from d3a.models.strategy import BaseStrategy
 from d3a.models.const import ConstSettings
-from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin
+from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, \
+    BidUpdateFrequencyMixin, InitialRateOptions
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import TIME_FORMAT
@@ -39,12 +40,14 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
     parameters = ('risk', 'initial_capacity_kWh', 'initial_soc', 'initial_rate_option',
                   'energy_rate_decrease_option', 'energy_rate_decrease_per_update',
                   'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
-                  )
+                  'initial_selling_rate')
 
     def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
                  initial_capacity_kWh: float=None,
                  initial_soc: float=None,
                  initial_rate_option: int=StorageSettings.INITIAL_RATE_OPTION,
+                 initial_selling_rate:
+                 float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  energy_rate_decrease_option: int=StorageSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update:
                  float=GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
@@ -64,14 +67,17 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
         break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
+        self.initial_selling_rate = initial_selling_rate
+
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh, break_even,
-                                             min_allowed_soc)
+                                             min_allowed_soc, initial_selling_rate)
         self.break_even = break_even
 
-        self.min_selling_rate = list(break_even.values())[0][1]
+        self.final_selling_rate = list(break_even.values())[0][1]
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
+                                           initial_selling_rate,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
         # Normalize min/max buying rate profiles before passing to the bid mixin
@@ -102,7 +108,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity_kWh, initial_soc,
-                                        battery_capacity_kWh, break_even, min_allowed_soc):
+                                        battery_capacity_kWh, break_even, min_allowed_soc,
+                                        initial_selling_rate):
         if battery_capacity_kWh < 0:
             raise ValueError("Battery capacity should be a positive integer")
         if initial_soc and not min_allowed_soc <= initial_soc <= 100:
@@ -120,6 +127,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if any(break_even_point[0] < 0 or break_even_point[1] < 0
                for _, break_even_point in break_even.items()):
             raise ValueError("Break even point should be positive energy rate values.")
+        if initial_selling_rate < 0:
+            raise ValueError("Initial selling rate must be greater equal 0.")
 
     def event_tick(self, *, area):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
@@ -292,10 +301,13 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             return max(max_selling_rate, break_even_sell)
 
     def _max_selling_rate(self, market):
-        if self.initial_rate_option == 1 and self.area.historical_avg_rate != 0:
+        if self.initial_rate_option == InitialRateOptions.HISTORICAL_AVG_RATE \
+                and self.area.historical_avg_rate != 0:
             return self.area.historical_avg_rate
-        else:
+        elif self.initial_rate_option == InitialRateOptions.MARKET_MAKER_RATE:
             return self.area.config.market_maker_rate[market.time_slot_str]
+        elif self.initial_rate_option == InitialRateOptions.CUSTOM_RATE:
+            return self.initial_selling_rate
 
     def capacity_dependant_sell_rate(self, market):
         if self.state.charge_history[market.time_slot] is '-':

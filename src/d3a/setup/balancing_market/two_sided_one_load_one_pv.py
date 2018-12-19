@@ -32,7 +32,7 @@ device_registry_dict = {
 def get_setup(config):
     # Two sided market
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.PVSettings.MIN_SELLING_RATE = 0
+    ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
     ConstSettings.LoadSettings.MAX_ENERGY_RATE = 30

@@ -69,7 +69,7 @@ def test_strategy_roundtrip_with_params():
 def test_non_attr_param():
     area1 = Area('area1', [], PVStrategy())
     recovered1 = area_from_string(area_to_string(area1))
-    assert recovered1.strategy.min_selling_rate == ConstSettings.PVSettings.MIN_SELLING_RATE
+    assert recovered1.strategy.final_selling_rate == ConstSettings.PVSettings.FINAL_SELLING_RATE
 
 
 @pytest.fixture

@@ -23,7 +23,7 @@ from d3a.constants import PENDULUM_TIME_FORMAT
 
 
 @then('the storages buy energy for no more than the min PV selling rate')
-def storages_pv_min_selling_rate(context):
+def storages_pv_final_selling_rate(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     house2 = list(filter(lambda x: x.name == "House 2", context.simulation.area.children))[0]
     storage1 = list(filter(lambda x: "Storage1" in x.name, house1.children))[0]
@@ -37,11 +37,11 @@ def storages_pv_min_selling_rate(context):
             assert trade.buyer != storage2.name
             if trade.buyer == storage1.name:
                 # Storage 1 should buy energy offers with rate more than the PV min sell rate
-                assert trade.offer.price / trade.offer.energy >= pv.strategy.min_selling_rate
+                assert trade.offer.price / trade.offer.energy >= pv.strategy.final_selling_rate
 
     for market in house2.past_markets:
         assert all(trade.seller == pv.name for trade in market.trades)
-        assert all(trade.offer.price / trade.offer.energy >= pv.strategy.min_selling_rate
+        assert all(trade.offer.price / trade.offer.energy >= pv.strategy.final_selling_rate
                    for trade in market.trades)
 
 
@@ -63,7 +63,7 @@ def pv_price_decrease(context):
                 market_maker_rate[slot.format(PENDULUM_TIME_FORMAT)] * (1 - pv.strategy.risk / 100)
             price_dec_per_update = price_dec_per_slot / number_of_updates_per_slot
             minimum_rate = max((market_maker_rate[slot.format(PENDULUM_TIME_FORMAT)] *
-                                pv.strategy.risk / 100), pv.strategy.min_selling_rate)
+                                pv.strategy.risk / 100), pv.strategy.final_selling_rate)
             for id, offer in market.offers.items():
                 assert isclose(round(offer.price/offer.energy, 6), minimum_rate)
             for trade in market.trades:
@@ -71,7 +71,7 @@ def pv_price_decrease(context):
                     assert any([isclose(round(trade.offer.price / trade.offer.energy, 6),
                                         max((market_maker_rate[slot.format(PENDULUM_TIME_FORMAT)] -
                                              i * price_dec_per_update),
-                                            pv.strategy.min_selling_rate))
+                                            pv.strategy.final_selling_rate))
                                 for i in range(number_of_updates_per_slot + 1)])
 
     elif pv.strategy.energy_rate_decrease_option.value == 2:
