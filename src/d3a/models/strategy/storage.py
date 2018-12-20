@@ -74,7 +74,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                              min_allowed_soc, initial_selling_rate)
         self.break_even = break_even
 
-        self.final_selling_rate = list(break_even.values())[0][1]
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
                                            initial_selling_rate,
@@ -102,6 +101,25 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
     def event_activate(self):
+        if ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME != 0:
+            self.assign_offermixin_arguments(3, 2, 0)
+            # self.max_buying_rate_profile = {k: 0. for k in self.break_even.keys()}
+            # self.min_buying_rate_profile = {k: 0. for k in self.break_even.keys()}
+            self.break_even = {k: (0., 0.) for k in self.break_even.keys()}
+            if ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 1:
+                self.initial_selling_rate = 0
+                self.final_selling_rate = 0
+            elif ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 2:
+                self.initial_selling_rate = \
+                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
+                    ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
+                self.final_selling_rate = \
+                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
+                    ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
+            elif ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 3:
+                self.initial_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+                self.final_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()

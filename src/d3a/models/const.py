@@ -104,6 +104,11 @@ class ConstSettings:
         # Option 2 stands for double sided pay as bid market
         # Option 3 stands for double sided pay as clear market
         MARKET_TYPE = 1
+        # PRICING_SCHEME
+        # 0=D3A_trading (default), 1=no scheme, 2=feed-in-tariff, 3=net-metering,
+        # RICING_SCHEME = 4
+        COMPARE_TO_PRICING_SCHEME = 0
+        FEED_IN_TARIFF_PERCENTAGE = 50
 
     class BlockchainSettings:
         # Blockchain URL, default is localhost.
