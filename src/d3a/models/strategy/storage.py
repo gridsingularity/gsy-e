@@ -67,18 +67,18 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                              initial_soc, battery_capacity_kWh, break_even,
                                              min_allowed_soc)
         self.break_even = break_even
-
         self.min_selling_rate = list(break_even.values())[0][1]
-        BaseStrategy.__init__(self)
-        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
-                                           energy_rate_decrease_option,
-                                           energy_rate_decrease_per_update)
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
             InputProfileTypes.IDENTITY,
             StorageSettings.MIN_BUYING_RATE
         )
         self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
+
+        BaseStrategy.__init__(self)
+        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
+                                           energy_rate_decrease_option,
+                                           energy_rate_decrease_per_update)
         BidUpdateFrequencyMixin.__init__(self,
                                          initial_rate_profile=self.min_buying_rate_profile,
                                          final_rate_profile=self.max_buying_rate_profile)
@@ -94,16 +94,29 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
-    def area_reconfigure_event(self, risk, initial_rate_option, energy_rate_decrease_option,
-                               energy_rate_decrease_per_update, battery_capacity_kWh,
-                               max_abs_battery_power_kW, break_even, min_allowed_soc):
-        self.break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
+    def area_reconfigure_event(self, risk=None, initial_rate_option=None,
+                               energy_rate_decrease_option=None,
+                               energy_rate_decrease_per_update=None,
+                               battery_capacity_kWh=None,
+                               max_abs_battery_power_kW=None, break_even=None,
+                               min_allowed_soc=None):
+        if break_even is not None:
+            self.break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
+            self.min_selling_rate = list(break_even.values())[0][1]
+            self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
+
         self._validate_constructor_arguments(risk, None, None, battery_capacity_kWh,
                                              self.break_even, min_allowed_soc)
         self.assign_offermixin_arguments(initial_rate_option, energy_rate_decrease_option,
                                          energy_rate_decrease_per_update)
-        self.state.capacity = battery_capacity_kWh
-        self.state.max_abs_battery_power_kW = max_abs_battery_power_kW
+        if battery_capacity_kWh is not None:
+            self.state.capacity = battery_capacity_kWh
+        if max_abs_battery_power_kW is not None:
+            self.state.max_abs_battery_power_kW = max_abs_battery_power_kW
+        if risk is not None:
+            self.risk = risk
+        if min_allowed_soc is not None:
+            self.state.min_allowed_soc = min_allowed_soc
 
     def event_activate(self):
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
@@ -120,9 +133,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                              "MIN_ALLOWED_SOC and 100.")
         if risk and not 0 <= risk <= 100:
             raise ValueError("Risk is a percentage value, should be between 0 and 100.")
-        min_allowed_capacity = min_allowed_soc * battery_capacity_kWh
-        if initial_capacity_kWh and not min_allowed_capacity \
-           <= initial_capacity_kWh <= battery_capacity_kWh:
+        if initial_capacity_kWh and battery_capacity_kWh and min_allowed_soc and \
+           not min_allowed_soc * battery_capacity_kWh <= \
+           initial_capacity_kWh <= battery_capacity_kWh:
             raise ValueError(f"Initial capacity should be between min_allowed_capacity and "
                              "battery_capacity_kWh parameter.")
         if any(be[1] <= be[0] for _, be in break_even.items()):

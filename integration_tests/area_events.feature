@@ -60,3 +60,10 @@ Feature: Area Events Tests
     When we run the d3a simulation with area_events.pv_event [1, 30, 15]
     Then load consumes less than 0.0756 kWh between 8:00 and 12:00
     And load consumes less than 1.59 kWh between 12:00 and 16:00
+
+  Scenario: Storage changes risk after strategy event
+    Given we have a scenario named area_events/storage_event
+    And d3a is installed
+    When we run the d3a simulation with area_events.storage_event [1, 30, 15]
+    Then load consumes 0.005 kWh with 25 ct/kWh between 0:00 and 12:00
+    And load does not consume energy between 12:00 and 24:00

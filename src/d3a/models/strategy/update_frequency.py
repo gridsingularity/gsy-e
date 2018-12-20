@@ -119,11 +119,14 @@ class OfferUpdateFrequencyMixin:
 
     def assign_offermixin_arguments(self, initial_rate_option, energy_rate_decrease_option,
                                     energy_rate_decrease_per_update):
-        self.initial_rate_option = InitialRateOptions(initial_rate_option)
-        self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
-        if energy_rate_decrease_per_update and energy_rate_decrease_per_update < 0:
-            raise ValueError("Energy rate decrease per update should be a positive value.")
-        self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
+        if initial_rate_option is not None:
+            self.initial_rate_option = InitialRateOptions(initial_rate_option)
+        if energy_rate_decrease_option is not None:
+            self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
+        if energy_rate_decrease_per_update is not None:
+            if energy_rate_decrease_per_update < 0:
+                raise ValueError("Energy rate decrease per update should be a positive value.")
+            self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
 
     def update_on_activate(self):
         self._decrease_price_every_nr_s = \

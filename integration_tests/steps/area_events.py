@@ -123,3 +123,33 @@ def load_consumes_between(context, energy, start_time, end_time):
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "H1 General Load"
         assert market.trades[0].offer.energy == energy
+
+
+@then('load consumes {energy} kWh with {rate} ct/kWh between {start_time}:00 and {end_time}:00')
+def load_consumes_variable_energy_with_rate_between(context, energy, rate, start_time, end_time):
+    energy = float(energy)
+    rate = int(rate)
+    start_time = int(start_time)
+    end_time = int(end_time)
+    grid = context.simulation.area
+
+    for market in grid.past_markets:
+        if not start_time <= market.time_slot.hour < end_time:
+            continue
+        assert len(market.trades) == 1
+        assert market.trades[0].seller == "IAA House 1" and \
+            market.trades[0].buyer == "Grid Load"
+        assert market.trades[0].offer.energy == energy
+        assert int(market.trades[0].offer.price / market.trades[0].offer.energy) == rate
+
+
+@then('load does not consume energy between {start_time}:00 and {end_time}:00')
+def load_does_not_consume_between(context, start_time, end_time):
+    start_time = int(start_time)
+    end_time = int(end_time)
+
+    grid = context.simulation.area
+    for market in grid.past_markets:
+        if not start_time <= market.time_slot.hour < end_time:
+            continue
+        assert len(market.trades) == 0
