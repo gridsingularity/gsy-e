@@ -38,17 +38,18 @@ class PVPredefinedStrategy(PVStrategy):
         Strategy responsible for using one of the predefined PV profiles.
     """
     parameters = ('panel_count', 'risk', 'final_selling_rate', 'energy_rate_decrease_option',
-                  'energy_rate_decrease_per_update')
+                  'energy_rate_decrease_per_update', 'initial_selling_rate')
 
-    def __init__(self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK, panel_count: int=1,
-                 final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-                 cloud_coverage: int=None,
-                 initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
-                 energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
-                 ENERGY_RATE_DECREASE_PER_UPDATE,
-                 max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
-                 ):
+    def __init__(
+            self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK, panel_count: int=1,
+            final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            cloud_coverage: int=None,
+            initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+            initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+            energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
+            energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
+            ENERGY_RATE_DECREASE_PER_UPDATE,
+            max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         """
         Constructor of PVPredefinedStrategy
         :param risk: PV risk parameter
@@ -59,6 +60,7 @@ class PVPredefinedStrategy(PVStrategy):
         super().__init__(panel_count=panel_count, risk=risk,
                          final_selling_rate=final_selling_rate,
                          initial_rate_option=initial_rate_option,
+                         initial_selling_rate=initial_selling_rate,
                          energy_rate_decrease_option=energy_rate_decrease_option,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          max_panel_power_W=max_panel_power_W
@@ -122,17 +124,18 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         Strategy responsible for reading a profile in the form of a dict of values.
     """
     parameters = ('panel_count', 'risk', 'final_selling_rate', 'energy_rate_decrease_option',
-                  'energy_rate_decrease_per_update', 'power_profile')
+                  'energy_rate_decrease_per_update', 'power_profile', 'initial_selling_rate')
 
-    def __init__(self, power_profile, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
-                 panel_count: int=1,
-                 final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-                 initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
-                 energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-                 energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
-                 ENERGY_RATE_DECREASE_PER_UPDATE,
-                 max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
-                 ):
+    def __init__(
+            self, power_profile, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
+            panel_count: int=1,
+            final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+            initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+            energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
+            energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
+            ENERGY_RATE_DECREASE_PER_UPDATE,
+            max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         """
         Constructor of PVUserProfileStrategy
         :param power_profile: input profile for a day. Can be either a csv file path,
@@ -145,6 +148,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         super().__init__(risk=risk, panel_count=panel_count,
                          final_selling_rate=final_selling_rate,
                          initial_rate_option=initial_rate_option,
+                         initial_selling_rate=initial_selling_rate,
                          energy_rate_decrease_option=energy_rate_decrease_option,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          max_panel_power_W=max_panel_power_W

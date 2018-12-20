@@ -34,18 +34,18 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                 help="Change the risk parameter. Valid values are between 1 and 100.")
     ]
 
-    parameters = ('panel_count', 'risk', 'max_panel_power_W', 'final_selling_rate')
+    parameters = ('panel_count', 'risk', 'max_panel_power_W', 'initial_selling_rate',
+                  'final_selling_rate')
 
     def __init__(
-        self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,
-        final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-        initial_rate_option: float=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
-        initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-        energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-        energy_rate_decrease_per_update:
-        float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-        max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
-    ):
+         self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,
+         final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
+         initial_rate_option: float=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+         initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+         energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
+         energy_rate_decrease_per_update:
+         float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+         max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         self._validate_constructor_arguments(panel_count, risk, max_panel_power_W,
                                              initial_selling_rate)
         BaseStrategy.__init__(self)
