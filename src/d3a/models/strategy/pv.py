@@ -34,7 +34,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                 help="Change the risk parameter. Valid values are between 1 and 100.")
     ]
 
-    parameters = ('panel_count', 'risk', 'max_panel_power_W', 'min_selling_rate')
+    parameters = ('panel_count', 'risk', 'max_panel_power_W', 'final_selling_rate')
 
     def __init__(
         self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,

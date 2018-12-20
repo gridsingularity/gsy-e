@@ -73,12 +73,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                              min_allowed_soc, initial_selling_rate)
         self.break_even = break_even
         self.final_selling_rate = list(break_even.values())[0][1]
-        BaseStrategy.__init__(self)
-        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
-                                           initial_selling_rate,
-                                           energy_rate_decrease_option,
-                                           energy_rate_decrease_per_update)
-
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
             InputProfileTypes.IDENTITY,
@@ -88,6 +82,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
+                                           initial_selling_rate,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
         BidUpdateFrequencyMixin.__init__(self,
