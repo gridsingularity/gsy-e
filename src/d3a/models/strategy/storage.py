@@ -108,11 +108,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                min_allowed_soc=None):
         if break_even is not None:
             self.break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
-            self.min_selling_rate = list(break_even.values())[0][1]
+            self.initial_selling_rate = list(break_even.values())[0][1]
             self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
 
         self._validate_constructor_arguments(risk, None, None, battery_capacity_kWh,
-                                             self.break_even, min_allowed_soc)
+                                             self.break_even, min_allowed_soc,
+                                             self.initial_selling_rate)
         self.assign_offermixin_arguments(initial_rate_option, energy_rate_decrease_option,
                                          energy_rate_decrease_per_update)
         if battery_capacity_kWh is not None:

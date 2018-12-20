@@ -77,7 +77,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         assert all(k in self.parameters for k in kw.keys())
         self._validate_constructor_arguments(kw.get('panel_count', None), kw.get('risk', None),
                                              kw.get('max_panel_power_W', None),
-                                             kw.get('min_selling_rate', None))
+                                             kw.get('initial_selling_rate', None))
         for name, value in kw.items():
             setattr(self, name, value)
         self.produced_energy_forecast_kWh()
