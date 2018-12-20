@@ -29,8 +29,8 @@
       "SELL_ON_MOST_EXPENSIVE_MARKET": false
     },
     "LoadSettings": {
-      "MIN_ENERGY_RATE": 0,
-      "MAX_ENERGY_RATE": 35
+      "INITIAL_BUYING_RATE": 0,
+      "FINAL_BUYING_RATE": 35
     },
     "PVSettings": {
       "FINAL_SELLING_RATE": 0,
