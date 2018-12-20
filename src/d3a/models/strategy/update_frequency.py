@@ -27,6 +27,7 @@ from d3a.models.const import ConstSettings
 class InitialRateOptions(Enum):
     HISTORICAL_AVG_RATE = 1
     MARKET_MAKER_RATE = 2
+    CUSTOM_RATE = 3
 
 
 class RateDecreaseOption(Enum):
@@ -108,14 +109,16 @@ class OfferUpdateFrequencyMixin:
 
     def __init__(self,
                  initial_rate_option,
+                 initial_selling_rate,
                  energy_rate_decrease_option,
-                 energy_rate_decrease_per_update
+                 energy_rate_decrease_per_update,
                  ):
         self.assign_offermixin_arguments(initial_rate_option, energy_rate_decrease_option,
                                          energy_rate_decrease_per_update)
         self._decrease_price_timepoint_s = {}  # type: Dict[Time, float]
         self._decrease_price_every_nr_s = 0
-        self.min_selling_rate = 0
+        self.final_selling_rate = 0
+        self.initial_selling_rate = initial_selling_rate
 
     def assign_offermixin_arguments(self, initial_rate_option, energy_rate_decrease_option,
                                     energy_rate_decrease_per_update):
@@ -141,6 +144,8 @@ class OfferUpdateFrequencyMixin:
                 return self.area.historical_avg_rate
         elif self.initial_rate_option is InitialRateOptions.MARKET_MAKER_RATE:
             return self.area.config.market_maker_rate[current_time_h]
+        elif self.initial_rate_option is InitialRateOptions.CUSTOM_RATE:
+            return self.initial_selling_rate
         else:
             raise ValueError("Initial rate option should be one of the InitialRateOptions.")
 
@@ -171,8 +176,8 @@ class OfferUpdateFrequencyMixin:
                     offer.energy,
                     self.owner.name
                 )
-                if (new_offer.price/new_offer.energy) < self.min_selling_rate:
-                    new_offer.price = self.min_selling_rate * new_offer.energy
+                if (new_offer.price/new_offer.energy) < self.final_selling_rate:
+                    new_offer.price = self.final_selling_rate * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
             except MarketException:
                 continue
@@ -190,8 +195,8 @@ class OfferUpdateFrequencyMixin:
                 RateDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
             return self.energy_rate_decrease_per_update
 
-    def update_market_cycle_offers(self, min_selling_rate):
-        self.min_selling_rate = min_selling_rate
+    def update_market_cycle_offers(self, final_selling_rate):
+        self.final_selling_rate = final_selling_rate
         # increase energy rate for each market again, except for the newly created one
         for market in self.area.all_markets:
             self._decrease_price_timepoint_s[market.time_slot] = self._decrease_price_every_nr_s

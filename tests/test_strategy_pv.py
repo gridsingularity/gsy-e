@@ -217,7 +217,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
                                        pv_test3._calculate_price_decrease_rate(
                                            area_test3.test_market))
     new_offer = list(pv_test3.offers.posted.keys())[-1]
-    assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.MIN_SELLING_RATE
+    assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.FINAL_SELLING_RATE
 
 
 """TEST 4"""
@@ -442,3 +442,32 @@ def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
     pv_test9.event_activate()
     pv_test9.event_market_cycle()
     assert len(market_test9.created_offers) == len(area_test9.all_markets)
+
+
+"""TEST10"""
+
+
+@pytest.fixture()
+def area_test10():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def market_test10():
+    return FakeMarket(0)
+
+
+@pytest.fixture()
+def pv_strategy_test10(area_test10, called):
+    s = PVStrategy(initial_selling_rate=25, initial_rate_option=3)
+    s.owner = area_test10
+    s.area = area_test10
+    s.accept_offer = called
+    return s
+
+
+def test_initial_selling_rate(pv_strategy_test10, area_test10):
+    pv_strategy_test10.event_activate()
+    pv_strategy_test10.event_market_cycle()
+    created_offer = area_test10.all_markets[0].created_offers[0]
+    assert created_offer.price/created_offer.energy == 25

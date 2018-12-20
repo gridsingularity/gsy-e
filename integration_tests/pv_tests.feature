@@ -1,9 +1,9 @@
 Feature: PV Tests
 
   Scenario: PV limits the minimum selling rate
-     Given we have a scenario named strategy_tests/pv_min_selling_rate
+     Given we have a scenario named strategy_tests/pv_final_selling_rate
      And d3a is installed
-     When we run the d3a simulation with strategy_tests.pv_min_selling_rate [24, 15, 15]
+     When we run the d3a simulation with strategy_tests.pv_final_selling_rate [24, 15, 15]
      Then the storages buy energy for no more than the min PV selling rate
 
   Scenario: PV RISK based price decrease

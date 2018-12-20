@@ -95,7 +95,7 @@ class Events:
 
         self.strategy_events = [e for e in event_list if type(e) == StrategyEvents]
 
-    def update_events(self, current_time, strategy=None):
+    def update_events(self, current_time):
         self.enable_disable_events.update_events(current_time)
         self.connect_disconnect_events.update_events(current_time)
         for ev in self.strategy_events:

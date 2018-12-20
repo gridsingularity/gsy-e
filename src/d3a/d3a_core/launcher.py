@@ -35,7 +35,7 @@ class Launcher:
                  interface="0.0.0.0",
                  host="127.0.0.1",
                  port_min=5000,
-                 port_max=5004,
+                 port_max=5003,
                  max_delay_seconds=2):
         self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
         self.interface = interface

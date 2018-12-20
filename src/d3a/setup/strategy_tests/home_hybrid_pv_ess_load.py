@@ -55,7 +55,7 @@ def get_setup(config):
                                                                  break_even=(12, 17.01)),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
-                                                      min_selling_rate=5,
+                                                      final_selling_rate=5,
                                                       initial_rate_option=2,
                                                       energy_rate_decrease_option=2,
                                                       energy_rate_decrease_per_update=7),

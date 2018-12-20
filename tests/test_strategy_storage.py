@@ -596,6 +596,10 @@ def test_storage_constructor_rejects_incorrect_parameters():
         StorageStrategy(break_even={0: (1, .99), 12: (.99, 1)})
     with pytest.raises(ValueError):
         StorageStrategy(break_even={0: (-1, 2), 12: (.99, 1)})
+    with pytest.raises(ValueError):
+        StorageStrategy(initial_rate_option=4)
+    with pytest.raises(ValueError):
+        StorageStrategy(initial_selling_rate=-1)
 
 
 def test_free_storage_calculation_takes_into_account_storage_capacity(storage_strategy_test1):
@@ -770,3 +774,34 @@ def test_balancing_offers_are_created_if_device_in_registry(
         area_test13.test_balancing_market.created_balancing_offers[1].price
     assert actual_balancing_supply_price == expected_balancing_supply_energy * 40
     DeviceRegistry.REGISTRY = {}
+
+
+"""TEST14"""
+
+
+@pytest.fixture()
+def area_test14():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def market_test14():
+    return FakeMarket(0)
+
+
+@pytest.fixture()
+def storage_strategy_test14(area_test14, called):
+    s = StorageStrategy(initial_capacity_kWh=15, battery_capacity_kWh=30,
+                        max_abs_battery_power_kW=10, initial_selling_rate=25,
+                        initial_rate_option=3)
+    s.owner = area_test14
+    s.area = area_test14
+    s.accept_offer = called
+    return s
+
+
+def test_initial_selling_rate(storage_strategy_test14, area_test14):
+    storage_strategy_test14.event_activate()
+    storage_strategy_test14.sell_energy()
+    created_offer = area_test14.all_markets[0].created_offers[0]
+    assert created_offer.price/created_offer.energy == 25

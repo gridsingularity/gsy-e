@@ -38,36 +38,39 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
     def __init__(
         self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,
-        min_selling_rate: float=ConstSettings.PVSettings.MIN_SELLING_RATE,
+        final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
         initial_rate_option: float=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+        initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
         energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
         energy_rate_decrease_per_update:
         float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
         max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
     ):
-        self._validate_constructor_arguments(panel_count, risk, max_panel_power_W)
+        self._validate_constructor_arguments(panel_count, risk, max_panel_power_W,
+                                             initial_selling_rate)
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
+                                           initial_selling_rate,
                                            energy_rate_decrease_option,
                                            energy_rate_decrease_per_update)
         self.risk = risk
         self.panel_count = panel_count
         self.max_panel_power_W = max_panel_power_W
         self.midnight = None
-        self.min_selling_rate = min_selling_rate
+        self.final_selling_rate = final_selling_rate
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
     @staticmethod
     def _validate_constructor_arguments(panel_count=None, risk=None,
-                                        max_panel_output_W=None, min_selling_rate=None):
+                                        max_panel_output_W=None, initial_selling_rate=None):
         if not ((risk is None or 0 <= risk <= 100) and
                 (panel_count is None or panel_count >= 1)):
             raise ValueError("Risk is a percentage value, should be "
                              "between 0 and 100, panel_count should be positive.")
         if max_panel_output_W is not None and max_panel_output_W < 0:
             raise ValueError("Max panel output in Watts should always be positive.")
-        if min_selling_rate is not None and min_selling_rate < 0:
+        if initial_selling_rate is not None and initial_selling_rate < 0:
             raise ValueError("Min selling rate should be positive.")
 
     def area_reconfigure_event(self, **kw):
@@ -87,7 +90,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.produced_energy_forecast_kWh()
 
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
-        energy_rate = max(initial_sell_rate, self.min_selling_rate)
+        energy_rate = max(initial_sell_rate, self.final_selling_rate)
         rounded_energy_rate = round(energy_rate, 2)
         if rounded_energy_rate == 0.0:
             # Initial selling offer
@@ -139,7 +142,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
-        self.update_market_cycle_offers(self.min_selling_rate)
+        self.update_market_cycle_offers(self.final_selling_rate)
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:

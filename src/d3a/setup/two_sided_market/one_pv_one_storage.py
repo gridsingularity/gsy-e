@@ -26,7 +26,7 @@ from d3a.models.const import ConstSettings
 def get_setup(config):
     # Two sided market
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.PVSettings.MIN_SELLING_RATE = 0
+    ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
     ConstSettings.StorageSettings.MIN_BUYING_RATE = 0
     ConstSettings.StorageSettings.BREAK_EVEN_BUY = 29.9

@@ -37,11 +37,11 @@ class PVPredefinedStrategy(PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-    parameters = ('panel_count', 'risk', 'min_selling_rate', 'energy_rate_decrease_option',
+    parameters = ('panel_count', 'risk', 'final_selling_rate', 'energy_rate_decrease_option',
                   'energy_rate_decrease_per_update')
 
     def __init__(self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK, panel_count: int=1,
-                 min_selling_rate: float=ConstSettings.PVSettings.MIN_SELLING_RATE,
+                 final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
                  cloud_coverage: int=None,
                  initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
@@ -53,11 +53,11 @@ class PVPredefinedStrategy(PVStrategy):
         Constructor of PVPredefinedStrategy
         :param risk: PV risk parameter
         :param panel_count: number of solar panels for this PV plant
-        :param min_selling_rate: lower threshold for the PV sale price
+        :param final_selling_rate: lower threshold for the PV sale price
         :param cloud_coverage: cloud conditions. 0=sunny, 1=partially cloudy, 2=cloudy
         """
         super().__init__(panel_count=panel_count, risk=risk,
-                         min_selling_rate=min_selling_rate,
+                         final_selling_rate=final_selling_rate,
                          initial_rate_option=initial_rate_option,
                          energy_rate_decrease_option=energy_rate_decrease_option,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
@@ -121,12 +121,12 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ('panel_count', 'risk', 'min_selling_rate', 'energy_rate_decrease_option',
+    parameters = ('panel_count', 'risk', 'final_selling_rate', 'energy_rate_decrease_option',
                   'energy_rate_decrease_per_update', 'power_profile')
 
     def __init__(self, power_profile, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
                  panel_count: int=1,
-                 min_selling_rate: float=ConstSettings.PVSettings.MIN_SELLING_RATE,
+                 final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
                  initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
                  energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
@@ -140,10 +140,10 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         or a dict with arbitrary time data (Dict[str, float])
         :param risk: PV risk parameter
         :param panel_count: number of solar panels for this PV plant
-        :param min_selling_rate: lower threshold for the PV sale price
+        :param final_selling_rate: lower threshold for the PV sale price
         """
         super().__init__(risk=risk, panel_count=panel_count,
-                         min_selling_rate=min_selling_rate,
+                         final_selling_rate=final_selling_rate,
                          initial_rate_option=initial_rate_option,
                          energy_rate_decrease_option=energy_rate_decrease_option,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
