@@ -109,7 +109,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         self.assign_energy_requirement(self.avg_power_W)
 
     def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None,
-                               hrs_of_day=None, max_energy_rate=None):
+                               hrs_of_day=None, final_buying_rate=None):
         if hrs_per_day is not None or hrs_of_day is not None:
             self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
             self.hrs_per_day = {day: self._initial_hrs_per_day
@@ -119,10 +119,10 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             self.avg_power_W = avg_power_W
             self.assign_energy_requirement(avg_power_W)
 
-        if max_energy_rate is not None:
-            self.max_energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                          max_energy_rate)
-            self._final_rate_profile = self.max_energy_rate
+        if final_buying_rate is not None:
+            self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                            final_buying_rate)
+            self._final_rate_profile = self.final_buying_rate
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers
