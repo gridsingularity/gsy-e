@@ -117,6 +117,12 @@ class AreaDispatcher:
             return BalancingAgent
 
     def create_area_agents(self, is_spot_market, market):
+        # if not _is_house_node(self.area) \
+        #         and ConstSettings.IAASettings.PRICING_SCHEME != 0:
+        #     return
+        # else:
+        #     print("creating IAA", self.area.name)
+
         if not self.area.parent:
             return
         if self.area.strategy:

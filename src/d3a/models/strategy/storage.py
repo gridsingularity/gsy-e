@@ -101,22 +101,20 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
     def event_activate(self):
-        if ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME != 0:
+        if ConstSettings.IAASettings.PRICING_SCHEME != 0:
             self.assign_offermixin_arguments(3, 2, 0)
-            # self.max_buying_rate_profile = {k: 0. for k in self.break_even.keys()}
-            # self.min_buying_rate_profile = {k: 0. for k in self.break_even.keys()}
             self.break_even = {k: (0., 0.) for k in self.break_even.keys()}
-            if ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 1:
+            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
                 self.initial_selling_rate = 0
                 self.final_selling_rate = 0
-            elif ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 2:
+            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
                 self.initial_selling_rate = \
                     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
                     ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
                 self.final_selling_rate = \
                     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
                     ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-            elif ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 3:
+            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
                 self.initial_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
                 self.final_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
@@ -257,9 +255,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
+            if "IAA" in offer.seller \
+                    and ConstSettings.IAASettings.PRICING_SCHEME != 0:
+                continue
             # Check if storage has free capacity and if the price is cheap enough
             if self.state.free_storage(market.time_slot) > 0.0 \
-                    and (offer.price / offer.energy) < max_affordable_offer_rate:
+                    and (offer.price / offer.energy) <= max_affordable_offer_rate:
                 try:
                     max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
                     if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):

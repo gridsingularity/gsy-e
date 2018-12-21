@@ -73,19 +73,19 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             raise ValueError("Initial selling rate must be greater equal 0.")
 
     def event_activate(self):
-        if ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME != 0:
+        if ConstSettings.IAASettings.PRICING_SCHEME != 0:
             self.assign_offermixin_arguments(3, 2, 0)
-            if ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 1:
+            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
                 self.initial_selling_rate = 0
                 self.final_selling_rate = 0
-            elif ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 2:
+            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
                 self.initial_selling_rate = \
                     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
                     ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
                 self.final_selling_rate = \
                     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
                     ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-            elif ConstSettings.IAASettings.COMPARE_TO_PRICING_SCHEME == 3:
+            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
                 self.initial_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
                 self.final_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
