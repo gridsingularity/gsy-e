@@ -58,3 +58,15 @@ class DisableAreaEvent(SimpleEvent):
 
 class EnableAreaEvent(SimpleEvent):
     pass
+
+
+class StrategyEvents(SimpleEvent):
+    def __init__(self, event_time, params):
+        super().__init__(event_time)
+        self.params = params
+        self._triggered = False
+
+    def tick(self, current_time, strategy):
+        if current_time.hour == self.event_time and not self._triggered:
+            strategy.area_reconfigure_event(**self.params)
+            self._triggered = True

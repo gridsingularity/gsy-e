@@ -65,24 +65,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         self.energy_requirement_Wh = {}  # type: Dict[Time, float]
         self.hrs_per_day = {}  # type: Dict[int, int]
 
-        if hrs_of_day is None:
-            hrs_of_day = list(range(24))
-
-        # be a parameter on the constructor or if we want to deal in percentages
-        if hrs_per_day is None:
-            hrs_per_day = len(hrs_of_day)
-        if hrs_of_day is None:
-            hrs_of_day = list(range(24))
-
-        self.hrs_of_day = hrs_of_day
-        self._initial_hrs_per_day = hrs_per_day
+        self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
-
-        if not all([0 <= h <= 23 for h in hrs_of_day]):
-            raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
-
-        if len(hrs_of_day) < hrs_per_day:
-            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
     @property
     def active_markets(self):
@@ -92,18 +76,53 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 markets.append(market)
         return markets
 
-    def event_activate(self):
-        self.energy_per_slot_Wh = (self.avg_power_W /
+    def assign_hours_of_per_day(self, hrs_of_day, hrs_per_day):
+        if hrs_of_day is None:
+            hrs_of_day = list(range(24))
+
+        # be a parameter on the constructor or if we want to deal in percentages
+        if hrs_per_day is None:
+            hrs_per_day = len(hrs_of_day)
+        if hrs_of_day is None:
+            hrs_of_day = list(range(24))
+        self.hrs_of_day = hrs_of_day
+        self._initial_hrs_per_day = hrs_per_day
+
+        if not all([0 <= h <= 23 for h in hrs_of_day]):
+            raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
+
+        if len(hrs_of_day) < hrs_per_day:
+            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
+
+    def assign_energy_requirement(self, avg_power_W):
+        self.energy_per_slot_Wh = (avg_power_W /
                                    (duration(hours=1) / self.area.config.slot_length))
-
-        self._simulation_start_timestamp = self.area.now
-        self.hrs_per_day = {day: self._initial_hrs_per_day
-                            for day in range(self.area.config.duration.days + 1)}
-
         for slot_time in generate_market_slot_list(self.area):
-            if self._allowed_operating_hours(slot_time):
+            if self._allowed_operating_hours(slot_time) and slot_time >= self.area.now:
                 self.energy_requirement_Wh[slot_time] = self.energy_per_slot_Wh
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
+
+    def event_activate(self):
+        self.hrs_per_day = {day: self._initial_hrs_per_day
+                            for day in range(self.area.config.duration.days + 1)}
+        self._simulation_start_timestamp = self.area.now
+        self.assign_energy_requirement(self.avg_power_W)
+
+    def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None,
+                               hrs_of_day=None, final_buying_rate=None):
+        if hrs_per_day is not None or hrs_of_day is not None:
+            self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
+            self.hrs_per_day = {day: self._initial_hrs_per_day
+                                for day in range(self.area.config.duration.days + 1)}
+
+        if avg_power_W is not None:
+            self.avg_power_W = avg_power_W
+            self.assign_energy_requirement(avg_power_W)
+
+        if final_buying_rate is not None:
+            self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                            final_buying_rate)
+            self._final_rate_profile = self.final_buying_rate
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers

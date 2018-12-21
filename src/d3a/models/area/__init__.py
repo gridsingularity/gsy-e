@@ -79,7 +79,7 @@ class Area:
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
-        self.events = Events(event_list)
+        self.events = Events(event_list, strategy)
         self.budget_keeper = budget_keeper
         if budget_keeper:
             self.budget_keeper.area = self
@@ -129,6 +129,9 @@ class Area:
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
         """
+
+        self.events.update_events(self.now)
+
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
             return

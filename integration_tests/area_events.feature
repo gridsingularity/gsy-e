@@ -45,3 +45,25 @@ Feature: Area Events Tests
     Then load and battery use energy from grid before 6:00
     And battery does not charge between 6:00 and 16:00
     And load and battery use energy from grid after 16:00
+
+  Scenario: Load changes consumption and hours of/per day after strategy event
+    Given we have a scenario named area_events/load_event
+    And d3a is installed
+    When we run the d3a simulation with area_events.load_event [1, 30, 15]
+    Then load consumes 0.1 kWh before 12:00
+    And load consumes 0.2 kWh between 12:00 and 22:00
+    And no trades occur after 22:00
+
+  Scenario: PV changes production and panel count after strategy event
+    Given we have a scenario named area_events/pv_event
+    And d3a is installed
+    When we run the d3a simulation with area_events.pv_event [1, 30, 15]
+    Then load consumes less than 0.0756 kWh between 8:00 and 12:00
+    And load consumes less than 1.59 kWh between 12:00 and 16:00
+
+  Scenario: Storage changes risk after strategy event
+    Given we have a scenario named area_events/storage_event
+    And d3a is installed
+    When we run the d3a simulation with area_events.storage_event [1, 30, 15]
+    Then load consumes 0.005 kWh with 25 ct/kWh between 0:00 and 12:00
+    And load does not consume energy between 12:00 and 24:00

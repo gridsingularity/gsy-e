@@ -36,7 +36,7 @@ class InterAreaAgent(BaseStrategy):
         """
         super().__init__()
         self.owner = owner
-
+        self._validate_constructor_arguments(transfer_fee_pct, min_offer_age)
         self.engines = [
             engine_type('High -> Low', higher_market, lower_market, min_offer_age,
                         transfer_fee_pct, self),
@@ -51,6 +51,18 @@ class InterAreaAgent(BaseStrategy):
         self.lower_market = lower_market
         self.transfer_fee_pct = transfer_fee_pct
         self.min_offer_age = min_offer_age
+
+    def _validate_constructor_arguments(self, transfer_fee_pct, min_offer_age):
+        assert 0 <= transfer_fee_pct <= 100
+        assert 1 <= min_offer_age <= 360
+
+    def area_reconfigure_event(self, transfer_fee_pct, min_offer_age):
+        self._validate_constructor_arguments(transfer_fee_pct, min_offer_age)
+        self.transfer_fee_pct = transfer_fee_pct
+        self.min_offer_age = min_offer_age
+        for engine in self.engines:
+            engine.transfer_fee_pct = transfer_fee_pct
+            engine.min_offer_age = min_offer_age
 
     @property
     def trades(self):
