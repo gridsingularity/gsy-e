@@ -41,7 +41,7 @@ def check_load_profile_csv(context):
             assert False
 
 
-@then('load only accepted offers lower than max_energy_rate')
+@then('load only accepted offers lower than final_buying_rate')
 def check_traded_energy_rate(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: "H1 DefinedLoad" in x.name, house.children))
@@ -50,7 +50,7 @@ def check_traded_energy_rate(context):
         for trade in market.trades:
             if trade.buyer == load.name:
                 assert (trade.offer.price / trade.offer.energy) < \
-                       load.strategy.max_energy_rate[market.time_slot.strftime(TIME_FORMAT)]
+                       load.strategy.final_buying_rate[market.time_slot.strftime(TIME_FORMAT)]
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')
@@ -79,7 +79,7 @@ def check_user_rate_profile_dict(context):
 
     unmatched = export_unmatched_loads(context.simulation.area)
     number_of_loads = 2
-    # There are two loads with the same max_energy_rate profile that should report unmatched
+    # There are two loads with the same final_buying_rate profile that should report unmatched
     # energy demand for the first 6 hours of the day:
     assert unmatched["unmatched_load_count"] == int(number_of_loads * 6. * 60 /
                                                     house.config.slot_length.minutes)
@@ -96,15 +96,15 @@ def check_min_user_rate_profile_dict(context):
         for trade in market.trades:
             if trade.buyer == load1.name:
                 assert int(trade.offer.price / trade.offer.energy) == \
-                       int(load1.strategy.min_energy_rate[market.time_slot_str])
+                       int(load1.strategy.initial_buying_rate[market.time_slot_str])
             elif trade.buyer == load2.name:
                 assert int(trade.offer.price / trade.offer.energy) == \
-                       int(load2.strategy.min_energy_rate[market.time_slot_str])
+                       int(load2.strategy.initial_buying_rate[market.time_slot_str])
             else:
                 assert False, "All trades should be bought by load1 or load2, no other consumer."
 
 
-@then('LoadHoursStrategy buys energy at the max_energy_rate')
+@then('LoadHoursStrategy buys energy at the final_buying_rate')
 def check_bid_update_frequency(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load1 = next(filter(lambda x: x.name == "H1 General Load", house.children))
@@ -114,6 +114,6 @@ def check_bid_update_frequency(context):
         for trade in market.trades:
             if trade.buyer == load1.name:
                 assert isclose((trade.offer.price / trade.offer.energy),
-                               (load1.strategy.max_energy_rate[market.time_slot_str]))
+                               (load1.strategy.final_buying_rate[market.time_slot_str]))
             else:
                 assert False, "All trades should be bought by load1, no other consumer."

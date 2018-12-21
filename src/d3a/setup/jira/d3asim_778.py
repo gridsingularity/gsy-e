@@ -34,8 +34,8 @@ def get_setup(config):
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       min_energy_rate=0,
-                                                                       max_energy_rate=30))
+                                                                       initial_buying_rate=0,
+                                                                       final_buying_rate=30))
                 ]
             ),
             Area('Commercial Energy Producer',

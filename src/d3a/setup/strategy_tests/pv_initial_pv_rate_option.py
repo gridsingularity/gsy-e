@@ -53,7 +53,7 @@ def get_setup(config):
                             hrs_per_day=6,
                             hrs_of_day=list(
                                 range(6, 22)),
-                            max_energy_rate=35.01
+                            final_buying_rate=35.01
                         ),
                          appliance=SwitchableAppliance()),
                     # The default value is 1, for historical average price

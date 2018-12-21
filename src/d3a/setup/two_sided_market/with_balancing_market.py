@@ -35,8 +35,8 @@ def get_setup(config):
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     # Two sided market
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
-    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
+    ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 0
+    ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
 
     area = Area(
         'Grid',
@@ -58,8 +58,8 @@ def get_setup(config):
                         avg_power_W=100,
                         hrs_per_day=24,
                         hrs_of_day=list(range(0, 24)),
-                        min_energy_rate=ConstSettings.LoadSettings.MIN_ENERGY_RATE,
-                        max_energy_rate=ConstSettings.LoadSettings.MAX_ENERGY_RATE
+                        initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
+                        final_buying_rate=ConstSettings.LoadSettings.FINAL_BUYING_RATE
                     ), appliance=SwitchableAppliance()),
 
                 ]
