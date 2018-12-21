@@ -37,7 +37,7 @@ def get_setup(config):
                                                                        hrs_per_day=15,
                                                                        hrs_of_day=list(
                                                                            range(5, 20)),
-                                                                       max_energy_rate=15),
+                                                                       final_buying_rate=15),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1, risk=50,
                                                                 initial_rate_option=2),

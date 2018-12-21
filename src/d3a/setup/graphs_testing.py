@@ -97,7 +97,7 @@ def get_setup(config):
                          strategy=CommercialStrategy(energy_rate=31),
                          appliance=SimpleAppliance()),
                     Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-                         hrs_per_day=24, hrs_of_day=list(range(0, 24)), max_energy_rate=30),
+                         hrs_per_day=24, hrs_of_day=list(range(0, 24)), final_buying_rate=30),
                          appliance=SwitchableAppliance())
                 ]
             ),

@@ -36,7 +36,7 @@ def get_setup(config):
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 20)),
-                                                                       max_energy_rate=29),
+                                                                       final_buying_rate=29),
                          appliance=SwitchableAppliance()),
                     Area('H1 Lighting', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=4,
@@ -55,7 +55,7 @@ def get_setup(config):
                                                                        hrs_per_day=3,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
-                                                                       max_energy_rate=50),
+                                                                       final_buying_rate=50),
                          appliance=SwitchableAppliance()),
                     Area('H2 Lighting', strategy=LoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=4,

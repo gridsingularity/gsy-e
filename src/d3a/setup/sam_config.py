@@ -46,7 +46,7 @@ def get_setup(config):
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
                                                              'SAM_MF2_Summer.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -65,7 +65,7 @@ def get_setup(config):
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
                                                              'SAM_SF_Summer.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
@@ -80,7 +80,7 @@ def get_setup(config):
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
                                                              'SAM_MF2_Summer.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
@@ -95,7 +95,7 @@ def get_setup(config):
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
                                                              'SAM_SF_Summer.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -112,7 +112,7 @@ def get_setup(config):
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
                                                              'SAM_MF2_Summer.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -129,7 +129,7 @@ def get_setup(config):
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
                                                              'SAM_SF_Summer.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
@@ -142,7 +142,7 @@ def get_setup(config):
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
                                                              'SAM_MF2_Summer.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]
@@ -155,7 +155,7 @@ def get_setup(config):
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources',
                                                              'SAM_SF_Summer.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
 
                 ]

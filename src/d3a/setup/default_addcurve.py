@@ -40,7 +40,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(
                              daily_load_profile=os.path.join(d3a_path,
                                                              'resources', 'LOAD_DATA_1.csv'),
-                             max_energy_rate=35),
+                             final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.4),
                          appliance=SwitchableAppliance()),
@@ -54,7 +54,7 @@ def get_setup(config):
                                                                        hrs_per_day=1,
                                                                        hrs_of_day=list(
                                                                            range(15, 16)),
-                                                                       max_energy_rate=35),
+                                                                       final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVStrategy(2, 80),
                          appliance=PVAppliance()),
@@ -64,7 +64,7 @@ def get_setup(config):
             # Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
             #                                                hrs_per_day=24,
             #                                               hrs_of_day=list(range(0, 24)),
-            #                                             max_energy_rate=35),
+            #                                             final_buying_rate=35),
             #  appliance=SwitchableAppliance())
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
