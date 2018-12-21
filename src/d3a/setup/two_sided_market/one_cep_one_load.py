@@ -37,8 +37,8 @@ def get_setup(config):
                         avg_power_W=200,
                         hrs_per_day=24,
                         hrs_of_day=list(range(0, 24)),
-                        min_energy_rate=0,
-                        max_energy_rate=35,
+                        initial_buying_rate=0,
+                        final_buying_rate=35,
                     ), appliance=SwitchableAppliance()),
                 ]
             ),

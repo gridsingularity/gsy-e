@@ -27,7 +27,7 @@ import os
 """
 Setup file for displaying DefinedLoadStrategy.
 DefinedLoadStrategy Strategy requires daily_load_profile and
-max_energy_rate is optional.
+final_buying_rate is optional.
 """
 
 profile_path = os.path.join(d3a_path, "resources/LOAD_DATA_1.csv")
@@ -42,7 +42,7 @@ def get_setup(config):
                 [
                     Area('H1 DefinedLoad',
                          strategy=DefinedLoadStrategy(daily_load_profile=profile_path,
-                                                      max_energy_rate=36),
+                                                      final_buying_rate=36),
                          appliance=SwitchableAppliance()),
                 ]
             ),

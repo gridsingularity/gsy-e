@@ -24,7 +24,7 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 
 """
 Setup file for displaying LoadHoursStrategy.
-Test parsing of LoadHoursStrategy max_energy_rate as dictionary.
+Test parsing of LoadHoursStrategy final_buying_rate as dictionary.
 """
 
 user_profile_int = {
@@ -46,11 +46,11 @@ def get_setup(config):
                 [
                     Area('H1 General Load 1',
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
-                                                    max_energy_rate=user_profile_int),
+                                                    final_buying_rate=user_profile_int),
                          appliance=SwitchableAppliance()),
                     Area('H1 General Load 2',
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
-                                                    max_energy_rate=user_profile_str),
+                                                    final_buying_rate=user_profile_str),
                          appliance=SwitchableAppliance()),
                 ]
             ),

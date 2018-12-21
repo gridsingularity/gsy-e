@@ -30,8 +30,8 @@ def get_setup(config):
 
     ConstSettings.IAASettings.MARKET_TYPE = 3
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
-    ConstSettings.LoadSettings.MIN_ENERGY_RATE = 35
-    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
+    ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
+    ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
     ConstSettings.StorageSettings.MIN_BUYING_RATE = 24.99
     ConstSettings.StorageSettings.BREAK_EVEN_BUY = 25
     ConstSettings.StorageSettings.BREAK_EVEN_SELL = 25.01
@@ -46,7 +46,7 @@ def get_setup(config):
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
-                                                                       max_energy_rate=35),
+                                                                       final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(
                         initial_capacity_kWh=0.6,
@@ -68,8 +68,8 @@ def get_setup(config):
                         hrs_per_day=4,
                         hrs_of_day=list(
                             range(12, 16)),
-                        min_energy_rate=ConstSettings.LoadSettings.MIN_ENERGY_RATE,
-                        max_energy_rate=35),
+                        initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
+                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVStrategy(4, 0),
                          appliance=PVAppliance()),
@@ -80,8 +80,8 @@ def get_setup(config):
                 avg_power_W=100,
                 hrs_per_day=24,
                 hrs_of_day=list(range(0, 24)),
-                min_energy_rate=ConstSettings.LoadSettings.MIN_ENERGY_RATE,
-                max_energy_rate=35),
+                initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
+                final_buying_rate=35),
                  appliance=SwitchableAppliance())
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),

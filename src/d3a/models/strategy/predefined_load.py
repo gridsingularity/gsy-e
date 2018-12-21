@@ -34,14 +34,14 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
     """
-    parameters = ('daily_load_profile', 'max_energy_rate', 'min_energy_rate',
+    parameters = ('daily_load_profile', 'final_buying_rate', 'initial_buying_rate',
                   'balancing_energy_ratio')
 
     def __init__(self, daily_load_profile,
-                 min_energy_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.MIN_ENERGY_RATE,
-                 max_energy_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.MAX_ENERGY_RATE,
+                 initial_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
+                 final_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.FINAL_BUYING_RATE,
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
@@ -50,11 +50,12 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         :param daily_load_profile: input profile for a day. Can be either a csv file path,
         or a dict with hourly data (Dict[int, float])
         or a dict with arbitrary time data (Dict[str, float])
-        :param max_energy_rate: max energy rate of the offers that the load can
+        :param final_buying_rate: max energy rate of the offers that the load can
         accept
         """
         super().__init__(0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
-                         max_energy_rate=max_energy_rate, min_energy_rate=min_energy_rate,
+                         final_buying_rate=final_buying_rate,
+                         initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio)
         self.daily_load_profile = daily_load_profile
         self.load_profile = {}
