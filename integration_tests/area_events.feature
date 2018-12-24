@@ -67,3 +67,11 @@ Feature: Area Events Tests
     When we run the d3a simulation with area_events.storage_event [1, 30, 15]
     Then load consumes 0.005 kWh with 25 ct/kWh between 0:00 and 12:00
     And load does not consume energy between 12:00 and 24:00
+
+  Scenario: Cloud coverage event changes config value
+    Given we have a scenario named area_events/cloud_coverage_event
+    And d3a is installed
+    When we run the d3a simulation with area_events.cloud_coverage_event [1, 30, 15]
+    Then both PVs follow they sunny profile until 12:00
+    And House 1 PV follows the partially cloudy profile after 12:00
+    And House 2 PV follows the cloudy profile after 12:00

@@ -77,13 +77,7 @@ class PVPredefinedStrategy(PVStrategy):
         # TODO: Need to have 2-stage initialization as well, because the area objects are not
         # created when the constructor is executed if we inherit from a mixin class,
         # therefore config cannot be read at that point
-        data = self._read_predefined_profile_for_pv()
-
-        for slot_time in generate_market_slot_list(self.area):
-            self.energy_production_forecast_kWh[slot_time] = \
-                data[slot_time.format(PENDULUM_TIME_FORMAT)] * self.panel_count
-            self.state.available_energy_kWh[slot_time] = \
-                self.energy_production_forecast_kWh[slot_time]
+        self.read_config_event()
 
         # TODO: A bit clumsy, but this decrease price calculation needs to be added here as well
         # Need to refactor once we convert the config object to a singleton that is shared globally
@@ -91,6 +85,16 @@ class PVPredefinedStrategy(PVStrategy):
         self._decrease_price_every_nr_s = \
             (self.area.config.tick_length.seconds *
              ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
+
+    def read_config_event(self):
+        self._power_profile_index = self.area.config.cloud_coverage
+        data = self._read_predefined_profile_for_pv()
+
+        for slot_time in generate_market_slot_list(self.area):
+            self.energy_production_forecast_kWh[slot_time] = \
+                data[slot_time.format(PENDULUM_TIME_FORMAT)] * self.panel_count
+            self.state.available_energy_kWh[slot_time] = \
+                self.energy_production_forecast_kWh[slot_time]
 
     def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
         """
