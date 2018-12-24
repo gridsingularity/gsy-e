@@ -149,7 +149,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
                                         buyer=self.owner.name,
-                                        energy=offer.energy,
+                                        energy=(clearing_energy - cumulative_traded_offers),
                                         price_drop=True)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
             self._delete_forwarded_offer_entries(offer)
