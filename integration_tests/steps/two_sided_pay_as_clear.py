@@ -27,6 +27,6 @@ def test_traded_energy_rate(context):
             for c in b:
                 for d in c.engines:
                     for trade in d.markets.source.trades:
-                        if len(d.clearing_rate) > 0:
+                        if len(d.clearing_rate) > 0 and b[0].owner.name == trade.buyer:
                             assert any([isclose((trade.offer.price/trade.offer.energy), rate)
                                         for rate in d.clearing_rate])

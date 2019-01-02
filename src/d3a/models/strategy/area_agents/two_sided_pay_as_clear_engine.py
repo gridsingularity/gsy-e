@@ -100,9 +100,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         if clearing is None:
             return
         clearing_rate, clearing_energy = clearing
-        self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
-                            f"||| Clearing Energy: {clearing_energy} ")
-        self.clearing_rate.append(clearing_rate)
+        if clearing_energy > 0:
+            self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
+                                f"||| Clearing Energy: {clearing_energy} ")
+            self.clearing_rate.append(clearing_rate)
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:
             if cumulative_traded_bids >= clearing_energy:
