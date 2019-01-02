@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from math import isclose
+from math import isclose, isfinite
 from behave import then
 
 
@@ -30,3 +30,14 @@ def test_traded_energy_rate(context):
                         if len(d.clearing_rate) > 0 and b[0].owner.name == trade.buyer:
                             assert any([isclose((trade.offer.price/trade.offer.energy), rate)
                                         for rate in d.clearing_rate])
+
+
+@then('all traded energy have finite value')
+def test_finite_traded_energy(context):
+    grid = context.simulation.area
+    for child in grid.children:
+        for a, b in child.dispatcher.interarea_agents.items():
+            for c in b:
+                for d in c.engines:
+                    for trade in d.markets.source.trades:
+                        assert isfinite(trade.offer.energy)
