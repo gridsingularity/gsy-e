@@ -100,9 +100,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         if clearing is None:
             return
         clearing_rate, clearing_energy = clearing
-        self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
-                            f"||| Clearing Energy: {clearing_energy} ")
-        self.clearing_rate.append(clearing_rate)
+        if clearing_energy > 0:
+            self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
+                                f"||| Clearing Energy: {clearing_energy} ")
+            self.clearing_rate.append(clearing_rate)
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:
             if cumulative_traded_bids >= clearing_energy:
@@ -149,7 +150,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
                                         buyer=self.owner.name,
-                                        energy=offer.energy,
+                                        energy=clearing_energy - cumulative_traded_offers,
                                         price_drop=True)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
             self._delete_forwarded_offer_entries(offer)
