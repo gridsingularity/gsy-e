@@ -26,6 +26,7 @@ from d3a.models.strategy import BaseStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
 from d3a.models.state import PVState
+from d3a.d3a_core.exceptions import MarketException
 
 
 class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
@@ -75,19 +76,6 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def event_activate(self):
         if ConstSettings.IAASettings.PRICING_SCHEME != 0:
             self.assign_offermixin_arguments(3, 2, 0)
-            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
-                self.initial_selling_rate = 0
-                self.final_selling_rate = 0
-            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
-                self.initial_selling_rate = \
-                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
-                    ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-                self.final_selling_rate = \
-                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
-                    ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
-                self.initial_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-                self.final_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
         # This gives us a pendulum object with today 0 o'clock
         self.midnight = self.area.now.start_of("day")
@@ -98,10 +86,10 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
         energy_rate = max(initial_sell_rate, self.final_selling_rate)
         rounded_energy_rate = round(energy_rate, 2)
-        if rounded_energy_rate == 0.0:
-            # Initial selling offer
-            rounded_energy_rate =\
-                self.area.config.market_maker_rate[current_time]
+        # if rounded_energy_rate == 0.0:
+        #     # Initial selling offer
+        #     rounded_energy_rate =\
+        #         self.area.config.market_maker_rate[current_time]
         assert rounded_energy_rate >= 0.0
 
         return rounded_energy_rate
@@ -151,6 +139,20 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
+
+            if ConstSettings.IAASettings.PRICING_SCHEME != 0:
+                if ConstSettings.IAASettings.PRICING_SCHEME == 1:
+                    sell_rate = 0
+                elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
+                    sell_rate = self.area.config.market_maker_rate[market.time_slot_str] * \
+                            ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
+                elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
+                    sell_rate = self.area.config.market_maker_rate[market.time_slot_str]
+                else:
+                    raise MarketException
+                self.initial_selling_rate = sell_rate
+                self.final_selling_rate = sell_rate
+
             initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
             rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
                                                                       market.time_slot_str)

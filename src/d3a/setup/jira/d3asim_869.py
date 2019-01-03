@@ -27,7 +27,7 @@ from d3a.models.const import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.PRICING_SCHEME = 2
+    ConstSettings.IAASettings.PRICING_SCHEME = 1
     area = Area(
         'Grid',
         [
@@ -41,7 +41,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(20, 0),
+                    Area('H1 PV', strategy=PVStrategy(4, 0),
                          appliance=PVAppliance()),
                 ]
             ),
@@ -53,7 +53,7 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(0, 24))),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(20, 0),
+                    Area('H2 PV', strategy=PVStrategy(4, 0),
                          appliance=PVAppliance()),
                     Area('H2 Storage1', strategy=StorageStrategy(initial_capacity_kWh=1.2),
                          appliance=SwitchableAppliance()),
@@ -61,7 +61,7 @@ def get_setup(config):
             ),
 
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_rate=0),
+                 strategy=CommercialStrategy(),
                  appliance=SimpleAppliance()
                  ),
 

@@ -71,15 +71,15 @@ class ExportAndPlot:
         mkdir_from_str(json_dir)
         kpi_file = os.path.join(json_dir, "KPI")
         with open(kpi_file, 'w') as outfile:
-            json.dump(self.kpi.performance_index, outfile)
+            json.dump(self.kpi.performance_index, outfile, indent=2)
         trade_file = os.path.join(json_dir, "trade-detail")
         with open(trade_file, 'w') as outfile:
-            json.dump(self.endpoint_buffer.trade_details, outfile)
+            json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)
 
         for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key)
             with open(json_file, 'w') as outfile:
-                json.dump(value, outfile)
+                json.dump(value, outfile, indent=2)
 
     @staticmethod
     def _file_path(directory: dir, slug: str):

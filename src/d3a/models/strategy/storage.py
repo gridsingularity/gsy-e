@@ -68,6 +68,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
         break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
         self.initial_selling_rate = initial_selling_rate
+        self.final_selling_rate = list(break_even.values())[0][1]
 
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh, break_even,
@@ -103,20 +104,24 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
     def event_activate(self):
         if ConstSettings.IAASettings.PRICING_SCHEME != 0:
             self.assign_offermixin_arguments(3, 2, 0)
-            self.break_even = {k: (0., 0.) for k in self.break_even.keys()}
             if ConstSettings.IAASettings.PRICING_SCHEME == 1:
-                self.initial_selling_rate = 0
-                self.final_selling_rate = 0
+                rate = 0
+                self.break_even = {k: (rate, rate) for k in self.break_even.keys()}
+
             elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
-                self.initial_selling_rate = \
-                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
+                # self.area.config.market_maker_rate[market.time_slot_str]
+                rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
                     ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-                self.final_selling_rate = \
-                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
-                    ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
+                self.break_even = {k: (rate, rate) for k in self.break_even.keys()}
+
             elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
-                self.initial_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-                self.final_selling_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+                rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+
+            else:
+                raise MarketException
+
+            self.initial_selling_rate = rate
+            self.final_selling_rate = rate
 
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
@@ -205,6 +210,27 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
+
+        if ConstSettings.IAASettings.PRICING_SCHEME != 0:
+            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
+                rate = 0
+                self.break_even = {k: (rate, rate) for k in self.break_even.keys()}
+
+            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
+                # self.area.config.market_maker_rate[market.time_slot_str]
+                rate = self.area.config.market_maker_rate[self.area.now.strftime(TIME_FORMAT)] * \
+                       ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
+                self.break_even = {k: (rate, rate) for k in self.break_even.keys()}
+
+            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
+                rate = self.area.config.market_maker_rate[self.area.now.strftime(TIME_FORMAT)]
+
+            else:
+                raise MarketException
+
+            self.initial_selling_rate = rate
+            self.final_selling_rate = rate
+
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         current_market = self.area.next_market
         past_market = self.area.last_past_market
@@ -257,6 +283,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 continue
             if "IAA" in offer.seller \
                     and ConstSettings.IAASettings.PRICING_SCHEME != 0:
+                # dont buy from IAA if alternative pricing scheme is activated
                 continue
             # Check if storage has free capacity and if the price is cheap enough
             if self.state.free_storage(market.time_slot) > 0.0 \

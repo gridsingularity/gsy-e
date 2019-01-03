@@ -18,10 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.util import make_iaa_name
-from d3a.models.const import ConstSettings
-from d3a.d3a_core.exceptions import MarketException
-from d3a.d3a_core.sim_results.area_statistics import _is_house_node
-from d3a.models.strategy.pv import PVStrategy
 
 
 class OneSidedAgent(InterAreaAgent):
@@ -48,25 +44,7 @@ class OneSidedAgent(InterAreaAgent):
         else:
             return None
 
-    def _buy_energy_alternative_pricing_schemes(self, area):
-        if area.current_tick_in_slot - 7 >= 0 and _is_house_node(self.owner):
-            # print(area.current_tick_in_slot)
-            try:
-                print("looping over offers")
-                for offer in self.lower_market.sorted_offers:
-                    if isinstance(offer.seller.strategy, PVStrategy):
-                        self.log.error(f"accept_offer {offer}")
-                        self.accept_offer(offer.market, offer)
-
-                    # self.log.warning(f"{offer}, {offer.market}")
-
-            except MarketException:
-                self.log.exception("An Error occurred while buying an offer")
-
     def event_tick(self, *, area):
-
-        if ConstSettings.IAASettings.PRICING_SCHEME != 0:
-            self._buy_energy_alternative_pricing_schemes(area)
 
         if area != self.owner:
             # We're connected to both areas but only want tick events from our owner
