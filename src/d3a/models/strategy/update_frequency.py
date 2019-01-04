@@ -113,7 +113,6 @@ class OfferUpdateFrequencyMixin:
                  energy_rate_decrease_option,
                  energy_rate_decrease_per_update,
                  ):
-
         self.assign_offermixin_arguments(initial_rate_option, energy_rate_decrease_option,
                                          energy_rate_decrease_per_update)
         self._decrease_price_timepoint_s = {}  # type: Dict[Time, float]
@@ -122,7 +121,6 @@ class OfferUpdateFrequencyMixin:
 
     def assign_offermixin_arguments(self, initial_rate_option, energy_rate_decrease_option,
                                     energy_rate_decrease_per_update):
-
         if initial_rate_option is not None:
             self.initial_rate_option = InitialRateOptions(initial_rate_option)
         if energy_rate_decrease_option is not None:

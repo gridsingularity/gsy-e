@@ -97,6 +97,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
         energy_rate = max(initial_sell_rate, self.final_selling_rate)
         rounded_energy_rate = round(energy_rate, 2)
+        # TODO: Find out the reason for this block, at the moment it does not make sense
         # if rounded_energy_rate == 0.0:
         #     # Initial selling offer
         #     rounded_energy_rate =\

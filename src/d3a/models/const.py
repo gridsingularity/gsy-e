@@ -105,7 +105,10 @@ class ConstSettings:
         # Option 3 stands for double sided pay as clear market
         MARKET_TYPE = 1
         # PRICING_SCHEME
-        # 0=D3A_trading (default), 1=no scheme, 2=feed-in-tariff, 3=net-metering,
+        # Option 0: D3A_trading, 1=no scheme, 2=feed-in-tariff, 3=net-metering,
+        # Option 1: no scheme (0 cents/kWh)
+        # Option 2: feed-in-tariff (FEED_IN_TARIFF_PERCENTAGE * MMR)
+        # Option 3: net-metering (MMR)
         PRICING_SCHEME = 0
         FEED_IN_TARIFF_PERCENTAGE = 50
 

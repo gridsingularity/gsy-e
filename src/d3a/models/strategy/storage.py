@@ -67,18 +67,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
         break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
         self.initial_selling_rate = initial_selling_rate
-        self.final_selling_rate = list(break_even.values())[0][1]
 
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh, break_even,
                                              min_allowed_soc, initial_selling_rate)
         self.break_even = break_even
-
-        BaseStrategy.__init__(self)
-        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
-                                           initial_selling_rate,
-                                           energy_rate_decrease_option,
-                                           energy_rate_decrease_per_update)
+        self.final_selling_rate = list(break_even.values())[0][1]
 
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
@@ -140,7 +134,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 self.break_even = {k: (rate, rate) for k in self.break_even.keys()}
 
             elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
-                # self.area.config.market_maker_rate[market.time_slot_str]
                 rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
                     ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
                 self.break_even = {k: (rate, rate) for k in self.break_even.keys()}
@@ -241,27 +234,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
-
-        if ConstSettings.IAASettings.PRICING_SCHEME != 0:
-            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
-                rate = 0
-                self.break_even = {k: (rate, rate) for k in self.break_even.keys()}
-
-            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
-                # self.area.config.market_maker_rate[market.time_slot_str]
-                rate = self.area.config.market_maker_rate[self.area.now.strftime(TIME_FORMAT)] * \
-                       ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-                self.break_even = {k: (rate, rate) for k in self.break_even.keys()}
-
-            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
-                rate = self.area.config.market_maker_rate[self.area.now.strftime(TIME_FORMAT)]
-
-            else:
-                raise MarketException
-
-            self.initial_selling_rate = rate
-            self.final_selling_rate = rate
-
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         current_market = self.area.next_market
         past_market = self.area.last_past_market

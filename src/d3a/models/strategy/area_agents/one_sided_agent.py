@@ -45,7 +45,6 @@ class OneSidedAgent(InterAreaAgent):
             return None
 
     def event_tick(self, *, area):
-
         if area != self.owner:
             # We're connected to both areas but only want tick events from our owner
             return
