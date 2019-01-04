@@ -17,38 +17,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.d3a_core.util import d3a_path
-import os
-
-
-"""
-Setup file for displaying DefinedLoadStrategy.
-DefinedLoadStrategy Strategy requires daily_load_profile and
-final_buying_rate is optional.
-"""
-
-profile_path = os.path.join(d3a_path, "resources/LOAD_DATA_1.csv")
+from d3a.models.area.events import StrategyEvents
+from d3a.models.strategy.pv import PVStrategy
+from d3a.models.appliance.pv import PVAppliance
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 
 def get_setup(config):
     area = Area(
         'Grid',
-        [
+        children=[
             Area(
                 'House 1',
-                [
-                    Area('H1 DefinedLoad',
-                         strategy=DefinedLoadStrategy(daily_load_profile=profile_path,
-                                                      final_buying_rate=36),
-                         appliance=SwitchableAppliance()),
+                children=[
+                    Area('H2 PV', strategy=PVStrategy(1, 80),
+                         appliance=PVAppliance(),
+                         event_list=[StrategyEvents(12, {'panel_count': 10,
+                                                         'max_panel_power_W': 320})])
                 ]
             ),
-            Area('Commercial Energy Producer', strategy=CommercialStrategy(),
-                 appliance=SimpleAppliance()
-                 ),
+            Area('Grid Load', strategy=LoadHoursStrategy(avg_power_W=10000,
+                                                         hrs_per_day=24,
+                                                         hrs_of_day=list(
+                                                             range(0, 24)),
+                                                         final_buying_rate=35),
+                 appliance=SwitchableAppliance())
         ],
         config=config
     )

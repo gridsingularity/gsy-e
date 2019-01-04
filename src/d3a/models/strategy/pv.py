@@ -35,18 +35,18 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                 help="Change the risk parameter. Valid values are between 1 and 100.")
     ]
 
-    parameters = ('panel_count', 'risk')
+    parameters = ('panel_count', 'risk', 'max_panel_power_W', 'initial_selling_rate',
+                  'final_selling_rate')
 
     def __init__(
-        self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,
-        final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-        initial_rate_option: float=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
-        initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-        energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-        energy_rate_decrease_per_update:
-        float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-        max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
-    ):
+         self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,
+         final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
+         initial_rate_option: float=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+         initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+         energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
+         energy_rate_decrease_per_update:
+         float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+         max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         self._validate_constructor_arguments(panel_count, risk, max_panel_power_W,
                                              initial_selling_rate)
         BaseStrategy.__init__(self)
@@ -63,15 +63,26 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.state = PVState()
 
     @staticmethod
-    def _validate_constructor_arguments(panel_count, risk, max_panel_output_W,
-                                        initial_selling_rate):
-        if not (0 <= risk <= 100 and panel_count >= 1):
+    def _validate_constructor_arguments(panel_count=None, risk=None,
+                                        max_panel_output_W=None, initial_selling_rate=None):
+        if not ((risk is None or 0 <= risk <= 100) and
+                (panel_count is None or panel_count >= 1)):
             raise ValueError("Risk is a percentage value, should be "
                              "between 0 and 100, panel_count should be positive.")
-        if max_panel_output_W < 0:
+        if max_panel_output_W is not None and max_panel_output_W < 0:
             raise ValueError("Max panel output in Watts should always be positive.")
-        if initial_selling_rate < 0:
-            raise ValueError("Initial selling rate must be greater equal 0.")
+        if initial_selling_rate is not None and initial_selling_rate < 0:
+            raise ValueError("Min selling rate should be positive.")
+
+    def area_reconfigure_event(self, **kwargs):
+        assert all(k in self.parameters for k in kwargs.keys())
+        self._validate_constructor_arguments(kwargs.get('panel_count', None),
+                                             kwargs.get('risk', None),
+                                             kwargs.get('max_panel_power_W', None),
+                                             kwargs.get('initial_selling_rate', None))
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+        self.produced_energy_forecast_kWh()
 
     def event_activate(self):
         if ConstSettings.IAASettings.PRICING_SCHEME != 0:
@@ -103,14 +114,15 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
         for slot_time in generate_market_slot_list(self.area):
-            difference_to_midnight_in_minutes = \
-                slot_time.diff(self.midnight).in_minutes() % (60 * 24)
-            self.energy_production_forecast_kWh[slot_time] = \
-                self.gaussian_energy_forecast_kWh(
-                    difference_to_midnight_in_minutes) * self.panel_count
-            self.state.available_energy_kWh[slot_time] = \
-                self.energy_production_forecast_kWh[slot_time]
-            assert self.energy_production_forecast_kWh[slot_time] >= 0.0
+            if slot_time >= self.area.now:
+                difference_to_midnight_in_minutes = \
+                    slot_time.diff(self.midnight).in_minutes() % (60 * 24)
+                self.energy_production_forecast_kWh[slot_time] = \
+                    self.gaussian_energy_forecast_kWh(
+                        difference_to_midnight_in_minutes) * self.panel_count
+                self.state.available_energy_kWh[slot_time] = \
+                    self.energy_production_forecast_kWh[slot_time]
+                assert self.energy_production_forecast_kWh[slot_time] >= 0.0
 
     def gaussian_energy_forecast_kWh(self, time_in_minutes=0):
         # The sun rises at approx 6:30 and sets at 18hr

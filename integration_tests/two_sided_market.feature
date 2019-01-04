@@ -46,4 +46,4 @@ Feature: Two sided market tests
     Given we have a scenario named two_sided_market/one_cep_one_load
     And d3a is installed
     When we run the simulation with setup file two_sided_market.one_cep_one_load and parameters [24, 15, 15, 0, 4]
-    Then LoadHoursStrategy buys energy at the max_energy_rate
+    Then LoadHoursStrategy buys energy at the final_buying_rate

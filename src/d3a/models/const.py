@@ -63,9 +63,9 @@ class ConstSettings:
 
     class LoadSettings:
         # Min load energy rate, in ct/kWh
-        MIN_ENERGY_RATE = 0
+        INITIAL_BUYING_RATE = 0
         # Max load energy rate, in ct/kWh
-        MAX_ENERGY_RATE = 35
+        FINAL_BUYING_RATE = 35
 
     class PVSettings:
         # This price should be just above the marginal costs for a PV system - unit is cents

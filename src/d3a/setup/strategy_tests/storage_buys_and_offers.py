@@ -34,7 +34,7 @@ def get_setup(config):
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       max_energy_rate=27),
+                                                                       final_buying_rate=27),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=15,
                                                                  battery_capacity_kWh=30,

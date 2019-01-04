@@ -28,8 +28,8 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
-    ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
-    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 30
+    ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 0
+    ConstSettings.LoadSettings.FINAL_BUYING_RATE = 30
 
     area = Area(
         'Grid',
@@ -41,8 +41,8 @@ def get_setup(config):
                         avg_power_W=200,
                         hrs_per_day=6,
                         hrs_of_day=list(range(9, 15)),
-                        min_energy_rate=ConstSettings.LoadSettings.MIN_ENERGY_RATE,
-                        max_energy_rate=ConstSettings.LoadSettings.MAX_ENERGY_RATE
+                        initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
+                        final_buying_rate=ConstSettings.LoadSettings.FINAL_BUYING_RATE
                     ), appliance=SwitchableAppliance()),
                 ]
             ),
