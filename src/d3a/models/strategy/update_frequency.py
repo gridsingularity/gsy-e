@@ -220,3 +220,17 @@ class OfferUpdateFrequencyMixin:
                 self.offers.replace(offer, new_offer, iterated_market)
             except MarketException:
                 continue
+
+    def set_initial_selling_rate_alternative_pricing_scheme(self, market):
+        if ConstSettings.IAASettings.PRICING_SCHEME != 0:
+            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
+                self.initial_selling_rate = 0
+            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
+                self.initial_selling_rate = \
+                    self.area.config.market_maker_rate[market.time_slot_str] * \
+                    ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
+            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
+                self.initial_selling_rate = \
+                    self.area.config.market_maker_rate[market.time_slot_str]
+            else:
+                raise MarketException

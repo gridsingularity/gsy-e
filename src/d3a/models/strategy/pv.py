@@ -26,7 +26,6 @@ from d3a.models.strategy import BaseStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
 from d3a.models.state import PVState
-from d3a.d3a_core.exceptions import MarketException
 
 
 class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
@@ -152,20 +151,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
-
-            if ConstSettings.IAASettings.PRICING_SCHEME != 0:
-                if ConstSettings.IAASettings.PRICING_SCHEME == 1:
-                    sell_rate = 0
-                elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
-                    sell_rate = self.area.config.market_maker_rate[market.time_slot_str] * \
-                            ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-                elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
-                    sell_rate = self.area.config.market_maker_rate[market.time_slot_str]
-                else:
-                    raise MarketException
-                self.initial_selling_rate = sell_rate
-                self.final_selling_rate = sell_rate
-
+            self.set_initial_selling_rate_alternative_pricing_scheme(market)
             initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
             rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
                                                                       market.time_slot_str)
