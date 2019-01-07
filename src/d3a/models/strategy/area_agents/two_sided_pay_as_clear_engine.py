@@ -115,7 +115,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
                     energy=bid.energy,
                     seller=self.owner.name,
-                    already_tracked=True,
                     price_drop=True
                 )
             elif (bid.price/bid.energy) >= clearing_rate and \
@@ -125,7 +124,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
                     energy=(clearing_energy - cumulative_traded_bids),
                     seller=self.owner.name,
-                    already_tracked=True,
                     price_drop=True
                 )
                 cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
