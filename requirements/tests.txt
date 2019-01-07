@@ -74,7 +74,7 @@ python-dateutil==2.7.5
 python-rex==0.4
 pytz==2018.7
 pytzdata==2018.7
-pyyaml==4.2b1
+pyyaml==3.13
 redis==2.10.6
 regex==2018.11.22
 requests-mock==1.5.2
