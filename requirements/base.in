@@ -14,7 +14,6 @@ pip-tools
 plotly
 # TODO: Deactivating solidity compiler due to bug
 # py-solc
-pyyaml
 python-rex
 tablib
 terminaltables
