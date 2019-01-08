@@ -24,6 +24,10 @@ from d3a.models.const import ConstSettings
 
 
 class OneSidedAlternativePricingAgent(OneSidedAgent):
+
+    # The following is an artificial number but has to be >= 2:
+    MIN_SLOT_AGE = 2
+
     def __init__(self, *, owner, higher_market, lower_market, min_offer_age=1,
                  transfer_fee_pct=1, engine_type=IAAEngine):
         super().__init__(engine_type=engine_type, owner=owner, higher_market=higher_market,
@@ -62,10 +66,7 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                                "An Error occurred while buying an offer")
 
     def event_tick(self, *, area):
-
-        # The following is an artificial number but has to be >= 2:
-        MIN_SLOT_AGE = 2
-        if area.current_tick_in_slot - MIN_SLOT_AGE >= 0 and \
+        if area.current_tick_in_slot - self.MIN_SLOT_AGE >= 0 and \
                 ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._buy_energy_alternative_pricing_schemes(area)
 
