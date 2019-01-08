@@ -156,6 +156,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def area_reconfigure_event(self, *args, **kwargs):
         pass
 
+    def read_config_event(self):
+        pass
+
     def non_attr_parameters(self):
         return dict()
 

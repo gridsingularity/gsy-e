@@ -72,6 +72,10 @@ class PVPredefinedStrategy(PVStrategy):
         # TODO: Need to have 2-stage initialization as well, because the area objects are not
         # created when the constructor is executed if we inherit from a mixin class,
         # therefore config cannot be read at that point
+        self.read_config_event()
+
+    def read_config_event(self):
+        self._power_profile_index = self.area.config.cloud_coverage
         data = self._read_predefined_profile_for_pv()
 
         for slot_time in generate_market_slot_list(self.area):
