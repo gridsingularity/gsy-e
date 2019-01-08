@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from d3a.models.area.event_types import EnableAreaEvent, DisableAreaEvent, ConnectAreaEvent, \
-    DisconnectAreaEvent, DisableIntervalAreaEvent, DisconnectIntervalAreaEvent, StrategyEvents
+    DisconnectAreaEvent, DisableIntervalAreaEvent, DisconnectIntervalAreaEvent, StrategyEvents, \
+    ConfigEvents
 
 
 class IndividualEvents:
@@ -81,8 +82,8 @@ class ConnectDisconnectEvents:
 
 
 class Events:
-    def __init__(self, event_list, strategy):
-        self.strategy = strategy
+    def __init__(self, event_list, area):
+        self.area = area
         self.enable_disable_events = EnableDisableEvents(
             [e for e in event_list if type(e) in [DisableAreaEvent, EnableAreaEvent]],
             [e for e in event_list if type(e) is DisableIntervalAreaEvent],
@@ -94,12 +95,15 @@ class Events:
         )
 
         self.strategy_events = [e for e in event_list if type(e) == StrategyEvents]
+        self.config_events = [e for e in event_list if type(e) == ConfigEvents]
 
     def update_events(self, current_time):
         self.enable_disable_events.update_events(current_time)
         self.connect_disconnect_events.update_events(current_time)
         for ev in self.strategy_events:
-            ev.tick(current_time, self.strategy)
+            ev.tick(current_time, self.area.strategy)
+        for ev in self.config_events:
+            ev.tick(current_time, self.area)
 
     @property
     def is_enabled(self):
