@@ -1,4 +1,7 @@
 from behave import then
+from d3a.models.read_user_profile import read_profile_csv_to_dict, InputProfileTypes
+from d3a.d3a_core.util import d3a_path
+from pendulum import duration
 
 
 def one_or_none_trade_before_or_after(context, hour, is_before, nr_expected_trades):
@@ -153,3 +156,64 @@ def load_does_not_consume_between(context, start_time, end_time):
         if not start_time <= market.time_slot.hour < end_time:
             continue
         assert len(market.trades) == 0
+
+
+def _read_solar_profile(profile_path, slot_length):
+    return read_profile_csv_to_dict(InputProfileTypes.POWER, str(profile_path), slot_length)
+
+
+@then('both PVs follow they sunny profile until 12:00')
+def both_sunny_profile(context):
+    slot_length = context.simulation.area.config.slot_length
+    sunny = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_sunny.csv', slot_length)
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
+
+    for time_slot, market in house1._markets.past_markets.items():
+        if time_slot.hour > 12:
+            continue
+        h1_trades = [t for t in market.trades if t.seller == "H1 PV"]
+        h2_trades = [t for t in house2._markets.past_markets[time_slot].trades
+                     if t.seller == "H2 PV"]
+        if len(h1_trades) == 0 and len(h2_trades) == 0:
+            continue
+        assert len(h2_trades) == 1
+        assert h1_trades[0].offer.energy == h2_trades[0].offer.energy
+        profile_energy = sunny[time_slot] / (duration(hours=1) / slot_length)
+        assert h1_trades[0].offer.energy == profile_energy
+
+
+@then('House 1 PV follows the partially cloudy profile after 12:00')
+def house1_partially_cloudy(context):
+    slot_length = context.simulation.area.config.slot_length
+    partial_cloud = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_partial.csv',
+                                        slot_length)
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+
+    for time_slot, market in house1._markets.past_markets.items():
+        if time_slot.hour > 12:
+            continue
+        h1_trades = [t for t in market.trades if t.seller == "H1 PV"]
+        if len(h1_trades) == 0:
+            continue
+        assert len(h1_trades) == 1
+        profile_energy = partial_cloud[time_slot] / (duration(hours=1) / slot_length)
+        assert h1_trades[0].offer.energy == profile_energy
+
+
+@then('House 2 PV follows the cloudy profile after 12:00')
+def house2_cloudy(context):
+    slot_length = context.simulation.area.config.slot_length
+    cloudy = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_cloudy.csv',
+                                 slot_length)
+    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
+
+    for time_slot, market in house2._markets.past_markets.items():
+        if time_slot.hour > 12:
+            continue
+        h2_trades = [t for t in market.trades if t.seller == "H2 PV"]
+        if len(h2_trades) == 0:
+            continue
+        assert len(h2_trades) == 1
+        profile_energy = cloudy[time_slot] / (duration(hours=1) / slot_length)
+        assert h2_trades[0].offer.energy == profile_energy

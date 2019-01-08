@@ -69,4 +69,15 @@ class StrategyEvents(SimpleEvent):
     def tick(self, current_time, strategy):
         if current_time.hour == self.event_time and not self._triggered:
             strategy.area_reconfigure_event(**self.params)
+
+
+class ConfigEvents(SimpleEvent):
+    def __init__(self, event_time, params):
+        super().__init__(event_time)
+        self.params = params
+        self._triggered = False
+
+    def tick(self, current_time, area):
+        if current_time.hour == self.event_time and not self._triggered:
+            area.update_config(**self.params)
             self._triggered = True
