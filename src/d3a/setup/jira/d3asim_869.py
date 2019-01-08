@@ -27,7 +27,7 @@ from d3a.models.const import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.PRICING_SCHEME = 1
+    ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1
     area = Area(
         'Grid',
         [

@@ -131,6 +131,8 @@ class OfferUpdateFrequencyMixin:
             self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
 
     def update_on_activate(self):
+        # TODO: Need to refactor once we convert the config object to a singleton that is shared
+        # globally in the simulation
         self._decrease_price_every_nr_s = \
             (self.area.config.tick_length.seconds *
              ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
@@ -222,14 +224,14 @@ class OfferUpdateFrequencyMixin:
                 continue
 
     def set_initial_selling_rate_alternative_pricing_scheme(self, market):
-        if ConstSettings.IAASettings.PRICING_SCHEME != 0:
-            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
                 self.initial_selling_rate = 0
-            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                 self.initial_selling_rate = \
                     self.area.config.market_maker_rate[market.time_slot_str] * \
-                    ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
+                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / 100
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                 self.initial_selling_rate = \
                     self.area.config.market_maker_rate[market.time_slot_str]
             else:

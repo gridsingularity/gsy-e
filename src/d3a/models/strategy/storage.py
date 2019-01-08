@@ -126,25 +126,29 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.min_allowed_soc = min_allowed_soc
 
     def event_activate(self):
-        if ConstSettings.IAASettings.PRICING_SCHEME != 0:
+
+        self._set_be_alternative_pricing()
+        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
+        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
+        self.update_on_activate()
+
+    def _set_be_alternative_pricing(self):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self.assign_offermixin_arguments(3, 2, 0)
-            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
+            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
                 self.break_even = {k: (0, 0) for k in self.break_even.keys()}
-            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                 for time_slot in self.break_even.keys():
                     rate = self.area.config.market_maker_rate[time_slot] * \
-                           ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
+                           ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE\
+                           / 100
                     self.break_even[time_slot] = (rate, rate)
-            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                 for time_slot in self.break_even.keys():
                     rate = self.area.config.market_maker_rate[time_slot]
                     self.break_even[time_slot] = (rate, rate)
             else:
                 raise MarketException
-
-        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
-        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
-        self.update_on_activate()
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity_kWh, initial_soc,
@@ -279,8 +283,10 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
+
+            # TODO: find a better was to distinguish between IAA and devices
             if "IAA" in offer.seller \
-                    and ConstSettings.IAASettings.PRICING_SCHEME != 0:
+                    and ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
                 # dont buy from IAA if alternative pricing scheme is activated
                 continue
             # Check if storage has free capacity and if the price is cheap enough

@@ -32,41 +32,41 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
 
     @staticmethod
     def _get_children_by_name(area, name):
-        for child in area.children:
-            if child.name == name:
-                return child
-        return None
+        return next((c for c in area.children if c.name == name), None)
 
     def _buy_energy_alternative_pricing_schemes(self, area):
-        if _is_house_node(self.owner):
-            try:
-                for offer in self.lower_market.sorted_offers:
-                    if offer.seller != self.name:
-                        seller = self._get_children_by_name(area, offer.seller)
-                        if seller is not None and isinstance(seller.strategy, PVStrategy):
-                            if ConstSettings.IAASettings.PRICING_SCHEME == 1:
-                                sell_rate = 0
-                            elif ConstSettings.IAASettings.PRICING_SCHEME == 2:
-                                sell_rate = \
-                                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
-                                    ConstSettings.IAASettings.FEED_IN_TARIFF_PERCENTAGE / 100
-                            elif ConstSettings.IAASettings.PRICING_SCHEME == 3:
-                                sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-                            else:
-                                raise MarketException
-                            offer.price = offer.energy * sell_rate
-                            self.accept_offer(offer.market, offer)
+        if not _is_house_node(self.owner):
+            return
+        try:
+            for offer in self.lower_market.sorted_offers:
+                if offer.seller == self.name:
+                    continue
+                seller = self._get_children_by_name(area, offer.seller)
+                if seller is not None and isinstance(seller.strategy, PVStrategy):
+                    if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                        sell_rate = 0
+                    elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                        sell_rate = \
+                            ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
+                            ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE\
+                            / 100
+                    elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                        sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+                    else:
+                        raise MarketException
+                    offer.price = offer.energy * sell_rate
+                    self.accept_offer(offer.market, offer)
 
-            except MarketException:
-                self.log.exception("Alternative pricing scheme: "
-                                   "An Error occurred while buying an offer")
+        except MarketException:
+            self.log.exception("Alternative pricing scheme: "
+                               "An Error occurred while buying an offer")
 
     def event_tick(self, *, area):
 
         # The following is an artificial number but has to be >= 2:
-        min_slot_age = 2
-        if area.current_tick_in_slot - min_slot_age >= 0 and \
-                ConstSettings.IAASettings.PRICING_SCHEME != 0:
+        MIN_SLOT_AGE = 2
+        if area.current_tick_in_slot - MIN_SLOT_AGE >= 0 and \
+                ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._buy_energy_alternative_pricing_schemes(area)
 
         super().event_tick(area=area)
