@@ -14,7 +14,7 @@ if [ "$TOXENV" == "py36,coverage" ] || [ "$TOXENV" == "py36" ] || [ "$TOXENV" ==
 	# Arghhhh travis. Sudo is not available
 	mkdir $HOME/solc
 
-	wget https://launchpad.net/~ethereum/+archive/ubuntu/ethereum/+files/solc_0.5.1-0ubuntu1~trusty_amd64.deb
+	wget https://s3.eu-central-1.amazonaws.com/d3a-installation-files/solidity_0.5.1/solc_0.5.1-0ubuntu1_trusty_amd64.deb
 	dpkg -x solc_0.5.1-0ubuntu1~trusty_amd64.deb $HOME/solc
 fi
 
