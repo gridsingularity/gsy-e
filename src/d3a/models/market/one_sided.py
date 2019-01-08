@@ -87,7 +87,8 @@ class OneSidedMarket(Market):
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: DateTime = None, price_drop: bool = False) -> Trade:
+                     time: DateTime = None, price_drop: bool = False,
+                     already_tracked: bool=False) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -158,8 +159,9 @@ class OneSidedMarket(Market):
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
         self.bc_interface.track_trade_event(trade)
 
-        self._update_stats_after_trade(trade, offer, buyer)
-        log.warning(f"[TRADE][{self.time_slot_str}] {trade}")
+        if not already_tracked:
+            self._update_stats_after_trade(trade, offer, buyer)
+            log.warning(f"[TRADE][{self.time_slot_str}] {trade}")
 
         # FIXME: Needs to be triggered by blockchain event
         # TODO: Same as above, should be modified when event-driven blockchain is introduced
