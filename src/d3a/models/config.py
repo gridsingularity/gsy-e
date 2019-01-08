@@ -44,18 +44,9 @@ class SimulationConfig:
                 self.ticks_per_slot
             ))
         self.total_ticks = self.duration // self.slot_length * self.ticks_per_slot
-        # TODO: Once the d3a uses a common API to the d3a-web, this should be removed
-        # since this limitation already exists on d3a-web
-        if 0 <= cloud_coverage <= 2:
-            self.cloud_coverage = cloud_coverage
-        else:
-            raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
 
-        self.pv_user_profile = None \
-            if pv_user_profile is None \
-            else read_arbitrary_profile(InputProfileTypes.POWER,
-                                        ast.literal_eval(pv_user_profile),
-                                        self.slot_length)
+        self.read_cloud_coverage(cloud_coverage)
+        self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
         if iaa_fee is None:
@@ -85,6 +76,27 @@ class SimulationConfig:
             for k, v in self.__dict__.items()
             if k in fields
         }
+
+    def event_update(self, cloud_coverage=None, pv_user_profile=None):
+        if cloud_coverage is not None:
+            self.read_cloud_coverage(cloud_coverage)
+        if pv_user_profile is not None:
+            self.read_pv_user_profile(pv_user_profile)
+
+    def read_cloud_coverage(self, cloud_coverage=0):
+        # TODO: Once the d3a uses a common API to the d3a-web, this should be removed
+        # since this limitation already exists on d3a-web
+        if 0 <= cloud_coverage <= 2:
+            self.cloud_coverage = cloud_coverage
+        else:
+            raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
+
+    def read_pv_user_profile(self, pv_user_profile=None):
+        self.pv_user_profile = None \
+            if pv_user_profile is None \
+            else read_arbitrary_profile(InputProfileTypes.POWER,
+                                        ast.literal_eval(pv_user_profile),
+                                        self.slot_length)
 
     def read_market_maker_rate(self, market_maker_rate):
         """
