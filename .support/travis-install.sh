@@ -15,7 +15,7 @@ if [ "$TOXENV" == "py36,coverage" ] || [ "$TOXENV" == "py36" ] || [ "$TOXENV" ==
 	mkdir $HOME/solc
 
 	wget https://s3.eu-central-1.amazonaws.com/d3a-installation-files/solidity_0.5.1/solc_0.5.1-0ubuntu1_trusty_amd64.deb
-	dpkg -x solc_0.5.1-0ubuntu1~trusty_amd64.deb $HOME/solc
+	dpkg -x solc_0.5.1-0ubuntu1_trusty_amd64.deb $HOME/solc
 fi
 
 pip install -U tox
