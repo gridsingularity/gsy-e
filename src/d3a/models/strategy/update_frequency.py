@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from enum import Enum
 from cached_property import cached_property
 from typing import Dict  # noqa
-from pendulum import Time # noqa
+from pendulum import Time  # noqa
 
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.const import ConstSettings
@@ -117,7 +117,6 @@ class OfferUpdateFrequencyMixin:
                                          energy_rate_decrease_per_update)
         self._decrease_price_timepoint_s = {}  # type: Dict[Time, float]
         self._decrease_price_every_nr_s = 0
-        self.final_selling_rate = 0
         self.initial_selling_rate = initial_selling_rate
 
     def assign_offermixin_arguments(self, initial_rate_option, energy_rate_decrease_option,
@@ -132,6 +131,8 @@ class OfferUpdateFrequencyMixin:
             self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
 
     def update_on_activate(self):
+        # TODO: Need to refactor once we convert the config object to a singleton that is shared
+        # globally in the simulation
         self._decrease_price_every_nr_s = \
             (self.area.config.tick_length.seconds *
              ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
@@ -221,3 +222,17 @@ class OfferUpdateFrequencyMixin:
                 self.offers.replace(offer, new_offer, iterated_market)
             except MarketException:
                 continue
+
+    def set_initial_selling_rate_alternative_pricing_scheme(self, market):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                self.initial_selling_rate = 0
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                self.initial_selling_rate = \
+                    self.area.config.market_maker_rate[market.time_slot_str] * \
+                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / 100
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                self.initial_selling_rate = \
+                    self.area.config.market_maker_rate[market.time_slot_str]
+            else:
+                raise MarketException

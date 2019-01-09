@@ -20,6 +20,8 @@ from typing import Union
 from collections import defaultdict
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
+from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import \
+    OneSidedAlternativePricingAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
@@ -108,7 +110,10 @@ class AreaDispatcher:
     def select_agent_class(is_spot_market):
         if is_spot_market:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                return OneSidedAgent
+                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+                    return OneSidedAlternativePricingAgent
+                else:
+                    return OneSidedAgent
             elif ConstSettings.IAASettings.MARKET_TYPE == 2:
                 return TwoSidedPayAsBidAgent
             elif ConstSettings.IAASettings.MARKET_TYPE == 3:
@@ -136,7 +141,9 @@ class AreaDispatcher:
                 owner=self.area,
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
-                transfer_fee_pct=self.area.config.iaa_fee
+                transfer_fee_pct=0
+                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0
+                else self.area.config.iaa_fee
             )
             # Attach agent to own IAA list
             self.interarea_agents[market.time_slot].append(iaa)

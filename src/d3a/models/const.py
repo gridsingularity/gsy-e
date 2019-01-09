@@ -105,6 +105,14 @@ class ConstSettings:
         # Option 3 stands for double sided pay as clear market
         MARKET_TYPE = 1
 
+        class AlternativePricing:
+            # Option 0: D3A_trading
+            # Option 1: no scheme (0 cents/kWh)
+            # Option 2: feed-in-tariff (FEED_IN_TARIFF_PERCENTAGE / 100 * MMR)
+            # Option 3: net-metering (MMR)
+            PRICING_SCHEME = 0
+            FEED_IN_TARIFF_PERCENTAGE = 50
+
     class BlockchainSettings:
         # Blockchain URL, default is localhost.
         URL = "http://127.0.0.1:8545"

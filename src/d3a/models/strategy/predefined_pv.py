@@ -68,23 +68,11 @@ class PVPredefinedStrategy(PVStrategy):
         self._power_profile_index = cloud_coverage
         self._time_format = TIME_FORMAT
 
-    def event_activate(self):
-        """
-        Runs on activate event. Reads the power profile data and calculates the required energy
-        for each slot.
-        :return: None
-        """
+    def produced_energy_forecast_kWh(self):
         # TODO: Need to have 2-stage initialization as well, because the area objects are not
         # created when the constructor is executed if we inherit from a mixin class,
         # therefore config cannot be read at that point
         self.read_config_event()
-
-        # TODO: A bit clumsy, but this decrease price calculation needs to be added here as well
-        # Need to refactor once we convert the config object to a singleton that is shared globally
-        # in the simulation
-        self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds *
-             ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
 
     def read_config_event(self):
         self._power_profile_index = self.area.config.cloud_coverage

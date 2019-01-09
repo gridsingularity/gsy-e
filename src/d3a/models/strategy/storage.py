@@ -23,7 +23,7 @@ from d3a.models.state import StorageState
 from d3a.models.strategy import BaseStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, \
-    BidUpdateFrequencyMixin, InitialRateOptions
+    BidUpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import TIME_FORMAT
@@ -66,13 +66,13 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
         break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
-        self.initial_selling_rate = initial_selling_rate
 
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh, break_even,
                                              min_allowed_soc, initial_selling_rate)
         self.break_even = break_even
         self.final_selling_rate = list(break_even.values())[0][1]
+
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
             InputProfileTypes.IDENTITY,
@@ -126,9 +126,29 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.min_allowed_soc = min_allowed_soc
 
     def event_activate(self):
+
+        self._set_be_alternative_pricing()
         self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
+
+    def _set_be_alternative_pricing(self):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            self.assign_offermixin_arguments(3, 2, 0)
+            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                self.break_even = {k: (0, 0) for k in self.break_even.keys()}
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                for time_slot in self.break_even.keys():
+                    rate = self.area.config.market_maker_rate[time_slot] * \
+                           ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE\
+                           / 100
+                    self.break_even[time_slot] = (rate, rate)
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                for time_slot in self.break_even.keys():
+                    rate = self.area.config.market_maker_rate[time_slot]
+                    self.break_even[time_slot] = (rate, rate)
+            else:
+                raise MarketException
 
     @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity_kWh, initial_soc,
@@ -263,9 +283,15 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
+
+            # TODO: find a better was to distinguish between IAA and devices
+            if "IAA" in offer.seller \
+                    and ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+                # dont buy from IAA if alternative pricing scheme is activated
+                continue
             # Check if storage has free capacity and if the price is cheap enough
             if self.state.free_storage(market.time_slot) > 0.0 \
-                    and (offer.price / offer.energy) < max_affordable_offer_rate:
+                    and (offer.price / offer.energy) <= max_affordable_offer_rate:
                 try:
                     max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
                     if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
@@ -284,6 +310,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         energy_sell_dict = self.state.clamp_energy_to_sell_kWh(
             [ma.time_slot for ma in markets_to_sell])
         for market in markets_to_sell:
+            self.set_initial_selling_rate_alternative_pricing_scheme(market)
+
             selling_rate = self.calculate_selling_rate(market)
             energy = energy_sell_dict[market.time_slot]
             if not self.state.has_battery_reached_max_power(energy, market.time_slot):
@@ -321,24 +349,15 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             return self.capacity_dependant_sell_rate(market)
         else:
             break_even_sell = self.break_even[market.time_slot_str][1]
-            max_selling_rate = self._max_selling_rate(market)
+            max_selling_rate = self.calculate_initial_sell_rate(market.time_slot_str)
             return max(max_selling_rate, break_even_sell)
-
-    def _max_selling_rate(self, market):
-        if self.initial_rate_option == InitialRateOptions.HISTORICAL_AVG_RATE \
-                and self.area.historical_avg_rate != 0:
-            return self.area.historical_avg_rate
-        elif self.initial_rate_option == InitialRateOptions.MARKET_MAKER_RATE:
-            return self.area.config.market_maker_rate[market.time_slot_str]
-        elif self.initial_rate_option == InitialRateOptions.CUSTOM_RATE:
-            return self.initial_selling_rate
 
     def capacity_dependant_sell_rate(self, market):
         if self.state.charge_history[market.time_slot] is '-':
             soc = self.state.used_storage / self.state.capacity
         else:
             soc = self.state.charge_history[market.time_slot] / 100.0
-        max_selling_rate = self._max_selling_rate(market)
+        max_selling_rate = self.calculate_initial_sell_rate(market.time_slot_str)
         break_even_sell = self.break_even[market.time_slot_str][1]
         if max_selling_rate < break_even_sell:
             return break_even_sell
