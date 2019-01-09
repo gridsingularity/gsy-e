@@ -106,7 +106,7 @@ class ConstSettings:
         MARKET_TYPE = 1
 
         class AlternativePricing:
-            # Option 0: D3A_trading, 1=no scheme, 2=feed-in-tariff, 3=net-metering,
+            # Option 0: D3A_trading
             # Option 1: no scheme (0 cents/kWh)
             # Option 2: feed-in-tariff (FEED_IN_TARIFF_PERCENTAGE / 100 * MMR)
             # Option 3: net-metering (MMR)
