@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import sys
+
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import MarketException
@@ -51,11 +53,11 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                         sell_rate = 0
                     elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                         sell_rate = \
-                            ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE * \
+                            area.config.market_maker_rate[self.lower_market.time_slot_str] * \
                             ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE\
                             / 100
                     elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                        sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+                        sell_rate = area.config.market_maker_rate[self.lower_market.time_slot_str]
                     else:
                         raise MarketException
                     offer.price = offer.energy * sell_rate
@@ -66,8 +68,19 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                                "An Error occurred while buying an offer")
 
     def event_tick(self, *, area):
-        if area.current_tick_in_slot - self.MIN_SLOT_AGE >= 0 and \
+        if area.current_tick_in_slot >= self.MIN_SLOT_AGE and \
                 ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._buy_energy_alternative_pricing_schemes(area)
 
-        super().event_tick(area=area)
+        # super().event_tick(area=area)
+
+    def event_market_cycle(self):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            energy_per_slot = sys.maxsize
+            energy_rate = self.owner.config.market_maker_rate[self.lower_market.time_slot_str]
+
+            self.lower_market.offer(
+                energy_per_slot * energy_rate,
+                energy_per_slot,
+                ConstSettings.GeneralSettings.ALT_PRICING_MARKET_MAKER_NAME
+            )

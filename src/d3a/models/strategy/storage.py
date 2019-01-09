@@ -284,10 +284,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 # Don't buy our own offer
                 continue
 
-            # TODO: find a better was to distinguish between IAA and devices
-            if "IAA" in offer.seller \
+            if offer.seller == ConstSettings.GeneralSettings.ALT_PRICING_MARKET_MAKER_NAME \
                     and ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-                # dont buy from IAA if alternative pricing scheme is activated
+                # don't buy from IAA if alternative pricing scheme is activated
                 continue
             # Check if storage has free capacity and if the price is cheap enough
             if self.state.free_storage(market.time_slot) > 0.0 \
