@@ -207,10 +207,7 @@ def running_the_simulation(context):
     export_path = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
-    exit_on_finish = True
-    exit_on_finish_wait = duration()
 
-    api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
         'json_arg',
         context._settings,
@@ -223,9 +220,6 @@ def running_the_simulation(context):
         export_path,
         reset_on_finish,
         reset_on_finish_wait,
-        exit_on_finish,
-        exit_on_finish_wait,
-        api_url
     )
     context.simulation.run()
 
@@ -235,7 +229,7 @@ def run_sim_console(context, scenario):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
     os.system("d3a -l FATAL run -d 2h --setup={scenario} --export --export-path={export_path} "
-              "--exit-on-finish".format(export_path=context.export_path, scenario=scenario))
+              .format(export_path=context.export_path, scenario=scenario))
 
 
 @when('we run the d3a simulation with config parameters'
@@ -263,10 +257,6 @@ def run_sim_with_config_setting(context, cloud_coverage,
     export_path = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
-    exit_on_finish = True
-    exit_on_finish_wait = duration()
-
-    api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
         scenario,
         simulation_config,
@@ -279,9 +269,6 @@ def run_sim_with_config_setting(context, cloud_coverage,
         export_path,
         reset_on_finish,
         reset_on_finish_wait,
-        exit_on_finish,
-        exit_on_finish_wait,
-        api_url
     )
     context.simulation.run()
 
@@ -291,10 +278,9 @@ def run_d3a_with_settings_file(context):
     context.export_path = os.path.join(context.simdir, "default")
     os.makedirs(context.export_path, exist_ok=True)
     os.system("d3a -l FATAL run -g {settings_file} --export --export-path={export_path} "
-              "--setup default_2a --exit-on-finish".format(export_path=context.export_path,
-                                                           settings_file=os.path.join(
-                                                               d3a_path, "setup",
-                                                               "d3a-settings.json")))
+              "--setup default_2a".format(export_path=context.export_path,
+                                          settings_file=os.path.join(d3a_path, "setup",
+                                                                     "d3a-settings.json")))
 
 
 @then('we test the export functionality of {scenario}')
@@ -351,7 +337,7 @@ def create_sim_object(context, scenario):
 
     context.simulation = Simulation(
         scenario, simulation_config, 0, 0, False, duration(), False, False, None, False,
-        duration(), True, duration(), None, "1234"
+        duration(), "1234", False
     )
 
 
@@ -451,10 +437,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
     export_path = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
-    exit_on_finish = True
-    exit_on_finish_wait = duration()
 
-    api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
         scenario,
         simulation_config,
@@ -467,9 +450,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
         export_path,
         reset_on_finish,
         reset_on_finish_wait,
-        exit_on_finish,
-        exit_on_finish_wait,
-        api_url
     )
     context.simulation.run()
 

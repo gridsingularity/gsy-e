@@ -32,7 +32,7 @@ from ptpython.repl import embed
 
 from d3a.blockchain import BlockChainInterface
 from d3a.constants import TIME_ZONE
-from d3a.d3a_core.exceptions import SimulationException, D3AException
+from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
@@ -60,9 +60,7 @@ class Simulation:
                  use_repl: bool = False, export: bool = False, export_path: str = None,
                  reset_on_finish: bool = False,
                  reset_on_finish_wait: duration = duration(minutes=1),
-                 exit_on_finish: bool = False,
-                 exit_on_finish_wait: duration = duration(seconds=1),
-                 api_url=None, redis_job_id=None, use_bc=False):
+                 redis_job_id=None, use_bc=False):
 
         self.initial_params = dict(
             slowdown=slowdown,
@@ -77,19 +75,11 @@ class Simulation:
         self.export_path = export_path
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait
-        self.exit_on_finish = exit_on_finish
-        self.exit_on_finish_wait = exit_on_finish_wait
-        self.api_url = api_url
         self.setup_module_name = setup_module_name
         self.use_bc = use_bc
         self.is_stopped = False
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
-        if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
-            raise D3AException(
-                "Can only specify one of '--reset-on-finish', '--exit-on-finish' and '--use-repl' "
-                "simultaneously."
-            )
 
         self.run_start = None
         self.paused_time = None
@@ -275,8 +265,6 @@ class Simulation:
                             " ({} paused)".format(paused_duration) if paused_duration else "",
                             config.duration / (run_duration - paused_duration)
                         )
-                    if not self.exit_on_finish:
-                        log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
                         ExportAndPlot(self.area, self.export_path,
                                       DateTime.now(tz=TIME_ZONE).isoformat(),
@@ -296,14 +284,6 @@ class Simulation:
                         t.start()
                         t.join()
                         continue
-                    elif self.exit_on_finish:
-                        self._handle_input(console, self.exit_on_finish_wait.in_seconds())
-                        log.error("Terminating. (--exit-on-finish set.)")
-                        break
-                    else:
-                        log.info("Ctrl-C to quit")
-                        while True:
-                            self._handle_input(console, 0.5)
 
                     break
             except _SimulationInterruped:

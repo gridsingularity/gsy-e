@@ -24,7 +24,7 @@ fi
 
 echo "Running d3a simulation settings: ${d3a_command}"
 
-docker run --rm -it -v $export_path:$_docker_export_path $_image_name ${d3a_command//d3a/} --export --export-path=$_docker_export_path --exit-on-finish
+docker run --rm -it -v $export_path:$_docker_export_path $_image_name ${d3a_command//d3a/} --export --export-path=$_docker_export_path
 
 if [ $? = 0 ]; then
     echo "Simulation results are written to ${export_path}"
