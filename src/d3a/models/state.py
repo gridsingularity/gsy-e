@@ -94,7 +94,7 @@ class StorageState:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
 
         assert limit_float_precision(initial_capacity_kWh / capacity) >= min_allowed_soc, \
-            f"Initial capacity ({initial_capacity_kWh} kWh) exceeds the " \
+            f"Initial capacity ({initial_capacity_kWh} kWh) is less than " \
             f"min allowed soc ({min_allowed_soc*100.0}%)."
 
         self.min_allowed_soc = min_allowed_soc
