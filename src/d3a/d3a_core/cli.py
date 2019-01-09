@@ -27,10 +27,11 @@ from colorlog.colorlog import ColoredFormatter
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios
 from d3a.d3a_core.util import read_settings_from_file
 from d3a.d3a_core.util import update_advanced_settings
+from d3a.d3a_core.simulation import run_simulation
+
 
 log = getLogger(__name__)
 
@@ -60,9 +61,9 @@ _setup_modules = available_simulation_scenarios
 @main.command()
 @click.option('-d', '--duration', type=IntervalType('D:H'), default="1d", show_default=True,
               help="Duration of simulation")
-@click.option('-t', '--tick-length', type=IntervalType('M:S'), default="1s", show_default=True,
+@click.option('-t', '--tick_length', type=IntervalType('M:S'), default="1s", show_default=True,
               help="Length of a tick")
-@click.option('-s', '--slot-length', type=IntervalType('M:S'), default="15m", show_default=True,
+@click.option('-s', '--slot_length', type=IntervalType('M:S'), default="15m", show_default=True,
               help="Length of a market slot")
 @click.option('-c', '--cloud_coverage', type=int,
               default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
@@ -73,7 +74,7 @@ _setup_modules = available_simulation_scenarios
 @click.option('-f', '--iaa_fee', type=int,
               default=ConstSettings.IAASettings.FEE_PERCENTAGE, show_default=True,
               help="Inter-Area-Agent Fee in percentage")
-@click.option('-m', '--market-count', type=int, default=1, show_default=True,
+@click.option('-m', '--market_count', type=int, default=1, show_default=True,
               help="Number of tradable market slots into the future")
 @click.option('--setup', 'setup_module_name', default="default_2a",
               help="Simulation setup module use. Available modules: [{}]".format(
@@ -100,36 +101,26 @@ _setup_modules = available_simulation_scenarios
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 @click.option('--enable-bc', is_flag=True, default=False, help="Run simulation on Blockchain")
 @click.option('--enable_bm', is_flag=True, default=False, help="Run simulation on BalancingMarket")
-def run(setup_module_name, settings_file, slowdown, seed, paused, pause_after,
-        repl, export, export_path, reset_on_finish, reset_on_finish_wait,
-        enable_bc, enable_bm, **config_params):
+def run(setup_module_name, settings_file, slowdown, enable_bm, duration, slot_length,
+        tick_length, market_count, cloud_coverage, market_maker_rate, iaa_fee,  **kwargs):
     try:
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
             update_advanced_settings(advanced_settings)
             simulation_config = SimulationConfig(**simulation_settings)
         else:
-            simulation_config = SimulationConfig(**config_params)
+            simulation_config = SimulationConfig(duration, slot_length, tick_length, market_count,
+                                                 cloud_coverage, market_maker_rate, iaa_fee)
 
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = enable_bm
-        simulation = Simulation(
-            setup_module_name=setup_module_name,
-            simulation_config=simulation_config,
-            slowdown=slowdown,
-            seed=seed,
-            paused=paused,
-            pause_after=pause_after,
-            use_repl=repl,
-            export=export,
-            export_path=export_path,
-            reset_on_finish=reset_on_finish,
-            reset_on_finish_wait=reset_on_finish_wait,
-            redis_job_id=None,
-            use_bc=enable_bc
-        )
+        run_simulation(setup_module_name=setup_module_name,
+                       simulation_config=simulation_config,
+                       slowdown=slowdown,
+                       redis_job_id=None,
+                       **kwargs)
+
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-    simulation.run()
 
 
 @main.command()

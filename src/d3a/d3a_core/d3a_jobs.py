@@ -26,9 +26,9 @@ from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import available_simulation_scenarios
 from d3a.d3a_core.util import update_advanced_settings
+from d3a.d3a_core.simulation import run_simulation
 
 
 @job('d3a')
@@ -71,12 +71,10 @@ def start(scenario, settings):
     else:
         scenario_name = 'json_arg'
         config.area = scenario
-    simulation = Simulation(scenario_name,
-                            config,
-                            slowdown=settings.get('slowdown', 0),
-                            redis_job_id=job.id)
-
-    simulation.run()
+    run_simulation(setup_module_name=scenario_name,
+                   simulation_config=config,
+                   slowdown=settings.get('slowdown', 0),
+                   redis_job_id=job.id)
 
 
 @job('d3a')

@@ -110,6 +110,7 @@ class ConstSettings:
             # Option 1: no scheme (0 cents/kWh)
             # Option 2: feed-in-tariff (FEED_IN_TARIFF_PERCENTAGE / 100 * MMR)
             # Option 3: net-metering (MMR)
+            COMPARE_PRICING_SCHEMES = False
             PRICING_SCHEME = 0
             FEED_IN_TARIFF_PERCENTAGE = 50
 
