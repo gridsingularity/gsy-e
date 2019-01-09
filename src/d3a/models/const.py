@@ -32,7 +32,6 @@ class ConstSettings:
         MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
         ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
         SETUP_FILE_PATH = None  # Default path of the available setup files
-        ALT_PRICING_MARKET_MAKER_NAME = "AGENT"
 
     class StorageSettings:
         # Max battery capacity in kWh.
@@ -113,6 +112,7 @@ class ConstSettings:
             # Option 3: net-metering (MMR)
             PRICING_SCHEME = 0
             FEED_IN_TARIFF_PERCENTAGE = 50
+            ALT_PRICING_MARKET_MAKER_NAME = "AGENT"
 
     class BlockchainSettings:
         # Blockchain URL, default is localhost.

@@ -284,8 +284,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 # Don't buy our own offer
                 continue
 
-            if offer.seller == ConstSettings.GeneralSettings.ALT_PRICING_MARKET_MAKER_NAME \
-                    and ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
+            if offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME \
+                    and alt_pricing_settings.PRICING_SCHEME != 0:
                 # don't buy from IAA if alternative pricing scheme is activated
                 continue
             # Check if storage has free capacity and if the price is cheap enough

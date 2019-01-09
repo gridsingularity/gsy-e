@@ -72,15 +72,13 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                 ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._buy_energy_alternative_pricing_schemes(area)
 
-        # super().event_tick(area=area)
-
     def event_market_cycle(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            energy_per_slot = sys.maxsize
+            energy_per_slot = int(sys.maxsize)
             energy_rate = self.owner.config.market_maker_rate[self.lower_market.time_slot_str]
 
             self.lower_market.offer(
                 energy_per_slot * energy_rate,
                 energy_per_slot,
-                ConstSettings.GeneralSettings.ALT_PRICING_MARKET_MAKER_NAME
+                ConstSettings.IAASettings.AlternativePricing.ALT_PRICING_MARKET_MAKER_NAME
             )
