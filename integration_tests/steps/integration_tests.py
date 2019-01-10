@@ -230,7 +230,7 @@ def running_the_simulation(context):
 def run_sim_console(context, scenario):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -d 2h --setup={scenario} --export --export-path={export_path} "
+    os.system("d3a -l FATAL run -d 2h --setup={scenario} --export-path={export_path} "
               .format(export_path=context.export_path, scenario=scenario))
 
 

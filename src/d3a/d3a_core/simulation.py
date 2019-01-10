@@ -78,7 +78,6 @@ class Simulation:
             self.export_subdir = \
                 DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
 
-        self.export_subdir = export_subdir
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait
         self.setup_module_name = setup_module_name
