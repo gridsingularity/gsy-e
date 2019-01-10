@@ -46,6 +46,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
 
         BaseStrategy.__init__(self)
+
         self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                           initial_buying_rate)
         self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
@@ -103,6 +104,12 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
 
     def event_activate(self):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
+            self.final_buying_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, self.area.config.market_maker_rate
+            )
+
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.duration.days + 1)}
         self._simulation_start_timestamp = self.area.now
