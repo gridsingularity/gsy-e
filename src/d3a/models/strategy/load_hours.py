@@ -173,8 +173,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 self._double_sided_market_event_tick(market)
 
     def _allowed_operating_hours(self, time):
-        return time.hour in self.hrs_of_day and \
-               self.hrs_per_day[self._get_day_of_timestamp(time)] > 0
+        return time.hour in self.hrs_of_day
 
     def _operating_hours(self, energy):
         return (((energy * 1000) / self.energy_per_slot_Wh)
@@ -182,6 +181,11 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         for market in self.active_markets:
+            current_day = self._get_day_of_timestamp(market.time_slot)
+            if self.hrs_per_day[current_day] <= 0:
+                self.energy_requirement_Wh[market.time_slot] = 0.0
+                self.state.desired_energy_Wh[market.time_slot] = 0.0
+
             if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
