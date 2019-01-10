@@ -214,3 +214,25 @@ def trades_on_all_markets_max_load_rate(context):
         assert all(t.buyer == "H1 General Load" for t in market.trades)
         assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot_str])
                    for t in market.trades)
+
+
+@then('the Load of House 1 should only buy energy from IAA between 5:00 and 8:00')
+def house1_load_only_from_iaa(context):
+    from d3a.models.const import ConstSettings
+    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
+    load1 = [child for child in house1.children if child.name == "H1 General Load"][0]
+
+    for market in load1.past_markets:
+        if not 5 <= market.time_slot.hour < 8:
+            continue
+
+        assert len(market.trades) == 1
+        assert market.trades[0].offer.seller == \
+            ConstSettings.GeneralSettings.ALT_PRICING_MARKET_MAKER_NAME
+
+
+@then('the Commercial Producer should never sell energy')
+def commercial_never_trades(context):
+    commercial = [child for child in context.simulation.area.children
+                  if child.name == "Commercial Energy Producer"][0]
+    assert all(len(m.trades) == 0 for m in commercial.past_markets)

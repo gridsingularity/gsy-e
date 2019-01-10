@@ -112,6 +112,7 @@ class ConstSettings:
             # Option 3: net-metering (MMR)
             PRICING_SCHEME = 0
             FEED_IN_TARIFF_PERCENTAGE = 50
+            ALT_PRICING_MARKET_MAKER_NAME = "AGENT"
 
     class BlockchainSettings:
         # Blockchain URL, default is localhost.
