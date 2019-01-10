@@ -252,14 +252,21 @@ def update_advanced_settings(advanced_settings):
     Updates ConstSettings class variables with advanced_settings.
     If variable is not part of ConstSettings, an Exception is raised.
     """
+
+    def update_nested_settings(class_object, class_name, settings_dict):
+        for set_var, set_val in settings_dict[class_name].items():
+            getattr(class_object, set_var)
+            if isinstance(set_val, str):
+                setattr(class_object, set_var, parseboolstring(set_val))
+            elif isinstance(set_val, dict):
+                nested_class = getattr(class_object, set_var)
+                update_nested_settings(nested_class, set_var, settings_dict[class_name])
+            else:
+                setattr(class_object, set_var, set_val)
+
     for settings_class_name in advanced_settings.keys():
         setting_class = getattr(ConstSettings, settings_class_name)
-        for set_var, set_val in advanced_settings[settings_class_name].items():
-            getattr(setting_class, set_var)
-            if isinstance(set_val, str):
-                setattr(setting_class, set_var, parseboolstring(set_val))
-            else:
-                setattr(setting_class, set_var, set_val)
+        update_nested_settings(setting_class, settings_class_name, advanced_settings)
 
 
 def generate_market_slot_list(area):
@@ -276,15 +283,24 @@ def generate_market_slot_list(area):
 
 
 def constsettings_to_dict():
+
+    def convert_nested_settings(class_object, class_name, settings_dict):
+        for key, value in dict(class_object.__dict__).items():
+            if key.startswith("__"):
+                continue
+            if inspect.isclass(value):
+                convert_nested_settings(value, key, settings_dict[class_name])
+            else:
+                if class_name in settings_dict.keys():
+                    settings_dict[class_name][key] = value
+                else:
+                    settings_dict[class_name] = {key: value}
+
     const_settings = {}
     for settings_class_name, settings_class in dict(ConstSettings.__dict__).items():
-        if not settings_class_name.startswith("__"):
-            for key, value in dict(settings_class.__dict__).items():
-                if not key.startswith("__"):
-                    if settings_class_name in const_settings.keys():
-                        const_settings[settings_class_name][key] = value
-                    else:
-                        const_settings[settings_class_name] = {key: value}
+        if settings_class_name.startswith("__"):
+            continue
+        convert_nested_settings(settings_class, settings_class_name, const_settings)
     return const_settings
 
 

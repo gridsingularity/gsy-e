@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import sys
-from d3a.models.strategy import ureg, Q_
 
 from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -29,7 +28,7 @@ class CommercialStrategy(BaseStrategy):
         if energy_rate is not None and energy_rate < 0:
             raise ValueError("Energy rate should be positive.")
         super().__init__()
-        self.energy_per_slot_kWh = Q_(int(sys.maxsize), ureg.kWh)
+        self.energy_per_slot_kWh = int(sys.maxsize)
         self.energy_rate = energy_rate
 
     def _markets_to_offer_on_activate(self):
@@ -61,8 +60,8 @@ class CommercialStrategy(BaseStrategy):
             if self.energy_rate is None \
             else self.energy_rate
         offer = market.offer(
-            self.energy_per_slot_kWh.m * energy_rate,
-            self.energy_per_slot_kWh.m,
+            self.energy_per_slot_kWh * energy_rate,
+            self.energy_per_slot_kWh,
             self.owner.name
         )
 
@@ -78,8 +77,8 @@ class CommercialStrategy(BaseStrategy):
         balancing_supply_rate = DeviceRegistry.REGISTRY[self.owner.name][1]
 
         offer = market.balancing_offer(
-            self.energy_per_slot_kWh.m * balancing_supply_rate,
-            self.energy_per_slot_kWh.m,
+            self.energy_per_slot_kWh * balancing_supply_rate,
+            self.energy_per_slot_kWh,
             self.owner.name
         )
         self.offers.post(offer, market)

@@ -43,8 +43,17 @@ Feature: Jira Issues Tests
      When we run the simulation with setup file jira.d3asim_778 and parameters [24, 15, 15, 0, 1]
      Then there should be trades on all markets using the max load rate
 
+
    Scenario: D3ASIM-871, unmatched loads are not reported if hours per day are covered
      Given we have a scenario named jira/d3asim_871
      And d3a is installed
      When we run the simulation with setup file jira.d3asim_871 and parameters [24, 15, 15, 0, 1]
      Then there should be no unmatched loads
+
+   Scenario: D3ASIM-874, alternative pricing can buy energy from IAA if there is not enough self-consumption
+     Given we have a scenario named jira/d3asim_869
+     And d3a is installed
+     When we run the d3a simulation with jira.d3asim_869 [24, 60, 60]
+     Then there should be no unmatched loads
+     And the Load of House 1 should only buy energy from IAA between 5:00 and 8:00
+     And the Commercial Producer should never sell energy
