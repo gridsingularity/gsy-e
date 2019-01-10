@@ -23,6 +23,8 @@ import dill
 from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
+from multiprocessing import Process
+from pendulum import DateTime
 
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
@@ -31,6 +33,7 @@ from d3a.d3a_core.util import IntervalType, available_simulation_scenarios
 from d3a.d3a_core.util import read_settings_from_file
 from d3a.d3a_core.util import update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
+from d3a.constants import TIME_ZONE, TIME_FORMAT_EXPORT_DIR
 
 
 log = getLogger(__name__)
@@ -96,28 +99,45 @@ _setup_modules = available_simulation_scenarios
               help="Automatically reset simulation after it finishes.")
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
-@click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
+@click.option('--no_export', is_flag=True, default=False, help="Skip export of simulation data")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 @click.option('--enable-bc', is_flag=True, default=False, help="Run simulation on Blockchain")
 @click.option('--enable_bm', is_flag=True, default=False, help="Run simulation on BalancingMarket")
-def run(setup_module_name, settings_file, slowdown, enable_bm, duration, slot_length,
-        tick_length, market_count, cloud_coverage, market_maker_rate, iaa_fee,  **kwargs):
+@click.option('--compare_alt_pricing', is_flag=True, default=False,
+              help="Compare alternative pricing schemes")
+def run(setup_module_name, settings_file, slowdown, enable_bm, duration, slot_length, tick_length,
+        market_count, cloud_coverage, market_maker_rate, iaa_fee, compare_alt_pricing, **kwargs):
+
     try:
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
             update_advanced_settings(advanced_settings)
             simulation_config = SimulationConfig(**simulation_settings)
         else:
-            simulation_config = SimulationConfig(duration, slot_length, tick_length, market_count,
-                                                 cloud_coverage, market_maker_rate, iaa_fee)
+            simulation_config = \
+                SimulationConfig(duration, slot_length, tick_length, market_count,
+                                 cloud_coverage, market_maker_rate, iaa_fee)
 
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = enable_bm
-        run_simulation(setup_module_name=setup_module_name,
-                       simulation_config=simulation_config,
-                       slowdown=slowdown,
-                       redis_job_id=None,
-                       **kwargs)
+
+        if compare_alt_pricing is True:
+            ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
+            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
+            joblist = list(range(0, 4))
+        else:
+            joblist = [0]
+
+        processes = []
+        for pricing_scheme in joblist:
+            p = Process(target=run_simulation, args=(pricing_scheme, setup_module_name,
+                                                     simulation_config, slowdown, None, kwargs)
+                        )
+            p.start()
+            processes.append(p)
+
+        for p in processes:
+            p.join()
 
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])

@@ -205,6 +205,7 @@ def running_the_simulation(context):
     repl = False
     export = False
     export_path = None
+    export_subdir = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
 
@@ -218,6 +219,7 @@ def running_the_simulation(context):
         repl,
         export,
         export_path,
+        export_subdir,
         reset_on_finish,
         reset_on_finish_wait,
     )
@@ -255,6 +257,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
     repl = False
     export = False
     export_path = None
+    export_subdir = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
     context.simulation = Simulation(
@@ -267,6 +270,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
         repl,
         export,
         export_path,
+        export_subdir,
         reset_on_finish,
         reset_on_finish_wait,
     )
@@ -277,7 +281,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
 def run_d3a_with_settings_file(context):
     context.export_path = os.path.join(context.simdir, "default")
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -g {settings_file} --export --export-path={export_path} "
+    os.system("d3a -l FATAL run -g {settings_file} --export-path={export_path} "
               "--setup default_2a".format(export_path=context.export_path,
                                           settings_file=os.path.join(d3a_path, "setup",
                                                                      "d3a-settings.json")))
@@ -336,7 +340,7 @@ def create_sim_object(context, scenario):
                                          iaa_fee=5)
 
     context.simulation = Simulation(
-        scenario, simulation_config, 0, 0, False, duration(), False, False, None, False,
+        scenario, simulation_config, 0, 0, False, duration(), False, False, None, None, False,
         duration(), "1234", False
     )
 
@@ -435,6 +439,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
     repl = False
     export = False
     export_path = None
+    export_subdir = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
 
@@ -448,6 +453,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
         repl,
         export,
         export_path,
+        export_subdir,
         reset_on_finish,
         reset_on_finish_wait,
     )

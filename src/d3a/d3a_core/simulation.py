@@ -32,7 +32,7 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.blockchain import BlockChainInterface
-from d3a.constants import TIME_ZONE
+from d3a.constants import TIME_ZONE, TIME_FORMAT_EXPORT_DIR
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
@@ -58,8 +58,8 @@ class _SimulationInterruped(Exception):
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: duration = None,
-                 repl: bool = False, export: bool = False, export_path: str = None,
-                 reset_on_finish: bool = False,
+                 repl: bool = False, no_export: bool = False, export_path: str = None,
+                 export_subdir: str = None, reset_on_finish: bool = False,
                  reset_on_finish_wait: duration = duration(minutes=1),
                  redis_job_id=None, enable_bc=False):
 
@@ -72,8 +72,13 @@ class Simulation:
 
         self.simulation_config = simulation_config
         self.use_repl = repl
-        self.export_on_finish = export
+        self.export_on_finish = not no_export
         self.export_path = export_path
+        if export_subdir is None:
+            self.export_subdir = \
+                DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
+
+        self.export_subdir = export_subdir
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait
         self.setup_module_name = setup_module_name
@@ -267,8 +272,8 @@ class Simulation:
                             config.duration / (run_duration - paused_duration)
                         )
                     if self.export_on_finish:
-                        ExportAndPlot(self.area, self.export_path,
-                                      DateTime.now(tz=TIME_ZONE).isoformat(),
+                        log.error("Exporting simulation data.")
+                        ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                       self.endpoint_buffer)
 
                     if self.use_repl:
@@ -436,10 +441,11 @@ class Simulation:
         self._init_events()
 
 
-def run_simulation(setup_module_name="", simulation_config=None, slowdown=None, redis_job_id=None,
-                   **kwargs):
+def run_simulation(pricing_scheme=0, setup_module_name="", simulation_config=None, slowdown=None,
+                   redis_job_id=None, kwargs=None):
 
     try:
+        ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = pricing_scheme
         simulation = Simulation(
             setup_module_name=setup_module_name,
             simulation_config=simulation_config,

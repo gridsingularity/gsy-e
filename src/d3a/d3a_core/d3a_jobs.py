@@ -71,7 +71,8 @@ def start(scenario, settings):
     else:
         scenario_name = 'json_arg'
         config.area = scenario
-    run_simulation(setup_module_name=scenario_name,
+    run_simulation(pricing_scheme=0,
+                   setup_module_name=scenario_name,
                    simulation_config=config,
                    slowdown=settings.get('slowdown', 0),
                    redis_job_id=job.id)
