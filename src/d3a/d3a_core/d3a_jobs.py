@@ -84,7 +84,6 @@ def get_simulation_scenarios():
 
 
 def main():
-    print('JOB MAIN')
     with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'))):
         Worker(
             ['d3a'],
