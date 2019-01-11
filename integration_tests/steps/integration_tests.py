@@ -34,6 +34,8 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loa
 
 @given('we have a scenario named {scenario}')
 def scenario_check(context, scenario):
+    if "." in scenario:
+        scenario = scenario.replace(".", "/")
     scenario_file = "./src/d3a/setup/{}.py".format(scenario)
     if not os.path.isfile(scenario_file):
         raise FileExistsError("File not found: {}".format(scenario_file))

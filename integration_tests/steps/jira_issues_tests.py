@@ -44,20 +44,6 @@ def average_trade_rate_constant(context):
         assert all(isclose(t, trade_rates[0]) for t in trade_rates[1:])
 
 
-@then('average trade rate is the MMR until {time}')
-def average_trade_rate_constant_time(context):
-    areas = get_areas_from_2_house_grid(context)
-
-    for area in areas:
-        trade_rates = [
-            trade.offer.price / trade.offer.energy
-            for market in area.past_markets
-            for trade in market.trades
-        ]
-
-        assert all(isclose(t, trade_rates[0]) for t in trade_rates[1:])
-
-
 @then('there are no trades with the same seller and buyer name')
 def same_seller_buyer_name_check(context):
     areas = get_areas_from_2_house_grid(context)
