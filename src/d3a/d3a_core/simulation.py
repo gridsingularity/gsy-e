@@ -74,9 +74,12 @@ class Simulation:
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
+
         if export_subdir is None:
             self.export_subdir = \
                 DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
+        else:
+            self.export_subdir = export_subdir
 
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait

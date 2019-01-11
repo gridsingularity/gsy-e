@@ -64,25 +64,25 @@ _setup_modules = available_simulation_scenarios
 @main.command()
 @click.option('-d', '--duration', type=IntervalType('D:H'), default="1d", show_default=True,
               help="Duration of simulation")
-@click.option('-t', '--tick_length', type=IntervalType('M:S'), default="1s", show_default=True,
+@click.option('-t', '--tick-length', type=IntervalType('M:S'), default="1s", show_default=True,
               help="Length of a tick")
-@click.option('-s', '--slot_length', type=IntervalType('M:S'), default="15m", show_default=True,
+@click.option('-s', '--slot-length', type=IntervalType('M:S'), default="15m", show_default=True,
               help="Length of a market slot")
-@click.option('-c', '--cloud_coverage', type=int,
+@click.option('-c', '--cloud-coverage', type=int,
               default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
-@click.option('-r', '--market_maker_rate', type=str,
+@click.option('-r', '--market-maker-rate', type=str,
               default=str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
               show_default=True, help="Market maker rate")
-@click.option('-f', '--iaa_fee', type=int,
+@click.option('-f', '--iaa-fee', type=int,
               default=ConstSettings.IAASettings.FEE_PERCENTAGE, show_default=True,
               help="Inter-Area-Agent Fee in percentage")
-@click.option('-m', '--market_count', type=int, default=1, show_default=True,
+@click.option('-m', '--market-count', type=int, default=1, show_default=True,
               help="Number of tradable market slots into the future")
 @click.option('--setup', 'setup_module_name', default="default_2a",
               help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
-@click.option('-g', '--settings_file', default=None,
+@click.option('-g', '--settings-file', default=None,
               help="Settings file path")
 @click.option('--slowdown', type=int, default=0,
               help="Slowdown factor [0 - 10,000]. "
@@ -99,12 +99,12 @@ _setup_modules = available_simulation_scenarios
               help="Automatically reset simulation after it finishes.")
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
-@click.option('--no_export', is_flag=True, default=False, help="Skip export of simulation data")
+@click.option('--no-export', is_flag=True, default=False, help="Skip export of simulation data")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 @click.option('--enable-bc', is_flag=True, default=False, help="Run simulation on Blockchain")
-@click.option('--enable_bm', is_flag=True, default=False, help="Run simulation on BalancingMarket")
-@click.option('--compare_alt_pricing', is_flag=True, default=False,
+@click.option('--enable-bm', is_flag=True, default=False, help="Run simulation on BalancingMarket")
+@click.option('--compare-alt-pricing', is_flag=True, default=False,
               help="Compare alternative pricing schemes")
 def run(setup_module_name, settings_file, slowdown, enable_bm, duration, slot_length, tick_length,
         market_count, cloud_coverage, market_maker_rate, iaa_fee, compare_alt_pricing, **kwargs):

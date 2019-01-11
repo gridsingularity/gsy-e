@@ -41,7 +41,7 @@ alternative_pricing_subdirs = {
     0: "d3a_pricing",
     1: "no_scheme_pricing",
     2: "feed_in_tariff_pricing",
-    3: "net_meetering_pricing"
+    3: "net_metering_pricing"
 }
 
 
