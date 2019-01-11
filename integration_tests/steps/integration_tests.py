@@ -234,6 +234,14 @@ def run_sim_console(context, scenario):
               .format(export_path=context.export_path, scenario=scenario))
 
 
+@when('we run the d3a simulation with compare-alt-pricing flag with {scenario}')
+def run_sim_console_alt_price(context, scenario):
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
+    os.system("d3a -l FATAL run -d 2h -t 15s --setup={scenario} --export-path={export_path} "
+              "--compare-alt-pricing".format(export_path=context.export_path, scenario=scenario))
+
+
 @when('we run the d3a simulation with config parameters'
       ' [{cloud_coverage}, {iaa_fee}] and {scenario}')
 def run_sim_with_config_setting(context, cloud_coverage,
@@ -294,6 +302,16 @@ def test_export_data_csv(context, scenario):
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}: {file} ".format(path=context.export_path,
                                                                     file=data_fn))
+
+
+@then('we test the export of with compare-alt-pricing flag')
+def test_export_data_csv_alt_pricing(context):
+    data_fn = "grid.csv"
+    from d3a.d3a_core.export import alternative_pricing_subdirs
+    for subdir in alternative_pricing_subdirs.values():
+        sim_data_csv = glob.glob(os.path.join(context.export_path, "*", subdir, data_fn))
+        if len(sim_data_csv) != 1:
+            raise FileExistsError(f"Not found in {context.export_path}: {data_fn}")
 
 
 @then('there are files with offers and bids for every area')
