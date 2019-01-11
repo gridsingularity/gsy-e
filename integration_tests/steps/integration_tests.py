@@ -203,7 +203,7 @@ def running_the_simulation(context):
     paused = False
     pause_after = duration()
     repl = False
-    export = False
+    no_export = True
     export_path = None
     export_subdir = None
     reset_on_finish = False
@@ -217,7 +217,7 @@ def running_the_simulation(context):
         paused,
         pause_after,
         repl,
-        export,
+        no_export,
         export_path,
         export_subdir,
         reset_on_finish,
@@ -255,7 +255,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
     paused = False
     pause_after = duration()
     repl = False
-    export = False
+    no_export = True
     export_path = None
     export_subdir = None
     reset_on_finish = False
@@ -268,7 +268,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
         paused,
         pause_after,
         repl,
-        export,
+        no_export,
         export_path,
         export_subdir,
         reset_on_finish,
@@ -437,7 +437,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
     paused = False
     pause_after = duration()
     repl = False
-    export = False
+    no_export = True
     export_path = None
     export_subdir = None
     reset_on_finish = False
@@ -451,7 +451,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
         paused,
         pause_after,
         repl,
-        export,
+        no_export,
         export_path,
         export_subdir,
         reset_on_finish,
