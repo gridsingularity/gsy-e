@@ -124,20 +124,21 @@ def run(setup_module_name, settings_file, slowdown, enable_bm, duration, slot_le
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
             kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
-            joblist = list(range(0, 4))
+            processes = []
+            for pricing_scheme in range(0, 4):
+                p = Process(target=run_simulation, args=(pricing_scheme, setup_module_name,
+                                                         simulation_config, slowdown, None, kwargs)
+                            )
+                p.start()
+                processes.append(p)
+
+            for p in processes:
+                p.join()
+
         else:
-            joblist = [0]
-
-        processes = []
-        for pricing_scheme in joblist:
-            p = Process(target=run_simulation, args=(pricing_scheme, setup_module_name,
-                                                     simulation_config, slowdown, None, kwargs)
-                        )
-            p.start()
-            processes.append(p)
-
-        for p in processes:
-            p.join()
+            pricing_scheme = 0
+            run_simulation(pricing_scheme, setup_module_name, simulation_config, slowdown, None,
+                           kwargs)
 
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
