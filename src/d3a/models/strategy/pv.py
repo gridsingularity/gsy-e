@@ -56,7 +56,6 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.risk = risk
         self.panel_count = panel_count
         self.max_panel_power_W = max_panel_power_W
-        self.midnight = None
         self.final_selling_rate = final_selling_rate
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
@@ -84,8 +83,9 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.produced_energy_forecast_kWh()
 
     def event_activate(self):
-        # This gives us a pendulum object with today 0 o'clock
-        self.midnight = self.area.now.start_of("day")
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            self.assign_offermixin_arguments(3, 2, 0)
+
         # Calculating the produced energy
         self.update_on_activate()
         self.produced_energy_forecast_kWh()
@@ -93,10 +93,6 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
     def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
         energy_rate = max(initial_sell_rate, self.final_selling_rate)
         rounded_energy_rate = round(energy_rate, 2)
-        if rounded_energy_rate == 0.0:
-            # Initial selling offer
-            rounded_energy_rate =\
-                self.area.config.market_maker_rate[current_time]
         assert rounded_energy_rate >= 0.0
 
         return rounded_energy_rate
@@ -112,7 +108,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         for slot_time in generate_market_slot_list(self.area):
             if slot_time >= self.area.now:
                 difference_to_midnight_in_minutes = \
-                    slot_time.diff(self.midnight).in_minutes() % (60 * 24)
+                    slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
                 self.energy_production_forecast_kWh[slot_time] = \
                     self.gaussian_energy_forecast_kWh(
                         difference_to_midnight_in_minutes) * self.panel_count
@@ -147,6 +143,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
+            self.set_initial_selling_rate_alternative_pricing_scheme(market)
             initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot_str)
             rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
                                                                       market.time_slot_str)

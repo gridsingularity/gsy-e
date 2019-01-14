@@ -252,7 +252,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
-    storage_strategy_test3.break_even = {"00:00": (20, 25)}
+    storage_strategy_test3.break_even = {"00:00": (19, 25)}
     storage_strategy_test3.event_activate()
     storage_strategy_test3.event_tick(area=area_test3)
     assert len(storage_strategy_test3.accept_offer.calls) == 0
@@ -305,7 +305,8 @@ def test_if_storage_pays_respect_to_capacity_limits(storage_strategy_test4, area
 def test_if_storage_max_sell_rate_is_one_unit_less_than_market_maker_rate(storage_strategy_test4,
                                                                           area_test4):
     storage_strategy_test4.event_activate()
-    assert storage_strategy_test4._max_selling_rate(area_test4.current_market) \
+    assert storage_strategy_test4.calculate_initial_sell_rate(
+        area_test4.current_market.time_slot_str) \
         == (area_test4.config.market_maker_rate[area_test4.current_market.time_slot_str])
 
 
