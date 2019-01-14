@@ -34,14 +34,17 @@ def test_traded_energy_rate(context):
 
 @then('buyers and sellers are not same')
 def test_different_buyer_seller(context):
+    areas = list()
     grid = context.simulation.area
-    for child in grid.children:
-        for a, b in child.dispatcher.interarea_agents.items():
-            for c in b:
-                for d in c.engines:
-                    for trade in d.markets.source.trades:
-                        print(f"Seller: {trade.offer.seller} & buyer: {trade.buyer}")
-                        assert str(trade.offer.seller) != str(trade.buyer)
+    areas.append(grid)
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    areas.append(house1)
+    house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
+    areas.append(house2)
+    for area in areas:
+        for market in area.past_markets:
+            for trade in market.trades:
+                assert str(trade.offer.seller) != str(trade.buyer)
 
 
 @then('all traded energy have finite value')
