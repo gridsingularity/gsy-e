@@ -23,15 +23,18 @@ import dill
 from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
+from multiprocessing import Process
+from pendulum import DateTime
 
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios
-from d3a.d3a_core.web import start_web
 from d3a.d3a_core.util import read_settings_from_file
 from d3a.d3a_core.util import update_advanced_settings
+from d3a.d3a_core.simulation import run_simulation
+from d3a.constants import TIME_ZONE, TIME_FORMAT_EXPORT_DIR
+
 
 log = getLogger(__name__)
 
@@ -65,25 +68,21 @@ _setup_modules = available_simulation_scenarios
               help="Length of a tick")
 @click.option('-s', '--slot-length', type=IntervalType('M:S'), default="15m", show_default=True,
               help="Length of a market slot")
-@click.option('-c', '--cloud_coverage', type=int,
+@click.option('-c', '--cloud-coverage', type=int,
               default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
-@click.option('-r', '--market_maker_rate', type=str,
+@click.option('-r', '--market-maker-rate', type=str,
               default=str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
               show_default=True, help="Market maker rate")
-@click.option('-f', '--iaa_fee', type=int,
+@click.option('-f', '--iaa-fee', type=int,
               default=ConstSettings.IAASettings.FEE_PERCENTAGE, show_default=True,
               help="Inter-Area-Agent Fee in percentage")
 @click.option('-m', '--market-count', type=int, default=1, show_default=True,
               help="Number of tradable market slots into the future")
-@click.option('-i', '--interface', default="0.0.0.0", show_default=True,
-              help="REST-API server listening interface")
-@click.option('-p', '--port', type=int, default=5000, show_default=True,
-              help="REST-API server listening port")
 @click.option('--setup', 'setup_module_name', default="default_2a",
               help="Simulation setup module use. Available modules: [{}]".format(
                   ', '.join(_setup_modules)))
-@click.option('-g', '--settings_file', default=None,
+@click.option('-g', '--settings-file', default=None,
               help="Settings file path")
 @click.option('--slowdown', type=int, default=0,
               help="Slowdown factor [0 - 10,000]. "
@@ -100,59 +99,53 @@ _setup_modules = available_simulation_scenarios
               help="Automatically reset simulation after it finishes.")
 @click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
               help="Wait time before resetting after finishing the simulation run")
-@click.option('--exit-on-finish', is_flag=True)
-@click.option('--exit-on-finish-wait', type=IntervalType('M:S'), default="0",
-              help="Wait time before exiting after finishing the simulation run. "
-                   "[default: disabled]")
-@click.option('--export/--no-export', default=False, help="Export Simulation data in a CSV File")
+@click.option('--no-export', is_flag=True, default=False, help="Skip export of simulation data")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 @click.option('--enable-bc', is_flag=True, default=False, help="Run simulation on Blockchain")
-@click.option('--enable_bm', is_flag=True, default=False, help="Run simulation on BalancingMarket")
-def run(interface, port, setup_module_name, settings_file, slowdown, seed, paused, pause_after,
-        repl, export, export_path, reset_on_finish, reset_on_finish_wait, exit_on_finish,
-        exit_on_finish_wait, enable_bc, enable_bm, **config_params):
+@click.option('--enable-bm', is_flag=True, default=False, help="Run simulation on BalancingMarket")
+@click.option('--compare-alt-pricing', is_flag=True, default=False,
+              help="Compare alternative pricing schemes")
+def run(setup_module_name, settings_file, slowdown, enable_bm, duration, slot_length, tick_length,
+        market_count, cloud_coverage, market_maker_rate, iaa_fee, compare_alt_pricing, **kwargs):
+
     try:
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
             update_advanced_settings(advanced_settings)
             simulation_config = SimulationConfig(**simulation_settings)
         else:
-            simulation_config = SimulationConfig(**config_params)
+            simulation_config = \
+                SimulationConfig(duration, slot_length, tick_length, market_count,
+                                 cloud_coverage, market_maker_rate, iaa_fee)
 
-        api_url = "http://{}:{}/api".format(interface, port)
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = enable_bm
-        simulation = Simulation(
-            setup_module_name=setup_module_name,
-            simulation_config=simulation_config,
-            slowdown=slowdown,
-            seed=seed,
-            paused=paused,
-            pause_after=pause_after,
-            use_repl=repl,
-            export=export,
-            export_path=export_path,
-            reset_on_finish=reset_on_finish,
-            reset_on_finish_wait=reset_on_finish_wait,
-            exit_on_finish=exit_on_finish,
-            exit_on_finish_wait=exit_on_finish_wait,
-            api_url=api_url,
-            redis_job_id=None,
-            use_bc=enable_bc
-        )
+
+        if compare_alt_pricing is True:
+            ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
+            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
+            processes = []
+            for pricing_scheme in range(0, 4):
+                p = Process(target=run_simulation, args=(pricing_scheme, setup_module_name,
+                                                         simulation_config, slowdown, None, kwargs)
+                            )
+                p.start()
+                processes.append(p)
+
+            for p in processes:
+                p.join()
+
+        else:
+            pricing_scheme = 0
+            run_simulation(pricing_scheme, setup_module_name, simulation_config, slowdown, None,
+                           kwargs)
+
     except D3AException as ex:
         raise click.BadOptionUsage(ex.args[0])
-    start_web(interface, port, simulation)
-    simulation.run()
 
 
 @main.command()
-@click.option('-i', '--interface', default="0.0.0.0", show_default=True,
-              help="REST-API server listening interface")
-@click.option('-p', '--port', type=int, default=5000, show_default=True,
-              help="REST-API server listening port")
 @click.argument('save-file', type=File(mode='rb'))
-def resume(save_file, interface, port):
+def resume(save_file):
     simulation = dill.load(save_file)
-    start_web(interface, port, simulation)
     simulation.run(resume=True)

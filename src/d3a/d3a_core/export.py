@@ -29,12 +29,20 @@ from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
+from d3a.models.const import ConstSettings
 
 
 _log = logging.getLogger(__name__)
 
 ENERGY_BUYER_SIGN_PLOTS = 1
 ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
+
+alternative_pricing_subdirs = {
+    0: "d3a_pricing",
+    1: "no_scheme_pricing",
+    2: "feed_in_tariff_pricing",
+    3: "net_metering_pricing"
+}
 
 
 def mkdir_from_str(directory: str, exist_ok=True, parents=True):
@@ -53,6 +61,10 @@ class ExportAndPlot:
         try:
             if path is not None:
                 path = os.path.abspath(path)
+            if ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES is True:
+                subdir = os.path.join(subdir, alternative_pricing_subdirs[
+                                      ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME])
+
             self.directory = pathlib.Path(path or "~/d3a-simulation", subdir).expanduser()
             mkdir_from_str(str(self.directory.mkdir))
         except Exception as ex:

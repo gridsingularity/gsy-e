@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.pv import PVStrategy
+from d3a.d3a_core.util import generate_market_slot_list
 
 """
 Example file for CustomPvStrategy.
@@ -30,7 +31,7 @@ class CustomPvStrategy(PVStrategy):
         Returns flat PV production curve.
         """
 
-        for slot_time in self.energy_production_forecast_kWh.keys():
+        for slot_time in generate_market_slot_list(self.area):
             self.energy_production_forecast_kWh[slot_time] = 100
 
     def calculate_initial_sell_rate(self, current_time_h):

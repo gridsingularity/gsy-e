@@ -23,6 +23,7 @@ from time import sleep
 from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
+import click
 
 from pendulum import DateTime
 from pendulum import duration
@@ -31,8 +32,8 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.blockchain import BlockChainInterface
-from d3a.constants import TIME_ZONE
-from d3a.d3a_core.exceptions import SimulationException, D3AException
+from d3a.constants import TIME_ZONE, TIME_FORMAT_EXPORT_DIR
+from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
@@ -42,7 +43,7 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.area_serializer import are_all_areas_unique
-
+from d3a.d3a_core.exceptions import D3AException
 
 log = getLogger(__name__)
 
@@ -57,12 +58,10 @@ class _SimulationInterruped(Exception):
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: duration = None,
-                 use_repl: bool = False, export: bool = False, export_path: str = None,
-                 reset_on_finish: bool = False,
+                 repl: bool = False, no_export: bool = False, export_path: str = None,
+                 export_subdir: str = None, reset_on_finish: bool = False,
                  reset_on_finish_wait: duration = duration(minutes=1),
-                 exit_on_finish: bool = False,
-                 exit_on_finish_wait: duration = duration(seconds=1),
-                 api_url=None, redis_job_id=None, use_bc=False):
+                 redis_job_id=None, enable_bc=False):
 
         self.initial_params = dict(
             slowdown=slowdown,
@@ -72,24 +71,23 @@ class Simulation:
         )
 
         self.simulation_config = simulation_config
-        self.use_repl = use_repl
-        self.export_on_finish = export
+        self.use_repl = repl
+        self.export_on_finish = not no_export
         self.export_path = export_path
+
+        if export_subdir is None:
+            self.export_subdir = \
+                DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
+        else:
+            self.export_subdir = export_subdir
+
         self.reset_on_finish = reset_on_finish
         self.reset_on_finish_wait = reset_on_finish_wait
-        self.exit_on_finish = exit_on_finish
-        self.exit_on_finish_wait = exit_on_finish_wait
-        self.api_url = api_url
         self.setup_module_name = setup_module_name
-        self.use_bc = use_bc
+        self.use_bc = enable_bc
         self.is_stopped = False
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
-        if sum([reset_on_finish, exit_on_finish, use_repl]) > 1:
-            raise D3AException(
-                "Can only specify one of '--reset-on-finish', '--exit-on-finish' and '--use-repl' "
-                "simultaneously."
-            )
 
         self.run_start = None
         self.paused_time = None
@@ -275,11 +273,9 @@ class Simulation:
                             " ({} paused)".format(paused_duration) if paused_duration else "",
                             config.duration / (run_duration - paused_duration)
                         )
-                    if not self.exit_on_finish:
-                        log.error("REST-API still running at %s", self.api_url)
                     if self.export_on_finish:
-                        ExportAndPlot(self.area, self.export_path,
-                                      DateTime.now(tz=TIME_ZONE).isoformat(),
+                        log.error("Exporting simulation data.")
+                        ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                       self.endpoint_buffer)
 
                     if self.use_repl:
@@ -296,14 +292,6 @@ class Simulation:
                         t.start()
                         t.join()
                         continue
-                    elif self.exit_on_finish:
-                        self._handle_input(console, self.exit_on_finish_wait.in_seconds())
-                        log.error("Terminating. (--exit-on-finish set.)")
-                        break
-                    else:
-                        log.info("Ctrl-C to quit")
-                        while True:
-                            self._handle_input(console, 0.5)
 
                     break
             except _SimulationInterruped:
@@ -453,3 +441,22 @@ class Simulation:
         self.__dict__.update(state)
         self._load_setup_module()
         self._init_events()
+
+
+def run_simulation(pricing_scheme=0, setup_module_name="", simulation_config=None, slowdown=None,
+                   redis_job_id=None, kwargs=None):
+
+    try:
+        ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = pricing_scheme
+        simulation = Simulation(
+            setup_module_name=setup_module_name,
+            simulation_config=simulation_config,
+            slowdown=slowdown,
+            redis_job_id=redis_job_id,
+            **kwargs
+        )
+
+    except D3AException as ex:
+        raise click.BadOptionUsage(ex.args[0])
+
+    simulation.run()
