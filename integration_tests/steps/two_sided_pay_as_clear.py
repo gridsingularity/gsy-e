@@ -32,6 +32,18 @@ def test_traded_energy_rate(context):
                                         for rate in d.clearing_rate])
 
 
+@then('buyers and sellers are not same')
+def test_different_buyer_seller(context):
+    grid = context.simulation.area
+    for child in grid.children:
+        for a, b in child.dispatcher.interarea_agents.items():
+            for c in b:
+                for d in c.engines:
+                    for trade in d.markets.source.trades:
+                        print(f"Seller: {trade.offer.seller} & buyer: {trade.buyer}")
+                        assert str(trade.offer.seller) != str(trade.buyer)
+
+
 @then('all traded energy have finite value')
 def test_finite_traded_energy(context):
     grid = context.simulation.area

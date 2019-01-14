@@ -5,6 +5,7 @@ Feature: Two sided pay_as_clear market tests
      And d3a is installed
      When we run the simulation with setup file two_sided_pay_as_clear.default_2a and parameters [24, 15, 15, 0, 1]
      Then all trades are equal to market_clearing_rate
+     And buyers and sellers are not same
 
   Scenario: All Offers & Bids are traded with finite energy
      Given we have a scenario named two_sided_pay_as_clear/default_2a
