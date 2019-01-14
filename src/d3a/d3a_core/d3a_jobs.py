@@ -26,22 +26,16 @@ from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.simulation import Simulation
-from d3a.d3a_core.web import start_web
 from d3a.d3a_core.util import available_simulation_scenarios
 from d3a.d3a_core.util import update_advanced_settings
+from d3a.d3a_core.simulation import run_simulation
 
 
 @job('d3a')
 def start(scenario, settings):
     logging.getLogger().setLevel(logging.ERROR)
-    interface = environ.get('WORKER_INTERFACE', "0.0.0.0")
-    port = int(environ.get('WORKER_PORT', 5000))
-    api_host = environ.get('WORKER_HOST', interface)
-    api_url = "http://{}:{}/api".format(api_host, port)
 
     job = get_current_job()
-    job.meta['api_url'] = api_url
     job.save_meta()
 
     if settings is None:
@@ -78,16 +72,13 @@ def start(scenario, settings):
         scenario_name = 'json_arg'
         config.area = scenario
 
-    simulation = Simulation(scenario_name,
-                            config,
-                            slowdown=settings.get('slowdown', 0),
-                            exit_on_finish=True,
-                            exit_on_finish_wait=pendulum.duration(seconds=10),
-                            api_url=api_url,
-                            redis_job_id=job.id)
-
-    start_web(interface, port, simulation)
-    simulation.run()
+    kwargs = {"no_export": True}
+    run_simulation(pricing_scheme=0,
+                   setup_module_name=scenario_name,
+                   simulation_config=config,
+                   slowdown=settings.get('slowdown', 0),
+                   redis_job_id=job.id,
+                   kwargs=kwargs)
 
 
 @job('d3a')

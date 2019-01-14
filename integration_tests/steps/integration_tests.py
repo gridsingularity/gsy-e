@@ -34,6 +34,8 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loa
 
 @given('we have a scenario named {scenario}')
 def scenario_check(context, scenario):
+    if "." in scenario:
+        scenario = scenario.replace(".", "/")
     scenario_file = "./src/d3a/setup/{}.py".format(scenario)
     if not os.path.isfile(scenario_file):
         raise FileExistsError("File not found: {}".format(scenario_file))
@@ -203,14 +205,12 @@ def running_the_simulation(context):
     paused = False
     pause_after = duration()
     repl = False
-    export = False
+    no_export = True
     export_path = None
+    export_subdir = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
-    exit_on_finish = True
-    exit_on_finish_wait = duration()
 
-    api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
         'json_arg',
         context._settings,
@@ -219,13 +219,11 @@ def running_the_simulation(context):
         paused,
         pause_after,
         repl,
-        export,
+        no_export,
         export_path,
+        export_subdir,
         reset_on_finish,
         reset_on_finish_wait,
-        exit_on_finish,
-        exit_on_finish_wait,
-        api_url
     )
     context.simulation.run()
 
@@ -234,8 +232,16 @@ def running_the_simulation(context):
 def run_sim_console(context, scenario):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -d 2h --setup={scenario} --export --export-path={export_path} "
-              "--exit-on-finish".format(export_path=context.export_path, scenario=scenario))
+    os.system("d3a -l FATAL run -d 2h --setup={scenario} --export-path={export_path} "
+              .format(export_path=context.export_path, scenario=scenario))
+
+
+@when('we run the d3a simulation with compare-alt-pricing flag with {scenario}')
+def run_sim_console_alt_price(context, scenario):
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
+    os.system("d3a -l FATAL run -d 2h -t 15s --setup={scenario} --export-path={export_path} "
+              "--compare-alt-pricing".format(export_path=context.export_path, scenario=scenario))
 
 
 @when('we run the d3a simulation with config parameters'
@@ -259,14 +265,11 @@ def run_sim_with_config_setting(context, cloud_coverage,
     paused = False
     pause_after = duration()
     repl = False
-    export = False
+    no_export = True
     export_path = None
+    export_subdir = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
-    exit_on_finish = True
-    exit_on_finish_wait = duration()
-
-    api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
         scenario,
         simulation_config,
@@ -275,13 +278,11 @@ def run_sim_with_config_setting(context, cloud_coverage,
         paused,
         pause_after,
         repl,
-        export,
+        no_export,
         export_path,
+        export_subdir,
         reset_on_finish,
         reset_on_finish_wait,
-        exit_on_finish,
-        exit_on_finish_wait,
-        api_url
     )
     context.simulation.run()
 
@@ -290,11 +291,10 @@ def run_sim_with_config_setting(context, cloud_coverage,
 def run_d3a_with_settings_file(context):
     context.export_path = os.path.join(context.simdir, "default")
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -g {settings_file} --export --export-path={export_path} "
-              "--setup default_2a --exit-on-finish".format(export_path=context.export_path,
-                                                           settings_file=os.path.join(
-                                                               d3a_path, "setup",
-                                                               "d3a-settings.json")))
+    os.system("d3a -l FATAL run -g {settings_file} --export-path={export_path} "
+              "--setup default_2a".format(export_path=context.export_path,
+                                          settings_file=os.path.join(d3a_path, "setup",
+                                                                     "d3a-settings.json")))
 
 
 @then('we test the export functionality of {scenario}')
@@ -304,6 +304,16 @@ def test_export_data_csv(context, scenario):
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}: {file} ".format(path=context.export_path,
                                                                     file=data_fn))
+
+
+@then('we test the export of with compare-alt-pricing flag')
+def test_export_data_csv_alt_pricing(context):
+    data_fn = "grid.csv"
+    from d3a.d3a_core.export import alternative_pricing_subdirs
+    for subdir in alternative_pricing_subdirs.values():
+        sim_data_csv = glob.glob(os.path.join(context.export_path, "*", subdir, data_fn))
+        if len(sim_data_csv) != 1:
+            raise FileExistsError(f"Not found in {context.export_path}: {data_fn}")
 
 
 @then('there are files with offers and bids for every area')
@@ -350,8 +360,8 @@ def create_sim_object(context, scenario):
                                          iaa_fee=5)
 
     context.simulation = Simulation(
-        scenario, simulation_config, 0, 0, False, duration(), False, False, None, False,
-        duration(), True, duration(), None, "1234"
+        scenario, simulation_config, 0, 0, False, duration(), False, False, None, None, False,
+        duration(), "1234", False
     )
 
 
@@ -447,14 +457,12 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
     paused = False
     pause_after = duration()
     repl = False
-    export = False
+    no_export = True
     export_path = None
+    export_subdir = None
     reset_on_finish = False
     reset_on_finish_wait = duration()
-    exit_on_finish = True
-    exit_on_finish_wait = duration()
 
-    api_url = "http://localhost:5000/api"
     context.simulation = Simulation(
         scenario,
         simulation_config,
@@ -463,13 +471,11 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
         paused,
         pause_after,
         repl,
-        export,
+        no_export,
         export_path,
+        export_subdir,
         reset_on_finish,
         reset_on_finish_wait,
-        exit_on_finish,
-        exit_on_finish_wait,
-        api_url
     )
     context.simulation.run()
 
