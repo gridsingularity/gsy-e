@@ -49,7 +49,6 @@ DEFAULT_CONFIG = SimulationConfig(
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-    market_maker_rate=str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
     iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE
 )
 

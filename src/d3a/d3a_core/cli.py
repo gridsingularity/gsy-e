@@ -71,9 +71,6 @@ _setup_modules = available_simulation_scenarios
 @click.option('-c', '--cloud-coverage', type=int,
               default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
-@click.option('-r', '--market-maker-rate', type=str,
-              default=str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
-              show_default=True, help="Market maker rate")
 @click.option('-f', '--iaa-fee', type=int,
               default=ConstSettings.IAASettings.FEE_PERCENTAGE, show_default=True,
               help="Inter-Area-Agent Fee in percentage")
@@ -95,19 +92,14 @@ _setup_modules = available_simulation_scenarios
               help="Automatically pause after a certain time.  [default: disabled]")
 @click.option('--repl/--no-repl', default=False, show_default=True,
               help="Start REPL after simulation run.")
-@click.option('--reset-on-finish/--no-reset-on-finish', default=False, show_default=True,
-              help="Automatically reset simulation after it finishes.")
-@click.option('--reset-on-finish-wait', type=IntervalType('M:S'), default="1m", show_default=True,
-              help="Wait time before resetting after finishing the simulation run")
 @click.option('--no-export', is_flag=True, default=False, help="Skip export of simulation data")
 @click.option('--export-path',  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/d3a-simulation)")
 @click.option('--enable-bc', is_flag=True, default=False, help="Run simulation on Blockchain")
-@click.option('--enable-bm', is_flag=True, default=False, help="Run simulation on BalancingMarket")
 @click.option('--compare-alt-pricing', is_flag=True, default=False,
               help="Compare alternative pricing schemes")
-def run(setup_module_name, settings_file, slowdown, enable_bm, duration, slot_length, tick_length,
-        market_count, cloud_coverage, market_maker_rate, iaa_fee, compare_alt_pricing, **kwargs):
+def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
+        market_count, cloud_coverage, iaa_fee, compare_alt_pricing, **kwargs):
 
     try:
         if settings_file is not None:
@@ -117,9 +109,7 @@ def run(setup_module_name, settings_file, slowdown, enable_bm, duration, slot_le
         else:
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
-                                 cloud_coverage, market_maker_rate, iaa_fee)
-
-        ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = enable_bm
+                                 cloud_coverage, iaa_fee)
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
