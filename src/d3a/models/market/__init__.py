@@ -40,7 +40,7 @@ class Market:
         self.area = area
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
-        self.time_slot_str = time_slot.strftime(TIME_FORMAT) \
+        self.time_slot_str = time_slot.format(TIME_FORMAT) \
             if self.time_slot is not None \
             else None
         self.readonly = readonly

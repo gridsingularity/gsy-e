@@ -19,8 +19,7 @@ import csv
 import os
 import ast
 from enum import Enum
-from datetime import datetime
-from pendulum import duration
+from pendulum import duration, DateTime, from_format, from_timestamp
 from statistics import mean
 from typing import Dict
 from itertools import product
@@ -37,8 +36,8 @@ class InputProfileTypes(Enum):
 
 
 def default_profile_dict():
-    return dict((datetime(year=2000, month=1, day=1, hour=hour, minute=minute).
-                 strftime(TIME_FORMAT), 0) for hour, minute in product(range(24), range(60)))
+    return dict((DateTime(year=2000, month=1, day=1, hour=hour, minute=minute).
+                 format(TIME_FORMAT), 0) for hour, minute in product(range(24), range(60)))
 
 
 def _readCSV(path: str) -> Dict[str, float]:
@@ -72,9 +71,9 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
     solar_power_input_W = list(profile_data_W.values())
     # Ensures that the power values are going to be floats, not strings.
     solar_power_input_W = [float(dp) for dp in solar_power_input_W]
-    time0 = datetime.utcfromtimestamp(0)
+    time0 = from_timestamp(0)
     time_solar_array = [
-        (datetime.strptime(ti, TIME_FORMAT) - time0).seconds
+        (from_format(ti, TIME_FORMAT) - time0).seconds
         for ti in timestr_solar_array
     ]
     whole_day_sec = 24 * 60 * 60
@@ -93,7 +92,7 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
     ]
     slot_energy_kWh = list(map(lambda x: x / (duration(hours=1) / slot_length), avg_power_kW))
 
-    return {datetime.utcfromtimestamp(slot_time_list[ii]).strftime(TIME_FORMAT):
+    return {from_timestamp(slot_time_list[ii]).format(TIME_FORMAT):
             slot_energy_kWh[ii]
             for ii in range(len(slot_energy_kWh))
             }
@@ -132,8 +131,8 @@ def _fill_gaps_in_rate_profile(rate_profile_input: Dict) -> Dict:
     rate_profile = default_profile_dict()
     current_rate = 0
     for hour, minute in product(range(24), range(60)):
-        time_str = datetime(year=2000, month=1, day=1, hour=hour, minute=minute).\
-            strftime(TIME_FORMAT)
+        time_str = DateTime(year=2000, month=1, day=1, hour=hour, minute=minute).\
+            format(TIME_FORMAT)
 
         if time_str in rate_profile_input.keys():
             current_rate = rate_profile_input[time_str]
@@ -180,8 +179,8 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
                 isinstance(list(daily_profile.keys())[0], float):
             # If it is an integer assume an hourly profile
             input_profile = dict(
-                (datetime(year=2000, month=1, day=1, hour=hour).
-                 strftime(TIME_FORMAT), val)
+                (DateTime(year=2000, month=1, day=1, hour=hour).
+                 format(TIME_FORMAT), val)
                 for hour, val in daily_profile.items()
             )
 

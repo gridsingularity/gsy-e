@@ -55,7 +55,7 @@ class ElectrolyzerStrategy(StorageStrategy):
             self.load_profile_kWh[key] = value * self.conversion_factor_kWh_kg
 
     def event_market_cycle(self):
-        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now.format(TIME_FORMAT)][1])
         current_market = self.area.next_market
         if self.area.past_markets:
             past_market = self.area.last_past_market

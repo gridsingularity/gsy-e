@@ -89,7 +89,7 @@ class FakeMarket:
 
     @property
     def time_slot_str(self):
-        return self.time_slot.strftime(TIME_FORMAT)
+        return self.time_slot.format(TIME_FORMAT)
 
     def delete_offer(self, offer_id):
         return

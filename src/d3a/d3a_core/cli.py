@@ -29,12 +29,11 @@ from pendulum import DateTime
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.util import IntervalType, available_simulation_scenarios
+from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, DateType
 from d3a.d3a_core.util import read_settings_from_file
 from d3a.d3a_core.util import update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
-from d3a.constants import TIME_ZONE, TIME_FORMAT_EXPORT_DIR
-
+from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT
 
 log = getLogger(__name__)
 
@@ -98,8 +97,11 @@ _setup_modules = available_simulation_scenarios
 @click.option('--enable-bc', is_flag=True, default=False, help="Run simulation on Blockchain")
 @click.option('--compare-alt-pricing', is_flag=True, default=False,
               help="Compare alternative pricing schemes")
+@click.option('--start-date', type=DateType(DATE_FORMAT),
+              default=DateTime.now().format(DATE_FORMAT), show_default=True,
+              help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
-        market_count, cloud_coverage, iaa_fee, compare_alt_pricing, **kwargs):
+        market_count, cloud_coverage, iaa_fee, compare_alt_pricing, start_date, **kwargs):
 
     try:
         if settings_file is not None:
@@ -113,7 +115,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
-            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
+            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(DATE_TIME_FORMAT)
             processes = []
             for pricing_scheme in range(0, 4):
                 p = Process(target=run_simulation, args=(pricing_scheme, setup_module_name,

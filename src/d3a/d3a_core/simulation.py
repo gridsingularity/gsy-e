@@ -32,7 +32,7 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.blockchain import BlockChainInterface
-from d3a.constants import TIME_ZONE, TIME_FORMAT_EXPORT_DIR
+from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
@@ -75,7 +75,7 @@ class Simulation:
 
         if export_subdir is None:
             self.export_subdir = \
-                DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
+                DateTime.now(tz=TIME_ZONE).format(DATE_TIME_FORMAT)
         else:
             self.export_subdir = export_subdir
 

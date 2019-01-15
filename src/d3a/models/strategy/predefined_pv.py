@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from d3a.constants import TIME_FORMAT, PENDULUM_TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.const import ConstSettings
@@ -80,7 +80,7 @@ class PVPredefinedStrategy(PVStrategy):
 
         for slot_time in generate_market_slot_list(self.area):
             self.energy_production_forecast_kWh[slot_time] = \
-                data[slot_time.format(PENDULUM_TIME_FORMAT)] * self.panel_count
+                data[slot_time.format(TIME_FORMAT)] * self.panel_count
             self.state.available_energy_kWh[slot_time] = \
                 self.energy_production_forecast_kWh[slot_time]
 

@@ -24,7 +24,7 @@ import json
 import time
 
 from click.types import ParamType
-from pendulum import duration
+from pendulum import duration, from_format
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
@@ -33,6 +33,7 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
+from d3a.constants import DATE_FORMAT
 
 import d3a
 import inspect
@@ -56,6 +57,27 @@ class TaggedLogWrapper(LoggerAdapter):
         return msg, kwargs
 
 
+class DateType(ParamType):
+    name = 'date'
+
+    def __init__(self, type):
+        if type == DATE_FORMAT:
+            self.allowed_formats = DATE_FORMAT
+        else:
+            raise ValueError("Invalid type. Choices: 'H:M', 'M:S', 'D:H'")
+
+    def convert(self, value, param, ctx):
+        try:
+            return from_format(value, DATE_FORMAT)
+        except ValueError:
+            self.fail(
+                "'{}' is not a valid date. Allowed formats: {}".format(
+                    value,
+                    self.allowed_formats
+                )
+            )
+
+
 class IntervalType(ParamType):
     name = 'interval'
 
@@ -70,7 +92,7 @@ class IntervalType(ParamType):
             self.re = INTERVAL_MS_RE
             self.allowed_formats = "'XXm', 'XXs', 'XXmYYs', 'XX:YY'"
         else:
-            raise ValueError("Invalid type. Choices: 'H:M', 'M:S'")
+            raise ValueError("Invalid type. Choices: 'H:M', 'M:S', 'D:H'")
 
     def convert(self, value, param, ctx):
         match = self.re(value)

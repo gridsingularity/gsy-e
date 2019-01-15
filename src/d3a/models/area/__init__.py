@@ -177,7 +177,7 @@ class Area:
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
             s=self,
-            markets=[t.strftime(TIME_FORMAT) for t in self._markets.markets.keys()]
+            markets=[t.format(TIME_FORMAT) for t in self._markets.markets.keys()]
         )
 
     @property

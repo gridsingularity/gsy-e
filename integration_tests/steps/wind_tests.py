@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from d3a.models.read_user_profile import _readCSV
-from d3a.constants import PENDULUM_TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 
 
 @then('the UserProfileWind follows the Wind profile of csv')
@@ -27,7 +27,7 @@ def check_wind_csv_profile(context):
     profile_data = _readCSV(user_profile_path)
     for timepoint, energy in wind.strategy.energy_production_forecast_kWh.items():
 
-        time = str(timepoint.format(PENDULUM_TIME_FORMAT))
+        time = str(timepoint.format(TIME_FORMAT))
         accumulated_energy = 0
         for time_str in profile_data.keys():
             if int(time_str[:2]) == int(timepoint.hour):

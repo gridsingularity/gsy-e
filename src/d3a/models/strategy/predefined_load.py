@@ -84,9 +84,9 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for slot_time in generate_market_slot_list(self.area):
             if self._allowed_operating_hours(slot_time.hour):
                 self.energy_requirement_Wh[slot_time] = \
-                    self.load_profile[slot_time.strftime(TIME_FORMAT)] * 1000
+                    self.load_profile[slot_time.format(TIME_FORMAT)] * 1000
                 self.state.desired_energy_Wh[slot_time] = \
-                    self.load_profile[slot_time.strftime(TIME_FORMAT)] * 1000
+                    self.load_profile[slot_time.format(TIME_FORMAT)] * 1000
 
     def _operating_hours(self, energy):
         """

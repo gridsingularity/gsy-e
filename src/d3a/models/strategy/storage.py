@@ -128,7 +128,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
     def event_activate(self):
 
         self._set_be_alternative_pricing()
-        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now.format(TIME_FORMAT)][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
@@ -233,7 +233,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
-        self.update_market_cycle_offers(self.break_even[self.area.now.strftime(TIME_FORMAT)][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now.format(TIME_FORMAT)][1])
         current_market = self.area.next_market
         past_market = self.area.last_past_market
 
@@ -248,7 +248,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if ConstSettings.IAASettings.MARKET_TYPE == 2:
             self.state.clamp_energy_to_buy_kWh([current_market.time_slot])
             self.update_market_cycle_bids(final_rate=self.break_even[
-                self.area.now.strftime(TIME_FORMAT)][0])
+                self.area.now.format(TIME_FORMAT)][0])
             energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
             if energy_kWh > 0:
                 self.post_first_bid(current_market, energy_kWh * 1000.0)

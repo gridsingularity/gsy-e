@@ -20,7 +20,7 @@ import pendulum
 import uuid
 from pendulum import DateTime, duration
 
-from d3a.constants import TIME_ZONE
+from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
@@ -87,7 +87,7 @@ class FakeMarket:
 
     @property
     def time_slot_str(self):
-        return self.time_slot.strftime("%H:%M")
+        return self.time_slot.format(TIME_FORMAT)
 
     def delete_offer(self, offer_id):
         return

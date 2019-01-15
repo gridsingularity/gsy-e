@@ -27,7 +27,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, _readCSV
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
-from d3a.constants import PENDULUM_TIME_FORMAT
+from d3a.constants import TIME_FORMAT
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 
@@ -507,7 +507,7 @@ def check_pv_profile(context):
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
     profile_data = _readCSV(path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format(PENDULUM_TIME_FORMAT))
+        time = str(timepoint.format(TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
                    (duration(hours=1) / pv.config.slot_length) / 1000.0
@@ -540,7 +540,7 @@ def check_pv_csv_profile(context):
     from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
     profile_data = _readCSV(user_profile_path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
-        time = str(timepoint.format(PENDULUM_TIME_FORMAT))
+        time = str(timepoint.format(TIME_FORMAT))
         if time in profile_data.keys():
             assert energy == profile_data[time] / \
                    (duration(hours=1) / pv.config.slot_length) / 1000.0

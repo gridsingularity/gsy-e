@@ -94,10 +94,10 @@ def check_capacity_dependant_sell_rate(context):
                 trades_sold.append(trade)
                 trade_rate = round((trade.offer.price / trade.offer.energy), 2)
                 break_even_sell = round(storage.strategy.break_even[
-                                            slot.strftime(TIME_FORMAT)][1], 2)
+                                            slot.format(TIME_FORMAT)][1], 2)
                 market_maker_rate = \
                     round(context.simulation.area.config.
-                          market_maker_rate[slot.strftime(TIME_FORMAT)], 2)
+                          market_maker_rate[slot.format(TIME_FORMAT)], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) == len(house1.past_markets)
@@ -116,16 +116,16 @@ def check_custom_storage(context):
             if offer.seller in storage.name:
                 assert isclose((offer.price / offer.energy),
                                context.simulation.simulation_config.
-                               market_maker_rate[slot.strftime(TIME_FORMAT)] - price_dec_per_slot)
+                               market_maker_rate[slot.format(TIME_FORMAT)] - price_dec_per_slot)
         for trade in market.trades:
             if trade.seller == storage.name:
                 trades_sold.append(trade)
                 trade_rate = round((trade.offer.price / trade.offer.energy), 2)
                 break_even_sell = round(storage.strategy.break_even[
-                                            slot.strftime(TIME_FORMAT)][1], 2)
+                                            slot.format(TIME_FORMAT)][1], 2)
                 market_maker_rate = \
                     round(context.simulation.area.config.
-                          market_maker_rate[slot.strftime(TIME_FORMAT)], 2)
+                          market_maker_rate[slot.format(TIME_FORMAT)], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) > 0

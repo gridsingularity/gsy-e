@@ -50,7 +50,7 @@ def check_traded_energy_rate(context):
         for trade in market.trades:
             if trade.buyer == load.name:
                 assert (trade.offer.price / trade.offer.energy) < \
-                       load.strategy.final_buying_rate[market.time_slot.strftime(TIME_FORMAT)]
+                       load.strategy.final_buying_rate[market.time_slot.format(TIME_FORMAT)]
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')

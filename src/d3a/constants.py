@@ -18,9 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
 VERSION = "1.0.0a0"
 
-TIME_FORMAT = "%H:%M"
-PENDULUM_TIME_FORMAT = "HH:mm"
+TIME_FORMAT = "HH:mm"
+DATE_FORMAT = "YYYY-MM-DD"
+DATE_TIME_FORMAT = f"{DATE_FORMAT}T{TIME_FORMAT}"
+
 TIME_ZONE = "UTC"
-TIME_FORMAT_EXPORT_DIR = "YYYY-MM-DD_HH:mm:ss"
 
 DEFAULT_PRECISION = 8
