@@ -208,9 +208,6 @@ def running_the_simulation(context):
     no_export = True
     export_path = None
     export_subdir = None
-    reset_on_finish = False
-    reset_on_finish_wait = duration()
-
     context.simulation = Simulation(
         'json_arg',
         context._settings,
@@ -222,8 +219,6 @@ def running_the_simulation(context):
         no_export,
         export_path,
         export_subdir,
-        reset_on_finish,
-        reset_on_finish_wait,
     )
     context.simulation.run()
 
@@ -257,7 +252,6 @@ def run_sim_with_config_setting(context, cloud_coverage,
                                          duration(seconds=int(60)),
                                          market_count=4,
                                          cloud_coverage=int(cloud_coverage),
-                                         market_maker_rate=context._market_maker_rate,
                                          iaa_fee=int(iaa_fee))
 
     slowdown = 0
@@ -268,8 +262,6 @@ def run_sim_with_config_setting(context, cloud_coverage,
     no_export = True
     export_path = None
     export_subdir = None
-    reset_on_finish = False
-    reset_on_finish_wait = duration()
     context.simulation = Simulation(
         scenario,
         simulation_config,
@@ -281,8 +273,6 @@ def run_sim_with_config_setting(context, cloud_coverage,
         no_export,
         export_path,
         export_subdir,
-        reset_on_finish,
-        reset_on_finish_wait,
     )
     context.simulation.run()
 
@@ -360,8 +350,8 @@ def create_sim_object(context, scenario):
                                          iaa_fee=5)
 
     context.simulation = Simulation(
-        scenario, simulation_config, 0, 0, False, duration(), False, False, None, None, False,
-        duration(), "1234", False
+        scenario, simulation_config, 0, 0, False, duration(), False, False, None, None,
+        "1234", False
     )
 
 
@@ -460,9 +450,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
     no_export = True
     export_path = None
     export_subdir = None
-    reset_on_finish = False
-    reset_on_finish_wait = duration()
-
     context.simulation = Simulation(
         scenario,
         simulation_config,
@@ -474,8 +461,6 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
         no_export,
         export_path,
         export_subdir,
-        reset_on_finish,
-        reset_on_finish_wait,
     )
     context.simulation.run()
 

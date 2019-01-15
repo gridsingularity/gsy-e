@@ -27,7 +27,8 @@ from d3a.models.read_user_profile import InputProfileTypes
 
 class SimulationConfig:
     def __init__(self, duration: duration, slot_length: duration, tick_length: duration,
-                 market_count: int, cloud_coverage: int, market_maker_rate, iaa_fee: int,
+                 market_count: int, cloud_coverage: int, iaa_fee: int,
+                 market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None):
         self.duration = duration
         self.slot_length = slot_length
@@ -63,8 +64,7 @@ class SimulationConfig:
             "market_count='{s.market_count}', "
             "ticks_per_slot='{s.ticks_per_slot}', "
             "cloud_coverage='{s.cloud_coverage}', "
-            "pv_user_profile='{s.pv_user_profile}'. "
-            "market_maker_rate='{s.market_maker_rate}', "
+            "pv_user_profile='{s.pv_user_profile}', "
             ")>"
         ).format(s=self)
 

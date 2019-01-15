@@ -3,9 +3,8 @@
    "duration": "24h",
    "slot_length": "60m",
    "tick_length": "60s",
-   "market_count": 4,
+   "market_count": 1,
    "cloud_coverage": 0,
-   "market_maker_rate": 30,
    "iaa_fee": 1
  },
   "advanced_settings": {
