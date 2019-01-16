@@ -38,7 +38,7 @@ from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
-from d3a.d3a_core.util import NonBlockingConsole, format_interval
+from d3a.d3a_core.util import NonBlockingConsole
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
@@ -59,9 +59,7 @@ class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: duration = None,
                  repl: bool = False, no_export: bool = False, export_path: str = None,
-                 export_subdir: str = None, reset_on_finish: bool = False,
-                 reset_on_finish_wait: duration = duration(minutes=1),
-                 redis_job_id=None, enable_bc=False):
+                 export_subdir: str = None, redis_job_id=None, enable_bc=False):
 
         self.initial_params = dict(
             slowdown=slowdown,
@@ -81,8 +79,6 @@ class Simulation:
         else:
             self.export_subdir = export_subdir
 
-        self.reset_on_finish = reset_on_finish
-        self.reset_on_finish_wait = reset_on_finish_wait
         self.setup_module_name = setup_module_name
         self.use_bc = enable_bc
         self.is_stopped = False
@@ -280,18 +276,6 @@ class Simulation:
 
                     if self.use_repl:
                         self._start_repl()
-                    elif self.reset_on_finish:
-                        log.error("Automatically restarting simulation in %s",
-                                  format_interval(self.reset_on_finish_wait))
-                        self._handle_input(console, self.reset_on_finish_wait.in_seconds())
-
-                        def _reset():
-                            self.reset(sync=False)
-                            self.paused = False
-                        t = Thread(target=_reset)
-                        t.start()
-                        t.join()
-                        continue
 
                     break
             except _SimulationInterruped:
