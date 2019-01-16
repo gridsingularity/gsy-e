@@ -46,7 +46,7 @@ def test_different_buyer_seller(context):
                 assert str(trade.offer.seller) != str(trade.buyer)
 
 
-@then('cummulative traded offer energy equal to cumulative bid energy')
+@then('cumulative traded offer energy equal to cumulative bid energy')
 def test_cumulative_offer_bid_energy(context):
     from d3a.models.market.market_structures import Bid, Offer
     areas = list()

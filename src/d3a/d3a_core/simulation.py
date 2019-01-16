@@ -141,6 +141,7 @@ class Simulation:
         else:
             random_seed = random.randint(0, 1000000)
             random.seed(random_seed)
+            self.initial_params['seed'] = random_seed
             log.error("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)

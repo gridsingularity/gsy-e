@@ -13,7 +13,7 @@ Feature: Two sided pay_as_clear market tests
      When we run the simulation with setup file two_sided_pay_as_clear.test_clearing_energy and parameters [24, 15, 15, 1, 1]
      Then all trades are equal to market_clearing_rate
      And buyers and sellers are not same
-     And cummulative traded offer energy equal to cumulative bid energy
+     And cumulative traded offer energy equal to cumulative bid energy
 
   Scenario: All Offers & Bids are traded with finite energy
      Given we have a scenario named two_sided_pay_as_clear/default_2a
