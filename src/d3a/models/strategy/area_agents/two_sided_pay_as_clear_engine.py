@@ -172,5 +172,5 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         self.mcp_update_point = \
             area.config.ticks_per_slot / \
             ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
-        if (current_tick_number+1) % int(self.mcp_update_point) == 0 and current_tick_number != 0:
+        if (current_tick_number+1) % int(self.mcp_update_point) == 0:
             self._match_offers_bids()
