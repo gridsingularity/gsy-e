@@ -34,15 +34,12 @@ def average_trade_rate_mmr_time(context, time):
     assert all([isclose(
         context.simulation.simulation_config.market_maker_rate[tt[0].time_slot_str], tt[1])
                 for tt in trade_rates
-                if tt[0].time_slot.hour < int(time)]), \
-        f"Seed: {context.simulation.initial_params['seed']}"
+                if tt[0].time_slot.hour < int(time)])
 
 
 @then('average trade rate after {time} is {trade_rate}')
 def average_trade_rate_rate_time(context, time, trade_rate):
-    from d3a import limit_float_precision
     trade_rates = get_trade_rates_house1(context)
-    assert all([limit_float_precision(float(trade_rate) - tt[1]) == 0.
+    assert all([isclose(float(trade_rate), tt[1])
                 for tt in trade_rates
-                if tt[0].time_slot.hour > int(time)]), \
-        f"Seed: {context.simulation.initial_params['seed']}"
+                if tt[0].time_slot.hour > int(time)])

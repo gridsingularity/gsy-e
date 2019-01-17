@@ -169,12 +169,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     self.owner.name != bid.seller:
                 self._forward_bid(bid)
         current_tick_number = area.current_tick % area.config.ticks_per_slot
-        # print(f"current_tick_number: {current_tick_number}")
         self.mcp_update_point = \
             area.config.ticks_per_slot / \
             ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
         if (current_tick_number+1) % int(self.mcp_update_point) == 0 and current_tick_number != 0:
-            print(f"mcp_update_point: {self.mcp_update_point}")
-            print(f"ticks_per_slot: {area.config.ticks_per_slot}")
-            print(f"current_tick_number: {current_tick_number}")
             self._match_offers_bids()

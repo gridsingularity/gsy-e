@@ -320,8 +320,7 @@ def test_offer_bid_files(context):
                  os.path.join(base_path, 'grid', 'house-2-balancing-offers.csv')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
-    for f in file_list:
-        assert len(open(glob.glob(f)[0]).readlines()) > 1, f"FileName: {f}"
+    assert all(len(open(glob.glob(f)[0]).readlines()) > 1 for f in file_list)
 
 
 @then('we test that config parameters are correctly parsed for {scenario}'
