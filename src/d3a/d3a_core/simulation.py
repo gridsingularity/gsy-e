@@ -136,7 +136,10 @@ class Simulation:
         self.pause_after = pause_after
         self.slowdown = slowdown
 
-        if seed:
+        # TODO: An issue was experienced when comparing random behaviour of the simulation between
+        # cli-call and behave integration tests
+        # Furthermore, random.seed() is also called before this following block by setuptools
+        if seed is not None:
             random.seed(seed)
         else:
             random_seed = random.randint(0, 1000000)
