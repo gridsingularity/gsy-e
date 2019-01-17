@@ -1,3 +1,4 @@
+# In order to install PandaPower run 'pip install pandapower'
 import pandapower as pp
 from pandapower.plotting import to_html
 
