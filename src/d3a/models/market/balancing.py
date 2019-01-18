@@ -64,7 +64,7 @@ class BalancingMarket(OneSidedMarket):
 
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
                      energy: int = None, time: DateTime = None, price_drop:
-                     bool = False) -> BalancingTrade:
+                     bool = False, already_tracked: bool = False) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
