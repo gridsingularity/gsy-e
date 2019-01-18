@@ -13,7 +13,7 @@ Feature: Run integration tests
      Given we have a scenario named two_sided_market/with_balancing_market
      And d3a is installed
      When we run the d3a simulation on console with two_sided_market.with_balancing_market
-     Then there are files with offers and bids for every area
+     Then there are files with offers (with balancing offers) and bids for every area
 
   Scenario Outline: Run general integration tests for simulation
      Given we have a scenario named <scenario>

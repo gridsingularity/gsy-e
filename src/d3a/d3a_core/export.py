@@ -142,11 +142,11 @@ class ExportAndPlot:
             self._export_trade_csv_files(area, directory, balancing=False)
             self._export_trade_csv_files(area, directory, balancing=True)
             self._export_area_offers_bids_csv_files(area, directory, "offers",
-                                                    Offer, "offers", area.past_markets)
+                                                    Offer, "offer_history", area.past_markets)
             self._export_area_offers_bids_csv_files(area, directory, "bids",
-                                                    Bid, "bids", area.past_markets)
+                                                    Bid, "bid_history", area.past_markets)
             self._export_area_offers_bids_csv_files(area, directory, "balancing-offers",
-                                                    BalancingOffer, "offers",
+                                                    BalancingOffer, "offer_history",
                                                     area.past_balancing_markets)
 
     def _export_area_offers_bids_csv_files(self, area, directory, file_suffix,
@@ -163,7 +163,7 @@ class ExportAndPlot:
                 writer = csv.writer(csv_file)
                 writer.writerow(labels)
                 for market in past_markets:
-                    for offer in getattr(market, market_member).values():
+                    for offer in getattr(market, market_member):
                         row = (market.time_slot,) + offer._to_csv()
                         writer.writerow(row)
         except OSError:
