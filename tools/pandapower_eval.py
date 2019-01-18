@@ -1,4 +1,4 @@
-# In order to install PandaPower run 'pip install pandapower'
+# In order to install PandaPower run 'pip install matplotlib pandapower'
 import pandapower as pp
 from pandapower.plotting import to_html
 
