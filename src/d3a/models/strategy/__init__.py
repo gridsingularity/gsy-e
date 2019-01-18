@@ -188,12 +188,14 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             return True
 
-    def accept_offer(self, market: Market, offer, *, buyer=None, energy=None, price_drop=False):
+    def accept_offer(self, market: Market, offer, *, buyer=None, energy=None,
+                     price_drop=False, already_tracked=False):
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market.offers[offer]
-        trade = market.accept_offer(offer, buyer, energy=energy, price_drop=price_drop)
+        trade = market.accept_offer(offer, buyer, energy=energy, price_drop=price_drop,
+                                    already_tracked=already_tracked)
         self.offers.bought_offer(trade.offer, market)
         return trade
 

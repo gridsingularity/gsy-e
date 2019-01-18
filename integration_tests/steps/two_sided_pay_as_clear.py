@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from math import isclose, isfinite
 from behave import then
+from d3a.d3a_core.util import make_iaa_name
 
 
 @then('all trades are equal to market_clearing_rate')
@@ -30,6 +31,41 @@ def test_traded_energy_rate(context):
                         if len(d.clearing_rate) > 0 and d.name == trade.buyer:
                             assert any([isclose((trade.offer.price/trade.offer.energy), rate)
                                         for rate in d.clearing_rate])
+
+
+@then('buyers and sellers are not same')
+def test_different_buyer_seller(context):
+    areas = list()
+    grid = context.simulation.area
+    areas.append(grid)
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    areas.append(house1)
+    for area in areas:
+        for market in area.past_markets:
+            for trade in market.trades:
+                assert str(trade.offer.seller) != str(trade.buyer)
+
+
+@then('cumulative traded offer energy equal to cumulative bid energy')
+def test_cumulative_offer_bid_energy(context):
+    from d3a.models.market.market_structures import Bid, Offer
+    areas = list()
+    grid = context.simulation.area
+    areas.append(grid)
+    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
+    areas.append(house1)
+
+    for area in areas:
+        for market in area.past_markets:
+            cumulative_traded_bid_energy = 0
+            cumulative_traded_offer_energy = 0
+            for trade in market.trades:
+                if type(trade.offer) == Bid and str(trade.seller) != str(make_iaa_name(area)):
+                    cumulative_traded_bid_energy += trade.offer.energy
+                elif type(trade.offer) == Offer and str(trade.buyer) != str(make_iaa_name(area)):
+                    cumulative_traded_offer_energy += trade.offer.energy
+            residual = (cumulative_traded_offer_energy - cumulative_traded_bid_energy)
+            assert isclose(residual, 0)
 
 
 @then('all traded energy have finite value')
