@@ -104,8 +104,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
                                 f"||| Clearing Energy: {clearing_energy} ")
             self.clearing_rate.append(clearing_rate)
+
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:
+            already_tracked = self.owner.name == bid.buyer
             if cumulative_traded_bids >= clearing_energy:
                 break
             elif (bid.price/bid.energy) >= clearing_rate and \
@@ -115,8 +117,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
                     energy=bid.energy,
                     seller=self.owner.name,
-                    already_tracked=True,
-                    price_drop=True
+                    price_drop=True,
+                    already_tracked=already_tracked
                 )
             elif (bid.price/bid.energy) >= clearing_rate and \
                     (0 < (clearing_energy - cumulative_traded_bids) <= bid.energy):
@@ -125,14 +127,15 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
                     energy=(clearing_energy - cumulative_traded_bids),
                     seller=self.owner.name,
-                    already_tracked=True,
-                    price_drop=True
+                    price_drop=True,
+                    already_tracked=already_tracked
                 )
                 cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
             self._delete_forwarded_bid_entries(bid)
 
         cumulative_traded_offers = 0
         for offer in self.sorted_offers:
+            already_tracked = self.owner.name == offer.seller
             if cumulative_traded_offers >= clearing_energy:
                 break
             elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
@@ -142,7 +145,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=offer.energy,
-                                        price_drop=True)
+                                        price_drop=True,
+                                        already_tracked=already_tracked)
                 cumulative_traded_offers += offer.energy
             elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
                     (clearing_energy - cumulative_traded_offers) <= offer.energy:
@@ -151,7 +155,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=clearing_energy - cumulative_traded_offers,
-                                        price_drop=True)
+                                        price_drop=True,
+                                        already_tracked=already_tracked)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
             self._delete_forwarded_offer_entries(offer)
 
@@ -167,5 +172,5 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         self.mcp_update_point = \
             area.config.ticks_per_slot / \
             ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
-        if current_tick_number % int(self.mcp_update_point) == 0:
+        if (current_tick_number+1) % int(self.mcp_update_point) == 0:
             self._match_offers_bids()
