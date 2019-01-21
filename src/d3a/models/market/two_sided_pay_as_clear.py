@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
+from d3a.models.state import MarketClearingState
 
 log = getLogger(__name__)
 
@@ -26,6 +27,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
     def __init__(self, time_slot=None, area=None,
                  notification_listener=None, readonly=False):
         super().__init__(time_slot, area, notification_listener, readonly)
+        self.state = MarketClearingState()
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsClear{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\

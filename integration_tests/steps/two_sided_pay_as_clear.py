@@ -22,32 +22,21 @@ from d3a.d3a_core.util import make_iaa_name
 
 @then('all trades are equal to market_clearing_rate')
 def test_traded_energy_rate(context):
-    grid = context.simulation.area
-    # iterating over area
-    for child in grid.children:
-        # iterating over IAA for different time_slot
-        for a, b in child.dispatcher.interarea_agents.items():
-            # iterating over HIGH->LOW & LOW->HIGH
-            for engine in b[0].engines:
-                # iterating over source_market trades
-                for trade in engine.markets.source.trades:
-                    if engine.clearing_rate[trade.time] != 0 and \
-                            trade.buyer == make_iaa_name(child):
-                        assert isclose((trade.offer.price/trade.offer.energy),
-                                       engine.clearing_rate[trade.time])
+    assert all(isclose((trade.offer.price / trade.offer.energy),
+                       market.state.clearing_rate[trade.time])
+               for child in context.simulation.area.children
+               for market in child.past_markets
+               for trade in market.trades
+               if market.state.clearing_rate[trade.time] != 0 and
+               trade.buyer == make_iaa_name(child))
 
 
 @then('buyers and sellers are not same')
 def test_different_buyer_seller(context):
-    areas = list()
-    grid = context.simulation.area
-    areas.append(grid)
-    house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
-    areas.append(house1)
-    for area in areas:
-        for market in area.past_markets:
-            for trade in market.trades:
-                assert str(trade.offer.seller) != str(trade.buyer)
+    assert all(str(trade.offer.seller) != str(trade.buyer)
+               for area in context.simulation.area.children
+               for market in area.past_markets
+               for trade in market.trades)
 
 
 @then('cumulative traded offer energy equal to cumulative bid energy')

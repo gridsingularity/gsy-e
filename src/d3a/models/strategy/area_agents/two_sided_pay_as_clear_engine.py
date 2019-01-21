@@ -20,23 +20,20 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSided
 import math
 from logging import getLogger
 from d3a.models.const import ConstSettings
-from d3a.models.state import MarketClearingState
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
 log = getLogger(__name__)
 
 
-class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine, MarketClearingState):
+class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
                  owner: "InterAreaAgent"):
-        TwoSidedPayAsBidEngine.__init__(self, name, market_1, market_2, min_offer_age,
-                                        transfer_fee_pct, owner)
-        MarketClearingState.__init__(self)
+        super().__init__(name, market_1, market_2, min_offer_age,
+                         transfer_fee_pct, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
         self.sorted_bids = []
         self.sorted_offers = []
-        # self.clearing_rate = []  # type: List[int]
 
     def __repr__(self):
         return "<TwoSidedPayAsClearEngine [{s.owner.name}] {s.name} " \
@@ -106,8 +103,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine, MarketClearingState):
         if clearing_energy > 0:
             self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
                                 f"||| Clearing Energy: {clearing_energy} ")
-            # print(f"Time: {time}")
-            self.clearing_rate[time] = clearing_rate
+            self.markets.source.state.clearing_rate[time] = clearing_rate
 
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:
