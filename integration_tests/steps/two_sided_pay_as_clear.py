@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from math import isclose, isfinite
+from math import isclose
 from behave import then
 from d3a.d3a_core.util import make_iaa_name
 
@@ -75,8 +75,8 @@ def test_cumulative_offer_bid_energy(context):
 @then('all traded energy have finite value')
 def test_finite_traded_energy(context):
     grid = context.simulation.area
-    for child in grid.children:
-        for a, b in child.dispatcher.interarea_agents.items():
-            for d in b[0].engines:
-                for trade in d.markets.source.trades:
-                    assert isfinite(trade.offer.energy)
+    # Validate that all trades have less than 100 kWh of energy
+    assert all(trade.offer.energy < 100
+               for area in grid.children
+               for market in area.past_markets
+               for trade in market.trades)
