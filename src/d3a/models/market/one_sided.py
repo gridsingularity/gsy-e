@@ -156,6 +156,7 @@ class OneSidedMarket(Market):
             self.bc_interface.handle_blockchain_trade_event(
                 offer, buyer, original_offer, residual_offer
             )
+        # print(f"OfferTradeTime: {time}")
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
         self.bc_interface.track_trade_event(trade)
 

@@ -238,4 +238,4 @@ class StorageState:
 
 class MarketClearingState:
     def __init__(self):
-        self.clearing_rate = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        self.clearing_rate = defaultdict(int)  # type: Dict[DateTime, float]

@@ -23,14 +23,18 @@ from d3a.d3a_core.util import make_iaa_name
 @then('all trades are equal to market_clearing_rate')
 def test_traded_energy_rate(context):
     grid = context.simulation.area
+    # iterating over area
     for child in grid.children:
+        # iterating over IAA for different time_slot
         for a, b in child.dispatcher.interarea_agents.items():
-            for c in b:
-                for d in c.engines:
-                    for trade in d.markets.source.trades:
-                        if len(d.clearing_rate) > 0 and d.name == trade.buyer:
-                            assert any([isclose((trade.offer.price/trade.offer.energy), rate)
-                                        for rate in d.clearing_rate])
+            # iterating over HIGH->LOW & LOW->HIGH
+            for engine in b[0].engines:
+                # iterating over source_market trades
+                for trade in engine.markets.source.trades:
+                    if engine.clearing_rate[trade.time] != 0 and \
+                            trade.buyer == make_iaa_name(child):
+                        assert isclose((trade.offer.price/trade.offer.energy),
+                                       engine.clearing_rate[trade.time])
 
 
 @then('buyers and sellers are not same')
@@ -73,7 +77,6 @@ def test_finite_traded_energy(context):
     grid = context.simulation.area
     for child in grid.children:
         for a, b in child.dispatcher.interarea_agents.items():
-            for c in b:
-                for d in c.engines:
-                    for trade in d.markets.source.trades:
-                        assert isfinite(trade.offer.energy)
+            for d in b[0].engines:
+                for trade in d.markets.source.trades:
+                    assert isfinite(trade.offer.energy)

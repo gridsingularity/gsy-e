@@ -92,6 +92,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                 final_price = energy * (bid.price / bid.energy)
                 bid = Bid(bid.id, final_price, energy,
                           buyer, seller, self)
+            # print(f"BidTradeTime: {self._now}")
             trade = Trade(str(uuid.uuid4()), self._now,
                           bid, seller, buyer, residual, price_drop=price_drop,
                           already_tracked=already_tracked)

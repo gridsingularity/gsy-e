@@ -98,7 +98,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine, MarketClearingState):
             else:
                 continue
 
-    def _match_offers_bids(self, time=None):
+    def _match_offers_bids(self, time):
         clearing = self._perform_pay_as_clear_matching()
         if clearing is None:
             return
@@ -106,6 +106,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine, MarketClearingState):
         if clearing_energy > 0:
             self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
                                 f"||| Clearing Energy: {clearing_energy} ")
+            # print(f"Time: {time}")
             self.clearing_rate[time] = clearing_rate
 
         cumulative_traded_bids = 0
@@ -164,7 +165,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine, MarketClearingState):
             self._delete_forwarded_offer_entries(offer)
 
     def tick(self, *, area):
-        super().tick(area=area)
+        # super().tick(area=area)
 
         for bid_id, bid in self.markets.source.bids.items():
             if bid_id not in self.forwarded_bids and \
