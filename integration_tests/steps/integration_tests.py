@@ -328,9 +328,7 @@ def test_offer_bid_files(context, with_or_without, nonempty=False):
                       os.path.join(base_path, 'grid', 'house-1-balancing-offers.csv'),
                       os.path.join(base_path, 'grid', 'house-2-balancing-offers.csv')]
 
-    line_count_limit = 3 if nonempty else 1
-    print(nonempty)
-    print(line_count_limit)
+    line_count_limit = 2 if nonempty else 1
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > line_count_limit
                for f in file_list)
