@@ -30,6 +30,7 @@ from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offe
 from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.util import constsettings_to_dict
 
 
 _log = logging.getLogger(__name__)
@@ -81,6 +82,9 @@ class ExportAndPlot:
     def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
+        settings_file = os.path.join(json_dir, "const_settings")
+        with open(settings_file, 'w') as outfile:
+            json.dump(constsettings_to_dict(), outfile, indent=2)
         kpi_file = os.path.join(json_dir, "KPI")
         with open(kpi_file, 'w') as outfile:
             json.dump(self.kpi.performance_index, outfile, indent=2)

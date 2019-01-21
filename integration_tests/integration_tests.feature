@@ -69,4 +69,8 @@ Feature: Run integration tests
     When we run the simulation with setup file default_2a with two different market_counts
     Then the results are the same for each simulation run
 
-
+  Scenario: Test aggregated results are exported
+     Given we have a scenario named default_2a
+     And d3a is installed
+     When we run the d3a simulation on console with default_2a
+     Then aggregated result files are exported
