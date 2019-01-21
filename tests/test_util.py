@@ -15,9 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.d3a_core.util import available_simulation_scenarios
+from d3a.d3a_core.util import available_simulation_scenarios, \
+    validate_const_settings_for_simulation
+from d3a.models.const import ConstSettings
 from d3a import setup as d3a_setup
 import os
+from parameterized import parameterized
+import pytest
 
 
 def test_validate_all_setup_scenarios_are_available():
@@ -30,3 +34,16 @@ def test_validate_all_setup_scenarios_are_available():
                     replace(root_path, '').replace("/", ".")
                 file_list.append(module_name)
     assert set(file_list) == set(available_simulation_scenarios)
+
+
+@parameterized.expand([(2, 1),
+                       (2, 2),
+                       (2, 3),
+                       (3, 1),
+                       (3, 2),
+                       (3, 3)])
+def test_validate_alternate_pricing_only_for_one_sided_market(market_type, alternative_pricing):
+    ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = alternative_pricing
+    ConstSettings.IAASettings.MARKET_TYPE = market_type
+    with pytest.raises(AssertionError):
+        validate_const_settings_for_simulation()

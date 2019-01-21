@@ -330,3 +330,10 @@ def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
         if retry_count >= max_retries:
             raise e
         return recursive_retry(functor, retry_count+1, max_retries, *args, **kwargs)
+
+
+def validate_const_settings_for_simulation():
+    from d3a.models.const import ConstSettings
+    if ConstSettings.IAASettings.MARKET_TYPE != 1 and \
+       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        assert False, "Alternate pricing schemes are only usable with an one sided market."

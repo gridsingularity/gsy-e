@@ -38,7 +38,7 @@ from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
-from d3a.d3a_core.util import NonBlockingConsole
+from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
@@ -155,7 +155,7 @@ class Simulation:
         self._set_traversal_length()
 
         are_all_areas_unique(self.area, set())
-
+        validate_const_settings_for_simulation()
         self.area.activate(self.bc)
 
     @property
