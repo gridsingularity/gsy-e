@@ -296,12 +296,16 @@ def constsettings_to_dict():
                 else:
                     settings_dict[class_name] = {key: value}
 
-    const_settings = {}
-    for settings_class_name, settings_class in dict(ConstSettings.__dict__).items():
-        if settings_class_name.startswith("__"):
-            continue
-        convert_nested_settings(settings_class, settings_class_name, const_settings)
-    return const_settings
+    try:
+        const_settings = {}
+        for settings_class_name, settings_class in dict(ConstSettings.__dict__).items():
+            if settings_class_name.startswith("__"):
+                continue
+            convert_nested_settings(settings_class, settings_class_name, const_settings)
+        return const_settings
+    except Exception:
+        raise SyntaxError("Error when serializing the const settings file. Incorrect "
+                          "setting structure.")
 
 
 def wait_until_timeout_blocking(functor, timeout=10, polling_period=0.01):
@@ -330,3 +334,20 @@ def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
         if retry_count >= max_retries:
             raise e
         return recursive_retry(functor, retry_count+1, max_retries, *args, **kwargs)
+
+
+def validate_const_settings_for_simulation():
+    from d3a.models.const import ConstSettings
+    # If schemes are not compared and an individual scheme is selected
+    # And the market type is not single sided market
+    # This is a wrong configuration and an exception is raised
+    if not ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
+       ConstSettings.IAASettings.MARKET_TYPE != 1 and \
+       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        assert False, "Alternate pricing schemes are only usable with an one sided market."
+
+    # If an alternate price is selected on compare schemes
+    # There should be a single sided market
+    if ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
+       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+        ConstSettings.IAASettings.MARKET_TYPE = 1

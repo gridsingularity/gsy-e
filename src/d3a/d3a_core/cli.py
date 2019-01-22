@@ -29,9 +29,8 @@ from pendulum import DateTime
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.util import IntervalType, available_simulation_scenarios
-from d3a.d3a_core.util import read_settings_from_file
-from d3a.d3a_core.util import update_advanced_settings
+from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
+    read_settings_from_file, update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
 from d3a.constants import TIME_ZONE, TIME_FORMAT_EXPORT_DIR
 
@@ -116,8 +115,9 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
             processes = []
             for pricing_scheme in range(0, 4):
-                p = Process(target=run_simulation, args=(pricing_scheme, setup_module_name,
-                                                         simulation_config, slowdown, None, kwargs)
+                kwargs["pricing_scheme"] = pricing_scheme
+                p = Process(target=run_simulation, args=(setup_module_name, simulation_config,
+                                                         slowdown, None, kwargs)
                             )
                 p.start()
                 processes.append(p)
@@ -126,8 +126,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
                 p.join()
 
         else:
-            pricing_scheme = 0
-            run_simulation(pricing_scheme, setup_module_name, simulation_config, slowdown, None,
+            run_simulation(setup_module_name, simulation_config, slowdown, None,
                            kwargs)
 
     except D3AException as ex:
