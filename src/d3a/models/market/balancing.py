@@ -58,6 +58,7 @@ class BalancingMarket(OneSidedMarket):
         self.offers[offer.id] = offer
         self._sorted_offers = \
             sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        self.offer_history.append(offer)
         log.info(f"[BALANCING_OFFER][NEW][{self.time_slot_str}] {offer}")
         self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
