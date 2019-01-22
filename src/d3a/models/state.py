@@ -234,3 +234,12 @@ class StorageState:
         self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
         self.charge_history_kWh[time_slot] = self.used_storage
         self.offered_history[time_slot] = self.offered_sell_kWh[time_slot]
+
+
+class MarketClearingState:
+    def __init__(self):
+        self.clearing_rate = defaultdict(int)  # type: Dict[DateTime, float]
+
+    @classmethod
+    def _csv_fields(cls):
+        return 'time', 'rate [ct./kWh]'

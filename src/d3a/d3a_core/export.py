@@ -31,7 +31,7 @@ from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict
-
+from d3a.models.state import MarketClearingState
 
 _log = logging.getLogger(__name__)
 
@@ -152,6 +152,22 @@ class ExportAndPlot:
             self._export_area_offers_bids_csv_files(area, directory, "balancing-offers",
                                                     BalancingOffer, "offer_history",
                                                     area.past_balancing_markets)
+            if ConstSettings.IAASettings.MARKET_TYPE == 3:
+                self._export_area_clearing_rate(area, directory, "market-clearing-rate")
+
+    def _export_area_clearing_rate(self, area, directory, file_suffix):
+        file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
+        labels = ("slot",) + MarketClearingState._csv_fields()
+        try:
+            with open(file_path, 'w') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(labels)
+                for market in area.past_markets:
+                    for time, rate in market.state.clearing_rate.items():
+                        row = (market.time_slot, time, rate)
+                        writer.writerow(row)
+        except OSError:
+            _log.exception("Could not export area market_clearing_rate")
 
     def _export_area_offers_bids_csv_files(self, area, directory, file_suffix,
                                            offer_type, market_member, past_markets):

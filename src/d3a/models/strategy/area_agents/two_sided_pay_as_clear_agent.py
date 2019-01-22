@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_clear_engine import TwoSidedPayAsClearEngine
+from d3a.models.const import ConstSettings
 
 
 class TwoSidedPayAsClearAgent(TwoSidedPayAsBidAgent):
@@ -27,6 +28,13 @@ class TwoSidedPayAsClearAgent(TwoSidedPayAsBidAgent):
                          higher_market=higher_market, lower_market=lower_market,
                          transfer_fee_pct=transfer_fee_pct, min_offer_age=min_offer_age,
                          engine_type=TwoSidedPayAsClearEngine)
+        self.mcp_update_point = \
+            self.owner.config.ticks_per_slot / \
+            ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
+
+    @property
+    def current_tick(self):
+        return self.owner.current_tick % self.owner.config.ticks_per_slot
 
     def __repr__(self):
         return "<TwoSidedPayAsClearAgent {s.name} {s.time_slot}>".format(s=self)
