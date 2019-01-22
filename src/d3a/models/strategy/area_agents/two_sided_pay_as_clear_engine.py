@@ -19,7 +19,7 @@ from collections import namedtuple, defaultdict
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSidedPayAsBidEngine
 import math
 from logging import getLogger
-from d3a.models.const import ConstSettings
+
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
@@ -95,7 +95,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             else:
                 continue
 
-    def _match_offers_bids(self, time):
+    def _match_offers_bids(self):
+        if not (self.owner.current_tick + 1) % int(self.owner.mcp_update_point) == 0:
+            return
+        time = self.owner.owner.now
         clearing = self._perform_pay_as_clear_matching()
         if clearing is None:
             return
@@ -161,16 +164,4 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             self._delete_forwarded_offer_entries(offer)
 
     def tick(self, *, area):
-        # super().tick(area=area)
-
-        for bid_id, bid in self.markets.source.bids.items():
-            if bid_id not in self.forwarded_bids and \
-                    self.owner.usable_bid(bid) and \
-                    self.owner.name != bid.seller:
-                self._forward_bid(bid)
-        current_tick_number = area.current_tick % area.config.ticks_per_slot
-        self.mcp_update_point = \
-            area.config.ticks_per_slot / \
-            ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
-        if (current_tick_number+1) % int(self.mcp_update_point) == 0:
-            self._match_offers_bids(area.now)
+        super().tick(area=area)

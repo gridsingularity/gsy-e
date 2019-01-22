@@ -87,7 +87,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         self.forwarded_bids.pop(bid_info.target_bid.id, None)
         self.forwarded_bids.pop(bid_info.source_bid.id, None)
 
-    def _match_offers_bids(self, time=None):
+    def _match_offers_bids(self):
         for bid, offer in self._perform_pay_as_bid_matching():
             selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
             offer.price = offer.energy * (bid.price / bid.energy)
@@ -113,7 +113,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                     self.owner.usable_bid(bid) and \
                     self.owner.name != bid.buyer:
                 self._forward_bid(bid)
-
         self._match_offers_bids()
 
     def event_bid_traded(self, *, bid_trade):

@@ -30,7 +30,7 @@ def test_traded_energy_rate(context):
                for market in child.past_markets
                for trade in market.trades
                if market.state.clearing_rate[trade.time] != 0 and
-               trade.buyer == make_iaa_name(child))
+               trade.buyer == make_iaa_name(child) and trade.already_tracked)
 
 
 @then('buyers and sellers are not same')
