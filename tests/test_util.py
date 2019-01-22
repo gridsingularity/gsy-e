@@ -43,7 +43,24 @@ def test_validate_all_setup_scenarios_are_available():
                        (3, 2),
                        (3, 3)])
 def test_validate_alternate_pricing_only_for_one_sided_market(market_type, alternative_pricing):
+    ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
     ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = alternative_pricing
     ConstSettings.IAASettings.MARKET_TYPE = market_type
     with pytest.raises(AssertionError):
         validate_const_settings_for_simulation()
+
+
+@parameterized.expand([(2, 1),
+                       (2, 2),
+                       (2, 3),
+                       (3, 1),
+                       (3, 2),
+                       (3, 3)])
+def test_validate_one_sided_market_when_pricing_scheme_on_comparison(market_type, alt_pricing):
+    ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
+    ConstSettings.IAASettings.MARKET_TYPE = market_type
+    ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = alt_pricing
+    validate_const_settings_for_simulation()
+    assert ConstSettings.IAASettings.MARKET_TYPE == 1
+    assert ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == alt_pricing
+    assert ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES

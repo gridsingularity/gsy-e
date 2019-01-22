@@ -155,7 +155,6 @@ class Simulation:
         self._set_traversal_length()
 
         are_all_areas_unique(self.area, set())
-        validate_const_settings_for_simulation()
         self.area.activate(self.bc)
 
     @property
@@ -430,11 +429,14 @@ class Simulation:
         self._init_events()
 
 
-def run_simulation(pricing_scheme=0, setup_module_name="", simulation_config=None, slowdown=None,
+def run_simulation(setup_module_name="", simulation_config=None, slowdown=None,
                    redis_job_id=None, kwargs=None):
 
     try:
-        ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = pricing_scheme
+        if "pricing_scheme" in kwargs:
+            ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = \
+                kwargs.pop("pricing_scheme")
+        validate_const_settings_for_simulation()
         simulation = Simulation(
             setup_module_name=setup_module_name,
             simulation_config=simulation_config,
