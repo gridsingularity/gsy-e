@@ -30,8 +30,12 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         self.state = MarketClearingState()
 
     def __repr__(self):  # pragma: no cover
-        return "<TwoSidedPayAsClear{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
+        return "<TwoSidedPayAsClear{} bids: {} (E: {} kWh V:{}) " \
+               "offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
             .format(" {}".format(self.time_slot_str),
+                    len(self.bids),
+                    sum(b.energy for b in self.bids.values()),
+                    sum(b.price for b in self.bids.values()),
                     len(self.offers),
                     sum(o.energy for o in self.offers.values()),
                     sum(o.price for o in self.offers.values()),
