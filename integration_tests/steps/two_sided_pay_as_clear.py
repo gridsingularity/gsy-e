@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
+import glob
 from math import isclose
 from behave import then
 from d3a.d3a_core.util import make_iaa_name
@@ -69,3 +71,19 @@ def test_finite_traded_energy(context):
                for area in grid.children
                for market in area.past_markets
                for trade in market.trades)
+
+
+@then('there are files with offers, bids & market_clearing_rate for every area')
+def test_offer_bid_market_clearing_rate_files(context):
+    base_path = os.path.join(context.export_path, "*")
+    file_list = [os.path.join(base_path, 'grid-offers.csv'),
+                 os.path.join(base_path, 'grid-bids.csv'),
+                 os.path.join(base_path, 'grid-market-clearing-rate.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-bids.csv'),
+                 os.path.join(base_path, 'grid', 'house-1-market-clearing-rate.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-offers.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-bids.csv'),
+                 os.path.join(base_path, 'grid', 'house-2-market-clearing-rate.csv')]
+
+    assert all(len(glob.glob(f)) == 1 for f in file_list)

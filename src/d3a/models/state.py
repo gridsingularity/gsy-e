@@ -239,3 +239,7 @@ class StorageState:
 class MarketClearingState:
     def __init__(self):
         self.clearing_rate = defaultdict(int)  # type: Dict[DateTime, float]
+
+    @classmethod
+    def _csv_fields(cls):
+        return 'time', 'rate [ct./kWh]'
