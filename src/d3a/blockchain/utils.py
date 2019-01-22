@@ -19,7 +19,7 @@ from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import wait_until_timeout_blocking
 from logging import getLogger
 from d3a.d3a_core.exceptions import D3AException
-
+import os
 import time
 
 log = getLogger(__name__)
@@ -50,8 +50,8 @@ def unlock_account(chain, address):
     if ConstSettings.BlockchainSettings.START_LOCAL_CHAIN:
         return
     else:
+        account_pass = os.getenv("BLOCKCHAIN_ACCOUNT_PASSWORD", "testgsy")
         log.info(f"Account: {address})")
         unlock = \
-            chain.personal.unlockAccount(address,
-                                         ConstSettings.BlockchainSettings.ACCOUNT_PASSWORD)
+            chain.personal.unlockAccount(address, account_pass)
         log.info(f"Unlocking: {unlock}")

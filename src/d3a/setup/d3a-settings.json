@@ -58,7 +58,6 @@
     "BlockchainSettings": {
       "URL": "http://127.0.0.1:8545",
       "START_LOCAL_CHAIN": true,
-      "ACCOUNT_PASSWORD": "testgsy",
       "TIMEOUT": 30
     },
     "BalancingSettings": {
