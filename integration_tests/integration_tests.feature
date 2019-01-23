@@ -13,7 +13,7 @@ Feature: Run integration tests
      Given we have a scenario named two_sided_market/with_balancing_market
      And d3a is installed
      When we run the d3a simulation on console with two_sided_market.with_balancing_market
-     Then there are files with offers and bids for every area
+     Then there are files with offers (with balancing offers) and bids for every area
 
   Scenario Outline: Run general integration tests for simulation
      Given we have a scenario named <scenario>
@@ -69,4 +69,8 @@ Feature: Run integration tests
     When we run the simulation with setup file default_2a with two different market_counts
     Then the results are the same for each simulation run
 
-
+  Scenario: Test aggregated results are exported
+     Given we have a scenario named default_2a
+     And d3a is installed
+     When we run the d3a simulation on console with default_2a
+     Then aggregated result files are exported

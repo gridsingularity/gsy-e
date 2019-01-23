@@ -123,8 +123,6 @@ class ConstSettings:
         URL = "http://127.0.0.1:8545"
         # Controls whether a local Ganache blockchain will start automatically by D3A.
         START_LOCAL_CHAIN = True
-        # Password for the base blockchain account
-        ACCOUNT_PASSWORD = "testgsy"
         # Timeout for blockchain operations, in seconds
         TIMEOUT = 30
 

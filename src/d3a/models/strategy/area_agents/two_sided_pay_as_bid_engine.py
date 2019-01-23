@@ -113,7 +113,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                     self.owner.usable_bid(bid) and \
                     self.owner.name != bid.buyer:
                 self._forward_bid(bid)
-
         self._match_offers_bids()
 
     def event_bid_traded(self, *, bid_trade):

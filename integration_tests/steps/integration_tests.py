@@ -315,21 +315,52 @@ def test_export_data_csv_alt_pricing(context):
             raise FileExistsError(f"Not found in {context.export_path}: {data_fn}")
 
 
-@then('there are files with offers and bids for every area')
-def test_offer_bid_files(context):
+@then('there are nonempty files with offers ({with_or_without} balancing offers) '
+      'and bids for every area')
+def nonempty_test_offer_bid_files(context, with_or_without):
+    test_offer_bid_files(context, with_or_without, True)
+
+
+@then('there are files with offers ({with_or_without} balancing offers) '
+      'and bids for every area')
+def test_offer_bid_files(context, with_or_without, nonempty=False):
     base_path = os.path.join(context.export_path, "*")
     file_list = [os.path.join(base_path, 'grid-offers.csv'),
                  os.path.join(base_path, 'grid-bids.csv'),
-                 os.path.join(base_path, 'grid-balancing-offers.csv'),
                  os.path.join(base_path, 'grid', 'house-1-offers.csv'),
                  os.path.join(base_path, 'grid', 'house-1-bids.csv'),
-                 os.path.join(base_path, 'grid', 'house-1-balancing-offers.csv'),
                  os.path.join(base_path, 'grid', 'house-2-offers.csv'),
-                 os.path.join(base_path, 'grid', 'house-2-bids.csv'),
-                 os.path.join(base_path, 'grid', 'house-2-balancing-offers.csv')]
+                 os.path.join(base_path, 'grid', 'house-2-bids.csv')]
+
+    if with_or_without == "with":
+        file_list += [os.path.join(base_path, 'grid-balancing-offers.csv'),
+                      os.path.join(base_path, 'grid', 'house-1-balancing-offers.csv'),
+                      os.path.join(base_path, 'grid', 'house-2-balancing-offers.csv')]
+
+    line_count_limit = 2 if nonempty else 1
+    assert all(len(glob.glob(f)) == 1 for f in file_list)
+    assert all(len(open(glob.glob(f)[0]).readlines()) > line_count_limit
+               for f in file_list)
+
+
+@then('aggregated result files are exported')
+def test_aggregated_result_files(context):
+    base_path = os.path.join(context.export_path, "*", "aggregated_results")
+    file_list = [os.path.join(base_path, 'bills'),
+                 os.path.join(base_path, 'const_settings'),
+                 os.path.join(base_path, 'cumulative_grid_trades'),
+                 os.path.join(base_path, 'cumulative_loads'),
+                 os.path.join(base_path, 'job_id'),
+                 os.path.join(base_path, 'KPI'),
+                 os.path.join(base_path, 'price_energy_day'),
+                 os.path.join(base_path, 'random_seed'),
+                 os.path.join(base_path, 'status'),
+                 os.path.join(base_path, 'trade-detail'),
+                 os.path.join(base_path, 'tree_summary'),
+                 os.path.join(base_path, 'unmatched_loads')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
-    assert all(len(open(glob.glob(f)[0]).readlines()) > 1 for f in file_list)
+    assert all(len(open(glob.glob(f)[0]).readlines()) > 0 for f in file_list)
 
 
 @then('we test that config parameters are correctly parsed for {scenario}'
