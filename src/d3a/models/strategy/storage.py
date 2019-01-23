@@ -26,7 +26,6 @@ from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, \
     BidUpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
-from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
@@ -128,7 +127,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
     def event_activate(self):
 
         self._set_be_alternative_pricing()
-        self.update_market_cycle_offers(self.break_even[self.area.now.format(TIME_FORMAT)][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now][1])
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
@@ -233,7 +232,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
-        self.update_market_cycle_offers(self.break_even[self.area.now.format(TIME_FORMAT)][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now][1])
         current_market = self.area.next_market
         past_market = self.area.last_past_market
 
@@ -248,7 +247,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if ConstSettings.IAASettings.MARKET_TYPE == 2:
             self.state.clamp_energy_to_buy_kWh([current_market.time_slot])
             self.update_market_cycle_bids(final_rate=self.break_even[
-                self.area.now.format(TIME_FORMAT)][0])
+                self.area.now][0])
             energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
             if energy_kWh > 0:
                 self.post_first_bid(current_market, energy_kWh * 1000.0)
@@ -278,7 +277,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                                                               self.owner.name)
 
     def buy_energy(self, market):
-        max_affordable_offer_rate = self.break_even[market.time_slot_str][0]
+        max_affordable_offer_rate = self.break_even[market.time_slot][0]
         for offer in market.sorted_offers:
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
@@ -348,8 +347,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
         else:
-            break_even_sell = self.break_even[market.time_slot_str][1]
-            max_selling_rate = self.calculate_initial_sell_rate(market.time_slot_str)
+            break_even_sell = self.break_even[market.time_slot][1]
+            max_selling_rate = self.calculate_initial_sell_rate(market.time_slot)
             return max(max_selling_rate, break_even_sell)
 
     def capacity_dependant_sell_rate(self, market):
@@ -357,8 +356,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             soc = self.state.used_storage / self.state.capacity
         else:
             soc = self.state.charge_history[market.time_slot] / 100.0
-        max_selling_rate = self.calculate_initial_sell_rate(market.time_slot_str)
-        break_even_sell = self.break_even[market.time_slot_str][1]
+        max_selling_rate = self.calculate_initial_sell_rate(market.time_slot)
+        break_even_sell = self.break_even[market.time_slot][1]
         if max_selling_rate < break_even_sell:
             return break_even_sell
         else:

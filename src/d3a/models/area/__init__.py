@@ -20,8 +20,7 @@ from logging import getLogger
 from typing import List, Optional  # noqa
 
 from cached_property import cached_property
-from pendulum import duration
-from pendulum import DateTime
+from pendulum import DateTime, duration, today
 from slugify import slugify
 
 from d3a.blockchain import BlockChainInterface
@@ -42,8 +41,8 @@ from d3a.models.area.events import Events
 
 log = getLogger(__name__)
 
-
 DEFAULT_CONFIG = SimulationConfig(
+    start_date=today(tz=TIME_ZONE),
     duration=duration(hours=24),
     market_count=1,
     slot_length=duration(minutes=15),

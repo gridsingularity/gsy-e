@@ -20,7 +20,6 @@ from typing import Union
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.constants import TIME_FORMAT
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 
@@ -68,8 +67,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """
         self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
-            self.daily_load_profile,
-            slot_length=self.area.config.slot_length)
+            self.daily_load_profile)
         self._update_energy_requirement()
 
     def _update_energy_requirement(self):
@@ -82,11 +80,12 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                             for day in range(self.area.config.duration.days + 1)}
 
         for slot_time in generate_market_slot_list(self.area):
+
             if self._allowed_operating_hours(slot_time.hour):
                 self.energy_requirement_Wh[slot_time] = \
-                    self.load_profile[slot_time.format(TIME_FORMAT)] * 1000
+                    self.load_profile[slot_time] * 1000
                 self.state.desired_energy_Wh[slot_time] = \
-                    self.load_profile[slot_time.format(TIME_FORMAT)] * 1000
+                    self.load_profile[slot_time] * 1000
 
     def _operating_hours(self, energy):
         """

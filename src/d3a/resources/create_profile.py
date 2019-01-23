@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+create_profile.py -i ./LOAD_DATA_1.csv -o ./LOAD_DATA_1_year.csv
+"""
+
 from pendulum import from_format, datetime
 import csv
 import argparse

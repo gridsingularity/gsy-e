@@ -75,7 +75,7 @@ class Simulation:
 
         if export_subdir is None:
             self.export_subdir = \
-                DateTime.now(tz=TIME_ZONE).format(DATE_TIME_FORMAT)
+                DateTime.now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
         else:
             self.export_subdir = export_subdir
 
@@ -88,6 +88,7 @@ class Simulation:
         self.run_start = None
         self.paused_time = None
 
+        # change_global_config(**simulation_config.__dict__)
         self._load_setup_module()
         self._init(**self.initial_params)
         self._init_events()
@@ -192,7 +193,7 @@ class Simulation:
         self.is_stopped = False
         config = self.simulation_config
         tick_lengths_s = config.tick_length.total_seconds()
-        slot_count = int(config.duration / config.slot_length) + 1
+        slot_count = int(config.duration / config.slot_length)
         while True:
             self.ready.wait()
             self.ready.clear()
@@ -208,7 +209,7 @@ class Simulation:
 
             try:
                 with NonBlockingConsole() as console:
-                    for slot_no in range(slot_resume, slot_count-1):
+                    for slot_no in range(slot_resume, slot_count):
                         run_duration = (
                             DateTime.now(tz=TIME_ZONE) - self.run_start -
                             duration(seconds=self.paused_time)

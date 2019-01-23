@@ -24,7 +24,7 @@ from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from multiprocessing import Process
-from pendulum import DateTime
+from pendulum import DateTime, today
 
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
@@ -98,7 +98,7 @@ _setup_modules = available_simulation_scenarios
 @click.option('--compare-alt-pricing', is_flag=True, default=False,
               help="Compare alternative pricing schemes")
 @click.option('--start-date', type=DateType(DATE_FORMAT),
-              default=DateTime.now().format(DATE_FORMAT), show_default=True,
+              default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
         market_count, cloud_coverage, iaa_fee, compare_alt_pricing, start_date, **kwargs):
@@ -111,11 +111,12 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
         else:
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
-                                 cloud_coverage, iaa_fee)
+                                 cloud_coverage, iaa_fee, start_date=start_date)
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
-            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(DATE_TIME_FORMAT)
+            # we need the seconds in the export dir name
+            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
             processes = []
             for pricing_scheme in range(0, 4):
                 p = Process(target=run_simulation, args=(pricing_scheme, setup_module_name,

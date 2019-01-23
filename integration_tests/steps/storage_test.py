@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a.constants import TIME_FORMAT
 
 
 @then('the storage devices buy and sell energy respecting the break even prices')
@@ -93,11 +92,9 @@ def check_capacity_dependant_sell_rate(context):
             if trade.seller == storage.name:
                 trades_sold.append(trade)
                 trade_rate = round((trade.offer.price / trade.offer.energy), 2)
-                break_even_sell = round(storage.strategy.break_even[
-                                            slot.format(TIME_FORMAT)][1], 2)
+                break_even_sell = round(storage.strategy.break_even[slot][1], 2)
                 market_maker_rate = \
-                    round(context.simulation.area.config.
-                          market_maker_rate[slot.format(TIME_FORMAT)], 2)
+                    round(context.simulation.area.config.market_maker_rate[slot], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) == len(house1.past_markets)
@@ -116,16 +113,16 @@ def check_custom_storage(context):
             if offer.seller in storage.name:
                 assert isclose((offer.price / offer.energy),
                                context.simulation.simulation_config.
-                               market_maker_rate[slot.format(TIME_FORMAT)] - price_dec_per_slot)
+                               market_maker_rate[slot] - price_dec_per_slot)
         for trade in market.trades:
             if trade.seller == storage.name:
                 trades_sold.append(trade)
                 trade_rate = round((trade.offer.price / trade.offer.energy), 2)
                 break_even_sell = round(storage.strategy.break_even[
-                                            slot.format(TIME_FORMAT)][1], 2)
+                                            slot][1], 2)
                 market_maker_rate = \
                     round(context.simulation.area.config.
-                          market_maker_rate[slot.format(TIME_FORMAT)], 2)
+                          market_maker_rate[slot], 2)
                 assert trade_rate >= break_even_sell
                 assert trade_rate <= market_maker_rate
     assert len(trades_sold) > 0

@@ -33,7 +33,7 @@ def get_trade_rates_house1(context):
 def average_trade_rate_mmr_time(context, time):
     trade_rates = get_trade_rates_house1(context)
     assert all([isclose(
-        context.simulation.simulation_config.market_maker_rate[tt[0].time_slot_str], tt[1])
+        context.simulation.simulation_config.market_maker_rate[tt[0].time_slot], tt[1])
                 for tt in trade_rates
                 if tt[0].time_slot.hour < int(time)])
 

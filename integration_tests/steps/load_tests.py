@@ -17,9 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from pendulum import duration
-from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
-from d3a.constants import TIME_FORMAT
 from math import isclose
+
+from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 
 
@@ -29,10 +29,7 @@ def check_load_profile_csv(context):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))
     input_profile = _readCSV(user_profile_load_csv.profile_path)
-
-    desired_energy_Wh = {f'{k.hour:02}:{k.minute:02}': v for k, v in
-                         load.strategy.state.desired_energy_Wh.items()}
-
+    desired_energy_Wh = load.strategy.state.desired_energy_Wh
     for timepoint, energy in desired_energy_Wh.items():
         if timepoint in input_profile:
             assert energy == input_profile[timepoint] / \
@@ -50,7 +47,7 @@ def check_traded_energy_rate(context):
         for trade in market.trades:
             if trade.buyer == load.name:
                 assert (trade.offer.price / trade.offer.energy) < \
-                       load.strategy.final_buying_rate[market.time_slot.format(TIME_FORMAT)]
+                       load.strategy.final_buying_rate[market.time_slot]
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')
@@ -96,10 +93,10 @@ def check_min_user_rate_profile_dict(context):
         for trade in market.trades:
             if trade.buyer == load1.name:
                 assert int(trade.offer.price / trade.offer.energy) == \
-                       int(load1.strategy.initial_buying_rate[market.time_slot_str])
+                       int(load1.strategy.initial_buying_rate[market.time_slot])
             elif trade.buyer == load2.name:
                 assert int(trade.offer.price / trade.offer.energy) == \
-                       int(load2.strategy.initial_buying_rate[market.time_slot_str])
+                       int(load2.strategy.initial_buying_rate[market.time_slot])
             else:
                 assert False, "All trades should be bought by load1 or load2, no other consumer."
 
@@ -114,6 +111,6 @@ def check_bid_update_frequency(context):
         for trade in market.trades:
             if trade.buyer == load1.name:
                 assert isclose((trade.offer.price / trade.offer.energy),
-                               (load1.strategy.final_buying_rate[market.time_slot_str]))
+                               (load1.strategy.final_buying_rate[market.time_slot]))
             else:
                 assert False, "All trades should be bought by load1, no other consumer."

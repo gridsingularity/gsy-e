@@ -16,6 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from pendulum import today, duration
+from d3a.constants import TIME_ZONE
+
 
 class ConstSettings:
     class GeneralSettings:
@@ -139,3 +142,16 @@ class ConstSettings:
         OFFER_SUPPLY_RATIO = 0.1
         # Adds flexible load support.
         FLEXIBLE_LOADS_SUPPORT = True
+
+
+class GlobalConfig:
+    START_DATE = today(tz=TIME_ZONE)
+    DURATION = duration(hours=24)
+    MARKET_COUNT = 1
+    SLOT_LENGTH = duration(minutes=15)
+    TICK_LENGTH = duration(seconds=1)
+    TICKS_PER_SLOT = 900
+    TOTAL_TICKS = 86400
+    CLOUD_COVERAGE = ConstSettings.PVSettings.DEFAULT_POWER_PROFILE
+    IAA_FEE = ConstSettings.IAASettings.FEE_PERCENTAGE
+    MARKET_MAKER_RATE = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

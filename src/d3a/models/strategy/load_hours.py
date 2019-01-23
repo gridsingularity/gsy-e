@@ -46,7 +46,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
 
         BaseStrategy.__init__(self)
-
         self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                           initial_buying_rate)
         self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
@@ -107,8 +106,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
             self.final_buying_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, self.area.config.market_maker_rate
-            )
+                InputProfileTypes.IDENTITY, self.area.config.market_maker_rate)
 
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.duration.days + 1)}
@@ -140,10 +138,11 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             if len(market.sorted_offers) < 1:
                 return
             acceptable_offer = self._find_acceptable_offer(market)
+
             if acceptable_offer and \
-                    self.initial_buying_rate[market.time_slot_str] <= \
+                    self.initial_buying_rate[market.time_slot] <= \
                     round(acceptable_offer.price / acceptable_offer.energy, 8) <= \
-                    self.final_buying_rate[market.time_slot_str]:
+                    self.final_buying_rate[market.time_slot]:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
                 current_day = self._get_day_of_timestamp(market.time_slot)
                 if acceptable_offer.energy > max_energy:

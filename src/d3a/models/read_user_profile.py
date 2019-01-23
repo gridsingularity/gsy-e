@@ -19,11 +19,12 @@ import csv
 import os
 import ast
 from enum import Enum
-from pendulum import duration, DateTime, from_format, from_timestamp
+from pendulum import duration, from_format, from_timestamp, today, DateTime
 from statistics import mean
 from typing import Dict
 from itertools import product
-from d3a.constants import TIME_FORMAT
+from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
+from d3a.models.const import GlobalConfig
 
 """
 Exposes mixins that can be used from strategy classes.
@@ -35,12 +36,43 @@ class InputProfileTypes(Enum):
     POWER = 2
 
 
-def default_profile_dict():
-    return dict((DateTime(year=2000, month=1, day=1, hour=hour, minute=minute).
-                 format(TIME_FORMAT), 0) for hour, minute in product(range(24), range(60)))
+def default_profile_dict(val=None):
+    if val is None:
+        val = 0
+    if GlobalConfig.DURATION.days > 0:
+        outdict = dict((GlobalConfig.START_DATE.add(days=day, hours=hour, minutes=minute), val)
+                       for day, hour, minute in
+                       product(range(GlobalConfig.DURATION.days), range(24), range(60)))
+    else:
+        outdict = dict((GlobalConfig.START_DATE.add(hours=hour, minutes=minute), val)
+                       for hour, minute in product(range(24), range(60)))
+
+    if GlobalConfig.MARKET_COUNT > 1:
+        # this is for adding data points for the future markets
+        added_market_count_minutes = int((GlobalConfig.MARKET_COUNT - 1) *
+                                         GlobalConfig.SLOT_LENGTH.in_minutes())
+        last_time = from_format(str(sorted(list(outdict.keys()))[-1]), DATE_TIME_FORMAT)
+
+        for minute in range(1, added_market_count_minutes+1):
+            outdict[last_time.add(minutes=minute)] = val
+
+    return outdict
 
 
-def _readCSV(path: str) -> Dict[str, float]:
+def _eval_time_format(time_dict: Dict):
+    try:
+        [from_format(str(ti), TIME_FORMAT) for ti in time_dict.keys()]
+        return TIME_FORMAT
+    except ValueError:
+        try:
+            [from_format(str(ti), DATE_TIME_FORMAT) for ti in time_dict.keys()]
+            return DATE_TIME_FORMAT
+        except ValueError:
+            raise Exception(f"Format of time-stamp is not one of ('{TIME_FORMAT}', "
+                            f"'{DATE_TIME_FORMAT}')")
+
+
+def _readCSV(path: str) -> Dict:
     """
     Read a 2-column csv profile file. First column is the time, second column
     is the value (power, energy ...)
@@ -52,9 +84,12 @@ def _readCSV(path: str) -> Dict[str, float]:
         next(csvfile)
         csv_rows = csv.reader(csvfile, delimiter=';')
         for row in csv_rows:
-            timestr, wattstr = row
-            profile_data[timestr] = float(wattstr)
-    return profile_data
+            time_str, wattstr = row
+            profile_data[time_str] = float(wattstr)
+    time_format = _eval_time_format(profile_data)
+    # if no date is defined, from_format uses today
+    return dict({(from_format(time_str, time_format, tz=TIME_ZONE), value)
+                 for time_str, value in profile_data.items()})
 
 
 def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
@@ -67,141 +102,133 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
     :return: a mapping from time to energy values in kWh
     """
 
-    timestr_solar_array = list(profile_data_W.keys())
-    solar_power_input_W = list(profile_data_W.values())
-    # Ensures that the power values are going to be floats, not strings.
-    solar_power_input_W = [float(dp) for dp in solar_power_input_W]
+    input_time_list = list(profile_data_W.keys())
+    input_power_list_W = [float(dp) for dp in profile_data_W.values()]
+
     time0 = from_timestamp(0)
-    time_solar_array = [
-        (from_format(ti, TIME_FORMAT) - time0).seconds
-        for ti in timestr_solar_array
+    input_time_seconds_list = [(ti - time0).in_seconds()
+                               for ti in input_time_list]
+
+    slot_time_list = [i for i in range(input_time_seconds_list[0], input_time_seconds_list[-1],
+                                       slot_length.in_seconds())]
+
+    second_power_list_W = [
+        input_power_list_W[index - 1]
+        for index, seconds in enumerate(input_time_seconds_list)
+        for _ in range(seconds - input_time_seconds_list[index - 1])
     ]
-    whole_day_sec = 24 * 60 * 60
-    time_solar_array.append(whole_day_sec)
-    solar_power_array_W = [
-        solar_power_input_W[index - 1]
-        for index, seconds in enumerate(time_solar_array)
-        for _ in range(seconds - time_solar_array[index - 1])
-    ]
-    slot_time_list = [i for i in range(0, whole_day_sec, slot_length.seconds)]
-    avg_power_kW = [
-        mean(solar_power_array_W[
-                index * slot_length.seconds:index * slot_length.seconds + slot_length.seconds
-             ]) / 1000.0
-        for index, slot in enumerate(slot_time_list)
-    ]
+
+    avg_power_kW = []
+    for index, slot in enumerate(slot_time_list):
+        first_index = index * slot_length.in_seconds()
+        second_index = first_index + slot_length.in_seconds()
+        if (first_index <= len(second_power_list_W)) or (second_index <= len(second_power_list_W)):
+            avg_power_kW.append(mean(second_power_list_W[first_index:second_index]) / 1000.)
+
     slot_energy_kWh = list(map(lambda x: x / (duration(hours=1) / slot_length), avg_power_kW))
 
-    return {from_timestamp(slot_time_list[ii]).format(TIME_FORMAT):
-            slot_energy_kWh[ii]
-            for ii in range(len(slot_energy_kWh))
+    return {from_timestamp(slot_time_list[ii]):
+            energy
+            for ii, energy in enumerate(slot_energy_kWh)
             }
 
 
-def read_profile_csv_to_dict(profile_type: InputProfileTypes,
-                             profile_path: str,
-                             slot_length: duration) -> Dict[str, float]:
-    """
-    Reads power profile from csv and converts it to energy
-    :param profile_path: path of the csv file
-    :param slot_length: slot length duration
-    :return: a mapping from time to energy values in kWh
-    """
-    profile_data = _readCSV(profile_path)
-    if profile_type == InputProfileTypes.IDENTITY:
-        return _fill_gaps_in_rate_profile(profile_data)
-    elif profile_type == InputProfileTypes.POWER:
-        return _calculate_energy_from_power_profile(
-            profile_data, slot_length
-        )
-
-
+# TODO: Do we need this?
 def create_energy_from_power_profile(profile_data_W, slot_length):
     return _calculate_energy_from_power_profile(profile_data_W, slot_length)
 
 
-def _fill_gaps_in_rate_profile(rate_profile_input: Dict) -> Dict:
+def _fill_gaps_in_profile(input_profile: Dict) -> Dict:
     """
     Fills time steps, where no rate is provided, with the rate value of the
     last available time step.
-    :param rate_profile_input: dict(str: float)
+    :param input_profile: dict(str: float)
     :return: continuous rate profile (dict)
     """
 
-    rate_profile = default_profile_dict()
-    current_rate = 0
-    for hour, minute in product(range(24), range(60)):
-        time_str = DateTime(year=2000, month=1, day=1, hour=hour, minute=minute).\
-            format(TIME_FORMAT)
+    out_profile = default_profile_dict()
 
-        if time_str in rate_profile_input.keys():
-            current_rate = rate_profile_input[time_str]
-        rate_profile[time_str] = current_rate
+    if isinstance(list(input_profile.values())[0], tuple):
+        current_val = (0, 0)
+    else:
+        current_val = 0
 
-    return rate_profile
+    for time in out_profile.keys():
+        if time in input_profile.keys():
+            current_val = input_profile[time]
+        out_profile[time] = current_val
+
+    return out_profile
+
+
+def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
+
+    if os.path.isfile(str(input_profile)):
+        # input is csv file
+        profile = _readCSV(input_profile)
+
+    elif isinstance(input_profile, dict) or isinstance(input_profile, str):
+        # input is profile
+
+        if isinstance(input_profile, str):
+            # input in JSON formatting
+            profile = ast.literal_eval(input_profile)
+            # Remove filename entry to support d3a-web profiles
+            profile.pop("filename", None)
+            time_format = _eval_time_format(profile)
+            profile = {from_format(key, time_format): val
+                       for key, val in profile.items()}
+        elif isinstance(list(input_profile.keys())[0], DateTime):
+            return input_profile
+
+        elif isinstance(list(input_profile.keys())[0], str):
+
+            # input is dict with string keys that are properly formatted time stamps
+            time_format = _eval_time_format(input_profile)
+            profile = {from_format(key, time_format): val
+                       for key, val in input_profile.items()}
+
+        elif isinstance(list(input_profile.keys())[0], int) or \
+                isinstance(list(input_profile.keys())[0], float):
+            # input is hourly profile
+
+            profile = dict(
+                (today(tz=TIME_ZONE).add(hours=hour), val)
+                for hour, val in input_profile.items()
+            )
+
+        else:
+            raise TypeError("Unsupported input type : " + str(list(input_profile.keys())[0]))
+
+    elif isinstance(input_profile, int) or \
+            isinstance(input_profile, float) or \
+            isinstance(input_profile, tuple):
+        # input is single value
+        profile = default_profile_dict(val=input_profile)
+
+    else:
+        raise TypeError(f"Unsupported input type: {str(input_profile)}")
+
+    return profile
 
 
 def read_arbitrary_profile(profile_type: InputProfileTypes,
-                           daily_profile,
-                           slot_length=duration()) -> Dict[str, float]:
+                           input_profile) -> Dict[str, float]:
     """
     Reads arbitrary profile.
     Handles csv, dict and string input.
     :param profile_type: Can be either rate or power
-    :param daily_profile: Can be either a csv file path,
+    :param input_profile: Can be either a csv file path,
     or a dict with hourly data (Dict[int, float])
     or a dict with arbitrary time data (Dict[str, float])
     or a string containing a serialized dict of the aforementioned structure
-    :param slot_length: slot length duration
     :return: a mapping from time to energy values in kWh
     """
 
-    if os.path.isfile(str(daily_profile)):
-        return read_profile_csv_to_dict(
-            profile_type,
-            daily_profile,
-            slot_length
-        )
-    elif isinstance(daily_profile, dict) or isinstance(daily_profile, str):
-
-        if isinstance(daily_profile, str):
-            # JSON
-            input_profile = ast.literal_eval(daily_profile)
-            # Remove filename entry to support d3a-web profiles
-            input_profile.pop("filename", None)
-            input_profile = {k: float(v) for k, v in input_profile.items()}
-
-        elif isinstance(list(daily_profile.keys())[0], str):
-            # Assume that the time fields are properly formatted.
-            input_profile = daily_profile
-
-        elif isinstance(list(daily_profile.keys())[0], int) or \
-                isinstance(list(daily_profile.keys())[0], float):
-            # If it is an integer assume an hourly profile
-            input_profile = dict(
-                (DateTime(year=2000, month=1, day=1, hour=hour).
-                 format(TIME_FORMAT), val)
-                for hour, val in daily_profile.items()
-            )
-
-        else:
-            raise TypeError("Unsupported input type : " + str(list(daily_profile.keys())[0]))
-
-    elif isinstance(daily_profile, int) or \
-            isinstance(daily_profile, float) or \
-            isinstance(daily_profile, tuple):
-        input_profile = default_profile_dict()
-        for key in input_profile.keys():
-            input_profile[key] = daily_profile
-
-    else:
-        raise TypeError(f"Unsupported input type: {str(daily_profile)}")
-
+    profile = _read_from_different_sources_todict(input_profile)
     if input_profile is not None:
-        filled_profile = _fill_gaps_in_rate_profile(input_profile)
+        filled_profile = _fill_gaps_in_profile(profile)
         if profile_type == InputProfileTypes.POWER:
-            return _calculate_energy_from_power_profile(
-                filled_profile,
-                slot_length)
+            return _calculate_energy_from_power_profile(filled_profile, GlobalConfig.SLOT_LENGTH)
         else:
             return filled_profile

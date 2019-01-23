@@ -16,21 +16,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import ast
-from pendulum import duration, Duration
+from pendulum import duration, Duration, DateTime, today
 
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import format_interval
 from d3a.models.const import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
+from d3a.d3a_core.util import change_global_config
 
 
 class SimulationConfig:
     def __init__(self, duration: duration, slot_length: duration, tick_length: duration,
                  market_count: int, cloud_coverage: int, iaa_fee: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-                 pv_user_profile=None):
+                 pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE)):
         self.duration = duration
+        self.start_date = start_date
         self.slot_length = slot_length
         self.tick_length = tick_length
         self.market_count = market_count
@@ -45,6 +48,8 @@ class SimulationConfig:
                 self.ticks_per_slot
             ))
         self.total_ticks = self.duration // self.slot_length * self.ticks_per_slot
+
+        change_global_config(**self.__dict__)
 
         self.read_cloud_coverage(cloud_coverage)
         self.read_pv_user_profile(pv_user_profile)
@@ -95,8 +100,7 @@ class SimulationConfig:
         self.pv_user_profile = None \
             if pv_user_profile is None \
             else read_arbitrary_profile(InputProfileTypes.POWER,
-                                        ast.literal_eval(pv_user_profile),
-                                        self.slot_length)
+                                        ast.literal_eval(pv_user_profile))
 
     def read_market_maker_rate(self, market_maker_rate):
         """

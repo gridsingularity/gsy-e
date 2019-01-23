@@ -28,7 +28,6 @@ from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trad
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.const import ConstSettings
-from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 
@@ -134,10 +133,6 @@ class FakeMarket:
     @property
     def time_slot(self):
         return TIME
-
-    @property
-    def time_slot_str(self):
-        return self.time_slot.format(TIME_FORMAT)
 
     def balancing_offer(self, price, energy, seller, market=None):
         offer = BalancingOffer('id', price, energy, seller, market)
