@@ -249,8 +249,8 @@ def read_settings_from_file(settings_file):
             settings = json.load(sf)
         advanced_settings = settings["advanced_settings"]
         simulation_settings = {
-            "duration": IntervalType('H:M')(
-                settings["basic_settings"].get('duration', timedelta(hours=24))),
+            "sim_duration": IntervalType('H:M')(
+                settings["basic_settings"].get('sim_duration', timedelta(hours=24))),
             "slot_length": IntervalType('M:S')(
                 settings["basic_settings"].get('slot_length', timedelta(minutes=15))),
             "tick_length": IntervalType('M:S')(
@@ -298,8 +298,8 @@ def generate_market_slot_list(area):
     """
     market_slots = []
     for slot_time in [
-        GlobalConfig.START_DATE + (area.config.slot_length * i) for i in range(
-            (area.config.duration + (area.config.market_count * area.config.slot_length)) //
+        area.config.start_date + (area.config.slot_length * i) for i in range(
+            (area.config.sim_duration + (area.config.market_count * area.config.slot_length)) //
             area.config.slot_length - 1)]:
         market_slots.append(slot_time)
     return market_slots
@@ -361,8 +361,8 @@ def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
 
 def change_global_config(**kwargs):
     for arg, value in kwargs.items():
-        if hasattr(GlobalConfig, arg.upper()):
-            setattr(GlobalConfig, arg.upper(), value)
+        if hasattr(GlobalConfig, arg):
+            setattr(GlobalConfig, arg, value)
 
 
 def validate_const_settings_for_simulation():

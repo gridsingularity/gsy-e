@@ -39,18 +39,18 @@ class InputProfileTypes(Enum):
 def default_profile_dict(val=None):
     if val is None:
         val = 0
-    if GlobalConfig.DURATION.days > 0:
-        outdict = dict((GlobalConfig.START_DATE.add(days=day, hours=hour, minutes=minute), val)
+    if GlobalConfig.sim_duration.days > 0:
+        outdict = dict((GlobalConfig.start_date.add(days=day, hours=hour, minutes=minute), val)
                        for day, hour, minute in
-                       product(range(GlobalConfig.DURATION.days), range(24), range(60)))
+                       product(range(GlobalConfig.sim_duration.days), range(24), range(60)))
     else:
-        outdict = dict((GlobalConfig.START_DATE.add(hours=hour, minutes=minute), val)
+        outdict = dict((GlobalConfig.start_date.add(hours=hour, minutes=minute), val)
                        for hour, minute in product(range(24), range(60)))
 
-    if GlobalConfig.MARKET_COUNT > 1:
+    if GlobalConfig.market_count > 1:
         # this is for adding data points for the future markets
-        added_market_count_minutes = int((GlobalConfig.MARKET_COUNT - 1) *
-                                         GlobalConfig.SLOT_LENGTH.in_minutes())
+        added_market_count_minutes = int((GlobalConfig.market_count - 1) *
+                                         GlobalConfig.slot_length.in_minutes())
         last_time = from_format(str(sorted(list(outdict.keys()))[-1]), DATE_TIME_FORMAT)
 
         for minute in range(1, added_market_count_minutes+1):
@@ -223,9 +223,9 @@ def _eval_time_period_consensus(input_profile: Dict):
     # Or is this hint enough for the educated user?
 
     input_time_list = list(input_profile.keys())
-    simulation_time_list = [GlobalConfig.START_DATE,
-                            GlobalConfig.START_DATE + GlobalConfig.DURATION
-                            - GlobalConfig.SLOT_LENGTH]
+    simulation_time_list = [GlobalConfig.start_date,
+                            GlobalConfig.start_date + GlobalConfig.sim_duration
+                            - GlobalConfig.slot_length]
     if simulation_time_list[0] < input_time_list[0] or \
             simulation_time_list[-1] > input_time_list[-1]:
         raise ValueError(f"Provided profile is not overlapping with simulation time period "
@@ -256,6 +256,6 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
         filled_profile = _fill_gaps_in_profile(profile)
 
         if profile_type == InputProfileTypes.POWER:
-            return _calculate_energy_from_power_profile(filled_profile, GlobalConfig.SLOT_LENGTH)
+            return _calculate_energy_from_power_profile(filled_profile, GlobalConfig.slot_length)
         else:
             return filled_profile

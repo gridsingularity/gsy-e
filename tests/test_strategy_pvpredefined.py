@@ -18,17 +18,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import pendulum
 import uuid
+import pathlib
 from pendulum import DateTime, duration
 
+from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-from d3a.models.const import ConstSettings
+from d3a.models.const import ConstSettings, GlobalConfig
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
-TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=2)
+TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
 class FakeArea():
@@ -44,6 +47,7 @@ class FakeArea():
 
     @property
     def config(self):
+        change_global_config(**DEFAULT_CONFIG.__dict__)
         return DEFAULT_CONFIG
 
     @property
@@ -303,15 +307,14 @@ def pv_test_cloudy(area_test7):
     p = PVPredefinedStrategy(cloud_coverage=1)
     p.area = area_test7
     p.owner = area_test7
-    p.area.config.slot_length = duration(minutes=20)
     return p
 
 
 def test_power_profiles(pv_test_sunny, pv_test_partial, pv_test_cloudy):
 
-    pv_test_sunny.event_activate()
-    pv_test_partial.event_activate()
-    pv_test_cloudy.event_activate()
+    pv_test_sunny.produced_energy_forecast_kWh()
+    pv_test_partial.produced_energy_forecast_kWh()
+    pv_test_cloudy.produced_energy_forecast_kWh()
 
     assert sum(pv_test_sunny.energy_production_forecast_kWh.values()) > 0
     assert sum(pv_test_partial.energy_production_forecast_kWh.values()) > 0
@@ -320,3 +323,13 @@ def test_power_profiles(pv_test_sunny, pv_test_partial, pv_test_cloudy):
     # checking whether the interpolation is done on the right sampling points
     assert list(pv_test_cloudy.energy_production_forecast_kWh.keys())[1].minute % \
         pv_test_partial.area.config.slot_length.minutes == 0
+
+
+def test_correct_interpolation_power_profile():
+    slot_length = 20
+    GlobalConfig.slot_length = duration(minutes=slot_length)
+    profile_path = pathlib.Path(d3a_path + '/resources/Solar_Curve_W_sunny.csv')
+    profile = read_arbitrary_profile(InputProfileTypes.POWER, str(profile_path))
+    times = list(profile)
+    for ii in range(len(times)-1):
+        assert abs((times[ii]-times[ii+1]).in_seconds()) == slot_length * 60

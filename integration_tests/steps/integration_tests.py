@@ -146,7 +146,7 @@ def pv_profile_scenario(context):
     }
     context._settings = SimulationConfig(tick_length=duration(seconds=15),
                                          slot_length=duration(minutes=15),
-                                         duration=duration(hours=24),
+                                         sim_duration=duration(hours=24),
                                          market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
@@ -195,7 +195,7 @@ def load_profile_scenario(context):
     }
     context._settings = SimulationConfig(tick_length=duration(seconds=15),
                                          slot_length=duration(minutes=15),
-                                         duration=duration(hours=24),
+                                         sim_duration=duration(hours=24),
                                          market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
@@ -516,14 +516,14 @@ def run_sim(context, scenario, start_date, total_duration, slot_length, tick_len
 
 
 @then('we test the output of the simulation of '
-      '{scenario} [{duration}, {slot_length}, {tick_length}]')
-def test_output(context, scenario, duration, slot_length, tick_length):
+      '{scenario} [{sim_duration}, {slot_length}, {tick_length}]')
+def test_output(context, scenario, sim_duration, slot_length, tick_length):
 
     if scenario in ["default_2a", "default_2b", "default_3"]:
         unmatched = export_unmatched_loads(context.simulation.area)
         assert unmatched["unmatched_load_count"] == 0
     # (check if number of last slot is the maximal number of slots):
-    no_of_slots = (int(duration) * 60 / int(slot_length))
+    no_of_slots = (int(sim_duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
     if scenario == "default":
         street1 = list(filter(lambda x: x.name == "Street 1", context.simulation.area.children))[0]

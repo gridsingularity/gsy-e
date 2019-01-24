@@ -28,9 +28,8 @@ class ConstSettings:
         DEFAULT_RISK = 50
         # Max energy price (market maker rate) in ct / kWh
         DEFAULT_MARKET_MAKER_RATE = 30  # 0.3 Eur
-        # Maximum number of area hierarchies. If None, this parameter will be
-        # automatically calculated.
-        MAX_OFFER_TRAVERSAL_LENGTH = None
+        # Number of ticks, an offer needs to be able to travel to reach each part of the setup
+        MAX_OFFER_TRAVERSAL_LENGTH = 6
         # Number of times Market clearing rate has to be calculated per slot
         MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
         ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
@@ -143,13 +142,13 @@ class ConstSettings:
 
 
 class GlobalConfig:
-    START_DATE = today(tz=TIME_ZONE)
-    DURATION = duration(hours=24)
-    MARKET_COUNT = 1
-    SLOT_LENGTH = duration(minutes=15)
-    TICK_LENGTH = duration(seconds=1)
-    TICKS_PER_SLOT = 900
-    TOTAL_TICKS = 86400
-    CLOUD_COVERAGE = ConstSettings.PVSettings.DEFAULT_POWER_PROFILE
-    IAA_FEE = ConstSettings.IAASettings.FEE_PERCENTAGE
-    MARKET_MAKER_RATE = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    start_date = today(tz=TIME_ZONE)
+    sim_duration = duration(hours=24)
+    market_count = 1
+    slot_length = duration(minutes=15)
+    tick_length = duration(seconds=1)
+    ticks_per_slot = 900
+    total_ticks = 86400
+    cloud_coverage = ConstSettings.PVSettings.DEFAULT_POWER_PROFILE
+    iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
+    market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

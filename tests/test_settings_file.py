@@ -33,7 +33,7 @@ class SampleTest(unittest.TestCase):
         update_advanced_settings(advanced_settings)
         simulation_config = SimulationConfig(**simulation_settings)
 
-        assert simulation_config.__getattribute__("duration") == IntervalType('H:M')("24h")
+        assert simulation_config.__getattribute__("sim_duration") == IntervalType('H:M')("24h")
         try:
             for setting in advanced_settings.keys():
                 getattr(ConstSettings, setting)

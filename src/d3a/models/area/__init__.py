@@ -43,13 +43,13 @@ from d3a.models.const import GlobalConfig
 log = getLogger(__name__)
 
 DEFAULT_CONFIG = SimulationConfig(
-    start_date=today(tz=TIME_ZONE),
-    duration=duration(hours=24),
+    sim_duration=duration(hours=24),
     market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-    iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE
+    iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE,
+    start_date=today(tz=TIME_ZONE)
 )
 
 
@@ -230,7 +230,7 @@ class Area:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return GlobalConfig.START_DATE.add(
+        return self.config.start_date.add(
             seconds=self.config.tick_length.seconds * self.current_tick
         )
 

@@ -32,7 +32,7 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
-TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=5)
+TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 MIN_BUY_ENERGY = 50  # wh
 

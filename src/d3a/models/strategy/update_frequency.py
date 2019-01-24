@@ -131,8 +131,8 @@ class OfferUpdateFrequencyMixin:
             self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
 
     def update_on_activate(self):
-        # TODO: Need to refactor once we convert the config object to a singleton that is shared
-        # globally in the simulation
+        # This update of _decrease_price_every_nr_s can only be done after activation as
+        # MAX_OFFER_TRAVERSAL_LENGTH is not known at construction
         self._decrease_price_every_nr_s = \
             (self.area.config.tick_length.seconds *
              ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)

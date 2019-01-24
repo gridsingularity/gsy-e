@@ -94,16 +94,15 @@ class Simulation:
         self._init_events()
 
     def _set_traversal_length(self):
-        if ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH is None:
-            no_of_levels = self._get_setup_levels(self.area) + 1
-            num_ticks_to_propagate = no_of_levels * 2
-            ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
-            time_to_propagate_minutes = num_ticks_to_propagate * \
-                self.simulation_config.tick_length.seconds / 60.
-            log.error("Setup has {} levels, offers/bids need at least {} minutes "
-                      "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
-                                                        ConstSettings.GeneralSettings.
-                                                        MAX_OFFER_TRAVERSAL_LENGTH,))
+        no_of_levels = self._get_setup_levels(self.area) + 1
+        num_ticks_to_propagate = no_of_levels * 2
+        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
+        time_to_propagate_minutes = num_ticks_to_propagate * \
+            self.simulation_config.tick_length.seconds / 60.
+        log.error("Setup has {} levels, offers/bids need at least {} minutes "
+                  "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
+                                                    ConstSettings.GeneralSettings.
+                                                    MAX_OFFER_TRAVERSAL_LENGTH,))
 
     def _get_setup_levels(self, area, level_count=0):
         level_count += 1
@@ -192,7 +191,7 @@ class Simulation:
         self.is_stopped = False
         config = self.simulation_config
         tick_lengths_s = config.tick_length.total_seconds()
-        slot_count = int(config.duration / config.slot_length)
+        slot_count = int(config.sim_duration / config.slot_length)
         while True:
             self.ready.wait()
             self.ready.clear()
@@ -270,7 +269,7 @@ class Simulation:
                             "Run finished in %s%s / %.2fx real time",
                             run_duration,
                             " ({} paused)".format(paused_duration) if paused_duration else "",
-                            config.duration / (run_duration - paused_duration)
+                            config.sim_duration / (run_duration - paused_duration)
                         )
                     if self.export_on_finish:
                         log.error("Exporting simulation data.")
@@ -366,7 +365,7 @@ class Simulation:
         info = self.simulation_config.as_dict()
         slot, tick = divmod(self.area.current_tick, self.simulation_config.ticks_per_slot)
         percent = self.area.current_tick / self.simulation_config.total_ticks * 100
-        slot_count = self.simulation_config.duration // self.simulation_config.slot_length
+        slot_count = self.simulation_config.sim_duration // self.simulation_config.slot_length
         info.update(slot=slot + 1, tick=tick + 1, slot_count=slot_count, percent=percent)
         log.critical(
             "\n"

@@ -77,8 +77,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """
         self._simulation_start_timestamp = self.area.now
         self.hrs_per_day = {day: self._initial_hrs_per_day
-                            for day in range(self.area.config.duration.days + 1)}
-
+                            for day in range(self.area.config.sim_duration.days + 1)}
         for slot_time in generate_market_slot_list(self.area):
             if self._allowed_operating_hours(slot_time.hour):
                 self.energy_requirement_Wh[slot_time] = \

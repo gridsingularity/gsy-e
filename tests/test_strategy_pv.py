@@ -28,7 +28,7 @@ from d3a.models.const import ConstSettings
 from d3a.constants import TIME_FORMAT
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
-TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=2)
+TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
 class FakeArea():

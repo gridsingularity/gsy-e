@@ -28,11 +28,11 @@ from d3a.d3a_core.util import change_global_config
 
 
 class SimulationConfig:
-    def __init__(self, duration: duration, slot_length: duration, tick_length: duration,
+    def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
                  market_count: int, cloud_coverage: int, iaa_fee: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE)):
-        self.duration = duration
+        self.sim_duration = sim_duration
         self.start_date = start_date
         self.slot_length = slot_length
         self.tick_length = tick_length
@@ -47,7 +47,7 @@ class SimulationConfig:
             raise D3AException("Too few ticks per slot ({}). Adjust simulation parameters".format(
                 self.ticks_per_slot
             ))
-        self.total_ticks = self.duration // self.slot_length * self.ticks_per_slot
+        self.total_ticks = self.sim_duration // self.slot_length * self.ticks_per_slot
 
         change_global_config(**self.__dict__)
 
@@ -63,7 +63,7 @@ class SimulationConfig:
     def __repr__(self):
         return (
             "<SimulationConfig("
-            "duration='{s.duration}', "
+            "sim_duration='{s.sim_duration}', "
             "slot_length='{s.slot_length}', "
             "tick_length='{s.tick_length}', "
             "market_count='{s.market_count}', "

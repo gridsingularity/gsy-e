@@ -109,7 +109,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                 InputProfileTypes.IDENTITY, self.area.config.market_maker_rate)
 
         self.hrs_per_day = {day: self._initial_hrs_per_day
-                            for day in range(self.area.config.duration.days + 1)}
+                            for day in range(self.area.config.sim_duration.days + 1)}
         self._simulation_start_timestamp = self.area.now
         self.assign_energy_requirement(self.avg_power_W)
 
@@ -118,7 +118,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         if hrs_per_day is not None or hrs_of_day is not None:
             self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
             self.hrs_per_day = {day: self._initial_hrs_per_day
-                                for day in range(self.area.config.duration.days + 1)}
+                                for day in range(self.area.config.sim_duration.days + 1)}
 
         if avg_power_W is not None:
             self.avg_power_W = avg_power_W

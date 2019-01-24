@@ -1,18 +1,19 @@
 {
  "basic_settings": {
-   "duration": "24h",
+   "sim_duration": "24h",
    "slot_length": "60m",
    "tick_length": "60s",
    "market_count": 1,
    "cloud_coverage": 0,
-   "iaa_fee": 1
+   "iaa_fee": 1,
+  "start_date": "2019-01-01"
  },
   "advanced_settings": {
     "GeneralSettings": {
       "MAX_RISK": 100,
       "DEFAULT_RISK": 50,
       "DEFAULT_MARKET_MAKER_RATE": 30,
-      "MAX_OFFER_TRAVERSAL_LENGTH": null,
+      "MAX_OFFER_TRAVERSAL_LENGTH": 6,
       "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
       "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
       "SETUP_FILE_PATH": null

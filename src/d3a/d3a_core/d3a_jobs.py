@@ -46,7 +46,7 @@ def start(scenario, settings):
         update_advanced_settings(ast.literal_eval(advanced_settings))
 
     config = SimulationConfig(
-        duration=pendulum.duration(
+        sim_duration=pendulum.duration(
             days=1 if 'duration' not in settings else settings['duration'].days
         ),
         slot_length=pendulum.duration(
