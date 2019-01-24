@@ -20,18 +20,23 @@ from pendulum import duration
 from math import isclose
 
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
+from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
 from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 
 
-@then('the DefinedLoadStrategy follows the Load profile provided as csv')
-def check_load_profile_csv(context):
+@then('the DefinedLoadStrategy follows the {single_or_multi} day Load profile provided as csv')
+def check_load_profile_csv(context, single_or_multi):
     from d3a.models.read_user_profile import _readCSV
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load = next(filter(lambda x: x.name == "H1 DefinedLoad", house1.children))
-    input_profile = _readCSV(user_profile_load_csv.profile_path)
+    if single_or_multi == "single":
+        path = user_profile_load_csv.profile_path
+    else:
+        path = user_profile_load_csv_multiday.profile_path
+    input_profile = _readCSV(path)
     desired_energy_Wh = load.strategy.state.desired_energy_Wh
     for timepoint, energy in desired_energy_Wh.items():
-        if timepoint in input_profile:
+        if timepoint in input_profile.keys():
             assert energy == input_profile[timepoint] / \
                    (duration(hours=1) / load.config.slot_length)
         else:

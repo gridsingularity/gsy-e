@@ -24,7 +24,6 @@ from math import isclose
 
 # from d3a.models.area import DEFAULT_CONFIG
 from d3a.constants import TIME_ZONE
-from d3a.models.strategy import ureg, Q_
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.const import ConstSettings
@@ -219,7 +218,7 @@ def test_if_storage_doesnt_buy_30ct(storage_strategy_test2, area_test2):
 
 def test_if_storage_doesnt_buy_above_break_even_point(storage_strategy_test2, area_test2):
     storage_strategy_test2.event_activate()
-    storage_strategy_test2.break_even_buy = Q_(10.0, (ureg.EUR_cents / ureg.kWh))
+    storage_strategy_test2.break_even_buy = 10.0
     area_test2.current_market.offers = {'id': Offer('id', 10.1, 1,
                                                     'FakeArea',
                                                     area_test2.current_market)}

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 """
-create_profile.py -i ./LOAD_DATA_1.csv -o ./LOAD_DATA_1_year.csv
+To create a 5 day Profile, run:
+./create_profile.py -i ./LOAD_DATA_1.csv -o ./LOAD_DATA_1_5d.csv -d 5
 """
 
-from pendulum import from_format, datetime
+from pendulum import from_format, DateTime
 import csv
 import argparse
 
@@ -43,8 +44,8 @@ def create_profile_from_daily_profile(n_days=365, year=2019, daily_profile_fn=No
     profile_dict = {}
     for day in range(1, n_days):
         for time, value in daily_profile_dict.items():
-            profile_dict[datetime(year, 1, 1).add(
-                day - 1, hours=time.hour, minutes=time.minute)] = value
+            profile_dict[DateTime(year, 1, 1).add(
+                days=day - 1, hours=time.hour, minutes=time.minute)] = value
 
     if out_fn is None:
         out_fn = daily_profile_fn.replace(".csv", "_year.csv")

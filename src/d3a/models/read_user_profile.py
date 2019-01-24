@@ -75,29 +75,28 @@ def _eval_time_format(time_dict: Dict):
 def _readCSV(path: str) -> Dict:
     """
     Read a 2-column csv profile file. First column is the time, second column
-    is the value (power, energy ...)
-    :param path: path of the csv file
-    :return: key-value pairs of the time and values
+    is the value (power, energy, rate, ...)
+    :param path: path to csv file
+    :return: Dict[DateTime, value]
     """
     profile_data = {}
     with open(path) as csvfile:
         next(csvfile)
         csv_rows = csv.reader(csvfile, delimiter=';')
         for row in csv_rows:
-            time_str, wattstr = row
-            profile_data[time_str] = float(wattstr)
+            time_str, valstr = row
+            profile_data[time_str] = float(valstr)
     time_format = _eval_time_format(profile_data)
-    # if no date is defined, from_format uses today
-    return dict({(from_format(time_str, time_format, tz=TIME_ZONE), value)
-                 for time_str, value in profile_data.items()})
+    return dict((from_format(time_str, time_format, tz=TIME_ZONE), value)
+                for time_str, value in profile_data.items())
 
 
 def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
-                                         slot_length: duration) -> Dict[str, float]:
+                                         slot_length: duration) -> Dict[DateTime, float]:
     """
     Calculates energy from power profile. Does not use numpy, calculates avg power for each
     market slot and based on that calculates energy.
-    :param profile_data_W: Power profile in W, in the same format as the result of _readCSV
+    :param profile_data_W: Power profile in W
     :param slot_length: slot length duration
     :return: a mapping from time to energy values in kWh
     """
@@ -127,23 +126,17 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
 
     slot_energy_kWh = list(map(lambda x: x / (duration(hours=1) / slot_length), avg_power_kW))
 
-    return {from_timestamp(slot_time_list[ii]):
-            energy
+    return {from_timestamp(slot_time_list[ii]): energy
             for ii, energy in enumerate(slot_energy_kWh)
             }
 
 
-# TODO: Do we need this?
-def create_energy_from_power_profile(profile_data_W, slot_length):
-    return _calculate_energy_from_power_profile(profile_data_W, slot_length)
-
-
-def _fill_gaps_in_profile(input_profile: Dict) -> Dict:
+def _fill_gaps_in_profile(input_profile: Dict=None) -> Dict:
     """
-    Fills time steps, where no rate is provided, with the rate value of the
+    Fills time steps, where no value is provided, with the value value of the
     last available time step.
-    :param input_profile: dict(str: float)
-    :return: continuous rate profile (dict)
+    :param input_profile: Dict[Datetime: float, int, tuple]
+    :return: continuous profile Dict[Datetime: float, int, tuple]
     """
 
     out_profile = default_profile_dict()
@@ -162,10 +155,20 @@ def _fill_gaps_in_profile(input_profile: Dict) -> Dict:
 
 
 def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
+    """
+    Reads arbitrary profile.
+    Handles csv, dict and string input.
+    :param input_profile:Can be either a csv file path,
+    or a dict with hourly data (Dict[int, float])
+    or a dict with arbitrary time data (Dict[str, float])
+    or a string containing a serialized dict of the aforementioned structure
+    :return:
+    """
 
     if os.path.isfile(str(input_profile)):
         # input is csv file
         profile = _readCSV(input_profile)
+        _eval_time_period_consensus(profile)
 
     elif isinstance(input_profile, dict) or isinstance(input_profile, str):
         # input is profile
@@ -182,7 +185,6 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
             return input_profile
 
         elif isinstance(list(input_profile.keys())[0], str):
-
             # input is dict with string keys that are properly formatted time stamps
             time_format = _eval_time_format(input_profile)
             profile = {from_format(key, time_format): val
@@ -212,22 +214,47 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
     return profile
 
 
+def _eval_time_period_consensus(input_profile: Dict):
+    """
+    Checks whether the provided profile is providing information for the simulation time period
+    :return:
+    """
+    # TODO: Shall we implement more sophisticated checks here?
+    # Or is this hint enough for the educated user?
+
+    input_time_list = list(input_profile.keys())
+    simulation_time_list = [GlobalConfig.START_DATE,
+                            GlobalConfig.START_DATE + GlobalConfig.DURATION
+                            - GlobalConfig.SLOT_LENGTH]
+    if simulation_time_list[0] < input_time_list[0] or \
+            simulation_time_list[-1] > input_time_list[-1]:
+        raise ValueError(f"Provided profile is not overlapping with simulation time period "
+                         f"(provided time period: {input_time_list[0].format(DATE_TIME_FORMAT)}, "
+                         f"{input_time_list[-1].format(DATE_TIME_FORMAT)}, "
+                         f"simulation time period: "
+                         f"{simulation_time_list[0].format(DATE_TIME_FORMAT)}, "
+                         f"{simulation_time_list[-1].format(DATE_TIME_FORMAT)})")
+
+
 def read_arbitrary_profile(profile_type: InputProfileTypes,
-                           input_profile) -> Dict[str, float]:
+                           input_profile) -> Dict[DateTime, float]:
     """
     Reads arbitrary profile.
     Handles csv, dict and string input.
+    Fills gaps in the profile.
     :param profile_type: Can be either rate or power
     :param input_profile: Can be either a csv file path,
     or a dict with hourly data (Dict[int, float])
     or a dict with arbitrary time data (Dict[str, float])
     or a string containing a serialized dict of the aforementioned structure
-    :return: a mapping from time to energy values in kWh
+    :return: a mapping from time to profile values
     """
 
     profile = _read_from_different_sources_todict(input_profile)
+
     if input_profile is not None:
         filled_profile = _fill_gaps_in_profile(profile)
+
         if profile_type == InputProfileTypes.POWER:
             return _calculate_energy_from_power_profile(filled_profile, GlobalConfig.SLOT_LENGTH)
         else:

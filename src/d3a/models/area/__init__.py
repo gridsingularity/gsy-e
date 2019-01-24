@@ -38,6 +38,7 @@ from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
+from d3a.models.const import GlobalConfig
 
 log = getLogger(__name__)
 
@@ -193,7 +194,7 @@ class Area:
             return self._config
         if self.parent:
             return self.parent.config
-        return DEFAULT_CONFIG
+        return GlobalConfig
 
     @property
     def bc(self) -> Optional[BlockChainInterface]:
@@ -229,7 +230,7 @@ class Area:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now(tz=TIME_ZONE).start_of('day').add(
+        return GlobalConfig.START_DATE.add(
             seconds=self.config.tick_length.seconds * self.current_tick
         )
 

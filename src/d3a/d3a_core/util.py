@@ -298,7 +298,7 @@ def generate_market_slot_list(area):
     """
     market_slots = []
     for slot_time in [
-        area.now + (area.config.slot_length * i) for i in range(
+        GlobalConfig.START_DATE + (area.config.slot_length * i) for i in range(
             (area.config.duration + (area.config.market_count * area.config.slot_length)) //
             area.config.slot_length - 1)]:
         market_slots.append(slot_time)

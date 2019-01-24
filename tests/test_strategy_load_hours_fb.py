@@ -17,24 +17,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import unittest
-import pendulum
 from unittest.mock import MagicMock, Mock
 from datetime import timedelta
-from pendulum import DateTime
-from pendulum import duration
+from pendulum import DateTime, duration, today
 from math import isclose
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.const import ConstSettings
-from d3a.constants import TIME_ZONE
+from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
-TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=5)
+TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=5)
 
 MIN_BUY_ENERGY = 50  # wh
 
@@ -133,6 +131,10 @@ class FakeMarket:
     @property
     def time_slot(self):
         return TIME
+
+    @property
+    def time_slot_str(self):
+        return self.time_slot.strftime(TIME_FORMAT)
 
     def balancing_offer(self, price, energy, seller, market=None):
         offer = BalancingOffer('id', price, energy, seller, market)

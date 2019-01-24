@@ -80,7 +80,6 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                             for day in range(self.area.config.duration.days + 1)}
 
         for slot_time in generate_market_slot_list(self.area):
-
             if self._allowed_operating_hours(slot_time.hour):
                 self.energy_requirement_Wh[slot_time] = \
                     self.load_profile[slot_time] * 1000

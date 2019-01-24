@@ -20,7 +20,7 @@ import pathlib
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.const import ConstSettings
-from d3a.models.read_user_profile import read_arbitrary_profile, create_energy_from_power_profile
+from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.d3a_core.util import d3a_path
 from typing import Dict
@@ -89,8 +89,8 @@ class PVPredefinedStrategy(PVStrategy):
         """
         if self._power_profile_index is None:
             if self.owner.config.pv_user_profile is not None:
-                return create_energy_from_power_profile(self.area.config.pv_user_profile,
-                                                        self.area.config.slot_length)
+                return read_arbitrary_profile(InputProfileTypes.POWER,
+                                              self.area.config.pv_user_profile)
             else:
                 self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
