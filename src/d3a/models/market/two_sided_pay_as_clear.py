@@ -28,6 +28,8 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                  notification_listener=None, readonly=False):
         super().__init__(time_slot, area, notification_listener, readonly)
         self.state = MarketClearingState()
+        self.cumulative_offers = dict()  # type Dict[Datetime, dict(]
+        self.cumulative_bids = dict()  # type Dict[Datetime, dict(]
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsClear{} bids: {} (E: {} kWh V:{}) " \

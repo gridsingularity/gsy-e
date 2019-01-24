@@ -111,7 +111,7 @@ class ExportAndPlot:
         self.plot_all_unmatched_loads()
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
-
+        self.supply_demand_curve(self.area, self.plot_dir)
         self.move_root_plot_folder()
 
     def move_root_plot_folder(self):
@@ -386,6 +386,43 @@ class ExportAndPlot:
         output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
+    def supply_demand_curve(self, area, subdir):
+        """
+        Wrapper for _supply_demand_curve
+        """
+        new_subdir = os.path.join(subdir, area.slug)
+        self._supply_demand_curve(new_subdir, area)
+        for child in area.children:
+            if child.children:
+                self.supply_demand_curve(child, new_subdir)
+
+    def _supply_demand_curve(self, subdir: str, area: Area):
+        plot_dir = os.path.join(subdir, 'mcp')
+        mkdir_from_str(plot_dir)
+
+        for i in area.past_markets:
+            data = list()
+            for j, k in i.cumulative_offers.items():
+                # print(f"j: {j} & k: {k}")
+                data.append(self._line_plot(k, j))
+            for l, m in i.cumulative_bids.items():
+                data.append(self._line_plot(m, l, False))
+            output_file = os.path.join(plot_dir, f'supply_demand_{i.time_slot_str}.html')
+            if len(data) > 0:
+                BarGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)', 'Rate (ct./kWh)',
+                                         data, output_file)
+
+    def _line_plot(self, data_set, key, supply=True):
+        graph_obj = BarGraph(data_set, key)
+        graph_obj.sd_curve(supply)
+        name = str(key) + '-' + ('supply' if supply else 'demand')
+        print(f"Name: {name}")
+        data_obj = go.Scatter(x=list(graph_obj.energy),
+                              y=list(graph_obj.rate),
+                              mode='lines+markers',
+                              name=name)
+        return data_obj
+
     def plot_avg_trade_price(self, area, subdir):
         """
         Wrapper for _plot_avg_trade_rate
@@ -450,6 +487,46 @@ class BarGraph:
         self.key = key
         self.dataset = dataset
         self.umHours = dict()
+        self.rate = list()
+        self.energy = list()
+
+    def sd_curve(self, supply=True):
+        try:
+            print(f"Dataset: {self.dataset}")
+            print(f"Key: {self.key}")
+            self.p_energy = 0
+            if supply:
+                self.sorted_rate = list(sorted(self.dataset))
+                for i in range(len(self.sorted_rate)):
+                    if i == 0:
+                        self.rate.append(self.sorted_rate[i])
+                        self.rate.append(self.sorted_rate[i])
+                        self.energy.append(0)
+                        self.energy.append(self.dataset[self.sorted_rate[i]])
+                    else:
+                        self.rate.append(self.sorted_rate[i])
+                        self.energy.append(self.dataset[self.sorted_rate[i-1]])
+                        self.rate.append(self.sorted_rate[i])
+                        self.energy.append(self.dataset[self.sorted_rate[i]])
+
+            else:
+                self.sorted_rate = list(sorted(self.dataset))
+                for i in range(len(self.sorted_rate), 0):
+                    if i == len(self.sorted_rate):
+                        self.rate.append(self.sorted_rate[i])
+                        self.rate.append(self.sorted_rate[i])
+                        self.energy.append(0)
+                        self.energy.append(self.dataset[self.sorted_rate[i]])
+                    else:
+                        self.rate.append(self.sorted_rate[i])
+                        self.energy.append(self.dataset[self.sorted_rate[i+1]])
+                        self.rate.append(self.sorted_rate[i])
+                        self.energy.append(self.dataset[self.sorted_rate[i]])
+            print(f"Energy: {self.energy}")
+            print(f"Rate: {self.rate}")
+
+        except KeyError:
+            pass
 
     def graph_value(self, scale_value=1):
         try:
@@ -507,6 +584,25 @@ class BarGraph:
             xaxis=dict(
                 title=xtitle,
                 range=time_range
+            ),
+            font=dict(
+                size=16
+            ),
+            showlegend=True
+        )
+
+        fig = go.Figure(data=data, layout=layout)
+        py.offline.plot(fig, filename=iname, auto_open=False)
+
+    @classmethod
+    def plot_line_graph(cls, title: str, xtitle: str, ytitle: str, data, iname: str):
+        layout = go.Layout(
+            title=title,
+            yaxis=dict(
+                title=ytitle
+            ),
+            xaxis=dict(
+                title=xtitle,
             ),
             font=dict(
                 size=16

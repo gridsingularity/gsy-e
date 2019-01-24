@@ -86,12 +86,15 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             int(max(math.floor(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
                     math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)))
 
-        cumulative_offers = self._smooth_discrete_point_curve(cumulative_offers, max_rate)
-        cumulative_bids = self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
+        self.markets.source.cumulative_offers[self.owner.owner.now] = \
+            self._smooth_discrete_point_curve(cumulative_offers, max_rate)
+        self.markets.source.cumulative_bids[self.owner.owner.now] = \
+            self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
 
         for i in range(1, max_rate+1):
-            if cumulative_offers[i] >= cumulative_bids[i]:
-                return i, cumulative_bids[i]
+            if self.markets.source.cumulative_offers[self.owner.owner.now][i] >= \
+                    self.markets.source.cumulative_bids[self.owner.owner.now][i]:
+                return i, self.markets.source.cumulative_bids[self.owner.owner.now][i]
             else:
                 continue
 
