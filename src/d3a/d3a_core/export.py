@@ -24,6 +24,7 @@ import plotly.graph_objs as go
 import pendulum
 import shutil
 import json
+from sortedcontainers import SortedDict
 
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
@@ -391,6 +392,7 @@ class ExportAndPlot:
         """
         Wrapper for _supply_demand_curve
         """
+        print(f"Subdir: {subdir}")
         new_subdir = os.path.join(subdir, area.slug)
         self._supply_demand_curve(new_subdir, area)
         for child in area.children:
@@ -506,7 +508,6 @@ class BarGraph:
 
     def sd_curve(self, supply=True):
         try:
-            from sortedcontainers import SortedDict
             if supply:
                 sort_values = SortedDict(self.dataset)
                 self.rate = list(sort_values.keys())
