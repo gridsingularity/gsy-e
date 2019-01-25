@@ -31,7 +31,7 @@ from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict
-from d3a.models.state import MarketClearingState
+from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 
 _log = logging.getLogger(__name__)
 
@@ -157,14 +157,14 @@ class ExportAndPlot:
 
     def _export_area_clearing_rate(self, area, directory, file_suffix):
         file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
-        labels = ("slot",) + MarketClearingState._csv_fields()
+        labels = ("slot",) + TwoSidedPayAsClear._csv_fields()
         try:
             with open(file_path, 'w') as csv_file:
                 writer = csv.writer(csv_file)
                 writer.writerow(labels)
                 for market in area.past_markets:
-                    for time, rate in market.state.clearing_rate.items():
-                        row = (market.time_slot, time, rate)
+                    for time, rate in market.clearing.items():
+                        row = (market.time_slot, time, rate[0])
                         writer.writerow(row)
         except OSError:
             _log.exception("Could not export area market_clearing_rate")
@@ -403,20 +403,31 @@ class ExportAndPlot:
         for i in area.past_markets:
             data = list()
             for j, k in i.cumulative_offers.items():
-                # print(f"j: {j} & k: {k}")
-                data.append(self._line_plot(k, j))
+                data.append(self._line_plot(k, j, True))
             for l, m in i.cumulative_bids.items():
                 data.append(self._line_plot(m, l, False))
+            for n, o in i.clearing.items():
+                if len(o) != 0:
+                    data_obj = go.Scatter(x=[0, o[1]],
+                                          y=[o[0], o[0]],
+                                          mode='lines+markers',
+                                          name=str(n) + str('Clearing-Rate'))
+                    data.append(data_obj)
+                    data_obj = go.Scatter(x=[o[1], o[1]],
+                                          y=[0, o[0]],
+                                          mode='lines+markers',
+                                          name=str(n) + str('Clearing-Energy'))
+                    data.append(data_obj)
+
             output_file = os.path.join(plot_dir, f'supply_demand_{i.time_slot_str}.html')
             if len(data) > 0:
                 BarGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)', 'Rate (ct./kWh)',
                                          data, output_file)
 
-    def _line_plot(self, data_set, key, supply=True):
+    def _line_plot(self, data_set, key, supply):
         graph_obj = BarGraph(data_set, key)
         graph_obj.sd_curve(supply)
         name = str(key) + '-' + ('supply' if supply else 'demand')
-        print(f"Name: {name}")
         data_obj = go.Scatter(x=list(graph_obj.energy),
                               y=list(graph_obj.rate),
                               mode='lines+markers',
@@ -489,42 +500,36 @@ class BarGraph:
         self.umHours = dict()
         self.rate = list()
         self.energy = list()
+        self.cond_rate = list()
+        self.cond_energy = list()
 
     def sd_curve(self, supply=True):
         try:
-            print(f"Dataset: {self.dataset}")
-            print(f"Key: {self.key}")
-            self.p_energy = 0
+            from sortedcontainers import SortedDict
             if supply:
-                self.sorted_rate = list(sorted(self.dataset))
-                for i in range(len(self.sorted_rate)):
-                    if i == 0:
-                        self.rate.append(self.sorted_rate[i])
-                        self.rate.append(self.sorted_rate[i])
-                        self.energy.append(0)
-                        self.energy.append(self.dataset[self.sorted_rate[i]])
-                    else:
-                        self.rate.append(self.sorted_rate[i])
-                        self.energy.append(self.dataset[self.sorted_rate[i-1]])
-                        self.rate.append(self.sorted_rate[i])
-                        self.energy.append(self.dataset[self.sorted_rate[i]])
+                sort_values = SortedDict(self.dataset)
+                self.rate = list(sort_values.keys())
+                self.energy = list(sort_values.values())
+            if not supply:
+                sort_values = SortedDict(self.dataset)
+                self.rate = list(reversed(sort_values.keys()))
+                self.energy = list(reversed(sort_values.values()))
 
-            else:
-                self.sorted_rate = list(sorted(self.dataset))
-                for i in range(len(self.sorted_rate), 0):
-                    if i == len(self.sorted_rate):
-                        self.rate.append(self.sorted_rate[i])
-                        self.rate.append(self.sorted_rate[i])
-                        self.energy.append(0)
-                        self.energy.append(self.dataset[self.sorted_rate[i]])
-                    else:
-                        self.rate.append(self.sorted_rate[i])
-                        self.energy.append(self.dataset[self.sorted_rate[i+1]])
-                        self.rate.append(self.sorted_rate[i])
-                        self.energy.append(self.dataset[self.sorted_rate[i]])
-            print(f"Energy: {self.energy}")
-            print(f"Rate: {self.rate}")
-
+            for i in range(len(self.energy)):
+                if i == 0:
+                    self.cond_rate.append(self.rate[0])
+                    self.cond_energy.append(0)
+                    self.cond_rate.append(self.rate[0])
+                    self.cond_energy.append(self.energy[i])
+                else:
+                    self.cond_rate.append(self.rate[i])
+                    self.cond_energy.append(self.energy[i-1])
+                    self.cond_energy.append(self.energy[i])
+                    self.cond_rate.append(self.rate[i])
+            self.rate = list()
+            self.rate = self.cond_rate
+            self.energy = list()
+            self.energy = self.cond_energy
         except KeyError:
             pass
 
@@ -603,6 +608,7 @@ class BarGraph:
             ),
             xaxis=dict(
                 title=xtitle,
+                range=(-1, 10)
             ),
             font=dict(
                 size=16

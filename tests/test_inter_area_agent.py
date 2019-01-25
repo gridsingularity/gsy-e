@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 
 import pendulum
+from collections import defaultdict
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
@@ -36,6 +37,7 @@ class FakeArea:
         self.name = name
         self.current_tick = 10
         self.future_market = None
+        self.now = pendulum.DateTime.now()
 
     @property
     def config(self):
@@ -62,6 +64,9 @@ class FakeMarket:
         self.area = FakeArea("fake_area")
         self.time_slot = pendulum.now(tz=TIME_ZONE)
         self.time_slot_str = self.time_slot.strftime(TIME_FORMAT)
+        self.cumulative_offers = dict()
+        self.cumulative_bids = dict()
+        self.clearing_rate = defaultdict(int)
 
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot

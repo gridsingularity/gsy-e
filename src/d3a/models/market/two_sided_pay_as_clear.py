@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.state import MarketClearingState
+from collections import defaultdict
+
 
 log = getLogger(__name__)
 
@@ -27,9 +28,13 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
     def __init__(self, time_slot=None, area=None,
                  notification_listener=None, readonly=False):
         super().__init__(time_slot, area, notification_listener, readonly)
-        self.state = MarketClearingState()
-        self.cumulative_offers = dict()  # type Dict[Datetime, dict(]
-        self.cumulative_bids = dict()  # type Dict[Datetime, dict(]
+        self.cumulative_offers = dict()  # type Dict[Datetime, dict()]
+        self.cumulative_bids = dict()  # type Dict[Datetime, dict()]
+        self.clearing = defaultdict(int)  # type: Dict[DateTime, tuple()]
+
+    @classmethod
+    def _csv_fields(cls):
+        return 'time', 'rate [ct./kWh]'
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsClear{} bids: {} (E: {} kWh V:{}) " \
