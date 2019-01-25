@@ -111,8 +111,9 @@ class ExportAndPlot:
         self.plot_all_unmatched_loads()
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
-        self.supply_demand_curve(self.area, self.plot_dir)
         self.move_root_plot_folder()
+        if ConstSettings.IAASettings.MARKET_TYPE == 3:
+            self.supply_demand_curve(self.area, self.plot_dir)
 
     def move_root_plot_folder(self):
         """
