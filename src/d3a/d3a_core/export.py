@@ -26,6 +26,7 @@ import shutil
 import json
 from sortedcontainers import SortedDict
 
+
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
@@ -301,6 +302,7 @@ class ExportAndPlot:
 
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
+        print(f"EnergyPlotOutputFileName: {plot_dir}")
         output_file = os.path.join(plot_dir,
                                    'energy_profile_{}.html'.format(market_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
@@ -400,11 +402,10 @@ class ExportAndPlot:
                 self.supply_demand_curve(child, new_subdir)
 
     def _supply_demand_curve(self, subdir: str, area: Area):
-        plot_dir = os.path.join(subdir, 'mcp')
-        mkdir_from_str(plot_dir)
 
         for i in area.past_markets:
             data = list()
+            xmax = 0
             for j, k in i.cumulative_offers.items():
                 data.append(self._line_plot(k, j, True))
             for l, m in i.cumulative_bids.items():
@@ -421,11 +422,14 @@ class ExportAndPlot:
                                           mode='lines+markers',
                                           name=str(n) + str('Clearing-Energy'))
                     data.append(data_obj)
+                    xmax = max(xmax, o[1]) * 3
 
-            output_file = os.path.join(plot_dir, f'supply_demand_{i.time_slot_str}.html')
             if len(data) > 0:
+                plot_dir = os.path.join(self.plot_dir, subdir, 'mcp')
+                mkdir_from_str(plot_dir)
+                output_file = os.path.join(plot_dir, f'supply_demand_{i.time_slot_str}.html')
                 BarGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)', 'Rate (ct./kWh)',
-                                         data, output_file)
+                                         data, output_file, xmax)
 
     def _line_plot(self, data_set, key, supply):
         graph_obj = BarGraph(data_set, key)
@@ -503,8 +507,6 @@ class BarGraph:
         self.umHours = dict()
         self.rate = list()
         self.energy = list()
-        self.cond_rate = list()
-        self.cond_energy = list()
 
     def sd_curve(self, supply=True):
         try:
@@ -517,21 +519,31 @@ class BarGraph:
                 self.rate = list(reversed(sort_values.keys()))
                 self.energy = list(reversed(sort_values.values()))
 
+            cond_rate = list()
+            cond_energy = list()
+
             for i in range(len(self.energy)):
+
+                index = 0
                 if i == 0:
-                    self.cond_rate.append(self.rate[0])
-                    self.cond_energy.append(0)
-                    self.cond_rate.append(self.rate[0])
-                    self.cond_energy.append(self.energy[i])
+                    cond_rate.append(self.rate[0])
+                    cond_energy.append(0)
+                    cond_rate.append(self.rate[0])
+                    cond_energy.append(self.energy[i])
                 else:
-                    self.cond_rate.append(self.rate[i])
-                    self.cond_energy.append(self.energy[i-1])
-                    self.cond_energy.append(self.energy[i])
-                    self.cond_rate.append(self.rate[i])
+                    cond_rate.append(self.rate[i])
+                    if self.energy[i-1] == self.energy[i]:
+                        index = i
+                    cond_energy.append(self.energy[i-1])
+                    cond_energy.append(self.energy[i])
+                    cond_rate.append(self.rate[i])
+            if index is not 0 and supply:
+                cond_energy = cond_energy[:index]
+                cond_rate = cond_rate[:index]
             self.rate = list()
-            self.rate = self.cond_rate
+            self.rate = cond_rate
             self.energy = list()
-            self.energy = self.cond_energy
+            self.energy = cond_energy
         except KeyError:
             pass
 
@@ -602,7 +614,7 @@ class BarGraph:
         py.offline.plot(fig, filename=iname, auto_open=False)
 
     @classmethod
-    def plot_line_graph(cls, title: str, xtitle: str, ytitle: str, data, iname: str):
+    def plot_line_graph(cls, title: str, xtitle: str, ytitle: str, data, iname: str, xmax: int):
         layout = go.Layout(
             title=title,
             yaxis=dict(
@@ -610,7 +622,7 @@ class BarGraph:
             ),
             xaxis=dict(
                 title=xtitle,
-                range=(-1, 10)
+                range=(0, xmax)
             ),
             font=dict(
                 size=16
