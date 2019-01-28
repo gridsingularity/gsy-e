@@ -302,7 +302,6 @@ class ExportAndPlot:
 
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
-        print(f"EnergyPlotOutputFileName: {plot_dir}")
         output_file = os.path.join(plot_dir,
                                    'energy_profile_{}.html'.format(market_name))
         BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
@@ -394,7 +393,6 @@ class ExportAndPlot:
         """
         Wrapper for _supply_demand_curve
         """
-        print(f"Subdir: {subdir}")
         new_subdir = os.path.join(subdir, area.slug)
         self._supply_demand_curve(new_subdir, area)
         for child in area.children:
@@ -524,22 +522,18 @@ class BarGraph:
 
             for i in range(len(self.energy)):
 
-                index = 0
                 if i == 0:
                     cond_rate.append(self.rate[0])
                     cond_energy.append(0)
                     cond_rate.append(self.rate[0])
                     cond_energy.append(self.energy[i])
                 else:
+                    if self.energy[i-1] == self.energy[i] and supply:
+                        continue
                     cond_rate.append(self.rate[i])
-                    if self.energy[i-1] == self.energy[i]:
-                        index = i
                     cond_energy.append(self.energy[i-1])
                     cond_energy.append(self.energy[i])
                     cond_rate.append(self.rate[i])
-            if index is not 0 and supply:
-                cond_energy = cond_energy[:index]
-                cond_rate = cond_rate[:index]
             self.rate = list()
             self.rate = cond_rate
             self.energy = list()
