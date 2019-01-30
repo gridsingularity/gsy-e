@@ -363,6 +363,9 @@ def change_global_config(**kwargs):
     for arg, value in kwargs.items():
         if hasattr(GlobalConfig, arg):
             setattr(GlobalConfig, arg, value)
+        else:
+            # continue, if config setting is not member of GlobalConfig, e.g. pv_user_profile
+            pass
 
 
 def validate_const_settings_for_simulation():

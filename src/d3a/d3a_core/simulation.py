@@ -88,7 +88,6 @@ class Simulation:
         self.run_start = None
         self.paused_time = None
 
-        # change_global_config(**simulation_config.__dict__)
         self._load_setup_module()
         self._init(**self.initial_params)
         self._init_events()

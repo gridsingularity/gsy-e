@@ -9,7 +9,7 @@ Feature: Alternative Pricing
   Scenario Outline: Pricing for alternative pricing is right
     Given we have a scenario named <scenario>
     And d3a is installed
-    When we run the d3a simulation with <scenario> [None, 24, 30, 15]
+    When we run the d3a simulation with <scenario> [24, 30, 15]
     Then average trade rate is the MMR until <time>
     And average trade rate after <time> is <trade_rate>
   Examples: Settings

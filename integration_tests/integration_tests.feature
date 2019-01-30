@@ -18,7 +18,7 @@ Feature: Run integration tests
   Scenario Outline: Run general integration tests for simulation
      Given we have a scenario named <scenario>
      And d3a is installed
-     When we run the d3a simulation with <scenario> [None, <duration>, <slot_length>, <tick_length>]
+     When we run the d3a simulation with <scenario> [<duration>, <slot_length>, <tick_length>]
      Then we test the output of the simulation of <scenario> [<duration>, <slot_length>, <tick_length>]
   Examples: Settings
      | scenario               | duration | slot_length | tick_length |

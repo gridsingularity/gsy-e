@@ -452,29 +452,9 @@ def method_called(context, method):
     assert context.ctrl_callback_call_count == 1
 
 
-@when('we run the d3a simulation with {scenario} [{start_date}, {total_duration}, '
+@when('we run a multi-day d3a simulation with {scenario} [{start_date}, {total_duration}, '
       '{slot_length}, {tick_length}]')
-def run_sim_without_iaa_fee(context, scenario, start_date, total_duration, slot_length,
-                            tick_length):
-    run_sim(context, scenario, start_date, total_duration, slot_length, tick_length,
-            ConstSettings.IAASettings.FEE_PERCENTAGE, market_count=1)
-
-
-@when("we run the simulation with setup file {scenario} with two different market_counts")
-def run_sim_market_count(context, scenario):
-    run_sim(context, scenario, "None", 24, 60, 60, ConstSettings.IAASettings.FEE_PERCENTAGE,
-            market_count=1)
-    context.simulation_1 = context.simulation
-
-    run_sim(context, scenario, "None", 24, 60, 60, ConstSettings.IAASettings.FEE_PERCENTAGE,
-            market_count=4)
-    context.simulation_4 = context.simulation
-
-
-@when('we run the simulation with setup file {scenario} and parameters '
-      '[{start_date},{total_duration}, {slot_length}, {tick_length}, {iaa_fee}, {market_count}]')
-def run_sim(context, scenario, start_date, total_duration, slot_length, tick_length, iaa_fee,
-            market_count):
+def run_sim_multiday(context, scenario, start_date, total_duration, slot_length, tick_length):
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.CRITICAL)
@@ -486,11 +466,67 @@ def run_sim(context, scenario, start_date, total_duration, slot_length, tick_len
     simulation_config = SimulationConfig(duration(hours=int(total_duration)),
                                          duration(minutes=int(slot_length)),
                                          duration(seconds=int(tick_length)),
+                                         market_count=1,
+                                         cloud_coverage=0,
+                                         market_maker_rate=30,
+                                         iaa_fee=1,
+                                         start_date=start_date)
+
+    slowdown = 0
+    seed = 0
+    paused = False
+    pause_after = duration()
+    repl = False
+    no_export = True
+    export_path = None
+    export_subdir = None
+    context.simulation = Simulation(
+        scenario,
+        simulation_config,
+        slowdown,
+        seed,
+        paused,
+        pause_after,
+        repl,
+        no_export,
+        export_path,
+        export_subdir,
+    )
+    context.simulation.run()
+
+
+@when('we run the d3a simulation with {scenario} [{total_duration}, {slot_length}, {tick_length}]')
+def run_sim_without_iaa_fee(context, scenario, total_duration, slot_length, tick_length):
+    run_sim(context, scenario, total_duration, slot_length, tick_length,
+            ConstSettings.IAASettings.FEE_PERCENTAGE, market_count=1)
+
+
+@when("we run the simulation with setup file {scenario} with two different market_counts")
+def run_sim_market_count(context, scenario):
+    run_sim(context, scenario, 24, 60, 60, ConstSettings.IAASettings.FEE_PERCENTAGE,
+            market_count=1)
+    context.simulation_1 = context.simulation
+
+    run_sim(context, scenario, 24, 60, 60, ConstSettings.IAASettings.FEE_PERCENTAGE,
+            market_count=4)
+    context.simulation_4 = context.simulation
+
+
+@when('we run the simulation with setup file {scenario} and parameters '
+      '[{total_duration}, {slot_length}, {tick_length}, {iaa_fee}, {market_count}]')
+def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee,
+            market_count):
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.CRITICAL)
+
+    simulation_config = SimulationConfig(duration(hours=int(total_duration)),
+                                         duration(minutes=int(slot_length)),
+                                         duration(seconds=int(tick_length)),
                                          market_count=int(market_count),
                                          cloud_coverage=0,
                                          market_maker_rate=30,
-                                         iaa_fee=int(iaa_fee),
-                                         start_date=start_date)
+                                         iaa_fee=int(iaa_fee))
 
     slowdown = 0
     seed = 0
@@ -601,7 +637,6 @@ def check_pv_profile_csv(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
     input_profile = _readCSV(context._device_profile)
-    # today_str = str(today(tz=TIME_ZONE).format(DATE_FORMAT))
     produced_energy = {from_format(f'{TODAY_STR}T{k.hour:02}:{k.minute:02}', DATE_TIME_FORMAT): v
                        for k, v in pv.strategy.energy_production_forecast_kWh.items()
                        }
