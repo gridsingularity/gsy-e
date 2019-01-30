@@ -20,8 +20,8 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.d3a_core.sim_results.area_statistics import _is_house_node, \
-    _is_load_node, _is_prosumer_node
+from d3a.d3a_core.sim_results.area_statistics import _is_load_node, \
+    _is_prosumer_node, _is_producer_node
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
@@ -246,48 +246,94 @@ class KPI:
                     if trade.buyer is child.name:
                         self._total_energy += trade.offer.energy
 
-    def _export_house_pv_self_consumption(self, area):
-        house_pv_device = list()
-        house_load_device = list()
-        trade_by_pv = 0
-        total_energy_bought = 0
-        traded_from_pv = 0
-        if not _is_house_node(area):
-            return
+    def _export_area_sufficiency(self, area):
+        area_pv_device = list()
+        area_load_device = list()
+        area_ess_device = list()
+        area_producer_device = list()
+        pv_based_ess_energy = 0  # charge-> + ; discharge-> -
+        self_charged_ess_energy = 0  # charge-> + ; discharge-> -
+
         for child in area.children:
             if isinstance(child.strategy, PVStrategy):
-                house_pv_device.append(child.name)
-            elif _is_load_node(child) or _is_prosumer_node(child):
-                house_load_device.append(child.name)
+                area_pv_device.append(child.name)
+            if _is_load_node(child):
+                area_load_device.append(child.name)
+            if _is_prosumer_node(child):
+                area_ess_device.append(child.name)
+            if _is_producer_node(child):
+                area_producer_device.append(child.name)
 
-        for markets in area.past_markets:
-            for trade in markets.trades:
+        # print(f"AreaPV: {area_pv_device}")
+        # print(f"AreaProducer: {area_producer_device}")
+        # print(f"AreaLoad: {area_load_device}")
+        # print(f"AreaESS: {area_ess_device}")
+
+        self_consumption = list()
+        self_sufficiency = list()
+
+        for market in area.past_markets:
+            trade_by_pv = 0
+            total_energy_bought = 0
+            traded_from_pv = 0
+            self_consumed = 0
+            energy_produced = 0
+
+            for trade in market.trades:
                 # Total Electricity traded by house device
-                if trade.buyer in house_load_device:
+                if trade.buyer in area_load_device:
                     total_energy_bought += trade.offer.energy
+                # Electricity produced
+                if trade.offer.seller in area_pv_device:
+                    energy_produced += trade.offer.energy
                 # Electricity produced by PV
-                if trade.offer.seller in house_pv_device:
+                if trade.offer.seller in area_pv_device:
                     trade_by_pv += trade.offer.energy
+                # Producer electricity self_consumption
+                if trade.offer.seller in area_producer_device and \
+                        trade.buyer in area_load_device:
+                    self_consumed += trade.offer.energy
                 # PV electricity self_consumption
-                if trade.offer.seller in house_pv_device and trade.buyer in house_load_device:
+                if trade.offer.seller in area_pv_device and trade.buyer in area_load_device:
+                    traded_from_pv += trade.offer.energy
+                # self_charging
+                if trade.offer.seller in area_producer_device and trade.buyer in area_ess_device:
+                    self_charged_ess_energy += trade.offer.energy
+                # discharging
+                if trade.offer.seller in area_ess_device and trade.buyer in area_load_device and \
+                        pv_based_ess_energy > 0:
+                    self_charged_ess_energy -= trade.offer.energy
+                    self_consumed += trade.offer.energy
+
+                # PV electricity self_charging
+                if trade.offer.seller in area_pv_device and trade.buyer in area_ess_device:
+                    pv_based_ess_energy += trade.offer.energy
+                # PV electricity discharging
+                if trade.offer.seller in area_ess_device and trade.buyer in area_load_device and \
+                        pv_based_ess_energy > 0:
+                    pv_based_ess_energy -= trade.offer.energy
                     traded_from_pv += trade.offer.energy
 
-        if trade_by_pv != 0:
-            self_consumption_within_house = traded_from_pv / trade_by_pv
-        else:
-            self_consumption_within_house = 0
-        if total_energy_bought != 0:
-            self_sufficiency = traded_from_pv / total_energy_bought
-        else:
-            self_sufficiency = 0
+            # calculating for each market
+            if energy_produced != 0:
+                self_consumption.append(self_consumed / energy_produced)
+                # print(f"self_consumption: {self_consumption} & area: {area}")
+            if total_energy_bought != 0:
+                self_sufficiency.append(traded_from_pv / total_energy_bought)
+                # print(f"self_sufficiency: {self_sufficiency} & area: {area}")
 
-        return {"self_consumption_within_house": self_consumption_within_house,
+        self_consumption = (sum(self_consumption) / len(self_consumption)
+                            if len(self_consumption) > 0 else 0)
+        self_sufficiency = (sum(self_sufficiency) / len(self_sufficiency)
+                            if len(self_sufficiency) > 0 else 0)
+
+        return {"self_consumption": self_consumption,
                 "self_sufficiency": self_sufficiency}
 
     def update_kpis_from_area(self, area):
         self._accumulated_trade_energy(area)
         self.performance_index[area.name] = \
-            self._export_house_pv_self_consumption(area)
+            self._export_area_sufficiency(area)
         if self._total_energy is not 0:
             cep_share = self._cep_energy / self._total_energy
         else:
