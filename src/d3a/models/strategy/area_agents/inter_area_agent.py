@@ -44,7 +44,7 @@ class InterAreaAgent(BaseStrategy):
                         transfer_fee_pct, self),
         ]
 
-        self.time_slot = higher_market.time_slot.strftime(TIME_FORMAT)
+        self.time_slot = higher_market.time_slot.format(TIME_FORMAT)
 
         # serialization parameters
         self.higher_market = higher_market

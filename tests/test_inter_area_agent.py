@@ -61,7 +61,7 @@ class FakeMarket:
         self.calls_bids_price = []
         self.area = FakeArea("fake_area")
         self.time_slot = pendulum.now(tz=TIME_ZONE)
-        self.time_slot_str = self.time_slot.strftime(TIME_FORMAT)
+        self.time_slot_str = self.time_slot.format(TIME_FORMAT)
 
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot

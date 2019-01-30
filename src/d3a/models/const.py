@@ -16,6 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from pendulum import today, duration
+from d3a.constants import TIME_ZONE
+
 
 class ConstSettings:
     class GeneralSettings:
@@ -25,9 +28,8 @@ class ConstSettings:
         DEFAULT_RISK = 50
         # Max energy price (market maker rate) in ct / kWh
         DEFAULT_MARKET_MAKER_RATE = 30  # 0.3 Eur
-        # Maximum number of area hierarchies. If None, this parameter will be
-        # automatically calculated.
-        MAX_OFFER_TRAVERSAL_LENGTH = None
+        # Number of ticks, an offer needs to be able to travel to reach each part of the setup
+        MAX_OFFER_TRAVERSAL_LENGTH = 6
         # Number of times Market clearing rate has to be calculated per slot
         MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
         ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
@@ -137,3 +139,16 @@ class ConstSettings:
         OFFER_SUPPLY_RATIO = 0.1
         # Adds flexible load support.
         FLEXIBLE_LOADS_SUPPORT = True
+
+
+class GlobalConfig:
+    start_date = today(tz=TIME_ZONE)
+    sim_duration = duration(hours=24)
+    market_count = 1
+    slot_length = duration(minutes=15)
+    tick_length = duration(seconds=1)
+    ticks_per_slot = 900
+    total_ticks = 86400
+    cloud_coverage = ConstSettings.PVSettings.DEFAULT_POWER_PROFILE
+    iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
+    market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

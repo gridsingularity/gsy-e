@@ -17,7 +17,14 @@ Feature: Load Tests
     Given we have a scenario named strategy_tests/user_profile_load_csv
     And d3a is installed
     When we run the d3a simulation with strategy_tests.user_profile_load_csv [24, 15, 15]
-    Then the DefinedLoadStrategy follows the Load profile provided as csv
+    Then the DefinedLoadStrategy follows the single day Load profile provided as csv
+    And load only accepted offers lower than final_buying_rate
+
+  Scenario: DefinedLoadStrategy trades energy based on a multiday csv profile
+    Given we have a scenario named strategy_tests/user_profile_load_csv_multiday
+    And d3a is installed
+    When we run a multi-day d3a simulation with strategy_tests.user_profile_load_csv_multiday [2019-01-01, 48, 15, 15]
+    Then the DefinedLoadStrategy follows the multi day Load profile provided as csv
     And load only accepted offers lower than final_buying_rate
 
   Scenario: LoadHoursStrategy buys energy in the rate range provided by the user as dict profile

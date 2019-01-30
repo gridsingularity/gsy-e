@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, DateTime
+from pendulum import duration, DateTime, today
 from collections import OrderedDict
 from unittest.mock import MagicMock
 import unittest
@@ -27,6 +27,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a.models.const import ConstSettings
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 
@@ -46,6 +47,7 @@ class TestAreaClass(unittest.TestCase):
         self.config = MagicMock(spec=SimulationConfig)
         self.config.slot_length = duration(minutes=15)
         self.config.tick_length = duration(seconds=15)
+        self.config.start_date = today(tz=TIME_ZONE)
         self.area = Area("test_area", None, self.strategy, self.appliance, self.config, None)
         self.area.parent = self.area
         self.area.children = [self.area]

@@ -23,10 +23,10 @@ def export_default_settings_to_json_file():
     from d3a.d3a_core.util import d3a_path
     from d3a.d3a_core.util import constsettings_to_dict
 
-    base_settings_str = '{ \n "basic_settings": { \n   "duration": "24h", \n   ' \
+    base_settings_str = '{ \n "basic_settings": { \n   "sim_duration": "24h", \n   ' \
                         '"slot_length": "60m", \n   "tick_length": "60s", \n   ' \
                         '"market_count": 1, \n   "cloud_coverage": 0, \n   ' \
-                        '"iaa_fee": 1 \n },'
+                        '"iaa_fee": 1, \n  "start_date": "2019-01-01"\n },'
     constsettings_str = json.dumps({"advanced_settings": constsettings_to_dict()}, indent=2)
     settings_filename = os.path.join(d3a_path, "setup", "d3a-settings.json")
     with open(settings_filename, "w") as settings_file:
