@@ -271,13 +271,13 @@ class KPI:
 
         self_consumption = list()
         self_sufficiency = list()
+        trade_by_pv = 0
+        total_energy_bought = 0
+        traded_from_pv = 0
+        self_consumed = 0
+        energy_produced = 0
 
         for market in area.past_markets:
-            trade_by_pv = 0
-            total_energy_bought = 0
-            traded_from_pv = 0
-            self_consumed = 0
-            energy_produced = 0
 
             for trade in market.trades:
                 # Total Electricity traded by house device
@@ -314,18 +314,10 @@ class KPI:
                     pv_based_ess_energy -= trade.offer.energy
                     traded_from_pv += trade.offer.energy
 
-            # calculating for each market
-            if energy_produced != 0:
-                self_consumption.append(self_consumed / energy_produced)
-                # print(f"self_consumption: {self_consumption} & area: {area}")
-            if total_energy_bought != 0:
-                self_sufficiency.append(traded_from_pv / total_energy_bought)
-                # print(f"self_sufficiency: {self_sufficiency} & area: {area}")
-
-        self_consumption = (sum(self_consumption) / len(self_consumption)
-                            if len(self_consumption) > 0 else 0)
-        self_sufficiency = (sum(self_sufficiency) / len(self_sufficiency)
-                            if len(self_sufficiency) > 0 else 0)
+            self_consumption = (self_consumed / energy_produced
+                                if energy_produced > 0 else 0)
+            self_sufficiency = (traded_from_pv / total_energy_bought
+                                if total_energy_bought > 0 else 0)
 
         return {"self_consumption": self_consumption,
                 "self_sufficiency": self_sufficiency}
