@@ -46,7 +46,7 @@ def start(scenario, settings):
         update_advanced_settings(ast.literal_eval(advanced_settings))
 
     config = SimulationConfig(
-        duration=pendulum.duration(
+        sim_duration=pendulum.duration(
             days=1 if 'duration' not in settings else settings['duration'].days
         ),
         slot_length=pendulum.duration(
@@ -70,9 +70,8 @@ def start(scenario, settings):
         scenario_name = 'json_arg'
         config.area = scenario
 
-    kwargs = {"no_export": True}
-    run_simulation(pricing_scheme=0,
-                   setup_module_name=scenario_name,
+    kwargs = {"no_export": True, "pricing_scheme": 0}
+    run_simulation(setup_module_name=scenario_name,
                    simulation_config=config,
                    slowdown=settings.get('slowdown', 0),
                    redis_job_id=job.id,

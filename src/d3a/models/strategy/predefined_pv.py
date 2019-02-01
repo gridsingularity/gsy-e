@@ -17,13 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from d3a.constants import TIME_FORMAT, PENDULUM_TIME_FORMAT
+from pendulum import DateTime
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.const import ConstSettings
-from d3a.models.read_user_profile import read_profile_csv_to_dict, read_arbitrary_profile, \
-    create_energy_from_power_profile
-from d3a.models.read_user_profile import InputProfileTypes
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.util import d3a_path
 from typing import Dict
 
@@ -66,7 +64,6 @@ class PVPredefinedStrategy(PVStrategy):
                          max_panel_power_W=max_panel_power_W
                          )
         self._power_profile_index = cloud_coverage
-        self._time_format = TIME_FORMAT
 
     def produced_energy_forecast_kWh(self):
         # TODO: Need to have 2-stage initialization as well, because the area objects are not
@@ -80,11 +77,11 @@ class PVPredefinedStrategy(PVStrategy):
 
         for slot_time in generate_market_slot_list(self.area):
             self.energy_production_forecast_kWh[slot_time] = \
-                data[slot_time.format(PENDULUM_TIME_FORMAT)] * self.panel_count
+                data[slot_time] * self.panel_count
             self.state.available_energy_kWh[slot_time] = \
                 self.energy_production_forecast_kWh[slot_time]
 
-    def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
+    def _read_predefined_profile_for_pv(self) -> Dict[DateTime, float]:
         """
         Reads profile data from the predefined power profiles. Reads config and constructor
         parameters and selects the appropriate predefined profile.
@@ -92,8 +89,8 @@ class PVPredefinedStrategy(PVStrategy):
         """
         if self._power_profile_index is None:
             if self.owner.config.pv_user_profile is not None:
-                return create_energy_from_power_profile(self.area.config.pv_user_profile,
-                                                        self.area.config.slot_length)
+                return read_arbitrary_profile(InputProfileTypes.POWER,
+                                              self.area.config.pv_user_profile)
             else:
                 self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
@@ -106,9 +103,8 @@ class PVPredefinedStrategy(PVStrategy):
             raise ValueError("Energy_profile has to be in [0,1,2]")
 
         # Populate energy production forecast data
-        return read_profile_csv_to_dict(
-            InputProfileTypes.POWER, str(profile_path),
-            self.area.config.slot_length)
+        return read_arbitrary_profile(
+            InputProfileTypes.POWER, str(profile_path))
 
 
 class PVUserProfileStrategy(PVPredefinedStrategy):
@@ -146,14 +142,12 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                          max_panel_power_W=max_panel_power_W
                          )
         self._power_profile_W = power_profile
-        self._time_format = TIME_FORMAT
 
-    def _read_predefined_profile_for_pv(self) -> Dict[str, float]:
+    def _read_predefined_profile_for_pv(self) -> Dict[DateTime, float]:
         """
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
         return read_arbitrary_profile(
             InputProfileTypes.POWER,
-            self._power_profile_W,
-            slot_length=self.area.config.slot_length)
+            self._power_profile_W)

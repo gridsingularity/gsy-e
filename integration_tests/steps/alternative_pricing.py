@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
+from d3a import limit_float_precision
 
 
 def get_trade_rates_house1(context):
@@ -32,7 +33,7 @@ def get_trade_rates_house1(context):
 def average_trade_rate_mmr_time(context, time):
     trade_rates = get_trade_rates_house1(context)
     assert all([isclose(
-        context.simulation.simulation_config.market_maker_rate[tt[0].time_slot_str], tt[1])
+        context.simulation.simulation_config.market_maker_rate[tt[0].time_slot], tt[1])
                 for tt in trade_rates
                 if tt[0].time_slot.hour < int(time)])
 
@@ -40,6 +41,6 @@ def average_trade_rate_mmr_time(context, time):
 @then('average trade rate after {time} is {trade_rate}')
 def average_trade_rate_rate_time(context, time, trade_rate):
     trade_rates = get_trade_rates_house1(context)
-    assert all([isclose(float(trade_rate), tt[1])
+    assert all([limit_float_precision(float(trade_rate)-tt[1]) == 0.
                 for tt in trade_rates
                 if tt[0].time_slot.hour > int(time)])

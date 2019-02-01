@@ -205,14 +205,14 @@ def trades_on_all_markets_max_load_rate(context):
         assert len(market.trades) == 1
         assert all(t.seller == "Commercial Energy Producer" for t in market.trades)
         assert all(t.buyer == "IAA House 1" for t in market.trades)
-        assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot_str])
+        assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot])
                    for t in market.trades)
 
     for market in house1.past_markets:
         assert len(market.trades) == 1
         assert all(t.seller == "IAA House 1" for t in market.trades)
         assert all(t.buyer == "H1 General Load" for t in market.trades)
-        assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot_str])
+        assert all(isclose(t.offer.price / t.offer.energy, max_rate[market.time_slot])
                    for t in market.trades)
 
 

@@ -20,6 +20,7 @@ from collections import defaultdict
 import pytest
 from unittest.mock import MagicMock
 
+from d3a.d3a_core.util import change_global_config
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import DEFAULT_CONFIG
@@ -98,6 +99,7 @@ class FakeArea:
 
     @property
     def config(self):
+        change_global_config(**DEFAULT_CONFIG.__dict__)
         return DEFAULT_CONFIG
 
     @property

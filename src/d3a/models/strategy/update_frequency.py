@@ -60,7 +60,7 @@ class BidUpdateFrequencyMixin:
             return None
         return self.post_bid(
             market,
-            energy_Wh * self._initial_rate_profile[market.time_slot_str] / 1000.0,
+            energy_Wh * self._initial_rate_profile[market.time_slot] / 1000.0,
             energy_Wh / 1000.0
         )
 
@@ -100,9 +100,9 @@ class BidUpdateFrequencyMixin:
         total_ticks = (self.area.config.ticks_per_slot -
                        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH)
         percentage_of_rate = max(min(current_tick / total_ticks, 1.0), 0.0)
-        rate_range = self._final_rate_profile[market.time_slot_str] - \
-            self._initial_rate_profile[market.time_slot_str]
-        return rate_range * percentage_of_rate + self._initial_rate_profile[market.time_slot_str]
+        rate_range = self._final_rate_profile[market.time_slot] - \
+            self._initial_rate_profile[market.time_slot]
+        return rate_range * percentage_of_rate + self._initial_rate_profile[market.time_slot]
 
 
 class OfferUpdateFrequencyMixin:
@@ -131,8 +131,8 @@ class OfferUpdateFrequencyMixin:
             self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
 
     def update_on_activate(self):
-        # TODO: Need to refactor once we convert the config object to a singleton that is shared
-        # globally in the simulation
+        # This update of _decrease_price_every_nr_s can only be done after activation as
+        # MAX_OFFER_TRAVERSAL_LENGTH is not known at construction
         self._decrease_price_every_nr_s = \
             (self.area.config.tick_length.seconds *
              ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
@@ -186,7 +186,7 @@ class OfferUpdateFrequencyMixin:
     def _calculate_price_decrease_rate(self, market):
         if self.energy_rate_decrease_option is \
                 RateDecreaseOption.PERCENTAGE_BASED_ENERGY_RATE_DECREASE:
-            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot_str) * \
+            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot) * \
                                  (1 - self.risk/ConstSettings.GeneralSettings.MAX_RISK)
             price_updates_per_slot = int(self.area.config.slot_length.seconds
                                          / self._decrease_price_every_nr_s)
@@ -215,7 +215,7 @@ class OfferUpdateFrequencyMixin:
                 iterated_market.delete_offer(offer.id)
 
                 new_offer = iterated_market.offer(
-                    offer.energy * self.calculate_initial_sell_rate(iterated_market.time_slot_str),
+                    offer.energy * self.calculate_initial_sell_rate(iterated_market.time_slot),
                     offer.energy,
                     self.owner.name
                 )
@@ -229,10 +229,10 @@ class OfferUpdateFrequencyMixin:
                 self.initial_selling_rate = 0
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                 self.initial_selling_rate = \
-                    self.area.config.market_maker_rate[market.time_slot_str] * \
+                    self.area.config.market_maker_rate[market.time_slot] * \
                     ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / 100
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                 self.initial_selling_rate = \
-                    self.area.config.market_maker_rate[market.time_slot_str]
+                    self.area.config.market_maker_rate[market.time_slot]
             else:
                 raise MarketException
