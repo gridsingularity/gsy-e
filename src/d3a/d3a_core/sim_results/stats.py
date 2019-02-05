@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.d3a_core.sim_results.area_statistics import get_area_type_string
+from d3a.models.market.market_structures import Offer
 
 
 def recursive_current_markets(area):
@@ -68,13 +69,16 @@ def energy_bills(area, past_market_types, from_slot=None, to_slot=None):
         if (from_slot is None or slot >= from_slot) and (to_slot is None or slot < to_slot):
             for trade in market.trades:
                 buyer = area_name_from_area_or_iaa_name(trade.buyer)
-                seller = area_name_from_area_or_iaa_name(trade.offer.seller)
+                seller = area_name_from_area_or_iaa_name(trade.offer.seller) \
+                    if type(trade.offer) == Offer \
+                    else area_name_from_area_or_iaa_name(trade.seller)
                 if buyer in result:
                     result[buyer]['bought'] += trade.offer.energy
                     result[buyer]['spent'] += trade.offer.price
                 if seller in result:
                     result[seller]['sold'] += trade.offer.energy
                     result[seller]['earned'] += trade.offer.price
+
     for child in area.children:
         child_result = energy_bills(child, past_market_types, from_slot, to_slot)
         if child_result is not None:
