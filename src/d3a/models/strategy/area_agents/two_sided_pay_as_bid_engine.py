@@ -97,13 +97,14 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                                     energy=selected_energy,
                                     price_drop=True)
             self._delete_forwarded_offer_entries(offer)
-
-            self.markets.source.accept_bid(bid,
-                                           selected_energy,
-                                           seller=bid.seller,
-                                           buyer=bid.buyer,
-                                           already_tracked=True,
-                                           price_drop=True)
+            t = self.markets.source.accept_bid(bid,
+                                               selected_energy,
+                                               seller=bid.seller,
+                                               buyer=bid.buyer,
+                                               already_tracked=True,
+                                               price_drop=True)
+            if t.residual is None:
+                self._delete_forwarded_bid_entries(bid)
 
     def tick(self, *, area):
         super().tick(area=area)
@@ -128,8 +129,11 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 source_price = bid_trade.offer.price
                 # Drop the rate of the trade bid according to IAA fee
                 source_price = source_price / (1 + (self.transfer_fee_pct / 100))
+
+            updated_bid = Bid(bid_info.source_bid.id, source_price, bid_trade.offer.energy,
+                              bid_info.source_bid.buyer, bid_info.source_bid.seller)
             self.markets.source.accept_bid(
-                bid_info.source_bid._replace(price=source_price, energy=bid_trade.offer.energy),
+                updated_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False
