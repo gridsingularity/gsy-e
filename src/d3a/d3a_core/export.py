@@ -25,7 +25,7 @@ import pendulum
 import shutil
 import json
 from sortedcontainers import SortedDict
-
+from d3a.constants import DATE_TIME_FORMAT
 
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
@@ -408,6 +408,10 @@ class ExportAndPlot:
                 data.append(PlotlyGraph._line_plot(supply_curve, time_slot, True))
             for time_slot, demand_curve in past_market.state.cumulative_bids.items():
                 data.append(PlotlyGraph._line_plot(demand_curve, time_slot, False))
+
+            if len(data) == 0:
+                return
+
             for time_slot, clearing_point in past_market.state.clearing.items():
                 # clearing_point[0] --> Clearing-Rate
                 # clearing_point[1] --> Clearing-Energy
@@ -416,23 +420,24 @@ class ExportAndPlot:
                                           y=[clearing_point[0], clearing_point[0]],
                                           mode='lines+markers',
                                           line=dict(width=5),
-                                          name=str(time_slot) + str('Clearing-Rate'))
+                                          name=time_slot.format(DATE_TIME_FORMAT +
+                                                                ' Clearing-Rate'))
                     data.append(data_obj)
                     data_obj = go.Scatter(x=[clearing_point[1], clearing_point[1]],
                                           y=[0, clearing_point[0]],
                                           mode='lines+markers',
                                           line=dict(width=5),
-                                          name=str(time_slot) + str('Clearing-Energy'))
+                                          name=time_slot.format(DATE_TIME_FORMAT +
+                                                                'Clearing-Energy'))
                     data.append(data_obj)
                     xmax = max(xmax, clearing_point[1]) * 3
 
-            if len(data) > 0:
-                plot_dir = os.path.join(self.plot_dir, subdir, 'mcp')
-                mkdir_from_str(plot_dir)
-                output_file = os.path.join(plot_dir,
-                                           f'supply_demand_{past_market.time_slot_str}.html')
-                PlotlyGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)',
-                                            'Rate (ct./kWh)', data, output_file, xmax)
+            plot_dir = os.path.join(self.plot_dir, subdir, 'mcp')
+            mkdir_from_str(plot_dir)
+            output_file = os.path.join(plot_dir,
+                                       f'supply_demand_{past_market.time_slot_str}.html')
+            PlotlyGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)',
+                                        'Rate (ct./kWh)', data, output_file, xmax)
 
     def plot_avg_trade_price(self, area, subdir):
         """
@@ -514,38 +519,35 @@ class PlotlyGraph:
         return data_obj
 
     def supply_demand_curve(self, supply=True):
-        try:
-            sort_values = SortedDict(self.dataset)
-            if supply:
-                self.rate = list(sort_values.keys())
-                self.energy = list(sort_values.values())
+        sort_values = SortedDict(self.dataset)
+        if supply:
+            self.rate = list(sort_values.keys())
+            self.energy = list(sort_values.values())
+        else:
+            self.rate = list(reversed(sort_values.keys()))
+            self.energy = list(reversed(sort_values.values()))
+
+        cond_rate = list()
+        cond_energy = list()
+
+        for i in range(len(self.energy)):
+
+            if i == 0:
+                cond_rate.append(self.rate[0])
+                cond_energy.append(0)
+                cond_rate.append(self.rate[0])
+                cond_energy.append(self.energy[i])
             else:
-                self.rate = list(reversed(sort_values.keys()))
-                self.energy = list(reversed(sort_values.values()))
-
-            cond_rate = list()
-            cond_energy = list()
-
-            for i in range(len(self.energy)):
-
-                if i == 0:
-                    cond_rate.append(self.rate[0])
-                    cond_energy.append(0)
-                    cond_rate.append(self.rate[0])
-                    cond_energy.append(self.energy[i])
-                else:
-                    if self.energy[i-1] == self.energy[i] and supply:
-                        continue
-                    cond_rate.append(self.rate[i])
-                    cond_energy.append(self.energy[i-1])
-                    cond_energy.append(self.energy[i])
-                    cond_rate.append(self.rate[i])
-            self.rate = list()
-            self.rate = cond_rate
-            self.energy = list()
-            self.energy = cond_energy
-        except KeyError:
-            pass
+                if self.energy[i-1] == self.energy[i] and supply:
+                    continue
+                cond_rate.append(self.rate[i])
+                cond_energy.append(self.energy[i-1])
+                cond_energy.append(self.energy[i])
+                cond_rate.append(self.rate[i])
+        self.rate = list()
+        self.rate = cond_rate
+        self.energy = list()
+        self.energy = cond_energy
 
     def graph_value(self, scale_value=1):
         try:

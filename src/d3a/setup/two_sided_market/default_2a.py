@@ -28,7 +28,7 @@ from d3a.models.const import ConstSettings
 
 def get_setup(config):
 
-    ConstSettings.IAASettings.MARKET_TYPE = 3
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
     ConstSettings.StorageSettings.MIN_BUYING_RATE = 24.99
