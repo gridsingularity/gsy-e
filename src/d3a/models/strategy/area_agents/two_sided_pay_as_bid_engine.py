@@ -151,15 +151,13 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 seller=self.owner.name,
                 already_tracked=False
             )
-            if not bid_trade.residual:
-                self.delete_forwarded_bids(bid_info)
+            self.delete_forwarded_bids(bid_info)
 
         # Bid was traded in the source market by someone else
         elif bid_trade.offer.id == bid_info.source_bid.id:
             if self.owner.name == bid_trade.seller:
                 return
-            if not bid_trade.residual:
-                self.delete_forwarded_bids(bid_info)
+            self.delete_forwarded_bids(bid_info)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
