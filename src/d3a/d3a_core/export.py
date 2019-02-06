@@ -114,7 +114,8 @@ class ExportAndPlot:
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
         self.move_root_plot_folder()
-        if ConstSettings.IAASettings.MARKET_TYPE == 3:
+        if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
+                ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
             self.plot_supply_demand_curve(self.area, self.plot_dir)
 
     def move_root_plot_folder(self):
@@ -410,7 +411,7 @@ class ExportAndPlot:
                 data.append(PlotlyGraph._line_plot(demand_curve, time_slot, False))
 
             if len(data) == 0:
-                return
+                continue
 
             for time_slot, clearing_point in past_market.state.clearing.items():
                 # clearing_point[0] --> Clearing-Rate
