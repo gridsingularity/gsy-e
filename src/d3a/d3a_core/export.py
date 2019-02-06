@@ -115,7 +115,7 @@ class ExportAndPlot:
         self.plot_ess_soc_history(self.area, self.plot_dir)
         self.move_root_plot_folder()
         if ConstSettings.IAASettings.MARKET_TYPE == 3:
-            self.supply_demand_curve(self.area, self.plot_dir)
+            self.plot_supply_demand_curve(self.area, self.plot_dir)
 
     def move_root_plot_folder(self):
         """
@@ -389,17 +389,17 @@ class ExportAndPlot:
         output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
-    def supply_demand_curve(self, area, subdir):
+    def plot_supply_demand_curve(self, area, subdir):
         """
-        Wrapper for _supply_demand_curve
+        Wrapper for _plot_supply_demand_curve
         """
         new_subdir = os.path.join(subdir, area.slug)
-        self._supply_demand_curve(new_subdir, area)
+        self._plot_supply_demand_curve(new_subdir, area)
         for child in area.children:
             if child.children:
-                self.supply_demand_curve(child, new_subdir)
+                self.plot_supply_demand_curve(child, new_subdir)
 
-    def _supply_demand_curve(self, subdir: str, area: Area):
+    def _plot_supply_demand_curve(self, subdir: str, area: Area):
 
         for past_market in area.past_markets:
             data = list()
