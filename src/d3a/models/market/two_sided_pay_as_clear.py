@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.state import MarketClearingState
+from d3a.models.market.market_structures import MarketClearingState
+
 
 log = getLogger(__name__)
 

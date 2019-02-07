@@ -29,6 +29,7 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSide
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
 from d3a.models.strategy.area_agents.one_sided_engine import OfferInfo
 from d3a.models.const import ConstSettings
+from d3a.models.market.market_structures import MarketClearingState
 
 
 class FakeArea:
@@ -36,6 +37,7 @@ class FakeArea:
         self.name = name
         self.current_tick = 10
         self.future_market = None
+        self.now = pendulum.DateTime.now()
 
     @property
     def config(self):
@@ -62,6 +64,7 @@ class FakeMarket:
         self.area = FakeArea("fake_area")
         self.time_slot = pendulum.now(tz=TIME_ZONE)
         self.time_slot_str = self.time_slot.format(TIME_FORMAT)
+        self.state = MarketClearingState()
 
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot
