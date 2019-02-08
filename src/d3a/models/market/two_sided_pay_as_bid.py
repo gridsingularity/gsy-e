@@ -78,7 +78,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         energy = market_bid.energy if energy is None else energy
         if energy <= 0:
             raise InvalidTrade("Energy cannot be zero.")
-        elif energy > bid.energy:
+        elif energy > market_bid.energy:
             raise InvalidTrade("Traded energy cannot be more than the bid energy.")
         elif energy is None or energy <= market_bid.energy:
             residual = False

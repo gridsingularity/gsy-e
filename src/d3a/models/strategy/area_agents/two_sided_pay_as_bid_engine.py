@@ -97,13 +97,16 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                                     energy=selected_energy,
                                     price_drop=True)
             self._delete_forwarded_offer_entries(offer)
-
             self.markets.source.accept_bid(bid,
                                            selected_energy,
                                            seller=bid.seller,
                                            buyer=bid.buyer,
                                            already_tracked=True,
                                            price_drop=True)
+
+            bid_info = self.forwarded_bids.get(bid.id, None)
+            if bid_info is not None:
+                self.delete_forwarded_bids(bid_info)
 
     def tick(self, *, area):
         super().tick(area=area)
@@ -115,6 +118,14 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 self._forward_bid(bid)
         self._match_offers_bids()
 
+    def delete_forwarded_bids(self, bid_info):
+        try:
+            self.markets.target.delete_bid(bid_info.target_bid)
+        except BidNotFound:
+            self.owner.log.debug(f"Bid {bid_info.target_bid.id} not "
+                                 f"found in the target market.")
+        self._delete_forwarded_bid_entries(bid_info.source_bid)
+
     def event_bid_traded(self, *, bid_trade):
         bid_info = self.forwarded_bids.get(bid_trade.offer.id)
         if not bid_info:
@@ -122,31 +133,31 @@ class TwoSidedPayAsBidEngine(IAAEngine):
 
         # Bid was traded in target market, buy in source
         if bid_trade.offer.id == bid_info.target_bid.id:
-            source_price = bid_info.source_bid.price
+            market_bid = self.markets.source.bids[bid_info.source_bid.id]
+            source_price = market_bid.price
             if bid_trade.price_drop:
                 # Use the rate of the trade bid for accepting the source bid too
                 source_price = bid_trade.offer.price
                 # Drop the rate of the trade bid according to IAA fee
                 source_price = source_price / (1 + (self.transfer_fee_pct / 100))
+
+            updated_bid = Bid(market_bid.id, source_price, bid_trade.offer.energy,
+                              market_bid.buyer, market_bid.seller)
+            assert bid_trade.offer.energy <= market_bid.energy, \
+                f"Traded bid on target market has more energy than the market bid."
             self.markets.source.accept_bid(
-                bid_info.source_bid._replace(price=source_price, energy=bid_trade.offer.energy),
+                updated_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False
             )
-            if not bid_trade.residual:
-                self._delete_forwarded_bid_entries(bid_info.target_bid)
+            self.delete_forwarded_bids(bid_info)
 
         # Bid was traded in the source market by someone else
         elif bid_trade.offer.id == bid_info.source_bid.id:
             if self.owner.name == bid_trade.seller:
                 return
-            # Delete target bid
-            try:
-                self.markets.target.delete_bid(bid_info.target_bid)
-            except BidNotFound:
-                pass
-            self._delete_forwarded_bid_entries(bid_info.source_bid)
+            self.delete_forwarded_bids(bid_info)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
@@ -163,11 +174,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             # Bid in source market of an bid we're already offering in the target market
             # was deleted - also delete in target market
             try:
-                self.markets.target.delete_bid(bid_info.target_bid.id)
-                self._delete_forwarded_bid_entries(bid_info.target_bid)
-            except BidNotFound:
-                self.owner.log.debug(f"Bid {bid_info.target_bid.id} not "
-                                     f"found in the target market.")
+                self.delete_forwarded_bids(bid_info)
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
         self._delete_forwarded_bid_entries(bid_info.source_bid)

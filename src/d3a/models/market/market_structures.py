@@ -159,3 +159,14 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
     def _to_csv(self):
         rate = round(self.offer.price / self.offer.energy, 4)
         return self[:2] + (rate, self.offer.energy) + self[3:5]
+
+
+class MarketClearingState:
+    def __init__(self):
+        self.cumulative_offers = dict()  # type Dict[Datetime, dict()]
+        self.cumulative_bids = dict()  # type Dict[Datetime, dict()]
+        self.clearing = defaultdict(int)  # type: Dict[DateTime, tuple()]
+
+    @classmethod
+    def _csv_fields(cls):
+        return 'time', 'rate [ct./kWh]'
