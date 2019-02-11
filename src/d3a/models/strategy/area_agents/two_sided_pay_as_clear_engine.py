@@ -86,12 +86,15 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             int(max(math.floor(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
                     math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)))
 
-        cumulative_offers = self._smooth_discrete_point_curve(cumulative_offers, max_rate)
-        cumulative_bids = self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
+        self.markets.source.state.cumulative_offers[self.owner.owner.now] = \
+            self._smooth_discrete_point_curve(cumulative_offers, max_rate)
+        self.markets.source.state.cumulative_bids[self.owner.owner.now] = \
+            self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
 
         for i in range(1, max_rate+1):
-            if cumulative_offers[i] >= cumulative_bids[i]:
-                return i, cumulative_bids[i]
+            if self.markets.source.state.cumulative_offers[self.owner.owner.now][i] >= \
+                    self.markets.source.state.cumulative_bids[self.owner.owner.now][i]:
+                return i, self.markets.source.state.cumulative_bids[self.owner.owner.now][i]
             else:
                 continue
 
@@ -106,7 +109,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         if clearing_energy > 0:
             self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
                                 f"||| Clearing Energy: {clearing_energy} ")
-            self.markets.source.state.clearing_rate[time] = clearing_rate
+            self.markets.source.state.clearing[time] = (clearing_rate, clearing_energy)
 
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:

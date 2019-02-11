@@ -24,6 +24,8 @@ import plotly.graph_objs as go
 import pendulum
 import shutil
 import json
+from sortedcontainers import SortedDict
+from d3a.constants import DATE_TIME_FORMAT
 
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
@@ -31,7 +33,7 @@ from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict
-from d3a.models.state import MarketClearingState
+from d3a.models.market.market_structures import MarketClearingState
 
 _log = logging.getLogger(__name__)
 
@@ -111,8 +113,10 @@ class ExportAndPlot:
         self.plot_all_unmatched_loads()
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
-
         self.move_root_plot_folder()
+        if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
+                ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
+            self.plot_supply_demand_curve(self.area, self.plot_dir)
 
     def move_root_plot_folder(self):
         """
@@ -163,8 +167,8 @@ class ExportAndPlot:
                 writer = csv.writer(csv_file)
                 writer.writerow(labels)
                 for market in area.past_markets:
-                    for time, rate in market.state.clearing_rate.items():
-                        row = (market.time_slot, time, rate)
+                    for time, clearing in market.state.clearing.items():
+                        row = (market.time_slot, time, clearing[0])
                         writer.writerow(row)
         except OSError:
             _log.exception("Could not export area market_clearing_rate")
@@ -253,7 +257,7 @@ class ExportAndPlot:
         """
         Plots trade partner pie graph for the sell tower.
         """
-        higt = TradeHistory(self.export_data.buyer_trades, load)
+        higt = PlotlyGraph(self.export_data.buyer_trades, load)
         higt.arrange_data()
         mkdir_from_str(plot_dir)
         higt.plot_pie_chart("Energy Trade Partners for {}".format(load),
@@ -301,13 +305,13 @@ class ExportAndPlot:
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir,
                                    'energy_profile_{}.html'.format(market_name))
-        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def _plot_energy_graph(self, trades, market_name, agent, agent_label, key, scale_value):
         internal_data = []
         for trader in trades[market_name][agent].keys():
 
-            graph_obj = BarGraph(trades[market_name][agent][trader], key)
+            graph_obj = PlotlyGraph(trades[market_name][agent][trader], key)
             graph_obj.graph_value(scale_value=scale_value)
             data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
                               y=list(graph_obj.umHours.values()),
@@ -330,7 +334,7 @@ class ExportAndPlot:
                      if unmatched_key in self.export_data.plot_stats[child_key].keys()]
 
         for li in load_list:
-            graph_obj = BarGraph(self.export_data.plot_stats[li], unmatched_key)
+            graph_obj = PlotlyGraph(self.export_data.plot_stats[li], unmatched_key)
             if sum(graph_obj.dataset[unmatched_key]) < 1e-10:
                 continue
             graph_obj.graph_value()
@@ -343,7 +347,7 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'unmatched_loads_{}.html'.format(root_name))
-        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def plot_ess_soc_history(self, area, subdir):
         """
@@ -373,7 +377,7 @@ class ExportAndPlot:
         ytitle = 'Charge [%]'
 
         for si in storage_list:
-            graph_obj = BarGraph(self.export_data.plot_stats[si], storage_key)
+            graph_obj = PlotlyGraph(self.export_data.plot_stats[si], storage_key)
             graph_obj.graph_value()
             data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
                                   y=list(graph_obj.umHours.values()),
@@ -384,7 +388,57 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
-        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def plot_supply_demand_curve(self, area, subdir):
+        """
+        Wrapper for _plot_supply_demand_curve
+        """
+        new_subdir = os.path.join(subdir, area.slug)
+        self._plot_supply_demand_curve(new_subdir, area)
+        for child in area.children:
+            if child.children:
+                self.plot_supply_demand_curve(child, new_subdir)
+
+    def _plot_supply_demand_curve(self, subdir: str, area: Area):
+
+        for past_market in area.past_markets:
+            data = list()
+            xmax = 0
+            for time_slot, supply_curve in past_market.state.cumulative_offers.items():
+                data.append(PlotlyGraph._line_plot(supply_curve, time_slot, True))
+            for time_slot, demand_curve in past_market.state.cumulative_bids.items():
+                data.append(PlotlyGraph._line_plot(demand_curve, time_slot, False))
+
+            if len(data) == 0:
+                continue
+
+            for time_slot, clearing_point in past_market.state.clearing.items():
+                # clearing_point[0] --> Clearing-Rate
+                # clearing_point[1] --> Clearing-Energy
+                if len(clearing_point) != 0:
+                    data_obj = go.Scatter(x=[0, clearing_point[1]],
+                                          y=[clearing_point[0], clearing_point[0]],
+                                          mode='lines+markers',
+                                          line=dict(width=5),
+                                          name=time_slot.format(DATE_TIME_FORMAT +
+                                                                ' Clearing-Rate'))
+                    data.append(data_obj)
+                    data_obj = go.Scatter(x=[clearing_point[1], clearing_point[1]],
+                                          y=[0, clearing_point[0]],
+                                          mode='lines+markers',
+                                          line=dict(width=5),
+                                          name=time_slot.format(DATE_TIME_FORMAT +
+                                                                'Clearing-Energy'))
+                    data.append(data_obj)
+                    xmax = max(xmax, clearing_point[1]) * 3
+
+            plot_dir = os.path.join(self.plot_dir, subdir, 'mcp')
+            mkdir_from_str(plot_dir)
+            output_file = os.path.join(plot_dir,
+                                       f'supply_demand_{past_market.time_slot_str}.html')
+            PlotlyGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)',
+                                        'Rate (ct./kWh)', data, output_file, xmax)
 
     def plot_avg_trade_price(self, area, subdir):
         """
@@ -434,10 +488,10 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'average_trade_price_{}.html'.format(area_list[0]))
-        BarGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def _plot_avg_trade_graph(self, stats, area_name, key, label):
-        graph_obj = BarGraph(stats[area_name.lower()], key)
+        graph_obj = PlotlyGraph(stats[area_name.lower()], key)
         graph_obj.graph_value()
         data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
                               y=list(graph_obj.umHours.values()),
@@ -445,11 +499,56 @@ class ExportAndPlot:
         return data_obj
 
 
-class BarGraph:
+class PlotlyGraph:
     def __init__(self, dataset: dict, key: str):
         self.key = key
         self.dataset = dataset
         self.umHours = dict()
+        self.rate = list()
+        self.energy = list()
+        self.trade_history = dict()
+
+    @staticmethod
+    def _line_plot(curve_point, time, supply):
+        graph_obj = PlotlyGraph(curve_point, time)
+        graph_obj.supply_demand_curve(supply)
+        name = str(time) + '-' + ('supply' if supply else 'demand')
+        data_obj = go.Scatter(x=list(graph_obj.energy),
+                              y=list(graph_obj.rate),
+                              mode='lines',
+                              name=name)
+        return data_obj
+
+    def supply_demand_curve(self, supply=True):
+        sort_values = SortedDict(self.dataset)
+        if supply:
+            self.rate = list(sort_values.keys())
+            self.energy = list(sort_values.values())
+        else:
+            self.rate = list(reversed(sort_values.keys()))
+            self.energy = list(reversed(sort_values.values()))
+
+        cond_rate = list()
+        cond_energy = list()
+
+        for i in range(len(self.energy)):
+
+            if i == 0:
+                cond_rate.append(self.rate[0])
+                cond_energy.append(0)
+                cond_rate.append(self.rate[0])
+                cond_energy.append(self.energy[i])
+            else:
+                if self.energy[i-1] == self.energy[i] and supply:
+                    continue
+                cond_rate.append(self.rate[i])
+                cond_energy.append(self.energy[i-1])
+                cond_energy.append(self.energy[i])
+                cond_rate.append(self.rate[i])
+        self.rate = list()
+        self.rate = cond_rate
+        self.energy = list()
+        self.energy = cond_energy
 
     def graph_value(self, scale_value=1):
         try:
@@ -517,12 +616,25 @@ class BarGraph:
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
+    @staticmethod
+    def plot_line_graph(title: str, xtitle: str, ytitle: str, data, iname: str, xmax: int):
+        layout = go.Layout(
+            title=title,
+            yaxis=dict(
+                title=ytitle
+            ),
+            xaxis=dict(
+                title=xtitle,
+                range=(0, xmax)
+            ),
+            font=dict(
+                size=16
+            ),
+            showlegend=True
+        )
 
-class TradeHistory:
-    def __init__(self, dataset: dict, key: str):
-        self.key = key
-        self.dataset = dataset
-        self.trade_history = dict()
+        fig = go.Figure(data=data, layout=layout)
+        py.offline.plot(fig, filename=iname, auto_open=False)
 
     def arrange_data(self):
         try:

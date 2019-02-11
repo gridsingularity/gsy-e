@@ -20,8 +20,7 @@ from logging import getLogger
 from typing import List, Optional  # noqa
 
 from cached_property import cached_property
-from pendulum import duration
-from pendulum import DateTime
+from pendulum import DateTime, duration, today
 from slugify import slugify
 
 from d3a.blockchain import BlockChainInterface
@@ -39,17 +38,18 @@ from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
+from d3a.models.const import GlobalConfig
 
 log = getLogger(__name__)
 
-
 DEFAULT_CONFIG = SimulationConfig(
-    duration=duration(hours=24),
+    sim_duration=duration(hours=24),
     market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-    iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE
+    iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE,
+    start_date=today(tz=TIME_ZONE)
 )
 
 
@@ -177,7 +177,7 @@ class Area:
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
             s=self,
-            markets=[t.strftime(TIME_FORMAT) for t in self._markets.markets.keys()]
+            markets=[t.format(TIME_FORMAT) for t in self._markets.markets.keys()]
         )
 
     @property
@@ -194,7 +194,7 @@ class Area:
             return self._config
         if self.parent:
             return self.parent.config
-        return DEFAULT_CONFIG
+        return GlobalConfig
 
     @property
     def bc(self) -> Optional[BlockChainInterface]:
@@ -230,7 +230,7 @@ class Area:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now(tz=TIME_ZONE).start_of('day').add(
+        return self.config.start_date.add(
             seconds=self.config.tick_length.seconds * self.current_tick
         )
 

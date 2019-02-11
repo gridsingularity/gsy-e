@@ -41,7 +41,7 @@ class MarketBlockchainInterface:
         if area and area.bc:
             self.bc_interface = area.bc
             self.bc_contract = create_market_contract(area.bc,
-                                                      area.config.duration.in_seconds(),
+                                                      area.config.sim_duration.in_seconds(),
                                                       [self.bc_listener])
         else:
             self.bc_interface = None

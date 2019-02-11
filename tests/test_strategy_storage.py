@@ -17,14 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import logging
-from pendulum import Duration
-from pendulum import DateTime
+from pendulum import Duration, DateTime, today
 from logging import getLogger
 from math import isclose
 
-# from d3a.models.area import DEFAULT_CONFIG
+from d3a.d3a_core.util import change_global_config
 from d3a.constants import TIME_ZONE
-from d3a.models.strategy import ureg, Q_
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.const import ConstSettings
@@ -104,8 +102,8 @@ class FakeArea:
 
     @property
     def config(self):
-        return SimulationConfig(
-                duration=Duration(hours=24),
+        configuration = SimulationConfig(
+                sim_duration=Duration(hours=24),
                 market_count=4,
                 slot_length=Duration(minutes=15),
                 tick_length=Duration(seconds=15),
@@ -113,6 +111,8 @@ class FakeArea:
                 market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                 iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE
                 )
+        change_global_config(**configuration.__dict__)
+        return configuration
 
 
 class FakeMarket:
@@ -146,7 +146,7 @@ class FakeMarket:
 
     @property
     def time_slot_str(self):
-        return self.time_slot.strftime(TIME_FORMAT)
+        return self.time_slot.format(TIME_FORMAT)
 
     def delete_offer(self, offer_id):
         return
@@ -219,7 +219,7 @@ def test_if_storage_doesnt_buy_30ct(storage_strategy_test2, area_test2):
 
 def test_if_storage_doesnt_buy_above_break_even_point(storage_strategy_test2, area_test2):
     storage_strategy_test2.event_activate()
-    storage_strategy_test2.break_even_buy = Q_(10.0, (ureg.EUR_cents / ureg.kWh))
+    storage_strategy_test2.break_even_buy = 10.0
     area_test2.current_market.offers = {'id': Offer('id', 10.1, 1,
                                                     'FakeArea',
                                                     area_test2.current_market)}
@@ -252,7 +252,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
-    storage_strategy_test3.break_even = {"00:00": (19, 25)}
+    storage_strategy_test3.break_even = {today(tz=TIME_ZONE): (19, 25)}
     storage_strategy_test3.event_activate()
     storage_strategy_test3.event_tick(area=area_test3)
     assert len(storage_strategy_test3.accept_offer.calls) == 0
@@ -306,8 +306,8 @@ def test_if_storage_max_sell_rate_is_one_unit_less_than_market_maker_rate(storag
                                                                           area_test4):
     storage_strategy_test4.event_activate()
     assert storage_strategy_test4.calculate_initial_sell_rate(
-        area_test4.current_market.time_slot_str) \
-        == (area_test4.config.market_maker_rate[area_test4.current_market.time_slot_str])
+        area_test4.current_market.time_slot) \
+        == (area_test4.config.market_maker_rate[area_test4.current_market.time_slot])
 
 
 """TEST5"""
@@ -416,7 +416,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
 def test_calculate_initial_sell_energy_rate_lower_bound(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
-    break_even_sell = storage_strategy_test7.break_even[market.time_slot_str][1]
+    break_even_sell = storage_strategy_test7.break_even[market.time_slot][1]
     assert storage_strategy_test7.calculate_selling_rate(market) == break_even_sell
 
 
@@ -433,7 +433,7 @@ def test_calculate_initial_sell_energy_rate_upper_bound(storage_strategy_test7_1
     storage_strategy_test7_1.event_activate()
     market = storage_strategy_test7_1.area.current_market
     market_maker_rate = \
-        storage_strategy_test7_1.area.config.market_maker_rate[market.time_slot_str]
+        storage_strategy_test7_1.area.config.market_maker_rate[market.time_slot]
     assert storage_strategy_test7_1.calculate_selling_rate(market) == market_maker_rate
 
 
@@ -655,9 +655,9 @@ def test_storage_populates_break_even_profile_correctly():
 
     s = StorageStrategy(break_even={0: (22, 23), 10: (24, 25), 20: (27, 28)})
     assert set(s.break_even.keys()) == set(default_profile_dict().keys())
-    assert all([s.break_even[f"{i:02}:00"] == (22, 23) for i in range(10)])
-    assert all([s.break_even[f"{i:02}:00"] == (24, 25) for i in range(10, 20)])
-    assert all([s.break_even[f"{i:02}:00"] == (27, 28) for i in range(20, 24)])
+    assert all([s.break_even[today(tz=TIME_ZONE).add(hours=i)] == (22, 23) for i in range(10)])
+    assert all([s.break_even[today(tz=TIME_ZONE).add(hours=i)] == (24, 25) for i in range(10, 20)])
+    assert all([s.break_even[today(tz=TIME_ZONE).add(hours=i)] == (27, 28) for i in range(20, 24)])
 
 
 def test_has_battery_reached_max_power(storage_strategy_test11):

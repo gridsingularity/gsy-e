@@ -29,6 +29,7 @@ from d3a.models.const import ConstSettings
 def get_setup(config):
 
     ConstSettings.IAASettings.MARKET_TYPE = 3
+    # ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS = False
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35

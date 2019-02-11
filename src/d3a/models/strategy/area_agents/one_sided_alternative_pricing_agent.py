@@ -53,11 +53,11 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                         sell_rate = 0
                     elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                         sell_rate = \
-                            area.config.market_maker_rate[self.lower_market.time_slot_str] * \
+                            area.config.market_maker_rate[self.lower_market.time_slot] * \
                             ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE\
                             / 100
                     elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                        sell_rate = area.config.market_maker_rate[self.lower_market.time_slot_str]
+                        sell_rate = area.config.market_maker_rate[self.lower_market.time_slot]
                     else:
                         raise MarketException
                     offer.price = offer.energy * sell_rate
@@ -75,7 +75,7 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
     def event_market_cycle(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             energy_per_slot = int(sys.maxsize)
-            energy_rate = self.owner.config.market_maker_rate[self.lower_market.time_slot_str]
+            energy_rate = self.owner.config.market_maker_rate[self.lower_market.time_slot]
 
             self.lower_market.offer(
                 energy_per_slot * energy_rate,

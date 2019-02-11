@@ -1,5 +1,5 @@
 from behave import then
-from d3a.models.read_user_profile import read_profile_csv_to_dict, InputProfileTypes
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.util import d3a_path
 from pendulum import duration
 
@@ -158,14 +158,14 @@ def load_does_not_consume_between(context, start_time, end_time):
         assert len(market.trades) == 0
 
 
-def _read_solar_profile(profile_path, slot_length):
-    return read_profile_csv_to_dict(InputProfileTypes.POWER, str(profile_path), slot_length)
+def _read_solar_profile(profile_path):
+    return read_arbitrary_profile(InputProfileTypes.POWER, str(profile_path))
 
 
 @then('both PVs follow they sunny profile until 12:00')
 def both_sunny_profile(context):
     slot_length = context.simulation.area.config.slot_length
-    sunny = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_sunny.csv', slot_length)
+    sunny = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_sunny.csv')
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
 
@@ -186,8 +186,7 @@ def both_sunny_profile(context):
 @then('House 1 PV follows the partially cloudy profile after 12:00')
 def house1_partially_cloudy(context):
     slot_length = context.simulation.area.config.slot_length
-    partial_cloud = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_partial.csv',
-                                        slot_length)
+    partial_cloud = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_partial.csv')
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
 
     for time_slot, market in house1._markets.past_markets.items():
@@ -204,8 +203,7 @@ def house1_partially_cloudy(context):
 @then('House 2 PV follows the cloudy profile after 12:00')
 def house2_cloudy(context):
     slot_length = context.simulation.area.config.slot_length
-    cloudy = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_cloudy.csv',
-                                 slot_length)
+    cloudy = _read_solar_profile(d3a_path + '/resources/Solar_Curve_W_cloudy.csv')
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
 
     for time_slot, market in house2._markets.past_markets.items():

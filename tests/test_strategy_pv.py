@@ -28,7 +28,7 @@ from d3a.models.const import ConstSettings
 from d3a.constants import TIME_FORMAT
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
-TIME = pendulum.today().at(hour=10, minute=45, second=2)
+TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
 class FakeArea():
@@ -89,7 +89,7 @@ class FakeMarket:
 
     @property
     def time_slot_str(self):
-        return self.time_slot.strftime(TIME_FORMAT)
+        return self.time_slot.format(TIME_FORMAT)
 
     def delete_offer(self, offer_id):
         return

@@ -24,7 +24,7 @@ import json
 import time
 
 from click.types import ParamType
-from pendulum import duration
+from pendulum import duration, from_format
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
@@ -33,6 +33,8 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
+from d3a.constants import DATE_FORMAT
+from d3a.models.const import GlobalConfig
 
 import d3a
 import inspect
@@ -56,6 +58,27 @@ class TaggedLogWrapper(LoggerAdapter):
         return msg, kwargs
 
 
+class DateType(ParamType):
+    name = 'date'
+
+    def __init__(self, type):
+        if type == DATE_FORMAT:
+            self.allowed_formats = DATE_FORMAT
+        else:
+            raise ValueError(f"Invalid type. Choices: {DATE_FORMAT} ")
+
+    def convert(self, value, param, ctx):
+        try:
+            return from_format(value, DATE_FORMAT)
+        except ValueError:
+            self.fail(
+                "'{}' is not a valid date. Allowed formats: {}".format(
+                    value,
+                    self.allowed_formats
+                )
+            )
+
+
 class IntervalType(ParamType):
     name = 'interval'
 
@@ -70,7 +93,7 @@ class IntervalType(ParamType):
             self.re = INTERVAL_MS_RE
             self.allowed_formats = "'XXm', 'XXs', 'XXmYYs', 'XX:YY'"
         else:
-            raise ValueError("Invalid type. Choices: 'H:M', 'M:S'")
+            raise ValueError("Invalid type. Choices: 'H:M', 'M:S', 'D:H'")
 
     def convert(self, value, param, ctx):
         match = self.re(value)
@@ -226,8 +249,8 @@ def read_settings_from_file(settings_file):
             settings = json.load(sf)
         advanced_settings = settings["advanced_settings"]
         simulation_settings = {
-            "duration": IntervalType('H:M')(
-                settings["basic_settings"].get('duration', timedelta(hours=24))),
+            "sim_duration": IntervalType('H:M')(
+                settings["basic_settings"].get('sim_duration', timedelta(hours=24))),
             "slot_length": IntervalType('M:S')(
                 settings["basic_settings"].get('slot_length', timedelta(minutes=15))),
             "tick_length": IntervalType('M:S')(
@@ -275,9 +298,9 @@ def generate_market_slot_list(area):
     """
     market_slots = []
     for slot_time in [
-        area.now + (area.config.slot_length * i) for i in range(
-            (area.config.duration + (area.config.market_count * area.config.slot_length)) //
-            area.config.slot_length)]:
+        area.config.start_date + (area.config.slot_length * i) for i in range(
+            (area.config.sim_duration + (area.config.market_count * area.config.slot_length)) //
+            area.config.slot_length - 1)]:
         market_slots.append(slot_time)
     return market_slots
 
@@ -334,6 +357,15 @@ def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
         if retry_count >= max_retries:
             raise e
         return recursive_retry(functor, retry_count+1, max_retries, *args, **kwargs)
+
+
+def change_global_config(**kwargs):
+    for arg, value in kwargs.items():
+        if hasattr(GlobalConfig, arg):
+            setattr(GlobalConfig, arg, value)
+        else:
+            # continue, if config setting is not member of GlobalConfig, e.g. pv_user_profile
+            pass
 
 
 def validate_const_settings_for_simulation():

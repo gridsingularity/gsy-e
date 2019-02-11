@@ -24,16 +24,17 @@ from click.types import Choice, File
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from multiprocessing import Process
-from pendulum import DateTime
+from pendulum import DateTime, today
 
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.util import DateType
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
     read_settings_from_file, update_advanced_settings
-from d3a.d3a_core.simulation import run_simulation
-from d3a.constants import TIME_ZONE, TIME_FORMAT_EXPORT_DIR
 
+from d3a.d3a_core.simulation import run_simulation
+from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT
 
 log = getLogger(__name__)
 
@@ -97,8 +98,11 @@ _setup_modules = available_simulation_scenarios
 @click.option('--enable-bc', is_flag=True, default=False, help="Run simulation on Blockchain")
 @click.option('--compare-alt-pricing', is_flag=True, default=False,
               help="Compare alternative pricing schemes")
+@click.option('--start-date', type=DateType(DATE_FORMAT),
+              default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
+              help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
-        market_count, cloud_coverage, iaa_fee, compare_alt_pricing, **kwargs):
+        market_count, cloud_coverage, iaa_fee, compare_alt_pricing, start_date, **kwargs):
 
     try:
         if settings_file is not None:
@@ -108,11 +112,12 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
         else:
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
-                                 cloud_coverage, iaa_fee)
+                                 cloud_coverage, iaa_fee, start_date=start_date)
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
-            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(TIME_FORMAT_EXPORT_DIR)
+            # we need the seconds in the export dir name
+            kwargs["export_subdir"] = DateTime.now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
             processes = []
             for pricing_scheme in range(0, 4):
                 kwargs["pricing_scheme"] = pricing_scheme
