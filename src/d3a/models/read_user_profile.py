@@ -80,12 +80,18 @@ def _readCSV(path: str) -> Dict:
     :return: Dict[DateTime, value]
     """
     profile_data = {}
-    with open(path) as csvfile:
-        next(csvfile)
-        csv_rows = csv.reader(csvfile, delimiter=';')
+    with open(path) as csv_file:
+        csv_rows = csv.reader(csv_file)
         for row in csv_rows:
-            time_str, valstr = row
-            profile_data[time_str] = float(valstr)
+            if len(row) == 0:
+                raise Exception(f"There must not be an empty line in the profile file {path}")
+            if len(row) != 2:
+                row = row[0].split(";")
+            try:
+                profile_data[row[0]] = float(row[1])
+            except ValueError:
+                pass
+
     time_format = _eval_time_format(profile_data)
     return dict((from_format(time_str, time_format, tz=TIME_ZONE), value)
                 for time_str, value in profile_data.items())
