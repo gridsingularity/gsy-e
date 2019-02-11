@@ -22,6 +22,7 @@ from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.d3a_core.sim_results.area_statistics import _is_load_node, \
     _is_prosumer_node, _is_producer_node
+from d3a.d3a_core.util import make_iaa_name
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
@@ -255,15 +256,13 @@ class KPI:
         for child in area.children:
             if _is_load_node(child):
                 area_load_device.append(child.name)
-            if _is_prosumer_node(child):
+            elif _is_prosumer_node(child):
                 area_ess_device.append(child.name)
-            if _is_producer_node(child):
+            elif _is_producer_node(child):
                 area_producer_device.append(child.name)
-
-        # print(f"AreaPV: {area_pv_device}")
-        # print(f"AreaProducer: {area_producer_device}")
-        # print(f"AreaLoad: {area_load_device}")
-        # print(f"AreaESS: {area_ess_device}")
+            else:
+                area_load_device.append(make_iaa_name(child))
+                area_producer_device.append(make_iaa_name(child))
 
         total_energy_bought = 0
         self_consumed = 0
