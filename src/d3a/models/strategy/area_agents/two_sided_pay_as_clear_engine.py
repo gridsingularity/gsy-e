@@ -72,6 +72,14 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 obj[i] = obj.get(i, 0) + obj.get(i+1, 0)
         return obj
 
+    def _get_clearing_point(self, max_rate):
+        for i in range(1, max_rate+1):
+            if self.markets.source.state.cumulative_offers[self.owner.owner.now][i] >= \
+                    self.markets.source.state.cumulative_bids[self.owner.owner.now][i]:
+                return i, self.markets.source.state.cumulative_bids[self.owner.owner.now][i]
+            else:
+                continue
+
     def _perform_pay_as_clear_matching(self):
         self.sorted_bids = self._sorting(self.markets.source.bids, True)
         self.sorted_offers = self._sorting(self.markets.source.offers)
@@ -91,12 +99,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         self.markets.source.state.cumulative_bids[self.owner.owner.now] = \
             self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
 
-        for i in range(1, max_rate+1):
-            if self.markets.source.state.cumulative_offers[self.owner.owner.now][i] >= \
-                    self.markets.source.state.cumulative_bids[self.owner.owner.now][i]:
-                return i, self.markets.source.state.cumulative_bids[self.owner.owner.now][i]
-            else:
-                continue
+        return self._get_clearing_point(max_rate)
 
     def _match_offers_bids(self):
         if not (self.owner.current_tick + 1) % int(self.owner.mcp_update_point) == 0:
