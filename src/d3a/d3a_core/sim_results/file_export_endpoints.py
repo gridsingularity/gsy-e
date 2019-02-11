@@ -247,16 +247,12 @@ class KPI:
                         self._total_energy += trade.offer.energy
 
     def _export_area_sufficiency(self, area):
-        area_pv_device = list()
         area_load_device = list()
         area_ess_device = list()
         area_producer_device = list()
-        pv_based_ess_energy = 0  # charge-> + ; discharge-> -
         self_charged_ess_energy = 0  # charge-> + ; discharge-> -
 
         for child in area.children:
-            if isinstance(child.strategy, PVStrategy):
-                area_pv_device.append(child.name)
             if _is_load_node(child):
                 area_load_device.append(child.name)
             if _is_prosumer_node(child):
@@ -269,11 +265,7 @@ class KPI:
         # print(f"AreaLoad: {area_load_device}")
         # print(f"AreaESS: {area_ess_device}")
 
-        self_consumption = list()
-        self_sufficiency = list()
-        trade_by_pv = 0
         total_energy_bought = 0
-        traded_from_pv = 0
         self_consumed = 0
         energy_produced = 0
 
@@ -284,39 +276,24 @@ class KPI:
                 if trade.buyer in area_load_device:
                     total_energy_bought += trade.offer.energy
                 # Electricity produced
-                if trade.offer.seller in area_pv_device:
+                if trade.offer.seller in area_producer_device:
                     energy_produced += trade.offer.energy
-                # Electricity produced by PV
-                if trade.offer.seller in area_pv_device:
-                    trade_by_pv += trade.offer.energy
                 # Producer electricity self_consumption
                 if trade.offer.seller in area_producer_device and \
                         trade.buyer in area_load_device:
                     self_consumed += trade.offer.energy
-                # PV electricity self_consumption
-                if trade.offer.seller in area_pv_device and trade.buyer in area_load_device:
-                    traded_from_pv += trade.offer.energy
                 # self_charging
                 if trade.offer.seller in area_producer_device and trade.buyer in area_ess_device:
                     self_charged_ess_energy += trade.offer.energy
                 # discharging
                 if trade.offer.seller in area_ess_device and trade.buyer in area_load_device and \
-                        pv_based_ess_energy > 0:
+                        self_charged_ess_energy > 0:
                     self_charged_ess_energy -= trade.offer.energy
                     self_consumed += trade.offer.energy
 
-                # PV electricity self_charging
-                if trade.offer.seller in area_pv_device and trade.buyer in area_ess_device:
-                    pv_based_ess_energy += trade.offer.energy
-                # PV electricity discharging
-                if trade.offer.seller in area_ess_device and trade.buyer in area_load_device and \
-                        pv_based_ess_energy > 0:
-                    pv_based_ess_energy -= trade.offer.energy
-                    traded_from_pv += trade.offer.energy
-
             self_consumption = (self_consumed / energy_produced
                                 if energy_produced > 0 else 0)
-            self_sufficiency = (traded_from_pv / total_energy_bought
+            self_sufficiency = (self_consumed / total_energy_bought
                                 if total_energy_bought > 0 else 0)
 
         return {"self_consumption": self_consumption,
