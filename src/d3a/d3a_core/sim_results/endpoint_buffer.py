@@ -59,7 +59,8 @@ class SimulationEndpointBuffer:
             "cumulative_grid_trades": self.cumulative_grid_trades_redis,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
-            "status": self.status
+            "status": self.status,
+            "device_stats": self.device_statistics
         }
 
     def generate_json_report(self):
@@ -72,7 +73,8 @@ class SimulationEndpointBuffer:
             "cumulative_grid_trades": self.cumulative_grid_trades,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
-            "status": self.status
+            "status": self.status,
+            "device_stats": self.device_statistics
         }
 
     def update_stats(self, area, simulation_status):
