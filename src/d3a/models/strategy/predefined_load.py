@@ -69,6 +69,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
             InputProfileTypes.POWER,
             self.daily_load_profile)
         self._update_energy_requirement()
+        self.energy_requirement_history_kWh = dict(
+            (k, v / 1000.) for k, v in self.energy_requirement_Wh.items())
 
     def _update_energy_requirement(self):
         """

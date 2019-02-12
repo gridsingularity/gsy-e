@@ -8,11 +8,13 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.area import Area
+from d3a.d3a_core.util import generate_market_slot_list
 
-PRICE_FILL_VALUE = None
+FILL_VALUE = None
 
 
-def _calc_min_max_from_sim_dict(indict: Dict[DateTime, list]):
+def _calc_min_max_from_sim_dict(indict: Dict[DateTime, list]) -> tuple((Dict, Dict)):
 
     min_trade_stats_daily = {}
     max_trade_stats_daily = {}
@@ -20,17 +22,12 @@ def _calc_min_max_from_sim_dict(indict: Dict[DateTime, list]):
     trade_stats_daily = dict((k.format(TIME_FORMAT), []) for k, v in indict.items())
 
     for time, value in indict.items():
-        slot_time_str = time.format(TIME_FORMAT)
         if len(value) != 0:
-            trade_stats_daily[slot_time_str] += value
+            trade_stats_daily[time.format(TIME_FORMAT)] += value
 
     for time_str, value in trade_stats_daily.items():
-        if len(value) > 0:
-            min_trade_stats_daily[time_str] = min(value)
-            max_trade_stats_daily[time_str] = max(value)
-        else:
-            min_trade_stats_daily[time_str] = PRICE_FILL_VALUE
-            max_trade_stats_daily[time_str] = PRICE_FILL_VALUE
+        min_trade_stats_daily[time_str] = min(value) if len(value) > 0 else FILL_VALUE
+        max_trade_stats_daily[time_str] = max(value) if len(value) > 0 else FILL_VALUE
 
     min_trade_stats = dict((time.format(DATE_TIME_FORMAT),
                             min_trade_stats_daily[time.format(TIME_FORMAT)])
@@ -42,7 +39,7 @@ def _calc_min_max_from_sim_dict(indict: Dict[DateTime, list]):
     return min_trade_stats, max_trade_stats
 
 
-def _device_price_stats(area):
+def _device_price_stats(area: Area) -> Dict:
 
     trade_price_dict = {}
     for market in area.parent.past_markets:
@@ -57,7 +54,7 @@ def _device_price_stats(area):
         if value != []:
             trade_price[time.format(DATE_TIME_FORMAT)] = mean(value)
         else:
-            trade_price[time.format(DATE_TIME_FORMAT)] = PRICE_FILL_VALUE
+            trade_price[time.format(DATE_TIME_FORMAT)] = FILL_VALUE
 
     min_trade_price, max_trade_price = _calc_min_max_from_sim_dict(trade_price_dict)
 
@@ -66,7 +63,7 @@ def _device_price_stats(area):
             "max_trade_price_eur": max_trade_price}
 
 
-def _device_energy_stats(area):
+def _device_energy_stats(area: Area) -> Dict:
 
     trade_energy_dict = {}
     for market in area.parent.past_markets:
@@ -87,7 +84,7 @@ def _device_energy_stats(area):
             "max_trade_energy_kWh": max_trade_energy}
 
 
-def _pv_production_stats(area):
+def _pv_production_stats(area: Area) -> Dict:
     pv_production_dict = dict((k, [v])
                               for k, v in area.strategy.energy_production_forecast_kWh.items())
     pv_production = dict((k.format(DATE_TIME_FORMAT), v[0]) for k, v in pv_production_dict.items())
@@ -99,7 +96,7 @@ def _pv_production_stats(area):
             "max_pv_production_kWh": max_pv_production}
 
 
-def _soc_stats(area):
+def _soc_stats(area: Area) -> Dict:
     soc_hist_dict = dict((k, [v]) for k, v in area.strategy.state.charge_history.items())
     soc_hist = dict((k.format(DATE_TIME_FORMAT), v[0]) for k, v in soc_hist_dict.items())
 
@@ -110,9 +107,13 @@ def _soc_stats(area):
             "max_soc_hist": max_soc}
 
 
-def _load_profile_stats(area):
-    load_profile_dict = dict((k, [v/1000.])
-                             for k, v in area.strategy.energy_requirement_Wh.items())
+def _load_profile_stats(area: Area) -> Dict:
+    load_profile_dict = dict(
+        (slot_time, [0]) for slot_time in generate_market_slot_list(area))
+
+    for k, v in area.strategy.energy_requirement_history_kWh.items():
+        load_profile_dict[k] = [v]
+
     load_profile = dict((k.format(DATE_TIME_FORMAT), v[0]) for k, v in load_profile_dict.items())
 
     min_load_profile, max_load_profile = _calc_min_max_from_sim_dict(load_profile_dict)
@@ -122,7 +123,8 @@ def _load_profile_stats(area):
             "max_load_profile_kWh": max_load_profile}
 
 
-def gather_device_statistics(area, dev_stats_dict):
+def gather_device_statistics(area: Area, dev_stats_dict: Dict) -> Dict:
+
     for child in area.children:
         if child.children == []:
             if len(child.parent.past_markets) == 0:
@@ -155,17 +157,6 @@ def gather_device_statistics(area, dev_stats_dict):
                 leaf_dict = {**trade_price_dict,
                              **trade_energy_dict,
                              **load_profile_dict}
-
-            elif isinstance(child.strategy, FinitePowerPlant):
-
-                production_dict = dict((market.time_slot.format(DATE_TIME_FORMAT),
-                                        child.strategy.energy_per_slot_kWh)
-                                       for market in child.parent.past_markets)
-                trade_price_dict = _device_price_stats(child)
-                trade_energy_dict = _device_energy_stats(child)
-                leaf_dict = {**trade_price_dict,
-                             **trade_energy_dict,
-                             "production_kWh": production_dict}
 
             elif isinstance(child.strategy, CommercialStrategy):
                 trade_price_dict = _device_price_stats(child)

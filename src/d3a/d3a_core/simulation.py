@@ -263,6 +263,12 @@ class Simulation:
                     paused_duration = duration(seconds=self.paused_time)
 
                     self.redis_connection.publish_results(self.endpoint_buffer)
+
+                    # export to json self.end
+                    import json
+                    with open('/Users/hannesd/tmp/device_statistics.json', 'w') as fp:
+                        json.dump(self.endpoint_buffer.device_statistics, fp, indent=2)
+
                     if not self.is_stopped:
                         log.error(
                             "Run finished in %s%s / %.2fx real time",

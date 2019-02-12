@@ -63,6 +63,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
         self.energy_requirement_Wh = {}  # type: Dict[Time, float]
+        self.energy_requirement_history_kWh = {}  # type: Dict[Time, float]
         self.hrs_per_day = {}  # type: Dict[int, int]
 
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
@@ -112,6 +113,8 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                             for day in range(self.area.config.sim_duration.days + 1)}
         self._simulation_start_timestamp = self.area.now
         self.assign_energy_requirement(self.avg_power_W)
+        self.energy_requirement_history_kWh = dict((k, v / 1000.)
+                                                   for k, v in self.energy_requirement_Wh.items())
 
     def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None,
                                hrs_of_day=None, final_buying_rate=None):
