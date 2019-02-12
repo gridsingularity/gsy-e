@@ -115,18 +115,19 @@ class IAAEngine:
                                          "{} (Forwarded offer not found)".format(trade.offer))
 
             try:
+                trade_offer_rate = (trade.offer.price / trade.offer.energy)
                 if trade.price_drop:
                     # Use the rate of the trade offer for accepting the source offer too
                     # Drop the rate of the trade offer according to IAA fee
-                    trade_offer_rate = trade.offer.price / trade.offer.energy
-                    offer_info.source_offer.price = \
-                        trade_offer_rate * offer_info.source_offer.energy \
-                        / (1 + (self.transfer_fee_pct / 100))
+                    # trade_offer_rate = trade.offer.price / trade.offer.energy
+                    trade_offer_rate = trade_offer_rate * \
+                                       (1 + (self.transfer_fee_pct / 100))
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,
                     energy=trade.offer.energy,
-                    buyer=self.owner.name
+                    buyer=self.owner.name,
+                    trade_rate=trade_offer_rate
                 )
             except OfferNotFoundException:
                 raise OfferNotFoundException()
