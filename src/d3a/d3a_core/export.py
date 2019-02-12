@@ -93,6 +93,9 @@ class ExportAndPlot:
         trade_file = os.path.join(json_dir, "trade-detail")
         with open(trade_file, 'w') as outfile:
             json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)
+        device_file = os.path.join(json_dir, 'device_statistics')
+        with open(device_file, 'w') as outfile:
+            json.dump(self.endpoint_buffer.device_statistics, outfile, indent=2)
 
         for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key)
