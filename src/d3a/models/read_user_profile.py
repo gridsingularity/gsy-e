@@ -46,7 +46,8 @@ def _str_to_datetime(time_str, time_format) -> DateTime:
     if time_format == DATE_TIME_FORMAT:
         return time
     elif time_format == TIME_FORMAT:
-        return GlobalConfig.start_date.add(hours=time.hour, minutes=time.minute)
+        return GlobalConfig.start_date.add(
+            hours=time.hour, minutes=time.minute, second=time.second)
     else:
         raise ValueError("Provided time_format invalid.")
 
