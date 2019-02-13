@@ -236,3 +236,13 @@ def commercial_never_trades(context):
     commercial = [child for child in context.simulation.area.children
                   if child.name == "Commercial Energy Producer"][0]
     assert all(len(m.trades) == 0 for m in commercial.past_markets)
+
+
+@then('the device statistics are correct')
+def device_statistics(context):
+    output_dict = context.simulation.endpoint_buffer.device_statistics_time_str_dict
+    assert list(output_dict.keys()) == \
+        ['House 1', 'House 2', 'Finite Commercial Producer', 'Commercial Energy Producer']
+    assert list(output_dict['House 1'].keys()) == ['H1 DefinedLoad', 'H1 Storage1']
+    # print(len(list(output_dict['House 1']['H1 DefinedLoad']['load_profile_kWh'])))
+    # assert len(list(output_dict['House 1']['H1 DefinedLoad']['load_profile_kWh'])) == 48

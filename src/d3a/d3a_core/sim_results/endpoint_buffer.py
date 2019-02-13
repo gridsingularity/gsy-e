@@ -49,7 +49,7 @@ class SimulationEndpointBuffer:
         self.balancing_energy_bills = {}
         self.trade_details = {}
         self.device_statistics = DeviceStatistics()
-        self.device_statistics_time_str = {}
+        self.device_statistics_time_str_dict = {}
 
     def generate_result_report(self):
         return {
@@ -62,7 +62,7 @@ class SimulationEndpointBuffer:
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status,
-            "device_stats": self.device_statistics_time_str
+            "device_stats": self.device_statistics_time_str_dict
         }
 
     def generate_json_report(self):
@@ -76,10 +76,16 @@ class SimulationEndpointBuffer:
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status,
-            "device_stats": self.device_statistics_time_str
+            "device_stats": self.device_statistics_time_str_dict
         }
 
     def update_stats(self, area, simulation_status):
+        # if not (not hasattr(area.parent, "past_markets") or len(area.parent.past_markets) == 0):
+        #     print(list(area.past_markets)[-1])
+        # try:
+        #     print(list(area.past_markets)[-1].time_slot_str)
+        # except:
+        #     pass
         self.status = simulation_status
 
         self.unmatched_loads_redis = {"unmatched_loads": export_unmatched_loads(area)}
@@ -110,7 +116,7 @@ class SimulationEndpointBuffer:
 
         self.device_statistics.gather_device_statistics(area,
                                                         self.device_statistics.device_stats_dict)
-        self.device_statistics_time_str = convert_datetime_to_str_keys(
+        self.device_statistics_time_str_dict = convert_datetime_to_str_keys(
             self.device_statistics.device_stats_dict, {})
 
     def _update_tree_summary(self, area):
