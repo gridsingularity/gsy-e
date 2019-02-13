@@ -109,11 +109,11 @@ def check_matching_trades(context):
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     grid = context.simulation.area
 
-    for market in grid.all_markets:
+    for market in grid.past_markets:
         timeslot = market.time_slot
-        assert house1.get_market(timeslot)
-        grid_trades = grid.get_market(timeslot).trades
-        house_trades = house1.get_market(timeslot).trades
+        assert house1.get_past_market(timeslot)
+        grid_trades = grid.get_past_market(timeslot).trades
+        house_trades = house1.get_past_market(timeslot).trades
         assert len(grid_trades) == len(house_trades)
         assert all(
             any(t.offer.energy == th.offer.energy and t.buyer == th.seller for th in house_trades)
@@ -244,5 +244,4 @@ def device_statistics(context):
     assert list(output_dict.keys()) == \
         ['House 1', 'House 2', 'Finite Commercial Producer', 'Commercial Energy Producer']
     assert list(output_dict['House 1'].keys()) == ['H1 DefinedLoad', 'H1 Storage1']
-    # print(len(list(output_dict['House 1']['H1 DefinedLoad']['load_profile_kWh'])))
-    # assert len(list(output_dict['House 1']['H1 DefinedLoad']['load_profile_kWh'])) == 48
+    assert len(list(output_dict['House 1']['H1 DefinedLoad']['load_profile_kWh'])) == 48
