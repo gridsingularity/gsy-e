@@ -78,6 +78,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
         energy = market_bid.energy if energy is None else energy
         if trade_rate is None:
             trade_rate = market_bid.price / market_bid.energy
+        else:
+            assert trade_rate <= (market_bid.price / market_bid.energy)
+
         if energy <= 0:
             raise InvalidTrade("Energy cannot be zero.")
         elif energy > market_bid.energy:
