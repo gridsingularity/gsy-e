@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+import math
 from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
@@ -116,7 +117,7 @@ class OneSidedMarket(Market):
                     if trade_rate is None:
                         trade_rate = offer.price / offer.energy
                     else:
-                        assert trade_rate >= (offer.price / offer.energy)
+                        assert trade_rate >= math.floor(offer.price / offer.energy)
 
                     accepted_offer = Offer(
                         accepted_offer_id,

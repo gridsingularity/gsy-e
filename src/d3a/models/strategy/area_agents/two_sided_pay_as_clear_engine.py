@@ -60,7 +60,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             if len(obj) <= 1 or i == (len(obj) - 1):
                 break
             rate = math.floor(obj[i+1].price / obj[i+1].energy)
-            cumulative[rate] += obj[i].energy
+            cumulative[rate] += obj[i+1].energy
         return cumulative
 
     def _smooth_discrete_point_curve(self, obj, limit, asc_order=True):
@@ -107,7 +107,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             return
         clearing_rate, clearing_energy = clearing
         if clearing_energy > 0:
-            self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
+            self.owner.log.warn(f"Market Clearing Rate: {clearing_rate} "
                                 f"||| Clearing Energy: {clearing_energy} ")
             self.markets.source.state.clearing[time] = (clearing_rate, clearing_energy)
 
@@ -158,7 +158,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 cumulative_traded_offers += offer.energy
             elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
                     (clearing_energy - cumulative_traded_offers) <= offer.energy:
-                offer.price = offer.energy * clearing_rate
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
                                         buyer=self.owner.name,

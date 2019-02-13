@@ -149,8 +149,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 updated_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
-                already_tracked=False,
-                trade_rate=(market_bid.price / market_bid.energy)
+                already_tracked=False
             )
             self.delete_forwarded_bids(bid_info)
 
