@@ -35,7 +35,7 @@ class ConstSettings:
         # Flag to enable supply/demand backend plots
         SUPPLY_DEMAND_PLOTS = True
         ENERGY_RATE_DECREASE_PER_UPDATE = 1  # rate decrease in cents_per_update
-        SETUP_FILE_PATH = None
+        SETUP_FILE_PATH = None  # Default path of the available setup files
 
     class StorageSettings:
         # Max battery capacity in kWh.

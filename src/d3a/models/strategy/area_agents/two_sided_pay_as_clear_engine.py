@@ -54,13 +54,9 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
 
     def _discrete_point_curve(self, obj):
         cumulative = defaultdict(int)
-        rate = math.floor(obj[0].price/obj[0].energy)
-        cumulative[rate] = obj[0].energy
         for i in range(len(obj)):
-            if len(obj) <= 1 or i == (len(obj) - 1):
-                break
-            rate = math.floor(obj[i+1].price / obj[i+1].energy)
-            cumulative[rate] += obj[i+1].energy
+            rate = math.floor(obj[i].price / obj[i].energy)
+            cumulative[rate] += obj[i].energy
         return cumulative
 
     def _smooth_discrete_point_curve(self, obj, limit, asc_order=True):
