@@ -124,6 +124,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if min_allowed_soc is not None:
             self.state.min_allowed_soc = min_allowed_soc
 
+    def event_on_disabled_area(self):
+        self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
+
     def event_activate(self):
 
         self._set_be_alternative_pricing()

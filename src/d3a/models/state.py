@@ -223,6 +223,10 @@ class StorageState:
         self.check_state(time_slot)
         self.lose(self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
 
+    def calculate_soc_for_time_slot(self, time_slot):
+        self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
+        self.charge_history_kWh[time_slot] = self.used_storage
+
     def market_cycle(self, past_time_slot, time_slot):
         """
         Simulate actual Energy flow by removing pledged storage and added bought energy to the
@@ -231,6 +235,5 @@ class StorageState:
         self._used_storage -= self.pledged_sell_kWh[past_time_slot]
         self._used_storage += self.pledged_buy_kWh[past_time_slot]
 
-        self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
-        self.charge_history_kWh[time_slot] = self.used_storage
+        self.calculate_soc_for_time_slot(time_slot)
         self.offered_history[time_slot] = self.offered_sell_kWh[time_slot]

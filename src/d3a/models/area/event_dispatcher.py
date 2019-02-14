@@ -64,7 +64,7 @@ class AreaDispatcher:
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if not self.area.events.is_enabled and \
-           event_type is not AreaEvent.ACTIVATE:
+           event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]:
             return
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
@@ -113,6 +113,8 @@ class AreaDispatcher:
                 self.area.strategy.event_listener(event_type, **kwargs)
             if self.area.appliance:
                 self.area.appliance.event_listener(event_type, **kwargs)
+        elif not self.area.events.is_enabled and event_type == AreaEvent.MARKET_CYCLE:
+            self.area.strategy.event_on_disabled_area()
 
     @staticmethod
     def select_agent_class(is_spot_market):

@@ -148,6 +148,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def area_reconfigure_event(self, *args, **kwargs):
         pass
 
+    def event_on_disabled_area(self):
+        pass
+
     def read_config_event(self):
         pass
 
