@@ -63,7 +63,8 @@ class AreaDispatcher:
         return self._broadcast_notification
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-        if not self.area.events.is_enabled:
+        if not self.area.events.is_enabled and \
+           event_type is not AreaEvent.ACTIVATE:
             return
         # Broadcast to children in random order to ensure fairness
         for child in sorted(self.area.children, key=lambda _: random()):
@@ -94,6 +95,12 @@ class AreaDispatcher:
     def add_listener(self, listener):
         self.listeners.append(listener)
 
+    def _should_dispatch_to_strategies_appliances(self, event_type):
+        if event_type is AreaEvent.ACTIVATE:
+            return True
+        else:
+            return self.area.events.is_connected and self.area.events.is_enabled
+
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if event_type is AreaEvent.TICK:
             self.area.tick()
@@ -101,10 +108,11 @@ class AreaDispatcher:
             self.area._cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
             self.area.activate()
-        if self.area.strategy and self.area.events.is_connected and self.area.events.is_enabled:
-            self.area.strategy.event_listener(event_type, **kwargs)
-        if self.area.appliance and self.area.events.is_connected and self.area.events.is_enabled:
-            self.area.appliance.event_listener(event_type, **kwargs)
+        if self._should_dispatch_to_strategies_appliances(event_type):
+            if self.area.strategy:
+                self.area.strategy.event_listener(event_type, **kwargs)
+            if self.area.appliance:
+                self.area.appliance.event_listener(event_type, **kwargs)
 
     @staticmethod
     def select_agent_class(is_spot_market):
