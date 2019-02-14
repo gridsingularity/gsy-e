@@ -225,7 +225,7 @@ class StorageState:
 
     def market_cycle(self, past_time_slot, time_slot):
         """
-        Simulate actual Energy flow by removing pledged storage and added baought energy to the
+        Simulate actual Energy flow by removing pledged storage and added bought energy to the
         used_storage
         """
         self._used_storage -= self.pledged_sell_kWh[past_time_slot]
