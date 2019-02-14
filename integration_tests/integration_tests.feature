@@ -35,6 +35,18 @@ Feature: Run integration tests
      |        default_5       |    24    |      60     |      60     |
      |        default_csv     |    24    |      60     |      60     |
 
+  Scenario Outline: Test Balanced Energy Bills
+     Given we have a scenario named <scenario>
+     And d3a is installed
+     When we run the d3a simulation with <scenario> [24, 60, 60]
+     Then we test energy bills
+  Examples: Settings
+      |                scenario                |
+      |               default_2a               |
+      |      two_sided_market.default_2a       |
+      |    two_sided_pay_as_clear.default_2a   |
+
+
   Scenario Outline: Simulation subscribes on the appropriate channels
      Given d3a is installed
      When a simulation is created for scenario <scenario>

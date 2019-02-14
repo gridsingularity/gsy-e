@@ -569,6 +569,31 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
         assert all([permanent_load.strategy.energy == ei for ei in energy_profile])
 
 
+@then('we test energy bills')
+def test_energy_bills(context):
+    bills = context.simulation.endpoint_buffer.bills
+
+    cell_tower = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
+
+    house1 = bills["House 1"]["sold"] - bills["House 1"]["bought"]
+    area_net_bill = 0
+    for k, v in bills["House 1"]["children"].items():
+        area_net_bill += bills["House 1"]["children"][k]["sold"] - \
+                        bills["House 1"]["children"][k]["bought"]
+    assert isclose(area_net_bill, house1)
+
+    house2 = bills["House 2"]["sold"] - bills["House 2"]["bought"]
+    area_net_bill = 0
+    for k, v in bills["House 2"]["children"].items():
+        area_net_bill += bills["House 2"]["children"][k]["sold"] - \
+                        bills["House 2"]["children"][k]["bought"]
+    assert isclose(area_net_bill, house2)
+
+    area_net_energy = cell_tower + house1 + house2
+
+    assert isclose(round(area_net_energy, 10), 0)
+
+
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
     if isinstance(context._device_profile, str):
