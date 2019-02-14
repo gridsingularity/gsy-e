@@ -116,8 +116,8 @@ class OneSidedMarket(Market):
 
                     if trade_rate is None:
                         trade_rate = offer.price / offer.energy
-                    else:
-                        assert trade_rate >= math.floor(offer.price / offer.energy)
+
+                    assert trade_rate >= math.floor(offer.price / offer.energy)
 
                     accepted_offer = Offer(
                         accepted_offer_id,
