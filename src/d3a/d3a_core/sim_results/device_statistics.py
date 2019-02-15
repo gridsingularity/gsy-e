@@ -6,7 +6,6 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import Area
 
 
@@ -103,9 +102,9 @@ class DeviceStatistics:
     def _load_profile_stats(self, area: Area, subdict: Dict):
         key_name = "load_profile_kWh"
         market = list(area.parent.past_markets)[-1]
-        if market.time_slot in area.strategy.energy_requirement_history_kWh:
+        if market.time_slot in area.strategy.state.desired_energy_Wh:
             _create_or_append_dict(subdict, key_name, {
-                market.time_slot: area.strategy.energy_requirement_history_kWh[market.time_slot]})
+                market.time_slot: area.strategy.state.desired_energy_Wh[market.time_slot] / 1000.})
         else:
             _create_or_append_dict(subdict, key_name, {market.time_slot: 0})
 
@@ -125,29 +124,20 @@ class DeviceStatistics:
         if not hasattr(area.parent, "past_markets") or len(area.parent.past_markets) == 0:
             return None
 
-        if isinstance(area.strategy, PVStrategy):
-
+        if area.strategy is not None:
             self._device_price_stats(area, subdict)
             self._device_energy_stats(area, subdict)
+
+        if isinstance(area.strategy, PVStrategy):
             self._pv_production_stats(area, subdict)
 
         elif isinstance(area.strategy, StorageStrategy):
-
             self._soc_stats(area, subdict)
-            self._device_price_stats(area, subdict)
-            self._device_energy_stats(area, subdict)
 
         elif isinstance(area.strategy, LoadHoursStrategy):
-
             self._load_profile_stats(area, subdict)
-            self._device_price_stats(area, subdict)
-            self._device_energy_stats(area, subdict)
 
-        elif isinstance(area.strategy, CommercialStrategy):
-            self._device_price_stats(area, subdict)
-            self._device_energy_stats(area, subdict)
-
-            if isinstance(area.strategy, FinitePowerPlant):
-                market = list(area.parent.past_markets)[-1]
-                _create_or_append_dict(subdict, "production_kWh",
-                                       {market.time_slot: area.strategy.energy_per_slot_kWh})
+        elif isinstance(area.strategy, FinitePowerPlant):
+            market = list(area.parent.past_markets)[-1]
+            _create_or_append_dict(subdict, "production_kWh",
+                                   {market.time_slot: area.strategy.energy_per_slot_kWh})
