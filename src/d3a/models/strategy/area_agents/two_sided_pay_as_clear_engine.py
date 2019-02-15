@@ -73,8 +73,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             if self.markets.source.state.cumulative_offers[self.owner.owner.now][i] >= \
                     self.markets.source.state.cumulative_bids[self.owner.owner.now][i]:
                 return i, self.markets.source.state.cumulative_bids[self.owner.owner.now][i]
-            else:
-                continue
 
     def _perform_pay_as_clear_matching(self):
         self.sorted_bids = self._sorting(self.markets.source.bids, True)
@@ -106,7 +104,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             return
         clearing_rate, clearing_energy = clearing
         if clearing_energy > 0:
-            self.owner.log.warn(f"Market Clearing Rate: {clearing_rate} "
+            self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
                                 f"||| Clearing Energy: {clearing_energy} ")
             self.markets.source.state.clearing[time] = (clearing_rate, clearing_energy)
 

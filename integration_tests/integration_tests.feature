@@ -35,11 +35,14 @@ Feature: Run integration tests
      |        default_5       |    24    |      60     |      60     |
      |        default_csv     |    24    |      60     |      60     |
 
+  # TODO: Once iaa_fee is included in billing, this test to be run non-zero iaa_fee
   Scenario Outline: Test Balanced Energy Bills
-     Given we have a scenario named <scenario>
-     And d3a is installed
-     When we run the d3a simulation with <scenario> [24, 60, 60]
-     Then we test energy bills
+    Given we have a scenario named <scenario>
+    And d3a is installed
+    When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
+    Then the traded energy report the correct accumulated traded energy
+    And the energy bills report the correct accumulated traded energy price
+
   Examples: Settings
       |                scenario                |
       |               default_2a               |
