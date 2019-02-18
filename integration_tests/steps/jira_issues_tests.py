@@ -109,11 +109,11 @@ def check_matching_trades(context):
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     grid = context.simulation.area
 
-    for market in grid.all_markets:
+    for market in grid.past_markets:
         timeslot = market.time_slot
-        assert house1.get_market(timeslot)
-        grid_trades = grid.get_market(timeslot).trades
-        house_trades = house1.get_market(timeslot).trades
+        assert house1.get_past_market(timeslot)
+        grid_trades = grid.get_past_market(timeslot).trades
+        house_trades = house1.get_past_market(timeslot).trades
         assert len(grid_trades) == len(house_trades)
         assert all(
             any(t.offer.energy == th.offer.energy and t.buyer == th.seller for th in house_trades)
@@ -236,3 +236,23 @@ def commercial_never_trades(context):
     commercial = [child for child in context.simulation.area.children
                   if child.name == "Commercial Energy Producer"][0]
     assert all(len(m.trades) == 0 for m in commercial.past_markets)
+
+
+@then('the device statistics are correct')
+def device_statistics(context):
+    output_dict = context.simulation.endpoint_buffer.device_statistics_time_str_dict
+    assert list(output_dict.keys()) == \
+        ['House 1', 'House 2', 'Finite Commercial Producer', 'Commercial Energy Producer']
+    assert list(output_dict['House 1'].keys()) == ['H1 DefinedLoad', 'H1 Storage1']
+    stats_list = ["trade_energy_kWh", "load_profile_kWh", "pv_production_kWh", "soc_hist",
+                  "trade_price_eur"]
+    counter = 0
+    for house in ["House 1", "House 2"]:
+        for device in output_dict[house]:
+            for stats_name in stats_list:
+                if stats_name in output_dict[house][device]:
+                    counter += 1
+                    assert len(list(output_dict[house][device][stats_name])) == 48
+                    assert len(list(output_dict[house][device]["min_" + stats_name])) == 48
+                    assert len(list(output_dict[house][device]["max_" + stats_name])) == 48
+    assert counter == 12

@@ -19,6 +19,8 @@ from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trad
     export_cumulative_loads, export_price_energy_day, generate_inter_area_trade_details
 from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 from d3a.d3a_core.sim_results.stats import energy_bills
+from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
+from d3a.d3a_core.util import convert_datetime_to_str_keys
 from collections import OrderedDict
 from statistics import mean
 
@@ -46,6 +48,8 @@ class SimulationEndpointBuffer:
         self.bills = {}
         self.balancing_energy_bills = {}
         self.trade_details = {}
+        self.device_statistics = DeviceStatistics()
+        self.device_statistics_time_str_dict = {}
 
     def generate_result_report(self):
         return {
@@ -57,7 +61,8 @@ class SimulationEndpointBuffer:
             "cumulative_grid_trades": self.cumulative_grid_trades_redis,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
-            "status": self.status
+            "status": self.status,
+            "device_statistics": self.device_statistics_time_str_dict
         }
 
     def generate_json_report(self):
@@ -70,7 +75,8 @@ class SimulationEndpointBuffer:
             "cumulative_grid_trades": self.cumulative_grid_trades,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
-            "status": self.status
+            "status": self.status,
+            "device_statistics": self.device_statistics_time_str_dict
         }
 
     def update_stats(self, area, simulation_status):
@@ -101,6 +107,11 @@ class SimulationEndpointBuffer:
 
         self._update_tree_summary(area)
         self.trade_details = generate_inter_area_trade_details(area, "past_markets")
+
+        self.device_statistics.gather_device_statistics(area,
+                                                        self.device_statistics.device_stats_dict)
+        self.device_statistics_time_str_dict = convert_datetime_to_str_keys(
+            self.device_statistics.device_stats_dict, {})
 
     def _update_tree_summary(self, area):
         price_energy_list = export_price_energy_day(area)
