@@ -63,3 +63,9 @@ Feature: Jira Issues Tests
      And d3a is installed
      When we run the d3a simulation on console with two_sided_pay_as_clear.default_2a
      Then there are nonempty files with offers (without balancing offers) and bids for every area
+
+  Scenario: D3ASIM-962, Device Statistics are calculated and returned correctly
+    Given we have a scenario named jira/d3asim_962
+    And d3a is installed
+    When we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
+    Then the device statistics are correct
