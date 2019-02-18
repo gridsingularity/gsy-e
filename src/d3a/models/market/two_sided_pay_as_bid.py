@@ -78,7 +78,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         energy = market_bid.energy if energy is None else energy
         if trade_rate is None:
             trade_rate = market_bid.price / market_bid.energy
-        assert trade_rate <= (market_bid.price / market_bid.energy)
+        assert trade_rate <= (market_bid.price / market_bid.energy) + 0.0001, \
+            f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
 
         if energy <= 0:
             raise InvalidTrade("Energy cannot be zero.")
@@ -100,6 +101,10 @@ class TwoSidedPayAsBid(OneSidedMarket):
                 final_price = energy * trade_rate
                 bid = Bid(bid.id, final_price, energy,
                           buyer, seller, self)
+            else:
+                if trade_rate is not None:
+                    bid = bid._replace(price=trade_rate * market_bid.energy)
+                    # print(f"BidID: {bid.id}")
             trade = Trade(str(uuid.uuid4()), self._now,
                           bid, seller, buyer, residual, price_drop=price_drop,
                           already_tracked=already_tracked)

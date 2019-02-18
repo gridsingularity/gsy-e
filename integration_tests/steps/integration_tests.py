@@ -579,7 +579,8 @@ def test_accumulated_energy_price(context):
     area_net_traded_energy_price = \
         sum([v["earned"] - v["spent"] for v in bills["House 1"]["children"].values()])
 
-    assert isclose(area_net_traded_energy_price, house1, rel_tol=1e-02)
+    assert isclose(area_net_traded_energy_price, house1, rel_tol=1e-02), \
+        f"area: {area_net_traded_energy_price} house {house1}"
 
     house2 = bills["House 2"]["earned"] - bills["House 2"]["spent"]
     area_net_traded_energy_price = \
