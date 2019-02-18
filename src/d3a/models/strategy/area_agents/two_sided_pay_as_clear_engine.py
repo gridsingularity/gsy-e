@@ -60,7 +60,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             if len(obj) <= 1 or i == (len(obj) - 1):
                 break
             rate = math.floor(obj[i+1].price / obj[i+1].energy)
-            cumulative[rate] += obj[i].energy
+            cumulative[rate] += obj[i+1].energy
         return cumulative
 
     def _smooth_discrete_point_curve(self, obj, limit, asc_order=True):
@@ -120,21 +120,23 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     (clearing_energy - cumulative_traded_bids) >= bid.energy:
                 cumulative_traded_bids += bid.energy
                 self.markets.source.accept_bid(
-                    bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
+                    bid=bid,
                     energy=bid.energy,
                     seller=self.owner.name,
                     price_drop=True,
-                    already_tracked=already_tracked
+                    already_tracked=already_tracked,
+                    trade_rate=clearing_rate
                 )
             elif (bid.price/bid.energy) >= clearing_rate and \
                     (0 < (clearing_energy - cumulative_traded_bids) <= bid.energy):
 
                 self.markets.source.accept_bid(
-                    bid._replace(price=(bid.energy * clearing_rate), energy=bid.energy),
+                    bid=bid,
                     energy=(clearing_energy - cumulative_traded_bids),
                     seller=self.owner.name,
                     price_drop=True,
-                    already_tracked=already_tracked
+                    already_tracked=already_tracked,
+                    trade_rate=clearing_rate
                 )
                 cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
             self._delete_forwarded_bid_entries(bid)
@@ -146,23 +148,23 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 break
             elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
                     (clearing_energy - cumulative_traded_offers) >= offer.energy:
-                offer.price = offer.energy * clearing_rate
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=offer.energy,
                                         price_drop=True,
-                                        already_tracked=already_tracked)
+                                        already_tracked=already_tracked,
+                                        trade_rate=clearing_rate)
                 cumulative_traded_offers += offer.energy
             elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
                     (clearing_energy - cumulative_traded_offers) <= offer.energy:
-                offer.price = offer.energy * clearing_rate
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=clearing_energy - cumulative_traded_offers,
                                         price_drop=True,
-                                        already_tracked=already_tracked)
+                                        already_tracked=already_tracked,
+                                        trade_rate=clearing_rate)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
             self._delete_forwarded_offer_entries(offer)
 
