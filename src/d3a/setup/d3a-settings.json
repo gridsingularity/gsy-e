@@ -26,6 +26,7 @@
       "BREAK_EVEN_SELL": 25,
       "BREAK_EVEN_BUY": 24.9,
       "MIN_BUYING_RATE": 24.9,
+      "MAX_SELLING_RATE": 30,
       "MIN_ALLOWED_SOC": 0.1,
       "SELL_ON_MOST_EXPENSIVE_MARKET": false
     },
