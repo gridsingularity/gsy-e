@@ -579,16 +579,16 @@ def test_accumulated_energy_price(context):
     area_net_traded_energy_price = \
         sum([v["earned"] - v["spent"] for v in bills["House 1"]["children"].values()])
 
-    assert round(area_net_traded_energy_price, 2) == round(house1, 2)
+    assert isclose(area_net_traded_energy_price, house1, rel_tol=1e-02)
 
     house2 = bills["House 2"]["earned"] - bills["House 2"]["spent"]
     area_net_traded_energy_price = \
         sum([v["earned"] - v["spent"] for v in bills["House 2"]["children"].values()])
-    assert round(area_net_traded_energy_price, 2) == round(house2, 2)
+    assert isclose(area_net_traded_energy_price, house2, rel_tol=1e-02)
 
     net_traded_energy_price = cell_tower + house1 + house2
 
-    assert round(net_traded_energy_price, 2) == 0
+    assert isclose(net_traded_energy_price, 0, abs_tol=1e-10)
 
 
 @then('the traded energy report the correct accumulated traded energy')
@@ -600,18 +600,16 @@ def test_accumulated_energy(context):
     house1 = bills["House 1"]["sold"] - bills["House 1"]["bought"]
     area_net_energy = \
         sum([v["sold"] - v["bought"] for v in bills["House 1"]["children"].values()])
-    print(f"area_net_energy: {area_net_energy}")
-    print(f"house1: {house1}")
-    assert round(area_net_energy, 2) == round(house1, 2)
+    assert isclose(area_net_energy, house1, rel_tol=1e-02)
 
     house2 = bills["House 2"]["sold"] - bills["House 2"]["bought"]
     area_net_energy = \
         sum([v["sold"] - v["bought"] for v in bills["House 2"]["children"].values()])
-    assert round(area_net_energy, 2) == round(house2, 2)
+    assert isclose(area_net_energy, house2, rel_tol=1e-02)
 
     net_energy = cell_tower + house1 + house2
 
-    assert round(net_energy, 2) == 0
+    assert isclose(net_energy, 0, abs_tol=1e-10)
 
 
 @then('the predefined load follows the load profile')
