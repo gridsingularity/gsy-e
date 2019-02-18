@@ -24,7 +24,7 @@ import json
 import time
 
 from click.types import ParamType
-from pendulum import duration, from_format
+from pendulum import duration, from_format, DateTime
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
@@ -33,7 +33,7 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT
 from d3a.models.const import GlobalConfig
 
 import d3a
@@ -383,3 +383,19 @@ def validate_const_settings_for_simulation():
     if ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
        ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
         ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+def convert_datetime_to_str_keys(indict, outdict):
+    """
+    Converts all Datetime keys in a dict into strings in DATE_TIME_FORMAT
+    """
+
+    for key, value in indict.items():
+        if isinstance(key, DateTime):
+            outdict[key.format(DATE_TIME_FORMAT)] = indict[key]
+        else:
+            if isinstance(indict[key], dict):
+                outdict[key] = {}
+                convert_datetime_to_str_keys(indict[key], outdict[key])
+
+    return outdict

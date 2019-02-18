@@ -117,7 +117,10 @@ class Area:
         self.active = True
         self.dispatcher.broadcast_activate()
 
-    def _cycle_markets(self, _trigger_event=True, _market_cycle=False):
+    def deactivate(self):
+        self._cycle_markets(deactivate=True)
+
+    def _cycle_markets(self, _trigger_event=True, _market_cycle=False, deactivate=False):
         """
         Remove markets for old time slots, add markets for new slots.
         Trigger `MARKET_CYCLE` event to allow child markets to also cycle.
@@ -145,6 +148,8 @@ class Area:
 
         self.log.info("Cycling markets")
         self._markets.rotate_markets(now, self.stats, self.dispatcher)
+        if deactivate:
+            return
 
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
