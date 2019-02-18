@@ -171,3 +171,14 @@ def trade_rates_break_even(context):
                 assert ConstSettings.StorageSettings.BREAK_EVEN_SELL <= \
                        limit_float_precision(trade.offer.price / trade.offer.energy) <= \
                        ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+
+
+@then('CEP posted the residual offer at the old rate')
+def cep_offer_residual_offer_rate(context):
+    house = next(filter(lambda x: "House" in x.name, context.simulation.area.children))
+    cep = next(filter(lambda x: "Commercial Energy Producer" in x.name, house.children))
+
+    for market in house.past_markets:
+        if len(market.trades) > 0:
+            for id, offer in market.offers.items():
+                assert isclose((offer.price / offer.energy), cep.strategy.energy_rate)
