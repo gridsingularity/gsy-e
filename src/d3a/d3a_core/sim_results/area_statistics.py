@@ -62,7 +62,7 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
     return load_price_lists
 
 
-def gather_prices_pv_stor_energ(area, price_energ_lists):
+def gather_prices_pv_storage_energy(area, price_energ_lists):
     for child in area.children:
         for market in child.parent.past_markets:
             slot = market.time_slot
@@ -99,7 +99,7 @@ def gather_prices_pv_stor_energ(area, price_energ_lists):
                 price_energ_lists[slot_time_str].stor_energ.extend(traded_energy)
 
         if child.children != []:
-            price_energ_lists = gather_prices_pv_stor_energ(child, price_energ_lists)
+            price_energ_lists = gather_prices_pv_storage_energy(child, price_energ_lists)
     return price_energ_lists
 
 
@@ -345,7 +345,7 @@ def export_cumulative_grid_trades(area, past_market_types, all_devices=False):
 
 
 def export_price_energy_day(area):
-    price_lists = gather_prices_pv_stor_energ(area, OrderedDict())
+    price_lists = gather_prices_pv_storage_energy(area, OrderedDict())
     return [
         {
             "timeslot": ii,
