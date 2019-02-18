@@ -2,7 +2,7 @@
 
 behave
 coverage
-flake8
+flake8==3.5.0
 flake8-tuple
 hypothesis
 isort

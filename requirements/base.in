@@ -5,9 +5,6 @@ click
 click-default-group
 colorlog
 dill
-flask
-flask-api
-flask-cors
 pendulum
 pint
 pip-tools
