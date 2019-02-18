@@ -244,4 +244,15 @@ def device_statistics(context):
     assert list(output_dict.keys()) == \
         ['House 1', 'House 2', 'Finite Commercial Producer', 'Commercial Energy Producer']
     assert list(output_dict['House 1'].keys()) == ['H1 DefinedLoad', 'H1 Storage1']
-    assert len(list(output_dict['House 1']['H1 DefinedLoad']['load_profile_kWh'])) == 48
+    stats_list = ["trade_energy_kWh", "load_profile_kWh", "pv_production_kWh", "soc_hist",
+                  "trade_price_eur"]
+    counter = 0
+    for house in ["House 1", "House 2"]:
+        for device in output_dict[house]:
+            for stats_name in stats_list:
+                if stats_name in output_dict[house][device]:
+                    counter += 1
+                    assert len(list(output_dict[house][device][stats_name])) == 48
+                    assert len(list(output_dict[house][device]["min_" + stats_name])) == 48
+                    assert len(list(output_dict[house][device]["max_" + stats_name])) == 48
+    assert counter == 12
