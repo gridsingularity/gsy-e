@@ -187,9 +187,10 @@ class Simulation:
         """
         For putting the last market into area.past_markets
         """
+        area.deactivate()
+
         for child in area.children:
             if child.children != []:
-                child.deactivate()
                 self.deactivate_areas(child)
 
     def run(self, resume=False) -> (Period, duration):
@@ -265,10 +266,7 @@ class Simulation:
                                 self.endpoint_buffer
                             )
 
-                    """
-                    TODO: D3ASIM-1001
-                    """
-                    # self.deactivate_areas(self.area)
+                    self.deactivate_areas(self.area)
                     self.endpoint_buffer.update_stats(self.area, self.status)
 
                     run_duration = (

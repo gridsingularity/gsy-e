@@ -241,7 +241,9 @@ class Area:
 
     @property
     def all_markets(self):
-        return list(self._markets.markets.values())
+        return [m for m in self._markets.markets.values()
+                if self.config.start_date <= m.time_slot <
+                (self.config.start_date + self.config.sim_duration)]
 
     @property
     def past_markets(self):
