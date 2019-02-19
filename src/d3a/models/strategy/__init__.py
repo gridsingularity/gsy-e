@@ -140,8 +140,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         super(BaseStrategy, self).__init__()
         self.offers = Offers(self)
         self.enabled = True
-        self._bids = {}
-        self._traded_bids = {}
 
     parameters = None
 
@@ -194,6 +192,43 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offers.bought_offer(trade.offer, market)
         return trade
 
+    def post(self, **data):
+        self.event_data_received(data)
+
+    def event_data_received(self, data: Dict[str, Any]):
+        pass
+
+    def trigger_enable(self, **kw):
+        self.enabled = True
+        self.log.warning("Trading has been enabled")
+
+    def trigger_disable(self):
+        self.enabled = False
+        self.log.warning("Trading has been disabled")
+        # We've been disabled - remove all future open offers
+        for market in self.area.markets.values():
+            for offer in list(market.offers.values()):
+                if offer.seller == self.owner.name:
+                    market.delete_offer(offer)
+
+    def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
+        if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):
+            super().event_listener(event_type, **kwargs)
+
+    def event_trade(self, *, market_id, trade):
+        market = self.area.get_future_market_from_id(market_id)
+        self.offers.on_trade(market, trade)
+
+    def event_offer_changed(self, *, market_id, existing_offer, new_offer):
+        self.offers.on_offer_changed(existing_offer, new_offer)
+
+
+class BidEnabledStrategy(BaseStrategy):
+    def __init__(self):
+        super().__init__()
+        self._bids = {}
+        self._traded_bids = {}
+
     def post_bid(self, market, price, energy):
         bid = market.bid(
             price,
@@ -236,35 +271,29 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             return {}
         return self._bids[market]
 
-    def post(self, **data):
-        self.event_data_received(data)
-
-    def event_data_received(self, data: Dict[str, Any]):
-        pass
-
-    def trigger_enable(self, **kw):
-        self.enabled = True
-        self.log.warning("Trading has been enabled")
-
-    def trigger_disable(self):
-        self.enabled = False
-        self.log.warning("Trading has been disabled")
-        # We've been disabled - remove all future open offers
-        for market in self.area.markets.values():
-            for offer in list(market.offers.values()):
-                if offer.seller == self.owner.name:
-                    market.delete_offer(offer)
-
-    def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
-        if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):
-            super().event_listener(event_type, **kwargs)
-
-    def event_trade(self, *, market_id, trade):
+    def event_bid_deleted(self, *, market_id, bid):
+        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+            "Invalid state, cannot receive a bid if single sided market is globally configured."
         market = self.area.get_future_market_from_id(market_id)
-        self.offers.on_trade(market, trade)
+        assert market is not None
 
-    def event_offer_changed(self, *, market_id, existing_offer, new_offer):
-        self.offers.on_offer_changed(existing_offer, new_offer)
+        if bid.buyer != self.owner.name:
+            return
+        self.remove_bid_from_pending(bid.id, market)
 
     def event_bid_changed(self, *, market_id, existing_bid, new_bid):
-        pass
+        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+            "Invalid state, cannot receive a bid if single sided market is globally configured."
+        market = self.area.get_future_market_from_id(market_id)
+        if new_bid.buyer != self.owner.name:
+            return
+        self.add_bid_to_posted(market=market, bid=new_bid)
+
+    def event_bid_traded(self, *, market_id, bid_trade):
+        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+            "Invalid state, cannot receive a bid if single sided market is globally configured."
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
+
+        if bid_trade.buyer == self.owner.name:
+            self.add_bid_to_bought(bid_trade.offer, self.area.get_future_market_from_id(market_id))

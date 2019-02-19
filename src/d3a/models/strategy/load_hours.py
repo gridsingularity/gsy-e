@@ -23,7 +23,7 @@ from collections import namedtuple
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
-from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import BidUpdateFrequencyMixin
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -33,7 +33,7 @@ from d3a.models.read_user_profile import InputProfileTypes
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 
-class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
+class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'final_buying_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, daily_budget=None,
@@ -45,7 +45,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
 
-        BaseStrategy.__init__(self)
+        BidEnabledStrategy.__init__(self)
         self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                           initial_buying_rate)
         self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
@@ -210,28 +210,9 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         for market in self.active_markets:
             self._demand_balancing_offer(market)
 
-    def event_bid_deleted(self, *, market_id, bid):
-        market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
-
-        if bid.buyer != self.owner.name:
-            return
-        self.remove_bid_from_pending(bid.id, market)
-
-    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
-        market = self.area.get_future_market_from_id(market_id)
-
-        if new_bid.buyer != self.owner.name:
-            return
-
-        self.add_bid_to_posted(market=market, bid=new_bid)
-
     def event_bid_traded(self, *, market_id, bid_trade):
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
-
-        if bid_trade.buyer != self.owner.name:
-            return
 
         if bid_trade.offer.buyer == self.owner.name:
             self.energy_requirement_Wh[market.time_slot] -= bid_trade.offer.energy * 1000.0
@@ -240,10 +221,6 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             assert self.energy_requirement_Wh[market.time_slot] >= -0.00001, \
                 f"Energy requirement for load {self.owner.name} fell below zero " \
                 f"({self.energy_requirement_Wh[market.time_slot]})."
-
-        self.remove_bid_from_pending(bid_trade.offer.id, market)
-
-        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)

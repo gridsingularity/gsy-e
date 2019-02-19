@@ -20,7 +20,7 @@ from collections import namedtuple
 
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import StorageState
-from d3a.models.strategy import BaseStrategy
+from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, \
     BidUpdateFrequencyMixin
@@ -36,7 +36,7 @@ GeneralSettings = ConstSettings.GeneralSettings
 BalancingSettings = ConstSettings.BalancingSettings
 
 
-class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
+class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequencyMixin):
     parameters = ('risk', 'initial_capacity_kWh', 'initial_soc', 'initial_rate_option',
                   'energy_rate_decrease_option', 'energy_rate_decrease_per_update',
                   'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
@@ -67,7 +67,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh,
                                              min_allowed_soc, initial_selling_rate)
-        BaseStrategy.__init__(self)
+        BidEnabledStrategy.__init__(self)
 
         self.final_selling_rate = next(iter(self.break_even.values())).sell
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
@@ -215,43 +215,13 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy
             self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
 
-    def event_bid_deleted(self, *, market_id, bid):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
-            "Invalid state, cannot receive a bid if single sided market is globally configured."
-        market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
-
-        if bid.buyer != self.owner.name:
-            return
-        self.remove_bid_from_pending(bid.id, market)
-
-    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
-            "Invalid state, cannot receive a bid if single sided market is globally configured."
-        market = self.area.get_future_market_from_id(market_id)
-        if new_bid.buyer != self.owner.name:
-            return
-        self.add_bid_to_posted(market=market, bid=new_bid)
-
     def event_bid_traded(self, *, market_id, bid_trade):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
-            "Invalid state, cannot receive a bid if single sided market is globally configured."
-
-        if bid_trade.offer.buyer != self.owner.name:
-            return
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
 
-        buffered_bid = next(filter(
-            lambda b: b.id == bid_trade.offer.id, self.get_posted_bids(market)
-        ))
-
-        if bid_trade.offer.buyer == buffered_bid.buyer:
-            # Do not remove bid in case the trade is partial
-            self.add_bid_to_bought(bid_trade.offer, market, remove_bid=not bid_trade.residual)
+        if bid_trade.offer.buyer == self.owner.name:
             self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer.energy
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
-        self.remove_bid_from_pending(bid_trade.offer.id, market)
 
     def event_market_cycle(self):
         self.update_market_cycle_offers(self.break_even[self.area.now][1])
