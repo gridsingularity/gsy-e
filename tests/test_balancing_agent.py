@@ -51,7 +51,8 @@ class FakeBalancingMarket:
     def time_slot(self):
         return self._timeslot
 
-    def accept_offer(self, offer_or_id, buyer, energy=None, time=None, price_drop=False):
+    def accept_offer(self, offer_or_id, buyer, energy=None, time=None,
+                     price_drop=False, trade_rate: float = None):
         if time is None:
             time = self.time_slot
         offer = offer_or_id

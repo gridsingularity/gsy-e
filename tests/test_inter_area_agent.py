@@ -78,7 +78,7 @@ class FakeMarket:
         return {bid.id: bid for bid in self._bids}
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None,
-                     price_drop=False, already_tracked=False):
+                     price_drop=False, already_tracked=False, trade_rate: float = None):
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
         if energy < offer.energy:
@@ -90,17 +90,23 @@ class FakeMarket:
             return Trade('trade_id', time, offer, offer.seller, buyer)
 
     def accept_bid(self, bid, energy, seller, buyer=None, already_tracked=True, *,
-                   time=None, price_drop=True):
+                   time=None, price_drop=True, trade_rate: float = None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
+        if trade_rate is None:
+            trade_rate = bid.price / bid.energy
+        else:
+            assert trade_rate <= (bid.price / bid.energy)
+
         if energy < bid.energy:
             residual_energy = bid.energy - energy
             residual = Bid('res', bid.price, residual_energy, bid.buyer, seller, bid.market)
-            traded = Bid(bid.id, bid.price, energy, bid.buyer, seller, bid.market)
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller, bid.market)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual)
         else:
-            return Trade('trade_id', time, bid, bid.seller, bid.buyer)
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller, bid.market)
+            return Trade('trade_id', time, traded, traded.seller, bid.buyer)
 
     def delete_offer(self, *args):
         pass
@@ -487,7 +493,7 @@ def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
     offer = iaa_double_sided_2.lower_market.calls_offers[0]
     assert offer.id == 'id'
     assert offer.energy == 2
-    assert offer.price == 2.4
+    assert offer.price == 2
 
     assert len(iaa_double_sided_2.lower_market.calls_bids) == 1
     bid = iaa_double_sided_2.lower_market.calls_bids[0]

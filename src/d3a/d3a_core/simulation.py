@@ -265,7 +265,10 @@ class Simulation:
                                 self.endpoint_buffer
                             )
 
-                    self.deactivate_areas(self.area)
+                    """
+                    TODO: D3ASIM-1001
+                    """
+                    # self.deactivate_areas(self.area)
                     self.endpoint_buffer.update_stats(self.area, self.status)
 
                     run_duration = (
