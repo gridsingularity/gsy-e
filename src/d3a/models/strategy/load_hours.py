@@ -29,6 +29,7 @@ from d3a.models.strategy.update_frequency import BidUpdateFrequencyMixin
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
@@ -218,7 +219,7 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
             self.energy_requirement_Wh[market.time_slot] -= bid_trade.offer.energy * 1000.0
             self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
                 self._operating_hours(bid_trade.offer.energy)
-            assert self.energy_requirement_Wh[market.time_slot] >= -0.00001, \
+            assert self.energy_requirement_Wh[market.time_slot] >= -FLOATING_POINT_TOLERANCE, \
                 f"Energy requirement for load {self.owner.name} fell below zero " \
                 f"({self.energy_requirement_Wh[market.time_slot]})."
 

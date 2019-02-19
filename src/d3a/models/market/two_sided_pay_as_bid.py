@@ -23,6 +23,7 @@ from d3a.models.market.one_sided import OneSidedMarket
 from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
 from d3a.models.market.market_structures import Bid, Trade
 from d3a.events.event_structures import MarketEvent
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
 
@@ -78,7 +79,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         energy = market_bid.energy if energy is None else energy
         if trade_rate is None:
             trade_rate = market_bid.price / market_bid.energy
-        assert trade_rate <= (market_bid.price / market_bid.energy) + 0.0001, \
+        assert trade_rate <= (market_bid.price / market_bid.energy) + FLOATING_POINT_TOLERANCE, \
             f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
 
         if energy <= 0:

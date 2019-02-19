@@ -27,8 +27,9 @@ from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.config import SimulationConfig
-from d3a.constants import TIME_FORMAT
+from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.device_registry import DeviceRegistry
+
 DeviceRegistry.REGISTRY = {
     "A": (23, 25),
     "someone": (23, 25),
@@ -535,7 +536,7 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
     assert abs(storage_strategy_test8.state.used_storage
                - storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot] -
                storage_strategy_test8.state.capacity *
-               ConstSettings.StorageSettings.MIN_ALLOWED_SOC) < 0.0001
+               ConstSettings.StorageSettings.MIN_ALLOWED_SOC) < FLOATING_POINT_TOLERANCE
     assert storage_strategy_test8.state.offered_sell_kWh[sell_market.time_slot] == \
         100 - storage_strategy_test8.state.capacity * ConstSettings.StorageSettings.MIN_ALLOWED_SOC
 
