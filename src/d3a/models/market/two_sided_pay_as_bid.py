@@ -104,7 +104,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
             else:
                 if trade_rate is not None:
                     bid = bid._replace(price=trade_rate * market_bid.energy)
-                    # print(f"BidID: {bid.id}")
             trade = Trade(str(uuid.uuid4()), self._now,
                           bid, seller, buyer, residual, price_drop=price_drop,
                           already_tracked=already_tracked)
