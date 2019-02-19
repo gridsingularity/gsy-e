@@ -216,20 +216,26 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
 
     def event_bid_deleted(self, *, market_id, bid):
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            # Do not handle bid deletes on single sided markets
-            return
-        if market_id != self.area.next_market.id:
-            return
+        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+            "Invalid state, cannot receive a bid if single sided market is globally configured."
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
+
         if bid.buyer != self.owner.name:
             return
-        self.remove_bid_from_pending(bid.id, self.area.next_market)
+        self.remove_bid_from_pending(bid.id, market)
+
+    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+            "Invalid state, cannot receive a bid if single sided market is globally configured."
+        market = self.area.get_future_market_from_id(market_id)
+        if new_bid.buyer != self.owner.name:
+            return
+        self.add_bid_to_posted(market=market, bid=new_bid)
 
     def event_bid_traded(self, *, market_id, bid_trade):
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            # Do not handle bid trades on single sided markets
-            assert False and "Invalid state, cannot receive a bid if single sided market" \
-                             " is globally configured."
+        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+            "Invalid state, cannot receive a bid if single sided market is globally configured."
 
         if bid_trade.offer.buyer != self.owner.name:
             return
@@ -245,6 +251,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.add_bid_to_bought(bid_trade.offer, market, remove_bid=not bid_trade.residual)
             self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer.energy
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
+        self.remove_bid_from_pending(bid_trade.offer.id, market)
 
     def event_market_cycle(self):
         self.update_market_cycle_offers(self.break_even[self.area.now][1])

@@ -310,8 +310,8 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
         round(((0.1/0.155) * 0.25), 2)
 
 
-@pytest.mark.parametrize("partial", [False, True])
-def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strategy_test5,
+@pytest.mark.parametrize("partial", [None, Bid('test_id', 123, 321, 'A', 'B')])
+def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strategy_test5,
                                                                 called,
                                                                 partial):
     ConstSettings.IAASettings.MARKET_TYPE = 2
@@ -330,14 +330,10 @@ def test_event_bid_traded_does_not_remove_bid_for_partial_trade(load_hours_strat
     trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=partial)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
-    if not partial:
-        assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
-        assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
-        assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
-            repr(trade_market)
-    else:
-        assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 0
-        assert load_hours_strategy_test5.get_posted_bids(trade_market) == [bid]
+    assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
+        repr(trade_market)
 
     ConstSettings.IAASettings.MARKET_TYPE = 1
 

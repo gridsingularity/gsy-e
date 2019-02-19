@@ -87,20 +87,22 @@ class TwoSidedPayAsBid(OneSidedMarket):
             raise InvalidTrade("Traded energy cannot be more than the bid energy.")
         elif energy is None or energy <= market_bid.energy:
             residual = False
-            if energy < market_bid.energy:
+            if energy is not None and energy < market_bid.energy:
                 # Partial bidding
-                residual = True
+
                 # For the residual bid we use the market rate, in order to not affect
                 # rate increase algorithm.
                 energy_rate = market_bid.price / market_bid.energy
                 residual_energy = market_bid.energy - energy
                 residual_price = residual_energy * energy_rate
-                self.bid(residual_price, residual_energy, buyer, seller, bid.id)
+                changed_bid = self.bid(residual_price, residual_energy, buyer, seller)
+                self._notify_listeners(MarketEvent.BID_CHANGED,
+                                       existing_bid=bid, new_bid=changed_bid)
+                residual = changed_bid
                 # For the accepted bid we use the 'clearing' rate from the bid
                 # input argument.
                 final_price = energy * trade_rate
-                bid = Bid(bid.id, final_price, energy,
-                          buyer, seller, self)
+                bid = Bid(bid.id, final_price, energy, buyer, seller, self)
             else:
                 if trade_rate is not None:
                     bid = bid._replace(price=trade_rate * market_bid.energy)

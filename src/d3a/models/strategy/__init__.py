@@ -200,15 +200,18 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             energy,
             self.owner.name,
             self.area.name)
-        if market not in self._bids.keys():
-            self._bids[market] = []
-        self._bids[market].append(bid)
+        self.add_bid_to_posted(market, bid)
         return bid
 
     def remove_bid_from_pending(self, bid_id, market):
         if bid_id in market.bids.keys():
             market.delete_bid(bid_id)
         self._bids[market] = [bid for bid in self._bids[market] if bid.id != bid_id]
+
+    def add_bid_to_posted(self, market, bid):
+        if market not in self._bids.keys():
+            self._bids[market] = []
+        self._bids[market].append(bid)
 
     def add_bid_to_bought(self, bid, market, remove_bid=True):
         if market not in self._traded_bids:
@@ -262,3 +265,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def event_offer_changed(self, *, market_id, existing_offer, new_offer):
         self.offers.on_offer_changed(existing_offer, new_offer)
+
+    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+        pass

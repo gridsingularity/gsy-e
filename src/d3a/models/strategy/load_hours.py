@@ -218,6 +218,14 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
             return
         self.remove_bid_from_pending(bid.id, market)
 
+    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+        market = self.area.get_future_market_from_id(market_id)
+
+        if new_bid.buyer != self.owner.name:
+            return
+
+        self.add_bid_to_posted(market=market, bid=new_bid)
+
     def event_bid_traded(self, *, market_id, bid_trade):
         market = self.area.get_future_market_from_id(market_id)
         assert market is not None
@@ -225,18 +233,15 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         if bid_trade.buyer != self.owner.name:
             return
 
-        buffered_bid = next(filter(
-            lambda b: b.id == bid_trade.offer.id,
-            self.get_posted_bids(market)
-        ))
-
-        if bid_trade.offer.buyer == buffered_bid.buyer:
+        if bid_trade.offer.buyer == self.owner.name:
             self.energy_requirement_Wh[market.time_slot] -= bid_trade.offer.energy * 1000.0
             self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
                 self._operating_hours(bid_trade.offer.energy)
-            if not bid_trade.residual or self.energy_requirement_Wh[market.time_slot] < 0.00001:
-                self.remove_bid_from_pending(bid_trade.offer.id, market)
-            assert self.energy_requirement_Wh[market.time_slot] >= -0.00001
+            assert self.energy_requirement_Wh[market.time_slot] >= -0.00001, \
+                f"Energy requirement for load {self.owner.name} fell below zero " \
+                f"({self.energy_requirement_Wh[market.time_slot]})."
+
+        self.remove_bid_from_pending(bid_trade.offer.id, market)
 
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
