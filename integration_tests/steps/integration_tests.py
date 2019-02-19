@@ -569,6 +569,50 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
         assert all([permanent_load.strategy.energy == ei for ei in energy_profile])
 
 
+@then('the energy bills report the correct accumulated traded energy price')
+def test_accumulated_energy_price(context):
+    bills = context.simulation.endpoint_buffer.bills
+
+    cell_tower = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
+
+    house1 = bills["House 1"]["earned"] - bills["House 1"]["spent"]
+    area_net_traded_energy_price = \
+        sum([v["earned"] - v["spent"] for v in bills["House 1"]["children"].values()])
+
+    assert isclose(area_net_traded_energy_price, house1, rel_tol=1e-02), \
+        f"area: {area_net_traded_energy_price} house {house1}"
+
+    house2 = bills["House 2"]["earned"] - bills["House 2"]["spent"]
+    area_net_traded_energy_price = \
+        sum([v["earned"] - v["spent"] for v in bills["House 2"]["children"].values()])
+    assert isclose(area_net_traded_energy_price, house2, rel_tol=1e-02)
+
+    net_traded_energy_price = cell_tower + house1 + house2
+
+    assert isclose(net_traded_energy_price, 0, abs_tol=1e-10)
+
+
+@then('the traded energy report the correct accumulated traded energy')
+def test_accumulated_energy(context):
+    bills = context.simulation.endpoint_buffer.bills
+
+    cell_tower = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
+
+    house1 = bills["House 1"]["sold"] - bills["House 1"]["bought"]
+    area_net_energy = \
+        sum([v["sold"] - v["bought"] for v in bills["House 1"]["children"].values()])
+    assert isclose(area_net_energy, house1, rel_tol=1e-02)
+
+    house2 = bills["House 2"]["sold"] - bills["House 2"]["bought"]
+    area_net_energy = \
+        sum([v["sold"] - v["bought"] for v in bills["House 2"]["children"].values()])
+    assert isclose(area_net_energy, house2, rel_tol=1e-02)
+
+    net_energy = cell_tower + house1 + house2
+
+    assert isclose(net_energy, 0, abs_tol=1e-10)
+
+
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
     if isinstance(context._device_profile, str):
