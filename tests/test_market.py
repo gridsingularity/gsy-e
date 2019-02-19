@@ -213,7 +213,8 @@ def test_market_bid_trade(market: TwoSidedPayAsBid):
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.offer is bid
+    assert trade.offer.price == bid.price
+    assert trade.offer.energy == bid.energy
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
     assert not trade.residual

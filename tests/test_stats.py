@@ -52,7 +52,7 @@ class FakeOffer:
 
 
 def _trade(price, buyer, energy=1, seller=None):
-    return Trade('id', 0, FakeOffer(price, energy, seller), 'seller', buyer, None)
+    return Trade('id', 0, FakeOffer(price, energy, seller), seller, buyer, None)
 
 
 @pytest.fixture

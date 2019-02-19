@@ -47,3 +47,9 @@ Feature: Two sided market tests
     And d3a is installed
     When we run the simulation with setup file two_sided_market.one_cep_one_load and parameters [24, 15, 15, 0, 4]
     Then LoadHoursStrategy buys energy at the final_buying_rate
+
+  Scenario: Residual Offer always reposted at the old rate
+    Given we have a scenario named two_sided_market/offer_reposted_at_old_offer_rate
+    And d3a is installed
+    When we run the simulation with setup file two_sided_market.offer_reposted_at_old_offer_rate and parameters [24, 60, 60, 0, 1]
+    Then CEP posted the residual offer at the old rate

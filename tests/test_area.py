@@ -19,7 +19,10 @@ from pendulum import duration, DateTime, today
 from collections import OrderedDict
 from unittest.mock import MagicMock
 import unittest
+from parameterized import parameterized
+from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.area import Area
+from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.storage import StorageStrategy
@@ -108,3 +111,117 @@ class TestAreaClass(unittest.TestCase):
         assert len(self.area.past_balancing_markets) == 1
         assert len(self.area.all_markets) == 5
         assert len(self.area.balancing_markets) == 5
+
+
+class TestEventDispatcher(unittest.TestCase):
+
+    def test_area_dispatches_activate_to_strategies_despite_connect_enable(self):
+        self.area = Area(name="test_area")
+        self.area.events = MagicMock(spec=Events)
+        self.area.events.is_enabled = False
+        self.area.events.is_connected = False
+        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(AreaEvent.ACTIVATE)
+        self.area.events.is_enabled = True
+        self.area.events.is_connected = True
+        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(AreaEvent.ACTIVATE)
+        self.area.events.is_enabled = True
+        self.area.events.is_connected = False
+        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(AreaEvent.ACTIVATE)
+        self.area.events.is_enabled = False
+        self.area.events.is_connected = True
+        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(AreaEvent.ACTIVATE)
+
+    def test_are_dispatches_other_events_only_if_connected_and_enabled(self):
+        self.area = Area(name="test_area")
+        self.area.events = MagicMock(spec=Events)
+        self.area.events.is_enabled = False
+        self.area.events.is_connected = False
+        assert not self.area.dispatcher._should_dispatch_to_strategies_appliances(
+            AreaEvent.MARKET_CYCLE)
+        self.area.events.is_enabled = True
+        self.area.events.is_connected = False
+        assert not self.area.dispatcher._should_dispatch_to_strategies_appliances(
+            AreaEvent.MARKET_CYCLE)
+        self.area.events.is_enabled = False
+        self.area.events.is_connected = True
+        assert not self.area.dispatcher._should_dispatch_to_strategies_appliances(
+            AreaEvent.MARKET_CYCLE)
+        self.area.events.is_enabled = True
+        self.area.events.is_connected = True
+        assert self.area.dispatcher._should_dispatch_to_strategies_appliances(
+            AreaEvent.MARKET_CYCLE)
+
+    @parameterized.expand([(AreaEvent.MARKET_CYCLE, "_cycle_markets"),
+                           (AreaEvent.ACTIVATE, "activate"),
+                           (AreaEvent.TICK, "tick")])
+    def test_event_listener_calls_area_methods_for_area_events(self, event_type, area_method):
+        function_mock = MagicMock(name=area_method)
+        area = Area(name="test_area")
+        setattr(area, area_method, function_mock)
+        area.dispatcher.event_listener(event_type)
+        assert function_mock.call_count == 1
+
+    def strategy_appliance_mock(self):
+        strategy_mock = MagicMock()
+        strategy_mock.event_listener = MagicMock()
+        appliance_mock = MagicMock()
+        appliance_mock.event_listener = MagicMock()
+        area = Area(name="test_area")
+        area.strategy = strategy_mock
+        area.appliance = appliance_mock
+        area.events = MagicMock(spec=Events)
+        return area
+
+    @parameterized.expand([(MarketEvent.OFFER, ),
+                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.BID_TRADED, ),
+                           (MarketEvent.BID_DELETED, ),
+                           (MarketEvent.OFFER_DELETED, )])
+    def test_event_listener_dispatches_to_strategy_appliance_if_enabled_connected(
+            self, event_type
+    ):
+        area = self.strategy_appliance_mock()
+        area.events.is_enabled = True
+        area.events.is_connected = True
+        area.dispatcher.event_listener(event_type)
+        assert area.strategy.event_listener.call_count == 1
+        assert area.appliance.event_listener.call_count == 1
+
+    @parameterized.expand([(MarketEvent.OFFER, ),
+                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.BID_TRADED, ),
+                           (MarketEvent.BID_DELETED, ),
+                           (MarketEvent.OFFER_DELETED, )])
+    def test_event_listener_doesnt_dispatch_to_strategy_appliance_if_not_enabled(self, event_type):
+        area = self.strategy_appliance_mock()
+        area.events.is_enabled = False
+        area.events.is_connected = True
+        area.dispatcher.event_listener(event_type)
+        assert area.strategy.event_listener.call_count == 0
+        assert area.appliance.event_listener.call_count == 0
+
+    @parameterized.expand([(MarketEvent.OFFER, ),
+                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.BID_TRADED, ),
+                           (MarketEvent.BID_DELETED, ),
+                           (MarketEvent.OFFER_DELETED, )])
+    def test_event_listener_doesnt_dispatch_to_strategy_appliance_if_not_connected(
+            self, event_type
+    ):
+        area = self.strategy_appliance_mock()
+        area.events.is_enabled = True
+        area.events.is_connected = False
+        area.dispatcher.event_listener(event_type)
+        assert area.strategy.event_listener.call_count == 0
+        assert area.appliance.event_listener.call_count == 0
+
+    def test_event_on_disabled_area_triggered_for_market_cycle_on_disabled_area(self):
+        area = self.strategy_appliance_mock()
+        area.strategy.event_on_disabled_area = MagicMock()
+        area.events.is_enabled = False
+        area.events.is_connected = True
+        area.dispatcher.event_listener(AreaEvent.MARKET_CYCLE)
+        assert area.strategy.event_on_disabled_area.call_count == 1

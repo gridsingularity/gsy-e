@@ -47,7 +47,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  initial_soc: float=None,
                  initial_rate_option: int=StorageSettings.INITIAL_RATE_OPTION,
                  initial_selling_rate:
-                 float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+                 float=StorageSettings.MAX_SELLING_RATE,
                  energy_rate_decrease_option: int=StorageSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update:
                  float=GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
@@ -67,7 +67,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh,
                                              min_allowed_soc, initial_selling_rate)
-
         BaseStrategy.__init__(self)
 
         self.final_selling_rate = next(iter(self.break_even.values())).sell
@@ -120,6 +119,9 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             self.risk = risk
         if min_allowed_soc is not None:
             self.state.min_allowed_soc = min_allowed_soc
+
+    def event_on_disabled_area(self):
+        self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
 
     def event_activate(self):
 
@@ -190,7 +192,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self.buy_energy(market)
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2:
+            elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+                    ConstSettings.IAASettings.MARKET_TYPE == 3:
 
                 if self.are_bids_posted(market):
                     self.update_posted_bids_over_ticks(market)
@@ -256,7 +259,8 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
         if self.state.used_storage > 0:
             self.sell_energy()
 
-        if ConstSettings.IAASettings.MARKET_TYPE == 2:
+        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+           ConstSettings.IAASettings.MARKET_TYPE == 3:
             self.state.clamp_energy_to_buy_kWh([current_market.time_slot])
             self.update_market_cycle_bids(final_rate=self.break_even[
                 self.area.now][0])

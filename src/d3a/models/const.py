@@ -59,6 +59,8 @@ class ConstSettings:
         BREAK_EVEN_BUY = 24.9
         # Minimum acceptable buy rate for the battery, in ct/kWh.
         MIN_BUYING_RATE = 24.9
+        # Maximum acceptable sell rate for the battery, in ct/kWh.
+        MAX_SELLING_RATE = 30
         # Min allowed battery SOC, range is [0, 1].
         MIN_ALLOWED_SOC = 0.1
         # Controls whether energy is sold only on the most expensive market, default is
