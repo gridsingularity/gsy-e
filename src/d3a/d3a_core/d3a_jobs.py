@@ -19,7 +19,7 @@ import logging
 from os import environ, getpid
 import ast
 
-import pendulum
+from pendulum import now, today, duration, from_format
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
@@ -29,6 +29,7 @@ from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import available_simulation_scenarios
 from d3a.d3a_core.util import update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
+from d3a.constants import TIME_ZONE, DATE_FORMAT
 
 
 @job('d3a')
@@ -46,20 +47,20 @@ def start(scenario, settings):
         update_advanced_settings(ast.literal_eval(advanced_settings))
 
     config = SimulationConfig(
-        sim_duration=pendulum.duration(
-            days=1 if 'duration' not in settings else settings['duration'].days
-        ),
-        slot_length=pendulum.duration(
+        sim_duration=duration(days=1 if 'duration' not in settings else settings['duration'].days),
+        slot_length=duration(
             seconds=15*60 if 'slot_length' not in settings else settings['slot_length'].seconds
         ),
-        tick_length=pendulum.duration(
+        tick_length=duration(
             seconds=15 if 'tick_length' not in settings else settings['tick_length'].seconds
         ),
         market_count=settings.get('market_count', 1),
         cloud_coverage=settings.get('cloud_coverage',
                                     ConstSettings.PVSettings.DEFAULT_POWER_PROFILE),
         pv_user_profile=settings.get('pv_user_profile', None),
-        iaa_fee=settings.get('iaa_fee', ConstSettings.IAASettings.FEE_PERCENTAGE)
+        iaa_fee=settings.get('iaa_fee', ConstSettings.IAASettings.FEE_PERCENTAGE),
+        start_date=from_format(settings.get('start_date'), DATE_FORMAT, tz=TIME_ZONE)
+        if not settings.get('start_date') is "None" else today(tz=TIME_ZONE)
     )
 
     if scenario is None:
@@ -87,7 +88,7 @@ def main():
     with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'))):
         Worker(
             ['d3a'],
-            name='simulation.{}.{:%s}'.format(getpid(), pendulum.now())
+            name='simulation.{}.{:%s}'.format(getpid(), now())
         ).work()
 
 
