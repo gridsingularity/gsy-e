@@ -29,6 +29,7 @@ from d3a.models.read_user_profile import InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
+BreakEven = namedtuple('BreakEven', ('buy', 'sell'))
 
 StorageSettings = ConstSettings.StorageSettings
 GeneralSettings = ConstSettings.GeneralSettings
@@ -61,23 +62,25 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
 
         if type(break_even) == list:
             break_even = tuple(break_even)
+        if type(break_even) is not dict:
+            break_even = BreakEven(*break_even)
+
+        break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
 
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
-        break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
-
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh, break_even,
                                              min_allowed_soc, initial_selling_rate)
         self.break_even = break_even
-        self.final_selling_rate = list(break_even.values())[0][1]
+        self.final_selling_rate = next(iter(break_even.values())).sell
 
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
             InputProfileTypes.IDENTITY,
             StorageSettings.MIN_BUYING_RATE
         )
-        self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
+        self.max_buying_rate_profile = {k: v.buy for k, v in break_even.items()}
 
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
