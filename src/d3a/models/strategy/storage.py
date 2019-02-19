@@ -60,33 +60,28 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                  cap_price_strategy: bool=False,
                  min_allowed_soc=None):
 
-        if type(break_even) == list:
-            break_even = tuple(break_even)
-        if type(break_even) is not dict:
-            break_even = BreakEven(*break_even)
-
-        break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
-
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
+
+        self.break_even = self._validate_break_even_points(break_even)
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
-                                             initial_soc, battery_capacity_kWh, break_even,
+                                             initial_soc, battery_capacity_kWh,
                                              min_allowed_soc, initial_selling_rate)
-        self.break_even = break_even
-        self.final_selling_rate = next(iter(break_even.values())).sell
+
+        BaseStrategy.__init__(self)
+
+        self.final_selling_rate = next(iter(self.break_even.values())).sell
+        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
+                                           initial_selling_rate,
+                                           energy_rate_decrease_option,
+                                           energy_rate_decrease_per_update)
 
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
             InputProfileTypes.IDENTITY,
             StorageSettings.MIN_BUYING_RATE
         )
-        self.max_buying_rate_profile = {k: v.buy for k, v in break_even.items()}
-
-        BaseStrategy.__init__(self)
-        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
-                                           initial_selling_rate,
-                                           energy_rate_decrease_option,
-                                           energy_rate_decrease_per_update)
+        self.max_buying_rate_profile = {k: v.buy for k, v in self.break_even.items()}
         BidUpdateFrequencyMixin.__init__(self,
                                          initial_rate_profile=self.min_buying_rate_profile,
                                          final_rate_profile=self.max_buying_rate_profile)
@@ -109,13 +104,12 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                                max_abs_battery_power_kW=None, break_even=None,
                                min_allowed_soc=None):
         if break_even is not None:
-            self.break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
+            self.break_even = self._validate_break_even_points(break_even)
             self.initial_selling_rate = list(break_even.values())[0][1]
             self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
 
         self._validate_constructor_arguments(risk, None, None, battery_capacity_kWh,
-                                             self.break_even, min_allowed_soc,
-                                             self.initial_selling_rate)
+                                             min_allowed_soc, self.initial_selling_rate)
         self.assign_offermixin_arguments(initial_rate_option, energy_rate_decrease_option,
                                          energy_rate_decrease_per_update)
         if battery_capacity_kWh is not None:
@@ -153,8 +147,28 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
                 raise MarketException
 
     @staticmethod
+    def _validate_break_even_points(break_even):
+        if type(break_even) not in [tuple, list, dict]:
+            raise ValueError("Break even points have to be a tuple, list or dict.")
+
+        if type(break_even) is list:
+            break_even = tuple(break_even)
+        if type(break_even) is tuple:
+            break_even = BreakEven(*break_even)
+        elif type(break_even) is dict:
+            break_even = {k: BreakEven(*v) for k, v in break_even.items()}
+
+        break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
+        if any(be.sell < be.buy for _, be in break_even.items()):
+            raise ValueError("Break even point for sell energy is lower than buy energy.")
+        if any(break_even_point.buy < 0 or break_even_point.sell < 0
+               for _, break_even_point in break_even.items()):
+            raise ValueError("Break even point should be positive energy rate values.")
+        return break_even
+
+    @staticmethod
     def _validate_constructor_arguments(risk, initial_capacity_kWh, initial_soc,
-                                        battery_capacity_kWh, break_even, min_allowed_soc,
+                                        battery_capacity_kWh, min_allowed_soc,
                                         initial_selling_rate):
         if battery_capacity_kWh and battery_capacity_kWh < 0:
             raise ValueError("Battery capacity should be a positive integer")
@@ -168,11 +182,6 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
            initial_capacity_kWh <= battery_capacity_kWh:
             raise ValueError(f"Initial capacity should be between min_allowed_capacity and "
                              "battery_capacity_kWh parameter.")
-        if any(be[1] < be[0] for _, be in break_even.items()):
-            raise ValueError("Break even point for sell energy is lower than buy energy.")
-        if any(break_even_point[0] < 0 or break_even_point[1] < 0
-               for _, break_even_point in break_even.items()):
-            raise ValueError("Break even point should be positive energy rate values.")
         if initial_selling_rate < 0:
             raise ValueError("Initial selling rate must be greater equal 0.")
 

@@ -741,14 +741,17 @@ def test_storage_event_trade(storage_strategy_test11, market_test13):
 def test_balancing_offers_are_not_created_if_device_not_in_registry(
         storage_strategy_test13, area_test13):
     DeviceRegistry.REGISTRY = {}
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     storage_strategy_test13.event_activate()
     storage_strategy_test13.event_market_cycle()
     storage_strategy_test13.event_balancing_market_cycle()
     assert len(area_test13.test_balancing_market.created_balancing_offers) == 0
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
 
 
 def test_balancing_offers_are_created_if_device_in_registry(
         storage_strategy_test13, area_test13):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     storage_strategy_test13.event_activate()
     storage_strategy_test13.event_market_cycle()
@@ -775,6 +778,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
         area_test13.test_balancing_market.created_balancing_offers[1].price
     assert actual_balancing_supply_price == expected_balancing_supply_energy * 40
     DeviceRegistry.REGISTRY = {}
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
 
 
 """TEST14"""
