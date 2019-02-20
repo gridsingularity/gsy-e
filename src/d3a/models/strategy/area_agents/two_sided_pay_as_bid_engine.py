@@ -171,9 +171,9 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             assert source_trade.residual.id not in self.forwarded_bids, \
                 f"Residual bid has not been forwarded even though it was transmitted via " \
                 f"event_bid_trade."
-            res_offer_info = BidInfo(source_trade.residual, target_residual_bid)
-            self.forwarded_bids[source_trade.residual.id] = res_offer_info
-            self.forwarded_bids[target_residual_bid.id] = res_offer_info
+            res_bid_info = BidInfo(source_trade.residual, target_residual_bid)
+            self.forwarded_bids[source_trade.residual.id] = res_bid_info
+            self.forwarded_bids[target_residual_bid.id] = res_bid_info
         self._delete_forwarded_bid_entries(bid_info.source_bid)
 
     def event_bid_deleted(self, *, bid):

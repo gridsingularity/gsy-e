@@ -2,5 +2,6 @@
 fabric3
 pre-commit
 ptpython
+pyyaml>=4.2b1
 tox
 readme-renderer
