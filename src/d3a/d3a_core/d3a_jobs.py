@@ -19,17 +19,17 @@ import logging
 from os import environ, getpid
 import ast
 
-from pendulum import now, today, duration, from_format
+from pendulum import now, duration, from_format
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
-from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import available_simulation_scenarios
 from d3a.d3a_core.util import update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
 from d3a.constants import TIME_ZONE, DATE_FORMAT
+from d3a.models.const import GlobalConfig
 
 
 @job('d3a')
@@ -47,20 +47,18 @@ def start(scenario, settings):
         update_advanced_settings(ast.literal_eval(advanced_settings))
 
     config = SimulationConfig(
-        sim_duration=duration(days=1 if 'duration' not in settings else settings['duration'].days),
-        slot_length=duration(
-            seconds=15*60 if 'slot_length' not in settings else settings['slot_length'].seconds
-        ),
-        tick_length=duration(
-            seconds=15 if 'tick_length' not in settings else settings['tick_length'].seconds
-        ),
-        market_count=settings.get('market_count', 1),
-        cloud_coverage=settings.get('cloud_coverage',
-                                    ConstSettings.PVSettings.DEFAULT_POWER_PROFILE),
+        sim_duration=duration(days=settings['duration'].days)
+        if 'duration' in settings else GlobalConfig.sim_duration,
+        slot_length=duration(seconds=settings['slot_length'].seconds)
+        if 'slot_length' in settings else GlobalConfig.slot_length,
+        tick_length=duration(seconds=settings['tick_length'].seconds)
+        if 'tick_length' in settings else GlobalConfig.tick_length,
+        market_count=settings.get('market_count', GlobalConfig.market_count),
+        cloud_coverage=settings.get('cloud_coverage', GlobalConfig.cloud_coverage),
         pv_user_profile=settings.get('pv_user_profile', None),
-        iaa_fee=settings.get('iaa_fee', ConstSettings.IAASettings.FEE_PERCENTAGE),
+        iaa_fee=settings.get('iaa_fee', GlobalConfig.iaa_fee),
         start_date=from_format(settings.get('start_date'), DATE_FORMAT, tz=TIME_ZONE)
-        if not settings.get('start_date') is "None" else today(tz=TIME_ZONE)
+        if settings.get('start_date') != "None" else GlobalConfig.start_date
     )
 
     if scenario is None:
