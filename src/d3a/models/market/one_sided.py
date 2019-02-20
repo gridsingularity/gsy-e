@@ -150,7 +150,8 @@ class OneSidedMarket(Market):
                     raise InvalidTrade("Energy can't be greater than offered energy")
                 else:
                     # Requested partial is equal to offered energy - just proceed normally
-                    pass
+                    if trade_rate is not None:
+                        offer.price = trade_rate * offer.energy
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer

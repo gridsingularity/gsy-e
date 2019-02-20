@@ -77,7 +77,7 @@ class StorageStrategy(BaseStrategy, OfferUpdateFrequencyMixin, BidUpdateFrequenc
             InputProfileTypes.IDENTITY,
             StorageSettings.MIN_BUYING_RATE
         )
-        self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
+        self.max_buying_rate_profile = {k: v[0] for k, v in break_even.items()}
 
         BaseStrategy.__init__(self)
         OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
