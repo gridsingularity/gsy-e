@@ -20,7 +20,7 @@ from pendulum import duration
 from typing import Union
 from collections import namedtuple
 
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list, is_market_in_simulation_duration
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BaseStrategy
@@ -73,8 +73,7 @@ class LoadHoursStrategy(BaseStrategy, BidUpdateFrequencyMixin):
         markets = []
         for market in self.area.all_markets:
             if self._allowed_operating_hours(market.time_slot) and \
-                    self.area.config.start_date <= market.time_slot <= \
-                    (self.area.config.start_date + self.area.config.sim_duration):
+                    is_market_in_simulation_duration(self.area.config, market):
                 markets.append(market)
         return markets
 
