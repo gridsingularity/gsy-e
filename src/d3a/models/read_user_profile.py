@@ -36,7 +36,28 @@ class InputProfileTypes(Enum):
     POWER = 2
 
 
-def default_profile_dict(val=None):
+def _str_to_datetime(time_str, time_format) -> DateTime:
+    """
+    Converts time_str into a pendulum (DateTime) object that either takes the global start date or
+    the provided one, dependant on the time_format
+    :return: DateTime
+    """
+    time = from_format(time_str, time_format, tz=TIME_ZONE)
+    if time_format == DATE_TIME_FORMAT:
+        return time
+    elif time_format == TIME_FORMAT:
+        return GlobalConfig.start_date.add(
+            hours=time.hour, minutes=time.minute, seconds=time.second)
+    else:
+        raise ValueError("Provided time_format invalid.")
+
+
+def default_profile_dict(val=None) -> Dict[DateTime, int]:
+    """
+    Expanding a dictionary that contains one key for every minute of the simulation time
+    The keys are pendulum (DateTime) objects
+    :return: Dict[DateTime, int]
+    """
     if val is None:
         val = 0
     if GlobalConfig.sim_duration.days > 0:
@@ -59,7 +80,12 @@ def default_profile_dict(val=None):
     return outdict
 
 
-def _eval_time_format(time_dict: Dict):
+def _eval_time_format(time_dict: Dict) -> str:
+    """
+    Evaluates which time format the provided dictionary has, also checks if the time-format is
+    consistent for each time_slot
+    :return: TIME_FORMAT or DATE_TIME_FORMAT
+    """
     try:
         [from_format(str(ti), TIME_FORMAT) for ti in time_dict.keys()]
         return TIME_FORMAT
@@ -80,14 +106,20 @@ def _readCSV(path: str) -> Dict:
     :return: Dict[DateTime, value]
     """
     profile_data = {}
-    with open(path) as csvfile:
-        next(csvfile)
-        csv_rows = csv.reader(csvfile, delimiter=';')
+    with open(path) as csv_file:
+        csv_rows = csv.reader(csv_file)
         for row in csv_rows:
-            time_str, valstr = row
-            profile_data[time_str] = float(valstr)
+            if len(row) == 0:
+                raise Exception(f"There must not be an empty line in the profile file {path}")
+            if len(row) != 2:
+                row = row[0].split(";")
+            try:
+                profile_data[row[0]] = float(row[1])
+            except ValueError:
+                pass
+
     time_format = _eval_time_format(profile_data)
-    return dict((from_format(time_str, time_format, tz=TIME_ZONE), value)
+    return dict((_str_to_datetime(time_str, time_format), value)
                 for time_str, value in profile_data.items())
 
 
@@ -179,7 +211,7 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
             # Remove filename entry to support d3a-web profiles
             profile.pop("filename", None)
             time_format = _eval_time_format(profile)
-            profile = {from_format(key, time_format): val
+            profile = {_str_to_datetime(key, time_format): val
                        for key, val in profile.items()}
         elif isinstance(list(input_profile.keys())[0], DateTime):
             return input_profile
@@ -187,7 +219,7 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
         elif isinstance(list(input_profile.keys())[0], str):
             # input is dict with string keys that are properly formatted time stamps
             time_format = _eval_time_format(input_profile)
-            profile = {from_format(key, time_format): val
+            profile = {_str_to_datetime(key, time_format): val
                        for key, val in input_profile.items()}
 
         elif isinstance(list(input_profile.keys())[0], int) or \
@@ -219,9 +251,6 @@ def _eval_time_period_consensus(input_profile: Dict):
     Checks whether the provided profile is providing information for the simulation time period
     :return:
     """
-    # TODO: Shall we implement more sophisticated checks here?
-    # Or is this hint enough for the educated user?
-
     input_time_list = list(input_profile.keys())
     simulation_time_list = [GlobalConfig.start_date,
                             GlobalConfig.start_date + GlobalConfig.sim_duration
