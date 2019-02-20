@@ -24,7 +24,7 @@ from math import isclose
 from d3a.d3a_core.util import change_global_config
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
-from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.storage import StorageStrategy, BreakEven
 from d3a.models.const import ConstSettings
 from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
@@ -253,7 +253,7 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
-    storage_strategy_test3.break_even = {today(tz=TIME_ZONE): (19, 25)}
+    storage_strategy_test3.break_even = {today(tz=TIME_ZONE): BreakEven(19, 25)}
     storage_strategy_test3.event_activate()
     storage_strategy_test3.event_tick(area=area_test3)
     assert len(storage_strategy_test3.accept_offer.calls) == 0
@@ -602,6 +602,14 @@ def test_storage_constructor_rejects_incorrect_parameters():
         StorageStrategy(initial_rate_option=4)
     with pytest.raises(ValueError):
         StorageStrategy(initial_selling_rate=-1)
+
+
+def test_storage_constructor_assigns_sell_and_buy_rate_according_to_breakeven_point():
+    storage = StorageStrategy(break_even=(15, 20))
+    assert all(be.sell == 20 and be.buy == 15 for be in storage.break_even.values())
+    assert storage.final_selling_rate == 20
+    assert all(r == 15 for r in storage._final_rate_profile.values())
+    assert all(r == 15 for r in storage.max_buying_rate_profile.values())
 
 
 def test_free_storage_calculation_takes_into_account_storage_capacity(storage_strategy_test1):

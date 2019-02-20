@@ -105,7 +105,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         if break_even is not None:
             self.break_even = self._validate_break_even_points(break_even)
             self.initial_selling_rate = list(break_even.values())[0][1]
-            self.max_buying_rate_profile = {k: v[1] for k, v in break_even.items()}
+            self.max_buying_rate_profile = {k: v.sell for k, v in break_even.items()}
 
         self._validate_constructor_arguments(risk, None, None, battery_capacity_kWh,
                                              min_allowed_soc, self.initial_selling_rate)
@@ -124,9 +124,8 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
 
     def event_activate(self):
-
         self._set_be_alternative_pricing()
-        self.update_market_cycle_offers(self.break_even[self.area.now][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now].sell)
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
         self.update_on_activate()
 
@@ -134,17 +133,17 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self.assign_offermixin_arguments(3, 2, 0)
             if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                self.break_even = {k: (0, 0) for k in self.break_even.keys()}
+                self.break_even = {k: BreakEven(0, 0) for k in self.break_even.keys()}
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                 for time_slot in self.break_even.keys():
                     rate = self.area.config.market_maker_rate[time_slot] * \
                            ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE\
                            / 100
-                    self.break_even[time_slot] = (rate, rate)
+                    self.break_even[time_slot] = BreakEven(rate, rate)
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                 for time_slot in self.break_even.keys():
                     rate = self.area.config.market_maker_rate[time_slot]
-                    self.break_even[time_slot] = (rate, rate)
+                    self.break_even[time_slot] = BreakEven(rate, rate)
             else:
                 raise MarketException
 
@@ -161,6 +160,8 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
             break_even = {k: BreakEven(*v) for k, v in break_even.items()}
 
         break_even = read_arbitrary_profile(InputProfileTypes.IDENTITY, break_even)
+        break_even = {k: BreakEven(*v) for k, v in break_even.items()}
+        assert all(type(v) is BreakEven for k, v in break_even.items())
         if any(be.sell < be.buy for _, be in break_even.items()):
             raise ValueError("Break even point for sell energy is lower than buy energy.")
         if any(break_even_point.buy < 0 or break_even_point.sell < 0
@@ -224,7 +225,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
-        self.update_market_cycle_offers(self.break_even[self.area.now][1])
+        self.update_market_cycle_offers(self.break_even[self.area.now].sell)
         current_market = self.area.next_market
         past_market = self.area.last_past_market
 
@@ -240,7 +241,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
            ConstSettings.IAASettings.MARKET_TYPE == 3:
             self.state.clamp_energy_to_buy_kWh([current_market.time_slot])
             self.update_market_cycle_bids(final_rate=self.break_even[
-                self.area.now][0])
+                self.area.now].buy)
             energy_kWh = self.state.energy_to_buy_dict[current_market.time_slot]
             if energy_kWh > 0:
                 self.post_first_bid(current_market, energy_kWh * 1000.0)
@@ -270,7 +271,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                                                                               self.owner.name)
 
     def buy_energy(self, market):
-        max_affordable_offer_rate = self.break_even[market.time_slot][0]
+        max_affordable_offer_rate = self.break_even[market.time_slot].buy
         for offer in market.sorted_offers:
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
@@ -340,7 +341,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         if self.cap_price_strategy is True:
             return self.capacity_dependant_sell_rate(market)
         else:
-            break_even_sell = self.break_even[market.time_slot][1]
+            break_even_sell = self.break_even[market.time_slot].sell
             max_selling_rate = self.calculate_initial_sell_rate(market.time_slot)
             return max(max_selling_rate, break_even_sell)
 
@@ -350,7 +351,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         else:
             soc = self.state.charge_history[market.time_slot] / 100.0
         max_selling_rate = self.calculate_initial_sell_rate(market.time_slot)
-        break_even_sell = self.break_even[market.time_slot][1]
+        break_even_sell = self.break_even[market.time_slot].sell
         if max_selling_rate < break_even_sell:
             return break_even_sell
         else:

@@ -174,7 +174,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             res_offer_info = BidInfo(source_trade.residual, target_residual_bid)
             self.forwarded_bids[source_trade.residual.id] = res_offer_info
             self.forwarded_bids[target_residual_bid.id] = res_offer_info
-            self._delete_forwarded_bid_entries(bid_info.source_bid)
+        self._delete_forwarded_bid_entries(bid_info.source_bid)
 
     def event_bid_deleted(self, *, bid):
         bid_id = bid.id if isinstance(bid, Bid) else bid
@@ -214,5 +214,5 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             bid_info = self.forwarded_bids.get(existing_bid.id)
             forwarded = self._forward_bid(new_bid)
             self.owner.log.info("Bid %s changed to residual bid %s",
-                                bid_info.target_offer,
+                                bid_info.target_bid,
                                 forwarded)
