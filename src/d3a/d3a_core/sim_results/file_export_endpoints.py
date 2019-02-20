@@ -25,11 +25,13 @@ from d3a.d3a_core.sim_results.area_statistics import _is_house_node, \
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.d3a_core.util import convert_datetime_to_str_keys
 
 
 class FileExportEndpoints:
     def __init__(self, area):
         self.traded_energy = {}
+        self.traded_energy_profile = {}
         self.balancing_traded_energy = {}
         self.plot_stats = {}
         self.plot_balancing_stats = {}
@@ -54,6 +56,15 @@ class FileExportEndpoints:
             self._calculate_devices_sold_bought_energy(area, area.past_markets)
         self.balancing_traded_energy[area.slug] = \
             self._calculate_devices_sold_bought_energy(area, area.past_balancing_markets)
+        self.traded_energy_profile[area.slug] = self._serialize_traded_energy_lists(area)
+
+    def _serialize_traded_energy_lists(self, area):
+        outdict = {}
+        for direction in ["sold_energy", "bought_energy"]:
+            outdict[direction] = {}
+            for seller, profile_dict in self.traded_energy[area.slug][direction].items():
+                outdict[direction][seller] = convert_datetime_to_str_keys(profile_dict, {})
+        return outdict
 
     def _get_stats_from_market_data(self, area, balancing):
         data = self.generate_market_export_data(area, balancing)

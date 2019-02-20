@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
     export_cumulative_loads, export_price_energy_day, generate_inter_area_trade_details
+from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 from d3a.d3a_core.sim_results.stats import energy_bills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
@@ -50,6 +51,7 @@ class SimulationEndpointBuffer:
         self.trade_details = {}
         self.device_statistics = DeviceStatistics()
         self.device_statistics_time_str_dict = {}
+        self.energy_trade_profile = {}
 
     def generate_result_report(self):
         return {
@@ -62,7 +64,8 @@ class SimulationEndpointBuffer:
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status,
-            "device_statistics": self.device_statistics_time_str_dict
+            "device_statistics": self.device_statistics_time_str_dict,
+            "energy_trade_profile": self.energy_trade_profile
         }
 
     def generate_json_report(self):
@@ -112,6 +115,8 @@ class SimulationEndpointBuffer:
                                                         self.device_statistics.device_stats_dict)
         self.device_statistics_time_str_dict = convert_datetime_to_str_keys(
             self.device_statistics.device_stats_dict, {})
+
+        self.energy_trade_profile = FileExportEndpoints(area).traded_energy_profile
 
     def _update_tree_summary(self, area):
         price_energy_list = export_price_energy_day(area)
