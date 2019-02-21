@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, DateTime, today
+from pendulum import duration, today
 from collections import OrderedDict
 from unittest.mock import MagicMock
 import unittest
@@ -51,6 +51,7 @@ class TestAreaClass(unittest.TestCase):
         self.config.slot_length = duration(minutes=15)
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
+        self.config.sim_duration = duration(days=1)
         self.area = Area("test_area", None, self.strategy, self.appliance, self.config, None)
         self.area.parent = self.area
         self.area.children = [self.area]
@@ -60,7 +61,7 @@ class TestAreaClass(unittest.TestCase):
 
     def test_markets_are_cycled_according_to_market_count(self):
         self.area._bc = False
-        for i in range(2, 100):
+        for i in range(2, 97):
             self.config.market_count = i
             self.area._cycle_markets(False, False)
             assert len(self.area.all_markets) == i
@@ -79,9 +80,16 @@ class TestAreaClass(unittest.TestCase):
         o3.price = 12
         o3.energy = 1
         markets = OrderedDict()
-        markets[DateTime(2018, 1, 1, 12, 0, 0)] = m1
-        markets[DateTime(2018, 1, 1, 12, 15, 0)] = m2
-        markets[DateTime(2018, 1, 1, 12, 30, 0)] = m3
+        td = today(tz=TIME_ZONE)
+        td1 = td + self.config.slot_length
+        m1.time_slot = td1
+        markets[m1.time_slot] = m1
+        td2 = td1 + self.config.slot_length
+        m2.time_slot = td2
+        markets[m2.time_slot] = m2
+        td3 = td2 + self.config.slot_length
+        m3.time_slot = td3
+        markets[m3.time_slot] = m3
         self.area._markets = MagicMock(spec=AreaMarkets)
         self.area._markets.markets = markets
         m1.sorted_offers = [o1, o1]
