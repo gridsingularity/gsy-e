@@ -357,7 +357,8 @@ def test_aggregated_result_files(context):
                  os.path.join(base_path, 'status'),
                  os.path.join(base_path, 'trade-detail'),
                  os.path.join(base_path, 'tree_summary'),
-                 os.path.join(base_path, 'unmatched_loads')]
+                 os.path.join(base_path, 'unmatched_loads'),
+                 os.path.join(base_path, 'device_statistics')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > 0 for f in file_list)

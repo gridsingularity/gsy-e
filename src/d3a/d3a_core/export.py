@@ -52,6 +52,9 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
+EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
+                           "soc_history_%", "load_profile_kWh"]
+
 
 def get_from_dict(data_dict, map_list):
     return reduce(operator.getitem, map_list, data_dict)
@@ -122,11 +125,12 @@ class ExportAndPlot:
         self.plot_all_unmatched_loads()
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
-        self.plot_device_stats(self.area, [])
-        self.move_root_plot_folder()
+        if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
+            self.plot_device_stats(self.area, [])
         if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
                 ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
             self.plot_supply_demand_curve(self.area, self.plot_dir)
+        self.move_root_plot_folder()
 
     def move_root_plot_folder(self):
         """
@@ -278,8 +282,7 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir,
                                 "/".join([slugify(node).lower() for node in address_list][0:-1]))
         mkdir_from_str(plot_dir)
-        for variable_name in ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
-                              "soc_history_%", "load_profile_kWh"]:
+        for variable_name in EXPORT_DEVICE_VARIABLES:
             if variable_name in device_dict:
                 if variable_name == "trade_price_eur":
                     device_dict = self._remove_none_values(device_dict, "trade_price_eur")
@@ -718,6 +721,8 @@ class PlotlyGraph:
     @classmethod
     def _plot_time_series(cls, indict: Dict, var_name: str, device_name: str, output_file: str):
         x = list(indict[var_name].keys())
+        if len(x) == 0:
+            return
         y = list(indict[var_name].values())
         y_lower = list(indict["min_" + var_name].values())
         y_upper = list(indict["max_" + var_name].values())
