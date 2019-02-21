@@ -30,7 +30,7 @@ from d3a.models.appliance.base import BaseAppliance
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
-from d3a.d3a_core.util import TaggedLogWrapper
+from d3a.d3a_core.util import TaggedLogWrapper, is_market_in_simulation_duration
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import TIME_FORMAT
@@ -241,7 +241,8 @@ class Area:
 
     @property
     def all_markets(self):
-        return list(self._markets.markets.values())
+        return [m for m in self._markets.markets.values()
+                if is_market_in_simulation_duration(self.config, m)]
 
     @property
     def past_markets(self):
