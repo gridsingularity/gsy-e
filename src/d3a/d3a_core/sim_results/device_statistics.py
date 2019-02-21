@@ -91,7 +91,7 @@ class DeviceStatistics:
         self._calc_min_max_from_sim_dict(subdict, key_name)
 
     def _soc_stats(self, area: Area, subdict: Dict):
-        key_name = "soc_hist"
+        key_name = "soc_history_%"
         market = list(area.parent.past_markets)[-1]
         _create_or_append_dict(subdict, key_name,
                                {market.time_slot:

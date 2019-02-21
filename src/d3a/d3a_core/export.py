@@ -24,8 +24,12 @@ import plotly.graph_objs as go
 import pendulum
 import shutil
 import json
+import operator
+from slugify import slugify
 from sortedcontainers import SortedDict
 from d3a.constants import DATE_TIME_FORMAT
+from typing import Dict
+from copy import deepcopy
 
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
@@ -34,6 +38,7 @@ from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, 
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict
 from d3a.models.market.market_structures import MarketClearingState
+from functools import reduce  # forward compatibility for Python 3
 
 _log = logging.getLogger(__name__)
 
@@ -46,6 +51,10 @@ alternative_pricing_subdirs = {
     2: "feed_in_tariff_pricing",
     3: "net_metering_pricing"
 }
+
+
+def get_from_dict(data_dict, map_list):
+    return reduce(operator.getitem, map_list, data_dict)
 
 
 def mkdir_from_str(directory: str, exist_ok=True, parents=True):
@@ -113,6 +122,7 @@ class ExportAndPlot:
         self.plot_all_unmatched_loads()
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
+        self.plot_device_stats(self.area, [])
         self.move_root_plot_folder()
         if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
                 ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
@@ -240,6 +250,52 @@ class ExportAndPlot:
                     writer.writerow(row)
         except Exception as ex:
             _log.error("Could not export area data: %s" % str(ex))
+
+    def plot_device_stats(self, area: Area, node_address_list: list):
+        """
+        Wrapper for _plot_trade_partner_cell_tower
+        """
+        new_node_address_list = node_address_list + [area.name]
+        for child in area.children:
+            if child.children:
+                self.plot_device_stats(child, new_node_address_list)
+            else:
+                address_list = new_node_address_list + [child.name]
+                self._plot_device_stats(address_list)
+
+    def _plot_device_stats(self, address_list: list):
+        """
+        Plots device graphs
+        """
+        # Dont use the root area name for address list:
+        device_address_list = address_list[1::]
+
+        device_name = device_address_list[-1].replace(" ", "_")
+        device_dict = get_from_dict(self.endpoint_buffer.device_statistics.device_stats_dict,
+                                    device_address_list)
+
+        # converting address_list into plot_dir by slugifying the members
+        plot_dir = os.path.join(self.plot_dir,
+                                "/".join([slugify(node).lower() for node in address_list][0:-1]))
+        mkdir_from_str(plot_dir)
+        for variable_name in ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
+                              "soc_history_%", "load_profile_kWh"]:
+            if variable_name in device_dict:
+                if variable_name == "trade_price_eur":
+                    device_dict = self._remove_none_values(device_dict, "trade_price_eur")
+                output_file = os.path.join(
+                    plot_dir, 'device_profile_{}_{}.html'.format(device_name, variable_name))
+                PlotlyGraph._plot_time_series(device_dict, variable_name, device_name, output_file)
+
+    @classmethod
+    def _remove_none_values(cls, indict: Dict, base_key: str):
+        """
+        Removes all None values from a dict (made for price/rate time series)
+        """
+        outdict = deepcopy(indict)
+        for key in [base_key, "min_" + base_key, "max_" + base_key]:
+            [outdict[key].pop(k) for k, v in indict[key].items() if v is None]
+        return outdict
 
     def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
         """
@@ -550,6 +606,27 @@ class PlotlyGraph:
         self.energy = list()
         self.energy = cond_energy
 
+    @staticmethod
+    def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list):
+        return go.Layout(
+            autosize=False,
+            width=1200,
+            height=700,
+            barmode=barmode,
+            title=title,
+            yaxis=dict(
+                title=ytitle
+            ),
+            xaxis=dict(
+                title=xtitle,
+                range=xrange
+            ),
+            font=dict(
+                size=16
+            ),
+            showlegend=True
+        )
+
     def graph_value(self, scale_value=1):
         try:
             self.dataset[self.key]
@@ -594,44 +671,14 @@ class PlotlyGraph:
         except ValueError:
             return
 
-        layout = go.Layout(
-            autosize=False,
-            width=1200,
-            height=700,
-            barmode=barmode,
-            title=title,
-            yaxis=dict(
-                title=ytitle
-            ),
-            xaxis=dict(
-                title=xtitle,
-                range=time_range
-            ),
-            font=dict(
-                size=16
-            ),
-            showlegend=True
-        )
+        layout = cls.common_layout(barmode, title, ytitle, xtitle, time_range)
 
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
-    @staticmethod
-    def plot_line_graph(title: str, xtitle: str, ytitle: str, data, iname: str, xmax: int):
-        layout = go.Layout(
-            title=title,
-            yaxis=dict(
-                title=ytitle
-            ),
-            xaxis=dict(
-                title=xtitle,
-                range=(0, xmax)
-            ),
-            font=dict(
-                size=16
-            ),
-            showlegend=True
-        )
+    @classmethod
+    def plot_line_graph(cls, title: str, xtitle: str, ytitle: str, data, iname: str, xmax: int):
+        layout = cls.common_layout("group", title, ytitle, xtitle, [0, xmax])
 
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
@@ -667,3 +714,54 @@ class PlotlyGraph:
             fig["data"][0]["labels"].append(key)
 
         py.offline.plot(fig, filename=filename, auto_open=False)
+
+    @classmethod
+    def _plot_time_series(cls, indict: Dict, var_name: str, device_name: str, output_file: str):
+        x = list(indict[var_name].keys())
+        y = list(indict[var_name].values())
+        y_lower = list(indict["min_" + var_name].values())
+        y_upper = list(indict["max_" + var_name].values())
+        time_series = go.Scatter(
+            x=x,
+            y=y,
+            line=dict(color='rgb(0,100,80)'),
+            mode='lines',
+            name="",
+            showlegend=False,
+            hoverinfo='all',
+        )
+        time_series_markers = go.Scatter(
+            x=x,
+            y=y,
+            line=dict(color='rgb(0,100,80)'),
+            mode='markers',
+            showlegend=False,
+            hoverinfo='none',
+        )
+        longterm_min = go.Scatter(
+            x=x,
+            y=y_lower,
+            fill='tonexty',
+            fillcolor='rgba(0,100,80,0.2)',
+            line=dict(color='rgba(255,255,255,0)'),
+            name=f"min longterm",
+            showlegend=False,
+            hoverinfo='y+name',
+        )
+        longterm_max = go.Scatter(
+            x=x,
+            y=y_upper,
+            fill='tonexty',
+            fillcolor='rgba(0,100,80,0.2)',
+            line=dict(color='rgba(255,255,255,0)'),
+            name=f"max longterm",
+            showlegend=False,
+            hoverinfo='y+name',
+        )
+        data = [time_series_markers, longterm_min, time_series, longterm_max]
+
+        layout = cls.common_layout("group", f"{device_name}  ({var_name})", var_name,
+                                   'Time', [x[0], x[-1]])
+
+        fig = go.Figure(data=data, layout=layout)
+        py.offline.plot(fig, filename=output_file, auto_open=False)
