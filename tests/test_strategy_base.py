@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
-
+from unittest.mock import MagicMock
 import pendulum
 
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy import BaseStrategy, Offers
+from d3a.models.strategy import BidEnabledStrategy, Offers
 from d3a.models.market.market_structures import Offer, Trade, Bid
 
 
@@ -40,6 +40,12 @@ class FakeOwner:
 
 
 class FakeArea:
+    def __init__(self, market=None):
+        self._market = market
+
+    def get_future_market_from_id(self, market_id):
+        return self._market
+
     @property
     def name(self):
         return 'FakeArea'
@@ -61,9 +67,10 @@ class FakeOffer:
 
 
 class FakeMarket:
-    def __init__(self, *, raises):
+    def __init__(self, *, raises, id=11):
         self.raises = raises
         self.bids = {}
+        self.id = id
 
     def accept_offer(self, offer, id, *, energy=None, time=None, price_drop=False,
                      already_tracked=False, trade_rate: float = None):
@@ -155,7 +162,7 @@ def offer_to_accept():
 
 @pytest.fixture
 def base():
-    base = BaseStrategy()
+    base = BidEnabledStrategy()
     base.owner = FakeOwner()
     base.area = FakeArea()
     return base
@@ -215,3 +222,55 @@ def test_add_bid_to_bought(base):
     assert not base.are_bids_posted(market)
     assert len(base.get_traded_bids_from_market(market)) == 1
     assert base.get_traded_bids_from_market(market) == [bid]
+
+
+def test_bid_events_fail_for_one_sided_market(base):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+    test_bid = Bid("123", 12, 23, 'A', 'B')
+    with pytest.raises(AssertionError):
+        base.event_bid_traded(market_id=123, bid_trade=test_bid)
+    with pytest.raises(AssertionError):
+        base.event_bid_deleted(market_id=123, bid=test_bid)
+    with pytest.raises(AssertionError):
+        base.event_bid_changed(market_id=123, existing_bid=test_bid, new_bid=test_bid)
+
+
+def test_bid_deleted_removes_bid_from_posted(base):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    test_bid = Bid("123", 12, 23, base.owner.name, 'B')
+    market = FakeMarket(raises=False, id=21)
+    base.area._market = market
+    base._bids[market] = [test_bid]
+    base.event_bid_deleted(market_id=21, bid=test_bid)
+    assert base.get_posted_bids(market) == []
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+def test_bid_changed_adds_bid_to_posted(base):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    test_bid = Bid("123", 12, 23, base.owner.name, 'B')
+    market = FakeMarket(raises=False, id=21)
+    base.area._market = market
+    base._bids[market] = []
+    base.event_bid_changed(market_id=21, existing_bid=test_bid, new_bid=test_bid)
+    assert base.get_posted_bids(market) == [test_bid]
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+def test_bid_traded_moves_bid_from_posted_to_traded(base):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    test_bid = Bid("123", 12, 23, base.owner.name, 'B')
+    trade = MagicMock()
+    trade.buyer = base.owner.name
+    trade.offer = test_bid
+    market = FakeMarket(raises=False, id=21)
+    base.area._market = market
+    base._bids[market] = [test_bid]
+    base.event_bid_traded(market_id=21, bid_trade=trade)
+    assert base.get_posted_bids(market) == []
+    assert base.get_traded_bids_from_market(market) == [test_bid]
+    ConstSettings.IAASettings.MARKET_TYPE = 1

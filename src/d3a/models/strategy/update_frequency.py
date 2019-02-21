@@ -78,6 +78,7 @@ class BidUpdateFrequencyMixin:
     def _update_posted_bids(self, market, current_tick_number):
         existing_bids = list(self.get_posted_bids(market))
         for bid in existing_bids:
+            assert bid.buyer == self.owner.name
             if bid.id in market.bids.keys():
                 bid = market.bids[bid.id]
             market.delete_bid(bid.id)

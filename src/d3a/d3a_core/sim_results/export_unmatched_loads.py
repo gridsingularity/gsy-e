@@ -20,9 +20,7 @@ from collections import OrderedDict
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.d3a_core.sim_results.area_statistics import get_area_type_string
-
-
-DEFICIT_THRESHOLD_Wh = 0.0001
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
 def _calculate_stats_for_single_device(hour_data, area, current_slot):
@@ -36,7 +34,7 @@ def _calculate_stats_for_single_device(hour_data, area, current_slot):
         else 0.0
     # Different sign conventions, hence the +
     deficit = desired_energy_Wh + traded_energy_kWh * 1000.0
-    if deficit > DEFICIT_THRESHOLD_Wh:
+    if deficit > FLOATING_POINT_TOLERANCE:
         # Get the hour data entry for this hour, or create an empty one if not there
         device = hour_data["devices"].get(
             area.slug,

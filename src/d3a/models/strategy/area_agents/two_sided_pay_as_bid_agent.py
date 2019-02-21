@@ -39,5 +39,11 @@ class TwoSidedPayAsBidAgent(OneSidedAgent):
         for engine in self.engines:
             engine.event_bid_deleted(bid=bid)
 
+    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+        for engine in self.engines:
+            engine.event_bid_changed(market_id=market_id,
+                                     existing_bid=existing_bid,
+                                     new_bid=new_bid)
+
     def __repr__(self):
         return "<TwoSidedPayAsBidAgent {s.name} {s.time_slot}>".format(s=self)

@@ -305,11 +305,11 @@ def test_market_trade_bid_partial(market: TwoSidedPayAsBid):
     assert trade.buyer == 'A'
     assert trade.residual
     assert len(market.bids) == 1
-    assert bid.id in market.bids
-    assert market.bids[bid.id].energy == 15
-    assert market.bids[bid.id].price == 15
-    assert market.bids[bid.id].seller == 'B'
-    assert market.bids[bid.id].buyer == 'A'
+    assert trade.residual.id in market.bids
+    assert market.bids[trade.residual.id].energy == 15
+    assert market.bids[trade.residual.id].price == 15
+    assert market.bids[trade.residual.id].seller == 'B'
+    assert market.bids[trade.residual.id].buyer == 'A'
 
 
 def test_market_accept_bid_emits_bid_traded_and_bid_deleted_event(market: TwoSidedPayAsBid,
@@ -336,9 +336,10 @@ def test_market_accept_bid_does_not_emit_bid_deleted_on_partial_bid(market: TwoS
     bid = market.bid(20, 20, 'A', 'B')
     trade = market.accept_bid(bid, energy=1)
     assert all([ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]])
-    assert len(called.calls) == 1
-    assert called.calls[0][0] == (repr(MarketEvent.BID_TRADED), )
-    assert called.calls[0][1] == {
+    assert len(called.calls) == 2
+    assert called.calls[0][0] == (repr(MarketEvent.BID_CHANGED),)
+    assert called.calls[1][0] == (repr(MarketEvent.BID_TRADED),)
+    assert called.calls[1][1] == {
         'market_id': repr(market.id),
         'bid_trade': repr(trade),
     }

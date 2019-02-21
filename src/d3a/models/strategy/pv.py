@@ -26,6 +26,7 @@ from d3a.models.strategy import BaseStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
 from d3a.models.state import PVState
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
 class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
@@ -147,7 +148,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
             initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot)
             rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
                                                                       market.time_slot)
-            assert self.state.available_energy_kWh[market.time_slot] >= -0.00001
+            assert self.state.available_energy_kWh[market.time_slot] >= -FLOATING_POINT_TOLERANCE
             if self.state.available_energy_kWh[market.time_slot] > 0:
                 offer = market.offer(
                     rounded_energy_rate * self.state.available_energy_kWh[market.time_slot],

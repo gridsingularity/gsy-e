@@ -99,7 +99,8 @@ class FakeMarket:
         else:
             assert trade_rate <= (bid.price / bid.energy)
 
-        if energy < bid.energy:
+        market_bid = [b for b in self._bids if b.id == bid.id][0]
+        if energy < market_bid.energy:
             residual_energy = bid.energy - energy
             residual = Bid('res', bid.price, residual_energy, bid.buyer, seller, bid.market)
             traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller, bid.market)
@@ -167,9 +168,10 @@ def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
 def iaa_bid():
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
-    higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner'),
+    higher_market = FakeMarket([], [Bid('id2', 1, 1, 'child', 'owner'),
                                     Bid('id3', 0.5, 1, 'child', 'owner')])
     owner = FakeArea('owner')
+
     iaa = TwoSidedPayAsBidAgent(owner=owner,
                                 higher_market=higher_market,
                                 lower_market=lower_market,
@@ -244,29 +246,39 @@ def test_iaa_event_trade_bid_does_not_delete_forwarded_bid_of_counterpart(iaa_bi
     assert len(iaa_bid.lower_market.delete_bid.calls) == 0
 
 
-# TODO: Think about this test and re-add it again
-# @pytest.mark.parametrize("partial", [True, False])
-# def test_iaa_event_trade_bid_does_not_update_forwarded_bids_on_partial(iaa_bid, called, partial):
-#     iaa_bid.lower_market.delete_bid = called
-#     low_to_high_engine = iaa_bid.engines[0]
-#     source_bid = list(low_to_high_engine.markets.source.bids.values())[0]
-#     target_bid = list(low_to_high_engine.markets.target.bids.values())[0]
-#     bidinfo = BidInfo(source_bid=source_bid, target_bid=target_bid)
-#     low_to_high_engine.forwarded_bids[source_bid.id] = bidinfo
-#     low_to_high_engine.forwarded_bids[target_bid.id] = bidinfo
-#     low_to_high_engine.event_bid_traded(
-#         bid_trade=Trade('trade_id',
-#                         pendulum.now(tz=TIME_ZONE),
-#                         low_to_high_engine.markets.target.bids[target_bid.id],
-#                         seller='someone_else',
-#                         buyer='owner',
-#                         residual=partial))
-#     if not partial:
-#         assert source_bid.id not in low_to_high_engine.forwarded_bids
-#         assert target_bid.id not in low_to_high_engine.forwarded_bids
-#     else:
-#         assert source_bid.id in low_to_high_engine.forwarded_bids
-#         assert target_bid.id in low_to_high_engine.forwarded_bids
+@pytest.mark.parametrize("partial", [True, False])
+def test_iaa_event_trade_bid_updates_forwarded_bids_on_partial(iaa_bid, called, partial):
+    iaa_bid.lower_market.delete_bid = called
+    low_to_high_engine = iaa_bid.engines[0]
+    iaa_bid._get_market_from_market_id = lambda x: low_to_high_engine.markets.target
+    if partial:
+        accepted_bid = Bid(*low_to_high_engine.markets.target._bids[0])
+        accepted_bid = accepted_bid._replace(energy=accepted_bid.energy-0.2)
+        partial_bid = Bid('1234', 12, 0.2, 'owner', 'someone_else')
+        low_to_high_engine.event_bid_changed(market_id=low_to_high_engine.markets.target,
+                                             existing_bid=accepted_bid,
+                                             new_bid=partial_bid)
+    else:
+        accepted_bid = low_to_high_engine.markets.target._bids[0]
+        partial_bid = False
+    source_bid = list(low_to_high_engine.markets.source.bids.values())[0]
+    target_bid = list(low_to_high_engine.markets.target.bids.values())[0]
+    bidinfo = BidInfo(source_bid=source_bid, target_bid=target_bid)
+    low_to_high_engine.forwarded_bids[source_bid.id] = bidinfo
+    low_to_high_engine.forwarded_bids[target_bid.id] = bidinfo
+
+    low_to_high_engine.event_bid_traded(
+        bid_trade=Trade('trade_id',
+                        pendulum.now(tz=TIME_ZONE),
+                        accepted_bid,
+                        seller='someone_else',
+                        buyer='owner',
+                        residual=partial_bid))
+
+    assert source_bid.id not in low_to_high_engine.forwarded_bids
+    assert target_bid.id not in low_to_high_engine.forwarded_bids
+    if partial:
+        assert partial_bid.id in low_to_high_engine.forwarded_bids
 
 
 @pytest.fixture
@@ -356,8 +368,13 @@ def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
 
 
 def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
+    iaa_double_sided._get_market_from_market_id = lambda x: iaa_double_sided.higher_market
     total_bid = iaa_double_sided.higher_market.forwarded_bid
     accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer, total_bid.seller)
+    residual_bid = Bid('residual_bid', total_bid.price, 0.1, total_bid.buyer, total_bid.seller)
+    iaa_double_sided.event_bid_changed(market_id=iaa_double_sided.higher_market,
+                                       existing_bid=total_bid,
+                                       new_bid=residual_bid)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
                         pendulum.now(tz=TIME_ZONE),
@@ -367,6 +384,18 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
                         'residual_offer'),
         market_id=iaa_double_sided.higher_market.id)
     assert iaa_double_sided.lower_market.calls_energy_bids[0] == 1
+
+
+def test_iaa_forwards_partial_bid_from_source_market(iaa_double_sided):
+    iaa_double_sided._get_market_from_market_id = lambda x: iaa_double_sided.lower_market
+    total_bid = iaa_double_sided.lower_market._bids[0]
+    accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer, total_bid.seller)
+    residual_bid = Bid('residual_bid', total_bid.price, 0.1, total_bid.buyer, total_bid.seller)
+    iaa_double_sided.usable_bid = lambda s: True
+    iaa_double_sided.event_bid_changed(market_id=iaa_double_sided.lower_market,
+                                       existing_bid=accepted_bid,
+                                       new_bid=residual_bid)
+    assert iaa_double_sided.higher_market.forwarded_bid.energy == 0.1
 
 
 def test_iaa_forwards_partial_offer_from_source_market(iaa2):
