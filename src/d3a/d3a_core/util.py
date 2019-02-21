@@ -186,6 +186,11 @@ def area_name_from_area_or_iaa_name(name):
     return name[4:] if name[:4] == 'IAA ' else name
 
 
+def is_market_in_simulation_duration(config, market):
+    return config.start_date <= market.time_slot < \
+           (config.start_date + config.sim_duration)
+
+
 def format_interval(interval, show_day=True):
     if interval.days and show_day:
         template = "{i.days:02d}:{i.hours:02d}:{i.minutes:02d}:{i.remaining_seconds:02d}"
