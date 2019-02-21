@@ -37,6 +37,7 @@ class EventMixin:
                 MarketEvent.TRADE: self.event_trade,
                 MarketEvent.BID_TRADED: self.event_bid_traded,
                 MarketEvent.BID_DELETED: self.event_bid_deleted,
+                MarketEvent.BID_CHANGED: self.event_bid_changed,
                 MarketEvent.BALANCING_OFFER: self.event_balancing_offer,
                 MarketEvent.BALANCING_OFFER_CHANGED: self.event_balancing_offer_changed,
                 MarketEvent.BALANCING_OFFER_DELETED: self.event_balancing_offer_deleted,
@@ -76,6 +77,9 @@ class EventMixin:
         pass
 
     def event_bid_deleted(self, *, market_id, bid):
+        pass
+
+    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
         pass
 
     def event_balancing_offer(self, *, market_id, offer):

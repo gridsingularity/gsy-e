@@ -27,6 +27,7 @@ from d3a.models.market import Market
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
 
@@ -116,8 +117,10 @@ class OneSidedMarket(Market):
 
                     if trade_rate is None:
                         trade_rate = offer.price / offer.energy
-
-                    assert trade_rate + 0.001 >= math.floor(offer.price / offer.energy)
+                    # TODO: Remove the math.floor from the lower threshold once the pay-as-clear
+                    # market is refactored (D3ASIM-907)
+                    assert trade_rate + FLOATING_POINT_TOLERANCE >= \
+                        math.floor(offer.price / offer.energy)
 
                     accepted_offer = Offer(
                         accepted_offer_id,

@@ -28,6 +28,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                  owner: "InterAreaAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, transfer_fee_pct, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
+        self.bid_trade_residual = {}  # type: Dict[str, Bid]
 
     def __repr__(self):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
@@ -145,23 +146,35 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                               market_bid.buyer, market_bid.seller)
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
-            self.markets.source.accept_bid(
+            source_trade = self.markets.source.accept_bid(
                 updated_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=updated_bid.price / updated_bid.energy
             )
-            self.delete_forwarded_bids(bid_info)
 
+            self.after_successful_trade_event(source_trade, bid_info)
         # Bid was traded in the source market by someone else
         elif bid_trade.offer.id == bid_info.source_bid.id:
-            if self.owner.name == bid_trade.seller:
-                return
             self.delete_forwarded_bids(bid_info)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
+
+    def after_successful_trade_event(self, source_trade, bid_info):
+        if source_trade.residual:
+            target_residual_bid = self.bid_trade_residual.pop(bid_info.target_bid.id)
+            assert target_residual_bid.id != source_trade.residual.id, \
+                f"Residual bid from the trade ({source_trade.residual}) is not the same as the" \
+                f" residual bid from event_bid_changed ({target_residual_bid})."
+            assert source_trade.residual.id not in self.forwarded_bids, \
+                f"Residual bid has not been forwarded even though it was transmitted via " \
+                f"event_bid_trade."
+            res_bid_info = BidInfo(source_trade.residual, target_residual_bid)
+            self.forwarded_bids[source_trade.residual.id] = res_bid_info
+            self.forwarded_bids[target_residual_bid.id] = res_bid_info
+        self._delete_forwarded_bid_entries(bid_info.source_bid)
 
     def event_bid_deleted(self, *, bid):
         bid_id = bid.id if isinstance(bid, Bid) else bid
@@ -179,3 +192,27 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
+
+    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+        market = self.owner._get_market_from_market_id(market_id)
+        if market is None:
+            return
+
+        if market == self.markets.target:
+            # one of our forwarded bids was split, so save the residual bid for handling
+            # the upcoming trade event
+            assert existing_bid.id not in self.bid_trade_residual, \
+                "Bid should only change once before each trade, there has been already " \
+                "an event_bid_changed for the same bid ({existing_bid.id})."
+            self.bid_trade_residual[existing_bid.id] = new_bid
+        if market == self.markets.source and existing_bid.id in self.forwarded_bids:
+            # a bid in the source market was split - forward the new residual bid
+            if not self.owner.usable_bid(existing_bid) or \
+                    self.owner.name == existing_bid.seller:
+                return
+
+            bid_info = self.forwarded_bids.get(existing_bid.id)
+            forwarded = self._forward_bid(new_bid)
+            self.owner.log.info("Bid %s changed to residual bid %s",
+                                bid_info.target_bid,
+                                forwarded)

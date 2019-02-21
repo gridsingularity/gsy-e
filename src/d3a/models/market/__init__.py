@@ -27,12 +27,10 @@ from terminaltables.other_tables import SingleTable
 
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
 log = getLogger(__name__)
-
-
-OFFER_PRICE_THRESHOLD = 0.00001
 
 
 class Market:
@@ -148,7 +146,7 @@ class Market:
         cheapest_offer = self.sorted_offers[0]
         rate = cheapest_offer.price / cheapest_offer.energy
         return [o for o in self.sorted_offers if
-                abs(o.price / o.energy - rate) < OFFER_PRICE_THRESHOLD]
+                abs(o.price / o.energy - rate) < FLOATING_POINT_TOLERANCE]
 
     @property
     def _now(self):
