@@ -63,7 +63,7 @@ def default_profile_dict(val=None) -> Dict[DateTime, int]:
     if GlobalConfig.sim_duration.days > 0:
         outdict = dict((GlobalConfig.start_date.add(days=day, hours=hour, minutes=minute), val)
                        for day, hour, minute in
-                       product(range(GlobalConfig.sim_duration.days), range(24), range(60)))
+                       product(range(GlobalConfig.sim_duration.days + 1), range(24), range(60)))
     else:
         outdict = dict((GlobalConfig.start_date.add(hours=hour, minutes=minute), val)
                        for hour, minute in product(range(24), range(60)))
