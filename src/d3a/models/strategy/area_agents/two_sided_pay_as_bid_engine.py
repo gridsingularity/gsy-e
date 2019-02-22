@@ -41,7 +41,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         if self.owner.name == self.markets.target.area.name:
             return
         forwarded_bid = self.markets.target.bid(
-            bid.price + (bid.price * (self.transfer_fee_pct / 100)),
+            bid.price - (bid.price * (self.transfer_fee_pct / 100)),
             bid.energy,
             self.owner.name,
             self.markets.target.area.name
@@ -140,7 +140,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 # Use the rate of the trade bid for accepting the source bid too
                 source_price = bid_trade.offer.price
                 # Drop the rate of the trade bid according to IAA fee
-                source_price = source_price / (1 + (self.transfer_fee_pct / 100))
+                source_price = source_price * (1 + (self.transfer_fee_pct / 100))
 
             updated_bid = Bid(market_bid.id, source_price, bid_trade.offer.energy,
                               market_bid.buyer, market_bid.seller)
