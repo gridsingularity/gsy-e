@@ -19,7 +19,7 @@ import pytest
 import pendulum
 import uuid
 import pathlib
-from pendulum import DateTime, duration
+from pendulum import DateTime, duration, today
 
 from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT
@@ -333,3 +333,20 @@ def test_correct_interpolation_power_profile():
     times = list(profile)
     for ii in range(len(times)-1):
         assert abs((times[ii]-times[ii+1]).in_seconds()) == slot_length * 60
+
+
+def test_correct_time_expansion_read_arbitrary_profile():
+    market_maker_rate = 30
+    GlobalConfig.sim_duration = duration(hours=3)
+    mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
+    assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 0
+    GlobalConfig.sim_duration = duration(hours=36)
+    mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
+    assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 1
+    GlobalConfig.sim_duration = duration(hours=48)
+    mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
+    assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 2
+    GlobalConfig.sim_duration = duration(hours=49)
+    mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
+    # read_arbitrary_profile expands until 23:59 of the last day in sim_duration:
+    assert (list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=3).add(minutes=-1))
