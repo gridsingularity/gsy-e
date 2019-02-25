@@ -42,7 +42,7 @@ def start(scenario, settings):
     if settings is None:
         settings = {}
     else:
-        settings = {k: v for k, v in settings.items() if v is not None or v != "None"}
+        settings = {k: v for k, v in settings.items() if v is not None and v != "None"}
 
     advanced_settings = settings.get('advanced_settings', None)
     if advanced_settings is not None:
