@@ -24,7 +24,7 @@ from pendulum import duration, today, from_format
 from behave import given, when, then
 
 from d3a.models.config import SimulationConfig
-from d3a.models.read_user_profile import read_arbitrary_profile, _readCSV
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
@@ -67,23 +67,21 @@ def hour_profile(context, device):
 
 @given('a {device} profile string as input to predefined load')
 def json_string_profile(context, device):
-    slots = [0, 15, 30, 45]
-    context._device_profile_dict = {today(tz=TIME_ZONE).add(hours=hour, minutes=minu):
-                                    100 for hour in range(10) for minu in slots}
-    context._device_profile_dict.update({today(tz=TIME_ZONE).add(hours=hour, minutes=minu):
-                                        50 for hour in range(10, 20) for minu in slots})
-    context._device_profile_dict.update({today(tz=TIME_ZONE).add(hours=hour, minutes=minu):
-                                        25 for hour in range(20, 25) for minu in slots})
+    context._device_profile_dict = {today(tz=TIME_ZONE).add(hours=hour): 100
+                                    for hour in range(10)}
+    context._device_profile_dict.update({today(tz=TIME_ZONE).add(hours=hour): 50
+                                         for hour in range(10, 20)})
+    context._device_profile_dict.update({today(tz=TIME_ZONE).add(hours=hour): 25
+                                         for hour in range(20, 25)})
 
     profile = "{"
     for i in range(24):
-        for j in ["00", "15", "30", "45"]:
             if i < 10:
-                profile += f"\"{i:02}:{j}\": 100, "
+                profile += f"\"{i:02}:00\": 100, "
             elif 10 <= i < 20:
-                profile += f"\"{i:02}:{j}\": 50, "
+                profile += f"\"{i:02}:00\": 50, "
             else:
-                profile += f"\"{i:02}:{j}\": 25, "
+                profile += f"\"{i:02}:00\": 25, "
     profile += "}"
     context._device_profile = profile
 
@@ -144,9 +142,9 @@ def pv_profile_scenario(context):
             }
         ]
     }
-    context._settings = SimulationConfig(tick_length=duration(seconds=15),
-                                         slot_length=duration(minutes=15),
-                                         sim_duration=duration(hours=24),
+    context._settings = SimulationConfig(tick_length=duration(seconds=60),
+                                         slot_length=duration(minutes=60),
+                                         sim_duration=duration(hours=23),
                                          market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
@@ -193,10 +191,10 @@ def load_profile_scenario(context):
         }
       ]
     }
-    context._settings = SimulationConfig(tick_length=duration(seconds=15),
-                                         slot_length=duration(minutes=15),
+    context._settings = SimulationConfig(tick_length=duration(seconds=60),
+                                         slot_length=duration(minutes=60),
                                          sim_duration=duration(hours=24),
-                                         market_count=4,
+                                         market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          iaa_fee=5)
@@ -236,7 +234,7 @@ def running_the_simulation(context):
 def run_sim_console(context, scenario):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -d 2h --setup={scenario} --export-path={export_path} "
+    os.system("d3a -l FATAL run -d 2h -t 60s -s 60m --setup={scenario} --export-path={export_path}"
               .format(export_path=context.export_path, scenario=scenario))
 
 
@@ -384,10 +382,10 @@ def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee
 
 @when('a simulation is created for scenario {scenario}')
 def create_sim_object(context, scenario):
-    simulation_config = SimulationConfig(duration(hours=int(24)),
-                                         duration(minutes=int(15)),
-                                         duration(seconds=int(30)),
-                                         market_count=4,
+    simulation_config = SimulationConfig(duration(hours=int(12)),
+                                         duration(minutes=int(60)),
+                                         duration(seconds=int(60)),
+                                         market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          iaa_fee=5)
@@ -439,7 +437,7 @@ def final_results(context):
 
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
-    assert context.interm_results_count == 96
+    assert context.interm_results_count == 12
 
 
 @then('final results are transmitted once')
@@ -635,11 +633,12 @@ def check_pv_profile(context):
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_partial.csv")
     if pv.strategy._power_profile_index == 2:
         path = os.path.join(d3a_path, "resources/Solar_Curve_W_cloudy.csv")
-    profile_data = _readCSV(str(path))
+    profile_data = read_arbitrary_profile(
+        InputProfileTypes.POWER,
+        str(path))
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
-            assert energy == profile_data[timepoint] / \
-                   (duration(hours=1) / pv.config.slot_length) / 1000.0
+            assert energy == profile_data[timepoint]
         else:
             assert energy == 0
 
@@ -667,11 +666,12 @@ def check_pv_csv_profile(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
     from d3a.setup.strategy_tests.user_profile_pv_csv import user_profile_path
-    profile_data = _readCSV(user_profile_path)
+    profile_data = read_arbitrary_profile(
+        InputProfileTypes.POWER,
+        user_profile_path)
     for timepoint, energy in pv.strategy.energy_production_forecast_kWh.items():
         if timepoint in profile_data.keys():
-            assert energy == profile_data[timepoint] / \
-                   (duration(hours=1) / pv.config.slot_length) / 1000.0
+            assert energy == profile_data[timepoint]
         else:
             assert energy == 0
 
@@ -680,14 +680,15 @@ def check_pv_csv_profile(context):
 def check_pv_profile_csv(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     pv = list(filter(lambda x: x.name == "H1 PV", house1.children))[0]
-    input_profile = _readCSV(context._device_profile)
+    input_profile = read_arbitrary_profile(
+        InputProfileTypes.POWER,
+        context._device_profile)
     produced_energy = {from_format(f'{TODAY_STR}T{k.hour:02}:{k.minute:02}', DATE_TIME_FORMAT): v
                        for k, v in pv.strategy.energy_production_forecast_kWh.items()
                        }
     for timepoint, energy in produced_energy.items():
         if timepoint in input_profile:
-            assert energy == input_profile[timepoint] / \
-                   (duration(hours=1) / pv.config.slot_length) / 1000.0
+            assert energy == input_profile[timepoint]
         else:
             assert False
 

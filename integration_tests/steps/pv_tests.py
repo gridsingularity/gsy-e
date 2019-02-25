@@ -117,7 +117,6 @@ def pv_const_energy(context):
 def load_buys_200_W(context, power_W):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     load = list(filter(lambda x: "Load" in x.name, house1.children))[0]
-
     max_desired_energy = float(power_W) * (house1.config.slot_length / duration(hours=1)) / 1000.0
     total_energy_per_slot = []
     for market in house1.past_markets:
@@ -126,5 +125,4 @@ def load_buys_200_W(context, power_W):
                            if trade.buyer == load.name)
         assert total_energy <= max_desired_energy
         total_energy_per_slot.append(total_energy)
-
-    assert max(total_energy_per_slot) == max_desired_energy
+    assert isclose(max(total_energy_per_slot), max_desired_energy, rel_tol=0.01)
