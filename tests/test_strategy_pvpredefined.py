@@ -348,5 +348,5 @@ def test_correct_time_expansion_read_arbitrary_profile():
     assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 2
     GlobalConfig.sim_duration = duration(hours=49)
     mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-    # read_arbitrary_profile expands until 23:59 of the day:
-    assert (list(mmr.keys())[-1] == today(tz="UTC").add(days=3).add(minutes=-1))
+    # read_arbitrary_profile expands until 23:59 of the last day in sim_duration:
+    assert (list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=3).add(minutes=-1))
