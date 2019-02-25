@@ -41,6 +41,8 @@ def start(scenario, settings):
 
     if settings is None:
         settings = {}
+    else:
+        settings = {k: v for k, v in settings.items() if v is not None and v != "None"}
 
     advanced_settings = settings.get('advanced_settings', None)
     if advanced_settings is not None:
@@ -58,7 +60,7 @@ def start(scenario, settings):
         pv_user_profile=settings.get('pv_user_profile', None),
         iaa_fee=settings.get('iaa_fee', GlobalConfig.iaa_fee),
         start_date=from_format(settings.get('start_date'), DATE_FORMAT, tz=TIME_ZONE)
-        if settings.get('start_date') != "None" else GlobalConfig.start_date
+        if 'start_date' in settings else GlobalConfig.start_date
     )
 
     if scenario is None:
