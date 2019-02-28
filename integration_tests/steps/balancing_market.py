@@ -116,16 +116,29 @@ def grid_has_balancing_trades_h1_h2(context, b_t_count):
 def follow_device_registry_energy_rate(context, device_name):
     negative_energy_rate = -DeviceRegistry.REGISTRY[device_name][0]
     positive_energy_rate = DeviceRegistry.REGISTRY[device_name][1]
-
+    print(negative_energy_rate, positive_energy_rate)
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
 
-    assert all(int(round(trade.offer.price / trade.offer.energy, 2)) == int(negative_energy_rate)
+    for device in [house1, house2, context.simulation.area]:
+        for market in device.past_balancing_markets:
+            for trade in market.trades:
+                if trade.offer.energy < 0:
+                    print(trade.offer.price / trade.offer.energy)
+
+    assert all((trade.offer.price / trade.offer.energy) == negative_energy_rate *
+               (1 - context.simulation.simulation_config.iaa_fee/100)
                for device in [house1, house2, context.simulation.area]
                for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy < 0)
-
-    assert all(int(round(trade.offer.price / trade.offer.energy, 2)) == int(positive_energy_rate)
+    for device in [house1, house2, context.simulation.area]:
+        for market in device.past_balancing_markets:
+            for trade in market.trades:
+                if trade.offer.energy < 0:
+                    print(trade.offer.price / trade.offer.energy, positive_energy_rate *
+                          (1 + context.simulation.simulation_config.iaa_fee/100))
+    assert all((trade.offer.price / trade.offer.energy) == positive_energy_rate *
+               (1 + context.simulation.simulation_config.iaa_fee/100)
                for device in [house1, house2, context.simulation.area]
                for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy > 0)

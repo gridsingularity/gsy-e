@@ -104,6 +104,11 @@ class IAAEngine:
         if trade.offer.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
             residual_info = None
+            source_rate = offer_info.source_offer.price / offer_info.source_offer.energy
+            target_rate = offer_info.target_offer.price / offer_info.target_offer.energy
+            assert source_rate <= target_rate, \
+                f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
+
             if trade.offer.energy < offer_info.source_offer.energy:
                 try:
                     residual_info = ResidualInfo(
