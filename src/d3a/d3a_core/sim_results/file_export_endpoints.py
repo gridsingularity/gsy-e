@@ -247,53 +247,73 @@ class KPI:
                     if trade.buyer is child.name:
                         self._total_energy += trade.offer.energy
 
+    def _get_root_load_devices(self, area):
+        print(f"Area: {area.name}")
+        for child in area.children:
+            print(f"Child: {child.name}")
+            if child.children:
+                self._get_root_load_devices(child)
+            if _is_load_node(child) and child.name not in self.area_load_device:
+                self.area_load_device.append(child.name)
+                for energy in child.strategy.state.desired_energy_Wh.values():
+                    self.total_energy_demand += energy / 1000
+
     def _export_area_sufficiency(self, area):
-        area_load_device = list()
-        area_ess_device = list()
-        area_producer_device = list()
-        self_charged_ess_energy = 0  # charge-> + ; discharge-> -
+        self.area_load_device = list()
+        self.area_ess_device = list()
+        self.area_producer_device = list()
+        self.self_charged_ess_energy = 0  # charge-> + ; discharge-> -
+        load_list = list()  # NOQA
+        self.total_energy_demand = 0
+
+        self._get_root_load_devices(area)
+
+        # load_list = [child_key for child_key in self.export_data.plot_stats.keys()
+        #              if unmatched_key in self.export_data.plot_stats[child_key].keys()]
 
         for child in area.children:
             if _is_load_node(child):
-                area_load_device.append(child.name)
+                self.area_load_device.append(child.name)
             elif _is_prosumer_node(child):
-                area_ess_device.append(child.name)
+                self.area_ess_device.append(child.name)
             elif _is_producer_node(child):
-                area_producer_device.append(child.name)
+                self.area_producer_device.append(child.name)
             else:
-                area_load_device.append(make_iaa_name(child))
-                area_producer_device.append(make_iaa_name(child))
+                self.area_load_device.append(make_iaa_name(child))
+                self.area_producer_device.append(make_iaa_name(child))
 
-        total_energy_bought = 0
-        self_consumed = 0
-        energy_produced = 0
+        self.total_energy_bought = 0
+        self.self_consumed = 0
+        self.energy_produced = 0
 
         for market in area.past_markets:
 
             for trade in market.trades:
                 # Total Electricity traded by house device
-                if trade.buyer in area_load_device:
-                    total_energy_bought += trade.offer.energy
+                # if trade.buyer in self.area_load_device:
+                #     self.total_energy_bought += trade.offer.energy
                 # Electricity produced
-                if trade.offer.seller in area_producer_device:
-                    energy_produced += trade.offer.energy
+                if trade.offer.seller in self.area_producer_device:
+                    self.energy_produced += trade.offer.energy
                 # Producer electricity self_consumption
-                if trade.offer.seller in area_producer_device and \
-                        trade.buyer in area_load_device:
-                    self_consumed += trade.offer.energy
+                if trade.offer.seller in self.area_producer_device and \
+                        trade.buyer in self.area_load_device:
+                    self.self_consumed += trade.offer.energy
                 # self_charging
-                if trade.offer.seller in area_producer_device and trade.buyer in area_ess_device:
-                    self_charged_ess_energy += trade.offer.energy
+                if trade.offer.seller in self.area_producer_device and \
+                        trade.buyer in self.area_ess_device:
+                    self.self_charged_ess_energy += trade.offer.energy
                 # discharging
-                if trade.offer.seller in area_ess_device and trade.buyer in area_load_device and \
-                        self_charged_ess_energy > 0:
-                    self_charged_ess_energy -= trade.offer.energy
-                    self_consumed += trade.offer.energy
+                if trade.offer.seller in self.area_ess_device and \
+                        trade.buyer in self.area_load_device and \
+                        self.self_charged_ess_energy > 0:
+                    self.self_charged_ess_energy -= trade.offer.energy
+                    self.self_consumed += trade.offer.energy
 
-            self_consumption = (self_consumed / energy_produced
-                                if energy_produced > 0 else 0)
-            self_sufficiency = (self_consumed / total_energy_bought
-                                if total_energy_bought > 0 else 0)
+            self_consumption = (self.self_consumed / self.energy_produced
+                                if self.energy_produced > 0 else 0)
+            self_sufficiency = (self.self_consumed / self.total_energy_demand
+                                if self.total_energy_demand > 0 else 0)
 
         return {"self_consumption": self_consumption,
                 "self_sufficiency": self_sufficiency}
