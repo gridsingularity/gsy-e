@@ -28,8 +28,6 @@ import operator
 from slugify import slugify
 from sortedcontainers import SortedDict
 from d3a.constants import DATE_TIME_FORMAT
-from typing import Dict
-from copy import deepcopy
 
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
@@ -39,6 +37,7 @@ from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict
 from d3a.models.market.market_structures import MarketClearingState
 from functools import reduce  # forward compatibility for Python 3
+from d3a import limit_float_precision
 
 _log = logging.getLogger(__name__)
 
@@ -54,6 +53,22 @@ alternative_pricing_subdirs = {
 
 EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
                            "soc_history_%", "load_profile_kWh"]
+
+DEVICE_PLOT_COLORS = {"trade_energy_kWh": 'rgba(200,0,0,alpha)',
+                      "pv_production_kWh": 'rgba(0,200,0,alpha)',
+                      "load_profile_kWh": 'rgba(0,200,0,alpha)',
+                      "soc_history_%": 'rgba(0,200,0,alpha)',
+                      "trade_price_eur": 'rgba(0,0,200,alpha)'}
+
+DEVICE_YAXIS = {"trade_energy_kWh": ('y2', 'Traded Energy [kWh]'),
+                "pv_production_kWh": ('y', 'PV Production [kWh]'),
+                "load_profile_kWh": ('y', 'Load Profile [kWh]'),
+                "soc_history_%": ('y', 'State of Charge [%]'),
+                "trade_price_eur": ('y3', 'Energy Rate [EUR/kWh]')}
+
+
+def _get_color(key, alpha):
+    return DEVICE_PLOT_COLORS[key].replace("alpha", str(alpha))
 
 
 def get_from_dict(data_dict, map_list):
@@ -282,23 +297,9 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir,
                                 "/".join([slugify(node).lower() for node in address_list][0:-1]))
         mkdir_from_str(plot_dir)
-        for variable_name in EXPORT_DEVICE_VARIABLES:
-            if variable_name in device_dict:
-                if variable_name == "trade_price_eur":
-                    device_dict = self._remove_none_values(device_dict, "trade_price_eur")
-                output_file = os.path.join(
-                    plot_dir, 'device_profile_{}_{}.html'.format(device_name, variable_name))
-                PlotlyGraph._plot_time_series(device_dict, variable_name, device_name, output_file)
-
-    @classmethod
-    def _remove_none_values(cls, indict: Dict, base_key: str):
-        """
-        Removes all None values from a dict (made for price/rate time series)
-        """
-        outdict = deepcopy(indict)
-        for key in [base_key, "min_" + base_key, "max_" + base_key]:
-            [outdict[key].pop(k) for k, v in indict[key].items() if v is None]
-        return outdict
+        output_file = os.path.join(
+            plot_dir, 'device_profile_{}.html'.format(device_name))
+        PlotlyGraph._plot_device_profile(device_dict, device_name, output_file)
 
     def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
         """
@@ -719,54 +720,272 @@ class PlotlyGraph:
         py.offline.plot(fig, filename=filename, auto_open=False)
 
     @classmethod
-    def _plot_time_series(cls, indict: Dict, var_name: str, device_name: str, output_file: str):
-        x = list(indict[var_name].keys())
-        if len(x) == 0:
-            return
-        y = list(indict[var_name].values())
-        y_lower = list(indict["min_" + var_name].values())
-        y_upper = list(indict["max_" + var_name].values())
+    def _plot_time_series_line(cls, x, y, y_lower, y_upper, var_name, color, fill_color,
+                               yaxis, connectgaps=True):
+        line = dict(color=color,
+                    width=0.8)
         time_series = go.Scatter(
             x=x,
             y=y,
-            line=dict(color='rgb(0,100,80)'),
-            mode='lines',
-            name="",
-            showlegend=False,
-            hoverinfo='all',
-        )
-        time_series_markers = go.Scatter(
-            x=x,
-            y=y,
-            line=dict(color='rgb(0,100,80)'),
-            mode='markers',
-            showlegend=False,
+            line=line,
+            mode='lines+markers',
+            marker=dict(size=5),
+            name=var_name,
+            showlegend=True,
             hoverinfo='none',
+            fill=None,
+            xaxis="x",
+            yaxis=yaxis,
+            connectgaps=connectgaps
         )
-        longterm_min = go.Scatter(
+        longterm_max_hover = go.Scatter(
             x=x,
-            y=y_lower,
-            fill='tonexty',
-            fillcolor='rgba(0,100,80,0.2)',
+            y=y_upper,
+            fill=None,
+            fillcolor=fill_color,
             line=dict(color='rgba(255,255,255,0)'),
-            name=f"min longterm",
+            name=f"max {var_name}",
             showlegend=False,
             hoverinfo='y+name',
+            xaxis="x",
+            yaxis=yaxis,
+            connectgaps=connectgaps
         )
-        longterm_max = go.Scatter(
+        longterm_min_hover = go.Scatter(
+            x=x,
+            y=y_lower,
+            fill=None,
+            fillcolor=fill_color,
+            line=dict(color='rgba(255,255,255,0)'),
+            name=f"min {var_name}",
+            showlegend=False,
+            hoverinfo='y+name',
+            xaxis="x",
+            yaxis=yaxis,
+            connectgaps=connectgaps
+        )
+        shade = go.Scatter(
             x=x,
             y=y_upper,
             fill='tonexty',
-            fillcolor='rgba(0,100,80,0.2)',
+            fillcolor=fill_color,
             line=dict(color='rgba(255,255,255,0)'),
-            name=f"max longterm",
-            showlegend=False,
-            hoverinfo='y+name',
+            name=f"minmax {var_name}",
+            showlegend=True,
+            hoverinfo='none',
+            xaxis="x",
+            yaxis=yaxis,
+            connectgaps=connectgaps
         )
-        data = [time_series_markers, longterm_min, time_series, longterm_max]
+        hoverinfo_x = go.Scatter(
+            x=x,
+            y=y_upper,
+            mode="none",
+            hoverinfo="x",
+            xaxis="x",
+            showlegend=False,
+            yaxis=yaxis
+        )
+        return [longterm_min_hover, shade, time_series, longterm_max_hover, hoverinfo_x]
 
-        layout = cls.common_layout("group", f"{device_name}  ({var_name})", var_name,
-                                   'Time', [x[0], x[-1]])
+    @classmethod
+    def _plot_time_series_bar(cls, x, y, y_lower, y_upper, var_name, color, fill_color, yaxis):
 
+        time_series = go.Bar(
+            x=x,
+            y=y,
+            marker=dict(
+                color=fill_color,
+                line=dict(
+                    color=color,
+                    width=1.,
+                )
+            ),
+            name=var_name,
+            showlegend=True,
+            hoverinfo='none',
+            xaxis="x",
+            yaxis=yaxis,
+        )
+
+        return [time_series] + cls._hoverinfo_trace(x, y_lower, y_upper, yaxis)
+
+    @classmethod
+    def _hoverinfo_trace(cls, x, y_lower, y_upper, yaxis):
+        hoverinfo_max = go.Scatter(
+            x=x,
+            y=y_upper,
+            mode="none",
+            name="longterm_max",
+            hoverinfo="y+name",
+            xaxis="x",
+            showlegend=False,
+            yaxis=yaxis
+        )
+        hoverinfo_min = go.Scatter(
+            x=x,
+            y=y_lower,
+            mode="none",
+            name="longterm_min",
+            hoverinfo="y+name",
+            xaxis="x",
+            showlegend=False,
+            yaxis=yaxis
+        )
+        hoverinfo_x = go.Scatter(
+            x=x,
+            y=y_upper,
+            mode="none",
+            hoverinfo="x",
+            xaxis="x",
+            showlegend=False,
+            yaxis=yaxis
+        )
+
+        return [hoverinfo_max, hoverinfo_min, hoverinfo_x]
+
+    @classmethod
+    def _plot_time_series_price_candle(cls, x, y_min, y_max, y_lower, y_upper, var_name, yaxis,
+                                       color):
+        candle_stick = go.Candlestick(x=x,
+                                      open=y_min,
+                                      high=y_upper,
+                                      low=y_lower,
+                                      close=y_max,
+                                      yaxis=yaxis,
+                                      xaxis="x",
+                                      hoverinfo="none",
+                                      name=var_name,
+                                      increasing=dict(line=dict(color=color)),
+                                      decreasing=dict(line=dict(color=color)),
+                                      )
+        hoverinfo_max = go.Scatter(
+            x=x,
+            y=y_max,
+            mode="none",
+            name="max",
+            hoverinfo="y+name",
+            xaxis="x",
+            showlegend=False,
+            yaxis=yaxis
+        )
+        hoverinfo_min = go.Scatter(
+            x=x,
+            y=y_min,
+            mode="none",
+            name="min",
+            hoverinfo="y+name",
+            xaxis="x",
+            showlegend=False,
+            yaxis=yaxis
+        )
+
+        return [candle_stick, hoverinfo_max, hoverinfo_min] + cls._hoverinfo_trace(x, y_lower,
+                                                                                   y_upper, yaxis)
+
+    @classmethod
+    def _plot_device_profile(cls, device_dict, device_name, output_file):
+        data = []
+        special_yaxis_title = ""
+        y2range = None
+        time_list = []
+        for var_name in EXPORT_DEVICE_VARIABLES:
+            if var_name in device_dict:
+                indict = device_dict
+                time_list = list(indict[var_name].keys())
+                if len(time_list) == 0:
+                    return
+                y = list(indict[var_name].values())
+                y_lower = list(indict["min_" + var_name].values())
+                y_upper = list(indict["max_" + var_name].values())
+
+                if var_name == "trade_price_eur":
+                    xx = []
+                    yy_min = []
+                    yy_max = []
+                    yy_lower = []
+                    yy_upper = []
+                    for ii in range(len(y)):
+                        if y[ii] is not None:
+                            xx.append(time_list[ii])
+                            yy_min.append(limit_float_precision(min(y[ii])))
+                            yy_max.append(limit_float_precision(max(y[ii])))
+                            yy_lower.append(limit_float_precision(y_lower[ii]))
+                            yy_upper.append(limit_float_precision(y_upper[ii]))
+
+                    data += cls._plot_time_series_price_candle(xx, yy_min, yy_max, yy_lower,
+                                                               yy_upper, var_name,
+                                                               DEVICE_YAXIS[var_name][0],
+                                                               _get_color(var_name, 1))
+                elif var_name == "trade_energy_kWh":
+                    data += cls._plot_time_series_bar(time_list, y, y_lower, y_upper, var_name,
+                                                      _get_color(var_name, 1),
+                                                      _get_color(var_name, 0.4),
+                                                      DEVICE_YAXIS[var_name][0], )
+                    ddd = max([abs(x) for x in y if x is not None])
+                    mma = ddd + ddd * 0.1
+                    y2range = [-mma, mma]
+
+                else:
+                    data += cls._plot_time_series_line(time_list, y, y_lower, y_upper, var_name,
+                                                       _get_color(var_name, 1),
+                                                       _get_color(var_name, 0.4),
+                                                       DEVICE_YAXIS[var_name][0],
+                                                       connectgaps=True)
+                    special_yaxis_title = DEVICE_YAXIS[var_name][1]
+
+        layout = cls.device_plot_layout("overlay", f"{device_name}", 'Time',
+                                        [time_list[0], time_list[-1]],
+                                        special_yaxis_title, y2range)
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=output_file, auto_open=False)
+
+    @staticmethod
+    def device_plot_layout(barmode: str, title: str, xtitle: str, xrange: list,
+                           special_yaxis_title: str, y2range: list):
+        return go.Layout(
+            autosize=False,
+            width=1200,
+            height=700,
+            barmode=barmode,
+            title=title,
+            xaxis=dict(
+                title=xtitle,
+                showgrid=True,
+                range=xrange,
+                anchor="y3",
+                rangeslider=dict(visible=True,
+                                 thickness=0.075,
+                                 bgcolor='rgba(100,100,100,0.3)'
+                                 )
+            ),
+            yaxis=dict(
+                title=special_yaxis_title,
+                side='left',
+                showgrid=True,
+                domain=[0.66, 1],
+                rangemode='tozero',
+                autorange=True
+            ),
+            yaxis2=dict(
+                title='Traded Energy [kWh]',
+                side='right',
+                showgrid=True,
+                domain=[0.33, 0.66],
+                range=y2range,
+                autorange=False
+            ),
+            yaxis3=dict(
+                title='Energy rate [EUR/kWh]',
+                domain=[0.0, 0.33],
+                side='left',
+                showgrid=True,
+                rangemode='tozero',
+                autorange=True
+            ),
+            font=dict(
+                size=12
+            ),
+            showlegend=True,
+            legend=dict(x=1.1, y=1)
+        )
