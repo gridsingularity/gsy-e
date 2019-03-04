@@ -139,7 +139,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             if bid_trade.price_drop:
                 # Use the rate of the trade bid for accepting the source bid too
                 source_price = bid_trade.offer.price
-                # Drop the rate of the trade bid according to IAA fee
+                # Increase the rate of the trade bid according to IAA fee
                 source_price = source_price * (1 + (self.transfer_fee_pct / 100))
 
             updated_bid = Bid(market_bid.id, source_price, bid_trade.offer.energy,
