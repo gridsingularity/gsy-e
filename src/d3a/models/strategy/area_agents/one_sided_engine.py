@@ -106,7 +106,7 @@ class IAAEngine:
             residual_info = None
             source_rate = offer_info.source_offer.price / offer_info.source_offer.energy
             target_rate = offer_info.target_offer.price / offer_info.target_offer.energy
-            assert source_rate <= target_rate, \
+            assert abs(source_rate) <= abs(target_rate), \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             if trade.offer.energy < offer_info.source_offer.energy:
@@ -125,7 +125,7 @@ class IAAEngine:
                     # Use the rate of the trade offer for accepting the source offer too
                     # Drop the rate of the trade offer according to IAA fee
                     trade_offer_rate = trade.offer.price / trade.offer.energy
-                    trade_offer_rate = trade_offer_rate / (1 + (self.transfer_fee_pct / 100))
+                    trade_offer_rate = trade_offer_rate * (1 - (self.transfer_fee_pct / 100))
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,

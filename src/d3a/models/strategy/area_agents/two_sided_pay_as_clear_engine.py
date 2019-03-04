@@ -52,10 +52,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 obj.values(),
                 key=lambda b: b.price / b.energy))
 
-    def _discrete_point_curve(self, obj_list):
+    def _discrete_point_curve(self, obj_list, functor):
         cumulative = defaultdict(int)
         for obj in obj_list:
-            rate = math.floor(obj.price / obj.energy)
+            rate = functor(obj.price / obj.energy)
             cumulative[rate] += obj.energy
         return cumulative
 
@@ -81,8 +81,9 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         if len(self.sorted_bids) == 0 or len(self.sorted_offers) == 0:
             return
 
-        cumulative_bids = self._discrete_point_curve(self.sorted_bids)
-        cumulative_offers = self._discrete_point_curve(self.sorted_offers)
+        # TODO: math.floor and math.ceil distinguishing will be resolved in the frame of D3ASIM-907
+        cumulative_bids = self._discrete_point_curve(self.sorted_bids, math.floor)
+        cumulative_offers = self._discrete_point_curve(self.sorted_offers, math.ceil)
 
         max_rate = \
             int(max(math.floor(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
