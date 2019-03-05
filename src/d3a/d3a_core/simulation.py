@@ -51,7 +51,7 @@ log = getLogger(__name__)
 page_lock = Lock()
 
 
-class _SimulationInterruped(Exception):
+class _SimulationInterrupted(Exception):
     pass
 
 
@@ -84,6 +84,7 @@ class Simulation:
         self.is_stopped = False
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
+        self._started_from_cli = redis_job_id is None
 
         self.run_start = None
         self.paused_time = None
@@ -198,9 +199,6 @@ class Simulation:
             log.critical("Resuming simulation")
             self._info()
         self.is_stopped = False
-        config = self.simulation_config
-        tick_lengths_s = config.tick_length.total_seconds()
-        slot_count = int(config.sim_duration / config.slot_length)
         while True:
             self.ready.wait()
             self.ready.clear()
@@ -208,94 +206,107 @@ class Simulation:
                 # FIXME: Fix resume time calculation
                 if self.run_start is None or self.paused_time is None:
                     raise RuntimeError("Can't resume without saved state")
-                slot_resume, tick_resume = divmod(self.area.current_tick, config.ticks_per_slot)
+                slot_resume, tick_resume = divmod(self.area.current_tick,
+                                                  self.simulation_config.ticks_per_slot)
             else:
                 self.run_start = DateTime.now(tz=TIME_ZONE)
                 self.paused_time = 0
                 slot_resume = tick_resume = 0
 
             try:
-                with NonBlockingConsole() as console:
-                    for slot_no in range(slot_resume, slot_count):
-                        run_duration = (
-                            DateTime.now(tz=TIME_ZONE) - self.run_start -
-                            duration(seconds=self.paused_time)
-                        )
-
-                        log.error(
-                            "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
-                            slot_no + 1,
-                            slot_count,
-                            (slot_no + 1) / slot_count * 100,
-                            run_duration, run_duration / (slot_no + 1) * slot_count
-                        )
-                        if self.is_stopped:
-                            log.error("Received stop command.")
-                            sleep(5)
-                            break
-
-                        for tick_no in range(tick_resume, config.ticks_per_slot):
-                            # reset tick_resume after possible resume
-                            tick_resume = 0
-                            self._handle_input(console)
-                            self.paused_time += self._handle_paused(console)
-                            tick_start = time.monotonic()
-                            log.debug(
-                                "Tick %d of %d in slot %d (%2.0f%%)",
-                                tick_no + 1,
-                                config.ticks_per_slot,
-                                slot_no + 1,
-                                (tick_no + 1) / config.ticks_per_slot * 100,
-                            )
-
-                            with page_lock:
-                                self.area.tick(is_root_area=True)
-
-                            tick_length = time.monotonic() - tick_start
-                            if self.slowdown and tick_length < tick_lengths_s:
-                                # Simulation runs faster than real time but a slowdown was
-                                # requested
-                                tick_diff = tick_lengths_s - tick_length
-                                diff_slowdown = tick_diff * self.slowdown / 10000
-                                log.debug("Slowdown: %.4f", diff_slowdown)
-                                self._handle_input(console, diff_slowdown)
-
-                        with page_lock:
-                            self.endpoint_buffer.update_stats(self.area, self.status)
-                            self.redis_connection.publish_intermediate_results(
-                                self.endpoint_buffer
-                            )
-
-                    self.deactivate_areas(self.area)
-                    self.endpoint_buffer.update_stats(self.area, self.status)
-
-                    run_duration = (
-                            DateTime.now(tz=TIME_ZONE) - self.run_start -
-                            duration(seconds=self.paused_time)
-                    )
-                    paused_duration = duration(seconds=self.paused_time)
-
-                    self.redis_connection.publish_results(self.endpoint_buffer)
-                    if not self.is_stopped:
-                        log.error(
-                            "Run finished in %s%s / %.2fx real time",
-                            run_duration,
-                            " ({} paused)".format(paused_duration) if paused_duration else "",
-                            config.sim_duration / (run_duration - paused_duration)
-                        )
-                    if self.export_on_finish:
-                        log.error("Exporting simulation data.")
-                        ExportAndPlot(self.area, self.export_path, self.export_subdir,
-                                      self.endpoint_buffer)
-
-                    if self.use_repl:
-                        self._start_repl()
-
-                    break
-            except _SimulationInterruped:
+                log.error(f"started from cli {self._started_from_cli}")
+                self._run_cli_execute_cycle(slot_resume, tick_resume) \
+                    if self._started_from_cli \
+                    else self._execute_simulation(slot_resume, tick_resume)
+            except _SimulationInterrupted:
                 self.interrupted.set()
             except KeyboardInterrupt:
                 break
+
+    def _run_cli_execute_cycle(self, slot_resume, tick_resume):
+        with NonBlockingConsole() as console:
+            self._execute_simulation(slot_resume, tick_resume, console)
+
+    def _execute_simulation(self, slot_resume, tick_resume, console=None):
+        config = self.simulation_config
+        tick_lengths_s = config.tick_length.total_seconds()
+        slot_count = int(config.sim_duration / config.slot_length)
+        for slot_no in range(slot_resume, slot_count):
+            run_duration = (
+                    DateTime.now(tz=TIME_ZONE) - self.run_start -
+                    duration(seconds=self.paused_time)
+            )
+
+            log.error(
+                "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
+                slot_no + 1,
+                slot_count,
+                (slot_no + 1) / slot_count * 100,
+                run_duration, run_duration / (slot_no + 1) * slot_count
+            )
+            if self.is_stopped:
+                log.error("Received stop command.")
+                sleep(5)
+                break
+
+            for tick_no in range(tick_resume, config.ticks_per_slot):
+                # reset tick_resume after possible resume
+                tick_resume = 0
+                if console is not None:
+                    self._handle_input(console)
+                    self.paused_time += self._handle_paused(console)
+                tick_start = time.monotonic()
+                log.debug(
+                    "Tick %d of %d in slot %d (%2.0f%%)",
+                    tick_no + 1,
+                    config.ticks_per_slot,
+                    slot_no + 1,
+                    (tick_no + 1) / config.ticks_per_slot * 100,
+                )
+
+                with page_lock:
+                    self.area.tick(is_root_area=True)
+
+                tick_length = time.monotonic() - tick_start
+                if self.slowdown and tick_length < tick_lengths_s:
+                    # Simulation runs faster than real time but a slowdown was
+                    # requested
+                    tick_diff = tick_lengths_s - tick_length
+                    diff_slowdown = tick_diff * self.slowdown / 10000
+                    log.debug("Slowdown: %.4f", diff_slowdown)
+                    if console is not None:
+                        self._handle_input(console, diff_slowdown)
+
+            with page_lock:
+                self.endpoint_buffer.update_stats(self.area, self.status)
+                self.redis_connection.publish_intermediate_results(
+                    self.endpoint_buffer
+                )
+
+        self.deactivate_areas(self.area)
+        self.endpoint_buffer.update_stats(self.area, self.status)
+
+        run_duration = (
+                DateTime.now(tz=TIME_ZONE) - self.run_start -
+                duration(seconds=self.paused_time)
+        )
+        paused_duration = duration(seconds=self.paused_time)
+
+        self.redis_connection.publish_results(self.endpoint_buffer)
+        if not self.is_stopped:
+            log.error(
+                "Run finished in %s%s / %.2fx real time",
+                run_duration,
+                " ({} paused)".format(paused_duration) if paused_duration else "",
+                config.sim_duration / (run_duration - paused_duration)
+            )
+        if self.export_on_finish:
+            log.error("Exporting simulation data.")
+            ExportAndPlot(self.area, self.export_path, self.export_subdir,
+                          self.endpoint_buffer)
+
+        if self.use_repl:
+            self._start_repl()
 
     def toggle_pause(self):
         if self.finished:
@@ -311,7 +322,7 @@ class Simulation:
             start = time.monotonic()
         while True:
             if self.interrupt.is_set():
-                raise _SimulationInterruped()
+                raise _SimulationInterrupted()
             cmd = console.get_char(timeout)
             if cmd:
                 if cmd not in {'i', 'p', 'q', 'r', 'S', 'R', 's', '+', '-'}:

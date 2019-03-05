@@ -32,21 +32,22 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 class Launcher:
     def __init__(self,
                  queue=None,
-                 n_jobs=4,
+                 max_jobs=4,
                  max_delay_seconds=2):
         self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
-        self.n_jobs = n_jobs
+        self.max_jobs = max_jobs
         self.max_delay = timedelta(seconds=max_delay_seconds)
         self.command = [sys.executable, 'src/d3a/d3a_core/d3a_jobs.py']
+        self.job_array = []
 
     def run(self):
-        self._start_worker()
-        n_jobs = 0
+        self.job_array.append(self._start_worker())
         while True:
             sleep(1)
-            if n_jobs <= self.n_jobs and self.is_crowded():
-                n_jobs += 1
+            if len(self.job_array) <= self.max_jobs and self.is_crowded():
                 self._start_worker()
+
+            self.job_array = [j for j in self.job_array if j.poll() is None]
 
     def is_crowded(self):
         enqueued = self.queue.jobs
@@ -57,7 +58,7 @@ class Launcher:
         return False
 
     def _start_worker(self):
-        Popen(self.command, env={'REDIS_URL': REDIS_URL})
+        return Popen(self.command, env={'REDIS_URL': REDIS_URL})
 
 
 @click.command()
