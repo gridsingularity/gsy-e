@@ -214,7 +214,6 @@ class Simulation:
                 slot_resume = tick_resume = 0
 
             try:
-                log.error(f"started from cli {self._started_from_cli}")
                 self._run_cli_execute_cycle(slot_resume, tick_resume) \
                     if self._started_from_cli \
                     else self._execute_simulation(slot_resume, tick_resume)
