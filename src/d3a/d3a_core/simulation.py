@@ -221,6 +221,8 @@ class Simulation:
                 self.interrupted.set()
             except KeyboardInterrupt:
                 break
+            finally:
+                break
 
     def _run_cli_execute_cycle(self, slot_resume, tick_resume):
         with NonBlockingConsole() as console:
