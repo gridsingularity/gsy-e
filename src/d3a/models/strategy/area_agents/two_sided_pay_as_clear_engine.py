@@ -52,10 +52,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 obj.values(),
                 key=lambda b: b.price / b.energy))
 
-    def _discrete_point_curve(self, obj_list, functor):
+    def _discrete_point_curve(self, obj_list, round_functor):
         cumulative = defaultdict(int)
         for obj in obj_list:
-            rate = functor(obj.price / obj.energy)
+            rate = round_functor(obj.price / obj.energy)
             cumulative[rate] += obj.energy
         return cumulative
 
