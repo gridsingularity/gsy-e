@@ -194,7 +194,7 @@ def load_profile_scenario(context):
     context._settings = SimulationConfig(tick_length=duration(seconds=60),
                                          slot_length=duration(minutes=60),
                                          sim_duration=duration(hours=24),
-                                         market_count=1,
+                                         market_count=4,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
                                          iaa_fee=5)
