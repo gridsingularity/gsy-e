@@ -22,6 +22,7 @@ from math import isclose
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
 from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
 @then('the DefinedLoadStrategy follows the {single_or_multi} day Load profile provided as csv')
@@ -87,21 +88,25 @@ def check_user_rate_profile_dict(context):
                                                     house.config.slot_length.minutes)
 
 
-@then('LoadHoursStrategy buys energy with rates equal to the min rate profile')
+@then('LoadHoursStrategy buys energy with rates equal to the initial buying rate profile')
 def check_min_user_rate_profile_dict(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     load1 = next(filter(lambda x: x.name == "H1 General Load 1", house.children))
     load2 = next(filter(lambda x: x.name == "H1 General Load 2", house.children))
 
+    num_of_hierarchies = 2
     for market in house.past_markets:
         assert len(market.trades) > 0
         for trade in market.trades:
+            trade_rate = trade.offer.price / trade.offer.energy
             if trade.buyer == load1.name:
-                assert int(trade.offer.price / trade.offer.energy) == \
-                       int(load1.strategy.initial_buying_rate[market.time_slot])
+                min_rate = load1.strategy.initial_buying_rate[market.time_slot]
+                assert trade_rate * (1 + context.simulation.simulation_config.iaa_fee /
+                                     100**num_of_hierarchies) - min_rate < FLOATING_POINT_TOLERANCE
             elif trade.buyer == load2.name:
-                assert int(trade.offer.price / trade.offer.energy) == \
-                       int(load2.strategy.initial_buying_rate[market.time_slot])
+                min_rate = load2.strategy.initial_buying_rate[market.time_slot]
+                assert trade_rate * (1 + context.simulation.simulation_config.iaa_fee /
+                                     100**num_of_hierarchies) - min_rate < FLOATING_POINT_TOLERANCE
             else:
                 assert False, "All trades should be bought by load1 or load2, no other consumer."
 
