@@ -27,6 +27,9 @@ log = getLogger(__name__)
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
+ERROR_CHANNEL = "d3a-errors"
+RESULTS_CHANNEL = "d3a-results"
+
 
 class RedisSimulationCommunication:
     def __init__(self, simulation, simulation_id):
@@ -39,7 +42,7 @@ class RedisSimulationCommunication:
                                    self._simulation_id + "/pause": self._pause_callback,
                                    self._simulation_id + "/resume": self._resume_callback,
                                    self._simulation_id + "/slowdown": self._slowdown_callback}
-        self.result_channel = "d3a-results"
+        self.result_channel = RESULTS_CHANNEL
 
         try:
             self.redis_db = StrictRedis.from_url(REDIS_URL)
@@ -93,3 +96,8 @@ class RedisSimulationCommunication:
     def publish_intermediate_results(self, endpoint_buffer):
         # Should have a different format in the future, hence the code duplication
         self.publish_results(endpoint_buffer)
+
+
+def publish_job_error_output(job_id, traceback):
+    StrictRedis.from_url(REDIS_URL).\
+        publish(ERROR_CHANNEL, json.dumps({"job_id": job_id, "errors": traceback}))
