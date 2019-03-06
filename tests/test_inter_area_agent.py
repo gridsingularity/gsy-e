@@ -202,8 +202,8 @@ def test_iaa_does_not_forward_bids_if_the_IAA_name_is_the_same_as_the_target_mar
 
 def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
     assert iaa_bid.higher_market.bid_count == 1
-    assert iaa_bid.higher_market.forwarded_bid.price / (1 + (iaa_bid.transfer_fee_pct / 100)) == \
-        list(iaa_bid.lower_market.bids.values())[-1].price
+    assert iaa_bid.higher_market.forwarded_bid.price == \
+        list(iaa_bid.lower_market.bids.values())[-1].price * (1 - (iaa_bid.transfer_fee_pct / 100))
 
 
 @pytest.mark.parametrize("iaa_fee", [10, 0, 50, 75, 5, 2, 3])
@@ -217,8 +217,8 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
                                 transfer_fee_pct=iaa_fee)
     iaa.event_tick(area=iaa.owner)
     assert iaa.higher_market.bid_count == 1
-    assert iaa.higher_market.forwarded_bid.price / (1 + (iaa_fee / 100)) == \
-        list(iaa.lower_market.bids.values())[-1].price
+    assert iaa.higher_market.forwarded_bid.price == \
+        list(iaa.lower_market.bids.values())[-1].price * (1 - (iaa_fee / 100))
     ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
@@ -338,7 +338,7 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10.0
 
 
-def test_iaa_event_bid_trade_reduces_bid_price(iaa_double_sided):
+def test_iaa_event_bid_trade_increases_bid_price(iaa_double_sided):
     iaa_double_sided.higher_market.forwarded_bid = \
         iaa_double_sided.higher_market.forwarded_bid._replace(price=20.2)
     iaa_double_sided.event_bid_traded(
@@ -351,7 +351,7 @@ def test_iaa_event_bid_trade_reduces_bid_price(iaa_double_sided):
         market_id=iaa_double_sided.higher_market.id)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
     assert iaa_double_sided.higher_market.forwarded_bid.price == 20.2
-    assert iaa_double_sided.lower_market.calls_bids_price[-1] == 20.0
+    assert iaa_double_sided.lower_market.calls_bids_price[-1] == 20.402
 
 
 def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):

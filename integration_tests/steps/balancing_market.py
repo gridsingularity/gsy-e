@@ -21,6 +21,7 @@ from functools import reduce
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import make_ba_name
 from d3a.models.const import ConstSettings
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
 @given('we have configured all the balancing_market.default_2a devices in the registry')
@@ -116,17 +117,20 @@ def grid_has_balancing_trades_h1_h2(context, b_t_count):
 def follow_device_registry_energy_rate(context, device_name):
     negative_energy_rate = -DeviceRegistry.REGISTRY[device_name][0]
     positive_energy_rate = DeviceRegistry.REGISTRY[device_name][1]
-
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
+    iaa_fee = context.simulation.simulation_config.iaa_fee
+    add_val = [0, 2*iaa_fee/100 + iaa_fee/100**2, iaa_fee/100]
 
-    assert all(int(round(trade.offer.price / trade.offer.energy, 2)) == int(negative_energy_rate)
-               for device in [house1, house2, context.simulation.area]
+    assert all((trade.offer.price / trade.offer.energy) - negative_energy_rate * (1 + add_val[ii])
+               < FLOATING_POINT_TOLERANCE
+               for ii, device in enumerate([house1, house2, context.simulation.area])
                for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy < 0)
 
-    assert all(int(round(trade.offer.price / trade.offer.energy, 2)) == int(positive_energy_rate)
-               for device in [house1, house2, context.simulation.area]
+    assert all((trade.offer.price / trade.offer.energy) - positive_energy_rate * (1 + add_val[ii])
+               < FLOATING_POINT_TOLERANCE
+               for ii, device in enumerate([house1, house2, context.simulation.area])
                for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy > 0)
 
