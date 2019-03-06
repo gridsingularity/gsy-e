@@ -45,7 +45,7 @@ class Launcher:
         while True:
             sleep(1)
             if len(self.job_array) <= self.max_jobs and self.is_crowded():
-                self._start_worker()
+                self.job_array.append(self._start_worker())
 
             self.job_array = [j for j in self.job_array if j.poll() is None]
 
