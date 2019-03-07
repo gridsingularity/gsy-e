@@ -54,9 +54,12 @@ class FileExportEndpoints:
     def update_sold_bought_energy(self, area: Area):
         self.traded_energy[area.uuid] = \
             self._calculate_devices_sold_bought_energy(area, area.past_markets)
+        self.traded_energy[area.slug] = self.traded_energy[area.uuid]
         self.balancing_traded_energy[area.slug] = \
             self._calculate_devices_sold_bought_energy(area, area.past_balancing_markets)
+        self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.slug]
         self.traded_energy_profile[area.uuid] = self._serialize_traded_energy_lists(area)
+        self.traded_energy_profile[area.slug] = self.traded_energy_profile[area.uuid]
 
     def _serialize_traded_energy_lists(self, area):
         outdict = {}

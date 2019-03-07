@@ -51,6 +51,8 @@ class AreaEncoder(json.JSONEncoder):
         result = {"name": area.name}
         if area.children:
             result['children'] = area.children
+        if area.uuid:
+            result['uuid'] = area.uuid
         if area.strategy:
             result['strategy'] = area.strategy
         if area.appliance:
@@ -108,7 +110,7 @@ def area_from_dict(description, config=None):
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
-        return Area(name, uuid, children, optional('strategy'), optional('appliance'), config,
+        return Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
                     optional('budget_keeper'))
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
         raise ValueError("Input is not a valid area description (%s)" % str(error))

@@ -56,7 +56,8 @@ DEFAULT_CONFIG = SimulationConfig(
 class Area:
     _area_id_counter = 1
 
-    def __init__(self, name: str = None, uuid: str = None, children: List["Area"] = None,
+    def __init__(self, name: str = None, children: List["Area"] = None,
+                 uuid: str = None,
                  strategy: BaseStrategy = None,
                  appliance: BaseAppliance = None,
                  config: SimulationConfig = None,
