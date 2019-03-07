@@ -22,6 +22,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loa
 from d3a.d3a_core.sim_results.stats import energy_bills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a.d3a_core.sim_results.unmatched_loads import ExportUnmatchedLoads
 from collections import OrderedDict
 from statistics import mean
 
@@ -39,6 +40,7 @@ class SimulationEndpointBuffer:
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.unmatched_loads = {}
+        self.unmatched_loads_new = {}
         self.unmatched_loads_redis = {}
         self.cumulative_loads = {}
         self.price_energy_day = {}
@@ -79,7 +81,8 @@ class SimulationEndpointBuffer:
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status,
-            "device_statistics": self.device_statistics_time_str_dict
+            "device_statistics": self.device_statistics_time_str_dict,
+            "unmatched_loads_new": self.unmatched_loads_new
         }
 
     def update_stats(self, area, simulation_status):
@@ -117,6 +120,8 @@ class SimulationEndpointBuffer:
             self.device_statistics.device_stats_dict, {})
 
         self.energy_trade_profile = FileExportEndpoints(area).traded_energy_profile
+
+        self.unmatched_loads_new = ExportUnmatchedLoads(area).unmatched_loads
 
     def _update_tree_summary(self, area):
         price_energy_list = export_price_energy_day(area)
