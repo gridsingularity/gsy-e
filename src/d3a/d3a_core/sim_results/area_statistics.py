@@ -327,10 +327,39 @@ def generate_inter_area_trade_details(area, past_market_types):
     return trade_details
 
 
+def _generate_self_consumption_entries_for_area_children(accumulated_trades, area_children):
+    # Create self consumed energy results (positive axis, first entries)
+    self_consumed_energy = []
+    children_trades = {k: v for k, v in accumulated_trades.items() if k in area_children}
+    for area_name, area_data in children_trades.items():
+        sc_energy = 0
+        sc_money = 0
+        if area_name in area_data["consumedFrom"].keys():
+            sc_energy = area_data["consumedFrom"].pop(area_name)
+            sc_money = area_data["spentTo"].pop(area_name)
+        self_consumed_energy.append({
+            "x": area_name,
+            "y": sc_energy,
+            "target": area_name,
+            "label": f"{area_name} Consumed {str(round(sc_energy, 3))} kWh from {area_name}",
+            "priceLabel": f"{area_name} Spent {str(round(sc_money, 3))} cents on "
+                          f"energy from {area_name}",
+        })
+    return sorted(self_consumed_energy, key=lambda a: a["x"])
+
+
+def generate_cumulative_grid_trades_for_area(accumulated_trades, area, results):
+    # TODO: WIP
+    # children_trades = {k: v for k, v in accumulated_trades.items() if k in area.children}
+    pass
+
+
 def export_cumulative_grid_trades(area, past_market_types, all_devices=False):
     accumulated_trades = _accumulate_grid_trades_all_devices(area, {}, past_market_types) \
         if all_devices \
         else _accumulate_grid_trades(area, {}, past_market_types)
+    if all_devices:
+        print(accumulated_trades)
     return {
         "unit": "kWh",
         "areas": sorted(accumulated_trades.keys()),
@@ -357,3 +386,67 @@ def export_price_energy_day(area):
             "cum_stor_prof": round(sum(trades.stor_energ), 2)
         } for ii, (hour, trades) in enumerate(price_lists.items())
     ]
+
+
+class AreaAccumulatedData:
+    def __init__(self, name):
+        self.name = name
+        self.produced = 0.0
+        self.earned = 0.0
+        self.consumedFrom = defaultdict(int)
+        self.spentTo = defaultdict(int)
+
+
+class ExportCumulativeTrades:
+    def __init__(self, base_area, is_balancing_market):
+        self.base_area = base_area
+        self.is_balancing_market = is_balancing_market
+        self.results = {base_area.name: AreaAccumulatedData(self.base_area.name)}
+
+    def _get_market_from_area(self, area):
+        return area.past_balancing_markets if self.is_balancing_market else area.past_markets
+
+    def export_cumulative_trades_for_all_areas(self, area):
+        for child in area.children:
+            if _is_load_node(child):
+                self.results[child.name] = AreaAccumulatedData(child.name)
+                for market in self._get_market_from_area(area):
+                    for trade in market.trades:
+                        if trade.buyer == child.name:
+                            sell_id = area_name_from_area_or_iaa_name(trade.seller)
+                            self.results[child.name].consumedFrom[sell_id] += trade.offer.energy
+                            self.results[child.name].spentTo[sell_id] += trade.offer.price
+            elif _is_producer_node(child):
+                for market in self._get_market_from_area(area):
+                    for trade in market.trades:
+                        if trade.offer.seller == child.name:
+                            self.results[child.name].produced += trade.offer.energy
+                            self.results[child.name].earned += trade.offer.price
+            elif child.children == []:
+                # Leaf node, no need for calculating cumulative trades, continue iteration
+                continue
+            else:
+                # Houses
+                house_IAA_name = make_iaa_name(child)
+                child_names = [c.name for c in child.children]
+                for market in self._get_market_from_area(child):
+                    for trade in market.trades:
+                        if area_name_from_area_or_iaa_name(trade.seller) in child_names and \
+                                area_name_from_area_or_iaa_name(trade.buyer) in child_names:
+                            # House self-consumption trade
+                            self.results[child.name].produced -= trade.offer.energy
+                            self.results[child.name].earned += trade.offer.price
+                            self.results[child.name].consumedFrom[child.name] += trade.offer.energy
+                            self.results[child.name].spentTo[child.name] += trade.offer.price
+                        elif trade.buyer == house_IAA_name:
+                            self.results[child.name].earned += trade.offer.price
+                            self.results[child.name].produced -= trade.offer.energy
+
+                for market in self._get_market_from_area(area):
+                    for trade in market.trades:
+                        if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
+                            seller_id = area_name_from_area_or_iaa_name(trade.seller)
+                            self.results[child.name].consumedFrom[seller_id] += trade.offer.energy
+                            self.results[child.name].spentTo[seller_id] += trade.offer.price
+
+                self.export_cumulative_trades_for_all_areas(child)

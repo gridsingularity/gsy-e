@@ -85,7 +85,7 @@ def get_setup(config):
                                                           break_even=(26.99, 27.01),
                                                           max_abs_battery_power_kW=5.0),
                                  appliance=SwitchableAppliance()),
-                            Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                            Area('H4 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                                hrs_per_day=23,
                                                                                hrs_of_day=list(
                                                                                    range(0, 23))),
