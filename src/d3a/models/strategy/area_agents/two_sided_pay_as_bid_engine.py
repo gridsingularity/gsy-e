@@ -146,6 +146,10 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                               market_bid.buyer, market_bid.seller)
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
+
+            # accumulate grid_fee in target market
+            self.markets.target.grid_fee += self.transfer_fee_pct * bid_trade.offer.energy
+
             # target_rate = bid_trade.offer.price / bid_trade.offer.energy
             # source_rate = market_bid.price / market_bid.energy
             source_rate = bid_info.source_bid.price / bid_info.source_bid.energy
@@ -160,6 +164,9 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 already_tracked=False,
                 trade_rate=updated_bid.price / updated_bid.energy
             )
+
+            # accumulate grid_fee in source market
+            self.markets.source.grid_fee += self.transfer_fee_pct * bid_trade.offer.energy
 
             self.after_successful_trade_event(source_trade, bid_info)
         # Bid was traded in the source market by someone else

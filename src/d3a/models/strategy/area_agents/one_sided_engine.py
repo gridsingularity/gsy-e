@@ -109,6 +109,9 @@ class IAAEngine:
             assert abs(source_rate) <= abs(target_rate), \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
+            # accumulate grid_fee in target market
+            self.markets.target.grid_fee += self.transfer_fee_pct * trade.offer.energy
+
             if trade.offer.energy < offer_info.source_offer.energy:
                 try:
                     residual_info = ResidualInfo(
@@ -133,6 +136,10 @@ class IAAEngine:
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate
                 )
+
+                # accumulate grid_fee in source market
+                self.markets.source.grid_fee += self.transfer_fee_pct * trade.offer.energy
+
             except OfferNotFoundException:
                 raise OfferNotFoundException()
             self.owner.log.info(
