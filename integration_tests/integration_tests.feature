@@ -1,13 +1,10 @@
 Feature: Run integration tests
 
   Scenario Outline: Run integration tests on console
-     Given we have a scenario named <scenario>
+     Given we have a scenario named default_2a
      And d3a is installed
-     When we run the d3a simulation on console with <scenario>
-     Then we test the export functionality of <scenario>
-  Examples: Scenarios
-     | scenario |
-     | integration_test_setup |
+     When we run the d3a simulation on console with default_2a
+     Then we test the export functionality of default_2a
 
   Scenario: Test offers, bids and balancing offers are exported
      Given we have a scenario named two_sided_market/with_balancing_market
@@ -22,10 +19,7 @@ Feature: Run integration tests
      Then we test the output of the simulation of <scenario> [<duration>, <slot_length>, <tick_length>]
   Examples: Settings
      | scenario               | duration | slot_length | tick_length |
-     | integration_test_setup |    2     |      20     |      1      |
-     | integration_test_setup |    4     |      10     |      5      |
      |         default_2      |    24    |      60     |      60     |
-     |        default_2a      |    24    |      60     |      60     |
      |        default_2b      |    24    |      60     |      60     |
      |        default_3       |    24    |      60     |      60     |
      |        default_3a      |    24    |      60     |      60     |
