@@ -105,7 +105,7 @@ def area_from_dict(description, config=None):
         if 'type' in description:
             return _leaf_from_dict(description)  # Area is a Leaf
         name = description['name']
-        uuid = description['uuid']
+        uuid = description.get('uuid', None)
         if 'children' in description:
             children = [area_from_dict(child) for child in description['children']]
         else:
