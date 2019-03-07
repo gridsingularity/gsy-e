@@ -103,11 +103,12 @@ def area_from_dict(description, config=None):
         if 'type' in description:
             return _leaf_from_dict(description)  # Area is a Leaf
         name = description['name']
+        uuid = description['uuid']
         if 'children' in description:
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
-        return Area(name, children, optional('strategy'), optional('appliance'), config,
+        return Area(name, uuid, children, optional('strategy'), optional('appliance'), config,
                     optional('budget_keeper'))
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
         raise ValueError("Input is not a valid area description (%s)" % str(error))
