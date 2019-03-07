@@ -57,6 +57,7 @@ class Area:
     _area_id_counter = 1
 
     def __init__(self, name: str = None, children: List["Area"] = None,
+                 uuid: str = None,
                  strategy: BaseStrategy = None,
                  appliance: BaseAppliance = None,
                  config: SimulationConfig = None,
@@ -68,6 +69,7 @@ class Area:
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
+        self.uuid = uuid
         self.slug = slugify(name, to_lower=True)
         self.area_id = Area._area_id_counter
         Area._area_id_counter += 1

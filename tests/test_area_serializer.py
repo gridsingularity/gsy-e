@@ -39,7 +39,7 @@ def test_area_with_children_roundtrip():
 
 
 def test_encode_strategy_appliance():
-    area = Area("child", [], PVStrategy(), PVAppliance())
+    area = Area("child", [], None, PVStrategy(), PVAppliance())
     area_dict = json.loads(area_to_string(area))
     assert 'children' not in area_dict
     assert area_dict['strategy']['type'] == 'PVStrategy'
@@ -47,7 +47,7 @@ def test_encode_strategy_appliance():
 
 
 def test_strategy_appliance_roundtrip():
-    area = Area("child", [], PVStrategy(), PVAppliance())
+    area = Area("child", [], None, PVStrategy(), PVAppliance())
     recovered = area_from_string(area_to_string(area))
     assert type(recovered.strategy) is PVStrategy
     assert type(recovered.appliance) is PVAppliance
@@ -59,7 +59,7 @@ def test_raises_unknown_class():
 
 
 def test_strategy_roundtrip_with_params():
-    area = Area('area', [], PVStrategy(panel_count=42, risk=1))
+    area = Area('area', [], None, PVStrategy(panel_count=42, risk=1))
     area_str = area_to_string(area)
     assert json.loads(area_str)['strategy']['kwargs']['risk'] == 1
     recovered = area_from_string(area_str)
@@ -67,7 +67,7 @@ def test_strategy_roundtrip_with_params():
 
 
 def test_non_attr_param():
-    area1 = Area('area1', [], PVStrategy())
+    area1 = Area('area1', [], None, PVStrategy())
     recovered1 = area_from_string(area_to_string(area1))
     assert recovered1.strategy.final_selling_rate == ConstSettings.PVSettings.FINAL_SELLING_RATE
 
