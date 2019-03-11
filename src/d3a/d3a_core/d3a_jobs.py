@@ -72,11 +72,16 @@ def start(scenario, settings):
         config.area = scenario
 
     kwargs = {"no_export": True, "pricing_scheme": 0}
-    run_simulation(setup_module_name=scenario_name,
-                   simulation_config=config,
-                   slowdown=settings.get('slowdown', 0),
-                   redis_job_id=job.id,
-                   kwargs=kwargs)
+    try:
+        run_simulation(setup_module_name=scenario_name,
+                       simulation_config=config,
+                       slowdown=settings.get('slowdown', 0),
+                       redis_job_id=job.id,
+                       kwargs=kwargs)
+    except Exception:
+        import traceback
+        from d3a.d3a_core.redis_communication import publish_job_error_output
+        publish_job_error_output(job.id, traceback.format_exc())
 
 
 @job('d3a')

@@ -301,13 +301,11 @@ def generate_market_slot_list(area):
     """
     Returns a list of all slot times
     """
-    market_slots = []
-    for slot_time in [
+    return [
         area.config.start_date + (area.config.slot_length * i) for i in range(
             (area.config.sim_duration + (area.config.market_count * area.config.slot_length)) //
-            area.config.slot_length - 1)]:
-        market_slots.append(slot_time)
-    return market_slots
+            area.config.slot_length - 1)
+        if (area.config.slot_length * i) <= area.config.sim_duration]
 
 
 def constsettings_to_dict():
