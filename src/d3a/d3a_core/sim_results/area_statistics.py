@@ -251,13 +251,13 @@ def _accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_ty
 def _generate_produced_energy_entries(accumulated_trades):
     # Create produced energy results (negative axis)
     produced_energy = [{
-        "x": area_name,
-        "y": area_data["produced"],
-        "target": area_name,
-        "label": f"{area_name} Produced {str(round(abs(area_data['produced']), 3))} kWh",
+        "areaName": area_name,
+        "energy": area_data["produced"],
+        "targetArea": area_name,
+        "energyLabel": f"{area_name} Produced {str(round(abs(area_data['produced']), 3))} kWh",
         "priceLabel": f"{area_name} Earned {str(round(abs(area_data['earned']), 3))} cents",
     } for area_name, area_data in accumulated_trades.items()]
-    return sorted(produced_energy, key=lambda a: a["x"])
+    return sorted(produced_energy, key=lambda a: a["areaName"])
 
 
 def _generate_self_consumption_entries(accumulated_trades):
@@ -270,14 +270,14 @@ def _generate_self_consumption_entries(accumulated_trades):
             sc_energy = area_data["consumedFrom"].pop(area_name)
             sc_money = area_data["spentTo"].pop(area_name)
         self_consumed_energy.append({
-            "x": area_name,
-            "y": sc_energy,
-            "target": area_name,
-            "label": f"{area_name} Consumed {str(round(sc_energy, 3))} kWh from {area_name}",
+            "areaName": area_name,
+            "energy": sc_energy,
+            "targetArea": area_name,
+            "energyLabel": f"{area_name} Consumed {str(round(sc_energy, 3))} kWh from {area_name}",
             "priceLabel": f"{area_name} Spent {str(round(sc_money, 3))} cents on "
                           f"energy from {area_name}",
         })
-    return sorted(self_consumed_energy, key=lambda a: a["x"])
+    return sorted(self_consumed_energy, key=lambda a: a["areaName"])
 
 
 def _generate_intraarea_consumption_entries(accumulated_trades):
@@ -302,15 +302,15 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
                 p_target_area, spent_to = accumulated_trades[area_name]["spentTo"].pop()
                 assert p_target_area == target_area
             consumption_row.append({
-                "x": area_name,
-                "y": consumption,
-                "target": target_area,
-                "label": f"{area_name} Consumed {str(round(consumption, 3))} kWh "
-                         f"from {target_area}",
+                "areaName": area_name,
+                "energy": consumption,
+                "targetArea": target_area,
+                "energyLabel": f"{area_name} Consumed {str(round(consumption, 3))} kWh "
+                               f"from {target_area}",
                 "priceLabel": f"{area_name} Spent {str(round(spent_to, 3))} cents on "
                               f"energy from {p_target_area}"
             })
-        consumption_rows.append(sorted(consumption_row, key=lambda x: x["x"]))
+        consumption_rows.append(sorted(consumption_row, key=lambda x: x["areaName"]))
     return consumption_rows
 
 
@@ -325,6 +325,24 @@ def generate_inter_area_trade_details(area, past_market_types):
             area_data["consumedFrom"][name] = str((energy / total_energy) * 100) + "%"
         trade_details[area_name] = area_data
     return trade_details
+
+
+def generate_cumulative_grid_trades_for_all_areas(accumulated_trades, area, results):
+    if area.children == []:
+        return results
+    children_trades = {k: v for k, v in accumulated_trades.items()
+                       if k in [c.name for c in area.children]}
+    results[area.uuid] = [
+        # Append first produced energy for all areas
+        _generate_produced_energy_entries(children_trades),
+        # Then self consumption energy for all areas
+        _generate_self_consumption_entries(children_trades),
+        # Then consumption entries for intra-house trades
+        *_generate_intraarea_consumption_entries(children_trades)
+    ]
+    for child in area.children:
+        results = generate_cumulative_grid_trades_for_all_areas(accumulated_trades, child, results)
+    return results
 
 
 def export_cumulative_grid_trades(area, past_market_types, all_devices=False):
@@ -342,6 +360,11 @@ def export_cumulative_grid_trades(area, past_market_types, all_devices=False):
             # Then consumption entries for intra-house trades
             *_generate_intraarea_consumption_entries(accumulated_trades)]
     }
+
+
+def export_cumulative_grid_trades_redis(area, past_market_types):
+    accumulated_trades = _accumulate_grid_trades_all_devices(area, {}, past_market_types)
+    return generate_cumulative_grid_trades_for_all_areas(accumulated_trades, area, {})
 
 
 def export_price_energy_day(area):

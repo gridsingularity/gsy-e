@@ -52,7 +52,7 @@ class TestAreaClass(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
-        self.area = Area("test_area", None, self.strategy, self.appliance, self.config, None)
+        self.area = Area("test_area", None, None, self.strategy, self.appliance, self.config, None)
         self.area.parent = self.area
         self.area.children = [self.area]
 
