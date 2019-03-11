@@ -227,17 +227,18 @@ class PlotlyGraph:
         py.offline.plot(fig, filename=filename, auto_open=False)
 
     @classmethod
-    def _plot_time_series_line(cls, device_dict, var_name):
+    def _plot_line_time_series(cls, device_dict, var_name):
         color = _get_color(var_name, 1)
         fill_color = _get_color(var_name, 0.4)
-        x, y, y_lower, y_upper = cls.prepare_input(device_dict, var_name)
+        time, var_data, longterm_min_var_data, longterm_max_var_data = \
+            cls.prepare_input(device_dict, var_name)
         yaxis = "y"
         connectgaps = True
         line = dict(color=color,
                     width=0.8)
         time_series = go.Scatter(
-            x=x,
-            y=y,
+            x=time,
+            y=var_data,
             line=line,
             mode='lines+markers',
             marker=dict(size=5),
@@ -250,12 +251,12 @@ class PlotlyGraph:
             connectgaps=connectgaps
         )
         longterm_max_hover = go.Scatter(
-            x=x,
-            y=y_upper,
+            x=time,
+            y=longterm_max_var_data,
             fill=None,
             fillcolor=fill_color,
             line=dict(color='rgba(255,255,255,0)'),
-            name=f"max {var_name}",
+            name=f"longterm max",
             showlegend=False,
             hoverinfo='y+name',
             xaxis="x",
@@ -263,12 +264,12 @@ class PlotlyGraph:
             connectgaps=connectgaps
         )
         longterm_min_hover = go.Scatter(
-            x=x,
-            y=y_lower,
+            x=time,
+            y=longterm_min_var_data,
             fill=None,
             fillcolor=fill_color,
             line=dict(color='rgba(255,255,255,0)'),
-            name=f"min {var_name}",
+            name=f"longterm min",
             showlegend=False,
             hoverinfo='y+name',
             xaxis="x",
@@ -276,8 +277,8 @@ class PlotlyGraph:
             connectgaps=connectgaps
         )
         shade = go.Scatter(
-            x=x,
-            y=y_upper,
+            x=time,
+            y=longterm_max_var_data,
             fill='tonexty',
             fillcolor=fill_color,
             line=dict(color='rgba(255,255,255,0)'),
@@ -288,26 +289,29 @@ class PlotlyGraph:
             yaxis=yaxis,
             connectgaps=connectgaps
         )
-        hoverinfo_x = go.Scatter(
-            x=x,
-            y=y_upper,
+        hoverinfo_time = go.Scatter(
+            x=time,
+            y=longterm_max_var_data,
             mode="none",
             hoverinfo="x",
             xaxis="x",
             showlegend=False,
             yaxis=yaxis
         )
-        return [longterm_min_hover, shade, time_series, longterm_max_hover, hoverinfo_x]
+
+        # it is not possible to use cls._hoverinfo here because the order matters here:
+        return [longterm_min_hover, shade, time_series, longterm_max_hover, hoverinfo_time]
 
     @classmethod
-    def _plot_time_series_bar_storage(cls, device_dict, var_name):
+    def _plot_bar_time_series_storage(cls, device_dict, var_name):
         color = _get_color(var_name, 1)
         fill_color = _get_color(var_name, 0.4)
-        x, y, y_lower, y_upper = cls.prepare_input(device_dict, var_name)
+        time, traded_energy, longterm_min_traded_energy, longterm_max_traded_energy = \
+            cls.prepare_input(device_dict, var_name)
         yaxis = "y2"
         time_series = go.Bar(
-            x=x,
-            y=y,
+            x=time,
+            y=traded_energy,
             marker=dict(
                 color=fill_color,
                 line=dict(
@@ -322,115 +326,123 @@ class PlotlyGraph:
             yaxis=yaxis,
         )
 
-        return [time_series] + cls._hoverinfo_trace(x, y_lower, y_upper, yaxis)
+        return [time_series] + \
+            cls._hoverinfo(time, longterm_min_traded_energy, longterm_max_traded_energy, yaxis)
 
     @classmethod
-    def _plot_time_series_bar_pv_load(cls, device_dict, var1_name, var2_name, invert_y=False):
-        color1 = _get_color(var1_name, 1)
-        fill_color1 = _get_color(var1_name, 0.4)
-        color2 = _get_color(var2_name, 1)
-        fill_color2 = _get_color(var2_name, 1)
-        x1, y1, y_lower1, y_upper1 = cls.prepare_input(device_dict, var1_name)
-        x2, y2, y_lower2, y_upper2 = cls.prepare_input(device_dict, var2_name, invert_y)
+    def _plot_bar_time_series_traded_expected(cls, device_dict, expected_varname, traded_varname,
+                                              invert_y=False):
+        color_expected = _get_color(expected_varname, 1)
+        fill_color_expected = _get_color(expected_varname, 0.4)
+        color_traded = _get_color(traded_varname, 1)
+        fill_color_traded = _get_color(traded_varname, 1)
+        time_expected, energy_expected, min_energy_expected, max_energy_expected = \
+            cls.prepare_input(device_dict, expected_varname)
+        time_traded, energy_traded, min_energy_traded, max_energy_traded = \
+            cls.prepare_input(device_dict, traded_varname, invert_y)
 
         yaxis = "y2"
-        time_series1 = go.Bar(
-            x=x1,
-            y=y1,
+        time_series_expected = go.Bar(
+            x=time_expected,
+            y=energy_expected,
             marker=dict(
-                color=fill_color1,
+                color=fill_color_expected,
                 line=dict(
-                    color=color1,
+                    color=color_expected,
                     width=1.,
                 )
             ),
-            name=var1_name,
+            name=expected_varname,
             showlegend=True,
             hoverinfo='y+name',
             xaxis="x",
             yaxis=yaxis,
         )
-        time_series2 = go.Bar(
-            x=x2,
-            y=y2,
+        time_series_traded = go.Bar(
+            x=time_traded,
+            y=energy_traded,
             marker=dict(
-                color=fill_color2,
+                color=fill_color_traded,
                 line=dict(
-                    color=color2,
+                    color=color_traded,
                     width=1.,
                 )
             ),
-            name=var2_name,
+            name=traded_varname,
             showlegend=True,
             hoverinfo='y+name',
             xaxis="x",
             yaxis=yaxis,
         )
 
-        return [time_series1, time_series2] + cls._hoverinfo_trace(x1, y_lower1, y_upper1, yaxis,
-                                                                   only_x=True)
+        return [time_series_expected, time_series_traded] + \
+            cls._hoverinfo(time_expected, min_energy_expected, max_energy_expected, yaxis,
+                           only_time=True)
 
     @classmethod
-    def _hoverinfo_trace(cls, x, y_lower, y_upper, yaxis, only_x=False):
+    def _hoverinfo(cls, time, longterm_min, longterm_max, yaxis, only_time=False):
         hoverinfo_max = go.Scatter(
-            x=x,
-            y=y_upper,
+            x=time,
+            y=longterm_max,
             mode="none",
-            name="longterm_max",
+            name="longterm max",
             hoverinfo="y+name",
             xaxis="x",
             showlegend=False,
             yaxis=yaxis
         )
         hoverinfo_min = go.Scatter(
-            x=x,
-            y=y_lower,
+            x=time,
+            y=longterm_min,
             mode="none",
-            name="longterm_min",
+            name="longterm min",
             hoverinfo="y+name",
             xaxis="x",
             showlegend=False,
             yaxis=yaxis
         )
-        hoverinfo_x = go.Scatter(
-            x=x,
-            y=y_upper,
+        hoverinfo_time = go.Scatter(
+            x=time,
+            y=longterm_max,
             mode="none",
             hoverinfo="x",
             xaxis="x",
             showlegend=False,
             yaxis=yaxis
         )
-        if only_x:
-            return [hoverinfo_x]
+        if only_time:
+            return [hoverinfo_time]
         else:
-            return [hoverinfo_max, hoverinfo_min, hoverinfo_x]
+            return [hoverinfo_max, hoverinfo_min, hoverinfo_time]
 
     @classmethod
-    def _plot_time_series_price_candle(cls, device_dict, var_name):
+    def _plot_candlestick_time_series_price(cls, device_dict, var_name):
 
-        time_list, y, y_lower, y_upper = cls.prepare_input(device_dict, var_name)
-        x = []
-        y_min = []
-        y_max = []
-        yy_lower = []
-        yy_upper = []
-        for ii in range(len(y)):
-            if y[ii] is not None:
-                x.append(time_list[ii])
-                y_min.append(limit_float_precision(min(y[ii])))
-                y_max.append(limit_float_precision(max(y[ii])))
-                yy_lower.append(limit_float_precision(y_lower[ii]))
-                yy_upper.append(limit_float_precision(y_upper[ii]))
+        time, trade_rate_list, longterm_min_trade_rate, longterm_max_trade_rate = \
+            cls.prepare_input(device_dict, var_name)
+        plot_time = []
+        plot_local_min_trade_rate = []
+        plot_local_max_trade_rate = []
+        plot_longterm_min_trade_rate = []
+        plot_longterm_max_trade_rate = []
+        for ii in range(len(trade_rate_list)):
+            if trade_rate_list[ii] is not None:
+                plot_time.append(time[ii])
+                plot_local_min_trade_rate.append(limit_float_precision(min(trade_rate_list[ii])))
+                plot_local_max_trade_rate.append(limit_float_precision(max(trade_rate_list[ii])))
+                plot_longterm_min_trade_rate.append(
+                    limit_float_precision(longterm_min_trade_rate[ii]))
+                plot_longterm_max_trade_rate.append(
+                    limit_float_precision(longterm_max_trade_rate[ii]))
 
         yaxis = "y3"
         color = _get_color(var_name, 1)
 
-        candle_stick = go.Candlestick(x=x,
-                                      open=y_min,
-                                      high=yy_upper,
-                                      low=yy_lower,
-                                      close=y_max,
+        candle_stick = go.Candlestick(x=plot_time,
+                                      open=plot_local_min_trade_rate,
+                                      high=plot_longterm_max_trade_rate,
+                                      low=plot_longterm_min_trade_rate,
+                                      close=plot_local_max_trade_rate,
                                       yaxis=yaxis,
                                       xaxis="x",
                                       hoverinfo="none",
@@ -438,9 +450,9 @@ class PlotlyGraph:
                                       increasing=dict(line=dict(color=color)),
                                       decreasing=dict(line=dict(color=color)),
                                       )
-        hoverinfo_max = go.Scatter(
-            x=x,
-            y=y_max,
+        hoverinfo_local_max = go.Scatter(
+            x=plot_time,
+            y=plot_local_max_trade_rate,
             mode="none",
             name="max",
             hoverinfo="y+name",
@@ -448,9 +460,9 @@ class PlotlyGraph:
             showlegend=False,
             yaxis=yaxis
         )
-        hoverinfo_min = go.Scatter(
-            x=x,
-            y=y_min,
+        hoverinfo_loacl_min = go.Scatter(
+            x=plot_time,
+            y=plot_local_min_trade_rate,
             mode="none",
             name="min",
             hoverinfo="y+name",
@@ -459,8 +471,9 @@ class PlotlyGraph:
             yaxis=yaxis
         )
 
-        return [candle_stick, hoverinfo_max, hoverinfo_min] + cls._hoverinfo_trace(x, yy_lower,
-                                                                                   yy_upper, yaxis)
+        return [candle_stick, hoverinfo_local_max, hoverinfo_loacl_min] + \
+            cls._hoverinfo(plot_time, plot_longterm_min_trade_rate,
+                           plot_longterm_max_trade_rate, yaxis)
 
     @classmethod
     def prepare_input(cls, device_dict, var_name, invert_y=False):
@@ -474,50 +487,56 @@ class PlotlyGraph:
             return x, y, y_lower, y_upper
 
     @classmethod
-    def _get_y2_range(cls, device_dict, var_name, zero=True):
-        y = list(device_dict[var_name].values())
-        ddd = max([abs(x) for x in y if x is not None])
-        mma = ddd + ddd * 0.1
-        if zero:
-            return [0, abs(mma)]
+    def _get_y2_range(cls, device_dict, var_name, start_at_zero=True):
+        """
+        Adds a 10% margin to the y2_range
+        """
+        data_max = max([abs(x) for x in list(device_dict[var_name].values()) if x is not None])
+        data_max_margin = data_max + data_max * 0.1
+        if start_at_zero:
+            return [0, abs(data_max_margin)]
         else:
-            return [-mma, mma]
+            return [-data_max_margin, data_max_margin]
 
     @classmethod
     def _plot_device_profile(cls, device_dict, device_name, output_file, device_strategy):
+        trade_energy_var_name = "trade_energy_kWh"
         data = []
-        # Trade Price graph (y3):
-        data += cls._plot_time_series_price_candle(device_dict, "trade_price_eur")
+        # Trade price graph (y3):
+        data += cls._plot_candlestick_time_series_price(device_dict, "trade_price_eur")
         # Traded energy graph (y2):
         if isinstance(device_strategy, StorageStrategy):
-            key = "soc_history_%"
-            data += cls._plot_time_series_bar_storage(device_dict, "trade_energy_kWh")
-            y2_range = cls._get_y2_range(device_dict, "trade_energy_kWh", zero=False)
-            y2axis_title = "Bought/Sold [kWh]"
+            y1axis_key = "soc_history_%"
+            data += cls._plot_bar_time_series_storage(device_dict, trade_energy_var_name)
+            y2axis_range = cls._get_y2_range(device_dict, trade_energy_var_name,
+                                             start_at_zero=False)
+            y2axis_caption = "Bought/Sold [kWh]"
         elif isinstance(device_strategy, LoadHoursStrategy):
-            key = "load_profile_kWh"
-            data += cls._plot_time_series_bar_pv_load(device_dict, key, "trade_energy_kWh")
-            y2axis_title = "Demand/Traded [kWh]"
-            y2_range = cls._get_y2_range(device_dict, "load_profile_kWh")
+            y1axis_key = "load_profile_kWh"
+            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
+                                                              trade_energy_var_name)
+            y2axis_caption = "Demand/Traded [kWh]"
+            y2axis_range = cls._get_y2_range(device_dict, "load_profile_kWh")
         elif isinstance(device_strategy, PVStrategy):
-            key = "pv_production_kWh"
-            data += cls._plot_time_series_bar_pv_load(device_dict, key,
-                                                      "trade_energy_kWh", invert_y=True)
-            y2_range = cls._get_y2_range(device_dict, key)
-            y2axis_title = "Supply/Traded [kWh]"
+            y1axis_key = "pv_production_kWh"
+            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
+                                                              trade_energy_var_name, invert_y=True)
+            y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
+            y2axis_caption = "Supply/Traded [kWh]"
         else:
             return
-        # SOC, load_curve, pv production graph (y):
-        data += cls._plot_time_series_line(device_dict, key)
-        yaxis_title = DEVICE_YAXIS[key]
+        # SOC, load_curve, pv production graph (y1):
+        data += cls._plot_line_time_series(device_dict, y1axis_key)
+        y1axis_caption = DEVICE_YAXIS[y1axis_key]
 
         layout = cls._device_plot_layout("overlay", f"{device_name}", 'Time',
-                                         yaxis_title, y2axis_title, y2_range)
+                                         y1axis_caption, y2axis_caption, y2axis_range)
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=output_file, auto_open=False)
 
     @staticmethod
-    def _device_plot_layout(barmode, title, xtitle, yaxis_title, y2axis_title, y2_range):
+    def _device_plot_layout(barmode, title, xaxis_caption, yaxis_caption, y2axis_caption,
+                            y2axis_range):
         return go.Layout(
             autosize=False,
             width=1200,
@@ -525,7 +544,7 @@ class PlotlyGraph:
             barmode=barmode,
             title=title,
             xaxis=dict(
-                title=xtitle,
+                title=xaxis_caption,
                 showgrid=True,
                 anchor="y3",
                 rangeslider=dict(visible=True,
@@ -534,7 +553,7 @@ class PlotlyGraph:
                                  )
             ),
             yaxis=dict(
-                title=yaxis_title,
+                title=yaxis_caption,
                 side='left',
                 showgrid=True,
                 domain=[0.66, 1],
@@ -542,15 +561,15 @@ class PlotlyGraph:
                 autorange=True
             ),
             yaxis2=dict(
-                title=y2axis_title,
+                title=y2axis_caption,
                 side='right',
-                range=y2_range,
+                range=y2axis_range,
                 showgrid=True,
                 domain=[0.33, 0.66],
                 autorange=False
             ),
             yaxis3=dict(
-                title='Energy rate [EUR/kWh]',
+                title='Energy rate [€/kWh]',
                 domain=[0.0, 0.33],
                 side='left',
                 showgrid=True,
