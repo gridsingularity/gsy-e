@@ -49,7 +49,8 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
-        self.grid_fee = 0
+        self.transfer_fee_pct = area.config.iaa_fee
+        self._grid_fee = 0
         # Store trades temporarily until bc event has fired
         self.ious = defaultdict(lambda: defaultdict(int))
         self.traded_energy = defaultdict(int)
@@ -215,3 +216,10 @@ class Market:
 
     def total_earned(self, seller):
         return sum(trade.offer.price for trade in self.trades if trade.seller == seller)
+
+    def add_grid_fee(self, trade):
+        self._grid_fee += (self.transfer_fee_pct / 100) * trade.offer.price
+
+    @property
+    def grid_fee(self):
+        return self._grid_fee

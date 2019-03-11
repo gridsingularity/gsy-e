@@ -110,7 +110,7 @@ class IAAEngine:
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             # accumulate grid_fee in target market
-            self.markets.target.grid_fee += self.transfer_fee_pct * trade.offer.energy
+            self.markets.target.add_grid_fee(trade)
 
             if trade.offer.energy < offer_info.source_offer.energy:
                 try:
@@ -138,7 +138,7 @@ class IAAEngine:
                 )
 
                 # accumulate grid_fee in source market
-                self.markets.source.grid_fee += self.transfer_fee_pct * trade.offer.energy
+                self.markets.source.add_grid_fee(trade)
 
             except OfferNotFoundException:
                 raise OfferNotFoundException()
