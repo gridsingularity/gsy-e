@@ -257,8 +257,8 @@ def _generate_produced_energy_entries(accumulated_trades):
         "areaName": area_name,
         "energy": area_data["produced"],
         "targetArea": area_name,
-        "energyLabel": f"{area_name} Produced {str(round(abs(area_data['produced']), 3))} kWh",
-        "priceLabel": f"{area_name} Earned {str(round(abs(area_data['earned']), 3))} cents",
+        "energyLabel": f"{area_name} produced {str(round(abs(area_data['produced']), 3))} kWh",
+        "priceLabel": f"{area_name} earned {str(round(abs(area_data['earned']), 3))} cents",
     } for area_name, area_data in accumulated_trades.items()]
     return sorted(produced_energy, key=lambda a: a["areaName"])
 
@@ -276,8 +276,8 @@ def _generate_self_consumption_entries(accumulated_trades):
             "areaName": area_name,
             "energy": sc_energy,
             "targetArea": area_name,
-            "energyLabel": f"{area_name} Consumed {str(round(sc_energy, 3))} kWh from {area_name}",
-            "priceLabel": f"{area_name} Spent {str(round(sc_money, 3))} cents on "
+            "energyLabel": f"{area_name} consumed {str(round(sc_energy, 3))} kWh from {area_name}",
+            "priceLabel": f"{area_name} spent {str(round(sc_money, 3))} cents on "
                           f"energy from {area_name}",
         })
     return sorted(self_consumed_energy, key=lambda a: a["areaName"])
@@ -308,9 +308,9 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
                 "areaName": area_name,
                 "energy": consumption,
                 "targetArea": target_area,
-                "energyLabel": f"{area_name} Consumed {str(round(consumption, 3))} kWh "
+                "energyLabel": f"{area_name} consumed {str(round(consumption, 3))} kWh "
                                f"from {target_area}",
-                "priceLabel": f"{area_name} Spent {str(round(spent_to, 3))} cents on "
+                "priceLabel": f"{area_name} spent {str(round(spent_to, 3))} cents on "
                               f"energy from {p_target_area}"
             })
         consumption_rows.append(sorted(consumption_row, key=lambda x: x["areaName"]))
@@ -339,9 +339,9 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
         results["bars"].append(
             {"energy": area_data["produced"], "targetArea": child.name,
              "energyLabel":
-                 f"{child.name} Produced {str(round(abs(area_data['produced']), 3))} kWh",
+                 f"{child.name} produced {str(round(abs(area_data['produced']), 3))} kWh",
              "priceLabel":
-                 f"{child.name} Earned {str(round(abs(area_data['earned']), 3))} cents"}
+                 f"{child.name} earned {str(round(abs(area_data['earned']), 3))} cents"}
         )
     if child.name in area_data["consumedFrom"]:
         energy = area_data["consumedFrom"][child.name]
@@ -349,8 +349,8 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
         results["bars"].append({
             "energy": energy,
             "targetArea": child.name,
-            "energyLabel": f"{child.name} Consumed {str(round(energy, 3))} kWh from {child.name}",
-            "priceLabel": f"{child.name} Spent {str(round(money, 3))} cents on "
+            "energyLabel": f"{child.name} consumed {str(round(energy, 3))} kWh from {child.name}",
+            "priceLabel": f"{child.name} spent {str(round(money, 3))} cents on "
                           f"energy from {child.name}",
         })
     # Consumer entries
@@ -359,8 +359,8 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
         results["bars"].append({
             "energy": energy,
             "targetArea": producer,
-            "energyLabel": f"{child.name} Consumed {str(round(energy, 3))} kWh from {producer}",
-            "priceLabel": f"{child.name} Spent {str(round(money, 3))} cents on "
+            "energyLabel": f"{child.name} consumed {str(round(energy, 3))} kWh from {producer}",
+            "priceLabel": f"{child.name} spent {str(round(money, 3))} cents on "
                           f"energy from {producer}",
         })
 
