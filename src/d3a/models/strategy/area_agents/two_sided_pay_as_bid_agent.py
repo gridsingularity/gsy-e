@@ -22,10 +22,10 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSided
 class TwoSidedPayAsBidAgent(OneSidedAgent):
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1, engine_type=TwoSidedPayAsBidEngine):
+                 min_offer_age=1, engine_type=TwoSidedPayAsBidEngine):
         super().__init__(engine_type=engine_type, owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
-                         transfer_fee_pct=transfer_fee_pct, min_offer_age=min_offer_age)
+                         min_offer_age=min_offer_age)
 
     def usable_bid(self, bid):
         """Prevent IAAEngines from trading their counterpart's bids"""

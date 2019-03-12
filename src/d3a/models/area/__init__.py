@@ -63,7 +63,8 @@ class Area:
                  config: SimulationConfig = None,
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
-                 event_list=[]):
+                 event_list=[],
+                 transfer_fee_pct: int =None):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -88,6 +89,8 @@ class Area:
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
         self.dispatcher = AreaDispatcher(self)
+        self.transfer_fee_pct = \
+            transfer_fee_pct if transfer_fee_pct is not None else self.config.iaa_fee
 
     def activate(self, bc=None):
         if bc:

@@ -27,12 +27,11 @@ ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 
 class IAAEngine:
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
                  owner: "InterAreaAgent"):
         self.name = name
         self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
-        self.transfer_fee_pct = transfer_fee_pct
         self.owner = owner
 
         self.offer_age = {}  # type: Dict[str, int]
@@ -110,9 +109,6 @@ class IAAEngine:
             assert abs(source_rate) <= abs(target_rate), \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
-            # accumulate grid_fee in target market
-            self.markets.target.add_grid_fee(trade)
-
             if trade.offer.energy < offer_info.source_offer.energy:
                 try:
                     residual_info = ResidualInfo(
@@ -131,11 +127,8 @@ class IAAEngine:
                     energy=trade.offer.energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
-                    iaa_fee=trade.price_drop
+                    iaa_fee=True
                 )
-
-                # accumulate grid_fee in source market
-                self.markets.source.add_grid_fee(trade)
 
             except OfferNotFoundException:
                 raise OfferNotFoundException()
@@ -240,7 +233,7 @@ class BalancingEngine(IAAEngine):
 
     def _forward_offer(self, offer, offer_id):
         forwarded_balancing_offer = self.markets.target.balancing_offer(
-            offer.price + (offer.price * (self.transfer_fee_pct / 100)),
+            offer.price,
             offer.energy,
             self.owner.name,
             True

@@ -24,9 +24,9 @@ BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
 
 class TwoSidedPayAsBidEngine(IAAEngine):
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
                  owner: "InterAreaAgent"):
-        super().__init__(name, market_1, market_2, min_offer_age, transfer_fee_pct, owner)
+        super().__init__(name, market_1, market_2, min_offer_age, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
         self.bid_trade_residual = {}  # type: Dict[str, Bid]
 
@@ -139,9 +139,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
 
-            # accumulate grid_fee in target market
-            self.markets.target.add_grid_fee(bid_trade)
-
             # target_rate = bid_trade.offer.price / bid_trade.offer.energy
             # source_rate = market_bid.price / market_bid.energy
             source_rate = bid_info.source_bid.price / bid_info.source_bid.energy
@@ -157,9 +154,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 trade_rate=market_bid.price / market_bid.energy,
                 iaa_fee=bid_trade.price_drop
             )
-
-            # accumulate grid_fee in source market
-            self.markets.source.add_grid_fee(bid_trade)
 
             self.after_successful_trade_event(source_trade, bid_info)
         # Bid was traded in the source market by someone else

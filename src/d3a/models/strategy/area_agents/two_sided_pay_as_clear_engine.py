@@ -27,10 +27,9 @@ log = getLogger(__name__)
 
 
 class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
                  owner: "InterAreaAgent"):
-        super().__init__(name, market_1, market_2, min_offer_age,
-                         transfer_fee_pct, owner)
+        super().__init__(name, market_1, market_2, min_offer_age, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
         self.sorted_bids = []
         self.sorted_offers = []

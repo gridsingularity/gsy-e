@@ -110,23 +110,28 @@ class OneSidedMarket(Market):
             if time is None:
                 time = self._now
             if energy is not None:
-                # Partial trade
                 if energy == 0:
                     raise InvalidTrade("Energy can not be zero.")
+                # partial energy is requested
                 elif energy < offer.energy:
                     original_offer = offer
+                    # Don't know why is it here
                     accepted_offer_id = offer.id \
                         if self.area is None or self.area.bc is None \
                         else offer.real_id
 
                     if trade_rate is None:
                         trade_rate = offer.price / offer.energy
-                    if iaa_fee:
-                        trade_rate = trade_rate * (1 - self.transfer_fee_pct / 100)
+
                     # TODO: Remove the math.floor from the lower threshold once the pay-as-clear
                     # market is refactored (D3ASIM-907)
                     assert trade_rate + FLOATING_POINT_TOLERANCE >= \
                         math.floor(offer.price / offer.energy)
+
+                    # reducing trade_rate to be charged in terms of grid_fee
+                    if iaa_fee:
+                        self._grid_fee += trade_rate * (self.transfer_fee_pct / 100) * energy
+                        trade_rate = trade_rate * (1 - self.transfer_fee_pct / 100)
 
                     accepted_offer = Offer(
                         accepted_offer_id,
@@ -158,9 +163,18 @@ class OneSidedMarket(Market):
                 elif energy > offer.energy:
                     raise InvalidTrade("Energy can't be greater than offered energy")
                 else:
-                    # Requested partial is equal to offered energy - just proceed normally
+                    # Requested energy is equal to offer's energy - just proceed normally
                     if trade_rate is not None:
-                        offer.price = trade_rate * offer.energy
+                        # offered_price adjusted to trade rate
+                        if iaa_fee:
+                            # adjusted in grid fee
+                            offer.price = trade_rate * offer.energy * \
+                                          (1 - self.transfer_fee_pct / 100)
+                            self._grid_fee += \
+                                trade_rate * (self.transfer_fee_pct / 100) * offer.energy
+                        else:
+                            offer.price = trade_rate * offer.energy
+
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
