@@ -53,11 +53,14 @@ class OneSidedMarket(Market):
     def balancing_offer(self, price, energy, seller, from_agent):
         assert False
 
-    def offer(self, price: float, energy: float, seller: str) -> Offer:
+    def offer(self, price: float, energy: float, seller: str,
+              iaaFee: bool = False) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
+        if iaaFee:
+            price = price * (1 + self.transfer_fee_pct / 100)
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)
@@ -90,7 +93,8 @@ class OneSidedMarket(Market):
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None, price_drop: bool = False,
-                     already_tracked: bool=False, trade_rate: float = None) -> Trade:
+                     already_tracked: bool=False, trade_rate: float = None,
+                     iaa_fee: bool = False) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -117,6 +121,8 @@ class OneSidedMarket(Market):
 
                     if trade_rate is None:
                         trade_rate = offer.price / offer.energy
+                    if iaa_fee:
+                        trade_rate = trade_rate * (1 - self.transfer_fee_pct / 100)
                     # TODO: Remove the math.floor from the lower threshold once the pay-as-clear
                     # market is refactored (D3ASIM-907)
                     assert trade_rate + FLOATING_POINT_TOLERANCE >= \
