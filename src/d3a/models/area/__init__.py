@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import warnings
 from logging import getLogger
 from typing import List, Optional  # noqa
-from uuid import uuid4
 from cached_property import cached_property
 from pendulum import DateTime, duration, today
 from slugify import slugify
+from uuid import uuid4
 
 from d3a.blockchain import BlockChainInterface
 from d3a.constants import TIME_ZONE
