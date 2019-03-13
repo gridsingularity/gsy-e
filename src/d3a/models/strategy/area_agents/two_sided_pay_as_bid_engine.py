@@ -96,15 +96,13 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                                     offer=offer,
                                     buyer=bid.buyer,
                                     energy=selected_energy,
-                                    price_drop=True,
                                     trade_rate=(bid.price / bid.energy))
             self._delete_forwarded_offer_entries(offer)
             self.markets.source.accept_bid(bid,
                                            selected_energy,
                                            seller=bid.seller,
                                            buyer=bid.buyer,
-                                           already_tracked=True,
-                                           price_drop=True)
+                                           already_tracked=True)
 
             bid_info = self.forwarded_bids.get(bid.id, None)
             if bid_info is not None:
@@ -152,7 +150,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=market_bid.price / market_bid.energy,
-                iaa_fee=bid_trade.price_drop
+                iaa_fee=True
             )
 
             self.after_successful_trade_event(source_trade, bid_info)

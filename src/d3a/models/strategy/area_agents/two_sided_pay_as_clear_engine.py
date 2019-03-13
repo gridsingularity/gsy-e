@@ -120,7 +120,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid=bid,
                     energy=bid.energy,
                     seller=self.owner.name,
-                    price_drop=True,
                     already_tracked=already_tracked,
                     trade_rate=clearing_rate
                 )
@@ -131,7 +130,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid=bid,
                     energy=(clearing_energy - cumulative_traded_bids),
                     seller=self.owner.name,
-                    price_drop=True,
                     already_tracked=already_tracked,
                     trade_rate=clearing_rate
                 )
@@ -149,7 +147,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=offer.energy,
-                                        price_drop=True,
                                         already_tracked=already_tracked,
                                         trade_rate=clearing_rate)
                 cumulative_traded_offers += offer.energy
@@ -159,7 +156,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=clearing_energy - cumulative_traded_offers,
-                                        price_drop=True,
                                         already_tracked=already_tracked,
                                         trade_rate=clearing_rate)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)

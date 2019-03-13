@@ -92,7 +92,7 @@ class OneSidedMarket(Market):
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: DateTime = None, price_drop: bool = False,
+                     time: DateTime = None,
                      already_tracked: bool=False, trade_rate: float = None,
                      iaa_fee: bool = False) -> Trade:
         if self.readonly:
@@ -186,7 +186,7 @@ class OneSidedMarket(Market):
             self.bc_interface.handle_blockchain_trade_event(
                 offer, buyer, original_offer, residual_offer
             )
-        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
+        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer)
         self.bc_interface.track_trade_event(trade)
 
         if not already_tracked:
