@@ -22,7 +22,6 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.const import GlobalConfig
 from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
 
-
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
 
 
@@ -54,7 +53,7 @@ class ExportUnmatchedLoads:
                     self.find_unmatched_loads(self.area, {})[self.area.name],
                     self.area.name, {})),
             self.area)
-        # print(unmatched_loads)
+
         return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
 
     def find_unmatched_loads(self, area, indict):
@@ -169,6 +168,7 @@ class ExportUnmatchedLoads:
             indict[area.name] = {}
             for child in area.children:
                 if child.children or isinstance(child.strategy, LoadHoursStrategy):
-                    indict[area.name][child.name] = indict[child.name]
+                    if child.name in indict:
+                        indict[area.name][child.name] = indict[child.name]
                     self.arrange_output(indict, child)
         return indict
