@@ -15,13 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.constants import FLOATING_POINT_TOLERANCE
 from pendulum import duration, from_format
 from itertools import product
+
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.const import GlobalConfig
-from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT
+from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
 
 
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
@@ -39,14 +38,25 @@ def hour_list():
 class ExportUnmatchedLoads:
     def __init__(self, area):
 
+        self.hour_list = hour_list()
+        # This is for only returning data until the current time_slot:
+        if hasattr(area, "past_markets") and len(list(area.past_markets)) > 0:
+            self.latest_time_slot = list(area.past_markets)[-1].time_slot
+        else:
+            self.latest_time_slot = from_format(self.hour_list[0], DATE_HOUR_FORMAT)
         self.name_uuid_map = {area.name: area.uuid}
-        self.unmatched_loads = self.find_unmatched_loads(area, {})
+        self.area = area
 
-        self.unmatched_loads_redis_tmp = {}
-        self.unmatched_loads_redis = {}
-        self.expand_ul_to_parents(self.unmatched_loads, "")
-        self.expand_to_ul_to_hours()
-        self.unmatched_loads_redis = self.change_name_to_uuid(self.unmatched_loads_redis)
+    def __call__(self):
+
+        unmatched_loads = self.arrange_output(
+            self.expand_to_ul_to_hours(
+                self.expand_ul_to_parents(
+                    self.find_unmatched_loads(self.area, {})[self.area.name],
+                    self.area.name, {})),
+            self.area)
+
+        return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
 
     def find_unmatched_loads(self, area, indict):
         """
@@ -66,9 +76,6 @@ class ExportUnmatchedLoads:
     def _accumulate_unmatched_loads(cls, area):
         """
         actually determines the unmatched loads
-        TODO: It would be better to list market.time_slot instead of market.time_slot_str
-        TODO: But this is bad for the local export
-        TODO: (possible solution: return the same structure for redis locally)
         """
         unmatched_times = []
         for market in area.parent.past_markets:
@@ -84,7 +91,6 @@ class ExportUnmatchedLoads:
     def change_name_to_uuid(self, indict):
         """
         postprocessing: changing area names to uuids
-        TODO: Could be omitted if local export isnt needed to be readable.
         """
         new = {}
         for k, v in indict.items():
@@ -102,36 +108,39 @@ class ExportUnmatchedLoads:
                 unmatched_list = self._accumulate_all_uls_in_branch(subdict[key], unmatched_list)
         return unmatched_list
 
-    def expand_ul_to_parents(self, subdict, parent_name):
+    def expand_ul_to_parents(self, subdict, parent_name, outdict):
         """
         expand UL times to all nodes including all UL times of the sub branch
-        TODO:  'if parent_name == "":' is only for the root area, is there another way?
         """
+
         for node_name, subsubdict in subdict.items():
-            if parent_name == "":
-                self.expand_ul_to_parents(subsubdict, node_name)
+            if isinstance(subsubdict, dict):
+                # nodes
+                ul_list = self._accumulate_all_uls_in_branch(subsubdict, [])
+                sub_ul = sorted(list(set(ul_list)))
+                if parent_name in outdict:
+                    outdict[parent_name].update({node_name: sub_ul})
+                else:
+                    outdict[parent_name] = {node_name: sub_ul}
+                outdict.update(self.expand_ul_to_parents(subsubdict, node_name, {}))
             else:
-                if isinstance(subsubdict, dict):
-                    ul_list = self._accumulate_all_uls_in_branch(subsubdict, [])
-                    sub_ul = sorted(list(set(ul_list)))
-                    if parent_name in self.unmatched_loads_redis_tmp:
-                        self.unmatched_loads_redis_tmp[parent_name].update({node_name: sub_ul})
-                    else:
-                        self.unmatched_loads_redis_tmp[parent_name] = {node_name: sub_ul}
-                    self.expand_ul_to_parents(subsubdict, node_name)
+                # leafs
+                outdict[parent_name] = {parent_name: subsubdict}
+
+        return outdict
 
     @classmethod
     def _get_hover_info(cls, indict, hour_str):
         """
         returns dict of UL for each subarea for the hover the UL graph
-        TODO: could be handled with list comprehensions as well !?
         """
         hover_dict = {}
-        count = 0
-        for child_name, child_ul in indict.items():
-            for time in child_ul:
+        ul_count = 0
+        for child_name, child_ul_list in indict.items():
+            # print(child_name, child_ul_list)
+            for time in child_ul_list:
                 if from_format(time, DATE_TIME_FORMAT).format(DATE_HOUR_FORMAT) == hour_str:
-                    count += 1
+                    ul_count += 1
                     if child_name in hover_dict:
                         hover_dict[child_name].append(time.format(TIME_FORMAT))
                     else:
@@ -139,15 +148,26 @@ class ExportUnmatchedLoads:
         if hover_dict == {}:
             return {"unmatched_count": 0}
         else:
-            return {"unmatched_count": count, "unmatched_times": hover_dict}
+            return {"unmatched_count": ul_count, "unmatched_times": hover_dict}
 
-    def expand_to_ul_to_hours(self):
+    def expand_to_ul_to_hours(self, indict):
         """
         Changing format to dict of hour time stamps
-        TODO: problem: ALWAYS returns the whole list of hours, not until the current market slot
         """
-        for node_name, subdict in self.unmatched_loads_redis_tmp.items():
-            self.unmatched_loads_redis[node_name] = {}
-            for hour_str in hour_list():
-                self.unmatched_loads_redis[node_name][hour_str] = \
-                    self._get_hover_info(subdict, hour_str)
+        outdict = {}
+        for node_name, subdict in indict.items():
+            outdict[node_name] = {}
+            for hour_str in self.hour_list:
+                if from_format(hour_str, DATE_HOUR_FORMAT) <= self.latest_time_slot:
+                    outdict[node_name][hour_str] = \
+                        self._get_hover_info(subdict, hour_str)
+        return outdict
+
+    def arrange_output(self, indict, area):
+        if area.children:
+            indict[area.name] = {}
+            for child in area.children:
+                if child.children or isinstance(child.strategy, LoadHoursStrategy):
+                    indict[area.name][child.name] = indict[child.name]
+                    self.arrange_output(indict, child)
+        return indict
