@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, from_format
+from pendulum import duration
 from itertools import product
 
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.const import GlobalConfig
-from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
+from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
 
 
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
@@ -28,11 +28,10 @@ DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
 
 def hour_list():
     if GlobalConfig.sim_duration > duration(days=1):
-        return [GlobalConfig.start_date.add(days=day, hours=hour).format(DATE_HOUR_FORMAT)
+        return [GlobalConfig.start_date.add(days=day, hours=hour)
                 for day, hour in product(range(GlobalConfig.sim_duration.days), range(24))]
     else:
-        return [GlobalConfig.start_date.add(hours=hour).format(DATE_HOUR_FORMAT)
-                for hour in range(24)]
+        return [GlobalConfig.start_date.add(hours=hour) for hour in range(24)]
 
 
 class ExportUnmatchedLoads:
@@ -43,7 +42,7 @@ class ExportUnmatchedLoads:
         if hasattr(area, "past_markets") and len(list(area.past_markets)) > 0:
             self.latest_time_slot = list(area.past_markets)[-1].time_slot
         else:
-            self.latest_time_slot = from_format(self.hour_list[0], DATE_HOUR_FORMAT)
+            self.latest_time_slot = self.hour_list[0]
         self.name_uuid_map = {area.name: area.uuid}
         self.area = area
 
@@ -55,7 +54,7 @@ class ExportUnmatchedLoads:
                     self.find_unmatched_loads(self.area, {})[self.area.name],
                     self.area.name, {})),
             self.area)
-
+        # print(unmatched_loads)
         return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
 
     def find_unmatched_loads(self, area, indict):
@@ -85,7 +84,7 @@ class ExportUnmatchedLoads:
                 else 0.0
             deficit = desired_energy_Wh + traded_energy_kWh * 1000.0
             if deficit > FLOATING_POINT_TOLERANCE:
-                unmatched_times.append(market.time_slot_str)
+                unmatched_times.append(market.time_slot)
         return {"unmatched_times": unmatched_times}
 
     def change_name_to_uuid(self, indict):
@@ -130,21 +129,23 @@ class ExportUnmatchedLoads:
         return outdict
 
     @classmethod
-    def _get_hover_info(cls, indict, hour_str):
+    def _get_hover_info(cls, indict, hour_time):
         """
         returns dict of UL for each subarea for the hover the UL graph
         """
         hover_dict = {}
         ul_count = 0
         for child_name, child_ul_list in indict.items():
-            # print(child_name, child_ul_list)
             for time in child_ul_list:
-                if from_format(time, DATE_TIME_FORMAT).format(DATE_HOUR_FORMAT) == hour_str:
+                if time.hour == hour_time.hour and \
+                   time.day == hour_time.day and \
+                   time.month == hour_time.month and \
+                   time.year == hour_time.year:
                     ul_count += 1
                     if child_name in hover_dict:
-                        hover_dict[child_name].append(time.format(TIME_FORMAT))
+                        hover_dict[child_name].append(time.format(DATE_TIME_FORMAT))
                     else:
-                        hover_dict[child_name] = [time.format(TIME_FORMAT)]
+                        hover_dict[child_name] = [time.format(DATE_TIME_FORMAT)]
         if hover_dict == {}:
             return {"unmatched_count": 0}
         else:
@@ -157,10 +158,10 @@ class ExportUnmatchedLoads:
         outdict = {}
         for node_name, subdict in indict.items():
             outdict[node_name] = {}
-            for hour_str in self.hour_list:
-                if from_format(hour_str, DATE_HOUR_FORMAT) <= self.latest_time_slot:
-                    outdict[node_name][hour_str] = \
-                        self._get_hover_info(subdict, hour_str)
+            for hour_time in self.hour_list:
+                if hour_time <= self.latest_time_slot:
+                    outdict[node_name][hour_time.format(DATE_HOUR_FORMAT)] = \
+                        self._get_hover_info(subdict, hour_time)
         return outdict
 
     def arrange_output(self, indict, area):
