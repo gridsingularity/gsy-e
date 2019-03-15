@@ -50,6 +50,7 @@ class FakeArea:
         self.current_tick = 10
         self.bc = False
         self.now = DateTime.now()
+        self.transfer_fee_pct = 1
         DeviceRegistry.REGISTRY = device_registry_dict
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
 
@@ -59,7 +60,7 @@ def market():
     return TwoSidedPayAsBid(area=FakeArea("FakeArea"))
 
 
-def test_device_registry(market=BalancingMarket()):
+def test_device_registry(market=BalancingMarket(area=FakeArea("FakeArea"))):
     with pytest.raises(DeviceNotInRegistryError):
         market.balancing_offer(10, 10, 'noone')
 

@@ -118,6 +118,7 @@ class Area:
 
         if not self.strategy and self.parent is not None:
             self.log.warning("No strategy. Using inter area agent.")
+            self.log.warning(f"PERCENTAGE GRID FEE {self.transfer_fee_pct}%")
         self.log.info('Activating area')
         self.active = True
         self.dispatcher.broadcast_activate()

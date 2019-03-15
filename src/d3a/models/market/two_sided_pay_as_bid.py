@@ -85,8 +85,10 @@ class TwoSidedPayAsBid(OneSidedMarket):
         assert trade_rate <= (market_bid.price / market_bid.energy) + FLOATING_POINT_TOLERANCE, \
             f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
         if iaa_fee:
-            self._grid_fee += trade_rate * (self.transfer_fee_pct / 100) * energy
-            trade_rate = trade_rate * (1 + self.transfer_fee_pct / 100)
+            source_rate = (100 * trade_rate) / (100 + self.transfer_fee_pct)
+            self._grid_fee += (trade_rate - source_rate) * energy
+        else:
+            source_rate = trade_rate
 
         if energy <= 0:
             raise InvalidTrade("Energy cannot be zero.")
@@ -108,7 +110,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                 residual = changed_bid
                 # For the accepted bid we use the 'clearing' rate from the bid
                 # input argument.
-                final_price = energy * trade_rate
+                final_price = energy * source_rate
                 bid = Bid(bid.id, final_price, energy, buyer, seller, self)
             else:
                 if trade_rate is not None:
