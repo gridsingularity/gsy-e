@@ -24,8 +24,9 @@ import shutil
 import json
 import operator
 from slugify import slugify
-from d3a.constants import DATE_TIME_FORMAT
+from sortedcontainers import SortedDict
 
+from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
@@ -280,7 +281,7 @@ class ExportAndPlot:
         mkdir_from_str(plot_dir)
         output_file = os.path.join(
             plot_dir, 'device_profile_{}.html'.format(device_name))
-        PlotlyGraph._plot_device_profile(device_dict, device_name, output_file, device_strategy)
+        PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
 
     def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
         """
@@ -447,9 +448,9 @@ class ExportAndPlot:
             data = list()
             xmax = 0
             for time_slot, supply_curve in past_market.state.cumulative_offers.items():
-                data.append(PlotlyGraph._line_plot(supply_curve, time_slot, True))
+                data.append(self.render_supply_demand_curve(supply_curve, time_slot, True))
             for time_slot, demand_curve in past_market.state.cumulative_bids.items():
-                data.append(PlotlyGraph._line_plot(demand_curve, time_slot, False))
+                data.append(self.render_supply_demand_curve(demand_curve, time_slot, False))
 
             if len(data) == 0:
                 continue
@@ -470,7 +471,7 @@ class ExportAndPlot:
                                           mode='lines+markers',
                                           line=dict(width=5),
                                           name=time_slot.format(DATE_TIME_FORMAT +
-                                                                'Clearing-Energy'))
+                                                                ' Clearing-Energy'))
                     data.append(data_obj)
                     xmax = max(xmax, clearing_point[1]) * 3
 
@@ -480,6 +481,45 @@ class ExportAndPlot:
                                        f'supply_demand_{past_market.time_slot_str}.html')
             PlotlyGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)',
                                         'Rate (ct./kWh)', data, output_file, xmax)
+
+    @classmethod
+    def render_supply_demand_curve(cls, dataset, time, supply):
+        rate, energy = cls.calc_supply_demand_curve(dataset, supply=supply)
+        name = str(time) + '-' + ('supply' if supply else 'demand')
+        data_obj = go.Scatter(x=energy,
+                              y=rate,
+                              mode='lines',
+                              name=name)
+        return data_obj
+
+    @staticmethod
+    def calc_supply_demand_curve(dataset, supply=True):
+        sort_values = SortedDict(dataset)
+        if supply:
+            rate = list(sort_values.keys())
+            energy = list(sort_values.values())
+        else:
+            rate = list(reversed(sort_values.keys()))
+            energy = list(reversed(sort_values.values()))
+
+        cond_rate = list()
+        cond_energy = list()
+
+        for i in range(len(energy)):
+
+            if i == 0:
+                cond_rate.append(rate[0])
+                cond_energy.append(0)
+                cond_rate.append(rate[0])
+                cond_energy.append(energy[i])
+            else:
+                if energy[i-1] == energy[i] and supply:
+                    continue
+                cond_rate.append(rate[i])
+                cond_energy.append(energy[i-1])
+                cond_energy.append(energy[i])
+                cond_rate.append(rate[i])
+        return cond_rate, cond_energy
 
     def plot_avg_trade_price(self, area, subdir):
         """

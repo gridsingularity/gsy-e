@@ -15,11 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import logging
 import plotly as py
 import plotly.graph_objs as go
 import pendulum
-from sortedcontainers import SortedDict
 
 from d3a.constants import TIME_ZONE
 from d3a.models.strategy.storage import StorageStrategy
@@ -27,7 +25,6 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a import limit_float_precision
 
-_log = logging.getLogger(__name__)
 
 ENERGY_BUYER_SIGN_PLOTS = 1
 ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
@@ -43,7 +40,7 @@ EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price
                            "soc_history_%", "load_profile_kWh"]
 
 green = 'rgba(20,150,20, alpha)'
-purple = 'rgb(156, 110, 177, alpha)'
+purple = 'rgba(156, 110, 177, alpha)'
 blue = 'rgba(0,0,200,alpha)'
 
 DEVICE_PLOT_COLORS = {"trade_energy_kWh": purple,
@@ -57,6 +54,9 @@ DEVICE_YAXIS = {"trade_energy_kWh": 'Demand/Traded [kWh]',
                 "load_profile_kWh": 'Load Profile [kWh]',
                 "soc_history_%": 'State of Charge [%]',
                 "trade_price_eur": 'Energy Rate [EUR/kWh]'}
+
+OPAQUE_ALPHA = 1
+TRANSPARENT_ALPHA = 0.4
 
 
 def _invert(inlist: list): return [-1 * l for l in inlist]
@@ -74,48 +74,6 @@ class PlotlyGraph:
         self.rate = list()
         self.energy = list()
         self.trade_history = dict()
-
-    @staticmethod
-    def _line_plot(curve_point, time, supply):
-        graph_obj = PlotlyGraph(curve_point, time)
-        graph_obj.supply_demand_curve(supply)
-        name = str(time) + '-' + ('supply' if supply else 'demand')
-        data_obj = go.Scatter(x=list(graph_obj.energy),
-                              y=list(graph_obj.rate),
-                              mode='lines',
-                              name=name)
-        return data_obj
-
-    def supply_demand_curve(self, supply=True):
-        sort_values = SortedDict(self.dataset)
-        if supply:
-            self.rate = list(sort_values.keys())
-            self.energy = list(sort_values.values())
-        else:
-            self.rate = list(reversed(sort_values.keys()))
-            self.energy = list(reversed(sort_values.values()))
-
-        cond_rate = list()
-        cond_energy = list()
-
-        for i in range(len(self.energy)):
-
-            if i == 0:
-                cond_rate.append(self.rate[0])
-                cond_energy.append(0)
-                cond_rate.append(self.rate[0])
-                cond_energy.append(self.energy[i])
-            else:
-                if self.energy[i-1] == self.energy[i] and supply:
-                    continue
-                cond_rate.append(self.rate[i])
-                cond_energy.append(self.energy[i-1])
-                cond_energy.append(self.energy[i])
-                cond_rate.append(self.rate[i])
-        self.rate = list()
-        self.rate = cond_rate
-        self.energy = list()
-        self.energy = cond_energy
 
     @staticmethod
     def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list):
@@ -228,8 +186,8 @@ class PlotlyGraph:
 
     @classmethod
     def _plot_line_time_series(cls, device_dict, var_name):
-        color = _get_color(var_name, 1)
-        fill_color = _get_color(var_name, 0.4)
+        color = _get_color(var_name, OPAQUE_ALPHA)
+        fill_color = _get_color(var_name, TRANSPARENT_ALPHA)
         time, var_data, longterm_min_var_data, longterm_max_var_data = \
             cls.prepare_input(device_dict, var_name)
         yaxis = "y"
@@ -304,8 +262,8 @@ class PlotlyGraph:
 
     @classmethod
     def _plot_bar_time_series_storage(cls, device_dict, var_name):
-        color = _get_color(var_name, 1)
-        fill_color = _get_color(var_name, 0.4)
+        color = _get_color(var_name, OPAQUE_ALPHA)
+        fill_color = _get_color(var_name, TRANSPARENT_ALPHA)
         time, traded_energy, longterm_min_traded_energy, longterm_max_traded_energy = \
             cls.prepare_input(device_dict, var_name)
         yaxis = "y2"
@@ -332,10 +290,10 @@ class PlotlyGraph:
     @classmethod
     def _plot_bar_time_series_traded_expected(cls, device_dict, expected_varname, traded_varname,
                                               invert_y=False):
-        color_expected = _get_color(expected_varname, 1)
-        fill_color_expected = _get_color(expected_varname, 0.4)
-        color_traded = _get_color(traded_varname, 1)
-        fill_color_traded = _get_color(traded_varname, 1)
+        color_expected = _get_color(expected_varname, OPAQUE_ALPHA)
+        fill_color_expected = _get_color(expected_varname, TRANSPARENT_ALPHA)
+        color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
+        fill_color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
         time_expected, energy_expected, min_energy_expected, max_energy_expected = \
             cls.prepare_input(device_dict, expected_varname)
         time_traded, energy_traded, min_energy_traded, max_energy_traded = \
@@ -436,7 +394,7 @@ class PlotlyGraph:
                     limit_float_precision(longterm_max_trade_rate[ii]))
 
         yaxis = "y3"
-        color = _get_color(var_name, 1)
+        color = _get_color(var_name, OPAQUE_ALPHA)
 
         candle_stick = go.Candlestick(x=plot_time,
                                       open=plot_local_min_trade_rate,
@@ -499,7 +457,7 @@ class PlotlyGraph:
             return [-data_max_margin, data_max_margin]
 
     @classmethod
-    def _plot_device_profile(cls, device_dict, device_name, output_file, device_strategy):
+    def plot_device_profile(cls, device_dict, device_name, output_file, device_strategy):
         trade_energy_var_name = "trade_energy_kWh"
         data = []
         # Trade price graph (y3):
