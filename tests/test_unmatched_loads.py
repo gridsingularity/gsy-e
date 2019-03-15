@@ -69,7 +69,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
 
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)
+        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
 
         assert list(unmatched_loads[self.grid.name].keys()) == ['House1']
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
@@ -88,7 +88,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market.traded_energy = {"load1": -0.09, "load2": -0.07}
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)
+        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
         assert get_number_of_unmatched_loads(unmatched_loads) == 20
 
     def test_export_unmatched_loads_is_reported_correctly_for_half_loads_unmatched(self):
@@ -105,7 +105,7 @@ class TestUnmatchedLoad(unittest.TestCase):
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
 
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)
+        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
         assert get_number_of_unmatched_loads(unmatched_loads) == 10
 
     def test_export_unmatched_loads_reports_cell_tower_areas(self):
@@ -133,7 +133,7 @@ class TestUnmatchedLoad(unittest.TestCase):
 
             self.grid._markets.past_markets[timeslot] = mock_market
 
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)
+        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
         assert get_number_of_unmatched_loads(unmatched_loads) == 30
 
     def test_export_unmatched_loads_is_reported_correctly_for_predefined_load_strategy(self):
@@ -149,5 +149,5 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market.traded_energy = {"load1": -0.099, "load3": -0.079}
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)
+        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
         assert get_number_of_unmatched_loads(unmatched_loads) == 20

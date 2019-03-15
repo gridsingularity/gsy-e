@@ -555,7 +555,7 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 
     if scenario in ["default_2a", "default_2b", "default_3"]:
         unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(context.simulation.area)
+            ExportUnmatchedLoads(context.simulation.area)()
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
     # (check if number of last slot is the maximal number of slots):
     no_of_slots = (int(sim_duration) * 60 / int(slot_length))

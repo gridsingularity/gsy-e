@@ -123,7 +123,7 @@ def check_matching_trades(context):
 
 @then('there should be no unmatched loads')
 def no_unmatched_loads(context):
-    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)
+    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)()
     assert get_number_of_unmatched_loads(unmatched) == 0
 
 
