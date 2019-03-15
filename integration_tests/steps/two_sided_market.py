@@ -17,11 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
+from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
+    get_number_of_unmatched_loads
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import make_iaa_name
 from d3a import limit_float_precision
-from d3a.d3a_core.util import get_number_of_unmatched_loads
 
 RATE_LOWER_THRESHOLD = 13
 RATE_UPPER_THRESHOLD = 18
@@ -29,13 +29,13 @@ RATE_UPPER_THRESHOLD = 18
 
 @then('the load has no unmatched loads')
 def no_unmatched_loads(context):
-    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area).__call__()
+    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)
     assert get_number_of_unmatched_loads(unmatched) == 0
 
 
 @then('the load has unmatched loads')
 def has_unmatched_loads(context):
-    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area).__call__()
+    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)
     assert get_number_of_unmatched_loads(unmatched) > 0
 
 

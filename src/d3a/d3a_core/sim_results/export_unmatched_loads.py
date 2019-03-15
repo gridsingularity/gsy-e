@@ -25,6 +25,16 @@ from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
 
 
+def get_number_of_unmatched_loads(indict):
+    # use root dict:
+    root = indict[list(indict.keys())[0]]
+    no_ul = 0
+    for parent in root.values():
+        for value in parent.values():
+            no_ul += value['unmatched_count']
+    return no_ul
+
+
 def hour_list():
     if GlobalConfig.sim_duration > duration(days=1):
         return [GlobalConfig.start_date.add(days=day, hours=hour)
@@ -67,11 +77,12 @@ class ExportUnmatchedLoads:
                 indict[area.name] = self.find_unmatched_loads(child, indict[area.name])
             else:
                 if isinstance(child.strategy, LoadHoursStrategy):
-                    indict[area.name][child.name] = self._accumulate_unmatched_loads(child)
+                    indict[area.name][child.name] = \
+                        self._calculate_unmatched_loads_leaf_area(child)
         return indict
 
     @classmethod
-    def _accumulate_unmatched_loads(cls, area):
+    def _calculate_unmatched_loads_leaf_area(cls, area):
         """
         actually determines the unmatched loads
         """

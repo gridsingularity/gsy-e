@@ -402,13 +402,3 @@ def convert_datetime_to_str_keys(indict, outdict):
                 convert_datetime_to_str_keys(indict[key], outdict[key])
 
     return outdict
-
-
-def get_number_of_unmatched_loads(indict):
-    # use root dict:
-    root = indict[list(indict.keys())[0]]
-    no_ul = 0
-    for parent in root.values():
-        for value in parent.values():
-            no_ul += value['unmatched_count']
-    return no_ul

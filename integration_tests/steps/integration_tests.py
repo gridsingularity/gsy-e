@@ -26,10 +26,11 @@ from behave import given, when, then
 from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.simulation import Simulation
-from d3a.d3a_core.util import d3a_path, get_number_of_unmatched_loads
+from d3a.d3a_core.util import d3a_path
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
+from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
+    get_number_of_unmatched_loads
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 
@@ -554,7 +555,7 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 
     if scenario in ["default_2a", "default_2b", "default_3"]:
         unmatched_loads, unmatched_loads_redis = \
-            ExportUnmatchedLoads(context.simulation.area).__call__()
+            ExportUnmatchedLoads(context.simulation.area)
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
     # (check if number of last slot is the maximal number of slots):
     no_of_slots = (int(sim_duration) * 60 / int(slot_length))

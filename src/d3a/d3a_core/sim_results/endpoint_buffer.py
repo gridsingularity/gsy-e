@@ -86,7 +86,7 @@ class SimulationEndpointBuffer:
     def update_stats(self, area, simulation_status):
         self.status = simulation_status
 
-        self.unmatched_loads, self.unmatched_loads_redis = ExportUnmatchedLoads(area).__call__()
+        self.unmatched_loads, self.unmatched_loads_redis = ExportUnmatchedLoads(area)
 
         self.cumulative_loads = {
             "price-currency": "Euros",
