@@ -163,8 +163,7 @@ class AreaDispatcher:
             ba = agent_class(
                 owner=self.area,
                 higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
-                lower_market=market,
-                transfer_fee_pct=self.area.config.iaa_fee
+                lower_market=market
             )
             self.balancing_agents[market.time_slot].append(ba)
             self.area.parent.dispatcher.balancing_agents[market.time_slot].append(ba)

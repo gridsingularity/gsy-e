@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 import unittest
 from parameterized import parameterized
 from d3a.events.event_structures import AreaEvent, MarketEvent
-from d3a.models.area import Area
+from d3a.models.area import Area, DEFAULT_CONFIG
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.appliance.simple import SimpleAppliance
@@ -52,9 +52,11 @@ class TestAreaClass(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
-        self.area = Area("test_area", None, None, self.strategy, self.appliance, self.config, None)
+        self.area = Area("test_area", None, None, self.strategy,
+                         self.appliance, self.config, None, transfer_fee_pct=1)
         self.area.parent = self.area
         self.area.children = [self.area]
+        self.area.transfer_fee_pct = 1
 
     def tearDown(self):
         pass
@@ -106,7 +108,8 @@ class TestAreaClass(unittest.TestCase):
         assert self.area.market_with_most_expensive_offer is m3
 
     def test_cycle_markets(self):
-        self.area = Area(name="Street", children=[Area(name="House")])
+        self.area = Area(name="Street", children=[Area(name="House")],
+                         config=DEFAULT_CONFIG, transfer_fee_pct=1)
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 5
         self.area.activate()

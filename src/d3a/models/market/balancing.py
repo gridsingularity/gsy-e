@@ -42,11 +42,12 @@ class BalancingMarket(OneSidedMarket):
 
         super().__init__(time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str):
+    def offer(self, price: float, energy: float, seller: str, iaaFee: bool = False):
         assert False
 
     def balancing_offer(self, price: float, energy: float,
-                        seller: str, from_agent: bool=False) -> BalancingOffer:
+                        seller: str, from_agent: bool=False,
+                        iaaFee: bool = False) -> BalancingOffer:
         if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
@@ -54,6 +55,9 @@ class BalancingMarket(OneSidedMarket):
             raise MarketReadOnlyException()
         if energy == 0:
             raise InvalidOffer()
+        if iaaFee:
+            price = price * (1 + self.transfer_fee_pct / 100)
+
         offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = \
@@ -83,14 +87,23 @@ class BalancingMarket(OneSidedMarket):
             if time is None:
                 time = self._now
             if energy is not None:
+
+                # reducing trade_rate to be charged in terms of grid_fee
+                if iaa_fee:
+                    trade_rate = offer.price / offer.energy
+                    source_rate = (100 * trade_rate) / (100 + self.transfer_fee_pct)
+                    self._grid_fee += (trade_rate - source_rate) * energy
+                else:
+                    source_rate = offer.price / offer.energy
                 # Partial trade
                 if energy == 0:
                     raise InvalidBalancingTradeException("Energy can not be zero.")
+
                 elif abs(energy) < abs(offer.energy):
                     original_offer = offer
                     accepted_offer = Offer(
                         offer.id,
-                        abs((offer.price / offer.energy) * energy),
+                        abs((source_rate) * energy),
                         energy,
                         offer.seller,
                         offer.market

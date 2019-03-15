@@ -132,7 +132,6 @@ class OneSidedMarket(Market):
                     if iaa_fee:
                         source_rate = (100 * trade_rate) / (100 + self.transfer_fee_pct)
                         self._grid_fee += (trade_rate - source_rate) * energy
-                        # trade_rate = trade_rate * (1 - self.transfer_fee_pct / 100)
                     else:
                         source_rate = trade_rate
 
