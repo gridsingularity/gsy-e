@@ -26,7 +26,7 @@ from d3a.models.const import ConstSettings
 def get_setup(config):
     # Two sided market
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.IAASettings.FEE_PERCENTAGE = 5
+    # ConstSettings.IAASettings.FEE_PERCENTAGE = 5
 
     area = Area(
         'Grid',

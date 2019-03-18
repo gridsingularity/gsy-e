@@ -89,8 +89,7 @@ class Area:
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
         self.dispatcher = AreaDispatcher(self)
-        self.transfer_fee_pct = \
-            transfer_fee_pct if transfer_fee_pct is not None else self.config.iaa_fee
+        self.transfer_fee_pct = transfer_fee_pct
 
     def activate(self, bc=None):
         if bc:
@@ -112,6 +111,8 @@ class Area:
 
             if self.budget_keeper:
                 self.budget_keeper.activate()
+        if self.transfer_fee_pct is None:
+            self.transfer_fee_pct = self.config.iaa_fee
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)

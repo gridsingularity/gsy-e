@@ -93,8 +93,7 @@ class FakeMarket:
             return Trade('trade_id', time, offer, offer.seller, buyer)
 
     def accept_bid(self, bid, energy, seller, buyer=None, already_tracked=True, *,
-                   time=None, price_drop=True,
-                   trade_rate: float = None, iaa_fee: bool = False):
+                   time=None, trade_rate: float = None, iaa_fee: bool = False):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
@@ -256,7 +255,10 @@ def test_iaa_event_trade_bid_updates_forwarded_bids_on_partial(iaa_bid, called, 
     iaa_bid._get_market_from_market_id = lambda x: low_to_high_engine.markets.target
     if partial:
         accepted_bid = Bid(*low_to_high_engine.markets.target._bids[0])
-        accepted_bid = accepted_bid._replace(energy=accepted_bid.energy-0.2)
+        accepted_bid = \
+            accepted_bid._replace(price=(accepted_bid.energy-0.2) *
+                                        (accepted_bid.price/accepted_bid.energy),
+                                  energy=accepted_bid.energy-0.2)
         partial_bid = Bid('1234', 12, 0.2, 'owner', 'someone_else')
         low_to_high_engine.event_bid_changed(market_id=low_to_high_engine.markets.target,
                                              existing_bid=accepted_bid,
@@ -326,7 +328,7 @@ def test_iaa_event_trade_buys_accepted_offer(iaa2):
 
 def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
     iaa_double_sided.higher_market.forwarded_bid = \
-        iaa_double_sided.higher_market.forwarded_bid._replace(price=20)
+        iaa_double_sided.higher_market.forwarded_bid
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
                         pendulum.now(tz=TIME_ZONE),
@@ -336,7 +338,7 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
         market_id=iaa_double_sided.higher_market.id)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
 
-    assert iaa_double_sided.higher_market.forwarded_bid.price == 20.0
+    assert iaa_double_sided.higher_market.forwarded_bid.price == 10
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10.0
 
 # Have to confirm if this trade is needed anymore
@@ -371,8 +373,10 @@ def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
 def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
     iaa_double_sided._get_market_from_market_id = lambda x: iaa_double_sided.higher_market
     total_bid = iaa_double_sided.higher_market.forwarded_bid
-    accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer, total_bid.seller)
-    residual_bid = Bid('residual_bid', total_bid.price, 0.1, total_bid.buyer, total_bid.seller)
+    accepted_bid_price = (total_bid.price/total_bid.energy) * 1
+    residual_bid_price = (total_bid.price/total_bid.energy) * 0.1
+    accepted_bid = Bid(total_bid.id, accepted_bid_price, 1, total_bid.buyer, total_bid.seller)
+    residual_bid = Bid('residual_bid', residual_bid_price, 0.1, total_bid.buyer, total_bid.seller)
     iaa_double_sided.event_bid_changed(market_id=iaa_double_sided.higher_market,
                                        existing_bid=total_bid,
                                        new_bid=residual_bid)

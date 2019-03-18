@@ -149,7 +149,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False,
-                trade_rate=market_bid.price / market_bid.energy,
+                trade_rate=(bid_trade.offer.price/bid_trade.offer.energy),
                 iaa_fee=True
             )
 

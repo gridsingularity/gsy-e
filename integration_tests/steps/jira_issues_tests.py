@@ -41,7 +41,7 @@ def average_trade_rate_constant(context):
             for trade in market.trades
         ]
 
-        assert all(isclose(t, trade_rates[0]) for t in trade_rates[1:])
+        assert all(isclose(t, trade_rates[0], abs_tol=0.01) for t in trade_rates[1:])
 
 
 @then('there are no trades with the same seller and buyer name')
