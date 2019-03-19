@@ -19,6 +19,8 @@ from behave import then
 from math import isclose
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
+from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
+
 
 
 def get_areas_from_2_house_grid(context):
@@ -245,12 +247,10 @@ def device_statistics(context):
     assert list(output_dict.keys()) == \
         ['House 1', 'House 2', 'Finite Commercial Producer', 'Commercial Energy Producer']
     assert list(output_dict['House 1'].keys()) == ['H1 DefinedLoad', 'H1 Storage1']
-    stats_list = ["trade_energy_kWh", "load_profile_kWh", "pv_production_kWh", "soc_hist",
-                  "trade_price_eur"]
     counter = 0
     for house in ["House 1", "House 2"]:
         for device in output_dict[house]:
-            for stats_name in stats_list:
+            for stats_name in EXPORT_DEVICE_VARIABLES:
                 if stats_name in output_dict[house][device]:
                     counter += 1
                     assert len(list(output_dict[house][device][stats_name])) == 48
