@@ -51,19 +51,36 @@ def total_avg_trade_price(markets):
     )
 
 
-def energy_bills(area, past_market_types, from_slot=None, to_slot=None):
+def _store_bought_trade(result_dict, trade_offer):
+    result_dict['bought'] += trade_offer.energy
+    result_dict['spent'] += trade_offer.price
+    result_dict['total_energy'] += trade_offer.energy
+    result_dict['total_cost'] += trade_offer.price
+
+
+def _store_sold_trade(result_dict, trade_offer):
+    result_dict['sold'] += trade_offer.energy
+    result_dict['earned'] += trade_offer.price
+    result_dict['total_energy'] -= trade_offer.energy
+    result_dict['total_cost'] -= trade_offer.price
+
+
+def energy_bills(area, past_market_types, external_trades, from_slot=None, to_slot=None):
     """
     Return a bill for each of area's children with total energy bought
     and sold (in kWh) and total money earned and spent (in cents).
     Compute bills recursively for children of children etc.
     """
     if not area.children:
-        return None
+        return None, None
     result = {child.name: dict(bought=0.0, sold=0.0,
                                spent=0.0, earned=0.0,
                                total_energy=0, total_cost=0,
                                type=get_area_type_string(child))
               for child in area.children}
+    external_trades[area.name] = dict(bought=0.0, sold=0.0,
+                                      spent=0.0, earned=0.0,
+                                      total_energy=0, total_cost=0)
     for market in getattr(area, past_market_types):
         slot = market.time_slot
         if (from_slot is None or slot >= from_slot) and (to_slot is None or slot < to_slot):
@@ -71,19 +88,19 @@ def energy_bills(area, past_market_types, from_slot=None, to_slot=None):
                 buyer = area_name_from_area_or_iaa_name(trade.buyer)
                 seller = area_name_from_area_or_iaa_name(trade.seller)
                 if buyer in result:
-                    result[buyer]['bought'] += trade.offer.energy
-                    result[buyer]['spent'] += trade.offer.price
-                    result[buyer]['total_energy'] += trade.offer.energy
-                    result[buyer]['total_cost'] += trade.offer.price
-
+                    _store_bought_trade(result[buyer], trade.offer)
                 if seller in result:
-                    result[seller]['sold'] += trade.offer.energy
-                    result[seller]['earned'] += trade.offer.price
-                    result[seller]['total_energy'] -= trade.offer.energy
-                    result[seller]['total_cost'] -= trade.offer.price
+                    _store_sold_trade(result[seller], trade.offer)
+
+                if area.name == buyer:
+                    _store_bought_trade(external_trades[buyer], trade.offer)
+                if area.name == seller:
+                    _store_sold_trade(external_trades[seller], trade.offer)
 
     for child in area.children:
-        child_result = energy_bills(child, past_market_types, from_slot, to_slot)
+        child_result, ext_trades = energy_bills(child, past_market_types,
+                                                external_trades, from_slot, to_slot)
         if child_result is not None:
             result[child.name]['children'] = child_result
-    return result
+            external_trades.update(**ext_trades)
+    return result, external_trades
