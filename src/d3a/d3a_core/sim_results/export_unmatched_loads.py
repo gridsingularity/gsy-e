@@ -108,7 +108,7 @@ class ExportUnmatchedLoads:
 
     def _accumulate_all_uls_in_branch(self, subdict, unmatched_list) -> list:
         """
-        aggregate all UL times in one branch into one list
+        aggregate all unmatched loads times in one branch into one list
         """
         for key in subdict.keys():
             if key == "unmatched_times":
@@ -119,7 +119,8 @@ class ExportUnmatchedLoads:
 
     def expand_ul_to_parents(self, subdict, parent_name, outdict):
         """
-        expand UL times to all nodes including all UL times of the sub branch
+        expand unmatched loads times to all nodes including all unmatched loads times of the
+        sub branch
         """
 
         for node_name, subsubdict in subdict.items():
