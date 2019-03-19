@@ -29,8 +29,8 @@ from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
-
+from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
+    get_number_of_unmatched_loads
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
 
@@ -344,19 +344,18 @@ def test_offer_bid_files(context, with_or_without, nonempty=False):
 @then('aggregated result files are exported')
 def test_aggregated_result_files(context):
     base_path = os.path.join(context.export_path, "*", "aggregated_results")
-    file_list = [os.path.join(base_path, 'bills'),
-                 os.path.join(base_path, 'const_settings'),
-                 os.path.join(base_path, 'cumulative_grid_trades'),
-                 os.path.join(base_path, 'cumulative_loads'),
-                 os.path.join(base_path, 'job_id'),
-                 os.path.join(base_path, 'KPI'),
-                 os.path.join(base_path, 'price_energy_day'),
-                 os.path.join(base_path, 'random_seed'),
-                 os.path.join(base_path, 'status'),
-                 os.path.join(base_path, 'trade-detail'),
-                 os.path.join(base_path, 'tree_summary'),
-                 os.path.join(base_path, 'unmatched_loads'),
-                 os.path.join(base_path, 'device_statistics')]
+    file_list = [os.path.join(base_path, 'bills.json'),
+                 os.path.join(base_path, 'const_settings.json'),
+                 os.path.join(base_path, 'cumulative_grid_trades.json'),
+                 os.path.join(base_path, 'cumulative_loads.json'),
+                 os.path.join(base_path, 'job_id.json'),
+                 os.path.join(base_path, 'KPI.json'),
+                 os.path.join(base_path, 'price_energy_day.json'),
+                 os.path.join(base_path, 'random_seed.json'),
+                 os.path.join(base_path, 'status.json'),
+                 os.path.join(base_path, 'trade-detail.json'),
+                 os.path.join(base_path, 'tree_summary.json'),
+                 os.path.join(base_path, 'unmatched_loads.json')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > 0 for f in file_list)
@@ -555,8 +554,9 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
 def test_output(context, scenario, sim_duration, slot_length, tick_length):
 
     if scenario in ["default_2a", "default_2b", "default_3"]:
-        unmatched = export_unmatched_loads(context.simulation.area)
-        assert unmatched["unmatched_load_count"] == 0
+        unmatched_loads, unmatched_loads_redis = \
+            ExportUnmatchedLoads(context.simulation.area)()
+        assert get_number_of_unmatched_loads(unmatched_loads) == 0
     # (check if number of last slot is the maximal number of slots):
     no_of_slots = (int(sim_duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
