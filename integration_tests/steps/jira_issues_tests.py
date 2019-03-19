@@ -17,7 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
-from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
+    get_number_of_unmatched_loads
+from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
 
 
 def get_areas_from_2_house_grid(context):
@@ -122,8 +124,8 @@ def check_matching_trades(context):
 
 @then('there should be no unmatched loads')
 def no_unmatched_loads(context):
-    unmatched = export_unmatched_loads(context.simulation.area)
-    assert unmatched["unmatched_load_count"] == 0
+    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)()
+    assert get_number_of_unmatched_loads(unmatched) == 0
 
 
 @then('pv produces the same energy on each corresponding time slot regardless of the day')
@@ -244,12 +246,10 @@ def device_statistics(context):
     assert list(output_dict.keys()) == \
         ['House 1', 'House 2', 'Finite Commercial Producer', 'Commercial Energy Producer']
     assert list(output_dict['House 1'].keys()) == ['H1 DefinedLoad', 'H1 Storage1']
-    stats_list = ["trade_energy_kWh", "load_profile_kWh", "pv_production_kWh", "soc_hist",
-                  "trade_price_eur"]
     counter = 0
     for house in ["House 1", "House 2"]:
         for device in output_dict[house]:
-            for stats_name in stats_list:
+            for stats_name in EXPORT_DEVICE_VARIABLES:
                 if stats_name in output_dict[house][device]:
                     counter += 1
                     assert len(list(output_dict[house][device][stats_name])) == 48

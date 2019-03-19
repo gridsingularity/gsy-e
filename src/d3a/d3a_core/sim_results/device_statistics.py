@@ -1,4 +1,3 @@
-from statistics import mean
 from typing import Dict
 
 from d3a.constants import TIME_FORMAT
@@ -7,6 +6,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.area import Area
+from d3a import limit_float_precision
 
 
 FILL_VALUE = None
@@ -37,8 +37,10 @@ class DeviceStatistics:
             trade_stats_daily[time.format(TIME_FORMAT)] += value
 
         for time_str, value in trade_stats_daily.items():
-            min_trade_stats_daily[time_str] = min(value) if len(value) > 0 else FILL_VALUE
-            max_trade_stats_daily[time_str] = max(value) if len(value) > 0 else FILL_VALUE
+            min_trade_stats_daily[time_str] = limit_float_precision(min(value)) \
+                if len(value) > 0 else FILL_VALUE
+            max_trade_stats_daily[time_str] = limit_float_precision(max(value)) \
+                if len(value) > 0 else FILL_VALUE
 
         min_trade_stats = dict((time, min_trade_stats_daily[time.format(TIME_FORMAT)])
                                for time in indict.keys())
@@ -59,7 +61,7 @@ class DeviceStatistics:
                 trade_price_list.append(t.offer.price / 100.0 / t.offer.energy)
 
         if trade_price_list != []:
-            _create_or_append_dict(subdict, key_name, {market.time_slot: mean(trade_price_list)})
+            _create_or_append_dict(subdict, key_name, {market.time_slot: trade_price_list})
         else:
             _create_or_append_dict(subdict, key_name, {market.time_slot: FILL_VALUE})
 
@@ -91,7 +93,7 @@ class DeviceStatistics:
         self._calc_min_max_from_sim_dict(subdict, key_name)
 
     def _soc_stats(self, area: Area, subdict: Dict):
-        key_name = "soc_hist"
+        key_name = "soc_history_%"
         market = list(area.parent.past_markets)[-1]
         _create_or_append_dict(subdict, key_name,
                                {market.time_slot:
