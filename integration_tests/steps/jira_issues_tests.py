@@ -22,7 +22,6 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
 
 
-
 def get_areas_from_2_house_grid(context):
     def filter_iaa(x):
         return x.name == "House 1" or \
