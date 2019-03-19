@@ -93,18 +93,18 @@ class ExportAndPlot:
     def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
-        settings_file = os.path.join(json_dir, "const_settings")
+        settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        kpi_file = os.path.join(json_dir, "KPI")
+        kpi_file = os.path.join(json_dir, "KPI.json")
         with open(kpi_file, 'w') as outfile:
             json.dump(self.kpi.performance_index, outfile, indent=2)
-        trade_file = os.path.join(json_dir, "trade-detail")
+        trade_file = os.path.join(json_dir, "trade-detail.json")
         with open(trade_file, 'w') as outfile:
             json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)
 
         for key, value in self.endpoint_buffer.generate_json_report().items():
-            json_file = os.path.join(json_dir, key)
+            json_file = os.path.join(json_dir, key + ".json")
             with open(json_file, 'w') as outfile:
                 json.dump(value, outfile, indent=2)
 

@@ -19,10 +19,10 @@ from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trad
     export_cumulative_loads, export_price_energy_day, generate_inter_area_trade_details, \
     export_cumulative_grid_trades_redis
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 from d3a.d3a_core.sim_results.stats import energy_bills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
 from collections import OrderedDict
 from statistics import mean
 
@@ -58,7 +58,7 @@ class SimulationEndpointBuffer:
         return {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
-            **self.unmatched_loads_redis,
+            "unmatched_loads": self.unmatched_loads_redis,
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day,
             "cumulative_grid_trades": self.cumulative_grid_trades_redis,
@@ -73,21 +73,20 @@ class SimulationEndpointBuffer:
         return {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
-            **self.unmatched_loads_redis,
+            "unmatched_loads": self.unmatched_loads,
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day,
             "cumulative_grid_trades": self.cumulative_grid_trades,
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status,
-            "device_statistics": self.device_statistics_time_str_dict
+            "device_statistics": self.device_statistics_time_str_dict,
         }
 
     def update_stats(self, area, simulation_status):
         self.status = simulation_status
 
-        self.unmatched_loads_redis = {"unmatched_loads": export_unmatched_loads(area)}
-        self.unmatched_loads = {"unmatched_loads": export_unmatched_loads(area, all_devices=True)}
+        self.unmatched_loads, self.unmatched_loads_redis = ExportUnmatchedLoads(area)()
 
         self.cumulative_loads = {
             "price-currency": "Euros",

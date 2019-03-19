@@ -17,8 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
+from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
+    get_number_of_unmatched_loads
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
-from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
 
 
 def get_areas_from_2_house_grid(context):
@@ -123,8 +124,8 @@ def check_matching_trades(context):
 
 @then('there should be no unmatched loads')
 def no_unmatched_loads(context):
-    unmatched = export_unmatched_loads(context.simulation.area)
-    assert unmatched["unmatched_load_count"] == 0
+    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)()
+    assert get_number_of_unmatched_loads(unmatched) == 0
 
 
 @then('pv produces the same energy on each corresponding time slot regardless of the day')

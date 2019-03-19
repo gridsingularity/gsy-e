@@ -21,7 +21,8 @@ from math import isclose
 
 from d3a.setup.strategy_tests import user_profile_load_csv  # NOQA
 from d3a.setup.strategy_tests import user_profile_load_csv_multiday  # NOQA
-from d3a.d3a_core.sim_results.export_unmatched_loads import export_unmatched_loads
+from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads,\
+    get_number_of_unmatched_loads
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
@@ -80,12 +81,12 @@ def check_user_pv_dict_profile(context):
 def check_user_rate_profile_dict(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
 
-    unmatched = export_unmatched_loads(context.simulation.area)
+    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)()
     number_of_loads = 2
     # There are two loads with the same final_buying_rate profile that should report unmatched
     # energy demand for the first 6 hours of the day:
-    assert unmatched["unmatched_load_count"] == int(number_of_loads * 6. * 60 /
-                                                    house.config.slot_length.minutes)
+    assert get_number_of_unmatched_loads(unmatched) == int(number_of_loads * 6. * 60 /
+                                                           house.config.slot_length.minutes)
 
 
 @then('LoadHoursStrategy buys energy with rates equal to the initial buying rate profile')
