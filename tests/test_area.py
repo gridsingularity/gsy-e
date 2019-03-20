@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 import unittest
 from parameterized import parameterized
 from d3a.events.event_structures import AreaEvent, MarketEvent
-from d3a.models.area import Area, DEFAULT_CONFIG
+from d3a.models.area import Area
 from d3a.models.area.events import Events
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.appliance.simple import SimpleAppliance
@@ -29,7 +29,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a.models.const import ConstSettings
+from d3a.models.const import ConstSettings, GlobalConfig
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 
@@ -59,7 +59,7 @@ class TestAreaClass(unittest.TestCase):
         self.area.transfer_fee_pct = 1
 
     def tearDown(self):
-        pass
+        GlobalConfig.market_count = 1
 
     def test_markets_are_cycled_according_to_market_count(self):
         self.area._bc = False
@@ -109,7 +109,7 @@ class TestAreaClass(unittest.TestCase):
 
     def test_cycle_markets(self):
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=DEFAULT_CONFIG, transfer_fee_pct=1)
+                         config=GlobalConfig, transfer_fee_pct=1)
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 5
         self.area.activate()
