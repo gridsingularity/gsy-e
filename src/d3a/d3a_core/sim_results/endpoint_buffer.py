@@ -25,6 +25,7 @@ from d3a.d3a_core.util import convert_datetime_to_str_keys
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
 from collections import OrderedDict
 from statistics import mean
+from copy import deepcopy
 
 
 _NO_VALUE = {
@@ -78,7 +79,7 @@ class SimulationEndpointBuffer:
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day,
             "cumulative_grid_trades": self.cumulative_grid_trades,
-            "bills": self.bills_redis,
+            "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status,
             "device_statistics": self.device_statistics_time_str_dict,
@@ -107,8 +108,8 @@ class SimulationEndpointBuffer:
         )
         self.cumulative_grid_balancing_trades = \
             export_cumulative_grid_trades(area, "past_balancing_markets")
-        self.bills, external_trades = self._update_bills(area, "past_markets")
-        self.bills_redis = self._calculate_redis_bills(area, self.bills, external_trades)
+        self.bills = self._update_bills(area, "past_markets")
+        self.bills_redis = self._calculate_redis_bills(area, self.bills)
 
         self.balancing_energy_bills, _ = self._update_bills(area, "past_balancing_markets")
 
@@ -141,13 +142,12 @@ class SimulationEndpointBuffer:
                 self._update_tree_summary(child)
 
     def _update_bills(self, area, past_market_types):
-        result, external_trades = energy_bills(area, past_market_types, {})
-        return OrderedDict(sorted(result.items())), external_trades
+        result = energy_bills(area, past_market_types)
+        return OrderedDict(sorted(result.items()))
 
-    def _calculate_redis_bills(self, area, energy_bills, external_trades):
-        from copy import deepcopy
+    def _calculate_redis_bills(self, area, energy_bills):
         flattened = self._flatten_energy_bills(deepcopy(energy_bills), {})
-        return self._accumulate_by_children(area, flattened, {}, external_trades)
+        return self._accumulate_by_children(area, flattened, {})
 
     def _flatten_energy_bills(self, energy_bills, flat_results):
         for k, v in energy_bills.items():
@@ -157,7 +157,7 @@ class SimulationEndpointBuffer:
             flat_results[k].pop("children", None)
         return flat_results
 
-    def _accumulate_by_children(self, area, flattened, results, external_trades):
+    def _accumulate_by_children(self, area, flattened, results):
         if not area.children:
             # This is a device
             results[area.uuid] = flattened[area.name]
@@ -170,7 +170,7 @@ class SimulationEndpointBuffer:
 
             for c in area.children:
                 results.update(
-                    **self._accumulate_by_children(c, flattened, results, external_trades)
+                    **self._accumulate_by_children(c, flattened, results)
                 )
         return results
 
