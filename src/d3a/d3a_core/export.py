@@ -19,21 +19,23 @@ import csv
 import logging
 import pathlib
 import os
-import plotly as py
 import plotly.graph_objs as go
-import pendulum
 import shutil
 import json
+import operator
+from slugify import slugify
 from sortedcontainers import SortedDict
-from d3a.constants import DATE_TIME_FORMAT
 
-from d3a.constants import TIME_ZONE
+from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict
 from d3a.models.market.market_structures import MarketClearingState
+from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
+from functools import reduce  # forward compatibility for Python 3
+
 
 _log = logging.getLogger(__name__)
 
@@ -46,6 +48,13 @@ alternative_pricing_subdirs = {
     2: "feed_in_tariff_pricing",
     3: "net_metering_pricing"
 }
+
+EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
+                           "soc_history_%", "load_profile_kWh"]
+
+
+def get_from_dict(data_dict, map_list):
+    return reduce(operator.getitem, map_list, data_dict)
 
 
 def mkdir_from_str(directory: str, exist_ok=True, parents=True):
@@ -84,18 +93,18 @@ class ExportAndPlot:
     def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
-        settings_file = os.path.join(json_dir, "const_settings")
+        settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        kpi_file = os.path.join(json_dir, "KPI")
+        kpi_file = os.path.join(json_dir, "KPI.json")
         with open(kpi_file, 'w') as outfile:
             json.dump(self.kpi.performance_index, outfile, indent=2)
-        trade_file = os.path.join(json_dir, "trade-detail")
+        trade_file = os.path.join(json_dir, "trade-detail.json")
         with open(trade_file, 'w') as outfile:
             json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)
 
         for key, value in self.endpoint_buffer.generate_json_report().items():
-            json_file = os.path.join(json_dir, key)
+            json_file = os.path.join(json_dir, key + ".json")
             with open(json_file, 'w') as outfile:
                 json.dump(value, outfile, indent=2)
 
@@ -113,10 +122,12 @@ class ExportAndPlot:
         self.plot_all_unmatched_loads()
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
-        self.move_root_plot_folder()
+        if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
+            self.plot_device_stats(self.area, [])
         if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
                 ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
             self.plot_supply_demand_curve(self.area, self.plot_dir)
+        self.move_root_plot_folder()
 
     def move_root_plot_folder(self):
         """
@@ -240,6 +251,37 @@ class ExportAndPlot:
                     writer.writerow(row)
         except Exception as ex:
             _log.error("Could not export area data: %s" % str(ex))
+
+    def plot_device_stats(self, area: Area, node_address_list: list):
+        """
+        Wrapper for _plot_trade_partner_cell_tower
+        """
+        new_node_address_list = node_address_list + [area.name]
+        for child in area.children:
+            if child.children:
+                self.plot_device_stats(child, new_node_address_list)
+            else:
+                address_list = new_node_address_list + [child.name]
+                self._plot_device_stats(address_list, child.strategy)
+
+    def _plot_device_stats(self, address_list: list, device_strategy):
+        """
+        Plots device graphs
+        """
+        # Dont use the root area name for address list:
+        device_address_list = address_list[1::]
+
+        device_name = device_address_list[-1].replace(" ", "_")
+        device_dict = get_from_dict(self.endpoint_buffer.device_statistics.device_stats_dict,
+                                    device_address_list)
+
+        # converting address_list into plot_dir by slugifying the members
+        plot_dir = os.path.join(self.plot_dir,
+                                "/".join([slugify(node).lower() for node in address_list][0:-1]))
+        mkdir_from_str(plot_dir)
+        output_file = os.path.join(
+            plot_dir, 'device_profile_{}.html'.format(device_name))
+        PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
 
     def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
         """
@@ -406,9 +448,9 @@ class ExportAndPlot:
             data = list()
             xmax = 0
             for time_slot, supply_curve in past_market.state.cumulative_offers.items():
-                data.append(PlotlyGraph._line_plot(supply_curve, time_slot, True))
+                data.append(self.render_supply_demand_curve(supply_curve, time_slot, True))
             for time_slot, demand_curve in past_market.state.cumulative_bids.items():
-                data.append(PlotlyGraph._line_plot(demand_curve, time_slot, False))
+                data.append(self.render_supply_demand_curve(demand_curve, time_slot, False))
 
             if len(data) == 0:
                 continue
@@ -429,7 +471,7 @@ class ExportAndPlot:
                                           mode='lines+markers',
                                           line=dict(width=5),
                                           name=time_slot.format(DATE_TIME_FORMAT +
-                                                                'Clearing-Energy'))
+                                                                ' Clearing-Energy'))
                     data.append(data_obj)
                     xmax = max(xmax, clearing_point[1]) * 3
 
@@ -439,6 +481,45 @@ class ExportAndPlot:
                                        f'supply_demand_{past_market.time_slot_str}.html')
             PlotlyGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)',
                                         'Rate (ct./kWh)', data, output_file, xmax)
+
+    @classmethod
+    def render_supply_demand_curve(cls, dataset, time, supply):
+        rate, energy = cls.calc_supply_demand_curve(dataset, supply=supply)
+        name = str(time) + '-' + ('supply' if supply else 'demand')
+        data_obj = go.Scatter(x=energy,
+                              y=rate,
+                              mode='lines',
+                              name=name)
+        return data_obj
+
+    @staticmethod
+    def calc_supply_demand_curve(dataset, supply=True):
+        sort_values = SortedDict(dataset)
+        if supply:
+            rate = list(sort_values.keys())
+            energy = list(sort_values.values())
+        else:
+            rate = list(reversed(sort_values.keys()))
+            energy = list(reversed(sort_values.values()))
+
+        cond_rate = list()
+        cond_energy = list()
+
+        for i in range(len(energy)):
+
+            if i == 0:
+                cond_rate.append(rate[0])
+                cond_energy.append(0)
+                cond_rate.append(rate[0])
+                cond_energy.append(energy[i])
+            else:
+                if energy[i-1] == energy[i] and supply:
+                    continue
+                cond_rate.append(rate[i])
+                cond_energy.append(energy[i-1])
+                cond_energy.append(energy[i])
+                cond_rate.append(rate[i])
+        return cond_rate, cond_energy
 
     def plot_avg_trade_price(self, area, subdir):
         """
@@ -497,173 +578,3 @@ class ExportAndPlot:
                               y=list(graph_obj.umHours.values()),
                               name=label.lower())
         return data_obj
-
-
-class PlotlyGraph:
-    def __init__(self, dataset: dict, key: str):
-        self.key = key
-        self.dataset = dataset
-        self.umHours = dict()
-        self.rate = list()
-        self.energy = list()
-        self.trade_history = dict()
-
-    @staticmethod
-    def _line_plot(curve_point, time, supply):
-        graph_obj = PlotlyGraph(curve_point, time)
-        graph_obj.supply_demand_curve(supply)
-        name = str(time) + '-' + ('supply' if supply else 'demand')
-        data_obj = go.Scatter(x=list(graph_obj.energy),
-                              y=list(graph_obj.rate),
-                              mode='lines',
-                              name=name)
-        return data_obj
-
-    def supply_demand_curve(self, supply=True):
-        sort_values = SortedDict(self.dataset)
-        if supply:
-            self.rate = list(sort_values.keys())
-            self.energy = list(sort_values.values())
-        else:
-            self.rate = list(reversed(sort_values.keys()))
-            self.energy = list(reversed(sort_values.values()))
-
-        cond_rate = list()
-        cond_energy = list()
-
-        for i in range(len(self.energy)):
-
-            if i == 0:
-                cond_rate.append(self.rate[0])
-                cond_energy.append(0)
-                cond_rate.append(self.rate[0])
-                cond_energy.append(self.energy[i])
-            else:
-                if self.energy[i-1] == self.energy[i] and supply:
-                    continue
-                cond_rate.append(self.rate[i])
-                cond_energy.append(self.energy[i-1])
-                cond_energy.append(self.energy[i])
-                cond_rate.append(self.rate[i])
-        self.rate = list()
-        self.rate = cond_rate
-        self.energy = list()
-        self.energy = cond_energy
-
-    def graph_value(self, scale_value=1):
-        try:
-            self.dataset[self.key]
-        except KeyError:
-            pass
-        else:
-            for de in range(len(self.dataset[self.key])):
-                if self.dataset[self.key][de] != 0:
-                    if self.dataset[self.key][de] == "-":
-                        self.umHours[self.dataset['slot'][de]] = 0.0
-                    else:
-                        self.umHours[self.dataset['slot'][de]] = \
-                            round(self.dataset[self.key][de], 5) * scale_value
-
-    @staticmethod
-    def modify_time_axis(data: dict, title: str):
-        """
-        Changes timezone of pendulum x-values to 'UTC' and determines the list of days
-        in order to return the time_range for the plot
-        """
-        day_set = set()
-        for di in range(len(data)):
-            time_list = data[di]["x"]
-            for ti in time_list:
-                day_set.add(pendulum.datetime(ti.year, ti.month, ti.day, tz=TIME_ZONE))
-
-        day_list = sorted(list(day_set))
-        if len(day_list) == 0:
-            raise ValueError("There is no time information in plot {}".format(title))
-
-        start_time = pendulum.datetime(day_list[0].year, day_list[0].month, day_list[0].day,
-                                       0, 0, 0, tz=TIME_ZONE)
-        end_time = pendulum.datetime(day_list[-1].year, day_list[-1].month, day_list[-1].day,
-                                     23, 59, 59, tz=TIME_ZONE)
-
-        return [start_time, end_time], data
-
-    @classmethod
-    def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
-        try:
-            time_range, data = cls.modify_time_axis(data, title)
-        except ValueError:
-            return
-
-        layout = go.Layout(
-            autosize=False,
-            width=1200,
-            height=700,
-            barmode=barmode,
-            title=title,
-            yaxis=dict(
-                title=ytitle
-            ),
-            xaxis=dict(
-                title=xtitle,
-                range=time_range
-            ),
-            font=dict(
-                size=16
-            ),
-            showlegend=True
-        )
-
-        fig = go.Figure(data=data, layout=layout)
-        py.offline.plot(fig, filename=iname, auto_open=False)
-
-    @staticmethod
-    def plot_line_graph(title: str, xtitle: str, ytitle: str, data, iname: str, xmax: int):
-        layout = go.Layout(
-            title=title,
-            yaxis=dict(
-                title=ytitle
-            ),
-            xaxis=dict(
-                title=xtitle,
-                range=(0, xmax)
-            ),
-            font=dict(
-                size=16
-            ),
-            showlegend=True
-        )
-
-        fig = go.Figure(data=data, layout=layout)
-        py.offline.plot(fig, filename=iname, auto_open=False)
-
-    def arrange_data(self):
-        try:
-            self.dataset[self.key]
-        except KeyError:
-            pass
-        else:
-            for ii, ki in enumerate(self.dataset[self.key]["seller"]):
-                if ki in self.trade_history.keys():
-                    self.trade_history[ki] += abs(self.dataset[self.key]["energy [kWh]"][ii])
-                else:
-                    self.trade_history[ki] = abs(self.dataset[self.key]["energy [kWh]"][ii])
-
-    def plot_pie_chart(self, title, filename):
-        fig = {
-            "data": [
-                {
-                    "values": list(),
-                    "labels": list(),
-                    "type": "pie"
-                }],
-            "layout": {
-                "title": title,
-                "font": {"size": 16
-                         }
-            }
-        }
-        for key, value in self.trade_history.items():
-            fig["data"][0]["values"].append(value)
-            fig["data"][0]["labels"].append(key)
-
-        py.offline.plot(fig, filename=filename, auto_open=False)
