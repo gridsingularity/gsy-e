@@ -25,7 +25,8 @@ from d3a.models.market.one_sided import OneSidedMarket
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import BalancingOffer, BalancingTrade
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidBalancingTradeException, DeviceNotInRegistryError
+    OfferNotFoundException, InvalidBalancingTradeException, \
+    DeviceNotInRegistryError, ChainTradeException
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 log = getLogger(__name__)
@@ -70,6 +71,8 @@ class BalancingMarket(OneSidedMarket):
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
                      energy: int = None, time: DateTime = None, already_tracked: bool = False,
                      trade_rate: float = None, iaa_fee: bool = False) -> BalancingTrade:
+        if iaa_fee and trade_rate is None:
+            raise ChainTradeException()
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -90,7 +93,6 @@ class BalancingMarket(OneSidedMarket):
 
                 # reducing trade_rate to be charged in terms of grid_fee
                 if iaa_fee:
-                    trade_rate = offer.price / offer.energy
                     source_rate = trade_rate / (1 + self.transfer_fee_ratio)
                     self._grid_fee += (trade_rate - source_rate) * energy
                 else:

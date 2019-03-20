@@ -26,7 +26,7 @@ from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidTrade
+    OfferNotFoundException, InvalidTrade, ChainTradeException
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
@@ -95,6 +95,8 @@ class OneSidedMarket(Market):
                      time: DateTime = None,
                      already_tracked: bool=False, trade_rate: float = None,
                      iaa_fee: bool = False) -> Trade:
+        if iaa_fee and trade_rate is None:
+            raise ChainTradeException()
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):

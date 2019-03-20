@@ -20,7 +20,7 @@ from typing import Union  # noqa
 from logging import getLogger
 
 from d3a.models.market.one_sided import OneSidedMarket
-from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
+from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade, ChainTradeException
 from d3a.models.market.market_structures import Bid, Trade
 from d3a.events.event_structures import MarketEvent
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -73,6 +73,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
                    trade_rate: float = None, iaa_fee: bool = False):
+        if iaa_fee and trade_rate is None:
+            raise ChainTradeException()
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
@@ -85,7 +87,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         assert trade_rate <= (market_bid.price / market_bid.energy) + FLOATING_POINT_TOLERANCE, \
             f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
         if iaa_fee:
-            source_rate = trade_rate / (1 + self.transfer_fee_ratio)
+            source_rate = trade_rate / (1 - self.transfer_fee_ratio)
             self._grid_fee += (trade_rate - source_rate) * energy
         else:
             source_rate = trade_rate
@@ -114,7 +116,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                 bid = Bid(bid.id, final_price, energy, buyer, seller, self)
             else:
                 if trade_rate is not None:
-                    bid = bid._replace(price=trade_rate * market_bid.energy)
+                    bid = bid._replace(price=source_rate * market_bid.energy)
             trade = Trade(str(uuid.uuid4()), self._now, bid, seller,
                           buyer, residual, already_tracked=already_tracked)
 

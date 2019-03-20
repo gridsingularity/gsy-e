@@ -19,7 +19,7 @@ import pytest
 import pendulum
 import uuid
 import pathlib
-from pendulum import DateTime, duration, today  # NOQA
+from pendulum import DateTime, duration, today
 
 from d3a.d3a_core.util import d3a_path, change_global_config
 from d3a.constants import TIME_ZONE, TIME_FORMAT

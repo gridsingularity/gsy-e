@@ -119,14 +119,16 @@ def follow_device_registry_energy_rate(context, device_name):
     positive_energy_rate = DeviceRegistry.REGISTRY[device_name][1]
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
+    iaa_fee = context.simulation.simulation_config.iaa_fee
+    add_val = [0, 2 * iaa_fee / 100 + iaa_fee / 100 ** 2, iaa_fee / 100]
 
-    assert all((trade.offer.price / trade.offer.energy) - negative_energy_rate
+    assert all((trade.offer.price / trade.offer.energy) - negative_energy_rate * (1 + add_val[ii])
                < FLOATING_POINT_TOLERANCE
                for ii, device in enumerate([house1, house2, context.simulation.area])
                for market in device.past_balancing_markets
                for trade in market.trades if trade.offer.energy < 0)
 
-    assert all((trade.offer.price / trade.offer.energy) - positive_energy_rate
+    assert all((trade.offer.price / trade.offer.energy) - positive_energy_rate * (1 + add_val[ii])
                < FLOATING_POINT_TOLERANCE
                for ii, device in enumerate([house1, house2, context.simulation.area])
                for market in device.past_balancing_markets
