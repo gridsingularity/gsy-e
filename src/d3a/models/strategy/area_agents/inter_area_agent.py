@@ -20,11 +20,9 @@ from d3a.constants import TIME_FORMAT
 
 
 class InterAreaAgent(BaseStrategy):
-    parameters = ('owner', 'higher_market', 'lower_market', 'transfer_fee_pct',
-                  'min_offer_age')
+    parameters = ('owner', 'higher_market', 'lower_market', 'min_offer_age')
 
-    def __init__(self, *, engine_type, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1):
+    def __init__(self, *, engine_type, owner, higher_market, lower_market, min_offer_age=1):
         """
         Equalize markets
 
@@ -36,7 +34,7 @@ class InterAreaAgent(BaseStrategy):
         """
         super().__init__()
         self.owner = owner
-        self._validate_constructor_arguments(transfer_fee_pct, min_offer_age)
+        self._validate_constructor_arguments(min_offer_age)
         self.engines = [
             engine_type('High -> Low', higher_market, lower_market, min_offer_age,
                         self),
@@ -51,12 +49,11 @@ class InterAreaAgent(BaseStrategy):
         self.lower_market = lower_market
         self.min_offer_age = min_offer_age
 
-    def _validate_constructor_arguments(self, transfer_fee_pct, min_offer_age):
-        assert 0 <= transfer_fee_pct <= 100
+    def _validate_constructor_arguments(self, min_offer_age):
         assert 1 <= min_offer_age <= 360
 
-    def area_reconfigure_event(self, transfer_fee_pct, min_offer_age):
-        self._validate_constructor_arguments(transfer_fee_pct, min_offer_age)
+    def area_reconfigure_event(self, min_offer_age):
+        self._validate_constructor_arguments(min_offer_age)
         self.min_offer_age = min_offer_age
         for engine in self.engines:
             engine.min_offer_age = min_offer_age

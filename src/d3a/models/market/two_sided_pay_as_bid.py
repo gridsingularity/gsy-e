@@ -49,11 +49,11 @@ class TwoSidedPayAsBid(OneSidedMarket):
                     )
 
     def bid(self, price: float, energy: float, buyer: str, seller: str, bid_id: str=None,
-            iaaFee: bool = False) -> Bid:
+            iaa_fee: bool = False) -> Bid:
         if energy <= 0:
             raise InvalidBid()
-        if iaaFee:
-            price = price * (1 - self.transfer_fee_pct / 100)
+        if iaa_fee:
+            price = price * (1 - self.transfer_fee_ratio)
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self)
         self.bids[bid.id] = bid
@@ -85,7 +85,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         assert trade_rate <= (market_bid.price / market_bid.energy) + FLOATING_POINT_TOLERANCE, \
             f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
         if iaa_fee:
-            source_rate = (100 * trade_rate) / (100 + self.transfer_fee_pct)
+            source_rate = trade_rate / (1 + self.transfer_fee_ratio)
             self._grid_fee += (trade_rate - source_rate) * energy
         else:
             source_rate = trade_rate

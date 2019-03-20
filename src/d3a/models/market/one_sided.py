@@ -54,13 +54,13 @@ class OneSidedMarket(Market):
         assert False
 
     def offer(self, price: float, energy: float, seller: str,
-              iaaFee: bool = False) -> Offer:
+              iaa_fee: bool = False) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
-        if iaaFee:
-            price = price * (1 + self.transfer_fee_pct / 100)
+        if iaa_fee:
+            price = price * (1 + self.transfer_fee_ratio)
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)
@@ -115,7 +115,6 @@ class OneSidedMarket(Market):
                 # partial energy is requested
                 elif energy < offer.energy:
                     original_offer = offer
-                    # Don't know why is it here
                     accepted_offer_id = offer.id \
                         if self.area is None or self.area.bc is None \
                         else offer.real_id
@@ -130,7 +129,7 @@ class OneSidedMarket(Market):
 
                     # reducing trade_rate to be charged in terms of grid_fee
                     if iaa_fee:
-                        source_rate = (100 * trade_rate) / (100 + self.transfer_fee_pct)
+                        source_rate = trade_rate / (1 + self.transfer_fee_ratio)
                         self._grid_fee += (trade_rate - source_rate) * energy
                     else:
                         source_rate = trade_rate
@@ -171,9 +170,9 @@ class OneSidedMarket(Market):
                         if iaa_fee:
                             # adjusted in grid fee
                             offer.price = trade_rate * offer.energy * \
-                                          (1 - self.transfer_fee_pct / 100)
+                                          (1 - self.transfer_fee_ratio)
                             self._grid_fee += \
-                                trade_rate * (self.transfer_fee_pct / 100) * offer.energy
+                                trade_rate * (self.transfer_fee_ratio) * offer.energy
                         else:
                             offer.price = trade_rate * offer.energy
 

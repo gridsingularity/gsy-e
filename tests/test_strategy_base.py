@@ -69,7 +69,7 @@ class FakeOffer:
 class FakeMarket:
     def __init__(self, *, raises, id=11):
         self.raises = raises
-        self.transfer_fee_pct = 0
+        self.transfer_fee_ratio = 0
         self.bids = {}
         self.id = id
 

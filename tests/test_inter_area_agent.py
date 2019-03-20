@@ -38,7 +38,7 @@ class FakeArea:
         self.current_tick = 10
         self.future_market = None
         self.now = pendulum.DateTime.now()
-        self.transfer_fee_pct = 0
+        self.transfer_fee_ratio = 0
 
     @property
     def config(self):
@@ -49,7 +49,7 @@ class FakeArea:
 
 
 class FakeMarket:
-    def __init__(self, sorted_offers, bids=[], m_id=123, transfer_fee_pct=0):
+    def __init__(self, sorted_offers, bids=[], m_id=123, transfer_fee_ratio=0):
         self.id = m_id
         self.sorted_offers = sorted_offers
         self._bids = bids
@@ -66,7 +66,7 @@ class FakeMarket:
         self.time_slot = pendulum.now(tz=TIME_ZONE)
         self.time_slot_str = self.time_slot.format(TIME_FORMAT)
         self.state = MarketClearingState()
-        self.transfer_fee_pct = transfer_fee_pct
+        self.transfer_fee_ratio = transfer_fee_ratio
 
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot
@@ -118,14 +118,14 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller, agent=False, iaaFee: bool = False):
+    def offer(self, price, energy, seller, agent=False, iaa_fee: bool = False):
         self.offer_count += 1
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller, market=self)
         return self.forwarded_offer
 
-    def bid(self, price, energy, buyer, seller, iaaFee: bool = False):
-        if iaaFee:
-            price = price * (1 - self.transfer_fee_pct/100)
+    def bid(self, price, energy, buyer, seller, iaa_fee: bool = False):
+        if iaa_fee:
+            price = price * (1 - self.transfer_fee_ratio)
         self.bid_count += 1
         self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller, market=self)
         return self.forwarded_bid
@@ -154,7 +154,7 @@ def test_iaa_forwarded_offers_complied_to_transfer_fee_percentage(iaa):
     iaa_per_fee = ((iaa.higher_market.forwarded_offer.price -
                     iaa.lower_market.sorted_offers[-1].price) /
                    iaa.lower_market.sorted_offers[-1].price)
-    assert round(iaa_per_fee, 2) == round(iaa.lower_market.transfer_fee_pct/100, 2)
+    assert round(iaa_per_fee, 2) == round(iaa.lower_market.transfer_fee_ratio, 2)
 
 
 def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
@@ -207,15 +207,17 @@ def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
     assert iaa_bid.higher_market.bid_count == 1
     expected_price = \
         list(iaa_bid.lower_market.bids.values())[-1].price * \
-        (1 - (iaa_bid.lower_market.transfer_fee_pct / 100))
+        (1 - iaa_bid.lower_market.transfer_fee_ratio)
     assert iaa_bid.higher_market.forwarded_bid.price == expected_price
 
 
-@pytest.mark.parametrize("iaa_fee", [10, 0, 50, 75, 5, 2, 3])
+@pytest.mark.parametrize("iaa_fee", [0.1, 0, 0.5, 0.75, 0.05, 0.02, 0.03])
 def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')], transfer_fee_pct=iaa_fee)
-    higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')], transfer_fee_pct=iaa_fee)
+    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')],
+                              transfer_fee_ratio=iaa_fee)
+    higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')],
+                               transfer_fee_ratio=iaa_fee)
     iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
                                 higher_market=higher_market,
                                 lower_market=lower_market)
@@ -225,7 +227,7 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
 
     assert iaa.higher_market.bid_count == 1
     assert iaa.higher_market.forwarded_bid.price == \
-        list(iaa.lower_market.bids.values())[-1].price * (1 - (iaa_fee / 100))
+        list(iaa.lower_market.bids.values())[-1].price * (1 - iaa_fee)
     ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
@@ -309,8 +311,8 @@ def iaa_double_sided():
     from d3a.models.const import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
-                              bids=[Bid('bid_id', 10, 10, 'B', 'S')], transfer_fee_pct=1)
-    higher_market = FakeMarket([], [], transfer_fee_pct=1)
+                              bids=[Bid('bid_id', 10, 10, 'B', 'S')], transfer_fee_ratio=0.01)
+    higher_market = FakeMarket([], [], transfer_fee_ratio=0.01)
     owner = FakeArea('owner')
     iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
                                 higher_market=higher_market)
@@ -345,7 +347,7 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
         market_id=iaa_double_sided.higher_market.id)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
 
-    expected_price = 10 * (1 - iaa_double_sided.lower_market.transfer_fee_pct / 100)
+    expected_price = 10 * (1 - iaa_double_sided.lower_market.transfer_fee_ratio)
 
     assert iaa_double_sided.higher_market.forwarded_bid.price == expected_price
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10.0
@@ -360,7 +362,7 @@ def test_iaa_event_bid_trade_increases_bid_price(iaa_double_sided):
                         'someone_else'),
         market_id=iaa_double_sided.higher_market.id)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
-    expected_price = 10 * (1 - iaa_double_sided.lower_market.transfer_fee_pct/100)
+    expected_price = 10 * (1 - iaa_double_sided.lower_market.transfer_fee_ratio)
     assert iaa_double_sided.higher_market.forwarded_bid.price == expected_price
 
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10

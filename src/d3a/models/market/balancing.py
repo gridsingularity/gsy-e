@@ -42,12 +42,12 @@ class BalancingMarket(OneSidedMarket):
 
         super().__init__(time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str, iaaFee: bool = False):
+    def offer(self, price: float, energy: float, seller: str, iaa_fee: bool = False):
         assert False
 
     def balancing_offer(self, price: float, energy: float,
                         seller: str, from_agent: bool=False,
-                        iaaFee: bool = False) -> BalancingOffer:
+                        iaa_fee: bool = False) -> BalancingOffer:
         if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
@@ -55,8 +55,8 @@ class BalancingMarket(OneSidedMarket):
             raise MarketReadOnlyException()
         if energy == 0:
             raise InvalidOffer()
-        if iaaFee:
-            price = price * (1 + self.transfer_fee_pct / 100)
+        if iaa_fee:
+            price = price * (1 + self.transfer_fee_ratio)
 
         offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller, self)
         self.offers[offer.id] = offer
@@ -91,7 +91,7 @@ class BalancingMarket(OneSidedMarket):
                 # reducing trade_rate to be charged in terms of grid_fee
                 if iaa_fee:
                     trade_rate = offer.price / offer.energy
-                    source_rate = (100 * trade_rate) / (100 + self.transfer_fee_pct)
+                    source_rate = trade_rate / (1 + self.transfer_fee_ratio)
                     self._grid_fee += (trade_rate - source_rate) * energy
                 else:
                     source_rate = offer.price / offer.energy
@@ -103,7 +103,7 @@ class BalancingMarket(OneSidedMarket):
                     original_offer = offer
                     accepted_offer = Offer(
                         offer.id,
-                        abs((source_rate) * energy),
+                        abs(source_rate * energy),
                         energy,
                         offer.seller,
                         offer.market
