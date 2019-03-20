@@ -124,7 +124,7 @@ def grid():
 
 
 def test_energy_bills(grid):
-    result = energy_bills(grid, "past_markets")
+    result, _ = energy_bills(grid, "past_markets", {})
     assert result['house2']['bought'] == result['commercial']['sold'] == 13
     assert result['house2']['spent'] == result['commercial']['earned'] == 3
     assert result['commercial']['spent'] == result['commercial']['bought'] == 0
@@ -148,5 +148,5 @@ def grid2():
 
 
 def test_energy_bills_finds_iaas(grid2):
-    result = energy_bills(grid2, "past_markets")
+    result, _ = energy_bills(grid2, "past_markets", {})
     assert result['house1']['bought'] == result['house2']['sold'] == 3
