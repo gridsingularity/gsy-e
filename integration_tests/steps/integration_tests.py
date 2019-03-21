@@ -612,6 +612,22 @@ def test_accumulated_energy(context):
     assert isclose(net_energy, 0, abs_tol=1e-10)
 
 
+def generate_area_uuid_map(sim_area, results):
+    results[sim_area.slug] = sim_area.uuid
+    for child in sim_area.children:
+        results = generate_area_uuid_map(child, results)
+    return results
+
+
+@then('the traded energy profile is correctly generated')
+def traded_energy_profile_correctly_generated(context):
+    area_uuid_map = generate_area_uuid_map(context.simulation.area, {})
+    assert len(context.simulation.endpoint_buffer.energy_trade_profile.keys()) == \
+        len(context.simulation.endpoint_buffer.energy_trade_profile_redis.keys())
+    for k, v in context.simulation.endpoint_buffer.energy_trade_profile.items():
+        assert context.simulation.endpoint_buffer.energy_trade_profile_redis[area_uuid_map[k]] == v
+
+
 @then('the predefined load follows the load profile')
 def check_load_profile(context):
     if isinstance(context._device_profile, str):
