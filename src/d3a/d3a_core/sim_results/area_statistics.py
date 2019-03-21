@@ -29,17 +29,6 @@ loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
 prices_pv_stor_energy = namedtuple('prices_pv_stor_energy', ['price', 'pv_energ', 'stor_energ'])
 
 
-def get_area_type_string(area):
-    if isinstance(area.strategy, CellTowerLoadHoursStrategy):
-        return "cell_tower"
-    elif area.children is None:
-        return "unknown"
-    elif area.children != [] and all(child.children == [] for child in area.children):
-        return "house"
-    else:
-        return "unknown"
-
-
 def gather_area_loads_and_trade_prices(area, load_price_lists):
     for child in area.children:
         if child.children == [] and not \
