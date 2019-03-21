@@ -111,7 +111,9 @@ class Area:
 
             if self.budget_keeper:
                 self.budget_keeper.activate()
-        if self.transfer_fee_pct is None:
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            self.transfer_fee_pct = 0
+        elif self.transfer_fee_pct is None:
             self.transfer_fee_pct = self.config.iaa_fee
 
         # Cycle markets without triggering it's own event chain.

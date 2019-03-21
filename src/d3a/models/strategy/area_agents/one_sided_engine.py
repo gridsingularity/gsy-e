@@ -236,7 +236,7 @@ class BalancingEngine(IAAEngine):
             offer.price,
             offer.energy,
             self.owner.name,
-            True,
+            from_agent=True,
             iaa_fee=True
         )
         offer_info = OfferInfo(offer, forwarded_balancing_offer)
