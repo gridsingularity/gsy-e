@@ -135,7 +135,6 @@ class OneSidedMarket(Market):
                         self._grid_fee += (trade_rate - source_rate) * energy
                     else:
                         source_rate = trade_rate
-
                     accepted_offer = Offer(
                         accepted_offer_id,
                         source_rate * energy,
@@ -171,8 +170,8 @@ class OneSidedMarket(Market):
                         # offered_price adjusted to trade rate
                         if iaa_fee:
                             # adjusted in grid fee
-                            offer.price = trade_rate * offer.energy * \
-                                          (1 - self.transfer_fee_ratio)
+                            offer.price = trade_rate * offer.energy / \
+                                          (1 + self.transfer_fee_ratio)
                             self._grid_fee += \
                                 trade_rate * (self.transfer_fee_ratio) * offer.energy
                         else:
