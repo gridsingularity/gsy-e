@@ -23,10 +23,10 @@ from d3a.models.const import ConstSettings
 class TwoSidedPayAsClearAgent(TwoSidedPayAsBidAgent):
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 transfer_fee_pct=1, min_offer_age=1):
+                 min_offer_age=1):
         super().__init__(owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
-                         transfer_fee_pct=transfer_fee_pct, min_offer_age=min_offer_age,
+                         min_offer_age=min_offer_age,
                          engine_type=TwoSidedPayAsClearEngine)
         self.mcp_update_point = \
             self.owner.config.ticks_per_slot / \

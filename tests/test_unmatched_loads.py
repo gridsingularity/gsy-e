@@ -48,9 +48,12 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.config.slot_length = duration(minutes=15)
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
-        self.area1 = Area("load1", None, None, self.strategy1, self.appliance, self.config, None)
-        self.area2 = Area("load2", None, None, self.strategy2, self.appliance, self.config, None)
-        self.area3 = Area("load3", None, None, self.strategy3, self.appliance, self.config, None)
+        self.area1 = Area("load1", None, None, self.strategy1, self.appliance,
+                          self.config, None, transfer_fee_pct=0)
+        self.area2 = Area("load2", None, None, self.strategy2, self.appliance,
+                          self.config, None, transfer_fee_pct=0)
+        self.area3 = Area("load3", None, None, self.strategy3, self.appliance,
+                          self.config, None, transfer_fee_pct=0)
 
     def tearDown(self):
         pass

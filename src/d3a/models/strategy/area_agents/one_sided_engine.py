@@ -27,12 +27,11 @@ ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 
 class IAAEngine:
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
                  owner: "InterAreaAgent"):
         self.name = name
         self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
-        self.transfer_fee_pct = transfer_fee_pct
         self.owner = owner
 
         self.offer_age = {}  # type: Dict[str, int]
@@ -48,9 +47,10 @@ class IAAEngine:
 
     def _forward_offer(self, offer, offer_id):
         forwarded_offer = self.markets.target.offer(
-            offer.price + (offer.price * (self.transfer_fee_pct / 100)),
+            offer.price,
             offer.energy,
-            self.owner.name
+            self.owner.name,
+            iaa_fee=True
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -120,19 +120,16 @@ class IAAEngine:
                                          "{} (Forwarded offer not found)".format(trade.offer))
 
             try:
-                trade_offer_rate = None
-                if trade.price_drop:
-                    # Use the rate of the trade offer for accepting the source offer too
-                    # Drop the rate of the trade offer according to IAA fee
-                    trade_offer_rate = trade.offer.price / trade.offer.energy
-                    trade_offer_rate = trade_offer_rate * (1 - (self.transfer_fee_pct / 100))
+                trade_offer_rate = trade.offer.price / trade.offer.energy
                 trade_source = self.owner.accept_offer(
                     self.markets.source,
                     offer_info.source_offer,
                     energy=trade.offer.energy,
                     buyer=self.owner.name,
-                    trade_rate=trade_offer_rate
+                    trade_rate=trade_offer_rate,
+                    iaa_fee=True
                 )
+
             except OfferNotFoundException:
                 raise OfferNotFoundException()
             self.owner.log.info(
@@ -236,10 +233,11 @@ class BalancingEngine(IAAEngine):
 
     def _forward_offer(self, offer, offer_id):
         forwarded_balancing_offer = self.markets.target.balancing_offer(
-            offer.price + (offer.price * (self.transfer_fee_pct / 100)),
+            offer.price,
             offer.energy,
             self.owner.name,
-            True
+            from_agent=True,
+            iaa_fee=True
         )
         offer_info = OfferInfo(offer, forwarded_balancing_offer)
         self.forwarded_offers[forwarded_balancing_offer.id] = offer_info

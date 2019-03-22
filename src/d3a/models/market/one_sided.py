@@ -26,7 +26,7 @@ from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidTrade
+    OfferNotFoundException, InvalidTrade, ChainTradeException
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
@@ -53,11 +53,14 @@ class OneSidedMarket(Market):
     def balancing_offer(self, price, energy, seller, from_agent):
         assert False
 
-    def offer(self, price: float, energy: float, seller: str) -> Offer:
+    def offer(self, price: float, energy: float, seller: str,
+              iaa_fee: bool = False) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
+        if iaa_fee:
+            price = price * (1 + self.transfer_fee_ratio)
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)
@@ -89,8 +92,11 @@ class OneSidedMarket(Market):
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
-                     time: DateTime = None, price_drop: bool = False,
-                     already_tracked: bool=False, trade_rate: float = None) -> Trade:
+                     time: DateTime = None,
+                     already_tracked: bool=False, trade_rate: float = None,
+                     iaa_fee: bool = False) -> Trade:
+        if iaa_fee and trade_rate is None:
+            raise ChainTradeException()
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -106,9 +112,9 @@ class OneSidedMarket(Market):
             if time is None:
                 time = self._now
             if energy is not None:
-                # Partial trade
                 if energy == 0:
                     raise InvalidTrade("Energy can not be zero.")
+                # partial energy is requested
                 elif energy < offer.energy:
                     original_offer = offer
                     accepted_offer_id = offer.id \
@@ -117,14 +123,21 @@ class OneSidedMarket(Market):
 
                     if trade_rate is None:
                         trade_rate = offer.price / offer.energy
+
                     # TODO: Remove the math.floor from the lower threshold once the pay-as-clear
                     # market is refactored (D3ASIM-907)
                     assert trade_rate + FLOATING_POINT_TOLERANCE >= \
                         math.floor(offer.price / offer.energy)
 
+                    # reducing trade_rate to be charged in terms of grid_fee
+                    if iaa_fee:
+                        source_rate = trade_rate / (1 + self.transfer_fee_ratio)
+                        self._grid_fee += (trade_rate - source_rate) * energy
+                    else:
+                        source_rate = trade_rate
                     accepted_offer = Offer(
                         accepted_offer_id,
-                        trade_rate * energy,
+                        source_rate * energy,
                         energy,
                         offer.seller,
                         offer.market
@@ -152,9 +165,18 @@ class OneSidedMarket(Market):
                 elif energy > offer.energy:
                     raise InvalidTrade("Energy can't be greater than offered energy")
                 else:
-                    # Requested partial is equal to offered energy - just proceed normally
+                    # Requested energy is equal to offer's energy - just proceed normally
                     if trade_rate is not None:
-                        offer.price = trade_rate * offer.energy
+                        # offered_price adjusted to trade rate
+                        if iaa_fee:
+                            # adjusted in grid fee
+                            offer.price = trade_rate * offer.energy / \
+                                          (1 + self.transfer_fee_ratio)
+                            self._grid_fee += \
+                                trade_rate * (self.transfer_fee_ratio) * offer.energy
+                        else:
+                            offer.price = trade_rate * offer.energy
+
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
@@ -166,7 +188,7 @@ class OneSidedMarket(Market):
             self.bc_interface.handle_blockchain_trade_event(
                 offer, buyer, original_offer, residual_offer
             )
-        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer, price_drop)
+        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer)
         self.bc_interface.track_trade_event(trade)
 
         if not already_tracked:

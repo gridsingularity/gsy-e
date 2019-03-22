@@ -30,10 +30,10 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
     # The following is an artificial number but has to be >= 2:
     MIN_SLOT_AGE = 2
 
-    def __init__(self, *, owner, higher_market, lower_market, min_offer_age=1,
-                 transfer_fee_pct=1, engine_type=IAAEngine):
-        super().__init__(engine_type=engine_type, owner=owner, higher_market=higher_market,
-                         lower_market=lower_market, transfer_fee_pct=transfer_fee_pct,
+    def __init__(self, *, owner, higher_market, lower_market,
+                 min_offer_age=1, engine_type=IAAEngine):
+        super().__init__(engine_type=engine_type, owner=owner,
+                         higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age)
 
     @staticmethod

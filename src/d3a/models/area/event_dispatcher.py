@@ -152,9 +152,6 @@ class AreaDispatcher:
                 owner=self.area,
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
-                transfer_fee_pct=0
-                if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0
-                else self.area.config.iaa_fee
             )
             # Attach agent to own IAA list
             self.interarea_agents[market.time_slot].append(iaa)
@@ -167,8 +164,7 @@ class AreaDispatcher:
             ba = agent_class(
                 owner=self.area,
                 higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
-                lower_market=market,
-                transfer_fee_pct=self.area.config.iaa_fee
+                lower_market=market
             )
             self.balancing_agents[market.time_slot].append(ba)
             self.area.parent.dispatcher.balancing_agents[market.time_slot].append(ba)

@@ -29,7 +29,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a.models.const import ConstSettings
+from d3a.models.const import ConstSettings, GlobalConfig
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 
@@ -52,12 +52,24 @@ class TestAreaClass(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
-        self.area = Area("test_area", None, None, self.strategy, self.appliance, self.config, None)
+        self.area = Area("test_area", None, None, self.strategy,
+                         self.appliance, self.config, None, transfer_fee_pct=1)
         self.area.parent = self.area
         self.area.children = [self.area]
+        self.area.transfer_fee_pct = 1
 
     def tearDown(self):
-        pass
+        GlobalConfig.market_count = 1
+
+    def test_respective_area_grid_fee_is_applied(self):
+        self.area = Area(name="Street", children=[Area(name="House")],
+                         config=GlobalConfig, transfer_fee_pct=5)
+        self.area.parent = Area(name="GRID")
+        self.area.config.market_count = 1
+        self.area.activate()
+        assert self.area.next_market.transfer_fee_ratio == 0.05
+        self.area.next_market.offer(1, 1, "test", True)
+        assert list(self.area.next_market.offers.values())[0].price == 1.05
 
     def test_markets_are_cycled_according_to_market_count(self):
         self.area._bc = False
@@ -106,7 +118,8 @@ class TestAreaClass(unittest.TestCase):
         assert self.area.market_with_most_expensive_offer is m3
 
     def test_cycle_markets(self):
-        self.area = Area(name="Street", children=[Area(name="House")])
+        self.area = Area(name="Street", children=[Area(name="House")],
+                         config=GlobalConfig, transfer_fee_pct=1)
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 5
         self.area.activate()

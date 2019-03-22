@@ -63,7 +63,8 @@ class Area:
                  config: SimulationConfig = None,
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
-                 event_list=[]):
+                 event_list=[],
+                 transfer_fee_pct: int =None):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -88,6 +89,7 @@ class Area:
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
         self.dispatcher = AreaDispatcher(self)
+        self.transfer_fee_pct = transfer_fee_pct
 
     def activate(self, bc=None):
         if bc:
@@ -109,6 +111,10 @@ class Area:
 
             if self.budget_keeper:
                 self.budget_keeper.activate()
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            self.transfer_fee_pct = 0
+        elif self.transfer_fee_pct is None:
+            self.transfer_fee_pct = self.config.iaa_fee
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)
