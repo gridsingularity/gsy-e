@@ -27,10 +27,9 @@ log = getLogger(__name__)
 
 
 class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int, transfer_fee_pct: int,
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
                  owner: "InterAreaAgent"):
-        super().__init__(name, market_1, market_2, min_offer_age,
-                         transfer_fee_pct, owner)
+        super().__init__(name, market_1, market_2, min_offer_age, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
         self.sorted_bids = []
         self.sorted_offers = []
@@ -121,7 +120,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid=bid,
                     energy=bid.energy,
                     seller=self.owner.name,
-                    price_drop=True,
                     already_tracked=already_tracked,
                     trade_rate=clearing_rate
                 )
@@ -132,7 +130,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid=bid,
                     energy=(clearing_energy - cumulative_traded_bids),
                     seller=self.owner.name,
-                    price_drop=True,
                     already_tracked=already_tracked,
                     trade_rate=clearing_rate
                 )
@@ -150,7 +147,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=offer.energy,
-                                        price_drop=True,
                                         already_tracked=already_tracked,
                                         trade_rate=clearing_rate)
                 cumulative_traded_offers += offer.energy
@@ -160,7 +156,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=clearing_energy - cumulative_traded_offers,
-                                        price_drop=True,
                                         already_tracked=already_tracked,
                                         trade_rate=clearing_rate)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)

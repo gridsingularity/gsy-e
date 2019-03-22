@@ -25,7 +25,8 @@ from d3a.models.market.one_sided import OneSidedMarket
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import BalancingOffer, BalancingTrade
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
-    OfferNotFoundException, InvalidBalancingTradeException, DeviceNotInRegistryError
+    OfferNotFoundException, InvalidBalancingTradeException, \
+    DeviceNotInRegistryError, ChainTradeException
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 log = getLogger(__name__)
@@ -42,11 +43,12 @@ class BalancingMarket(OneSidedMarket):
 
         super().__init__(time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str):
+    def offer(self, price: float, energy: float, seller: str, iaa_fee: bool = False):
         assert False
 
     def balancing_offer(self, price: float, energy: float,
-                        seller: str, from_agent: bool=False) -> BalancingOffer:
+                        seller: str, from_agent: bool=False,
+                        iaa_fee: bool = False) -> BalancingOffer:
         if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
@@ -54,6 +56,9 @@ class BalancingMarket(OneSidedMarket):
             raise MarketReadOnlyException()
         if energy == 0:
             raise InvalidOffer()
+        if iaa_fee:
+            price = price * (1 + self.transfer_fee_ratio)
+
         offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller, self)
         self.offers[offer.id] = offer
         self._sorted_offers = \
@@ -64,9 +69,10 @@ class BalancingMarket(OneSidedMarket):
         return offer
 
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
-                     energy: int = None, time: DateTime = None, price_drop:
-                     bool = False, already_tracked: bool = False,
-                     trade_rate: float = None) -> BalancingTrade:
+                     energy: int = None, time: DateTime = None, already_tracked: bool = False,
+                     trade_rate: float = None, iaa_fee: bool = False) -> BalancingTrade:
+        if iaa_fee and trade_rate is None:
+            raise ChainTradeException()
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -84,14 +90,22 @@ class BalancingMarket(OneSidedMarket):
             if time is None:
                 time = self._now
             if energy is not None:
+
+                # reducing trade_rate to be charged in terms of grid_fee
+                if iaa_fee:
+                    source_rate = trade_rate / (1 + self.transfer_fee_ratio)
+                    self._grid_fee += (trade_rate - source_rate) * energy
+                else:
+                    source_rate = offer.price / offer.energy
                 # Partial trade
                 if energy == 0:
                     raise InvalidBalancingTradeException("Energy can not be zero.")
+
                 elif abs(energy) < abs(offer.energy):
                     original_offer = offer
                     accepted_offer = Offer(
                         offer.id,
-                        abs((offer.price / offer.energy) * energy),
+                        abs(source_rate * energy),
                         energy,
                         offer.seller,
                         offer.market
@@ -130,7 +144,7 @@ class BalancingMarket(OneSidedMarket):
             raise
         trade = BalancingTrade(id=str(uuid.uuid4()), time=time, offer=offer,
                                seller=offer.seller, buyer=buyer,
-                               residual=residual_offer, price_drop=price_drop)
+                               residual=residual_offer)
         self.trades.append(trade)
         self._update_accumulated_trade_price_energy(trade)
         log.warning(f"[BALANCING_TRADE][{self.time_slot_str}] {trade}")

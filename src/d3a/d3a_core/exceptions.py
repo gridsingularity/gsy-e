@@ -63,3 +63,7 @@ class InvalidBalancingTradeException(MarketException):
 
 class DeviceNotInRegistryError(MarketException):
     pass
+
+
+class ChainTradeException(MarketException):
+    pass

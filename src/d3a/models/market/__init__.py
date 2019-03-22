@@ -49,6 +49,8 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
+        self.transfer_fee_ratio = area.transfer_fee_pct / 100
+        self._grid_fee = 0
         # Store trades temporarily until bc event has fired
         self.ious = defaultdict(lambda: defaultdict(int))
         self.traded_energy = defaultdict(int)
