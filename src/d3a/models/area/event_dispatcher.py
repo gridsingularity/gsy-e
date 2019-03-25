@@ -113,7 +113,8 @@ class AreaDispatcher:
                 self.area.strategy.event_listener(event_type, **kwargs)
             if self.area.appliance:
                 self.area.appliance.event_listener(event_type, **kwargs)
-        elif not self.area.events.is_enabled and event_type == AreaEvent.MARKET_CYCLE:
+        elif (not self.area.events.is_enabled or not self.area.events.is_connected) \
+                and event_type == AreaEvent.MARKET_CYCLE:
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod

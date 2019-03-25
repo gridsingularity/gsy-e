@@ -49,29 +49,6 @@ class LoadState:
         self.desired_energy_Wh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
 
 
-class FridgeState:
-    def __init__(self):
-        self.temperature = ConstSettings.FridgeSettings.TEMPERATURE
-        self.temp_history = defaultdict(lambda: '-')
-        self.min_temperature = ConstSettings.FridgeSettings.MIN_TEMP
-        self.max_temperature = ConstSettings.FridgeSettings.MAX_TEMP
-
-    @property
-    def normalized_temperature(self):
-        # between -1 (min_temperature) and +1 (max_temperature)
-
-        domain = self.max_temperature - self.min_temperature
-        center = 0.5 * (self.max_temperature + self.min_temperature)
-        return 2 * (self.temperature - center) / domain
-
-    def market_cycle(self, area):
-        self.temp_history[area.current_market.time_slot] = self.temperature
-
-    def tick(self, area):
-        # The not cooled fridge warms up (0.02 / 60)C up every second
-        self.temperature += area.config.tick_length.in_seconds() * round((0.02 / 60), 6)
-
-
 class StorageState:
     def __init__(self,
                  initial_capacity_kWh=None,
