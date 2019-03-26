@@ -402,3 +402,7 @@ def convert_datetime_to_str_keys(indict, outdict):
                 convert_datetime_to_str_keys(indict[key], outdict[key])
 
     return outdict
+
+
+def round_floats_for_ui(number):
+    return round(number, 3)

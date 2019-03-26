@@ -22,7 +22,7 @@ from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, round_floats_for_ui
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
@@ -246,8 +246,10 @@ def _generate_produced_energy_entries(accumulated_trades):
         "areaName": area_name,
         "energy": area_data["produced"],
         "targetArea": area_name,
-        "energyLabel": f"{area_name} produced {str(round(abs(area_data['produced']), 3))} kWh",
-        "priceLabel": f"{area_name} earned {str(round(abs(area_data['earned']), 3))} cents",
+        "energyLabel": f"{area_name} produced "
+                       f"{str(round_floats_for_ui(abs(area_data['produced'])))} kWh",
+        "priceLabel": f"{area_name} earned "
+                      f"{str(round_floats_for_ui(abs(area_data['earned'])))} cents",
     } for area_name, area_data in accumulated_trades.items()]
     return sorted(produced_energy, key=lambda a: a["areaName"])
 
@@ -265,9 +267,10 @@ def _generate_self_consumption_entries(accumulated_trades):
             "areaName": area_name,
             "energy": sc_energy,
             "targetArea": area_name,
-            "energyLabel": f"{area_name} consumed {str(round(sc_energy, 3))} kWh from {area_name}",
-            "priceLabel": f"{area_name} spent {str(round(sc_money, 3))} cents on "
-                          f"energy from {area_name}",
+            "energyLabel": f"{area_name} consumed "
+                           f"{str(round_floats_for_ui(sc_energy))} kWh from {area_name}",
+            "priceLabel": f"{area_name} spent {str(round_floats_for_ui(sc_money))} "
+                          f"cents on energy from {area_name}",
         })
     return sorted(self_consumed_energy, key=lambda a: a["areaName"])
 
@@ -297,9 +300,9 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
                 "areaName": area_name,
                 "energy": consumption,
                 "targetArea": target_area,
-                "energyLabel": f"{area_name} consumed {str(round(consumption, 3))} kWh "
+                "energyLabel": f"{area_name} consumed {str(round_floats_for_ui(consumption))} kWh "
                                f"from {target_area}",
-                "priceLabel": f"{area_name} spent {str(round(spent_to, 3))} cents on "
+                "priceLabel": f"{area_name} spent {str(round_floats_for_ui(spent_to))} cents on "
                               f"energy from {p_target_area}"
             })
         consumption_rows.append(sorted(consumption_row, key=lambda x: x["areaName"]))
@@ -326,31 +329,35 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
     results["bars"] = []
     if abs(area_data["produced"]) > FLOATING_POINT_TOLERANCE:
         results["bars"].append(
-            {"energy": round(area_data["produced"], 3), "targetArea": child.name,
+            {"energy": round_floats_for_ui(area_data["produced"]), "targetArea": child.name,
              "energyLabel":
-                 f"{child.name} produced {str(round(abs(area_data['produced']), 3))} kWh",
+                 f"{child.name} produced "
+                 f"{str(round_floats_for_ui(abs(area_data['produced'])))} kWh",
              "priceLabel":
-                 f"{child.name} earned {str(round(abs(area_data['earned']), 3))} cents"}
+                 f"{child.name} earned "
+                 f"{str(round_floats_for_ui(abs(area_data['earned'])))} cents"}
         )
     if child.name in area_data["consumedFrom"]:
-        energy = round(area_data["consumedFrom"][child.name], 3)
-        money = round(area_data["spentTo"][child.name], 3)
+        energy = round_floats_for_ui(area_data["consumedFrom"][child.name])
+        money = round_floats_for_ui(area_data["spentTo"][child.name])
         results["bars"].append({
-            "energy": round(energy, 3),
+            "energy": round_floats_for_ui(energy),
             "targetArea": child.name,
-            "energyLabel": f"{child.name} consumed {str(round(energy, 3))} kWh from {child.name}",
-            "priceLabel": f"{child.name} spent {str(round(money, 3))} cents on "
-                          f"energy from {child.name}",
+            "energyLabel": f"{child.name} consumed "
+                           f"{str(round_floats_for_ui(energy))} kWh from {child.name}",
+            "priceLabel": f"{child.name} spent "
+                          f"{str(round_floats_for_ui(money))} cents on energy from {child.name}",
         })
     # Consumer entries
     for producer, energy in area_data["consumedFrom"].items():
-        money = round(area_data["spentTo"][producer], 3)
+        money = round_floats_for_ui(area_data["spentTo"][producer])
         results["bars"].append({
-            "energy": round(energy, 3),
+            "energy": round_floats_for_ui(energy),
             "targetArea": producer,
-            "energyLabel": f"{child.name} consumed {str(round(energy, 3))} kWh from {producer}",
-            "priceLabel": f"{child.name} spent {str(round(money, 3))} cents on "
-                          f"energy from {producer}",
+            "energyLabel": f"{child.name} consumed "
+                           f"{str(round_floats_for_ui(energy))} kWh from {producer}",
+            "priceLabel": f"{child.name} spent "
+                          f"{str(round_floats_for_ui(money))} cents on energy from {producer}",
         })
 
     return results

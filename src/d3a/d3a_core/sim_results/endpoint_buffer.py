@@ -21,7 +21,7 @@ from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trad
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import energy_bills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
-from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a.d3a_core.util import convert_datetime_to_str_keys, round_floats_for_ui
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
 from collections import OrderedDict
 from statistics import mean
@@ -186,19 +186,19 @@ class SimulationEndpointBuffer:
                 for dev in profile[k][sold_bought].keys():
                     for timestamp in profile[k][sold_bought][dev].keys():
                         profile[k][sold_bought][dev][timestamp] = \
-                            round(profile[k][sold_bought][dev][timestamp], 3)
+                            round_floats_for_ui(profile[k][sold_bought][dev][timestamp])
         return profile
 
     @classmethod
     def _round_area_bill_result_redis(cls, results):
         for i, _ in enumerate(results):
             for k in results[i].keys():
-                results[i][k]['bought'] = round(results[i][k]['bought'], 3)
-                results[i][k]['sold'] = round(results[i][k]['sold'], 3)
-                results[i][k]['spent'] = round(results[i][k]['spent'], 3)
-                results[i][k]['earned'] = round(results[i][k]['earned'], 3)
-                results[i][k]['total_energy'] = round(results[i][k]['total_energy'], 3)
-                results[i][k]['total_cost'] = round(results[i][k]['total_cost'], 3)
+                results[i][k]['bought'] = round_floats_for_ui(results[i][k]['bought'])
+                results[i][k]['sold'] = round_floats_for_ui(results[i][k]['sold'])
+                results[i][k]['spent'] = round_floats_for_ui(results[i][k]['spent'])
+                results[i][k]['earned'] = round_floats_for_ui(results[i][k]['earned'])
+                results[i][k]['total_energy'] = round_floats_for_ui(results[i][k]['total_energy'])
+                results[i][k]['total_cost'] = round_floats_for_ui(results[i][k]['total_cost'])
         return results
 
     def _generate_external_and_total_bills(self, area, results, flattened):
