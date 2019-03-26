@@ -125,7 +125,8 @@ class SimulationEndpointBuffer:
 
         exported_endpoints = FileExportEndpoints(area)
         self.energy_trade_profile = exported_endpoints.traded_energy_profile
-        self.energy_trade_profile_redis = exported_endpoints.traded_energy_profile_redis
+        self.energy_trade_profile_redis = self._round_energy_trade_profile(
+            exported_endpoints.traded_energy_profile_redis)
 
     def _update_tree_summary(self, area):
         price_energy_list = export_price_energy_day(area)
@@ -178,8 +179,29 @@ class SimulationEndpointBuffer:
                 )
         return results
 
-    def _generate_external_and_total_bills(self, area, results, flattened):
+    @classmethod
+    def _round_energy_trade_profile(cls, profile):
+        for k in profile.keys():
+            for sold_bought in ['sold_energy', 'bought_energy']:
+                for dev in profile[k][sold_bought].keys():
+                    for timestamp in profile[k][sold_bought][dev].keys():
+                        profile[k][sold_bought][dev][timestamp] = \
+                            round(profile[k][sold_bought][dev][timestamp], 3)
+        return profile
 
+    @classmethod
+    def _round_area_bill_result_redis(cls, results):
+        for i, _ in enumerate(results):
+            for k in results[i].keys():
+                results[i][k]['bought'] = round(results[i][k]['bought'], 3)
+                results[i][k]['sold'] = round(results[i][k]['sold'], 3)
+                results[i][k]['spent'] = round(results[i][k]['spent'], 3)
+                results[i][k]['earned'] = round(results[i][k]['earned'], 3)
+                results[i][k]['total_energy'] = round(results[i][k]['total_energy'], 3)
+                results[i][k]['total_cost'] = round(results[i][k]['total_cost'], 3)
+        return results
+
+    def _generate_external_and_total_bills(self, area, results, flattened):
         all_child_results = [v for i in results[area.uuid] for _, v in i.items()]
         results[area.uuid].append({"Accumulated Trades": {
             'bought': sum(v['bought'] for v in all_child_results),
@@ -192,5 +214,5 @@ class SimulationEndpointBuffer:
 
         if area.name in flattened:
             results[area.uuid].append({"External Trades": flattened[area.name]})
-
+        results[area.uuid] = self._round_area_bill_result_redis(results[area.uuid])
         return results

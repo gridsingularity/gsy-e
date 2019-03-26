@@ -326,17 +326,17 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
     results["bars"] = []
     if abs(area_data["produced"]) > FLOATING_POINT_TOLERANCE:
         results["bars"].append(
-            {"energy": area_data["produced"], "targetArea": child.name,
+            {"energy": round(area_data["produced"], 3), "targetArea": child.name,
              "energyLabel":
                  f"{child.name} produced {str(round(abs(area_data['produced']), 3))} kWh",
              "priceLabel":
                  f"{child.name} earned {str(round(abs(area_data['earned']), 3))} cents"}
         )
     if child.name in area_data["consumedFrom"]:
-        energy = area_data["consumedFrom"][child.name]
-        money = area_data["spentTo"][child.name]
+        energy = round(area_data["consumedFrom"][child.name], 3)
+        money = round(area_data["spentTo"][child.name], 3)
         results["bars"].append({
-            "energy": energy,
+            "energy": round(energy, 3),
             "targetArea": child.name,
             "energyLabel": f"{child.name} consumed {str(round(energy, 3))} kWh from {child.name}",
             "priceLabel": f"{child.name} spent {str(round(money, 3))} cents on "
@@ -344,9 +344,9 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
         })
     # Consumer entries
     for producer, energy in area_data["consumedFrom"].items():
-        money = area_data["spentTo"][producer]
+        money = round(area_data["spentTo"][producer], 3)
         results["bars"].append({
-            "energy": energy,
+            "energy": round(energy, 3),
             "targetArea": producer,
             "energyLabel": f"{child.name} consumed {str(round(energy, 3))} kWh from {producer}",
             "priceLabel": f"{child.name} spent {str(round(money, 3))} cents on "
