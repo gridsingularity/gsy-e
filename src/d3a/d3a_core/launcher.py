@@ -40,9 +40,7 @@ class Launcher:
         self.max_delay = timedelta(seconds=max_delay_seconds)
         python_executable = sys.executable \
             if platform.python_implementation() != "PyPy" \
-            else "pypy3"
-        print("HERE IS THE pypy interpreter.")
-        print(python_executable)
+            else "/usr/local/bin/pypy3"
         self.command = [python_executable, 'src/d3a/d3a_core/d3a_jobs.py']
         self.job_array = []
 
@@ -64,7 +62,9 @@ class Launcher:
         return False
 
     def _start_worker(self):
-        return Popen(self.command, env={'REDIS_URL': REDIS_URL})
+        job_environment = os.environ
+        job_environment['REDIS_URL'] = REDIS_URL
+        return Popen(self.command, env=job_environment)
 
 
 @click.command()
