@@ -24,12 +24,8 @@ from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
-
 import platform
-if platform.python_implementation() != "PyPy":
-    python_executable = sys.executable
-else:
-    python_executable = "pypy3"
+
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
@@ -37,12 +33,17 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 class Launcher:
     def __init__(self,
                  queue=None,
-                 max_jobs=4,
+                 max_jobs=2,
                  max_delay_seconds=2):
         self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
         self.max_jobs = max_jobs
         self.max_delay = timedelta(seconds=max_delay_seconds)
-        self.command = [sys.executable, 'src/d3a/d3a_core/d3a_jobs.py']
+        python_executable = sys.executable \
+            if platform.python_implementation() != "PyPy" \
+            else "pypy3"
+        print("HERE IS THE pypy interpreter.")
+        print(python_executable)
+        self.command = [python_executable, 'src/d3a/d3a_core/d3a_jobs.py']
         self.job_array = []
 
     def run(self):
