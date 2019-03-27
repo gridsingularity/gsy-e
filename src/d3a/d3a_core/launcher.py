@@ -25,6 +25,11 @@ from rq import Queue
 from subprocess import Popen
 from time import sleep
 
+import platform
+if platform.python_implementation() != "PyPy":
+    python_executable = sys.executable
+else:
+    python_executable = "pypy3"
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
