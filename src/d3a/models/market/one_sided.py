@@ -27,10 +27,7 @@ from d3a.models.market import Market
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, ChainTradeException
 from d3a.constants import FLOATING_POINT_TOLERANCE
-
-import platform
-if platform.python_implementation() != "PyPy":
-    from d3a.models.market.blockchain_interface import MarketBlockchainInterface
+from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 
 log = getLogger(__name__)
 

@@ -62,7 +62,6 @@ class Simulation:
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: duration = None,
                  repl: bool = False, no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False):
-
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -149,7 +148,7 @@ class Simulation:
             log.error("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        self.bc = None  # type: BlockChainInterface
+        self.bc = None
         if self.use_bc:
             self.bc = BlockChainInterface()
         log.info("Starting simulation with config %s", self.simulation_config)

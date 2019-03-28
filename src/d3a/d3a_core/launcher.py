@@ -40,7 +40,7 @@ class Launcher:
         self.max_delay = timedelta(seconds=max_delay_seconds)
         python_executable = sys.executable \
             if platform.python_implementation() != "PyPy" \
-            else "/usr/local/bin/pypy3"
+            else "pypy3"
         self.command = [python_executable, 'src/d3a/d3a_core/d3a_jobs.py']
         self.job_array = []
 
