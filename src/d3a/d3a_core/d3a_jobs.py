@@ -82,6 +82,7 @@ def start(scenario, settings):
         import traceback
         from d3a.d3a_core.redis_communication import publish_job_error_output
         publish_job_error_output(job.id, traceback.format_exc())
+        logging.getLogger().error(f"Error on jobId {job.id}: {traceback.format_exc()}")
 
 
 @job('d3a')
