@@ -92,6 +92,7 @@ class Simulation:
         self._load_setup_module()
         self._init(**self.initial_params)
         self._init_events()
+        validate_const_settings_for_simulation()
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
@@ -195,6 +196,7 @@ class Simulation:
                 self.deactivate_areas(child)
 
     def run(self, resume=False) -> (Period, duration):
+        # validate_const_settings_for_simulation()
         if resume:
             log.critical("Resuming simulation")
             self._info()
@@ -460,7 +462,6 @@ def run_simulation(setup_module_name="", simulation_config=None, slowdown=None,
         if "pricing_scheme" in kwargs:
             ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = \
                 kwargs.pop("pricing_scheme")
-        validate_const_settings_for_simulation()
         simulation = Simulation(
             setup_module_name=setup_module_name,
             simulation_config=simulation_config,
