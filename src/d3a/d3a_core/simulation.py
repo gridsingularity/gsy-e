@@ -196,7 +196,6 @@ class Simulation:
                 self.deactivate_areas(child)
 
     def run(self, resume=False) -> (Period, duration):
-        # validate_const_settings_for_simulation()
         if resume:
             log.critical("Resuming simulation")
             self._info()
