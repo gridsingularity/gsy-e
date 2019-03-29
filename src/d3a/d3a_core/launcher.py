@@ -24,6 +24,7 @@ from redis import StrictRedis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
+import platform
 
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
@@ -37,14 +38,17 @@ class Launcher:
         self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
         self.max_jobs = max_jobs
         self.max_delay = timedelta(seconds=max_delay_seconds)
-        self.command = [sys.executable, 'src/d3a/d3a_core/d3a_jobs.py']
+        python_executable = sys.executable \
+            if platform.python_implementation() != "PyPy" \
+            else "pypy3"
+        self.command = [python_executable, 'src/d3a/d3a_core/d3a_jobs.py']
         self.job_array = []
 
     def run(self):
         self.job_array.append(self._start_worker())
         while True:
             sleep(1)
-            if len(self.job_array) <= self.max_jobs and self.is_crowded():
+            if len(self.job_array) < self.max_jobs and self.is_crowded():
                 self.job_array.append(self._start_worker())
 
             self.job_array = [j for j in self.job_array if j.poll() is None]
@@ -58,7 +62,9 @@ class Launcher:
         return False
 
     def _start_worker(self):
-        return Popen(self.command, env={'REDIS_URL': REDIS_URL})
+        job_environment = os.environ
+        job_environment['REDIS_URL'] = REDIS_URL
+        return Popen(self.command, env=job_environment)
 
 
 @click.command()

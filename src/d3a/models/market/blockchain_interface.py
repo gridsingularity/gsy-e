@@ -16,12 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
-
-from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
-    cancel_offer, trade_offer
-
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
+import platform
+
+if platform.python_implementation() != "PyPy":
+    from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
+        cancel_offer, trade_offer
 
 
 BC_EVENT_MAP = {
