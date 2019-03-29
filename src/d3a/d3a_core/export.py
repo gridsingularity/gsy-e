@@ -311,7 +311,7 @@ class ExportAndPlot:
         """
 
         new_subdir = os.path.join(subdir, area.slug)
-        self._plot_energy_profile(new_subdir, area.slug)
+        self._plot_energy_profile(new_subdir, area.name)
         for child in area.children:
             if child.children:
                 self.plot_energy_profile(child, new_subdir)
