@@ -1,0 +1,13 @@
+FROM pypy:3.6
+
+ADD . /app
+
+WORKDIR /app
+
+# TODO: Workaround for pysolc due to https://github.com/ethereum/py-solc/issues/64
+RUN pip install -r/app/requirements/dev.txt && \
+    pip install -e . && \
+    pip install git+https://github.com/Jonasmpi/py-solc.git
+
+ENTRYPOINT ["pypy3", "src/d3a/d3a_core/launcher.py"]
+

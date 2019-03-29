@@ -31,7 +31,6 @@ from pendulum.period import Period
 from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
-from d3a.blockchain import BlockChainInterface
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
@@ -44,6 +43,9 @@ from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.area_serializer import are_all_areas_unique
 from d3a.d3a_core.exceptions import D3AException
+import platform
+if platform.python_implementation() != "PyPy":
+    from d3a.blockchain import BlockChainInterface
 
 log = getLogger(__name__)
 
@@ -60,7 +62,6 @@ class Simulation:
                  slowdown: int = 0, seed=None, paused: bool = False, pause_after: duration = None,
                  repl: bool = False, no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False):
-
         self.initial_params = dict(
             slowdown=slowdown,
             seed=seed,
@@ -147,7 +148,7 @@ class Simulation:
             log.error("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        self.bc = None  # type: BlockChainInterface
+        self.bc = None
         if self.use_bc:
             self.bc = BlockChainInterface()
         log.info("Starting simulation with config %s", self.simulation_config)
