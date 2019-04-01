@@ -89,12 +89,16 @@ class FileExportEndpoints:
         for market in past_markets:
             for trade in market.trades:
                 trade_seller = trade.seller
+                if trade_seller.startswith("IAA "):
+                    trade_seller = trade_seller[4:]
                 if trade_seller not in out_dict["sold_energy"]:
                     out_dict["sold_energy"][trade_seller] = dict(
                         (m.time_slot, 0) for m in area.past_markets)
                 out_dict["sold_energy"][trade_seller][market.time_slot] += trade.offer.energy
 
                 trade_buyer = trade.buyer
+                if trade_buyer.startswith("IAA "):
+                    trade_buyer = trade_buyer[4:]
                 if trade_buyer not in out_dict["bought_energy"]:
                     out_dict["bought_energy"][trade_buyer] = dict(
                         (m.time_slot, 0) for m in area.past_markets)
