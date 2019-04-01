@@ -39,6 +39,7 @@ from d3a.models.const import GlobalConfig
 import d3a
 import inspect
 import os
+import calendar
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 log = getLogger(__name__)
@@ -388,14 +389,18 @@ def validate_const_settings_for_simulation():
         ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
-def convert_datetime_to_str_keys(indict, outdict):
+def convert_datetime_to_str_keys(indict, outdict, ui_format=False):
     """
     Converts all Datetime keys in a dict into strings in DATE_TIME_FORMAT
     """
 
     for key, value in indict.items():
         if isinstance(key, DateTime):
-            outdict[key.format(DATE_TIME_FORMAT)] = indict[key]
+            if not ui_format:
+                outdict[key.format(DATE_TIME_FORMAT)] = indict[key]
+            else:
+                formatted_date = f"{calendar.month_name[key.month]} {key:%d %Y, %H:%M h}"
+                outdict[formatted_date] = indict[key]
         else:
             if isinstance(indict[key], dict):
                 outdict[key] = {}

@@ -67,7 +67,9 @@ class FileExportEndpoints:
         for direction in ["sold_energy", "bought_energy"]:
             outdict[direction] = {}
             for seller, profile_dict in self.traded_energy[area.uuid][direction].items():
-                outdict[direction][seller] = convert_datetime_to_str_keys(profile_dict, {})
+                outdict[direction][seller] = convert_datetime_to_str_keys(
+                    profile_dict, {}, ui_format=True
+                )
         return outdict
 
     def _get_stats_from_market_data(self, area, balancing):
