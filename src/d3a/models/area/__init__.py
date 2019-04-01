@@ -17,13 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import warnings
 from logging import getLogger
-from typing import List, Optional  # noqa
+from typing import List  # noqa
 from cached_property import cached_property
 from pendulum import DateTime, duration, today
 from slugify import slugify
 from uuid import uuid4
 
-from d3a.blockchain import BlockChainInterface
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
@@ -85,7 +84,7 @@ class Area:
         self.budget_keeper = budget_keeper
         if budget_keeper:
             self.budget_keeper.area = self
-        self._bc = None  # type: BlockChainInterface
+        self._bc = None
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
         self.dispatcher = AreaDispatcher(self)
@@ -210,7 +209,7 @@ class Area:
         return GlobalConfig
 
     @property
-    def bc(self) -> Optional[BlockChainInterface]:
+    def bc(self):
         if self._bc is not None:
             return self._bc
         if self.parent:
