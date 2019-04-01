@@ -33,13 +33,12 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
 from d3a.models.const import GlobalConfig
 
 import d3a
 import inspect
 import os
-import calendar
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 log = getLogger(__name__)
@@ -399,8 +398,7 @@ def convert_datetime_to_str_keys(indict, outdict, ui_format=False):
             if not ui_format:
                 outdict[key.format(DATE_TIME_FORMAT)] = indict[key]
             else:
-                formatted_date = f"{calendar.month_name[key.month]} {key:%d %Y, %H:%M h}"
-                outdict[formatted_date] = indict[key]
+                outdict[key.format(DATE_TIME_UI_FORMAT)] = indict[key]
         else:
             if isinstance(indict[key], dict):
                 outdict[key] = {}
