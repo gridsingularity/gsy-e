@@ -203,7 +203,7 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
                 accumulated_trades[house.name]["spentToExternal"] += trade.offer.price
             elif area_name_from_area_or_iaa_name(trade.buyer) == house.name:
                 accumulated_trades[house.name]["producedForExternal"] -= trade.offer.energy
-                accumulated_trades[house.name]["earnedFromExternal"] -= trade.offer.price
+                accumulated_trades[house.name]["earnedFromExternal"] += trade.offer.price
 
     return accumulated_trades
 
@@ -349,7 +349,7 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
                  f"{str(round_floats_for_ui(abs(area_data['produced'])))} kWh",
              "priceLabel":
                  f"{child.name} earned "
-                 f"{str(round_floats_for_ui(abs(area_data['earned'])))} cents"}
+                 f"{str(round_floats_for_ui(area_data['earned']))} cents"}
         )
 
     # Consumer entries
@@ -381,7 +381,7 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
             "energy": outgoing_energy,
             "marketArea": child.name,
             "energyLabel": f"{child.name} sent {abs(outgoing_energy)} kWh to external consumers",
-            "priceLabel": f"{child.name} earned {abs(earned)} cents from external consumers."
+            "priceLabel": f"{child.name} earned {earned} cents from external consumers."
         })
 
     return results
