@@ -144,7 +144,6 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
 
 
 def _accumulate_producer_trades(producer, grid, accumulated_trades):
-    assert producer.name not in accumulated_trades
     accumulated_trades[producer.name] = {
         "id": producer.area_id,
         "produced": 0.0,
@@ -169,6 +168,10 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
             "earned": 0.0,
             "consumedFrom": defaultdict(int),
             "spentTo": defaultdict(int),
+            "producedForExternal": 0.0,
+            "earnedFromExternal": 0.0,
+            "consumedFromExternal": 0.0,
+            "spentToExternal": 0.0,
         }
     house_IAA_name = make_iaa_name(house)
     child_names = [c.name for c in house.children]
@@ -191,6 +194,16 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
                 seller_id = area_name_from_area_or_iaa_name(trade.seller)
                 accumulated_trades[house.name]["consumedFrom"][seller_id] += trade.offer.energy
                 accumulated_trades[house.name]["spentTo"][seller_id] += trade.offer.price
+
+    for market in getattr(house, past_market_types):
+        for trade in market.trades:
+            if area_name_from_area_or_iaa_name(trade.seller) == house.name:
+                accumulated_trades[house.name]["consumedFromExternal"] += trade.offer.energy
+                accumulated_trades[house.name]["spentToExternal"] += trade.offer.price
+            elif area_name_from_area_or_iaa_name(trade.buyer) == house.name:
+                accumulated_trades[house.name]["producedForExternal"] -= trade.offer.energy
+                accumulated_trades[house.name]["earnedFromExternal"] -= trade.offer.price
+
     return accumulated_trades
 
 
@@ -325,7 +338,6 @@ def generate_inter_area_trade_details(area, past_market_types):
 def generate_area_cumulative_trade_redis(child, accumulated_trades):
     results = {"areaName": child.name}
     area_data = accumulated_trades[child.name]
-    # Producer entries
     results["bars"] = []
     if abs(area_data["produced"]) > FLOATING_POINT_TOLERANCE:
         results["bars"].append(
@@ -337,17 +349,7 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
                  f"{child.name} earned "
                  f"{str(round_floats_for_ui(abs(area_data['earned'])))} cents"}
         )
-    if child.name in area_data["consumedFrom"]:
-        energy = round_floats_for_ui(area_data["consumedFrom"][child.name])
-        money = round_floats_for_ui(area_data["spentTo"][child.name])
-        results["bars"].append({
-            "energy": round_floats_for_ui(energy),
-            "targetArea": child.name,
-            "energyLabel": f"{child.name} consumed "
-                           f"{str(round_floats_for_ui(energy))} kWh from {child.name}",
-            "priceLabel": f"{child.name} spent "
-                          f"{str(round_floats_for_ui(money))} cents on energy from {child.name}",
-        })
+
     # Consumer entries
     for producer, energy in area_data["consumedFrom"].items():
         money = round_floats_for_ui(area_data["spentTo"][producer])
@@ -358,6 +360,27 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
                            f"{str(round_floats_for_ui(energy))} kWh from {producer}",
             "priceLabel": f"{child.name} spent "
                           f"{str(round_floats_for_ui(money))} cents on energy from {producer}",
+        })
+
+    # External Trades entries
+    if "consumedFromExternal" in area_data:
+        incoming_energy = round_floats_for_ui(area_data["consumedFromExternal"])
+        spent = round_floats_for_ui(area_data["spentToExternal"])
+        results["bars"].append({
+            "energy": incoming_energy,
+            "marketArea": child.name,
+            "energyLabel": f"{child.name} consumed {abs(incoming_energy)} "
+                           f"kWh from external sources",
+            "priceLabel": f"{child.name} spent {abs(spent)} cents to external sources"
+
+        })
+        outgoing_energy = round_floats_for_ui(area_data["producedForExternal"])
+        earned = round_floats_for_ui(area_data["earnedFromExternal"])
+        results["bars"].append({
+            "energy": outgoing_energy,
+            "marketArea": child.name,
+            "energyLabel": f"{child.name} sent {abs(outgoing_energy)} kWh to external consumers",
+            "priceLabel": f"{child.name} earned {abs(earned)} cents from external consumers."
         })
 
     return results
