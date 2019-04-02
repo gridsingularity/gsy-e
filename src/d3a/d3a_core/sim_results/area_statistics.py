@@ -144,6 +144,7 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
 
 
 def _accumulate_producer_trades(producer, grid, accumulated_trades):
+    assert producer.name not in accumulated_trades
     accumulated_trades[producer.name] = {
         "id": producer.area_id,
         "produced": 0.0,
@@ -339,6 +340,7 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
     results = {"areaName": child.name}
     area_data = accumulated_trades[child.name]
     results["bars"] = []
+    # Producer entries
     if abs(area_data["produced"]) > FLOATING_POINT_TOLERANCE:
         results["bars"].append(
             {"energy": round_floats_for_ui(area_data["produced"]), "targetArea": child.name,
@@ -361,7 +363,6 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
             "priceLabel": f"{child.name} spent "
                           f"{str(round_floats_for_ui(money))} cents on energy from {producer}",
         })
-
     # External Trades entries
     if "consumedFromExternal" in area_data:
         incoming_energy = round_floats_for_ui(area_data["consumedFromExternal"])
