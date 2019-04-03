@@ -33,7 +33,7 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
 from d3a.models.const import GlobalConfig
 
 import d3a
@@ -388,14 +388,17 @@ def validate_const_settings_for_simulation():
         ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
-def convert_datetime_to_str_keys(indict, outdict):
+def convert_datetime_to_str_keys(indict, outdict, ui_format=False):
     """
     Converts all Datetime keys in a dict into strings in DATE_TIME_FORMAT
     """
 
     for key, value in indict.items():
         if isinstance(key, DateTime):
-            outdict[key.format(DATE_TIME_FORMAT)] = indict[key]
+            if not ui_format:
+                outdict[key.format(DATE_TIME_FORMAT)] = indict[key]
+            else:
+                outdict[key.format(DATE_TIME_UI_FORMAT)] = indict[key]
         else:
             if isinstance(indict[key], dict):
                 outdict[key] = {}
