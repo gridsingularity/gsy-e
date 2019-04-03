@@ -55,10 +55,10 @@ class FileExportEndpoints:
     def update_sold_bought_energy(self, area: Area):
         self.traded_energy[area.uuid] = \
             self._calculate_devices_sold_bought_energy(area, area.past_markets)
-        self.traded_energy[area.slug] = self.traded_energy[area.uuid]
-        self.balancing_traded_energy[area.slug] = \
+        self.traded_energy[area.name] = self.traded_energy[area.uuid]
+        self.balancing_traded_energy[area.name] = \
             self._calculate_devices_sold_bought_energy(area, area.past_balancing_markets)
-        self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.slug]
+        self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
         self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(area)
         self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
 
@@ -67,7 +67,9 @@ class FileExportEndpoints:
         for direction in ["sold_energy", "bought_energy"]:
             outdict[direction] = {}
             for seller, profile_dict in self.traded_energy[area.uuid][direction].items():
-                outdict[direction][seller] = convert_datetime_to_str_keys(profile_dict, {})
+                outdict[direction][seller] = convert_datetime_to_str_keys(
+                    profile_dict, {}, ui_format=True
+                )
         return outdict
 
     def _get_stats_from_market_data(self, area, balancing):
@@ -86,13 +88,17 @@ class FileExportEndpoints:
         out_dict = {"sold_energy": {}, "bought_energy": {}}
         for market in past_markets:
             for trade in market.trades:
-                trade_seller = slugify(trade.seller, to_lower=True)
+                trade_seller = trade.seller
+                if trade_seller.startswith("IAA "):
+                    trade_seller = trade_seller[4:]
                 if trade_seller not in out_dict["sold_energy"]:
                     out_dict["sold_energy"][trade_seller] = dict(
                         (m.time_slot, 0) for m in area.past_markets)
                 out_dict["sold_energy"][trade_seller][market.time_slot] += trade.offer.energy
 
-                trade_buyer = slugify(trade.buyer, to_lower=True)
+                trade_buyer = trade.buyer
+                if trade_buyer.startswith("IAA "):
+                    trade_buyer = trade_buyer[4:]
                 if trade_buyer not in out_dict["bought_energy"]:
                     out_dict["bought_energy"][trade_buyer] = dict(
                         (m.time_slot, 0) for m in area.past_markets)
