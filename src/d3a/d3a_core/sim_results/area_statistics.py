@@ -155,7 +155,7 @@ def _accumulate_producer_trades(producer, grid, accumulated_trades):
     for market in grid.past_markets:
         for trade in market.trades:
             if trade.offer.seller == producer.name:
-                accumulated_trades[producer.name]["produced"] += trade.offer.energy
+                accumulated_trades[producer.name]["produced"] -= trade.offer.energy
                 accumulated_trades[producer.name]["earned"] += trade.offer.price
     return accumulated_trades
 
