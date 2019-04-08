@@ -29,7 +29,8 @@ from d3a.d3a_core.util import change_global_config
 
 class SimulationConfig:
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
-                 market_count: int, cloud_coverage: int, iaa_fee: int,
+                 market_count: int, cloud_coverage: int,
+                 iaa_fee: int=ConstSettings.IAASettings.FEE_PERCENTAGE,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE)):
         self.sim_duration = sim_duration
@@ -55,10 +56,7 @@ class SimulationConfig:
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
-        if iaa_fee is None:
-            self.iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
-        else:
-            self.iaa_fee = iaa_fee
+        self.read_iaa_fee(iaa_fee)
 
     def __repr__(self):
         return (
@@ -110,3 +108,6 @@ class SimulationConfig:
         self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                         market_maker_rate_parsed)
         self.market_maker_rate = {k: float(v) for k, v in self.market_maker_rate.items()}
+
+    def read_iaa_fee(self, iaa_fee):
+        self.iaa_fee = iaa_fee
