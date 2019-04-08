@@ -531,7 +531,6 @@ class PlotlyGraph:
                 domain=[0.0, 0.33],
                 side='left',
                 showgrid=True,
-                rangemode='tozero',
                 autorange=True
             ),
             font=dict(
