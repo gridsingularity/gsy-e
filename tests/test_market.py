@@ -51,6 +51,7 @@ class FakeArea:
         self.bc = False
         self.now = DateTime.now()
         self.transfer_fee_pct = 1
+        self.transfer_fee_const = 0
         DeviceRegistry.REGISTRY = device_registry_dict
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
 

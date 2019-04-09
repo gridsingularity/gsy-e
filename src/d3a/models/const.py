@@ -106,6 +106,7 @@ class ConstSettings:
     class IAASettings:
         # Percentage value that controls the fee the IAA adds to the offers and bids.
         FEE_PERCENTAGE = 1
+        FEE_CONSTANT = 0
         # Market type option
         # Default value 1 stands for single sided market
         # Option 2 stands for double sided pay as bid market
@@ -156,4 +157,5 @@ class GlobalConfig:
     total_ticks = 86400
     cloud_coverage = ConstSettings.PVSettings.DEFAULT_POWER_PROFILE
     iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
+    iaa_fee_const = ConstSettings.IAASettings.FEE_CONSTANT
     market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE

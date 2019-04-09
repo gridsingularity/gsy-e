@@ -60,7 +60,7 @@ class OneSidedMarket(Market):
         if energy <= 0:
             raise InvalidOffer()
         if iaa_fee:
-            price = price * (1 + self.transfer_fee_ratio)
+            price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)
@@ -131,7 +131,8 @@ class OneSidedMarket(Market):
 
                     # reducing trade_rate to be charged in terms of grid_fee
                     if iaa_fee:
-                        source_rate = trade_rate / (1 + self.transfer_fee_ratio)
+                        source_rate = trade_rate / (1 + self.transfer_fee_ratio) \
+                                      - self.transfer_fee_const
                         self._grid_fee += (trade_rate - source_rate) * energy
                     else:
                         source_rate = trade_rate
@@ -171,7 +172,7 @@ class OneSidedMarket(Market):
                         if iaa_fee:
                             # adjusted in grid fee
                             offer.price = trade_rate * offer.energy / \
-                                          (1 + self.transfer_fee_ratio)
+                                          (1 + self.transfer_fee_ratio) + self.transfer_fee_const
                             self._grid_fee += \
                                 trade_rate * (self.transfer_fee_ratio) * offer.energy
                         else:
