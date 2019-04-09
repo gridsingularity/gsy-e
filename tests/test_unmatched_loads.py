@@ -154,3 +154,19 @@ class TestUnmatchedLoad(unittest.TestCase):
             self.grid._markets.past_markets[timeslot] = mock_market
         unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
         assert get_number_of_unmatched_loads(unmatched_loads) == 20
+
+    def test_export_unmatched_loads_is_reporting_correctly_the_device_types(self):
+        self.area1.display_type = "Area 1 type"
+        self.area3.display_type = "Area 3 type"
+        house1 = Area("House1", [self.area1, self.area3])
+        self.grid = Area("Grid", [house1])
+        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
+        assert get_number_of_unmatched_loads(unmatched_loads) == 0
+        assert "type" not in unmatched_loads["House1"]
+        assert unmatched_loads["House1"]["load1"]["type"] == "Area 1 type"
+        assert unmatched_loads["House1"]["load3"]["type"] == "Area 3 type"
+        assert unmatched_loads_redis[house1.uuid]["load1"]["type"] == "Area 1 type"
+        assert unmatched_loads_redis[house1.uuid]["load3"]["type"] == "Area 3 type"
+        assert "type" not in unmatched_loads["Grid"]
+        assert unmatched_loads["Grid"]["House1"]["type"] == "Area"
+        assert unmatched_loads_redis[self.grid.uuid]["House1"]["type"] == "Area"

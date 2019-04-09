@@ -29,6 +29,7 @@ from d3a.models.strategy import BaseStrategy
 class FakeArea:
     def __init__(self, name, children=None, past_markets=None):
         self.name = name
+        self.display_type = "Area"
         self.children = children
         self.past_markets = past_markets
         self.strategy = MagicMock(spec=BaseStrategy)
@@ -138,6 +139,8 @@ def test_energy_bills(grid):
 def grid2():
     house1 = FakeArea('house1')
     house2 = FakeArea('house2')
+    house1.display_type = "House 1 type"
+    house2.display_type = "House 2 type"
     return FakeArea(
         'street',
         children=[house1, house2],
@@ -150,3 +153,9 @@ def grid2():
 def test_energy_bills_finds_iaas(grid2):
     result = energy_bills(grid2, "past_markets")
     assert result['house1']['bought'] == result['house2']['sold'] == 3
+
+
+def test_energy_bills_ensure_device_types_are_populated(grid2):
+    result = energy_bills(grid2, "past_markets")
+    assert result["house1"]["type"] == "House 1 type"
+    assert result["house2"]["type"] == "House 2 type"
