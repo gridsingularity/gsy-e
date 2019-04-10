@@ -56,7 +56,7 @@ class SimulationConfig:
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
-        self.iaa_fee = iaa_fee
+        self.iaa_fee = iaa_fee if iaa_fee is not None else ConstSettings.IAASettings.FEE_PERCENTAGE
 
     def __repr__(self):
         return (
