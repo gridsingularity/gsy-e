@@ -57,7 +57,7 @@ class BalancingMarket(OneSidedMarket):
         if energy == 0:
             raise InvalidOffer()
         if iaa_fee:
-            price = price * (1 + self.transfer_fee_ratio)
+            price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
 
         offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller, self)
         self.offers[offer.id] = offer
@@ -93,7 +93,8 @@ class BalancingMarket(OneSidedMarket):
 
                 # reducing trade_rate to be charged in terms of grid_fee
                 if iaa_fee:
-                    source_rate = trade_rate / (1 + self.transfer_fee_ratio)
+                    source_rate = trade_rate / (1 + self.transfer_fee_ratio) \
+                                  - self.transfer_fee_const
                     self._grid_fee += (trade_rate - source_rate) * energy
                 else:
                     source_rate = offer.price / offer.energy

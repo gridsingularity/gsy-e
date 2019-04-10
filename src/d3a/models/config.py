@@ -32,6 +32,7 @@ class SimulationConfig:
                  market_count: int, cloud_coverage: int,
                  iaa_fee: int=ConstSettings.IAASettings.FEE_PERCENTAGE,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+                 iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE)):
         self.sim_duration = sim_duration
         self.start_date = start_date
@@ -57,6 +58,8 @@ class SimulationConfig:
         self.read_market_maker_rate(market_maker_rate)
 
         self.iaa_fee = iaa_fee if iaa_fee is not None else ConstSettings.IAASettings.FEE_PERCENTAGE
+        self.iaa_fee_const = iaa_fee_const if iaa_fee_const is not None else \
+            ConstSettings.IAASettings.FEE_CONSTANT
 
     def __repr__(self):
         return (

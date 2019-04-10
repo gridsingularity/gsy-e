@@ -48,6 +48,7 @@ DEFAULT_CONFIG = SimulationConfig(
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
     iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE,
+    iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
     start_date=today(tz=TIME_ZONE)
 )
 
@@ -63,7 +64,8 @@ class Area:
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=[],
-                 transfer_fee_pct: int =None):
+                 transfer_fee_pct: int =None,
+                 transfer_fee_const: float=None):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -89,6 +91,7 @@ class Area:
         self.stats = AreaStats(self._markets)
         self.dispatcher = AreaDispatcher(self)
         self.transfer_fee_pct = transfer_fee_pct
+        self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
 
     def activate(self, bc=None):
@@ -115,6 +118,8 @@ class Area:
             self.transfer_fee_pct = 0
         elif self.transfer_fee_pct is None:
             self.transfer_fee_pct = self.config.iaa_fee
+        if self.transfer_fee_const is None:
+            self.transfer_fee_const = self.config.iaa_fee_const
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)
