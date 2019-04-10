@@ -59,6 +59,8 @@ class AreaEncoder(json.JSONEncoder):
             result['appliance'] = area.appliance
         if area.budget_keeper:
             result['budget_keeper'] = area.budget_keeper
+        if area.display_type:
+            result['display_type'] = area.display_type
         return result
 
     def _encode_subobject(self, obj):
@@ -71,7 +73,9 @@ class AreaEncoder(json.JSONEncoder):
         return result
 
     def _encode_leaf(self, obj):
-        description = {"name": obj.name, "type": obj.__class__.__name__}
+        description = {"name": obj.name,
+                       "type": obj.__class__.__name__,
+                       "display_type": obj.display_type}
         description.update(obj.parameters)
         return description
 
