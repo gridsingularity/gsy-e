@@ -28,15 +28,16 @@ import platform
 
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
+MAX_JOBS = os.environ.get('D3A_MAX_JOBS_PER_POD', 2)
 
 
 class Launcher:
     def __init__(self,
                  queue=None,
-                 max_jobs=2,
+                 max_jobs=None,
                  max_delay_seconds=2):
         self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
-        self.max_jobs = max_jobs
+        self.max_jobs = max_jobs if max_jobs is not None else MAX_JOBS
         self.max_delay = timedelta(seconds=max_delay_seconds)
         python_executable = sys.executable \
             if platform.python_implementation() != "PyPy" \
