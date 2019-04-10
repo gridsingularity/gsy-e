@@ -95,7 +95,10 @@ def _leaf_from_dict(description):
     leaf_type = globals().get(description.pop('type'), type(None))
     if not issubclass(leaf_type, Leaf):
         raise ValueError("Unknown leaf type '%s'" % leaf_type)
-    return leaf_type(**description)
+    display_type = description.pop("display_type")
+    leaf_object = leaf_type(**description)
+    leaf_object.display_type = display_type
+    return leaf_object
 
 
 def area_from_dict(description, config=None):
