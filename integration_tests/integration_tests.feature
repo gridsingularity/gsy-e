@@ -9,7 +9,7 @@ Feature: Run integration tests
   Scenario: Run integration tests on console to test config parameters
      Given we have a scenario named config_parameter_test
      And d3a is installed
-     When we run the d3a simulation on console with config_parameter_test
+     When we run the simulation with setup file config_parameter_test and parameters [24, 60, 60, 0, 1]
      Then we test the config parameters
 
   Scenario: Test offers, bids and balancing offers are exported

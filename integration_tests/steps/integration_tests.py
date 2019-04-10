@@ -786,5 +786,6 @@ def test_sim_market_count(context):
 @then("we test the config parameters")
 def test_config_parameters(context):
     grid = context.simulation.area
-    print(f"Grid: {grid}")
-    assert False
+    assert grid.config.iaa_fee == 5
+    assert all([isclose(rate, 35)
+                for rate in grid.config.market_maker_rate.values()])
