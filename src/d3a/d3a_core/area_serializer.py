@@ -59,6 +59,8 @@ class AreaEncoder(json.JSONEncoder):
             result['appliance'] = area.appliance
         if area.budget_keeper:
             result['budget_keeper'] = area.budget_keeper
+        if area.display_type:
+            result['display_type'] = area.display_type
         return result
 
     def _encode_subobject(self, obj):
@@ -71,7 +73,9 @@ class AreaEncoder(json.JSONEncoder):
         return result
 
     def _encode_leaf(self, obj):
-        description = {"name": obj.name, "type": obj.__class__.__name__}
+        description = {"name": obj.name,
+                       "type": obj.__class__.__name__,
+                       "display_type": obj.display_type}
         description.update(obj.parameters)
         return description
 
@@ -95,7 +99,11 @@ def _leaf_from_dict(description):
     leaf_type = globals().get(description.pop('type'), type(None))
     if not issubclass(leaf_type, Leaf):
         raise ValueError("Unknown leaf type '%s'" % leaf_type)
-    return leaf_type(**description)
+    display_type = description.pop("display_type", None)
+    leaf_object = leaf_type(**description)
+    if display_type is not None:
+        leaf_object.display_type = display_type
+    return leaf_object
 
 
 def area_from_dict(description, config=None):
