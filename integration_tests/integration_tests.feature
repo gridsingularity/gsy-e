@@ -1,10 +1,16 @@
 Feature: Run integration tests
 
-  Scenario Outline: Run integration tests on console
+  Scenario: Run integration tests on console
      Given we have a scenario named default_2a
      And d3a is installed
      When we run the d3a simulation on console with default_2a
      Then we test the export functionality of default_2a
+
+  Scenario: Run integration tests on console to test config parameters
+     Given we have a scenario named config_parameter_test
+     And d3a is installed
+     When we run the simulation with setup file config_parameter_test and parameters [24, 60, 60, 0, 1]
+     Then we test the config parameters
 
   Scenario: Test offers, bids and balancing offers are exported
      Given we have a scenario named two_sided_market/with_balancing_market

@@ -781,3 +781,11 @@ def test_sim_market_count(context):
         market_4 = grid_4.get_past_market(market_1.time_slot)
         for area in market_1.traded_energy.keys():
             assert isclose(market_1.traded_energy[area], market_4.traded_energy[area])
+
+
+@then("we test the config parameters")
+def test_config_parameters(context):
+    grid = context.simulation.area
+    assert grid.config.iaa_fee == 5
+    assert all([rate == 35
+                for rate in grid.config.market_maker_rate.values()])

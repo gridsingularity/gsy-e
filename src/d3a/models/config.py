@@ -29,7 +29,8 @@ from d3a.d3a_core.util import change_global_config
 
 class SimulationConfig:
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
-                 market_count: int, cloud_coverage: int, iaa_fee: int,
+                 market_count: int, cloud_coverage: int,
+                 iaa_fee: int=ConstSettings.IAASettings.FEE_PERCENTAGE,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE)):
         self.sim_duration = sim_duration
@@ -55,10 +56,7 @@ class SimulationConfig:
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
-        if iaa_fee is None:
-            self.iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
-        else:
-            self.iaa_fee = iaa_fee
+        self.iaa_fee = iaa_fee if iaa_fee is not None else ConstSettings.IAASettings.FEE_PERCENTAGE
 
     def __repr__(self):
         return (
@@ -82,11 +80,16 @@ class SimulationConfig:
             if k in fields
         }
 
-    def event_update(self, cloud_coverage=None, pv_user_profile=None):
+    def update_config_parameters(self, cloud_coverage=None, pv_user_profile=None,
+                                 iaa_fee=None, market_maker_rate=None):
         if cloud_coverage is not None:
             self.read_cloud_coverage(cloud_coverage)
         if pv_user_profile is not None:
             self.read_pv_user_profile(pv_user_profile)
+        if iaa_fee is not None:
+            self.iaa_fee = iaa_fee
+        if market_maker_rate is not None:
+            self.read_market_maker_rate(market_maker_rate)
 
     def read_cloud_coverage(self, cloud_coverage=0):
         # TODO: Once the d3a uses a common API to the d3a-web, this should be removed
