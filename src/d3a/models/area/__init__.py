@@ -327,13 +327,13 @@ class Area:
         for target in (self.strategy, self.appliance):
             if isinstance(target, TriggerMixin):
                 for trigger in target.available_triggers:
-                    if trigger.name == trigger_name:
+                    if trigger.naome == trigger_name:
                         return target.fire_trigger(trigger_name, **params)
 
     def update_config(self, **kwargs):
         if not self.config:
             return
-        self.config.event_update(**kwargs)
+        self.config.update_config_parameters(**kwargs)
         if self.strategy:
             self.strategy.read_config_event()
         for child in self.children:
