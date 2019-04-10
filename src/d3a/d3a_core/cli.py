@@ -71,12 +71,6 @@ _setup_modules = available_simulation_scenarios
 @click.option('-c', '--cloud-coverage', type=int,
               default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
               help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
-@click.option('-p', '--percentage-grid-fee', type=int,
-              default=ConstSettings.IAASettings.FEE_PERCENTAGE, show_default=True,
-              help="Grid Fee in percentage")
-@click.option('-k', '--const-grid-fee', type=int,
-              default=ConstSettings.IAASettings.FEE_CONSTANT, show_default=True,
-              help="Constant Grid Fee")
 @click.option('-m', '--market-count', type=int, default=1, show_default=True,
               help="Number of tradable market slots into the future")
 @click.option('--setup', 'setup_module_name', default="default_2a",
@@ -105,8 +99,7 @@ _setup_modules = available_simulation_scenarios
               default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
-        market_count, cloud_coverage, percentage_grid_fee, const_grid_fee, compare_alt_pricing,
-        start_date, **kwargs):
+        market_count, cloud_coverage, compare_alt_pricing, start_date, **kwargs):
 
     try:
         if settings_file is not None:
@@ -116,8 +109,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
         else:
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
-                                 cloud_coverage, start_date=start_date,
-                                 iaa_fee_const=const_grid_fee, iaa_fee=percentage_grid_fee)
+                                 cloud_coverage, start_date=start_date)
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
