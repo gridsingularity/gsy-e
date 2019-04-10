@@ -56,7 +56,7 @@ class SimulationConfig:
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
-        self.read_iaa_fee(iaa_fee)
+        self.iaa_fee = iaa_fee
 
     def __repr__(self):
         return (
@@ -80,11 +80,16 @@ class SimulationConfig:
             if k in fields
         }
 
-    def event_update(self, cloud_coverage=None, pv_user_profile=None):
+    def event_update(self, cloud_coverage=None, pv_user_profile=None,
+                     iaa_fee=None, market_maker_rate=None):
         if cloud_coverage is not None:
             self.read_cloud_coverage(cloud_coverage)
         if pv_user_profile is not None:
             self.read_pv_user_profile(pv_user_profile)
+        if iaa_fee is not None:
+            self.iaa_fee = iaa_fee
+        if market_maker_rate is not None:
+            self.read_market_maker_rate(market_maker_rate)
 
     def read_cloud_coverage(self, cloud_coverage=0):
         # TODO: Once the d3a uses a common API to the d3a-web, this should be removed
@@ -108,6 +113,3 @@ class SimulationConfig:
         self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                         market_maker_rate_parsed)
         self.market_maker_rate = {k: float(v) for k, v in self.market_maker_rate.items()}
-
-    def read_iaa_fee(self, iaa_fee):
-        self.iaa_fee = iaa_fee
