@@ -89,6 +89,7 @@ class Area:
         self.stats = AreaStats(self._markets)
         self.dispatcher = AreaDispatcher(self)
         self.transfer_fee_pct = transfer_fee_pct
+        self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
 
     def activate(self, bc=None):
         if bc:
