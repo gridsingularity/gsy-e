@@ -95,8 +95,8 @@ def test_leaf_deserialization():
         '''{
              "name": "house",
              "children":[
-                 {"name": "pv1", "type": "PV", "panel_count": 4, "risk": 50},
-                 {"name": "pv2", "type": "PV", "panel_count": 1, "risk": 10}
+                 {"name": "pv1", "type": "PV", "panel_count": 4, "risk": 50, "display_type": "PV"},
+                 {"name": "pv2", "type": "PV", "panel_count": 1, "risk": 10, "display_type": "PV"}
              ]
            }
         '''
@@ -104,8 +104,10 @@ def test_leaf_deserialization():
     pv1, pv2 = recovered.children
     assert isinstance(pv1, PV)
     assert pv1.strategy.panel_count == 4 and pv1.strategy.risk == 50
+    assert pv1.display_type == "PV"
     assert isinstance(pv2, PV)
     assert pv2.strategy.panel_count == 1 and pv2.strategy.risk == 10
+    assert pv2.display_type == "PV"
 
 
 @pytest.fixture
