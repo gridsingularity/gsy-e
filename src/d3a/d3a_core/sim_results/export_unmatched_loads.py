@@ -30,7 +30,7 @@ def get_number_of_unmatched_loads(indict):
     root = indict[list(indict.keys())[0]]
     no_ul = 0
     for parent in root.values():
-        for value in parent.values():
+        for value in parent['unmatched_loads'].values():
             no_ul += value['unmatched_count']
     return no_ul
 
@@ -53,16 +53,16 @@ class ExportUnmatchedLoads:
         else:
             self.latest_time_slot = self.hour_list[0]
         self.name_uuid_map = {area.name: area.uuid}
+        self.name_type_map = {area.name: area.display_type}
         self.area = area
 
     def __call__(self):
 
-        unmatched_loads = self.arrange_output(
+        unmatched_loads = self.arrange_output(self.append_device_type(
             self.expand_to_ul_to_hours(
                 self.expand_ul_to_parents(
-                    self.find_unmatched_loads(self.area, {})[self.area.name],
-                    self.area.name, {})),
-            self.area)
+                    self.find_unmatched_loads(self.area, {})[self.area.name], self.area.name, {}
+                ))), self.area)
 
         return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
 
@@ -73,6 +73,7 @@ class ExportUnmatchedLoads:
         indict[area.name] = {}
         for child in area.children:
             self.name_uuid_map[child.name] = child.uuid
+            self.name_type_map[child.name] = child.display_type
             if child.children:
                 indict[area.name] = self.find_unmatched_loads(child, indict[area.name])
             else:
@@ -173,6 +174,15 @@ class ExportUnmatchedLoads:
                 if hour_time <= self.latest_time_slot:
                     outdict[node_name][hour_time.format(DATE_HOUR_FORMAT)] = \
                         self._get_hover_info(subdict, hour_time)
+        return outdict
+
+    def append_device_type(self, indict):
+        outdict = {}
+        for name, unmatched_times in indict.items():
+            outdict[name] = {
+                "unmatched_loads": unmatched_times,
+                "type": self.name_type_map[name]
+            }
         return outdict
 
     def arrange_output(self, indict, area):
