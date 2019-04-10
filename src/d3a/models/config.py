@@ -80,8 +80,8 @@ class SimulationConfig:
             if k in fields
         }
 
-    def event_update(self, cloud_coverage=None, pv_user_profile=None,
-                     iaa_fee=None, market_maker_rate=None):
+    def update_config_parameters(self, cloud_coverage=None, pv_user_profile=None,
+                                 iaa_fee=None, market_maker_rate=None):
         if cloud_coverage is not None:
             self.read_cloud_coverage(cloud_coverage)
         if pv_user_profile is not None:
