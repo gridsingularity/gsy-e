@@ -74,7 +74,8 @@ def energy_bills(area, past_market_types):
         return None
     result = {child.name: dict(bought=0.0, sold=0.0,
                                spent=0.0, earned=0.0,
-                               total_energy=0, total_cost=0)
+                               total_energy=0, total_cost=0,
+                               type=child.display_type)
               for child in area.children}
     for market in getattr(area, past_market_types):
         for trade in market.trades:

@@ -110,8 +110,11 @@ def area_from_dict(description, config=None):
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
-        return Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
+        area = Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
                     optional('budget_keeper'))
+        if "display_type" in description:
+            area.display_type = description["display_type"]
+        return area
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
         raise ValueError("Input is not a valid area description (%s)" % str(error))
 
