@@ -41,7 +41,6 @@ from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_si
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.area_serializer import are_all_areas_unique
 from d3a.d3a_core.exceptions import D3AException
 import platform
 if platform.python_implementation() != "PyPy":
@@ -156,7 +155,6 @@ class Simulation:
 
         self._set_traversal_length()
 
-        are_all_areas_unique(self.area, set())
         self.area.activate(self.bc)
 
     @property
