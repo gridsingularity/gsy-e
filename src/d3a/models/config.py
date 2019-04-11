@@ -84,14 +84,14 @@ class SimulationConfig:
         }
 
     def update_config_parameters(self, cloud_coverage=None, pv_user_profile=None,
-                                 transfer_fee_perc=None, market_maker_rate=None,
+                                 transfer_fee_pct=None, market_maker_rate=None,
                                  transfer_fee_const=None):
         if cloud_coverage is not None:
             self.read_cloud_coverage(cloud_coverage)
         if pv_user_profile is not None:
             self.read_pv_user_profile(pv_user_profile)
-        if transfer_fee_perc is not None:
-            self.iaa_fee = transfer_fee_perc
+        if transfer_fee_pct is not None:
+            self.iaa_fee = transfer_fee_pct
         if transfer_fee_const is not None:
             self.iaa_fee_const = transfer_fee_const
         if market_maker_rate is not None:
