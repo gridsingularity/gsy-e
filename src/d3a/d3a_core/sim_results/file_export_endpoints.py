@@ -26,6 +26,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
 class FileExportEndpoints:
@@ -94,7 +95,9 @@ class FileExportEndpoints:
                 if trade_seller not in out_dict["sold_energy"]:
                     out_dict["sold_energy"][trade_seller] = {}
                 if market.time_slot not in out_dict["sold_energy"][trade_seller]:
-                    out_dict["sold_energy"][trade_seller][market.time_slot] = trade.offer.energy
+                    if trade.offer.energy > FLOATING_POINT_TOLERANCE:
+                        out_dict["sold_energy"][trade_seller][market.time_slot] = \
+                            trade.offer.energy
                 else:
                     out_dict["sold_energy"][trade_seller][market.time_slot] += trade.offer.energy
 
@@ -104,7 +107,9 @@ class FileExportEndpoints:
                 if trade_buyer not in out_dict["bought_energy"]:
                     out_dict["bought_energy"][trade_buyer] = {}
                 if market.time_slot not in out_dict["bought_energy"][trade_buyer]:
-                    out_dict["bought_energy"][trade_buyer][market.time_slot] = trade.offer.energy
+                    if trade.offer.energy > FLOATING_POINT_TOLERANCE:
+                        out_dict["bought_energy"][trade_buyer][market.time_slot] = \
+                            trade.offer.energy
                 else:
                     out_dict["bought_energy"][trade_buyer][market.time_slot] += trade.offer.energy
 
