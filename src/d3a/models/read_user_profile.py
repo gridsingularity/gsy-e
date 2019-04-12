@@ -80,6 +80,22 @@ def default_profile_dict(val=None) -> Dict[DateTime, int]:
     return outdict
 
 
+def _remove_header(profile_dict: Dict) -> Dict:
+    """
+    If first entry is not cmaptible with time format, remove it
+    """
+
+    time = list(profile_dict.keys())[0]
+    try:
+        from_format(str(time), TIME_FORMAT)
+    except ValueError:
+        try:
+            from_format(str(time), DATE_TIME_FORMAT)
+        except ValueError:
+            profile_dict.pop(time)
+    return profile_dict
+
+
 def _eval_time_format(time_dict: Dict) -> str:
     """
     Evaluates which time format the provided dictionary has, also checks if the time-format is
@@ -210,6 +226,7 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
             profile = ast.literal_eval(input_profile)
             # Remove filename entry to support d3a-web profiles
             profile.pop("filename", None)
+            profile = _remove_header(profile)
             time_format = _eval_time_format(profile)
             profile = {_str_to_datetime(key, time_format): val
                        for key, val in profile.items()}
@@ -218,6 +235,7 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
 
         elif isinstance(list(input_profile.keys())[0], str):
             # input is dict with string keys that are properly formatted time stamps
+            input_profile = _remove_header(input_profile)
             time_format = _eval_time_format(input_profile)
             profile = {_str_to_datetime(key, time_format): val
                        for key, val in input_profile.items()}
