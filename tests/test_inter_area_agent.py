@@ -530,11 +530,14 @@ def iaa_double_sided_pay_as_clear():
 
 @pytest.mark.parametrize("offer, bid, MCP", [
     ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4),
+    ([1, 2, 3, 4, 5, 6, 7], [7, 6, 5, 4, 3, 2, 1], 4),
     ([8, 9, 10, 11, 12, 13, 14], [8, 9, 10, 11, 12, 13, 14], 11),
     ([2, 3, 3, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7], 5),
 ])
+@pytest.mark.parametrize("algorithm", [1, 2])
 def test_iaa_double_sided_performs_pay_as_clear_matching(iaa_double_sided_pay_as_clear,
-                                                         offer, bid, MCP):
+                                                         offer, bid, MCP, algorithm):
+    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
     low_high_engine = \
         next(filter(lambda e: e.name == "Low -> High", iaa_double_sided_pay_as_clear.engines))
     iaa_double_sided_pay_as_clear.lower_market.sorted_offers = \
@@ -557,6 +560,25 @@ def test_iaa_double_sided_performs_pay_as_clear_matching(iaa_double_sided_pay_as
 
     matched = low_high_engine._perform_pay_as_clear_matching()[0]
     assert matched == MCP
+    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+
+
+def test_iaa_double_sided_pay_as_clear_works_with_floats(iaa_double_sided_pay_as_clear):
+    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+    low_high_engine = \
+        next(filter(lambda e: e.name == "Low -> High", iaa_double_sided_pay_as_clear.engines))
+    iaa_double_sided_pay_as_clear.lower_market.sorted_offers = \
+        [Offer('id1', 1.1, 1, 'other'),
+         Offer('id2', 2.2, 1, 'other'),
+         Offer('id3', 3.3, 1, 'other')]
+
+    iaa_double_sided_pay_as_clear.lower_market._bids = \
+        [Bid('bid_id1', 3.3, 1, 'B', 'S'),
+         Bid('bid_id2', 2.2, 1, 'B', 'S'),
+         Bid('bid_id3', 1.1, 1, 'B', 'S')]
+
+    matched = low_high_engine._perform_pay_as_clear_matching()[0]
+    assert matched == 2.2
 
 
 def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
