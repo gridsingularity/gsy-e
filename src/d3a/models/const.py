@@ -113,6 +113,11 @@ class ConstSettings:
         # Option 3 stands for double sided pay as clear market
         MARKET_TYPE = 1
 
+        # Pay as clear offer and bid rate/energy aggregation algorithm
+        # Default value 1 stands for line sweep algorithm
+        # Value 2 stands for integer precision/relaxation algorithm
+        PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+
         class AlternativePricing:
             # Option 0: D3A_trading
             # Option 1: no scheme (0 cents/kWh)
