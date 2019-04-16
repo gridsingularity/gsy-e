@@ -23,7 +23,7 @@ from d3a.models.const import ConstSettings
 class TwoSidedPayAsClearAgent(TwoSidedPayAsBidAgent):
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=1):
+                 min_offer_age=0):
         super().__init__(owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age,
