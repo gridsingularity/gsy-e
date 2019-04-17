@@ -79,7 +79,7 @@ class ExportAndPlot:
 
             self.directory = pathlib.Path(path or str(pathlib.Path.home()) + "/d3a-simulation",
                                           subdir)
-            mkdir_from_str(str(self.directory.mkdir))
+            mkdir_from_str(str(self.directory))
         except Exception as ex:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
