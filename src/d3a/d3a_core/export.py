@@ -77,8 +77,9 @@ class ExportAndPlot:
                 subdir = os.path.join(subdir, alternative_pricing_subdirs[
                                       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME])
 
-            self.directory = pathlib.Path(path or "~/d3a-simulation", subdir).expanduser()
-            mkdir_from_str(str(self.directory.mkdir))
+            self.directory = pathlib.Path(path or str(pathlib.Path.home()) + "/d3a-simulation",
+                                          subdir)
+            mkdir_from_str(str(self.directory))
         except Exception as ex:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
