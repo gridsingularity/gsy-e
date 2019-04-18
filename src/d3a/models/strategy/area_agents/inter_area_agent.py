@@ -22,7 +22,7 @@ from d3a.constants import TIME_FORMAT
 class InterAreaAgent(BaseStrategy):
     parameters = ('owner', 'higher_market', 'lower_market', 'min_offer_age')
 
-    def __init__(self, *, engine_type, owner, higher_market, lower_market, min_offer_age=1):
+    def __init__(self, *, engine_type, owner, higher_market, lower_market, min_offer_age=0):
         """
         Equalize markets
 
@@ -50,7 +50,7 @@ class InterAreaAgent(BaseStrategy):
         self.min_offer_age = min_offer_age
 
     def _validate_constructor_arguments(self, min_offer_age):
-        assert 1 <= min_offer_age <= 360
+        assert 0 <= min_offer_age <= 360
 
     def area_reconfigure_event(self, min_offer_age):
         self._validate_constructor_arguments(min_offer_age)
