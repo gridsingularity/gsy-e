@@ -30,9 +30,12 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     parameters = ('energy_sell_rate', 'energy_buy_rate')
 
     def __init__(self, energy_sell_rate=None, energy_buy_rate=None):
-
         super().__init__()
         self.energy_per_slot_kWh = INF_ENERGY
+        energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE \
+            if energy_buy_rate is None else energy_buy_rate
+        energy_sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE \
+            if energy_sell_rate is None else energy_sell_rate
         self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_sell_rate)
         self.energy_buy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_buy_rate)
 
@@ -50,15 +53,12 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
-
             if (offer.price / offer.energy) <= self.energy_buy_rate[market.time_slot]:
                 try:
                     self.accept_offer(market, offer)
-                    return True
                 except MarketException:
                     # Offer already gone etc., try next one.
-                    return False
-            return False
+                    continue
 
     def event_tick(self, *, area):
         super().event_tick(area=area)
@@ -69,7 +69,6 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-
         if ConstSettings.IAASettings.MARKET_TYPE == 2:
             for market in self.area.all_markets:
                 self.post_bid(market, self.energy_rate[market.time_slot] * INF_ENERGY, INF_ENERGY)

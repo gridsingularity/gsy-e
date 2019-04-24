@@ -27,13 +27,13 @@ def check_buy_behaviour_ib(context):
     load = list(filter(lambda x: x.name == "H1 General Load", house_1.children))[0]
 
     for market in grid.past_markets:
-            for trade in market.trades:
-                assert trade.offer.price / trade.offer.energy <= \
-                    bus.strategy.energy_rate[market.time_slot]
-                assert trade.buyer == bus.name
-                assert trade.offer.energy == \
-                    pv.strategy.energy_production_forecast_kWh[market.time_slot] \
-                    - load.strategy.avg_power_W / 1000.
+        for trade in market.trades:
+            assert trade.offer.price / trade.offer.energy <= \
+                bus.strategy.energy_rate[market.time_slot]
+            assert trade.buyer == bus.name
+            assert trade.offer.energy == \
+                pv.strategy.energy_production_forecast_kWh[market.time_slot] \
+                - load.strategy.avg_power_W / 1000.
 
 
 @then('Infinite Bus buys energy from the PV and sells to the load')
@@ -45,9 +45,9 @@ def check_buy_behaviour_ib_two_sided(context):
     load = list(filter(lambda x: x.name == "H1 General Load", house_1.children))[0]
 
     for market in grid.past_markets:
-            for trade in market.trades:
-                if trade.buyer == bus.name:
-                    assert trade.offer.energy == \
-                           pv.strategy.energy_production_forecast_kWh[market.time_slot]
-                elif trade.seller == bus.name:
-                    assert trade.offer.energy == load.strategy.avg_power_W / 1000.
+        for trade in market.trades:
+            if trade.buyer == bus.name:
+                assert trade.offer.energy == \
+                       pv.strategy.energy_production_forecast_kWh[market.time_slot]
+            elif trade.seller == bus.name:
+                assert trade.offer.energy == load.strategy.avg_power_W / 1000.

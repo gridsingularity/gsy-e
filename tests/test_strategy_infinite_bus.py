@@ -17,12 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import sys
+import pendulum
 
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
+from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.const import ConstSettings
+from d3a.constants import TIME_ZONE
+
+TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
 class FakeArea:
@@ -34,6 +38,7 @@ class FakeArea:
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
         self._past_markets = {}
+        self._bids = {}
 
     def get_future_market_from_id(self, id):
         return self.test_market
@@ -64,6 +69,13 @@ class FakeMarket:
         self.count = count
         self.created_offers = []
         self.created_balancing_offers = []
+        self.sorted_offers = [Offer('id', 25., 1., 'other'), Offer('id', 26., 1., 'other')]
+        self.traded_offers = []
+        self._bids = {TIME: []}
+
+    @property
+    def time_slot(self):
+        return TIME
 
     def offer(self, price, energy, seller, market=None):
         offer = Offer('id', price, energy, seller, market)
@@ -77,8 +89,19 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
+    def accept_offer(self, offer, buyer, *, energy=None, time=None,
+                     price_drop=False, already_tracked=False,
+                     trade_rate: float = None, iaa_fee: bool = False):
+        trade = Trade('trade_id', time, offer, offer.seller, buyer)
+        self.traded_offers.append(trade)
+        return trade
 
-"""COPY of CEP tests below (as the bus should behave the same when selling energy"""
+    def bid(self, price, energy, buyer, seller, iaa_fee: bool = False):
+        bid = Bid("bid_id", price, energy, buyer, seller, market=self)
+        return bid
+
+
+"""COPY of CEP tests below"""
 """TEST1"""
 
 
@@ -224,6 +247,9 @@ def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, b
     assert list(bus_test2.offers.posted.values())[0] == area_test2.test_market
 
 
+"""COPY of CEP tests above"""
+
+
 """TEST3"""
 
 
@@ -240,41 +266,42 @@ def bus_test3(area_test3):
     return c
 
 
-def testing_event_market_cycle(bus_test3, area_test3):
+def testing_event_market_cycle_post_offers(bus_test3, area_test3):
     bus_test3.event_activate()
     bus_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 1
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
+    assert area_test3.test_market.created_offers[-1].price == 30 * sys.maxsize
 
 
-def test_bus_producer_constructor_rejects_invalid_parameters():
-    with pytest.raises(ValueError):
-        InfiniteBusStrategy(energy_sell_rate=-1)
+"""TEST4"""
 
 
-"""COPY of CEP tests above (as the bus should behave the same when selling energy"""
+@pytest.fixture()
+def area_test4():
+    return FakeArea(0)
 
 
-# @pytest.fixture()
-# def area_test4():
-#     return FakeArea(0)
-#
-#
-# @pytest.fixture()
-# def bus_test4(area_test4):
-#     c = InfiniteBusStrategy(energy_sell_rate=30)
-#     c.area = area_test4
-#     c.owner = area_test4
-#     return c
-#
-#
-# def testing_event_market_cycle_bus(bus_test4, area_test3):
-#     bus_test4.event_activate()
-#     bus_test4.event_market_cycle()
-#     assert len(area_test3.test_market.created_offers) == 1
-#     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
-#
-#
-# def test_bus_producer_constructor_rejects_invalid_parameters():
-#     with pytest.raises(ValueError):
-#         InfiniteBusStrategy(energy_sell_rate=-1)
+@pytest.fixture()
+def bus_test4(area_test4):
+    c = InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=25)
+    c.area = area_test4
+    c.owner = area_test4
+    return c
+
+
+def testing_event_tick_buy_energy(bus_test4, area_test4):
+    bus_test4.event_activate()
+    bus_test4.event_tick(area=area_test4)
+    assert len(area_test4.test_market.traded_offers) == 1
+    assert area_test4.test_market.traded_offers[-1].offer.energy == 1
+
+
+def testing_event_market_cycle_posting_bids(bus_test4, area_test4):
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+    bus_test4.event_activate()
+    bus_test4.event_market_cycle()
+    assert len(bus_test4._bids) == 1
+    assert bus_test4._bids[area_test4.test_market][-1].energy == sys.maxsize
+    assert bus_test4._bids[area_test4.test_market][-1].price == 30 * sys.maxsize
+    ConstSettings.IAASettings.MARKET_TYPE = 1
