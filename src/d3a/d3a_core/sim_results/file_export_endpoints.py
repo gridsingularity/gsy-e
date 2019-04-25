@@ -93,7 +93,8 @@ class FileExportEndpoints:
                 if trade_seller.startswith("IAA "):
                     trade_seller = trade_seller[4:]
                 if trade_seller not in out_dict["sold_energy"]:
-                    out_dict["sold_energy"][trade_seller] = {}
+                    out_dict["sold_energy"][trade_seller] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
                 if market.time_slot not in out_dict["sold_energy"][trade_seller]:
                     if trade.offer.energy > FLOATING_POINT_TOLERANCE:
                         out_dict["sold_energy"][trade_seller][market.time_slot] = \
@@ -105,7 +106,8 @@ class FileExportEndpoints:
                 if trade_buyer.startswith("IAA "):
                     trade_buyer = trade_buyer[4:]
                 if trade_buyer not in out_dict["bought_energy"]:
-                    out_dict["bought_energy"][trade_buyer] = {}
+                    out_dict["bought_energy"][trade_buyer] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
                 if market.time_slot not in out_dict["bought_energy"][trade_buyer]:
                     if trade.offer.energy > FLOATING_POINT_TOLERANCE:
                         out_dict["bought_energy"][trade_buyer][market.time_slot] = \
