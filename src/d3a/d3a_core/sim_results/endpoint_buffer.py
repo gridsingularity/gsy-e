@@ -84,7 +84,7 @@ class SimulationEndpointBuffer:
             "tree_summary": self.tree_summary,
             "status": self.status,
             "device_statistics": self.device_statistics_time_str_dict,
-            "energy_trade_profile": self.energy_trade_profile
+            "energy_trade_profile": self.energy_trade_profile_redis
         }
 
     def update_stats(self, area, simulation_status):
@@ -184,9 +184,10 @@ class SimulationEndpointBuffer:
         for k in profile.keys():
             for sold_bought in ['sold_energy', 'bought_energy']:
                 for dev in profile[k][sold_bought].keys():
-                    for timestamp in profile[k][sold_bought][dev].keys():
-                        profile[k][sold_bought][dev][timestamp] = \
-                            round_floats_for_ui(profile[k][sold_bought][dev][timestamp])
+                    for target in profile[k][sold_bought][dev].keys():
+                        for timestamp in profile[k][sold_bought][dev][target].keys():
+                            profile[k][sold_bought][dev][target][timestamp] = round_floats_for_ui(
+                                profile[k][sold_bought][dev][target][timestamp])
         return profile
 
     @classmethod

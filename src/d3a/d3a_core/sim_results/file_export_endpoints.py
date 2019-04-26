@@ -67,10 +67,12 @@ class FileExportEndpoints:
         outdict = {}
         for direction in ["sold_energy", "bought_energy"]:
             outdict[direction] = {}
-            for seller, profile_dict in self.traded_energy[area.uuid][direction].items():
-                outdict[direction][seller] = convert_datetime_to_str_keys(
-                    profile_dict, {}, ui_format=True
-                )
+            for seller, buyer_dict in self.traded_energy[area.uuid][direction].items():
+                outdict[direction][seller] = {}
+                for buyer, profile_dict in buyer_dict.items():
+                    outdict[direction][seller][buyer] = convert_datetime_to_str_keys(
+                        profile_dict, {}, ui_format=True
+                    )
         return outdict
 
     def _get_stats_from_market_data(self, area, balancing):
@@ -89,35 +91,44 @@ class FileExportEndpoints:
         out_dict = {"sold_energy": {}, "bought_energy": {}}
         for market in past_markets:
             for trade in market.trades:
-                trade_seller = trade.seller
-                if trade_seller.startswith("IAA "):
-                    trade_seller = trade_seller[4:]
+                trade_seller = trade.seller[4:] if trade.seller.startswith("IAA ") \
+                    else trade.seller
+                trade_buyer = trade.buyer[4:] if trade.buyer.startswith("IAA ") \
+                    else trade.buyer
+
                 if trade_seller not in out_dict["sold_energy"]:
                     out_dict["sold_energy"][trade_seller] = {}
-                if market.time_slot not in out_dict["sold_energy"][trade_seller]:
-                    if trade.offer.energy > FLOATING_POINT_TOLERANCE:
-                        out_dict["sold_energy"][trade_seller][market.time_slot] = \
-                            trade.offer.energy
-                else:
-                    out_dict["sold_energy"][trade_seller][market.time_slot] += trade.offer.energy
+                    out_dict["sold_energy"][trade_seller]["accumulated"] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
+                if trade_buyer not in out_dict["sold_energy"][trade_seller]:
+                    out_dict["sold_energy"][trade_seller][trade_buyer] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
+                if trade.offer.energy > FLOATING_POINT_TOLERANCE:
+                    out_dict["sold_energy"][trade_seller]["accumulated"][market.time_slot] += \
+                        trade.offer.energy
+                    out_dict["sold_energy"][trade_seller][trade_buyer][market.time_slot] += \
+                        trade.offer.energy
 
-                trade_buyer = trade.buyer
-                if trade_buyer.startswith("IAA "):
-                    trade_buyer = trade_buyer[4:]
                 if trade_buyer not in out_dict["bought_energy"]:
                     out_dict["bought_energy"][trade_buyer] = {}
-                if market.time_slot not in out_dict["bought_energy"][trade_buyer]:
-                    if trade.offer.energy > FLOATING_POINT_TOLERANCE:
-                        out_dict["bought_energy"][trade_buyer][market.time_slot] = \
-                            trade.offer.energy
-                else:
-                    out_dict["bought_energy"][trade_buyer][market.time_slot] += trade.offer.energy
+                    out_dict["bought_energy"][trade_buyer]["accumulated"] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
+                if trade_seller not in out_dict["bought_energy"][trade_buyer]:
+                    out_dict["bought_energy"][trade_buyer][trade_seller] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
+                if trade.offer.energy > FLOATING_POINT_TOLERANCE:
+                    out_dict["bought_energy"][trade_buyer]["accumulated"][market.time_slot] += \
+                        trade.offer.energy
+                    out_dict["bought_energy"][trade_buyer][trade_seller][market.time_slot] += \
+                        trade.offer.energy
 
         for ks in ("sold_energy", "bought_energy"):
             out_dict[ks + "_lists"] = dict((ki, {}) for ki in out_dict[ks].keys())
             for node in out_dict[ks].keys():
-                out_dict[ks + "_lists"][node]["slot"] = list(out_dict[ks][node].keys())
-                out_dict[ks + "_lists"][node]["energy"] = list(out_dict[ks][node].values())
+                out_dict[ks + "_lists"][node]["slot"] = \
+                    list(out_dict[ks][node]["accumulated"].keys())
+                out_dict[ks + "_lists"][node]["energy"] = \
+                    list(out_dict[ks][node]["accumulated"].values())
         return out_dict
 
     def _get_buyer_seller_trades(self, area: Area):
