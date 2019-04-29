@@ -24,6 +24,7 @@ from pathlib import Path
 from threading import Event, Thread, Lock
 import dill
 import click
+import platform
 
 from pendulum import DateTime
 from pendulum import duration
@@ -31,6 +32,7 @@ from pendulum.period import Period
 from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
+from d3a.d3a_core.area_serializer import are_all_areas_unique
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
@@ -42,7 +44,6 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-import platform
 if platform.python_implementation() != "PyPy":
     from d3a.blockchain import BlockChainInterface
 
@@ -154,6 +155,8 @@ class Simulation:
         log.info("Starting simulation with config %s", self.simulation_config)
 
         self._set_traversal_length()
+
+        are_all_areas_unique(self.area, set())
 
         self.area.activate(self.bc)
 
