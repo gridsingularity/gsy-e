@@ -48,12 +48,11 @@ class TwoSidedPayAsBid(OneSidedMarket):
                     self.accumulated_trade_price
                     )
 
-    def bid(self, price: float, energy: float, buyer: str, seller: str, bid_id: str=None,
-            iaa_fee: bool = False) -> Bid:
+    def bid(self, price: float, energy: float, buyer: str, seller: str, bid_id: str=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
-        if iaa_fee:
-            price = price * (1 - self.transfer_fee_ratio) + self.transfer_fee_const * energy
+
+        price = price * (1 - self.transfer_fee_ratio) - self.transfer_fee_const * energy
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self)
         self.bids[bid.id] = bid

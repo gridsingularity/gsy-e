@@ -740,7 +740,7 @@ def test_infinite_plant_energy_rate(context, plant_name):
                 trades_sold.append(trade)
     assert all([isclose(trade.offer.price / trade.offer.energy,
                 context.simulation.simulation_config.
-                        market_maker_rate[trade.offer.market.time_slot])
+                        market_maker_rate[trade.offer.market.time_slot] * 1.01)
                 for trade in trades_sold])
     assert len(trades_sold) > 0
 

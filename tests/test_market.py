@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import string
 from collections import defaultdict
+from math import isclose
 
 import pytest
 from pendulum import DateTime
@@ -45,12 +46,12 @@ device_registry_dict = {
 
 
 class FakeArea:
-    def __init__(self, name):
+    def __init__(self, name, transfer_fee_pct=1):
         self.name = name
         self.current_tick = 10
         self.bc = False
         self.now = DateTime.now()
-        self.transfer_fee_pct = 1
+        self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = 0
         DeviceRegistry.REGISTRY = device_registry_dict
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
@@ -67,8 +68,8 @@ def test_device_registry(market=BalancingMarket(area=FakeArea("FakeArea"))):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer")
 ])
 def test_market_offer(market, offer):
     e_offer = getattr(market, offer)(10, 20, 'someone')
@@ -82,7 +83,7 @@ def test_market_offer(market, offer):
 def test_market_bid(market: TwoSidedPayAsBid):
     bid = market.bid(1, 2, 'bidder', 'seller')
     assert market.bids[bid.id] == bid
-    assert bid.price == 1
+    assert bid.price == 0.99
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
     assert bid.seller == 'seller'
@@ -94,7 +95,7 @@ def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
     bid = market.bid(1, 2, 'bidder', 'seller', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
-    assert bid.price == 1
+    assert bid.price == 0.99
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
     assert bid.seller == 'seller'
@@ -104,7 +105,7 @@ def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
     bid = market.bid(3, 4, 'updated_bidder', 'updated_seller', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
-    assert bid.price == 3
+    assert isclose(bid.price, 2.97)
     assert bid.energy == 4
     assert bid.buyer == 'updated_bidder'
     assert bid.seller == 'updated_seller'
@@ -122,8 +123,8 @@ def test_market_bid_invalid(market: TwoSidedPayAsBid):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (TwoSidedPayAsBid(area=FakeArea("FakeArea")), "offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer")
+    (TwoSidedPayAsBid(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer")
 ])
 def test_market_offer_readonly(market, offer):
     market.readonly = True
@@ -132,8 +133,8 @@ def test_market_offer_readonly(market, offer):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (TwoSidedPayAsBid(area=FakeArea("FakeArea")), "offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer")
+    (TwoSidedPayAsBid(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer")
 ])
 def test_market_offer_delete(market, offer):
     offer = getattr(market, offer)(20, 10, 'someone')
@@ -143,16 +144,16 @@ def test_market_offer_delete(market, offer):
 
 
 @pytest.mark.parametrize("market",
-                         [OneSidedMarket(area=FakeArea("FakeArea")),
-                          BalancingMarket(area=FakeArea("FakeArea"))])
+                         [OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+                          BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0))])
 def test_market_offer_delete_missing(market):
     with pytest.raises(OfferNotFoundException):
         market.delete_offer("no such offer")
 
 
 @pytest.mark.parametrize("market",
-                         [OneSidedMarket(area=FakeArea("FakeArea")),
-                          BalancingMarket(area=FakeArea("FakeArea"))])
+                         [OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+                          BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0))])
 def test_market_offer_delete_readonly(market):
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
@@ -181,8 +182,10 @@ def test_market_bid_delete_missing(market: TwoSidedPayAsBid):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "accept_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "accept_offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "accept_offer")
 ])
 def test_market_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
@@ -198,7 +201,7 @@ def test_market_trade(market, offer, accept_offer):
     assert trade.buyer == 'B'
 
 
-def test_balancing_market_negative_offer_trade(market=BalancingMarket(area=FakeArea("FakeArea"))):
+def test_balancing_market_negative_offer_trade(market=BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0))):  # NOQA
     offer = market.balancing_offer(20, -10, 'A')
 
     now = DateTime.now(tz=TIME_ZONE)
@@ -227,8 +230,10 @@ def test_market_bid_trade(market: TwoSidedPayAsBid):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "accept_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "accept_offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "accept_offer")
 ])
 def test_market_trade_by_id(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
@@ -239,8 +244,10 @@ def test_market_trade_by_id(market, offer, accept_offer):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "accept_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "accept_offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "accept_offer")
 ])
 def test_market_trade_readonly(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
@@ -250,8 +257,10 @@ def test_market_trade_readonly(market, offer, accept_offer):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "accept_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "accept_offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "accept_offer")
 ])
 def test_market_trade_not_found(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 10, 'A')
@@ -271,8 +280,10 @@ def test_market_trade_bid_not_found(market: TwoSidedPayAsBid):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "accept_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "accept_offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "accept_offer")
 ])
 def test_market_trade_partial(market, offer, accept_offer):
     e_offer = getattr(market, offer)(20, 20, 'A')
@@ -305,7 +316,7 @@ def test_market_trade_bid_partial(market: TwoSidedPayAsBid):
     assert trade.id
     assert trade.offer is not bid
     assert trade.offer.energy == 5
-    assert trade.offer.price == 5
+    assert trade.offer.price == 5 * 0.99
     assert trade.offer.seller == 'B'
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
@@ -313,7 +324,7 @@ def test_market_trade_bid_partial(market: TwoSidedPayAsBid):
     assert len(market.bids) == 1
     assert trade.residual.id in market.bids
     assert market.bids[trade.residual.id].energy == 15
-    assert market.bids[trade.residual.id].price == 15
+    assert market.bids[trade.residual.id].price == 15 * 0.99 * 0.99
     assert market.bids[trade.residual.id].seller == 'B'
     assert market.bids[trade.residual.id].buyer == 'A'
 
@@ -364,11 +375,13 @@ def test_market_accept_bid_always_updates_trade_stats(market: TwoSidedPayAsBid, 
 
 
 @pytest.mark.parametrize("market, offer, accept_offer, energy, exception", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer", 0, InvalidTrade),
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer", 21, InvalidTrade),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer",
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "accept_offer", 0, InvalidTrade),
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "accept_offer", 21, InvalidTrade),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer",
      "accept_offer", 0, InvalidBalancingTradeException),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer",
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer",
      "accept_offer", 21, InvalidBalancingTradeException)
 ])
 def test_market_trade_partial_invalid(market, offer, accept_offer, energy, exception):
@@ -413,8 +426,8 @@ def test_market_acct_multiple(market: OneSidedMarket):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer")
 ])
 def test_market_avg_offer_price(market, offer):
     getattr(market, offer)(1, 1, 'A')
@@ -424,15 +437,15 @@ def test_market_avg_offer_price(market, offer):
 
 
 @pytest.mark.parametrize("market",
-                         [OneSidedMarket(area=FakeArea("FakeArea")),
-                          BalancingMarket(area=FakeArea("FakeArea"))])
+                         [OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+                          BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0))])
 def test_market_avg_offer_price_empty(market):
     assert market.avg_offer_price == 0
 
 
 @pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer")
 ])
 def test_market_sorted_offers(market, offer):
     getattr(market, offer)(5, 1, 'A')
@@ -445,8 +458,8 @@ def test_market_sorted_offers(market, offer):
 
 
 @pytest.mark.parametrize("market, offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer")
 ])
 def test_market_most_affordable_offers(market, offer):
     getattr(market, offer)(5, 1, 'A')
@@ -466,14 +479,17 @@ def test_market_most_affordable_offers(market, offer):
     (BalancingMarket, "balancing_offer")
 ])
 def test_market_listeners_init(market, offer, called):
-    markt = market(area=FakeArea('fake_house'), notification_listener=called)
+    markt = market(area=FakeArea('fake_house', transfer_fee_pct=0),
+                   notification_listener=called)
     getattr(markt, offer)(10, 20, 'A')
     assert len(called.calls) == 1
 
 
 @pytest.mark.parametrize("market, offer, add_listener", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "add_listener"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "add_listener")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "add_listener"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "add_listener")
 ])
 def test_market_listeners_add(market, offer, add_listener, called):
     getattr(market, add_listener)(called)
@@ -483,9 +499,9 @@ def test_market_listeners_add(market, offer, add_listener, called):
 
 
 @pytest.mark.parametrize("market, offer, add_listener, event", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer",
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer",
      "add_listener", MarketEvent.OFFER),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer",
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "balancing_offer",
      "add_listener", MarketEvent.BALANCING_OFFER)
 ])
 def test_market_listeners_offer(market, offer, add_listener, event, called):
@@ -497,9 +513,10 @@ def test_market_listeners_offer(market, offer, add_listener, event, called):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer, add_listener, event", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer",
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer", "accept_offer",
      "add_listener", MarketEvent.OFFER_CHANGED),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "accept_offer",
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "accept_offer",
      "add_listener", MarketEvent.BALANCING_OFFER_CHANGED)
 ])
 def test_market_listeners_offer_changed(market, offer, accept_offer, add_listener, event, called):
@@ -517,9 +534,10 @@ def test_market_listeners_offer_changed(market, offer, accept_offer, add_listene
 
 
 @pytest.mark.parametrize("market, offer, delete_offer, add_listener, event", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "delete_offer",
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)), "offer", "delete_offer",
      "add_listener", MarketEvent.OFFER_DELETED),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "delete_balancing_offer",
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "delete_balancing_offer",
      "add_listener", MarketEvent.BALANCING_OFFER_DELETED)
 ])
 def test_market_listeners_offer_deleted(market, offer, delete_offer, add_listener, event, called):
@@ -555,12 +573,14 @@ def test_market_iou(market: OneSidedMarket):
     offer = market.offer(10, 20, 'A')
     market.accept_offer(offer, 'B')
 
-    assert market.ious['B']['A'] == 10
+    assert market.ious['B']['A'] == 10.1
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
-    (OneSidedMarket(area=FakeArea("FakeArea")), "offer", "accept_offer"),
-    (BalancingMarket(area=FakeArea("FakeArea")), "balancing_offer", "accept_offer")
+    (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "offer", "accept_offer"),
+    (BalancingMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
+     "balancing_offer", "accept_offer")
 ])
 def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
     e_offer = getattr(market, offer)(2.0, 4, 'seller')
@@ -580,7 +600,7 @@ class MarketStateMachine(RuleBasedStateMachine):
 
     def __init__(self):
         super().__init__()
-        self.market = OneSidedMarket(area=FakeArea(name='my_fake_house'))
+        self.market = OneSidedMarket(area=FakeArea(name='my_fake_house', transfer_fee_pct=0))
 
     @rule(target=actors, actor=st.text(min_size=1, max_size=3,
                                        alphabet=string.ascii_letters + string.digits))

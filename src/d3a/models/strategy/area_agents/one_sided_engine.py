@@ -49,8 +49,7 @@ class IAAEngine:
         forwarded_offer = self.markets.target.offer(
             offer.price,
             offer.energy,
-            self.owner.name,
-            iaa_fee=True
+            self.owner.name
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
