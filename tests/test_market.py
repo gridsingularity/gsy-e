@@ -599,8 +599,9 @@ class MarketStateMachine(RuleBasedStateMachine):
     actors = Bundle('Actors')
 
     def __init__(self):
+        test_area = FakeArea(name='my_fake_house', transfer_fee_pct=0)
+        self.market = OneSidedMarket(area=test_area)
         super().__init__()
-        self.market = OneSidedMarket(area=FakeArea(name='my_fake_house', transfer_fee_pct=0))
 
     @rule(target=actors, actor=st.text(min_size=1, max_size=3,
                                        alphabet=string.ascii_letters + string.digits))

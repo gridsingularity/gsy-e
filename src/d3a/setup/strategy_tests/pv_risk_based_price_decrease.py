@@ -84,7 +84,8 @@ def get_setup(config):
                                                       final_selling_rate=5,
                                                       energy_rate_decrease_option=1),
                          appliance=PVAppliance()),
-                ]
+                ],
+                transfer_fee_pct=0,
             ),
         ],
         config=config

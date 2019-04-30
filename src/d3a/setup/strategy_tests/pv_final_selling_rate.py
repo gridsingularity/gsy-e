@@ -39,7 +39,8 @@ def get_setup(config):
                                                                  battery_capacity_kWh=15.0,
                                                                  break_even=(22.99, 28.01)),
                          appliance=SwitchableAppliance()),
-                ]
+                ],
+                transfer_fee_pct=0,
             ),
             Area(
                 'House 2',
@@ -49,7 +50,8 @@ def get_setup(config):
                                                       initial_rate_option=2),
                          appliance=PVAppliance()),
 
-                ]
+                ],
+                transfer_fee_pct=0,
             ),
         ],
         config=config
