@@ -127,7 +127,7 @@ class FakeMarket:
         return self.forwarded_offer
 
     def bid(self, price, energy, buyer, seller):
-        price = price * (1 - self.transfer_fee_ratio) + self.transfer_fee_const * energy
+        price = price * (1 - self.transfer_fee_ratio) - self.transfer_fee_const * energy
         self.bid_count += 1
         self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller, market=self)
         return self.forwarded_bid
@@ -273,7 +273,7 @@ def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
 
     assert iaa.higher_market.bid_count == 1
     bid = list(iaa.lower_market.bids.values())[-1]
-    assert iaa.higher_market.forwarded_bid.price == bid.price + iaa_fee_const * bid.energy
+    assert iaa.higher_market.forwarded_bid.price == bid.price - iaa_fee_const * bid.energy
     ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
