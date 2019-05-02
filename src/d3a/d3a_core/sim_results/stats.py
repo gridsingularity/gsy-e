@@ -52,16 +52,16 @@ def total_avg_trade_price(markets):
 
 def _store_bought_trade(result_dict, trade_offer):
     result_dict['bought'] += trade_offer.energy
-    result_dict['spent'] += trade_offer.price
+    result_dict['spent'] += trade_offer.price / 100.
     result_dict['total_energy'] += trade_offer.energy
-    result_dict['total_cost'] += trade_offer.price
+    result_dict['total_cost'] += trade_offer.price / 100.
 
 
 def _store_sold_trade(result_dict, trade_offer):
     result_dict['sold'] += trade_offer.energy
-    result_dict['earned'] += trade_offer.price
+    result_dict['earned'] += trade_offer.price / 100.
     result_dict['total_energy'] -= trade_offer.energy
-    result_dict['total_cost'] -= trade_offer.price
+    result_dict['total_cost'] -= trade_offer.price / 100.
 
 
 def energy_bills(area, past_market_types):

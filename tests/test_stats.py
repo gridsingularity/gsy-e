@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 from unittest.mock import MagicMock
+from math import isclose
 
 from d3a.models.market.market_structures import Trade
 from d3a.d3a_core.sim_results.stats import energy_bills, primary_unit_prices, \
@@ -127,11 +128,11 @@ def grid():
 def test_energy_bills(grid):
     result = energy_bills(grid, "past_markets")
     assert result['house2']['bought'] == result['commercial']['sold'] == 13
-    assert result['house2']['spent'] == result['commercial']['earned'] == 3
+    assert result['house2']['spent'] == result['commercial']['earned'] == 0.03
     assert result['commercial']['spent'] == result['commercial']['bought'] == 0
     result1 = result['house1']['children']
-    assert result1['fridge']['bought'] == 5 and result1['fridge']['spent'] == 6
-    assert result1['pv']['sold'] == 4 and result1['pv']['earned'] == 3
+    assert result1['fridge']['bought'] == 5 and isclose(result1['fridge']['spent'], 0.06)
+    assert result1['pv']['sold'] == 4 and isclose(result1['pv']['earned'], 0.03)
     assert 'children' not in result1
 
 

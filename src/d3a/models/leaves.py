@@ -36,7 +36,7 @@ class Leaf(Area):
     strategy_type = None
     appliance_type = SimpleAppliance
 
-    def __init__(self, name, config=None, **kwargs):
+    def __init__(self, name, config=None, uuid=None, **kwargs):
         super(Leaf, self).__init__(
             name=name,
             strategy=self.strategy_type(**{
@@ -44,7 +44,8 @@ class Leaf(Area):
                 if key in (self.strategy_type.parameters or []) and value is not None
             }),
             appliance=self.appliance_type(),
-            config=config
+            config=config,
+            uuid=uuid
         )
 
     @property
