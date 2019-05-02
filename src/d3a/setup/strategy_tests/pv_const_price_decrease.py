@@ -67,7 +67,8 @@ def get_setup(config):
                                                                 energy_rate_decrease_option=2,
                                                                 cloud_coverage=2),
                          appliance=PVAppliance()),
-                ]
+                ],
+                transfer_fee_pct=0,
             ),
         ],
         config=config

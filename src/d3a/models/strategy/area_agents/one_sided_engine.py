@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict, Set  # noqa
+from d3a.constants import FLOATING_POINT_TOLERANCE
+
 
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
 
@@ -49,8 +51,7 @@ class IAAEngine:
         forwarded_offer = self.markets.target.offer(
             offer.price,
             offer.energy,
-            self.owner.name,
-            iaa_fee=True
+            self.owner.name
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -106,7 +107,7 @@ class IAAEngine:
             residual_info = None
             source_rate = offer_info.source_offer.price / offer_info.source_offer.energy
             target_rate = offer_info.target_offer.price / offer_info.target_offer.energy
-            assert abs(source_rate) <= abs(target_rate), \
+            assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             if trade.offer.energy < offer_info.source_offer.energy:
