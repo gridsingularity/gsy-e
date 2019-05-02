@@ -184,9 +184,10 @@ class SimulationEndpointBuffer:
         for k in profile.keys():
             for sold_bought in ['sold_energy', 'bought_energy']:
                 for dev in profile[k][sold_bought].keys():
-                    for timestamp in profile[k][sold_bought][dev].keys():
-                        profile[k][sold_bought][dev][timestamp] = \
-                            round_floats_for_ui(profile[k][sold_bought][dev][timestamp])
+                    for target in profile[k][sold_bought][dev].keys():
+                        for timestamp in profile[k][sold_bought][dev][target].keys():
+                            profile[k][sold_bought][dev][target][timestamp] = round_floats_for_ui(
+                                profile[k][sold_bought][dev][target][timestamp])
         return profile
 
     @classmethod
