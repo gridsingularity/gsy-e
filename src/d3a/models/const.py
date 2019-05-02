@@ -105,7 +105,7 @@ class ConstSettings:
 
     class IAASettings:
         # Percentage value that controls the fee the IAA adds to the offers and bids.
-        FEE_PERCENTAGE = 1
+        FEE_PERCENTAGE = 0
         FEE_CONSTANT = 0
         # Market type option
         # Default value 1 stands for single sided market
