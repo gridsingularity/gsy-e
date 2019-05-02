@@ -84,7 +84,7 @@ class SimulationEndpointBuffer:
             "tree_summary": self.tree_summary,
             "status": self.status,
             "device_statistics": self.device_statistics_time_str_dict,
-            "energy_trade_profile": self.energy_trade_profile_redis
+            "energy_trade_profile": self.energy_trade_profile
         }
 
     def update_stats(self, area, simulation_status):
