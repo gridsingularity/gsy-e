@@ -156,6 +156,8 @@ class SimulationEndpointBuffer:
 
     def _flatten_energy_bills(self, energy_bills, flat_results):
         for k, v in energy_bills.items():
+            if k == "market_fee":
+                continue
             if "children" in v:
                 self._flatten_energy_bills(v["children"], flat_results)
             flat_results[k] = v

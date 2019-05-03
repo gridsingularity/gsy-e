@@ -87,7 +87,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
         if iaa_fee:
             source_rate = trade_rate / (1 - self.transfer_fee_ratio) + self.transfer_fee_const
-            self._grid_fee += (trade_rate - source_rate) * energy
+            self.market_fee += (trade_rate - source_rate) * energy
         else:
             source_rate = trade_rate
 
