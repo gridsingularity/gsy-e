@@ -44,6 +44,7 @@ class FakeMarket:
     def __init__(self, trades):
         self.trades = trades
         self.time_slot = 15
+        self.market_fee = 0
 
 
 class FakeOffer:
