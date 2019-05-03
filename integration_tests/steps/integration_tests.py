@@ -571,9 +571,7 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 @then('the energy bills report the correct accumulated traded energy price')
 def test_accumulated_energy_price(context):
     bills = context.simulation.endpoint_buffer.bills
-
     cell_tower = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
-
     house1 = bills["House 1"]["earned"] - bills["House 1"]["spent"]
     area_net_traded_energy_price = \
         sum([v["earned"] - v["spent"] for v in bills["House 1"]["children"].values()])
@@ -731,6 +729,7 @@ def test_finite_plant_energy_rate(context, plant_name):
 def test_infinite_plant_energy_rate(context, plant_name):
     grid = context.simulation.area
 
+    market_maker_rate = context.simulation.simulation_config.market_maker_rate
     finite = list(filter(lambda x: x.name == plant_name,
                          grid.children))[0]
     trades_sold = []
@@ -739,10 +738,9 @@ def test_infinite_plant_energy_rate(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
+
     assert all([isclose(trade.offer.price / trade.offer.energy,
-                        context.simulation.simulation_config.
-                        market_maker_rate[trade.offer.market.time_slot] *
-                        (1 + grid.transfer_fee_pct / 100))
+                        market_maker_rate[trade.offer.market.time_slot])
                 for trade in trades_sold])
     assert len(trades_sold) > 0
 

@@ -23,10 +23,11 @@ from d3a.events.event_structures import OfferEvent
 
 
 class Offer:
-    def __init__(self, id, price, energy, seller, market=None):
+    def __init__(self, id, price, energy, seller, market=None, original_offer_price=None):
         self.id = str(id)
         self.real_id = id
         self.price = price
+        self.original_offer_price = original_offer_price
         self.energy = energy
         self.seller = seller
         self.market = market
@@ -71,10 +72,12 @@ class Offer:
         return self.id, rate, self.energy, self.price, self.seller
 
 
-class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market'))):
-    def __new__(cls, id, price, energy, buyer, seller, market=None):
+class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
+                             'market', 'original_bid_price'))):
+    def __new__(cls, id, price, energy, buyer, seller, market=None, original_bid_price=None):
         # overridden to give the residual field a default value
-        return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller, market)
+        return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller,
+                                       market, original_bid_price)
 
     def __repr__(self):
         return (
@@ -98,12 +101,12 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller', 'market
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
-                                 'buyer', 'residual', 'already_tracked'))):
+                                 'buyer', 'residual', 'already_tracked', 'original_trade_price'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None,
-                already_tracked=False):
+                already_tracked=False, original_trade_price=None):
         # overridden to give the residual field a default value
         return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual,
-                                         already_tracked)
+                                         already_tracked, original_trade_price)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""

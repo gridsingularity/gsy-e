@@ -37,6 +37,10 @@ TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 MIN_BUY_ENERGY = 50  # wh
 
 
+def teardown_function():
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
 class FakeArea:
     def __init__(self, count):
         self.appliance = None
@@ -99,8 +103,10 @@ class FakeMarket:
         self.created_balancing_offers = []
         self.bids = {}
 
-    def bid(self, price: float, energy: float, buyer: str, seller: str, bid_id: str=None) -> Bid:
-        bid = Bid(id='bid_id', price=price, energy=energy, buyer=buyer, seller=seller)
+    def bid(self, price: float, energy: float, buyer: str,
+            seller: str, original_bid_price=None) -> Bid:
+        bid = Bid(id='bid_id', price=price, energy=energy, buyer=buyer,
+                  seller=seller, original_bid_price=original_bid_price)
         self.bids[bid.id] = bid
         return bid
 
@@ -335,8 +341,6 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
         repr(trade_market)
 
-    ConstSettings.IAASettings.MARKET_TYPE = 1
-
 
 def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_strategy_test5,
                                                                    market_test2,
@@ -359,8 +363,6 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
         repr(trade_market)
-
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 @pytest.fixture

@@ -150,10 +150,13 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                                                                       market.time_slot)
             assert self.state.available_energy_kWh[market.time_slot] >= -FLOATING_POINT_TOLERANCE
             if self.state.available_energy_kWh[market.time_slot] > 0:
+                offer_price = rounded_energy_rate * \
+                    self.state.available_energy_kWh[market.time_slot]
                 offer = market.offer(
-                    rounded_energy_rate * self.state.available_energy_kWh[market.time_slot],
+                    offer_price,
                     self.state.available_energy_kWh[market.time_slot],
-                    self.owner.name
+                    self.owner.name,
+                    original_offer_price=offer_price
                 )
                 self.offers.post(offer, market)
 

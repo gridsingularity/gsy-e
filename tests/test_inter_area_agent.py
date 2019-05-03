@@ -32,6 +32,11 @@ from d3a.models.const import ConstSettings
 from d3a.models.market.market_structures import MarketClearingState
 
 
+def teardown_function():
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+
+
 class FakeArea:
     def __init__(self, name):
         self.name = name
@@ -83,7 +88,7 @@ class FakeMarket:
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None,
                      price_drop=False, already_tracked=False,
-                     trade_rate: float = None, iaa_fee: bool = False):
+                     trade_rate: float = None):
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
         if energy < offer.energy:
@@ -95,7 +100,7 @@ class FakeMarket:
             return Trade('trade_id', time, offer, offer.seller, buyer)
 
     def accept_bid(self, bid, energy, seller, buyer=None, already_tracked=True, *,
-                   time=None, trade_rate: float = None, iaa_fee: bool = False):
+                   time=None, trade_rate: float = None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
@@ -120,16 +125,18 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller):
+    def offer(self, price, energy, seller, original_offer_price=None):
         self.offer_count += 1
         price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
-        self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller, market=self)
+        self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller,
+                                     market=self, original_offer_price=original_offer_price)
         return self.forwarded_offer
 
-    def bid(self, price, energy, buyer, seller):
+    def bid(self, price, energy, buyer, seller, original_bid_price=None):
         price = price * (1 - self.transfer_fee_ratio) - self.transfer_fee_const * energy
         self.bid_count += 1
-        self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller, market=self)
+        self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller,
+                                 market=self, original_bid_price=original_bid_price)
         return self.forwarded_bid
 
 
@@ -209,7 +216,6 @@ def iaa_bid():
     iaa.owner.current_tick = 14
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_forwards_bids(iaa_bid):
@@ -254,7 +260,6 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
     assert iaa.higher_market.bid_count == 1
     assert iaa.higher_market.forwarded_bid.price == \
         list(iaa.lower_market.bids.values())[-1].price * (1 - iaa_fee)
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 @pytest.mark.parametrize("iaa_fee_const", [0.5, 1, 5, 10])
@@ -274,7 +279,6 @@ def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
     assert iaa.higher_market.bid_count == 1
     bid = list(iaa.lower_market.bids.values())[-1]
     assert iaa.higher_market.forwarded_bid.price == bid.price - iaa_fee_const * bid.energy
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_event_trade_bid_deletes_forwarded_bid_when_sold(iaa_bid, called):
@@ -368,7 +372,6 @@ def iaa_double_sided():
     iaa.owner.current_tick += 2
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_event_trade_buys_accepted_offer(iaa2):
@@ -482,7 +485,6 @@ def iaa_double_sided_2():
                                 higher_market=higher_market)
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 def test_iaa_double_sided_performs_pay_as_bid_matching(iaa_double_sided_2):
@@ -523,7 +525,6 @@ def iaa_double_sided_pay_as_clear():
                                   higher_market=higher_market)
     iaa.event_tick(area=iaa.owner)
     yield iaa
-    ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 @pytest.mark.parametrize("offer, bid, MCP", [
@@ -558,7 +559,6 @@ def test_iaa_double_sided_performs_pay_as_clear_matching(iaa_double_sided_pay_as
 
     matched = low_high_engine._perform_pay_as_clear_matching()[0]
     assert matched == MCP
-    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
 
 
 def test_iaa_double_sided_pay_as_clear_works_with_floats(iaa_double_sided_pay_as_clear):

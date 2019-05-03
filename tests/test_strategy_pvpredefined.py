@@ -79,8 +79,8 @@ class FakeMarket:
         self.created_offers = []
         self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A', market=self)}
 
-    def offer(self, price, energy, seller, market=None):
-        offer = Offer(str(uuid.uuid4()), price, energy, seller, market)
+    def offer(self, price, energy, seller, market=None, original_offer_price=None):
+        offer = Offer(str(uuid.uuid4()), price, energy, seller, market, original_offer_price)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer

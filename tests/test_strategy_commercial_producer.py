@@ -65,8 +65,8 @@ class FakeMarket:
         self.created_offers = []
         self.created_balancing_offers = []
 
-    def offer(self, price, energy, seller, market=None):
-        offer = Offer('id', price, energy, seller, market)
+    def offer(self, price, energy, seller, market=None, original_offer_price=None):
+        offer = Offer('id', price, energy, seller, market, original_offer_price)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer

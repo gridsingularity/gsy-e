@@ -172,11 +172,12 @@ class OfferUpdateFrequencyMixin:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
+                updated_price = round(offer.price - (offer.energy * decrease_rate_per_tick), 10)
                 new_offer = iterated_market.offer(
-                    round(offer.price - (offer.energy *
-                          decrease_rate_per_tick), 10),
+                    updated_price,
                     offer.energy,
-                    self.owner.name
+                    self.owner.name,
+                    original_offer_price=updated_price
                 )
                 if (new_offer.price/new_offer.energy) < self.final_selling_rate:
                     new_offer.price = self.final_selling_rate * new_offer.energy
@@ -214,11 +215,13 @@ class OfferUpdateFrequencyMixin:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
-
+                updated_price = offer.energy * \
+                    self.calculate_initial_sell_rate(iterated_market.time_slot)
                 new_offer = iterated_market.offer(
-                    offer.energy * self.calculate_initial_sell_rate(iterated_market.time_slot),
+                    updated_price,
                     offer.energy,
-                    self.owner.name
+                    self.owner.name,
+                    original_offer_price=updated_price
                 )
                 self.offers.replace(offer, new_offer, iterated_market)
             except MarketException:
