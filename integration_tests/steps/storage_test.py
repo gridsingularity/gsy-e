@@ -105,9 +105,9 @@ def check_custom_storage(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     storage = list(filter(lambda x: x.name == "H1 Storage1", house1.children))[0]
     trades_sold = []
-    break_even_sell = list(storage.strategy.break_even.values())[-1][-1]
     for market in house1.past_markets:
         slot = market.time_slot
+        break_even_sell = storage.strategy.break_even[slot][-1]
         for id, offer in market.offers.items():
             if offer.seller in storage.name:
                 assert isclose((offer.price / offer.energy),
