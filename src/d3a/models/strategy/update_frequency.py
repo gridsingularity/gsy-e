@@ -151,6 +151,7 @@ class OfferUpdateFrequencyMixin:
         else:
             raise ValueError("Initial rate option should be one of the InitialRateOptions.")
 
+    @property
     def _price_update_interval(self):
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
@@ -198,13 +199,13 @@ class OfferUpdateFrequencyMixin:
             price_dec_per_update = price_dec_per_slot / price_updates_per_slot
             reduced_price = \
                 self.calculate_initial_sell_rate(market.time_slot) - \
-                price_dec_per_update * self._price_update_interval()
+                price_dec_per_update * self._price_update_interval
             return reduced_price
         elif self.energy_rate_decrease_option is \
                 RateDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
             reduced_price = \
                 self.calculate_initial_sell_rate(market.time_slot) - \
-                self.energy_rate_decrease_per_update * self._price_update_interval()
+                self.energy_rate_decrease_per_update * self._price_update_interval
             return reduced_price
 
     def update_market_cycle_offers(self, final_selling_rate):

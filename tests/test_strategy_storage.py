@@ -471,7 +471,7 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
     reduced_price = \
         storage_strategy_test7_2.calculate_initial_sell_rate(area_test7.
                                                              current_market.time_slot) - \
-        price_dec_per_update * storage_strategy_test7_2._price_update_interval()
+        price_dec_per_update * storage_strategy_test7_2._price_update_interval
     assert isclose(new_offer.price, old_offer.energy * reduced_price)
 
 

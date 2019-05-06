@@ -383,7 +383,7 @@ def testing_low_risk(area_test3, pv_test7):
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         reduced_price = \
             pv_test7.calculate_initial_sell_rate(area_test3.test_market.time_slot) - \
-            price_dec_per_update * pv_test7._price_update_interval()
+            price_dec_per_update * pv_test7._price_update_interval
         assert new_offer.price == old_offer.energy * reduced_price
 
 
@@ -419,7 +419,7 @@ def testing_high_risk(area_test3, pv_test8):
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
         reduced_price = \
             pv_test8.calculate_initial_sell_rate(area_test3.test_market.time_slot) - \
-            price_dec_per_update * pv_test8._price_update_interval()
+            price_dec_per_update * pv_test8._price_update_interval
         assert new_offer.price == old_offer.energy * reduced_price
 
 
