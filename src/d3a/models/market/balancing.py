@@ -26,7 +26,7 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import BalancingOffer, BalancingTrade
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidBalancingTradeException, \
-    DeviceNotInRegistryError, ChainTradeException
+    DeviceNotInRegistryError
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 log = getLogger(__name__)
@@ -72,7 +72,7 @@ class BalancingMarket(OneSidedMarket):
                      energy: int = None, time: DateTime = None, already_tracked: bool = False,
                      trade_rate: float = None, iaa_fee: bool = False) -> BalancingTrade:
         if iaa_fee and trade_rate is None:
-            raise ChainTradeException()
+            raise Exception()
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):

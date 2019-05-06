@@ -119,13 +119,13 @@ class OneSidedMarket(Market):
         if trade_rate is None:
             trade_rate = offer.price / offer.energy
 
-        energy_portion = energy / offer.energy
         self._sorted_offers = sorted(self.offers.values(),
                                      key=lambda o: o.price / o.energy)
         try:
             if time is None:
                 time = self._now
             if energy is not None:
+                energy_portion = energy / offer.energy
                 if energy == 0:
                     raise InvalidTrade("Energy can not be zero.")
                 # partial energy is requested
