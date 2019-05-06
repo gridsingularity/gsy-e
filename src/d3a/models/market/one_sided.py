@@ -96,8 +96,8 @@ class OneSidedMarket(Market):
 
     def _update_fee_and_calculate_final_price(self, energy, trade_rate,
                                               energy_portion, original_price):
-        fees = self.transfer_fee_ratio * original_price * energy_portion
-        fees += self.transfer_fee_const * energy
+        fees = self.transfer_fee_ratio * original_price * energy_portion \
+            + self.transfer_fee_const * energy
         self._grid_fee += fees
         return energy * trade_rate + fees
 
