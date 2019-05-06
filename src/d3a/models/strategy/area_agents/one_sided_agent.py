@@ -22,7 +22,7 @@ from d3a.d3a_core.util import make_iaa_name
 
 class OneSidedAgent(InterAreaAgent):
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=1, engine_type=IAAEngine):
+                 min_offer_age=0, engine_type=IAAEngine):
         super().__init__(engine_type=engine_type, owner=owner, higher_market=higher_market,
                          lower_market=lower_market, min_offer_age=min_offer_age)
         self.name = make_iaa_name(owner)
