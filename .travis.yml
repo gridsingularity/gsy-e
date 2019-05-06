@@ -1,6 +1,6 @@
 sudo: false
 dist: trusty
-language: python3.6
+language: python
 branches:
   only:
   - master
