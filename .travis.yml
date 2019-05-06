@@ -1,6 +1,6 @@
 sudo: false
 dist: trusty
-language: python
+language: python3.6
 branches:
   only:
   - master
@@ -12,7 +12,8 @@ jobs:
      install: .support/travis-install.sh
      script: .support/travis-run.sh
 # this is to trigger a new build of d3a-web for every push to master
-   - stage: trigger downstream
+   - python: 3.6
+     stage: trigger downstream
      jdk: oraclejdk8
      script: |
        echo "TRAVIS_BRANCH=$TRAVIS_BRANCH TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST"
