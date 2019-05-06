@@ -133,7 +133,6 @@ class OneSidedMarket(Market):
                         source_rate = trade_rate / (1 + self.transfer_fee_ratio) \
                                       - self.transfer_fee_const
                         self.market_fee += (trade_rate - source_rate) * energy
-                        print(self.area.name, self.market_fee)
                     else:
                         source_rate = trade_rate
                     accepted_offer = Offer(
