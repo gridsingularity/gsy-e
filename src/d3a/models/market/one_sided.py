@@ -128,11 +128,11 @@ class OneSidedMarket(Market):
                     assert trade_rate + FLOATING_POINT_TOLERANCE >= \
                         math.floor(offer.price / offer.energy)
 
-                    # reducing trade_rate to be charged in terms of grid_fee
+                    # reducing trade_rate to be charged in terms of market_fee
                     if iaa_fee:
                         source_rate = trade_rate / (1 + self.transfer_fee_ratio) \
                                       - self.transfer_fee_const
-                        self._grid_fee += (trade_rate - source_rate) * energy
+                        self.market_fee += (trade_rate - source_rate) * energy
                     else:
                         source_rate = trade_rate
                     accepted_offer = Offer(
@@ -172,7 +172,7 @@ class OneSidedMarket(Market):
                             # adjusted in grid fee
                             offer.price = trade_rate * offer.energy / \
                                           (1 + self.transfer_fee_ratio) + self.transfer_fee_const
-                            self._grid_fee += \
+                            self.market_fee += \
                                 trade_rate * (self.transfer_fee_ratio) * offer.energy
                         else:
                             offer.price = trade_rate * offer.energy
