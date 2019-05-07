@@ -61,16 +61,6 @@ class TestAreaClass(unittest.TestCase):
     def tearDown(self):
         GlobalConfig.market_count = 1
 
-    def test_respective_area_grid_fee_is_applied(self):
-        self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=5)
-        self.area.parent = Area(name="GRID")
-        self.area.config.market_count = 1
-        self.area.activate()
-        assert self.area.next_market.transfer_fee_ratio == 0.05
-        self.area.next_market.offer(1, 1, "test")
-        assert list(self.area.next_market.offers.values())[0].price == 1.05
-
     def test_markets_are_cycled_according_to_market_count(self):
         self.area._bc = False
         for i in range(2, 97):

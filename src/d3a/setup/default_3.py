@@ -44,10 +44,10 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=4,
+                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=1000,
+                                                                       hrs_per_day=13,
                                                                        hrs_of_day=list(
-                                                                           range(12, 16))),
+                                                                           range(5, 18))),
                          appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVStrategy(6, 80),
                          appliance=PVAppliance()),

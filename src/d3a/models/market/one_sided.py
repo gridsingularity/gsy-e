@@ -53,13 +53,14 @@ class OneSidedMarket(Market):
     def balancing_offer(self, price, energy, seller, from_agent):
         assert False
 
-    def offer(self, price: float, energy: float, seller: str) -> Offer:
+    def offer(self, price: float, energy: float, seller: str, market=None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
-
-        price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
+        if market is not None:
+            price = \
+                price * (1 + market.transfer_fee_ratio) + market.transfer_fee_const * energy
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)

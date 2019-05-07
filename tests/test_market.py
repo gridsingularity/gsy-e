@@ -573,7 +573,7 @@ def test_market_iou(market: OneSidedMarket):
     offer = market.offer(10, 20, 'A')
     market.accept_offer(offer, 'B')
 
-    assert market.ious['B']['A'] == 10.1
+    assert market.ious['B']['A'] == 10
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [

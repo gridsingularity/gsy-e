@@ -120,9 +120,11 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller):
+    def offer(self, price, energy, seller, market=None):
         self.offer_count += 1
-        price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
+        if market is not None:
+            price = \
+                price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller, market=self)
         return self.forwarded_offer
 
@@ -149,7 +151,7 @@ def iaa():
 
 @pytest.fixture
 def iaa_grid_fee():
-    lower_market = FakeMarket([Offer('id', 1, 1, 'other')], transfer_fee_ratio=0.1,
+    lower_market = FakeMarket([Offer('id', 1, 1, 'other')], transfer_fee_ratio=0.15,
                               transfer_fee_const=2)
     higher_market = FakeMarket([Offer('id2', 3, 3, 'owner'), Offer('id3', 0.5, 1, 'owner')],
                                transfer_fee_ratio=0.1, transfer_fee_const=2)
