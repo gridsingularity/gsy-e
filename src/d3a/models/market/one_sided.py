@@ -59,7 +59,8 @@ class OneSidedMarket(Market):
         if energy <= 0:
             raise InvalidOffer()
 
-        price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
+        if price != 0:
+            price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, self)

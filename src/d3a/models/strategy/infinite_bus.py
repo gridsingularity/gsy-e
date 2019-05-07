@@ -69,6 +69,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        if ConstSettings.IAASettings.MARKET_TYPE == 2:
+        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+           ConstSettings.IAASettings.MARKET_TYPE == 3:
             for market in self.area.all_markets:
                 self.post_bid(market, self.energy_rate[market.time_slot] * INF_ENERGY, INF_ENERGY)

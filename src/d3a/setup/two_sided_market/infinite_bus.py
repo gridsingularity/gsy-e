@@ -22,12 +22,9 @@ from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.appliance.pv import PVAppliance
-from d3a.models.const import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    config.update_config_parameters(transfer_fee_pct=0)
     area = Area(
         'Grid',
         [
@@ -37,14 +34,15 @@ def get_setup(config):
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_of_day=list(
                                                                            range(0, 23)),
-                                                                       final_buying_rate=25),
+                                                                       final_buying_rate=26,
+                                                                       initial_buying_rate=26),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(panel_count=4, risk=0,
+                    Area('H1 PV', strategy=PVStrategy(panel_count=4,
                                                       final_selling_rate=23,
                                                       initial_selling_rate=23,
                                                       initial_rate_option=3),
                          appliance=PVAppliance()),
-                ]
+                ], transfer_fee_const=1
             ),
             Area('Infinite Bus', strategy=InfiniteBusStrategy(energy_buy_rate=24,
                                                               energy_sell_rate=25),

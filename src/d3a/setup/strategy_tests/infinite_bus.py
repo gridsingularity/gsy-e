@@ -23,9 +23,6 @@ from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.appliance.pv import PVAppliance
 
-ib_selling_rate = {0: 26, 6: 27, 18: 26}
-ib_buying_rate = {0: 24, 6: 24.5, 18: 24}
-
 
 def get_setup(config):
     area = Area(
@@ -40,14 +37,15 @@ def get_setup(config):
                                                                            range(0, 23)),
                                                                        final_buying_rate=25),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(panel_count=4, risk=0,
-                                                      final_selling_rate=23.0,
-                                                      initial_rate_option=2),
+                    Area('H1 PV', strategy=PVStrategy(panel_count=4,
+                                                      initial_rate_option=3,
+                                                      initial_selling_rate=23.0,
+                                                      final_selling_rate=23.0),
                          appliance=PVAppliance()),
                 ]
             ),
             Area('Infinite Bus', strategy=InfiniteBusStrategy(energy_buy_rate=24,
-                                                              energy_sell_rate=ib_selling_rate),
+                                                              energy_sell_rate=24),
                  appliance=SimpleAppliance()
                  ),
 

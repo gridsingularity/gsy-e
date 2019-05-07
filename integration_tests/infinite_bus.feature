@@ -1,13 +1,13 @@
 Feature: Infinite Bus tests
 
-  Scenario: Infinite Bus one-sided market behaviour
-    Given we have a scenario named strategy_tests/infinite_bus
+  Scenario Outline: Infinite Bus behaviour
+    Given we have a scenario named <scenario>
     And d3a is installed
-    When we run the d3a simulation with strategy_tests.infinite_bus [24, 60, 60]
-    Then Infinite Bus buys energy that is not needed from the PV
+    And the market type is <market_type>
+    When we run the d3a simulation with <scenario> [24, 60, 60]
+    Then Infinite Bus buys energy that is not needed from the PV and sells to the load
+  Examples: Market Type
+     | scenario                      | market_type |
+     | strategy_tests.infinite_bus   |      1      |
+     | two_sided_market.infinite_bus |      2      |
 
-  Scenario: Infinite Bus two-sided PAB market behaviour
-    Given we have a scenario named two_sided_market/infinite_bus
-    And d3a is installed
-    When we run the d3a simulation with two_sided_market.infinite_bus [24, 60, 60]
-    Then Infinite Bus buys energy from the PV and sells to the load
