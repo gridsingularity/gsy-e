@@ -22,7 +22,7 @@ from d3a.models.strategy.area_agents.one_sided_engine import BalancingEngine
 
 class BalancingAgent(OneSidedAgent):
     def __init__(self, owner, higher_market, lower_market,
-                 min_offer_age=1):
+                 min_offer_age=0):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
         super().__init__(owner=owner, higher_market=higher_market,
                          lower_market=lower_market,

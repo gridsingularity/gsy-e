@@ -147,7 +147,7 @@ def pv_test3(area_test3):
     p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
+    p.offers.posted = {Offer('id', 30, 1, 'FakeArea', market=area_test3.test_market):
                        area_test3.test_market}
     return p
 
@@ -157,9 +157,10 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
     old_offer = list(pv_test3.offers.posted.keys())[0]
-    pv_test3._decrease_offer_price(area_test3.test_market,
-                                   pv_test3._calculate_price_decrease_rate(
-                                           area_test3.test_market))
+    area_test3.current_tick += 7
+    dec_rate = pv_test3._calculate_price_decrease_rate(area_test3.test_market)
+    pv_test3._decrease_offer_price(area_test3.test_market, dec_rate)
+
     new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
 

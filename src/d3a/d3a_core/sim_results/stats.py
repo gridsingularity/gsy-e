@@ -77,7 +77,9 @@ def energy_bills(area, past_market_types):
                                total_energy=0, total_cost=0,
                                type=child.display_type)
               for child in area.children}
+    result["market_fee"] = 0
     for market in getattr(area, past_market_types):
+        result["market_fee"] += market.market_fee
         for trade in market.trades:
             buyer = area_name_from_area_or_iaa_name(trade.buyer)
             seller = area_name_from_area_or_iaa_name(trade.seller)
@@ -89,6 +91,7 @@ def energy_bills(area, past_market_types):
     for child in area.children:
         child_result = energy_bills(child, past_market_types)
         if child_result is not None:
+            result[child.name]['market_fee'] = child_result.pop("market_fee")
             result[child.name]['children'] = child_result
 
     return result

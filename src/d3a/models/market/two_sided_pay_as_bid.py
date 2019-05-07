@@ -79,7 +79,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
-        self._grid_fee += fees
+        self.market_fee += fees
         return energy * trade_rate + fees
 
     def accept_bid(self, bid: Bid, energy: float = None,
@@ -97,8 +97,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
         assert trade_rate <= (market_bid.price / market_bid.energy) + FLOATING_POINT_TOLERANCE, \
             f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
 
-        # source_rate = trade_rate / (1 - self.transfer_fee_ratio) + self.transfer_fee_const
-        # self._grid_fee += (trade_rate - source_rate) * energy
         orig_price = bid.original_bid_price if bid.original_bid_price is not None else bid.price
 
         if energy <= 0:

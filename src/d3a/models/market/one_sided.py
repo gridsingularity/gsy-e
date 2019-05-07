@@ -98,7 +98,7 @@ class OneSidedMarket(Market):
                                               energy_portion, original_price):
         fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
-        self._grid_fee += fees
+        self.market_fee += fees
         return energy * trade_rate + fees
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
@@ -142,6 +142,7 @@ class OneSidedMarket(Market):
                     )
 
                     original_residual_price = ((offer.energy - energy) / offer.energy) * orig_price
+
                     accepted_offer = Offer(
                         accepted_offer_id,
                         final_price,
