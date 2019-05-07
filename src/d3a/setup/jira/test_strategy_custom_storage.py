@@ -52,11 +52,11 @@ class CustomStorageStrategy(StorageStrategy):
         Decreases the offer rate by 0.1 ct/kWh per tick
         """
 
-        decrease_rate_per_tick = 0.1
+        reduced_rate = 5
         # example for determining the current tick number:
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         if current_tick_number >= 0:
-            self._decrease_offer_price(self.area.next_market, decrease_rate_per_tick)
+            self._decrease_offer_price(self.area.next_market, reduced_rate)
 
     def select_market_to_sell(self):
         """
