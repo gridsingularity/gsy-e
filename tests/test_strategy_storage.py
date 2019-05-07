@@ -441,7 +441,7 @@ def test_calculate_initial_sell_energy_rate_upper_bound(storage_strategy_test7_1
 @pytest.fixture()
 def storage_strategy_test7_2(area_test7):
     s = StorageStrategy(initial_capacity_kWh=3.0, battery_capacity_kWh=3.01,
-                        max_abs_battery_power_kW=5.21, initial_rate_option=1, break_even=(16, 17))
+                        max_abs_battery_power_kW=5.21, initial_rate_option=2, break_even=(16, 17))
     s.owner = area_test7
     s.area = area_test7
     s.offers.posted = {Offer('id', 30, 1, 'FakeArea',
@@ -452,20 +452,27 @@ def storage_strategy_test7_2(area_test7):
 @pytest.mark.parametrize("risk", [10.0, 25.0, 95.0])
 def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
     storage_strategy_test7_2.risk = risk
+    assert len(storage_strategy_test7_2.offers.posted.items()) == 1
     storage_strategy_test7_2.event_activate()
+    storage_strategy_test7_2.event_market_cycle()
+
     old_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
-    storage_strategy_test7_2._decrease_offer_price(
-        area_test7.current_market,
-        storage_strategy_test7_2._calculate_price_decrease_rate(area_test7.current_market))
-    new_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
-    price_dec_per_slot = (area_test7.historical_avg_rate) * (1 - storage_strategy_test7_2.risk /
-                                                             ConstSettings.
-                                                             GeneralSettings.MAX_RISK)
+    area_test7.current_tick += 7
+    dec_rate = storage_strategy_test7_2._calculate_price_decrease_rate(area_test7.current_market)
+    storage_strategy_test7_2._decrease_offer_price(area_test7.current_market, dec_rate)
+    new_offer = list(storage_strategy_test7_2.offers.posted.keys())[-1]
+    price_dec_per_slot = \
+        (storage_strategy_test7_2.
+         calculate_initial_sell_rate(area_test7.current_market.time_slot)) * \
+        (1 - storage_strategy_test7_2.risk / ConstSettings.GeneralSettings.MAX_RISK)
     price_updates_per_slot = int(area_test7.config.slot_length.seconds
                                  / storage_strategy_test7_2._decrease_price_every_nr_s)
     price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-    assert round(new_offer.price, 8) == round(
-        old_offer.price - (old_offer.energy * price_dec_per_update), 8)
+    reduced_price = \
+        storage_strategy_test7_2.calculate_initial_sell_rate(area_test7.
+                                                             current_market.time_slot) - \
+        price_dec_per_update * storage_strategy_test7_2._price_update_interval
+    assert isclose(new_offer.price, old_offer.energy * reduced_price)
 
 
 @pytest.fixture()

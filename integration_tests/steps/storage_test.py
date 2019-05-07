@@ -104,16 +104,14 @@ def check_capacity_dependant_sell_rate(context):
 def check_custom_storage(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     storage = list(filter(lambda x: x.name == "H1 Storage1", house1.children))[0]
-    price_dec_per_slot = 0.1 * int(context.simulation.simulation_config.slot_length.seconds /
-                                   context.simulation.simulation_config.tick_length.seconds)
     trades_sold = []
     for market in house1.past_markets:
         slot = market.time_slot
+        break_even_sell = storage.strategy.break_even[slot][-1]
         for id, offer in market.offers.items():
             if offer.seller in storage.name:
                 assert isclose((offer.price / offer.energy),
-                               context.simulation.simulation_config.
-                               market_maker_rate[slot] - price_dec_per_slot)
+                               break_even_sell)
         for trade in market.trades:
             if trade.seller == storage.name:
                 trades_sold.append(trade)

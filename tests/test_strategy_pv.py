@@ -198,11 +198,13 @@ def testing_decrease_offer_price(area_test3, pv_test3):
     assert len(pv_test3.offers.posted.items()) == 1
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
+
     for i in range(3):
+        area_test3.current_tick += 7
         old_offer = list(pv_test3.offers.posted.keys())[0]
-        pv_test3._decrease_offer_price(area_test3.test_market,
-                                       pv_test3._calculate_price_decrease_rate(
-                                           area_test3.test_market))
+        dec_rate = pv_test3._calculate_price_decrease_rate(area_test3.test_market)
+        pv_test3._decrease_offer_price(area_test3.test_market, dec_rate)
+
         new_offer = list(pv_test3.offers.posted.keys())[0]
         assert new_offer.price < old_offer.price
 
@@ -353,7 +355,8 @@ def test_pv_constructor_rejects_incorrect_parameters():
 
 @pytest.fixture()
 def pv_test7(area_test3):
-    p = PVStrategy(1, 95)
+    p = PVStrategy(panel_count=1, risk=95, initial_rate_option=1,
+                   initial_selling_rate=30, energy_rate_decrease_option=1)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
@@ -366,19 +369,22 @@ def testing_low_risk(area_test3, pv_test7):
     pv_test7.event_activate()
     pv_test7.event_market_cycle()
     for i in range(3):
+        area_test3.current_tick += 7
         old_offer = list(pv_test7.offers.posted.keys())[0]
-        pv_test7._decrease_offer_price(area_test3.test_market,
-                                       pv_test7._calculate_price_decrease_rate(
-                                           area_test3.test_market))
+        dec_rate = pv_test7._calculate_price_decrease_rate(area_test3.test_market)
+        pv_test7._decrease_offer_price(area_test3.test_market, dec_rate)
         new_offer = list(pv_test7.offers.posted.keys())[0]
-        price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test7.risk /
-                                                                 ConstSettings.
-                                                                 GeneralSettings.MAX_RISK)
+
+        price_dec_per_slot = \
+            (pv_test7.calculate_initial_sell_rate(area_test3.test_market.time_slot)) * \
+            (1 - pv_test7.risk / ConstSettings.GeneralSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
                                      / pv_test7._decrease_price_every_nr_s)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-        assert new_offer.price == round(old_offer.price
-                                        - (old_offer.energy * price_dec_per_update), 8)
+        reduced_price = \
+            pv_test7.calculate_initial_sell_rate(area_test3.test_market.time_slot) - \
+            price_dec_per_update * pv_test7._price_update_interval
+        assert new_offer.price == old_offer.energy * reduced_price
 
 
 """TEST8"""
@@ -386,7 +392,8 @@ def testing_low_risk(area_test3, pv_test7):
 
 @pytest.fixture()
 def pv_test8(area_test3):
-    p = PVStrategy(1, 10)
+    p = PVStrategy(panel_count=1, risk=10, initial_rate_option=1,
+                   initial_selling_rate=30, energy_rate_decrease_option=1)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
@@ -400,17 +407,20 @@ def testing_high_risk(area_test3, pv_test8):
     pv_test8.event_market_cycle()
     for i in range(3):
         old_offer = list(pv_test8.offers.posted.keys())[0]
-        pv_test8._decrease_offer_price(area_test3.test_market,
-                                       pv_test8._calculate_price_decrease_rate(
-                                           area_test3.test_market))
+        area_test3.current_tick += 7
+        dec_rate = pv_test8._calculate_price_decrease_rate(area_test3.test_market)
+        pv_test8._decrease_offer_price(area_test3.test_market, dec_rate)
         new_offer = list(pv_test8.offers.posted.keys())[0]
-        price_dec_per_slot = (area_test3.historical_avg_rate) * (1 - pv_test8.risk /
-                                                                 ConstSettings.
-                                                                 GeneralSettings.MAX_RISK)
+        price_dec_per_slot = \
+            (pv_test8.calculate_initial_sell_rate(area_test3.test_market.time_slot)) * \
+            (1 - pv_test8.risk / ConstSettings.GeneralSettings.MAX_RISK)
         price_updates_per_slot = int(area_test3.config.slot_length.seconds
                                      / pv_test8._decrease_price_every_nr_s)
         price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-        assert new_offer.price == old_offer.price - (old_offer.energy * price_dec_per_update)
+        reduced_price = \
+            pv_test8.calculate_initial_sell_rate(area_test3.test_market.time_slot) - \
+            price_dec_per_update * pv_test8._price_update_interval
+        assert new_offer.price == old_offer.energy * reduced_price
 
 
 """TEST9"""
