@@ -32,21 +32,15 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     def __init__(self, energy_sell_rate=None, energy_buy_rate=None):
         super().__init__()
         self.energy_per_slot_kWh = INF_ENERGY
-        energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE \
-            if energy_buy_rate is None else energy_buy_rate
-        energy_sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE \
-            if energy_sell_rate is None else energy_sell_rate
-        self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_sell_rate)
-        self.energy_buy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_buy_rate)
+        self.energy_buy_rate = energy_buy_rate
+        self.energy_rate = energy_sell_rate
 
-    def offer_energy(self, market):
-        energy_rate = self.energy_rate[market.time_slot]
-        offer = market.offer(
-            self.energy_per_slot_kWh * energy_rate,
-            self.energy_per_slot_kWh,
-            self.owner.name
-        )
-        self.offers.post(offer, market)
+    def event_activate(self):
+        self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
+            else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
+
+        self.energy_buy_rate = self.area.config.market_maker_rate if self.energy_buy_rate is None \
+            else read_arbitrary_profile(InputProfileTypes.IDENTITYself.energy_buy_rate)
 
     def buy_energy(self, market):
         for offer in market.sorted_offers:
@@ -61,8 +55,6 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                     continue
 
     def event_tick(self, *, area):
-        super().event_tick(area=area)
-
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             for market in self.area.all_markets:
                 self.buy_energy(market)

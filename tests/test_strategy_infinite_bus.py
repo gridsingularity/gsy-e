@@ -161,6 +161,7 @@ def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
 def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registry(
         bus_test1, area_test1):
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
+    bus_test1.event_activate()
     bus_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
@@ -242,6 +243,7 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
 
 
 def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, bus_test2):
+    bus_test2.event_activate()
     bus_test2.offer_energy(area_test2.test_market)
     assert len(bus_test2.offers.posted) == 1
     assert list(bus_test2.offers.posted.values())[0] == area_test2.test_market
