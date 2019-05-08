@@ -40,7 +40,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
 
         self.energy_buy_rate = self.area.config.market_maker_rate if self.energy_buy_rate is None \
-            else read_arbitrary_profile(InputProfileTypes.IDENTITYself.energy_buy_rate)
+            else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_buy_rate)
 
     def buy_energy(self, market):
         for offer in market.sorted_offers:

@@ -260,9 +260,9 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
 @pytest.mark.parametrize("iaa_fee_const", [0.5, 1, 5, 10])
 def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')],
+    lower_market = FakeMarket([], [Bid('id', 10, 1, 'this', 'other')],
                               transfer_fee_const=iaa_fee_const)
-    higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')],
+    higher_market = FakeMarket([], [Bid('id2', 30, 3, 'child', 'owner')],
                                transfer_fee_const=iaa_fee_const)
     iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
                                 higher_market=higher_market,
