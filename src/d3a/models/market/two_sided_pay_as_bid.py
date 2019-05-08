@@ -76,7 +76,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     def _update_fee_and_calculate_final_price(self, energy, trade_rate,
                                               energy_portion, original_price):
-
         fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
         self.market_fee += fees
@@ -84,7 +83,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   trade_rate: float = None):
+                   trade_rate: float = None, original_trade_rate=None):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
@@ -94,60 +93,66 @@ class TwoSidedPayAsBid(OneSidedMarket):
         energy = market_bid.energy if energy is None else energy
         if trade_rate is None:
             trade_rate = market_bid.price / market_bid.energy
+
+        print(f"TRADE RATE {trade_rate} ORIGINAL {original_trade_rate}")
         assert trade_rate <= (market_bid.price / market_bid.energy) + FLOATING_POINT_TOLERANCE, \
             f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
 
         orig_price = bid.original_bid_price if bid.original_bid_price is not None else bid.price
+        residual = None
 
         if energy <= 0:
-            raise InvalidTrade("Energy cannot be zero.")
+            raise InvalidTrade("Energy cannot be less than zero.")
         elif energy > market_bid.energy:
             raise InvalidTrade("Traded energy cannot be more than the bid energy.")
-        elif energy is None or energy <= market_bid.energy:
-            residual = False
-            if energy is not None and energy < market_bid.energy:
-                # Partial bidding
-                energy_portion = energy / market_bid.energy
-                residual_price = (1 - energy_portion) * market_bid.price
-                residual_energy = market_bid.energy - energy
+        elif energy < market_bid.energy:
+            if original_trade_rate is not None:
+                orig_price = original_trade_rate * market_bid.energy
 
-                # Manually creating the bid in order to not double-charge the fee of the
-                # residual bid
-                changed_bid = Bid(
-                    str(uuid.uuid4()), residual_price, residual_energy,
-                    buyer, seller, self,
-                    original_bid_price=(residual_energy / market_bid.energy) * orig_price
-                )
-                self.bids[changed_bid.id] = changed_bid
-                self.bid_history.append(changed_bid)
+            # Partial bidding
+            energy_portion = energy / market_bid.energy
+            residual_price = (1 - energy_portion) * market_bid.price
+            residual_energy = market_bid.energy - energy
 
-                self._notify_listeners(MarketEvent.BID_CHANGED,
-                                       existing_bid=bid, new_bid=changed_bid)
-                residual = changed_bid
+            # Manually creating the bid in order to not double-charge the fee of the
+            # residual bid
+            changed_bid = Bid(
+                str(uuid.uuid4()), residual_price, residual_energy,
+                buyer, seller, self,
+                original_bid_price=energy_portion * orig_price
+            )
+            self.bids[changed_bid.id] = changed_bid
+            self.bid_history.append(changed_bid)
 
-                final_price = self._update_fee_and_calculate_final_price(
-                    energy, trade_rate, energy_portion, orig_price
-                )
+            self._notify_listeners(MarketEvent.BID_CHANGED,
+                                   existing_bid=bid, new_bid=changed_bid)
+            residual = changed_bid
 
-                bid = Bid(bid.id, final_price, energy, buyer, seller, self,
-                          original_bid_price=energy_portion * orig_price)
-            else:
-                fees = self.transfer_fee_ratio * orig_price
-                fees += self.transfer_fee_const * energy
-                self._grid_fee += fees
+            final_price = self._update_fee_and_calculate_final_price(
+                energy, trade_rate, energy_portion, orig_price
+            ) if not already_tracked else market_bid.energy * trade_rate
 
-                final_price = market_bid.energy * trade_rate + fees
-                bid = bid._replace(price=final_price)
-            trade = Trade(str(uuid.uuid4()), self._now, bid, seller,
-                          buyer, residual, already_tracked=already_tracked)
-
-            if not already_tracked:
-                self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
-                log.warning(f"[TRADE][BID][{self.time_slot_str}] {trade}")
-
-            self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
-            if not trade.residual:
-                self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
-            return trade
+            bid = Bid(bid.id, final_price, energy, buyer, seller, self,
+                      original_bid_price=energy_portion * orig_price)
         else:
-            raise Exception("Undefined state or conditions. Should never reach this place.")
+            fees = self.transfer_fee_ratio * orig_price
+            fees += self.transfer_fee_const * energy
+            self.market_fee += fees
+
+            final_price = market_bid.energy * trade_rate + fees \
+                if not already_tracked else market_bid.energy * trade_rate
+
+            bid = bid._replace(price=final_price)
+
+        trade = Trade(str(uuid.uuid4()), self._now, bid, seller,
+                      buyer, residual, already_tracked=already_tracked,
+                      original_trade_rate=original_trade_rate)
+
+        if not already_tracked:
+            self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
+            log.warning(f"[TRADE][BID][{self.time_slot_str}] {trade}")
+
+        self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
+        if not trade.residual:
+            self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
+        return trade

@@ -128,7 +128,8 @@ class IAAEngine:
                     offer_info.source_offer,
                     energy=trade.offer.energy,
                     buyer=self.owner.name,
-                    trade_rate=trade_offer_rate
+                    trade_rate=trade_offer_rate,
+                    original_trade_rate=trade.original_trade_rate
                 )
 
             except OfferNotFoundException:

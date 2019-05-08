@@ -94,28 +94,35 @@ class OneSidedMarket(Market):
         # TODO: Once we add event-driven blockchain, this should be asynchronous
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
-    def _update_fee_and_calculate_final_price(self, energy, trade_rate,
-                                              energy_portion, original_price):
-        fees = self.transfer_fee_ratio * original_price * energy_portion \
+    def _update_offer_fee_and_calculate_final_price(self, energy, trade_rate, original_price):
+        fees = self.transfer_fee_ratio * original_price \
             + self.transfer_fee_const * energy
         self.market_fee += fees
-        return energy * trade_rate + fees
+        return energy * trade_rate - fees
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
-                     already_tracked: bool=False, trade_rate: float = None) -> Trade:
+                     already_tracked: bool=False, trade_rate: float = None,
+                     original_trade_rate: float = None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
+
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
         offer = self.offers.pop(offer_or_id, None)
         if offer is None:
             raise OfferNotFoundException()
+
+        if energy is None:
+            energy = offer.energy
+
         original_offer = offer
         residual_offer = None
-        orig_price = offer.original_offer_price \
-            if offer.original_offer_price is not None \
-            else offer.price
+
+        if offer.original_offer_price is not None:
+            orig_price = offer.original_offer_price
+        else:
+            orig_price = offer.price
         if trade_rate is None:
             trade_rate = offer.price / offer.energy
 
@@ -124,64 +131,65 @@ class OneSidedMarket(Market):
         try:
             if time is None:
                 time = self._now
-            if energy is not None:
-                energy_portion = energy / offer.energy
-                if energy == 0:
-                    raise InvalidTrade("Energy can not be zero.")
-                # partial energy is requested
-                elif energy < offer.energy:
-                    original_offer = offer
-                    accepted_offer_id = offer.id \
-                        if self.area is None or self.area.bc is None \
-                        else offer.real_id
+            if original_trade_rate is not None:
+                orig_price = original_trade_rate * energy
 
-                    assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
+            energy_portion = energy / offer.energy
+            if energy == 0:
+                raise InvalidTrade("Energy can not be zero.")
+            # partial energy is requested
+            elif energy < offer.energy:
+                original_offer = offer
+                accepted_offer_id = offer.id \
+                    if self.area is None or self.area.bc is None \
+                    else offer.real_id
 
-                    final_price = self._update_fee_and_calculate_final_price(
-                        energy, trade_rate, energy_portion, orig_price
-                    )
+                assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 
-                    original_residual_price = ((offer.energy - energy) / offer.energy) * orig_price
+                final_price = self._update_offer_fee_and_calculate_final_price(
+                    energy, trade_rate, orig_price
+                ) if not already_tracked else energy * trade_rate
 
-                    accepted_offer = Offer(
-                        accepted_offer_id,
-                        final_price,
-                        energy,
-                        offer.seller,
-                        offer.market
-                    )
+                original_residual_price = ((offer.energy - energy) / offer.energy) * orig_price
+                accepted_offer = Offer(
+                    accepted_offer_id,
+                    final_price,
+                    energy,
+                    offer.seller,
+                    offer.market
+                )
 
-                    residual_price = (1 - energy_portion) * offer.price
-                    residual_energy = offer.energy - energy
+                residual_price = (1 - energy_portion) * offer.price
+                residual_energy = offer.energy - energy
 
-                    residual_offer = Offer(
-                        str(uuid.uuid4()),
-                        residual_price,
-                        residual_energy,
-                        offer.seller,
-                        offer.market,
-                        original_offer_price=original_residual_price
-                    )
-                    self.offers[residual_offer.id] = residual_offer
-                    log.info(f"[OFFER][CHANGED][{self.time_slot_str}] "
-                             f"{original_offer} -> {residual_offer}")
-                    offer = accepted_offer
+                residual_offer = Offer(
+                    str(uuid.uuid4()),
+                    residual_price,
+                    residual_energy,
+                    offer.seller,
+                    offer.market,
+                    original_offer_price=original_residual_price
+                )
+                self.offers[residual_offer.id] = residual_offer
+                log.info(f"[OFFER][CHANGED][{self.time_slot_str}] "
+                         f"{original_offer} -> {residual_offer}")
+                offer = accepted_offer
 
-                    self.bc_interface.change_offer(offer, original_offer, residual_offer)
-                    self._sorted_offers = sorted(self.offers.values(),
-                                                 key=lambda o: o.price / o.energy)
-                    self._notify_listeners(
-                        MarketEvent.OFFER_CHANGED,
-                        existing_offer=original_offer,
-                        new_offer=residual_offer
-                    )
-                elif energy > offer.energy:
-                    raise InvalidTrade("Energy can't be greater than offered energy")
-                else:
-                    # Requested energy is equal to offer's energy - just proceed normally
-                    offer.price = self._update_fee_and_calculate_final_price(
-                        energy, trade_rate, energy_portion, orig_price
-                    )
+                self.bc_interface.change_offer(offer, original_offer, residual_offer)
+                self._sorted_offers = sorted(self.offers.values(),
+                                             key=lambda o: o.price / o.energy)
+                self._notify_listeners(
+                    MarketEvent.OFFER_CHANGED,
+                    existing_offer=original_offer,
+                    new_offer=residual_offer
+                )
+            elif energy > offer.energy:
+                raise InvalidTrade("Energy can't be greater than offered energy")
+            else:
+                # Requested energy is equal to offer's energy - just proceed normally
+                offer.price = self._update_offer_fee_and_calculate_final_price(
+                    energy, trade_rate, orig_price
+                ) if not already_tracked else energy * trade_rate
 
         except Exception:
             # Exception happened - restore offer
@@ -194,7 +202,8 @@ class OneSidedMarket(Market):
             self.bc_interface.handle_blockchain_trade_event(
                 offer, buyer, original_offer, residual_offer
             )
-        trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer)
+        trade = Trade(trade_id, time, offer, offer.seller, buyer,
+                      residual_offer, original_trade_rate=original_trade_rate)
         self.bc_interface.track_trade_event(trade)
 
         if not already_tracked:

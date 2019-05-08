@@ -92,17 +92,29 @@ class TwoSidedPayAsBidEngine(IAAEngine):
     def _match_offers_bids(self):
         for bid, offer in self._perform_pay_as_bid_matching():
             selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+            original_bid_rate = bid.original_bid_price / bid.energy
+            clearing_rate = bid.price / bid.energy
+            # print(f"OFFER SELLER {offer.seller}")
+            # print(f"OWNER {self.owner.name}")
+            # print(f"MARKET NAME {self.markets.source.area.name}")
+            # print(f"BID BUYER {bid.buyer}")
+            # print(f"BID SELLER {bid.seller}")
+
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
                                     buyer=bid.buyer,
                                     energy=selected_energy,
-                                    trade_rate=(bid.price / bid.energy))
+                                    trade_rate=clearing_rate,
+                                    already_tracked=True,
+                                    original_trade_rate=original_bid_rate)
             self._delete_forwarded_offer_entries(offer)
             self.markets.source.accept_bid(bid,
                                            selected_energy,
-                                           seller=bid.seller,
+                                           seller=offer.seller,
                                            buyer=bid.buyer,
-                                           already_tracked=True)
+                                           already_tracked=False,
+                                           trade_rate=clearing_rate,
+                                           original_trade_rate=original_bid_rate)
 
             bid_info = self.forwarded_bids.get(bid.id, None)
             if bid_info is not None:
@@ -137,19 +149,20 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
 
-            # target_rate = bid_trade.offer.price / bid_trade.offer.energy
-            # source_rate = market_bid.price / market_bid.energy
             source_rate = bid_info.source_bid.price / bid_info.source_bid.energy
             target_rate = bid_info.target_bid.price / bid_info.target_bid.energy
             assert source_rate >= target_rate, \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
+
+            trade_rate = (bid_trade.offer.price/bid_trade.offer.energy)
 
             source_trade = self.markets.source.accept_bid(
                 market_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False,
-                trade_rate=(bid_trade.offer.price/bid_trade.offer.energy)
+                trade_rate=trade_rate,
+                original_trade_rate=bid_trade.original_trade_rate
             )
 
             self.after_successful_trade_event(source_trade, bid_info)

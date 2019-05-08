@@ -140,9 +140,7 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
             if len(market.sorted_offers) < 1:
                 return
             acceptable_offer = self._find_acceptable_offer(market)
-
             if acceptable_offer and \
-                    self.initial_buying_rate[market.time_slot] <= \
                     round(acceptable_offer.price / acceptable_offer.energy, 8) <= \
                     self.final_buying_rate[market.time_slot]:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
