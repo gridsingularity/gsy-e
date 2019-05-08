@@ -225,14 +225,16 @@ class IAAEngine:
             self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
             offer_info = self.forwarded_offers[existing_offer.id]
             forwarded = self._forward_offer(new_offer, new_offer.id)
-            if forwarded:
-                self.owner.log.info("Offer %s changed to residual offer %s",
-                                    offer_info.target_offer,
-                                    forwarded)
+            if not forwarded:
+                return
 
-                # Do not delete the forwarded offer entries for the case of residual offers
-                if existing_offer.seller != new_offer.seller:
-                    self._delete_forwarded_offer_entries(offer_info.source_offer)
+            self.owner.log.info("Offer %s changed to residual offer %s",
+                                offer_info.target_offer,
+                                forwarded)
+
+            # Do not delete the forwarded offer entries for the case of residual offers
+            if existing_offer.seller != new_offer.seller:
+                self._delete_forwarded_offer_entries(offer_info.source_offer)
 
 
 class BalancingEngine(IAAEngine):
