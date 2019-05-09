@@ -124,7 +124,7 @@ class FakeMarket:
         self.offer_count += 1
         if market is not None:
             price = \
-                price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
+                price * (1 + market.transfer_fee_ratio) + market.transfer_fee_const * energy
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller, market=self)
         return self.forwarded_offer
 
