@@ -19,6 +19,7 @@ import sys
 
 from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 
 class CommercialStrategy(BaseStrategy):
@@ -28,8 +29,12 @@ class CommercialStrategy(BaseStrategy):
         if energy_rate is not None and energy_rate < 0:
             raise ValueError("Energy rate should be positive.")
         super().__init__()
-        self.energy_per_slot_kWh = int(sys.maxsize)
         self.energy_rate = energy_rate
+        self.energy_per_slot_kWh = int(sys.maxsize)
+
+    def event_activate(self):
+        self.energy_rate = self.area.config.market_maker_rate if self.energy_rate is None \
+            else read_arbitrary_profile(InputProfileTypes.IDENTITY, self.energy_rate)
 
     def _markets_to_offer_on_activate(self):
         return self.area.all_markets
@@ -42,7 +47,6 @@ class CommercialStrategy(BaseStrategy):
             self._offer_balancing_energy(market)
 
     def event_market_cycle(self):
-
         if not self.area.last_past_market:
             # Post new offers only on first time_slot:
             self.place_initial_offers()
@@ -56,9 +60,7 @@ class CommercialStrategy(BaseStrategy):
                 self._offer_balancing_energy(balancing_market)
 
     def offer_energy(self, market):
-        energy_rate = self.area.config.market_maker_rate[market.time_slot] \
-            if self.energy_rate is None \
-            else self.energy_rate
+        energy_rate = self.energy_rate[market.time_slot]
         offer = market.offer(
             self.energy_per_slot_kWh * energy_rate,
             self.energy_per_slot_kWh,
