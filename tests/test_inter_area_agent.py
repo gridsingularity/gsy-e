@@ -151,7 +151,7 @@ def iaa():
 
 @pytest.fixture
 def iaa_grid_fee():
-    lower_market = FakeMarket([Offer('id', 1, 1, 'other')], transfer_fee_ratio=0.15,
+    lower_market = FakeMarket([Offer('id', 1, 1, 'other')], transfer_fee_ratio=0.1,
                               transfer_fee_const=2)
     higher_market = FakeMarket([Offer('id2', 3, 3, 'owner'), Offer('id3', 0.5, 1, 'owner')],
                                transfer_fee_ratio=0.1, transfer_fee_const=2)

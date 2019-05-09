@@ -28,6 +28,7 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, ChainTradeException
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
+from d3a.models.const import ConstSettings
 
 log = getLogger(__name__)
 
@@ -58,7 +59,12 @@ class OneSidedMarket(Market):
             raise MarketReadOnlyException()
         if energy <= 0:
             raise InvalidOffer()
-        if market is not None:
+        # For Single-sided Market, fee should be added based on target market grid fee
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            price = \
+                price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
+        # For Double-sided Market, fee should be added based on source market grid fee
+        elif market is not None:
             price = \
                 price * (1 + market.transfer_fee_ratio) + market.transfer_fee_const * energy
 
