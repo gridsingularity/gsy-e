@@ -45,7 +45,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             bid.energy,
             self.owner.name,
             self.markets.target.area.name,
-            original_bid_price=bid.original_bid_price
+            original_bid_price=bid.original_bid_price,
+            source_market=self.markets.source
         )
         bid_coupling = BidInfo(bid, forwarded_bid)
         self.forwarded_bids[forwarded_bid.id] = bid_coupling
@@ -94,27 +95,24 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
             original_bid_rate = bid.original_bid_price / bid.energy
             clearing_rate = bid.price / bid.energy
-            # print(f"OFFER SELLER {offer.seller}")
-            # print(f"OWNER {self.owner.name}")
-            # print(f"MARKET NAME {self.markets.source.area.name}")
-            # print(f"BID BUYER {bid.buyer}")
-            # print(f"BID SELLER {bid.seller}")
 
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
                                     buyer=bid.buyer,
                                     energy=selected_energy,
                                     trade_rate=clearing_rate,
-                                    already_tracked=True,
-                                    original_trade_rate=original_bid_rate)
+                                    already_tracked=False,
+                                    original_trade_rate=original_bid_rate,
+                                    calculate_fees=True)
             self._delete_forwarded_offer_entries(offer)
             self.markets.source.accept_bid(bid,
                                            selected_energy,
                                            seller=offer.seller,
                                            buyer=bid.buyer,
-                                           already_tracked=False,
+                                           already_tracked=True,
                                            trade_rate=clearing_rate,
-                                           original_trade_rate=original_bid_rate)
+                                           original_trade_rate=original_bid_rate,
+                                           calculate_fees=False)
 
             bid_info = self.forwarded_bids.get(bid.id, None)
             if bid_info is not None:

@@ -94,8 +94,9 @@ class OneSidedMarket(Market):
         # TODO: Once we add event-driven blockchain, this should be asynchronous
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
-    def _update_offer_fee_and_calculate_final_price(self, energy, trade_rate, original_price):
-        fees = self.transfer_fee_ratio * original_price \
+    def _update_offer_fee_and_calculate_final_price(self, energy, trade_rate,
+                                                    energy_portion, original_price):
+        fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
         self.market_fee += fees
         return energy * trade_rate - fees
@@ -103,7 +104,7 @@ class OneSidedMarket(Market):
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
                      already_tracked: bool=False, trade_rate: float = None,
-                     original_trade_rate: float = None) -> Trade:
+                     original_trade_rate: float = None, calculate_fees=True) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -120,9 +121,9 @@ class OneSidedMarket(Market):
         residual_offer = None
 
         if offer.original_offer_price is not None:
-            orig_price = offer.original_offer_price
+            orig_offer_price = offer.original_offer_price
         else:
-            orig_price = offer.price
+            orig_offer_price = offer.price
         if trade_rate is None:
             trade_rate = offer.price / offer.energy
 
@@ -132,7 +133,9 @@ class OneSidedMarket(Market):
             if time is None:
                 time = self._now
             if original_trade_rate is not None:
-                orig_price = original_trade_rate * energy
+                orig_trade_price = original_trade_rate * offer.energy
+            else:
+                orig_trade_price = orig_offer_price
 
             energy_portion = energy / offer.energy
             if energy == 0:
@@ -147,10 +150,11 @@ class OneSidedMarket(Market):
                 assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 
                 final_price = self._update_offer_fee_and_calculate_final_price(
-                    energy, trade_rate, orig_price
-                ) if not already_tracked else energy * trade_rate
+                    energy, trade_rate, energy_portion, orig_trade_price
+                ) if calculate_fees is True else energy * trade_rate
 
-                original_residual_price = ((offer.energy - energy) / offer.energy) * orig_price
+                original_residual_price = \
+                    ((offer.energy - energy) / offer.energy) * orig_offer_price
                 accepted_offer = Offer(
                     accepted_offer_id,
                     final_price,
@@ -188,8 +192,8 @@ class OneSidedMarket(Market):
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 offer.price = self._update_offer_fee_and_calculate_final_price(
-                    energy, trade_rate, orig_price
-                ) if not already_tracked else energy * trade_rate
+                    energy, trade_rate, 1, orig_trade_price
+                ) if calculate_fees is True else energy * trade_rate
 
         except Exception:
             # Exception happened - restore offer
@@ -208,7 +212,7 @@ class OneSidedMarket(Market):
 
         if not already_tracked:
             self._update_stats_after_trade(trade, offer, buyer)
-            log.warning(f"[TRADE][{self.time_slot_str}] {trade}")
+            log.warning(f"[TRADE] {self.area.name} [{self.time_slot_str}] {trade}")
 
         # FIXME: Needs to be triggered by blockchain event
         # TODO: Same as above, should be modified when event-driven blockchain is introduced

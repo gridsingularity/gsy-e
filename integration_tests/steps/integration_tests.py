@@ -201,6 +201,18 @@ def load_profile_scenario(context):
     context._settings.area = predefined_load_scenario
 
 
+@given('d3a uses an one-sided market')
+def one_sided_market(context):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+@given('d3a uses an two-sided pay-as-bid market')
+def two_sided_pay_as_bid_market(context):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+
+
 @when('the simulation is running')
 def running_the_simulation(context):
 
@@ -790,3 +802,22 @@ def test_config_parameters(context):
     assert grid.config.iaa_fee_const == 1
     assert all([rate == 35
                 for rate in grid.config.market_maker_rate.values()])
+
+
+@then('trades on the {market_name} market clear with {clearing_rate} cents/kWh')
+def trades_clear_price(context, market_name, clearing_rate):
+    grid = context.simulation.area
+    neigh1 = list(filter(lambda x: x.name == "Neighborhood 1", grid.children))[0]
+    neigh2 = list(filter(lambda x: x.name == "Neighborhood 2", grid.children))[0]
+    if market_name == "Grid":
+        markets = grid.past_markets
+    elif market_name in ["Neighborhood 1", "Neighborhood 2"]:
+        markets = (list(filter(lambda x: x.name == market_name, grid.children))[0]).past_markets
+    elif market_name == "House 1":
+        markets = (list(filter(lambda x: x.name == market_name, neigh1.children))[0]).past_markets
+    elif market_name == "House 2":
+        markets = (list(filter(lambda x: x.name == market_name, neigh2.children))[0]).past_markets
+
+    for market in markets:
+        for t in market.trades:
+            assert isclose(t.offer.price / t.offer.energy, float(clearing_rate))

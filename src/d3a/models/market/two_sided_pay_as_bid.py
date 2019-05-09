@@ -49,15 +49,17 @@ class TwoSidedPayAsBid(OneSidedMarket):
                     )
 
     def bid(self, price: float, energy: float, buyer: str, seller: str, bid_id: str=None,
-            original_bid_price=None) -> Bid:
+            original_bid_price=None, source_market=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
         if original_bid_price is None:
             original_bid_price = price
 
-        price = price \
-            - self.transfer_fee_ratio * original_bid_price \
-            - self.transfer_fee_const * energy
+        price = price - self.transfer_fee_ratio * original_bid_price - \
+            self.transfer_fee_const * energy \
+            if source_market is None \
+            else price - source_market.transfer_fee_ratio * original_bid_price - \
+            source_market.transfer_fee_const * energy
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self, original_bid_price)
         self.bids[bid.id] = bid
@@ -83,7 +85,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   trade_rate: float = None, original_trade_rate=None):
+                   trade_rate: float = None, original_trade_rate=None, calculate_fees=True):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
@@ -94,7 +96,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
         if trade_rate is None:
             trade_rate = market_bid.price / market_bid.energy
 
-        print(f"TRADE RATE {trade_rate} ORIGINAL {original_trade_rate}")
         assert trade_rate <= (market_bid.price / market_bid.energy) + FLOATING_POINT_TOLERANCE, \
             f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
 
@@ -130,9 +131,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
             final_price = self._update_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_price
-            ) if not already_tracked else market_bid.energy * trade_rate
-
-            bid = Bid(bid.id, final_price, energy, buyer, seller, self,
+            ) if calculate_fees is True else energy * trade_rate
+            bid = Bid(bid.id, energy * trade_rate, energy, buyer, seller, self,
                       original_bid_price=energy_portion * orig_price)
         else:
             fees = self.transfer_fee_ratio * orig_price
@@ -140,9 +140,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
             self.market_fee += fees
 
             final_price = market_bid.energy * trade_rate + fees \
-                if not already_tracked else market_bid.energy * trade_rate
+                if calculate_fees is True else market_bid.energy * trade_rate
 
-            bid = bid._replace(price=final_price)
+            bid = bid._replace(price=energy * trade_rate)
 
         trade = Trade(str(uuid.uuid4()), self._now, bid, seller,
                       buyer, residual, already_tracked=already_tracked,
@@ -150,7 +150,11 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         if not already_tracked:
             self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
-            log.warning(f"[TRADE][BID][{self.time_slot_str}] {trade}")
+            log.warning(f"[TRADE][BID] {self.area.name} [{self.time_slot_str}] {trade}")
+
+        if calculate_fees is True:
+            final_bid = bid._replace(price=final_price)
+            trade = trade._replace(offer=final_bid)
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         if not trade.residual:
