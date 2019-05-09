@@ -139,11 +139,11 @@ class BalancingOffer(Offer):
 
 
 class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'seller',
-                                                   'buyer', 'residual'))):
-    def __new__(cls, id, time, offer, seller, buyer, residual=None):
+                                                   'buyer', 'residual', 'original_trade_rate'))):
+    def __new__(cls, id, time, offer, seller, buyer, residual=None, original_trade_rate=None):
         # overridden to give the residual field a default value
         return super(BalancingTrade, cls).__new__(cls, id, time, offer, seller,
-                                                  buyer, residual)
+                                                  buyer, residual, original_trade_rate)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""

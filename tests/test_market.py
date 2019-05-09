@@ -224,7 +224,9 @@ def test_market_bid_trade(market: TwoSidedPayAsBid):
 
     trade = market.accept_bid(bid, energy=10, seller='B')
     assert trade
-    assert trade == market.trades[0]
+    print(trade)
+    print(market.trades)
+    assert trade.id == market.trades[0].id
     assert trade.id
     assert trade.offer.price == bid.price + bid.original_bid_price * market.transfer_fee_ratio
     assert trade.offer.energy == bid.energy
@@ -316,7 +318,7 @@ def test_market_trade_bid_partial(market: TwoSidedPayAsBid):
 
     trade = market.accept_bid(bid, energy=5, seller='B')
     assert trade
-    assert trade == market.trades[0]
+    assert trade.id == market.trades[0].id
     assert trade.id
     assert trade.offer is not bid
     assert trade.offer.energy == 5
@@ -577,7 +579,7 @@ def test_market_iou(market: OneSidedMarket):
     offer = market.offer(10, 20, 'A')
     market.accept_offer(offer, 'B')
 
-    assert market.ious['B']['A'] == 10.1
+    assert market.ious['B']['A'] == 10.0
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
@@ -656,12 +658,12 @@ class MarketStateMachine(RuleBasedStateMachine):
         trade_sum = sum(t.offer.price for t in self.market.trades)
 
         for seller, iou in seller_ious.items():
-            assert iou == sum(ious[seller] for ious in self.market.ious.values())
+            assert isclose(iou, sum(ious[seller] for ious in self.market.ious.values()))
 
         for buyer, iou in buyer_ious.items():
-            assert iou == sum(self.market.ious[buyer].values())
+            assert isclose(iou, sum(self.market.ious[buyer].values()))
 
-        assert trade_sum == sum(sum(i.values()) for i in self.market.ious.values())
+        assert isclose(trade_sum, sum(sum(i.values()) for i in self.market.ious.values()))
 
 
 TestMarketIOU = MarketStateMachine.TestCase
