@@ -722,7 +722,7 @@ def test_finite_plant_energy_rate(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert all([isclose(trade.offer.price / trade.offer.energy,
-                            finite.strategy.energy_rate, rel_tol=1e-02)
+                            finite.strategy.energy_rate[market.time_slot], rel_tol=1e-02)
                     for trade in trades_sold])
         assert len(trades_sold) > 0
 
