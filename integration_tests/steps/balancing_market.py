@@ -80,7 +80,6 @@ def number_of_reserve_trades(context, area, r_trade_nr, s_trade_nr):
             market.trades,
             0
         )
-        print(area_object._markets.past_markets[market.time_slot].trades)
         assert r_trade_nr == reduced_reserve_trades
         assert len(area_object._markets.past_markets[market.time_slot].trades) == s_trade_nr
 

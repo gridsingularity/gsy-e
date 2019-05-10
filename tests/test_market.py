@@ -87,7 +87,7 @@ def test_market_offer(market, offer):
 def test_market_bid(market: TwoSidedPayAsBid):
     bid = market.bid(1, 2, 'bidder', 'seller')
     assert market.bids[bid.id] == bid
-    assert bid.price == 0.99
+    assert bid.price == 1
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
     assert bid.seller == 'seller'
@@ -99,7 +99,7 @@ def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
     bid = market.bid(1, 2, 'bidder', 'seller', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
-    assert bid.price == 0.99
+    assert bid.price == 1
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
     assert bid.seller == 'seller'
@@ -109,7 +109,7 @@ def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
     bid = market.bid(3, 4, 'updated_bidder', 'updated_seller', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
-    assert isclose(bid.price, 2.97)
+    assert isclose(bid.price, 3)
     assert bid.energy == 4
     assert bid.buyer == 'updated_bidder'
     assert bid.seller == 'updated_seller'
@@ -320,7 +320,7 @@ def test_market_trade_bid_partial(market: TwoSidedPayAsBid):
     assert trade.id
     assert trade.offer is not bid
     assert trade.offer.energy == 5
-    assert trade.offer.price == 5
+    assert trade.offer.price == 5.05
     assert trade.offer.seller == 'B'
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
@@ -328,7 +328,7 @@ def test_market_trade_bid_partial(market: TwoSidedPayAsBid):
     assert len(market.bids) == 1
     assert trade.residual.id in market.bids
     assert market.bids[trade.residual.id].energy == 15
-    assert isclose(market.bids[trade.residual.id].price, 15 * 0.99)
+    assert isclose(market.bids[trade.residual.id].price, 15)
     assert market.bids[trade.residual.id].seller == 'B'
     assert market.bids[trade.residual.id].buyer == 'A'
 
