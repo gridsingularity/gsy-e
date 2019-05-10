@@ -52,14 +52,16 @@ class TwoSidedPayAsBid(OneSidedMarket):
             original_bid_price=None, source_market=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
+
         if original_bid_price is None:
             original_bid_price = price
 
-        price = price - self.transfer_fee_ratio * original_bid_price - \
-            self.transfer_fee_const * energy \
-            if source_market is None \
-            else price - source_market.transfer_fee_ratio * original_bid_price - \
-            source_market.transfer_fee_const * energy
+        if price != 0:
+            price = price - self.transfer_fee_ratio * original_bid_price - \
+                self.transfer_fee_const * energy \
+                if source_market is None \
+                else price - source_market.transfer_fee_ratio * original_bid_price - \
+                source_market.transfer_fee_const * energy
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, self, original_bid_price)
         self.bids[bid.id] = bid
