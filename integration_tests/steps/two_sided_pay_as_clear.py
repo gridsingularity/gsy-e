@@ -25,12 +25,12 @@ from d3a.d3a_core.util import make_iaa_name
 @then('all trades are equal to market_clearing_rate')
 def test_traded_energy_rate(context):
     assert all(isclose((trade.offer.price / trade.offer.energy),
-                       market.clearing[trade.time][0])
+                       market.state.clearing[trade.time][0])
                for child in context.simulation.area.children
                for market in child.past_markets
                for trade in market.trades
                if market.state.clearing[trade.time] != 0 and
-               trade.buyer == make_iaa_name(child) and trade.already_tracked)
+               trade.buyer == make_iaa_name(child))
 
 
 @then('buyers and sellers are not same')

@@ -85,7 +85,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   trade_rate: float = None, original_trade_rate=None, calculate_fees=True):
+                   trade_rate: float = None, original_trade_rate=None):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
@@ -131,16 +131,13 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
             final_price = self._update_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_price
-            ) if calculate_fees is True else energy * trade_rate
+            ) if already_tracked is False else energy * trade_rate
             bid = Bid(bid.id, energy * trade_rate, energy, buyer, seller, self,
                       original_bid_price=energy_portion * orig_price)
         else:
-            fees = self.transfer_fee_ratio * orig_price
-            fees += self.transfer_fee_const * energy
-            self.market_fee += fees
-
-            final_price = market_bid.energy * trade_rate + fees \
-                if calculate_fees is True else market_bid.energy * trade_rate
+            final_price = self._update_fee_and_calculate_final_price(
+                energy, trade_rate, 1, orig_price
+            ) if already_tracked is False else energy * trade_rate
 
             bid = bid._replace(price=energy * trade_rate)
 
@@ -148,11 +145,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
                       buyer, residual, already_tracked=already_tracked,
                       original_trade_rate=original_trade_rate)
 
-        if not already_tracked:
+        if already_tracked is False:
             self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
-            log.warning(f"[TRADE][BID] {self.area.name} [{self.time_slot_str}] {trade}")
-
-        if calculate_fees is True:
+            log.warning(f"[TRADE][BID] [{self.time_slot_str}] {trade}")
             final_bid = bid._replace(price=final_price)
             trade = trade._replace(offer=final_bid)
 

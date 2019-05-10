@@ -72,7 +72,7 @@ class BalancingMarket(OneSidedMarket):
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
                      energy: int = None, time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
-                     original_trade_rate: float = None, calculate_fees=True) -> BalancingTrade:
+                     original_trade_rate: float = None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -89,22 +89,18 @@ class BalancingMarket(OneSidedMarket):
         original_offer = offer
         residual_offer = None
 
-        if offer.original_offer_price is not None:
-            orig_offer_price = offer.original_offer_price
-        else:
-            orig_offer_price = offer.price
         if trade_rate is None:
             trade_rate = offer.price / offer.energy
+
+        orig_offer_price, orig_trade_price = self._calculate_original_prices(
+            offer, original_trade_rate
+        )
 
         self._sorted_offers = sorted(self.offers.values(),
                                      key=lambda o: o.price / o.energy)
         try:
             if time is None:
                 time = self._now
-            if original_trade_rate is not None:
-                orig_trade_price = original_trade_rate * offer.energy
-            else:
-                orig_trade_price = orig_offer_price
 
             energy_portion = energy / offer.energy
             if energy == 0:
@@ -120,10 +116,8 @@ class BalancingMarket(OneSidedMarket):
 
                 final_price = self._update_offer_fee_and_calculate_final_price(
                     energy, trade_rate, energy_portion, orig_trade_price
-                ) if calculate_fees is True else energy * trade_rate
+                ) if already_tracked is False else energy * trade_rate
 
-                original_residual_price = \
-                    ((offer.energy - energy) / offer.energy) * orig_offer_price
                 accepted_offer = Offer(
                     accepted_offer_id,
                     abs(final_price),
@@ -134,6 +128,8 @@ class BalancingMarket(OneSidedMarket):
 
                 residual_price = (1 - energy_portion) * offer.price
                 residual_energy = offer.energy - energy
+                original_residual_price = \
+                    ((offer.energy - energy) / offer.energy) * orig_offer_price
 
                 residual_offer = Offer(
                     str(uuid.uuid4()),
@@ -162,7 +158,7 @@ class BalancingMarket(OneSidedMarket):
                 # Requested energy is equal to offer's energy - just proceed normally
                 offer.price = self._update_offer_fee_and_calculate_final_price(
                     energy, trade_rate, 1, orig_trade_price
-                ) if calculate_fees is True else energy * trade_rate
+                ) if already_tracked is False else energy * trade_rate
 
         except Exception:
             # Exception happened - restore offer
@@ -179,9 +175,9 @@ class BalancingMarket(OneSidedMarket):
                                residual_offer, original_trade_rate=original_trade_rate)
         self.bc_interface.track_trade_event(trade)
 
-        if not already_tracked:
+        if already_tracked is False:
             self._update_stats_after_trade(trade, offer, buyer)
-            log.warning(f"[BALANCING_TRADE] {self.area.name} [{self.time_slot_str}] {trade}")
+            log.warning(f"[BALANCING_TRADE] [{self.time_slot_str}] {trade}")
 
         # FIXME: Needs to be triggered by blockchain event
         # TODO: Same as above, should be modified when event-driven blockchain is introduced

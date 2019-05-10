@@ -224,8 +224,6 @@ def test_market_bid_trade(market: TwoSidedPayAsBid):
 
     trade = market.accept_bid(bid, energy=10, seller='B')
     assert trade
-    print(trade)
-    print(market.trades)
     assert trade.id == market.trades[0].id
     assert trade.id
     assert trade.offer.price == bid.price + bid.original_bid_price * market.transfer_fee_ratio
@@ -375,7 +373,7 @@ def test_market_accept_bid_always_updates_trade_stats(market: TwoSidedPayAsBid, 
     setattr(market, market_method, called)
 
     bid = market.bid(20, 20, 'A', 'B')
-    trade = market.accept_bid(bid, energy=5, seller='B', already_tracked=False)
+    trade = market.accept_bid(bid, energy=5, seller='B')
     assert trade
     assert len(getattr(market, market_method).calls) == 1
 
