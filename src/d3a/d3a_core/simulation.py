@@ -281,6 +281,9 @@ class Simulation:
                     if console is not None:
                         self._handle_input(console, diff_slowdown)
 
+                if ConstSettings.GeneralSettings.RUN_REAL_TIME:
+                    sleep(tick_lengths_s - tick_length)
+
             with page_lock:
                 self.endpoint_buffer.update_stats(self.area, self.status)
                 self.redis_connection.publish_intermediate_results(
@@ -397,7 +400,7 @@ class Simulation:
         log.critical(
             "\n"
             "Simulation configuration:\n"
-            "  Duration: %(duration)s\n"
+            "  Duration: %(sim_duration)s\n"
             "  Slot length: %(slot_length)s\n"
             "  Tick length: %(tick_length)s\n"
             "  Market count: %(market_count)d\n"
