@@ -75,8 +75,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         log.info(f"[BID][DEL][{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
-    def _update_fee_and_calculate_final_price(self, energy, trade_rate,
-                                              energy_portion, original_price):
+    def _update_bid_fee_and_calculate_final_price(self, energy, trade_rate,
+                                                  energy_portion, original_price):
         fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
         self.market_fee += fees
@@ -102,7 +102,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         residual = None
 
         if energy <= 0:
-            raise InvalidTrade("Energy cannot be less than zero.")
+            raise InvalidTrade("Energy cannot be negative or zero.")
         elif energy > market_bid.energy:
             raise InvalidTrade("Traded energy cannot be more than the bid energy.")
         elif energy < market_bid.energy:
@@ -128,13 +128,13 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                    existing_bid=bid, new_bid=changed_bid)
             residual = changed_bid
 
-            final_price = self._update_fee_and_calculate_final_price(
+            final_price = self._update_bid_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_price
             ) if already_tracked is False else energy * trade_rate
             bid = Bid(bid.id, energy * trade_rate, energy, buyer, seller, self,
                       original_bid_price=energy_portion * orig_price)
         else:
-            final_price = self._update_fee_and_calculate_final_price(
+            final_price = self._update_bid_fee_and_calculate_final_price(
                 energy, trade_rate, 1, orig_price
             ) if already_tracked is False else energy * trade_rate
 

@@ -804,8 +804,8 @@ def test_config_parameters(context):
                 for rate in grid.config.market_maker_rate.values()])
 
 
-@then('trades on the {market_name} market clear with {clearing_rate} cents/kWh')
-def trades_clear_price(context, market_name, clearing_rate):
+@then('trades on the {market_name} market clear with {trade_rate} cents/kWh')
+def assert_trade_rates(context, market_name, trade_rate):
     grid = context.simulation.area
     neigh1 = list(filter(lambda x: x.name == "Neighborhood 1", grid.children))[0]
     neigh2 = list(filter(lambda x: x.name == "Neighborhood 2", grid.children))[0]
@@ -820,4 +820,4 @@ def trades_clear_price(context, market_name, clearing_rate):
 
     for market in markets:
         for t in market.trades:
-            assert isclose(t.offer.price / t.offer.energy, float(clearing_rate))
+            assert isclose(t.offer.price / t.offer.energy, float(trade_rate))

@@ -227,8 +227,8 @@ class OfferUpdateFrequencyMixin:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
-                updated_price = offer.energy * \
-                    self.calculate_initial_sell_rate(iterated_market.time_slot)
+                updated_price = round(
+                    offer.energy * self.calculate_initial_sell_rate(iterated_market.time_slot), 10)
                 new_offer = iterated_market.offer(
                     updated_price,
                     offer.energy,

@@ -100,13 +100,13 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         for bid, offer in self._perform_pay_as_bid_matching():
             selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
             original_bid_rate = bid.original_bid_price / bid.energy
-            clearing_rate = bid.price / bid.energy
+            matched_rate = bid.price / bid.energy
 
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
                                     buyer=bid.buyer,
                                     energy=selected_energy,
-                                    trade_rate=clearing_rate,
+                                    trade_rate=matched_rate,
                                     already_tracked=False,
                                     original_trade_rate=original_bid_rate)
             self._delete_forwarded_offer_entries(offer)
@@ -115,7 +115,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                                            seller=offer.seller,
                                            buyer=bid.buyer,
                                            already_tracked=True,
-                                           trade_rate=clearing_rate,
+                                           trade_rate=matched_rate,
                                            original_trade_rate=original_bid_rate)
 
             bid_info = self.forwarded_bids.get(bid.id, None)
