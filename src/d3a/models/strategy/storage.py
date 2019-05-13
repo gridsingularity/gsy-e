@@ -173,13 +173,13 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
             raise ValueError("Break even point should be positive energy rate values.")
         if any(break_even_point.sell > initial_selling_rate
                for break_even_point in break_even.values()):
-            raise ValueError(f"Break even point (selling) should be lower equal "
-                             f"than initial_buying_rate")
+            raise ValueError(f"Break even point(s) (selling) should be lower equal "
+                             f"than initial_selling_rate ({initial_selling_rate})")
         if ConstSettings.IAASettings.MARKET_TYPE != 1:
             if any(break_even_point.buy < initial_buying_rate
                    for break_even_point in break_even.values()):
-                raise ValueError("Break even point (buying) should be higher equal "
-                                 "than initial_buying_rate")
+                raise ValueError(f"Break even point(s) (buying) should be higher equal "
+                                 f"than initial_buying_rate ({initial_buying_rate})")
 
         return break_even
 
