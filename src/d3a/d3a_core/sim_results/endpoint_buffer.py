@@ -48,6 +48,7 @@ class SimulationEndpointBuffer:
         self.cumulative_grid_trades_redis = {}
         self.cumulative_grid_balancing_trades = {}
         self.tree_summary = {}
+        self.tree_summary_redis = {}
         self.bills = {}
         self.bills_redis = {}
         self.balancing_energy_bills = {}
@@ -66,7 +67,7 @@ class SimulationEndpointBuffer:
             "price_energy_day": self.price_energy_day,
             "cumulative_grid_trades": self.cumulative_grid_trades_redis,
             "bills": self.bills_redis,
-            "tree_summary": self.tree_summary,
+            "tree_summary": self.tree_summary_redis,
             "status": self.status,
             "device_statistics": self.device_statistics_time_str_dict,
             "energy_trade_profile": self.energy_trade_profile_redis
@@ -142,6 +143,7 @@ class SimulationEndpointBuffer:
             "max_trade_price": calculate_prices("max_price", max),
             "avg_trade_price": calculate_prices("av_price", mean),
         }
+        self.tree_summary_redis[area.uuid] = self.tree_summary[area.slug]
         for child in area.children:
             if child.children != []:
                 self._update_tree_summary(child)
