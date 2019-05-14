@@ -42,7 +42,9 @@ def get_setup(config):
                          strategy=StorageStrategy(initial_capacity_kWh=0.6,
                                                   break_even=(
                                                     ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)
+                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL),
+                                                  initial_selling_rate=30,
+                                                  initial_buying_rate=0
                                                   ),
                          appliance=SwitchableAppliance()),
                 ]
