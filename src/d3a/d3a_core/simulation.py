@@ -271,15 +271,18 @@ class Simulation:
                 with page_lock:
                     self.area.tick(is_root_area=True)
 
-                tick_length = time.monotonic() - tick_start
-                if self.slowdown and tick_length < tick_lengths_s:
+                realtime_tick_length = time.monotonic() - tick_start
+                if self.slowdown and realtime_tick_length < tick_lengths_s:
                     # Simulation runs faster than real time but a slowdown was
                     # requested
-                    tick_diff = tick_lengths_s - tick_length
+                    tick_diff = tick_lengths_s - realtime_tick_length
                     diff_slowdown = tick_diff * self.slowdown / 10000
                     log.debug("Slowdown: %.4f", diff_slowdown)
                     if console is not None:
                         self._handle_input(console, diff_slowdown)
+
+                if ConstSettings.GeneralSettings.RUN_REAL_TIME:
+                    sleep(tick_lengths_s - realtime_tick_length)
 
             with page_lock:
                 self.endpoint_buffer.update_stats(self.area, self.status)
@@ -397,7 +400,7 @@ class Simulation:
         log.critical(
             "\n"
             "Simulation configuration:\n"
-            "  Duration: %(duration)s\n"
+            "  Duration: %(sim_duration)s\n"
             "  Slot length: %(slot_length)s\n"
             "  Tick length: %(tick_length)s\n"
             "  Market count: %(market_count)d\n"
