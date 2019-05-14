@@ -75,7 +75,7 @@ class SimulationConfig:
         ).format(s=self)
 
     def as_dict(self):
-        fields = {'duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
+        fields = {'sim_duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
                   'total_ticks', 'cloud_coverage'}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
