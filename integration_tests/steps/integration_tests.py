@@ -201,6 +201,18 @@ def load_profile_scenario(context):
     context._settings.area = predefined_load_scenario
 
 
+@given('d3a uses an one-sided market')
+def one_sided_market(context):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
+@given('d3a uses an two-sided pay-as-bid market')
+def two_sided_pay_as_bid_market(context):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 2
+
+
 @when('the simulation is running')
 def running_the_simulation(context):
 
@@ -571,9 +583,7 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 @then('the energy bills report the correct accumulated traded energy price')
 def test_accumulated_energy_price(context):
     bills = context.simulation.endpoint_buffer.bills
-
     cell_tower = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
-
     house1 = bills["House 1"]["earned"] - bills["House 1"]["spent"]
     area_net_traded_energy_price = \
         sum([v["earned"] - v["spent"] for v in bills["House 1"]["children"].values()])
@@ -731,6 +741,7 @@ def test_finite_plant_energy_rate(context, plant_name):
 def test_infinite_plant_energy_rate(context, plant_name):
     grid = context.simulation.area
 
+    market_maker_rate = context.simulation.simulation_config.market_maker_rate
     finite = list(filter(lambda x: x.name == plant_name,
                          grid.children))[0]
     trades_sold = []
@@ -739,10 +750,9 @@ def test_infinite_plant_energy_rate(context, plant_name):
             assert trade.buyer is not finite.name
             if trade.seller == finite.name:
                 trades_sold.append(trade)
+
     assert all([isclose(trade.offer.price / trade.offer.energy,
-                        context.simulation.simulation_config.
-                        market_maker_rate[trade.offer.market.time_slot] *
-                        (1 + grid.transfer_fee_pct / 100))
+                        market_maker_rate[trade.offer.market.time_slot])
                 for trade in trades_sold])
     assert len(trades_sold) > 0
 
@@ -792,3 +802,22 @@ def test_config_parameters(context):
     assert grid.config.iaa_fee_const == 1
     assert all([rate == 35
                 for rate in grid.config.market_maker_rate.values()])
+
+
+@then('trades on the {market_name} market clear with {trade_rate} cents/kWh')
+def assert_trade_rates(context, market_name, trade_rate):
+    grid = context.simulation.area
+    neigh1 = list(filter(lambda x: x.name == "Neighborhood 1", grid.children))[0]
+    neigh2 = list(filter(lambda x: x.name == "Neighborhood 2", grid.children))[0]
+    if market_name == "Grid":
+        markets = grid.past_markets
+    elif market_name in ["Neighborhood 1", "Neighborhood 2"]:
+        markets = (list(filter(lambda x: x.name == market_name, grid.children))[0]).past_markets
+    elif market_name == "House 1":
+        markets = (list(filter(lambda x: x.name == market_name, neigh1.children))[0]).past_markets
+    elif market_name == "House 2":
+        markets = (list(filter(lambda x: x.name == market_name, neigh2.children))[0]).past_markets
+
+    for market in markets:
+        for t in market.trades:
+            assert isclose(t.offer.price / t.offer.energy, float(trade_rate))

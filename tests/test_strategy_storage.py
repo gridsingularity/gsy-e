@@ -152,8 +152,8 @@ class FakeMarket:
     def delete_offer(self, offer_id):
         return
 
-    def offer(self, price, energy, seller, market=None):
-        offer = Offer('id', price, energy, seller, market)
+    def offer(self, price, energy, seller, market=None, original_offer_price=None):
+        offer = Offer('id', price, energy, seller, market, original_offer_price)
         self.created_offers.append(offer)
         return offer
 
@@ -163,7 +163,7 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
-    def bid(self, price, energy, buyer, seller):
+    def bid(self, price, energy, buyer, seller, market=None, original_bid_price=None):
         pass
 
 

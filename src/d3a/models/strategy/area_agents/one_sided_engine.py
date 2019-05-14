@@ -55,7 +55,8 @@ class IAAEngine:
         forwarded_offer = self.markets.target.offer(
             offer.price,
             offer.energy,
-            self.owner.name
+            self.owner.name,
+            offer.original_offer_price
         )
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -133,7 +134,7 @@ class IAAEngine:
                     energy=trade.offer.energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
-                    iaa_fee=True
+                    original_trade_rate=trade.original_trade_rate
                 )
 
             except OfferNotFoundException:
@@ -244,8 +245,7 @@ class BalancingEngine(IAAEngine):
             offer.price,
             offer.energy,
             self.owner.name,
-            from_agent=True,
-            iaa_fee=True
+            from_agent=True
         )
         offer_info = OfferInfo(offer, forwarded_balancing_offer)
         self.forwarded_offers[forwarded_balancing_offer.id] = offer_info

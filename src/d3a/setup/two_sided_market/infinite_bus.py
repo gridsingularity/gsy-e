@@ -34,18 +34,18 @@ def get_setup(config):
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_of_day=list(
                                                                            range(0, 23)),
-                                                                       final_buying_rate=26,
-                                                                       initial_buying_rate=26),
+                                                                       final_buying_rate=27,
+                                                                       initial_buying_rate=27),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
-                                                      final_selling_rate=23,
-                                                      initial_selling_rate=23,
+                                                      final_selling_rate=15,
+                                                      initial_selling_rate=24.1,
                                                       initial_rate_option=3),
                          appliance=PVAppliance()),
                 ], transfer_fee_const=1
             ),
             Area('Infinite Bus', strategy=InfiniteBusStrategy(energy_buy_rate=24,
-                                                              energy_sell_rate=25),
+                                                              energy_sell_rate=24),
                  appliance=SimpleAppliance()
                  ),
 

@@ -326,7 +326,8 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                     offer = market.offer(
                         energy * selling_rate,
                         energy,
-                        self.owner.name
+                        self.owner.name,
+                        original_offer_price=energy * selling_rate
                     )
                     self.offers.post(offer, market)
                     self.state.offered_sell_kWh[market.time_slot] += offer.energy

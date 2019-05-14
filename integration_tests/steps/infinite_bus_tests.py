@@ -39,7 +39,8 @@ def check_buy_behaviour_ib(context):
     for market in grid.past_markets:
         for trade in market.trades:
             assert limit_float_precision(trade.offer.price / trade.offer.energy) <= \
-                   bus.strategy.energy_rate[market.time_slot] + house_1.transfer_fee_const
+                   bus.strategy.energy_rate[market.time_slot] + house_1.transfer_fee_const or \
+                   "Infinite Bus" is not trade.seller
 
             if trade.buyer == load.name:
                 assert trade.offer.energy == load.strategy.avg_power_W / 1000.
