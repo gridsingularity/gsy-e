@@ -26,8 +26,9 @@ from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import BalancingOffer, BalancingTrade
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidBalancingTradeException, \
-    DeviceNotInRegistryError, ChainTradeException
+    DeviceNotInRegistryError
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
 
@@ -69,93 +70,121 @@ class BalancingMarket(OneSidedMarket):
         return offer
 
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
-                     energy: int = None, time: DateTime = None, already_tracked: bool = False,
-                     trade_rate: float = None, iaa_fee: bool = False) -> BalancingTrade:
-        if iaa_fee and trade_rate is None:
-            raise ChainTradeException()
+                     energy: int = None, time: DateTime = None,
+                     already_tracked: bool = False, trade_rate: float = None,
+                     original_trade_rate: float = None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
-        residual_offer = None
         offer = self.offers.pop(offer_or_id, None)
-        self._sorted_offers = sorted(self.offers.values(),
-                                     key=lambda o: o.price / o.energy)
         if offer is None:
             raise OfferNotFoundException()
         if (offer.energy > 0 and energy < 0) or (offer.energy < 0 and energy > 0):
             raise InvalidBalancingTradeException("BalancingOffer and energy "
                                                  "are not compatible")
+        if energy is None:
+            energy = offer.energy
+
+        original_offer = offer
+        residual_offer = None
+
+        if trade_rate is None:
+            trade_rate = offer.price / offer.energy
+
+        orig_offer_price, orig_trade_price = self._calculate_original_prices(
+            offer, original_trade_rate
+        )
+
+        self._sorted_offers = sorted(self.offers.values(),
+                                     key=lambda o: o.price / o.energy)
         try:
             if time is None:
                 time = self._now
-            if energy is not None:
 
-                # reducing trade_rate to be charged in terms of grid_fee
-                if iaa_fee:
-                    source_rate = trade_rate / (1 + self.transfer_fee_ratio) \
-                                  - self.transfer_fee_const
-                    self.market_fee += (trade_rate - source_rate) * energy
-                else:
-                    source_rate = offer.price / offer.energy
-                # Partial trade
-                if energy == 0:
-                    raise InvalidBalancingTradeException("Energy can not be zero.")
+            energy_portion = energy / offer.energy
+            if energy == 0:
+                raise InvalidBalancingTradeException("Energy can not be zero.")
+            # partial energy is requested
+            elif abs(energy) < abs(offer.energy):
+                original_offer = offer
+                accepted_offer_id = offer.id \
+                    if self.area is None or self.area.bc is None \
+                    else offer.real_id
 
-                elif abs(energy) < abs(offer.energy):
-                    original_offer = offer
-                    accepted_offer = Offer(
-                        offer.id,
-                        abs(source_rate * energy),
-                        energy,
-                        offer.seller,
-                        offer.market
-                    )
-                    residual_energy = (offer.energy - energy)
-                    residual_offer = Offer(
-                        str(uuid.uuid4()),
-                        abs((offer.price / offer.energy) * residual_energy),
-                        residual_energy,
-                        offer.seller,
-                        offer.market
-                    )
-                    self.offers[residual_offer.id] = residual_offer
-                    log.info(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
-                             f"{original_offer} -> {residual_offer}")
-                    offer = accepted_offer
-                    self._sorted_offers = sorted(self.offers.values(),
-                                                 key=lambda o: o.price / o.energy)
-                    self._notify_listeners(
-                        MarketEvent.BALANCING_OFFER_CHANGED,
-                        existing_offer=original_offer,
-                        new_offer=residual_offer
-                    )
-                elif abs(energy) > abs(offer.energy):
-                    raise InvalidBalancingTradeException(
-                        f"Energy {energy} can't be greater than offered energy {offer}"
-                    )
-                else:
-                    # Requested partial is equal to offered energy - just proceed normally
-                    pass
+                assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
+
+                final_price = self._update_offer_fee_and_calculate_final_price(
+                    energy, trade_rate, energy_portion, orig_trade_price
+                ) if already_tracked is False else energy * trade_rate
+
+                accepted_offer = Offer(
+                    accepted_offer_id,
+                    abs(final_price),
+                    energy,
+                    offer.seller,
+                    offer.market
+                )
+
+                residual_price = (1 - energy_portion) * offer.price
+                residual_energy = offer.energy - energy
+                original_residual_price = \
+                    ((offer.energy - energy) / offer.energy) * orig_offer_price
+
+                residual_offer = Offer(
+                    str(uuid.uuid4()),
+                    abs(residual_price),
+                    residual_energy,
+                    offer.seller,
+                    offer.market,
+                    original_offer_price=original_residual_price
+                )
+                self.offers[residual_offer.id] = residual_offer
+                log.info(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
+                         f"{original_offer} -> {residual_offer}")
+                offer = accepted_offer
+
+                self.bc_interface.change_offer(offer, original_offer, residual_offer)
+                self._sorted_offers = sorted(self.offers.values(),
+                                             key=lambda o: o.price / o.energy)
+                self._notify_listeners(
+                    MarketEvent.BALANCING_OFFER_CHANGED,
+                    existing_offer=original_offer,
+                    new_offer=residual_offer
+                )
+            elif abs(energy) > abs(offer.energy):
+                raise InvalidBalancingTradeException("Energy can't be greater than offered energy")
+            else:
+                # Requested energy is equal to offer's energy - just proceed normally
+                offer.price = self._update_offer_fee_and_calculate_final_price(
+                    energy, trade_rate, 1, orig_trade_price
+                ) if already_tracked is False else energy * trade_rate
+
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
             self._sorted_offers = sorted(self.offers.values(),
                                          key=lambda o: o.price / o.energy)
             raise
-        trade = BalancingTrade(id=str(uuid.uuid4()), time=time, offer=offer,
-                               seller=offer.seller, buyer=buyer,
-                               residual=residual_offer)
-        self.trades.append(trade)
-        self._update_accumulated_trade_price_energy(trade)
-        log.warning(f"[BALANCING_TRADE][{self.time_slot_str}] {trade}")
-        self.traded_energy[offer.seller] += offer.energy
-        self.traded_energy[buyer] -= offer.energy
-        self.ious[buyer][offer.seller] += offer.price
-        self._update_min_max_avg_trade_prices(offer.price / offer.energy)
-        # Recalculate offer min/max price since offer was removed
-        self._update_min_max_avg_offer_prices()
+
+        trade_id, residual_offer = \
+            self.bc_interface.handle_blockchain_trade_event(
+                offer, buyer, original_offer, residual_offer
+            )
+        trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
+                               residual_offer, original_trade_rate=original_trade_rate)
+        self.bc_interface.track_trade_event(trade)
+
+        if already_tracked is False:
+            self._update_stats_after_trade(trade, offer, buyer)
+            log.warning(f"[BALANCING_TRADE] [{self.time_slot_str}] {trade}")
+
+        # FIXME: Needs to be triggered by blockchain event
+        # TODO: Same as above, should be modified when event-driven blockchain is introduced
         offer._traded(trade, self)
+
+        # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
+        # normal runs.
         self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
         return trade
 

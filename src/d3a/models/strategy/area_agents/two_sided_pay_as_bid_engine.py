@@ -40,11 +40,19 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
         if self.owner.name == self.markets.target.area.name:
             return
+        if (bid.price * (1 - self.markets.target.transfer_fee_ratio)
+                - self.markets.target.transfer_fee_const * bid.energy) <= 0:
+            self.owner.log.info("Bid is not forwarded because bid price lower "
+                                "than transfer_fee_const")
+            return
+
         forwarded_bid = self.markets.target.bid(
             bid.price,
             bid.energy,
             self.owner.name,
-            self.markets.target.area.name
+            self.markets.target.area.name,
+            original_bid_price=bid.original_bid_price,
+            source_market=self.markets.source
         )
         bid_coupling = BidInfo(bid, forwarded_bid)
         self.forwarded_bids[forwarded_bid.id] = bid_coupling
@@ -91,17 +99,24 @@ class TwoSidedPayAsBidEngine(IAAEngine):
     def _match_offers_bids(self):
         for bid, offer in self._perform_pay_as_bid_matching():
             selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+            original_bid_rate = bid.original_bid_price / bid.energy
+            matched_rate = bid.price / bid.energy
+
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
                                     buyer=bid.buyer,
                                     energy=selected_energy,
-                                    trade_rate=(bid.price / bid.energy))
+                                    trade_rate=matched_rate,
+                                    already_tracked=False,
+                                    original_trade_rate=original_bid_rate)
             self._delete_forwarded_offer_entries(offer)
             self.markets.source.accept_bid(bid,
                                            selected_energy,
-                                           seller=bid.seller,
+                                           seller=offer.seller,
                                            buyer=bid.buyer,
-                                           already_tracked=True)
+                                           already_tracked=True,
+                                           trade_rate=matched_rate,
+                                           original_trade_rate=original_bid_rate)
 
             bid_info = self.forwarded_bids.get(bid.id, None)
             if bid_info is not None:
@@ -136,20 +151,20 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
 
-            # target_rate = bid_trade.offer.price / bid_trade.offer.energy
-            # source_rate = market_bid.price / market_bid.energy
             source_rate = bid_info.source_bid.price / bid_info.source_bid.energy
             target_rate = bid_info.target_bid.price / bid_info.target_bid.energy
             assert source_rate >= target_rate, \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
+
+            trade_rate = (bid_trade.offer.price/bid_trade.offer.energy)
 
             source_trade = self.markets.source.accept_bid(
                 market_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False,
-                trade_rate=(bid_trade.offer.price/bid_trade.offer.energy),
-                iaa_fee=True
+                trade_rate=trade_rate,
+                original_trade_rate=bid_trade.original_trade_rate
             )
 
             self.after_successful_trade_event(source_trade, bid_info)
@@ -211,6 +226,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
 
             bid_info = self.forwarded_bids.get(existing_bid.id)
             forwarded = self._forward_bid(new_bid)
-            self.owner.log.info("Bid %s changed to residual bid %s",
-                                bid_info.target_bid,
-                                forwarded)
+            if forwarded:
+                self.owner.log.info("Bid %s changed to residual bid %s",
+                                    bid_info.target_bid, forwarded)

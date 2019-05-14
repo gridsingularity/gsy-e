@@ -56,7 +56,8 @@ def get_setup(config):
                                                   max_abs_battery_power_kW=5,
                                                   break_even=(
                                                     ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)
+                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL),
+                                                  initial_buying_rate=0
                                                   ),
                          appliance=SwitchableAppliance()),
                 ]

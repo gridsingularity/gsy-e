@@ -36,7 +36,9 @@ class ElectrolyzerStrategy(StorageStrategy):
                          battery_capacity_kWh=capacity_kWh,
                          max_abs_battery_power_kW=production_rate_kW,
                          min_allowed_soc=0.,
-                         break_even=(31, 32))
+                         break_even=(31, 32),
+                         initial_buying_rate=31,
+                         initial_selling_rate=32)
 
         self.discharge_profile = discharge_profile
         self.conversion_factor_kWh_kg = conversion_factor_kg_to_kWh

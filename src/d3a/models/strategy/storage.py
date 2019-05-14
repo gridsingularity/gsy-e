@@ -42,20 +42,20 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                   'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
                   'initial_selling_rate')
 
-    def __init__(self, risk: int=GeneralSettings.DEFAULT_RISK,
-                 initial_capacity_kWh: float=None,
-                 initial_soc: float=None,
-                 initial_rate_option: int=StorageSettings.INITIAL_RATE_OPTION,
-                 initial_selling_rate:
-                 float=StorageSettings.MAX_SELLING_RATE,
-                 energy_rate_decrease_option: int=StorageSettings.RATE_DECREASE_OPTION,
+    def __init__(self, risk: int = GeneralSettings.DEFAULT_RISK,
+                 initial_capacity_kWh: float = None,
+                 initial_soc: float = None,
+                 initial_rate_option: int = StorageSettings.INITIAL_RATE_OPTION,
+                 initial_selling_rate: float = StorageSettings.MAX_SELLING_RATE,
+                 initial_buying_rate: float = StorageSettings.MIN_BUYING_RATE,
+                 energy_rate_decrease_option: int = StorageSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update:
-                 float=GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
-                 battery_capacity_kWh: float=StorageSettings.CAPACITY,
-                 max_abs_battery_power_kW: float=StorageSettings.MAX_ABS_POWER,
-                 break_even: Union[tuple, dict]=(StorageSettings.BREAK_EVEN_BUY,
+                 float = GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
+                 battery_capacity_kWh: float = StorageSettings.CAPACITY,
+                 max_abs_battery_power_kW: float = StorageSettings.MAX_ABS_POWER,
+                 break_even: Union[tuple, dict] = (StorageSettings.BREAK_EVEN_BUY,
                              StorageSettings.BREAK_EVEN_SELL),
-                 balancing_energy_ratio: tuple=(BalancingSettings.OFFER_DEMAND_RATIO,
+                 balancing_energy_ratio: tuple = (BalancingSettings.OFFER_DEMAND_RATIO,
                                                 BalancingSettings.OFFER_SUPPLY_RATIO),
                  cap_price_strategy: bool=False,
                  min_allowed_soc=None):
@@ -63,7 +63,10 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
 
-        self.break_even = self._validate_break_even_points(break_even)
+        self.break_even = self._validate_break_even_points(
+            break_even, initial_selling_rate=initial_selling_rate,
+            initial_buying_rate=initial_buying_rate)
+
         self._validate_constructor_arguments(risk, initial_capacity_kWh,
                                              initial_soc, battery_capacity_kWh,
                                              min_allowed_soc, initial_selling_rate)
@@ -78,7 +81,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         # Normalize min/max buying rate profiles before passing to the bid mixin
         self.min_buying_rate_profile = read_arbitrary_profile(
             InputProfileTypes.IDENTITY,
-            StorageSettings.MIN_BUYING_RATE
+            initial_buying_rate
         )
         self.max_buying_rate_profile = {k: v.buy for k, v in self.break_even.items()}
         BidUpdateFrequencyMixin.__init__(self,
@@ -148,7 +151,8 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                 raise MarketException
 
     @staticmethod
-    def _validate_break_even_points(break_even):
+    def _validate_break_even_points(break_even,
+                                    initial_selling_rate=None, initial_buying_rate=None):
         if type(break_even) not in [tuple, list, dict]:
             raise ValueError("Break even points have to be a tuple, list or dict.")
 
@@ -167,6 +171,16 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         if any(break_even_point.buy < 0 or break_even_point.sell < 0
                for _, break_even_point in break_even.items()):
             raise ValueError("Break even point should be positive energy rate values.")
+        if any(break_even_point.sell > initial_selling_rate
+               for break_even_point in break_even.values()):
+            raise ValueError(f"Break even point(s) (selling) should be less than or equal "
+                             f"to initial_selling_rate ({initial_selling_rate})")
+        if ConstSettings.IAASettings.MARKET_TYPE != 1:
+            if any(break_even_point.buy < initial_buying_rate
+                   for break_even_point in break_even.values()):
+                raise ValueError(f"Break even point(s) (buying) should be greater than or equal "
+                                 f"to initial_buying_rate ({initial_buying_rate})")
+
         return break_even
 
     @staticmethod
@@ -312,7 +326,8 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                     offer = market.offer(
                         energy * selling_rate,
                         energy,
-                        self.owner.name
+                        self.owner.name,
+                        original_offer_price=energy * selling_rate
                     )
                     self.offers.post(offer, market)
                     self.state.offered_sell_kWh[market.time_slot] += offer.energy

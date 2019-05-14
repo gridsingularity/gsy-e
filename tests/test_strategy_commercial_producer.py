@@ -17,12 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import sys
+import pendulum
 
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.const import ConstSettings
+from d3a.constants import TIME_ZONE, TIME_FORMAT
+
+TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
 class FakeArea:
@@ -65,8 +69,8 @@ class FakeMarket:
         self.created_offers = []
         self.created_balancing_offers = []
 
-    def offer(self, price, energy, seller, market=None):
-        offer = Offer('id', price, energy, seller, market)
+    def offer(self, price, energy, seller, market=None, original_offer_price=None):
+        offer = Offer('id', price, energy, seller, market, original_offer_price)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -76,6 +80,14 @@ class FakeMarket:
         self.created_balancing_offers.append(offer)
         offer.id = 'id'
         return offer
+
+    @property
+    def time_slot(self):
+        return TIME
+
+    @property
+    def time_slot_str(self):
+        return self.time_slot.format(TIME_FORMAT)
 
 
 """TEST1"""
@@ -138,6 +150,7 @@ def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
 def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registry(
         commercial_test1, area_test1):
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
+    commercial_test1.event_activate()
     commercial_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
@@ -220,6 +233,7 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
 
 
 def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, commercial_test2):
+    commercial_test2.event_activate()
     commercial_test2.offer_energy(area_test2.test_market)
     assert len(commercial_test2.offers.posted) == 1
     assert list(commercial_test2.offers.posted.values())[0] == area_test2.test_market

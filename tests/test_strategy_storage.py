@@ -152,8 +152,8 @@ class FakeMarket:
     def delete_offer(self, offer_id):
         return
 
-    def offer(self, price, energy, seller, market=None):
-        offer = Offer('id', price, energy, seller, market)
+    def offer(self, price, energy, seller, market=None, original_offer_price=None):
+        offer = Offer('id', price, energy, seller, market, original_offer_price)
         self.created_offers.append(offer)
         return offer
 
@@ -163,7 +163,7 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
-    def bid(self, price, energy, buyer, seller):
+    def bid(self, price, energy, buyer, seller, market=None, original_bid_price=None):
         pass
 
 
@@ -394,7 +394,8 @@ def area_test7():
 @pytest.fixture()
 def storage_strategy_test7(area_test7):
     s = StorageStrategy(initial_capacity_kWh=3.0, battery_capacity_kWh=3.01,
-                        max_abs_battery_power_kW=5.21, initial_rate_option=2, break_even=(31, 32))
+                        max_abs_battery_power_kW=5.21, initial_rate_option=2, break_even=(31, 32),
+                        initial_buying_rate=31, initial_selling_rate=32)
     s.owner = area_test7
     s.area = area_test7
     return s
@@ -739,7 +740,8 @@ def market_test13():
 @pytest.fixture()
 def storage_strategy_test13(area_test13, called):
     s = StorageStrategy(battery_capacity_kWh=5, initial_capacity_kWh=2.5,
-                        max_abs_battery_power_kW=5, break_even=(34, 35.1))
+                        max_abs_battery_power_kW=5, break_even=(34, 35.1),
+                        initial_selling_rate=35.1, initial_buying_rate=34)
     s.owner = area_test13
     s.area = area_test13
     s.accept_offer = called

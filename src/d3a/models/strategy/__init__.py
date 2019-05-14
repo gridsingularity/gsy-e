@@ -183,14 +183,14 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def accept_offer(self, market: Market, offer, *, buyer=None, energy=None,
                      already_tracked=False, trade_rate: float = None,
-                     iaa_fee: bool = False):
+                     original_trade_rate: float = None):
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market.offers[offer]
-        trade = market.accept_offer(offer, buyer, energy=energy,
-                                    already_tracked=already_tracked, trade_rate=trade_rate,
-                                    iaa_fee=iaa_fee)
+        trade = market.accept_offer(offer, buyer, energy=energy, trade_rate=trade_rate,
+                                    already_tracked=already_tracked,
+                                    original_trade_rate=original_trade_rate)
         self.offers.bought_offer(trade.offer, market)
         return trade
 
@@ -236,7 +236,9 @@ class BidEnabledStrategy(BaseStrategy):
             price,
             energy,
             self.owner.name,
-            self.area.name)
+            self.area.name,
+            original_bid_price=price
+        )
         self.add_bid_to_posted(market, bid)
         return bid
 

@@ -71,7 +71,9 @@ def start(scenario, settings):
         scenario_name = 'json_arg'
         config.area = scenario
 
-    kwargs = {"no_export": True, "pricing_scheme": 0}
+    kwargs = {"no_export": True,
+              "pricing_scheme": 0,
+              "seed": settings.get('random_seed', 0)}
     try:
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,

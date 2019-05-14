@@ -57,6 +57,10 @@ class FakeArea:
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
 
 
+def teardown_function():
+    ConstSettings.IAASettings.MARKET_TYPE = 1
+
+
 @pytest.yield_fixture
 def market():
     return TwoSidedPayAsBid(area=FakeArea("FakeArea"))
@@ -83,7 +87,7 @@ def test_market_offer(market, offer):
 def test_market_bid(market: TwoSidedPayAsBid):
     bid = market.bid(1, 2, 'bidder', 'seller')
     assert market.bids[bid.id] == bid
-    assert bid.price == 0.99
+    assert bid.price == 1
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
     assert bid.seller == 'seller'
@@ -95,7 +99,7 @@ def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
     bid = market.bid(1, 2, 'bidder', 'seller', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
-    assert bid.price == 0.99
+    assert bid.price == 1
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
     assert bid.seller == 'seller'
@@ -105,7 +109,7 @@ def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
     bid = market.bid(3, 4, 'updated_bidder', 'updated_seller', bid_id='123')
     assert market.bids['123'] == bid
     assert bid.id == '123'
-    assert isclose(bid.price, 2.97)
+    assert isclose(bid.price, 3)
     assert bid.energy == 4
     assert bid.buyer == 'updated_bidder'
     assert bid.seller == 'updated_seller'
@@ -216,13 +220,13 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(area=FakeA
 
 
 def test_market_bid_trade(market: TwoSidedPayAsBid):
-    bid = market.bid(20, 10, 'A', 'B')
+    bid = market.bid(20, 10, 'A', 'B', original_bid_price=20)
 
     trade = market.accept_bid(bid, energy=10, seller='B')
     assert trade
-    assert trade == market.trades[0]
+    assert trade.id == market.trades[0].id
     assert trade.id
-    assert trade.offer.price == bid.price
+    assert trade.offer.price == bid.price + bid.original_bid_price * market.transfer_fee_ratio
     assert trade.offer.energy == bid.energy
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
@@ -308,15 +312,15 @@ def test_market_trade_partial(market, offer, accept_offer):
 
 
 def test_market_trade_bid_partial(market: TwoSidedPayAsBid):
-    bid = market.bid(20, 20, 'A', 'B')
+    bid = market.bid(20, 20, 'A', 'B', original_bid_price=20)
 
     trade = market.accept_bid(bid, energy=5, seller='B')
     assert trade
-    assert trade == market.trades[0]
+    assert trade.id == market.trades[0].id
     assert trade.id
     assert trade.offer is not bid
     assert trade.offer.energy == 5
-    assert trade.offer.price == 5 * 0.99
+    assert trade.offer.price == 5.05
     assert trade.offer.seller == 'B'
     assert trade.seller == 'B'
     assert trade.buyer == 'A'
@@ -324,7 +328,7 @@ def test_market_trade_bid_partial(market: TwoSidedPayAsBid):
     assert len(market.bids) == 1
     assert trade.residual.id in market.bids
     assert market.bids[trade.residual.id].energy == 15
-    assert market.bids[trade.residual.id].price == 15 * 0.99 * 0.99
+    assert isclose(market.bids[trade.residual.id].price, 15)
     assert market.bids[trade.residual.id].seller == 'B'
     assert market.bids[trade.residual.id].buyer == 'A'
 
@@ -369,7 +373,7 @@ def test_market_accept_bid_always_updates_trade_stats(market: TwoSidedPayAsBid, 
     setattr(market, market_method, called)
 
     bid = market.bid(20, 20, 'A', 'B')
-    trade = market.accept_bid(bid, energy=5, seller='B', already_tracked=False)
+    trade = market.accept_bid(bid, energy=5, seller='B')
     assert trade
     assert len(getattr(market, market_method).calls) == 1
 
@@ -573,7 +577,7 @@ def test_market_iou(market: OneSidedMarket):
     offer = market.offer(10, 20, 'A')
     market.accept_offer(offer, 'B')
 
-    assert market.ious['B']['A'] == 10.1
+    assert market.ious['B']['A'] == 10.0
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
@@ -599,8 +603,7 @@ class MarketStateMachine(RuleBasedStateMachine):
     actors = Bundle('Actors')
 
     def __init__(self):
-        test_area = FakeArea(name='my_fake_house', transfer_fee_pct=0)
-        self.market = OneSidedMarket(area=test_area)
+        self.market = OneSidedMarket(area=FakeArea(name='my_fake_house', transfer_fee_pct=0))
         super().__init__()
 
     @rule(target=actors, actor=st.text(min_size=1, max_size=3,
@@ -653,12 +656,12 @@ class MarketStateMachine(RuleBasedStateMachine):
         trade_sum = sum(t.offer.price for t in self.market.trades)
 
         for seller, iou in seller_ious.items():
-            assert iou == sum(ious[seller] for ious in self.market.ious.values())
+            assert isclose(iou, sum(ious[seller] for ious in self.market.ious.values()))
 
         for buyer, iou in buyer_ious.items():
-            assert iou == sum(self.market.ious[buyer].values())
+            assert isclose(iou, sum(self.market.ious[buyer].values()))
 
-        assert trade_sum == sum(sum(i.values()) for i in self.market.ious.values())
+        assert isclose(trade_sum, sum(sum(i.values()) for i in self.market.ious.values()))
 
 
 TestMarketIOU = MarketStateMachine.TestCase

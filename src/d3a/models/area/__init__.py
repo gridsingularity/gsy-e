@@ -125,7 +125,7 @@ class Area:
         self._cycle_markets(_trigger_event=False)
 
         if not self.strategy and self.parent is not None:
-            self.log.warning("No strategy. Using inter area agent.")
+            self.log.info("No strategy. Using inter area agent.")
         self.log.info('Activating area')
         self.active = True
         self.dispatcher.broadcast_activate()
