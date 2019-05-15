@@ -22,6 +22,8 @@ import glob
 from math import isclose
 from pendulum import duration, today, from_format
 from behave import given, when, then
+from deepdiff import DeepDiff
+from copy import deepcopy
 
 from d3a.models.config import SimulationConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -213,6 +215,11 @@ def two_sided_pay_as_bid_market(context):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
 
+@given('the past markets are kept in memory')
+def past_markets_in_memory(context):
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+
+
 @when('the simulation is running')
 def running_the_simulation(context):
 
@@ -304,6 +311,18 @@ def run_d3a_with_settings_file(context):
               "--setup default_2a".format(export_path=context.export_path,
                                           settings_file=os.path.join(d3a_path, "setup",
                                                                      "d3a-settings.json")))
+
+
+@when('the reported unmatched loads are saved')
+def save_reported_unmatched_loads(context):
+    context.unmatched_loads = deepcopy(context.simulation.endpoint_buffer.unmatched_loads)
+    context.unmatched_loads_redis = \
+        deepcopy(context.simulation.endpoint_buffer.unmatched_loads_redis)
+
+
+@when('the past markets are not kept in memory')
+def past_markets_not_in_memory(context):
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
 
 
 @then('we test the export functionality of {scenario}')
@@ -821,3 +840,17 @@ def assert_trade_rates(context, market_name, trade_rate):
     for market in markets:
         for t in market.trades:
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
+
+
+@then('the unmatched loads are identical no matter if the past markets are kept')
+def identical_unmatched_loads(context):
+    unmatched_loads = context.simulation.endpoint_buffer.unmatched_loads
+    unmatched_loads_redis = context.simulation.endpoint_buffer.unmatched_loads_redis
+
+    assert len(DeepDiff(unmatched_loads, context.unmatched_loads)) == 0
+    # The 2 simulation runs do not assign the same uuids to the same areas
+    # therefore we have to search whether there are elements with the same values
+
+    for _, v in unmatched_loads_redis.items():
+        assert any(len(DeepDiff(v, old_area_results)) == 0
+                   for _, old_area_results in context.unmatched_loads_redis.items())

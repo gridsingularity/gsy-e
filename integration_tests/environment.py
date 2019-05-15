@@ -21,6 +21,7 @@ import os
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
+from d3a.models.const import ConstSettings
 
 """
 before_step(context, step), after_step(context, step)
@@ -44,6 +45,7 @@ def before_scenario(context, scenario):
     context.simdir = "./d3a-simulation/integration_tests/"
     os.makedirs(context.simdir, exist_ok=True)
     context.resource_manager = contextlib.ExitStack()
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
 
 
 def after_scenario(context, scenario):
@@ -57,3 +59,4 @@ def after_scenario(context, scenario):
 def before_all(context):
     context.default_const_settings = constsettings_to_dict()
     context.config.setup_logging()
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True

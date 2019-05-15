@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration
 from itertools import product
-
+from copy import deepcopy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.const import GlobalConfig
 from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
@@ -56,17 +56,27 @@ class ExportUnmatchedLoads:
         self.name_type_map = {area.name: area.display_type}
         self.area = area
 
-    def __call__(self):
-
+    def get_current_market_results(self):
         unmatched_loads = self.arrange_output(self.append_device_type(
             self.expand_to_ul_to_hours(
                 self.expand_ul_to_parents(
-                    self.find_unmatched_loads(self.area, {})[self.area.name], self.area.name, {}
+                    self.find_unmatched_loads(self.area, {}, False)[self.area.name],
+                    self.area.name, {}
                 ))), self.area)
 
         return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
 
-    def find_unmatched_loads(self, area, indict):
+    def __call__(self):
+        unmatched_loads = self.arrange_output(self.append_device_type(
+            self.expand_to_ul_to_hours(
+                self.expand_ul_to_parents(
+                    self.find_unmatched_loads(self.area, {}, True)[self.area.name],
+                    self.area.name, {}
+                ))), self.area)
+
+        return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
+
+    def find_unmatched_loads(self, area, indict, all_past_markets: bool):
         """
         Aggregates list of times for each unmatched time slot for each load
         """
@@ -75,20 +85,28 @@ class ExportUnmatchedLoads:
             self.name_uuid_map[child.name] = child.uuid
             self.name_type_map[child.name] = child.display_type
             if child.children:
-                indict[area.name] = self.find_unmatched_loads(child, indict[area.name])
+                indict[area.name] = self.find_unmatched_loads(
+                    child, indict[area.name], all_past_markets
+                )
             else:
                 if isinstance(child.strategy, LoadHoursStrategy):
+                    curr_market = [child.parent.current_market] \
+                        if child.parent.current_market is not None \
+                        else []
                     indict[area.name][child.name] = \
-                        self._calculate_unmatched_loads_leaf_area(child)
+                        self._calculate_unmatched_loads_leaf_area(
+                            child,
+                            child.parent.past_markets if all_past_markets is True else curr_market
+                        )
         return indict
 
     @classmethod
-    def _calculate_unmatched_loads_leaf_area(cls, area):
+    def _calculate_unmatched_loads_leaf_area(cls, area, markets):
         """
         actually determines the unmatched loads
         """
         unmatched_times = []
-        for market in area.parent.past_markets:
+        for market in markets:
             desired_energy_Wh = area.strategy.state.desired_energy_Wh[market.time_slot]
             traded_energy_kWh = market.traded_energy[area.name] \
                 if market is not None and (area.name in market.traded_energy) \
@@ -194,3 +212,81 @@ class ExportUnmatchedLoads:
                         indict[area.name][child.name] = indict[child.name]
                     self.arrange_output(indict, child)
         return indict
+
+
+class MarketUnmatchedLoads:
+
+    def __init__(self):
+        self._unmatched_loads_incremental = {}
+        self._unmatched_loads_incremental_uuid = {}
+
+    def _merge_base_area_unmatched_loads(self, accumulated_results, current_results, area):
+        for target, target_value in current_results[area].items():
+            if target not in accumulated_results[area]:
+                accumulated_results[area][target] = deepcopy(target_value)
+            else:
+                if target == 'type':
+                    continue
+                elif target == 'unmatched_loads':
+                    self._merge_accumulated_unmatched_loads(
+                        accumulated_results, current_results, area
+                    )
+                else:
+                    self._merge_target_area_unmatched_loads(
+                        accumulated_results, current_results, area, target
+                    )
+
+    def _merge_target_area_unmatched_loads(self, accumulated_results, current_results,
+                                           area, target):
+        target_ul = accumulated_results[area][target]['unmatched_loads']
+        current_ul = current_results[area][target]['unmatched_loads']
+        for timestamp, ts_value in current_ul.items():
+            if timestamp not in target_ul:
+                target_ul[timestamp] = deepcopy(ts_value)
+            else:
+                if 'unmatched_times' not in current_ul[timestamp]:
+                    continue
+                if 'unmatched_times' not in target_ul[timestamp]:
+                    target_ul[timestamp]['unmatched_times'] = {}
+                for device, time_list in current_ul[timestamp]['unmatched_times'].items():
+                    if device not in target_ul[timestamp]['unmatched_times']:
+                        target_ul[timestamp]['unmatched_times'][device] = deepcopy(time_list)
+                    else:
+                        for ts in time_list:
+                            if ts not in target_ul[timestamp]['unmatched_times'][device]:
+                                target_ul[timestamp]['unmatched_times'][device].append(ts)
+
+                unm_count = 0
+                for _, hours in target_ul[timestamp]['unmatched_times'].items():
+                    unm_count += len(hours)
+
+                    target_ul['unmatched_count'] = unm_count
+
+    def _merge_accumulated_unmatched_loads(self, accumulated_results, current_results, area):
+        for timestamp, ts_value in current_results[area]['unmatched_loads'].items():
+            if timestamp not in accumulated_results[area]['unmatched_loads']:
+                accumulated_results[area]['unmatched_loads'][timestamp] = deepcopy(ts_value)
+
+    def _iterate_on_base_areas(self, accumulated_results, current_results):
+        if not self._unmatched_loads_incremental:
+            return deepcopy(current_results)
+        else:
+            for base_area, target_results in current_results.items():
+                if base_area not in accumulated_results:
+                    accumulated_results[base_area] = deepcopy(target_results)
+                else:
+                    self._merge_base_area_unmatched_loads(
+                        accumulated_results, current_results, base_area
+                    )
+        return accumulated_results
+
+    def update_and_get_unmatched_loads(self, area):
+        current_results, current_results_uuid = \
+            ExportUnmatchedLoads(area).get_current_market_results()
+        self._unmatched_loads_incremental = self._iterate_on_base_areas(
+            self._unmatched_loads_incremental, current_results
+        )
+        self._unmatched_loads_incremental_uuid = self._iterate_on_base_areas(
+            self._unmatched_loads_incremental_uuid, current_results_uuid
+        )
+        return self._unmatched_loads_incremental, self._unmatched_loads_incremental_uuid

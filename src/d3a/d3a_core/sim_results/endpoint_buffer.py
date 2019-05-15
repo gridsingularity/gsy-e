@@ -22,11 +22,12 @@ from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import energy_bills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.util import convert_datetime_to_str_keys, round_floats_for_ui
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
+from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
+    MarketUnmatchedLoads
+from d3a.models.const import ConstSettings
 from collections import OrderedDict
 from statistics import mean
 from copy import deepcopy
-
 
 _NO_VALUE = {
     'min': None,
@@ -42,6 +43,7 @@ class SimulationEndpointBuffer:
         self.status = {}
         self.unmatched_loads = {}
         self.unmatched_loads_redis = {}
+        self.market_unmatched_loads = MarketUnmatchedLoads()
         self.cumulative_loads = {}
         self.price_energy_day = {}
         self.cumulative_grid_trades = {}
@@ -88,11 +90,16 @@ class SimulationEndpointBuffer:
             "energy_trade_profile": self.energy_trade_profile
         }
 
+    def _update_unmatched_loads(self, area):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            self.unmatched_loads, self.unmatched_loads_redis = ExportUnmatchedLoads(area)()
+        else:
+            self.unmatched_loads, self.unmatched_loads_redis = \
+                self.market_unmatched_loads.update_and_get_unmatched_loads(area)
+
     def update_stats(self, area, simulation_status):
         self.status = simulation_status
-
-        self.unmatched_loads, self.unmatched_loads_redis = ExportUnmatchedLoads(area)()
-
+        self._update_unmatched_loads(area)
         self.cumulative_loads = {
             "price-currency": "Euros",
             "load-unit": "kWh",
