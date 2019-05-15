@@ -64,7 +64,7 @@ class Area:
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=[],
-                 transfer_fee_pct: int =None,
+                 transfer_fee_pct: float =None,
                  transfer_fee_const: float=None):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
