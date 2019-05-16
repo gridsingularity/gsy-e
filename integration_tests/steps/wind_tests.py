@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
+from pendulum import duration
 from d3a.models.read_user_profile import _readCSV
 
 
@@ -25,13 +26,9 @@ def check_wind_csv_profile(context):
     from d3a.setup.strategy_tests.user_profile_wind_csv import user_profile_path
     profile_data = _readCSV(user_profile_path)
     for timepoint, energy in wind.strategy.energy_production_forecast_kWh.items():
-
-        accumulated_energy = 0
-        for time in profile_data.keys():
-            if time.hour == timepoint.hour:
-                accumulated_energy += (profile_data[time] * 0.25)
         if timepoint in profile_data.keys():
-            actual_energy = accumulated_energy / 1000.0
+            actual_energy = profile_data[timepoint] * \
+                            (wind.config.slot_length / duration(hours=1)) / 1000.0
             assert energy == actual_energy
         else:
             assert energy == 0
