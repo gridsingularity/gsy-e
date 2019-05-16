@@ -39,6 +39,7 @@ class ConstSettings:
         EXPORT_DEVICE_PLOTS = True
         # Boolean flag which forces d3a to run in real-time
         RUN_REAL_TIME = False
+        KEEP_PAST_MARKETS = False
 
     class StorageSettings:
         # Max battery capacity in kWh.
