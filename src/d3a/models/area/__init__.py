@@ -293,7 +293,7 @@ class Area:
         except IndexError:
             return None
 
-    @cached_property
+    @property
     def current_market(self):
         """Returns the 'current' market (i.e. the one currently 'running')"""
         try:

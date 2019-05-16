@@ -10,3 +10,4 @@ parameterized
 pytest
 ptpython
 requests-mock
+deepdiff
