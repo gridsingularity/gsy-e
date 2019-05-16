@@ -157,4 +157,6 @@ If no export_path is provided, simulation results will be stored in $HOME/d3a-si
 _`docker`: https://docker.io
 
 
-
+Detailed Documentation
+===============
+Please refer to: https://gridsingularity.atlassian.net/wiki/spaces/D3AD/pages/855212151/D3A+Documentation
