@@ -141,7 +141,6 @@ def pv_produces_same_amount_of_energy_day(context):
                                         for trade in market.trades
                                         if trade.seller == "H2 PV")
                                     for market in same_time_markets]
-        print(same_time_markets_energy)
         assert all(isclose(same_time_markets_energy[0], energy)
                    for energy in same_time_markets_energy)
 

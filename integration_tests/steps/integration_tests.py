@@ -848,9 +848,9 @@ def identical_unmatched_loads(context):
     unmatched_loads_redis = context.simulation.endpoint_buffer.unmatched_loads_redis
 
     assert len(DeepDiff(unmatched_loads, context.unmatched_loads)) == 0
+
     # The 2 simulation runs do not assign the same uuids to the same areas
     # therefore we have to search whether there are elements with the same values
-
     for _, v in unmatched_loads_redis.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0
                    for _, old_area_results in context.unmatched_loads_redis.items())

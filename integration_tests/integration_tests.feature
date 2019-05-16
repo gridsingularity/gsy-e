@@ -113,12 +113,18 @@ Feature: Run integration tests
      Then trades on the Neighborhood 2 market clear with 16.0 cents/kWh
      Then trades on the House 2 market clear with 16.0 cents/kWh
 
-  Scenario: Unmatched loads are the same with and without keeping the past markets
-     Given we have a scenario named default_3b
+  Scenario Outline: Unmatched loads are the same with and without keeping the past markets
+     Given we have a scenario named <scenario>
      And d3a is installed
      And the past markets are kept in memory
-     When we run the simulation with setup file default_3b and parameters [24, 60, 60, 0, 1]
+     When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
      And the reported unmatched loads are saved
      And the past markets are not kept in memory
-     And we run the simulation with setup file default_3b and parameters [24, 60, 60, 0, 1]
+     And we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
      Then the unmatched loads are identical no matter if the past markets are kept
+
+  Examples: Settings
+     | scenario     |
+     |  default_2a  |
+     |  default_3a  |
+     |  default_3b  |
