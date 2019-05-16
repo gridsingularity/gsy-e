@@ -99,7 +99,7 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
     def assign_energy_requirement(self, avg_power_W):
         self.energy_per_slot_Wh = (avg_power_W /
                                    (duration(hours=1) / self.area.config.slot_length))
-        for slot_time in generate_market_slot_list(self.area):
+        for slot_time in generate_market_slot_list(area=self.area):
             if self._allowed_operating_hours(slot_time) and slot_time >= self.area.now:
                 self.energy_requirement_Wh[slot_time] = self.energy_per_slot_Wh
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh

@@ -297,15 +297,16 @@ def update_advanced_settings(advanced_settings):
         update_nested_settings(setting_class, settings_class_name, advanced_settings)
 
 
-def generate_market_slot_list(area):
-    """
-    Returns a list of all slot times
-    """
+def generate_market_slot_list(area=None):
+    if area is None:
+        config = GlobalConfig
+    else:
+        config = area.config
     return [
-        area.config.start_date + (area.config.slot_length * i) for i in range(
-            (area.config.sim_duration + (area.config.market_count * area.config.slot_length)) //
-            area.config.slot_length - 1)
-        if (area.config.slot_length * i) <= area.config.sim_duration]
+        config.start_date + (config.slot_length * i) for i in range(
+            (config.sim_duration + (config.market_count * config.slot_length)) //
+            config.slot_length - 1)
+        if (config.slot_length * i) <= config.sim_duration]
 
 
 def constsettings_to_dict():
@@ -409,3 +410,27 @@ def convert_datetime_to_str_keys(indict, outdict, ui_format=False):
 
 def round_floats_for_ui(number):
     return round(number, 3)
+
+
+def add_or_create_key(dict, key, value):
+    if key in dict:
+        dict[key] += value
+    else:
+        dict[key] = value
+    return dict
+
+
+def substract_or_create_key(dict, key, value):
+    if key in dict:
+        dict[key] -= value
+    else:
+        dict[key] = 0 - value
+    return dict
+
+
+def append_or_create_key(dict, key, obj):
+    if key in dict:
+        dict[key].append(obj)
+    else:
+        dict[key] = [obj]
+    return dict

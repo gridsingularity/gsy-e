@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from collections import defaultdict
 from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 
@@ -28,6 +27,7 @@ from d3a.models.const import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.events import EventMixin
+from d3a.d3a_core.util import append_or_create_key
 
 log = getLogger(__name__)
 
@@ -53,25 +53,29 @@ class Offers:
     posted_in_market() yields all offers that have been posted,
     open_in_market() only those who have not been sold.
     """
-
+    # TODO: move from market to time_slot o.s.
     def __init__(self, strategy):
         self.strategy = strategy
         self.bought = {}  # type: Dict[Offer, Market]
         self.posted = {}  # type: Dict[Offer, Market]
-        self.sold = defaultdict(list)  # type: Dict[Market, List[str]]
+        self.sold = {}  # type: Dict[Market, List[str]]
         self.changed = {}  # type: Dict[str, Offer]
 
     @property
     def open(self):
-        return {offer: market
-                for offer, market in self.posted.items()
-                if offer.id not in self.sold[market]}
+        open_offers = {}
+        for offer, market in self.posted.items():
+            if market not in self.sold:
+                self.sold[market] = []
+            if offer.id not in self.sold[market]:
+                open_offers[offer] = market
+        return open_offers
 
     def bought_offer(self, offer, market):
         self.bought[offer] = market
 
     def sold_offer(self, offer_id, market):
-        self.sold[market].append(offer_id)
+        self.sold = append_or_create_key(self.sold, market, offer_id)
 
     def _update_offer(self, offer):
         old_offer_list = [o for o in self.posted.keys() if o.id == offer.id]
@@ -91,9 +95,13 @@ class Offers:
         return [offer for offer, _market in self.posted.items() if market == _market]
 
     def sold_in_market(self, market):
-        return [offer
-                for offer in self.posted_in_market(market)
-                if offer.id in self.sold[market]]
+        sold_offers = []
+        for offer in self.posted_in_market(market):
+            if market not in self.sold:
+                self.sold[market] = []
+            if offer.id in self.sold[market]:
+                sold_offers.append(offer)
+        return sold_offers
 
     def post(self, offer, market):
         self.posted[offer] = market
@@ -108,6 +116,7 @@ class Offers:
                 return True
         except KeyError:
             self.strategy.log.warning("Could not find offer to remove")
+            return True
 
     def replace(self, old_offer, new_offer, market):
         if self.remove(old_offer):

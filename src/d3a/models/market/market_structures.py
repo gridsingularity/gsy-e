@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import random
 
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from typing import Dict, List, Set, Union  # noqa
 from d3a.events.event_structures import OfferEvent
 
@@ -31,7 +31,7 @@ class Offer:
         self.energy = energy
         self.seller = seller
         self.market = market
-        self._listeners = defaultdict(set)  # type: Dict[OfferEvent, Set[callable]]
+        self._listeners = {}  # type: Dict[OfferEvent, Set[callable]]
 
     def __repr__(self):
         return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
@@ -46,12 +46,15 @@ class Offer:
             for ev in event:
                 self.add_listener(ev, listener)
         else:
+            if event not in self._listeners:
+                self._listeners[event] = set()
             self._listeners[event].add(listener)
 
     def _call_listeners(self, event: OfferEvent, **kwargs):
         # Call listeners in random order to ensure fairness
-        for listener in sorted(self._listeners[event], key=lambda l: random.random()):
-            listener(**kwargs, offer=self)
+        if event in self._listeners:
+            for listener in sorted(self._listeners[event], key=lambda l: random.random()):
+                listener(**kwargs, offer=self)
 
     # XXX: This might be unreliable - decide after testing
     def __del__(self):
@@ -167,7 +170,7 @@ class MarketClearingState:
     def __init__(self):
         self.cumulative_offers = dict()  # type Dict[Datetime, dict()]
         self.cumulative_bids = dict()  # type Dict[Datetime, dict()]
-        self.clearing = defaultdict(int)  # type: Dict[DateTime, tuple()]
+        self.clearing = {}  # type: Dict[DateTime, tuple()]
 
     @classmethod
     def _csv_fields(cls):
