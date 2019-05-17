@@ -22,7 +22,6 @@ from enum import Enum
 from pendulum import duration, from_format, from_timestamp, today, DateTime
 from statistics import mean
 from typing import Dict
-from itertools import product
 from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
 from d3a.models.const import GlobalConfig
 
@@ -60,22 +59,18 @@ def default_profile_dict(val=None) -> Dict[DateTime, int]:
     """
     if val is None:
         val = 0
-    if GlobalConfig.sim_duration > duration(days=1):
-        outdict = dict((GlobalConfig.start_date.add(days=day, hours=hour, minutes=minute), val)
-                       for day, hour, minute in
-                       product(range(GlobalConfig.sim_duration.days + 1), range(24), range(60)))
-    else:
-        outdict = dict((GlobalConfig.start_date.add(hours=hour, minutes=minute), val)
-                       for hour, minute in product(range(24), range(60)))
 
-    if GlobalConfig.market_count > 1:
-        # this is for adding data points for the future markets
-        added_market_count_minutes = int((GlobalConfig.market_count - 1) *
-                                         GlobalConfig.slot_length.in_minutes())
-        last_time = from_format(str(sorted(list(outdict.keys()))[-1]), DATE_TIME_FORMAT)
+    outdict = {}
+    iter_date = GlobalConfig.start_date
+    end_date = GlobalConfig.start_date.add(days=GlobalConfig.sim_duration.days,
+                                           hours=GlobalConfig.sim_duration.hours)
+    while iter_date <= end_date:
+        outdict[iter_date] = val
+        iter_date = iter_date.add(seconds=GlobalConfig.slot_length.seconds)
 
-        for minute in range(1, added_market_count_minutes+1):
-            outdict[last_time.add(minutes=minute)] = val
+    for _ in range(GlobalConfig.market_count-1):
+        outdict[iter_date] = val
+        iter_date = iter_date.add(seconds=GlobalConfig.slot_length.seconds)
 
     return outdict
 
