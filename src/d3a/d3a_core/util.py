@@ -298,10 +298,7 @@ def update_advanced_settings(advanced_settings):
 
 
 def generate_market_slot_list(area=None):
-    if area is None:
-        config = GlobalConfig
-    else:
-        config = area.config
+    config = GlobalConfig if area is None else area.config
     return [
         config.start_date + (config.slot_length * i) for i in range(
             (config.sim_duration + (config.market_count * config.slot_length)) //

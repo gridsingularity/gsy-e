@@ -53,7 +53,7 @@ class Offers:
     posted_in_market() yields all offers that have been posted,
     open_in_market() only those who have not been sold.
     """
-    # TODO: move from market to time_slot o.s.
+
     def __init__(self, strategy):
         self.strategy = strategy
         self.bought = {}  # type: Dict[Offer, Market]
