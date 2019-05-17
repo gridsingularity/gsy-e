@@ -132,7 +132,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
 
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:
-            already_tracked = self.owner.name == bid.buyer
+            original_bid_rate = bid.original_bid_price / bid.energy
             if cumulative_traded_bids >= clearing_energy:
                 break
             elif (bid.price/bid.energy) >= clearing_rate and \
@@ -142,8 +142,9 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid=bid,
                     energy=bid.energy,
                     seller=self.owner.name,
-                    already_tracked=already_tracked,
-                    trade_rate=clearing_rate
+                    already_tracked=True,
+                    trade_rate=clearing_rate,
+                    original_trade_rate=original_bid_rate
                 )
             elif (bid.price/bid.energy) >= clearing_rate and \
                     (0 < (clearing_energy - cumulative_traded_bids) <= bid.energy):
@@ -152,25 +153,30 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid=bid,
                     energy=(clearing_energy - cumulative_traded_bids),
                     seller=self.owner.name,
-                    already_tracked=already_tracked,
-                    trade_rate=clearing_rate
+                    already_tracked=True,
+                    trade_rate=clearing_rate,
+                    original_trade_rate=original_bid_rate
                 )
                 cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
             self._delete_forwarded_bid_entries(bid)
 
         cumulative_traded_offers = 0
         for offer in self.sorted_offers:
-            already_tracked = self.owner.name == offer.seller
             if cumulative_traded_offers >= clearing_energy:
                 break
             elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
                     (clearing_energy - cumulative_traded_offers) >= offer.energy:
+                # TODO: Used the clearing_rate as the original_trade_rate for the offers, because
+                # currently an aggregated market is used. If/once a peer-to-peer market is
+                # implemented, we should use the original bid rate for calculating the fees
+                # on the source offers, similar to the two sided pay as bid market.
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=offer.energy,
-                                        already_tracked=already_tracked,
-                                        trade_rate=clearing_rate)
+                                        already_tracked=False,
+                                        trade_rate=clearing_rate,
+                                        original_trade_rate=clearing_rate)
                 cumulative_traded_offers += offer.energy
             elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
                     (clearing_energy - cumulative_traded_offers) <= offer.energy:
@@ -178,8 +184,9 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=clearing_energy - cumulative_traded_offers,
-                                        already_tracked=already_tracked,
-                                        trade_rate=clearing_rate)
+                                        already_tracked=False,
+                                        trade_rate=clearing_rate,
+                                        original_trade_rate=clearing_rate)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
 
             self._delete_forwarded_offer_entries(offer)
