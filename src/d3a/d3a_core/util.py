@@ -298,6 +298,9 @@ def update_advanced_settings(advanced_settings):
 
 
 def generate_market_slot_list(area=None):
+    """
+    Returns a list of all slot times
+    """
     config = GlobalConfig if area is None else area.config
     return [
         config.start_date + (config.slot_length * i) for i in range(
