@@ -30,6 +30,10 @@ from d3a.models.const import ConstSettings, GlobalConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 
+def setup_function():
+    change_global_config(**DEFAULT_CONFIG.__dict__)
+
+
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
@@ -349,5 +353,6 @@ def test_correct_time_expansion_read_arbitrary_profile():
     assert (list(mmr.keys())[-1] - today(tz=TIME_ZONE)).days == 2
     GlobalConfig.sim_duration = duration(hours=49)
     mmr = read_arbitrary_profile(InputProfileTypes.IDENTITY, market_maker_rate)
-    # read_arbitrary_profile expands until 23:59 of the last day in sim_duration:
-    assert (list(mmr.keys())[-1] == today(tz=TIME_ZONE).add(days=3).add(minutes=-1))
+    # read_arbitrary_profile expands until 01:00 after the last day in sim_duration
+    # because of the future markets
+    assert (sorted(list(mmr.keys()))[-1] == today(tz=TIME_ZONE).add(hours=49))
