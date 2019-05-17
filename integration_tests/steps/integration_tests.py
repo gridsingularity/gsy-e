@@ -397,11 +397,13 @@ def test_aggregated_result_files(context):
 def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):
     from d3a.models.read_user_profile import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
-    assert len(context.simulation.simulation_config.market_maker_rate) == 24 * 60 + 3 * 60
+    assert len(context.simulation.simulation_config.market_maker_rate) == \
+        24 / context.simulation.simulation_config.slot_length.hours + \
+        context.simulation.simulation_config.market_count
     assert len(default_profile_dict().keys()) == len(context.simulation.simulation_config.
                                                      market_maker_rate.keys())
     assert context.simulation.simulation_config.market_maker_rate[
-               from_format(f"{TODAY_STR}T01:59", DATE_TIME_FORMAT)] == 0
+               from_format(f"{TODAY_STR}T01:00", DATE_TIME_FORMAT)] == 0
     assert context.simulation.simulation_config.market_maker_rate[from_format(
         f"{TODAY_STR}T12:00", DATE_TIME_FORMAT)] == context._market_maker_rate[
         from_format(f"{TODAY_STR}T11:00", DATE_TIME_FORMAT)]
