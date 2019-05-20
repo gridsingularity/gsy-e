@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from random import random
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSidedPayAsBidEngine
 
@@ -32,15 +33,15 @@ class TwoSidedPayAsBidAgent(OneSidedAgent):
         return all(bid.id not in engine.forwarded_bids.keys() for engine in self.engines)
 
     def event_bid_traded(self, *, market_id, bid_trade):
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_bid_traded(bid_trade=bid_trade)
 
     def event_bid_deleted(self, *, market_id, bid):
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_bid_deleted(bid=bid)
 
     def event_bid_changed(self, *, market_id, existing_bid, new_bid):
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_bid_changed(market_id=market_id,
                                      existing_bid=existing_bid,
                                      new_bid=new_bid)
