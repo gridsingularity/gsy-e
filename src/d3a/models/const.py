@@ -141,7 +141,7 @@ class ConstSettings:
 
     class BalancingSettings:
         # Enables/disables balancing market
-        ENABLE_BALANCING_MARKET = False
+        ENABLE_BALANCING_MARKET = True
         # Controls the percentage of the energy traded in the spot market that needs to be
         # acquired by the balancing market on each IAA.
         SPOT_TRADE_RATIO = 0.2
