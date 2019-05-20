@@ -127,11 +127,13 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         clearing_rate, clearing_energy = clearing
         if clearing_energy > 0:
             self.owner.log.info(f"Market Clearing Rate: {clearing_rate} "
-                                f"||| Clearing Energy: {clearing_energy} ")
+                                f"||| Clearing Energy: {clearing_energy} "
+                                f"||| Market: {self.markets.source.area.name}")
             self.markets.source.state.clearing[time] = (clearing_rate, clearing_energy)
 
         cumulative_traded_bids = 0
         for bid in self.sorted_bids:
+            already_tracked = self.owner.name == bid.buyer
             original_bid_rate = bid.original_bid_price / bid.energy
             if cumulative_traded_bids >= clearing_energy:
                 break
@@ -142,7 +144,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid=bid,
                     energy=bid.energy,
                     seller=self.owner.name,
-                    already_tracked=True,
+                    already_tracked=already_tracked,
                     trade_rate=clearing_rate,
                     original_trade_rate=original_bid_rate
                 )
@@ -153,7 +155,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid=bid,
                     energy=(clearing_energy - cumulative_traded_bids),
                     seller=self.owner.name,
-                    already_tracked=True,
+                    already_tracked=already_tracked,
                     trade_rate=clearing_rate,
                     original_trade_rate=original_bid_rate
                 )
@@ -162,6 +164,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
 
         cumulative_traded_offers = 0
         for offer in self.sorted_offers:
+            already_tracked = self.owner.name == offer.seller
             if cumulative_traded_offers >= clearing_energy:
                 break
             elif (math.floor(offer.price/offer.energy)) <= clearing_rate and \
@@ -174,7 +177,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=offer.energy,
-                                        already_tracked=False,
+                                        already_tracked=already_tracked,
                                         trade_rate=clearing_rate,
                                         original_trade_rate=clearing_rate)
                 cumulative_traded_offers += offer.energy
@@ -184,7 +187,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         offer=offer,
                                         buyer=self.owner.name,
                                         energy=clearing_energy - cumulative_traded_offers,
-                                        already_tracked=False,
+                                        already_tracked=already_tracked,
                                         trade_rate=clearing_rate,
                                         original_trade_rate=clearing_rate)
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
