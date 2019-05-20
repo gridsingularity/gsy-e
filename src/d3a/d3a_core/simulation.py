@@ -142,7 +142,7 @@ class Simulation:
         # cli-call and behave integration tests
         # Furthermore, random.seed() is also called before this following block by setuptools
         if seed is not None:
-            random.seed(seed)
+            random.seed(int(seed))
         else:
             random_seed = random.randint(0, 1000000)
             random.seed(random_seed)
