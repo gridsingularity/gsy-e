@@ -320,6 +320,14 @@ def save_reported_unmatched_loads(context):
         deepcopy(context.simulation.endpoint_buffer.unmatched_loads_redis)
 
 
+@when('the reported energy trade profile are saved')
+def save_reported_energy_trade_profile(context):
+    context.energy_trade_profile = deepcopy(
+        context.simulation.endpoint_buffer.energy_trade_profile)
+    context.energy_trade_profile_redis = \
+        deepcopy(context.simulation.endpoint_buffer.energy_trade_profile_redis)
+
+
 @when('the past markets are not kept in memory')
 def past_markets_not_in_memory(context):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
@@ -856,3 +864,17 @@ def identical_unmatched_loads(context):
     for _, v in unmatched_loads_redis.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0
                    for _, old_area_results in context.unmatched_loads_redis.items())
+
+
+@then('the energy trade profiles are identical no matter if the past markets are kept')
+def identical_energy_trade_profiles(context):
+    energy_trade_profile = context.simulation.endpoint_buffer.energy_trade_profile
+    energy_trade_profile_redis = context.simulation.endpoint_buffer.energy_trade_profile_redis
+
+    assert len(DeepDiff(energy_trade_profile, context.energy_trade_profile)) == 0
+
+    # The 2 simulation runs do not assign the same uuids to the same areas
+    # therefore we have to search whether there are elements with the same values
+    for _, v in energy_trade_profile_redis.items():
+        assert any(len(DeepDiff(v, old_area_results)) == 0
+                   for _, old_area_results in context.energy_trade_profile_redis.items())

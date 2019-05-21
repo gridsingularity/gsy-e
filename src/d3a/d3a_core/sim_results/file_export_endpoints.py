@@ -28,6 +28,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.d3a_core.util import convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import generate_market_slot_list
+from d3a.models.const import ConstSettings
 
 
 class FileExportEndpoints:
@@ -59,16 +60,25 @@ class FileExportEndpoints:
         return ExportBalancingData(area) if is_balancing_market else ExportData.create(area)
 
     def update_sold_bought_energy(self, area: Area):
-        if area.uuid not in self.traded_energy:
-            self.traded_energy[area.uuid] = {"sold_energy": {}, "bought_energy": {}}
-        self._calculate_devices_sold_bought_energy(self.traded_energy[area.uuid],
-                                                   area.current_market)
-        self.traded_energy[area.name] = self.traded_energy[area.uuid]
-        if area.name not in self.balancing_traded_energy:
-            self.balancing_traded_energy[area.name] = {"sold_energy": {}, "bought_energy": {}}
-        if len(area.past_balancing_markets) > 0:
-            self._calculate_devices_sold_bought_energy(self.balancing_traded_energy[area.name],
-                                                       area.past_balancing_markets[-1])
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            self.traded_energy[area.uuid] = \
+                self._calculate_devices_sold_bought_energy_past_markets(area, area.past_markets)
+            self.traded_energy[area.name] = self.traded_energy[area.uuid]
+            self.balancing_traded_energy[area.name] = \
+                self._calculate_devices_sold_bought_energy_past_markets(
+                    area, area.past_balancing_markets)
+        else:
+            if area.uuid not in self.traded_energy:
+                self.traded_energy[area.uuid] = {"sold_energy": {}, "bought_energy": {}}
+            self._calculate_devices_sold_bought_energy(self.traded_energy[area.uuid],
+                                                       area.current_market)
+            self.traded_energy[area.name] = self.traded_energy[area.uuid]
+            if area.name not in self.balancing_traded_energy:
+                self.balancing_traded_energy[area.name] = {"sold_energy": {}, "bought_energy": {}}
+            if len(area.past_balancing_markets) > 0:
+                self._calculate_devices_sold_bought_energy(self.balancing_traded_energy[area.name],
+                                                           area.past_balancing_markets[-1])
+
         self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
         self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(area)
         self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
@@ -106,8 +116,7 @@ class FileExportEndpoints:
                 else trade.seller
             trade_buyer = trade.buyer[4:] if trade.buyer.startswith("IAA ") \
                 else trade.buyer
-            if "sold_energy" not in res_dict:
-                print(res_dict)
+
             if trade_seller not in res_dict["sold_energy"]:
                 res_dict["sold_energy"][trade_seller] = {}
                 res_dict["sold_energy"][trade_seller]["accumulated"] = dict(
@@ -134,6 +143,10 @@ class FileExportEndpoints:
                 res_dict["bought_energy"][trade_buyer][trade_seller][market.time_slot] += \
                     trade.offer.energy
 
+        self._add_sold_bought_lists(res_dict)
+
+    @classmethod
+    def _add_sold_bought_lists(cls, res_dict):
         for ks in ("sold_energy", "bought_energy"):
             res_dict[ks + "_lists"] = dict((ki, {}) for ki in res_dict[ks].keys())
             for node in res_dict[ks].keys():
@@ -141,6 +154,44 @@ class FileExportEndpoints:
                     list(res_dict[ks][node]["accumulated"].keys())
                 res_dict[ks + "_lists"][node]["energy"] = \
                     list(res_dict[ks][node]["accumulated"].values())
+
+    def _calculate_devices_sold_bought_energy_past_markets(self, area, past_markets):
+        out_dict = {"sold_energy": {}, "bought_energy": {}}
+        for market in past_markets:
+            for trade in market.trades:
+                trade_seller = trade.seller[4:] if trade.seller.startswith("IAA ") \
+                    else trade.seller
+                trade_buyer = trade.buyer[4:] if trade.buyer.startswith("IAA ") \
+                    else trade.buyer
+
+                if trade_seller not in out_dict["sold_energy"]:
+                    out_dict["sold_energy"][trade_seller] = {}
+                    out_dict["sold_energy"][trade_seller]["accumulated"] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
+                if trade_buyer not in out_dict["sold_energy"][trade_seller]:
+                    out_dict["sold_energy"][trade_seller][trade_buyer] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
+                if trade.offer.energy > FLOATING_POINT_TOLERANCE:
+                    out_dict["sold_energy"][trade_seller]["accumulated"][market.time_slot] += \
+                        trade.offer.energy
+                    out_dict["sold_energy"][trade_seller][trade_buyer][market.time_slot] += \
+                        trade.offer.energy
+
+                if trade_buyer not in out_dict["bought_energy"]:
+                    out_dict["bought_energy"][trade_buyer] = {}
+                    out_dict["bought_energy"][trade_buyer]["accumulated"] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
+                if trade_seller not in out_dict["bought_energy"][trade_buyer]:
+                    out_dict["bought_energy"][trade_buyer][trade_seller] = dict(
+                        (m.time_slot, 0) for m in area.past_markets)
+                if trade.offer.energy > FLOATING_POINT_TOLERANCE:
+                    out_dict["bought_energy"][trade_buyer]["accumulated"][market.time_slot] += \
+                        trade.offer.energy
+                    out_dict["bought_energy"][trade_buyer][trade_seller][market.time_slot] += \
+                        trade.offer.energy
+        self._add_sold_bought_lists(out_dict)
+
+        return out_dict
 
     def _get_buyer_seller_trades(self, area: Area):
         """
