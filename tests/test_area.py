@@ -96,12 +96,10 @@ class TestAreaClass(unittest.TestCase):
         current_time = today(tz=TIME_ZONE).add(hours=1)
         self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
         assert len(self.area.past_markets) == 1
-        print(self.area.past_markets)
 
         self.area._markets.create_future_markets(current_time, True, self.area)
         current_time = today(tz=TIME_ZONE).add(hours=2)
         self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
-        print(self.area.past_markets)
         assert len(self.area.past_markets) == 1
         assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
 
