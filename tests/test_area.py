@@ -32,6 +32,8 @@ from d3a.models.market.market_structures import Offer
 from d3a.models.const import ConstSettings, GlobalConfig
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.models.area.event_dispatcher import AreaDispatcher
+from d3a.models.area.stats import AreaStats
 
 
 class TestAreaClass(unittest.TestCase):
@@ -57,9 +59,12 @@ class TestAreaClass(unittest.TestCase):
         self.area.parent = self.area
         self.area.children = [self.area]
         self.area.transfer_fee_pct = 1
+        self.dispatcher = AreaDispatcher(self.area)
+        self.stats = AreaStats(self.area._markets)
 
     def tearDown(self):
         GlobalConfig.market_count = 1
+        ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
 
     def test_respective_area_grid_fee_is_applied(self):
         self.area = Area(name="Street", children=[Area(name="House")],
@@ -77,6 +82,48 @@ class TestAreaClass(unittest.TestCase):
             self.config.market_count = i
             self.area._cycle_markets(False, False)
             assert len(self.area.all_markets) == i
+
+    def test_delete_past_markets_instead_of_last(self):
+        self.area = Area(name="Street", children=[Area(name="House")],
+                         config=GlobalConfig, transfer_fee_pct=5)
+        self.area.config.market_count = 1
+        self.area.activate()
+        self.area._bc = False
+
+        self.area._cycle_markets(False, False, False)
+        assert len(self.area.past_markets) == 0
+
+        current_time = today(tz=TIME_ZONE).add(hours=1)
+        self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
+        assert len(self.area.past_markets) == 1
+        print(self.area.past_markets)
+
+        self.area._markets.create_future_markets(current_time, True, self.area)
+        current_time = today(tz=TIME_ZONE).add(hours=2)
+        self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
+        print(self.area.past_markets)
+        assert len(self.area.past_markets) == 1
+        assert list(self.area.past_markets)[-1].time_slot == today(tz=TIME_ZONE).add(hours=1)
+
+    def test_keep_past_markets(self):
+        ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+        self.area = Area(name="Street", children=[Area(name="House")],
+                         config=GlobalConfig, transfer_fee_pct=5)
+        self.area.config.market_count = 1
+        self.area.activate()
+        self.area._bc = False
+
+        self.area._cycle_markets(False, False, False)
+        assert len(self.area.past_markets) == 0
+
+        current_time = today(tz=TIME_ZONE).add(hours=1)
+        self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
+        assert len(self.area.past_markets) == 1
+
+        self.area._markets.create_future_markets(current_time, True, self.area)
+        current_time = today(tz=TIME_ZONE).add(hours=2)
+        self.area._markets.rotate_markets(current_time, self.stats, self.dispatcher)
+        assert len(self.area.past_markets) == 2
 
     def test_market_with_most_expensive_offer(self):
         m1 = MagicMock(spec=Market)
