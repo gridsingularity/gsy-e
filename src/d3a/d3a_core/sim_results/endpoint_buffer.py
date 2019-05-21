@@ -110,14 +110,19 @@ class SimulationEndpointBuffer:
             "load-unit": "kWh",
             "price-energy-day": export_price_energy_day(area)
         }
+        market_type = \
+            "current_market" if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS else "past_markets"
 
         self.cumulative_grid_trades_redis = \
-            export_cumulative_grid_trades_redis(area, "past_markets")
+            export_cumulative_grid_trades_redis(area, market_type)
         self.cumulative_grid_trades = export_cumulative_grid_trades(
-            area, "past_markets", all_devices=True
+            area, market_type, all_devices=True
         )
+        balancing_market_type = "current_balancing_market" \
+            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS \
+            else "past_balancing_markets"
         self.cumulative_grid_balancing_trades = \
-            export_cumulative_grid_trades(area, "past_balancing_markets")
+            export_cumulative_grid_trades(area, balancing_market_type)
         self.bills = self._update_bills(area, "past_markets")
         self.bills_redis = self._calculate_redis_bills(area, self.bills)
 
