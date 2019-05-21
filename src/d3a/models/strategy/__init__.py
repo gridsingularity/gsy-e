@@ -109,14 +109,13 @@ class Offers:
     def remove(self, offer):
         try:
             market = self.posted.pop(offer)
-            if offer.id in self.sold[market]:
+            if market in self.sold and offer.id in self.sold[market]:
                 self.strategy.log.error("Offer already sold, cannot remove it.")
                 self.posted[offer] = market
             else:
                 return True
         except KeyError:
             self.strategy.log.warning("Could not find offer to remove")
-            return True
 
     def replace(self, old_offer, new_offer, market):
         if self.remove(old_offer):
