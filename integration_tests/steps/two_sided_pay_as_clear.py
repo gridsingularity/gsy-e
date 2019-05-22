@@ -29,7 +29,8 @@ def test_traded_energy_rate(context):
                for child in context.simulation.area.children
                for market in child.past_markets
                for trade in market.trades
-               if market.state.clearing[trade.time] != 0 and
+               if trade.time in market.state.clearing and
+               market.state.clearing[trade.time] != 0 and
                trade.buyer == make_iaa_name(child))
 
 
