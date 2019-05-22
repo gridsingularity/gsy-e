@@ -75,7 +75,7 @@ class PVPredefinedStrategy(PVStrategy):
         self._power_profile_index = self.area.config.cloud_coverage
         data = self._read_predefined_profile_for_pv()
 
-        for slot_time in generate_market_slot_list(self.area):
+        for slot_time in generate_market_slot_list(area=self.area):
             self.energy_production_forecast_kWh[slot_time] = \
                 data[slot_time] * self.panel_count
             self.state.available_energy_kWh[slot_time] = \
