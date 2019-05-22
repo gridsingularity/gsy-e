@@ -15,11 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import random
-
-from collections import defaultdict, namedtuple
-from typing import Dict, List, Set, Union  # noqa
-from d3a.events.event_structures import OfferEvent
+from collections import namedtuple
+from typing import Dict # noqa
 
 
 class Offer:
@@ -31,7 +28,6 @@ class Offer:
         self.energy = energy
         self.seller = seller
         self.market = market
-        self._listeners = defaultdict(set)  # type: Dict[OfferEvent, Set[callable]]
 
     def __repr__(self):
         return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
@@ -40,28 +36,6 @@ class Offer:
     def __str__(self):
         return "{{{s.id!s:.6s}}} [{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
             .format(s=self, rate=self.price / self.energy)
-
-    def add_listener(self, event: Union[OfferEvent, List[OfferEvent]], listener):
-        if isinstance(event, (tuple, list)):
-            for ev in event:
-                self.add_listener(ev, listener)
-        else:
-            self._listeners[event].add(listener)
-
-    def _call_listeners(self, event: OfferEvent, **kwargs):
-        # Call listeners in random order to ensure fairness
-        for listener in sorted(self._listeners[event], key=lambda l: random.random()):
-            listener(**kwargs, offer=self)
-
-    # XXX: This might be unreliable - decide after testing
-    def __del__(self):
-        self._call_listeners(OfferEvent.DELETED)
-
-    def _traded(self, trade: 'Trade', market: 'Market'):
-        """
-        Called by `Market` to inform listeners about the trade
-        """
-        self._call_listeners(OfferEvent.ACCEPTED, market=market, trade=trade)
 
     @classmethod
     def _csv_fields(cls):
@@ -167,7 +141,7 @@ class MarketClearingState:
     def __init__(self):
         self.cumulative_offers = dict()  # type Dict[Datetime, dict()]
         self.cumulative_bids = dict()  # type Dict[Datetime, dict()]
-        self.clearing = defaultdict(int)  # type: Dict[DateTime, tuple()]
+        self.clearing = {}  # type: Dict[DateTime, tuple()]
 
     @classmethod
     def _csv_fields(cls):

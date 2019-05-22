@@ -15,15 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from collections import namedtuple, defaultdict, OrderedDict
+from collections import namedtuple, OrderedDict
 from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, round_floats_for_ui
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
+    round_floats_for_ui, add_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
+
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
 prices_pv_stor_energy = namedtuple('prices_pv_stor_energy', ['price', 'pv_energ', 'stor_energ'])
@@ -39,14 +41,15 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
                 slot = market.time_slot
                 if slot.hour not in load_price_lists.keys():
                     load_price_lists[slot.hour] = loads_avg_prices(load=[], price=[])
-                load_price_lists[slot.hour].load.append(abs(market.traded_energy[child.name]))
-                trade_prices = [
-                    # Convert from cents to euro
-                    t.offer.price / 100.0 / t.offer.energy
-                    for t in market.trades
-                    if t.buyer == child.name
-                ]
-                load_price_lists[slot.hour].price.extend(trade_prices)
+                if child.name in market.traded_energy:
+                    load_price_lists[slot.hour].load.append(abs(market.traded_energy[child.name]))
+                    trade_prices = [
+                        # Convert from cents to euro
+                        t.offer.price / 100.0 / t.offer.energy
+                        for t in market.trades
+                        if t.buyer == child.name
+                    ]
+                    load_price_lists[slot.hour].price.extend(trade_prices)
         else:
             load_price_lists = gather_area_loads_and_trade_prices(child, load_price_lists)
     return load_price_lists
@@ -136,15 +139,17 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower):
             "id": load.area_id,
             "produced": 0.0,
             "earned": 0.0,
-            "consumedFrom": defaultdict(int),
-            "spentTo": defaultdict(int),
+            "consumedFrom": {},
+            "spentTo": {},
         }
     for market in grid.past_markets:
         for trade in market.trades:
             if trade.buyer == load.name:
                 sell_id = area_name_from_area_or_iaa_name(trade.seller)
-                accumulated_trades[load.name]["consumedFrom"][sell_id] += trade.offer.energy
-                accumulated_trades[load.name]["spentTo"][sell_id] += trade.offer.price
+                accumulated_trades[load.name]["consumedFrom"] = add_or_create_key(
+                    accumulated_trades[load.name]["consumedFrom"], sell_id, trade.offer.energy)
+                accumulated_trades[load.name]["spentTo"] = add_or_create_key(
+                    accumulated_trades[load.name]["spentTo"], sell_id, trade.offer.price)
     return accumulated_trades
 
 
@@ -154,8 +159,8 @@ def _accumulate_producer_trades(producer, grid, accumulated_trades):
         "id": producer.area_id,
         "produced": 0.0,
         "earned": 0.0,
-        "consumedFrom": defaultdict(int),
-        "spentTo": defaultdict(int),
+        "consumedFrom": {},
+        "spentTo": {},
     }
     for market in grid.past_markets:
         for trade in market.trades:
@@ -172,8 +177,8 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
             "id": house.area_id,
             "produced": 0.0,
             "earned": 0.0,
-            "consumedFrom": defaultdict(int),
-            "spentTo": defaultdict(int),
+            "consumedFrom": {},
+            "spentTo": {},
             "producedForExternal": 0.0,
             "earnedFromExternal": 0.0,
             "consumedFromExternal": 0.0,
@@ -188,8 +193,10 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
                 # House self-consumption trade
                 accumulated_trades[house.name]["produced"] -= trade.offer.energy
                 accumulated_trades[house.name]["earned"] += trade.offer.price
-                accumulated_trades[house.name]["consumedFrom"][house.name] += trade.offer.energy
-                accumulated_trades[house.name]["spentTo"][house.name] += trade.offer.price
+                accumulated_trades[house.name]["consumedFrom"] = add_or_create_key(
+                    accumulated_trades[house.name]["consumedFrom"], house.name, trade.offer.energy)
+                accumulated_trades[house.name]["spentTo"] = add_or_create_key(
+                    accumulated_trades[house.name]["spentTo"], house.name, trade.offer.price)
             elif trade.buyer == house_IAA_name:
                 accumulated_trades[house.name]["earned"] += trade.offer.price
                 accumulated_trades[house.name]["produced"] -= trade.offer.energy
@@ -198,8 +205,10 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
         for trade in market.trades:
             if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
                 seller_id = area_name_from_area_or_iaa_name(trade.seller)
-                accumulated_trades[house.name]["consumedFrom"][seller_id] += trade.offer.energy
-                accumulated_trades[house.name]["spentTo"][seller_id] += trade.offer.price
+                accumulated_trades[house.name]["consumedFrom"] = add_or_create_key(
+                    accumulated_trades[house.name]["consumedFrom"], seller_id, trade.offer.energy)
+                accumulated_trades[house.name]["spentTo"] = add_or_create_key(
+                    accumulated_trades[house.name]["spentTo"], seller_id, trade.offer.price)
 
     for market in getattr(house, past_market_types):
         for trade in market.trades:

@@ -223,10 +223,6 @@ class OneSidedMarket(Market):
             self._update_stats_after_trade(trade, offer, buyer)
             log.warning(f"[TRADE] [{self.time_slot_str}] {trade}")
 
-        # FIXME: Needs to be triggered by blockchain event
-        # TODO: Same as above, should be modified when event-driven blockchain is introduced
-        offer._traded(trade, self)
-
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.
         self._notify_listeners(MarketEvent.TRADE, trade=trade)
