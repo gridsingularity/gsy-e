@@ -212,10 +212,12 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
 
     for market in getattr(house, past_market_types):
         for trade in market.trades:
-            if area_name_from_area_or_iaa_name(trade.seller) == house.name:
+            if area_name_from_area_or_iaa_name(trade.seller) == house.name and \
+                    trade.buyer not in child_names:
                 accumulated_trades[house.name]["consumedFromExternal"] += trade.offer.energy
                 accumulated_trades[house.name]["spentToExternal"] += trade.offer.price
-            elif area_name_from_area_or_iaa_name(trade.buyer) == house.name:
+            elif area_name_from_area_or_iaa_name(trade.buyer) == house.name and \
+                    trade.seller not in child_names:
                 accumulated_trades[house.name]["producedForExternal"] -= trade.offer.energy
                 accumulated_trades[house.name]["earnedFromExternal"] += trade.offer.price
 
