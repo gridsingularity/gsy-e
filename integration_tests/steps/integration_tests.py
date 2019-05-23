@@ -854,7 +854,8 @@ def assert_trade_rates(context, market_name, trade_rate):
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
 
 
-@then('trades on the {market_name} market clear with {trade_rate1} or {trade_rate2} cents/kWh')
+@then('trades on the {market_name} market clear using a rate of either {trade_rate1} or '
+      '{trade_rate2} cents/kWh')
 def assert_multiple_trade_rates_any(context, market_name, trade_rate1, trade_rate2):
     markets = _filter_markets_by_market_name(context, market_name)
     for market in markets:

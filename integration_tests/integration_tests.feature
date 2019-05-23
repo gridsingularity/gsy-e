@@ -121,8 +121,8 @@ Feature: Run integration tests
      Then trades on the House 1 market clear with 20.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 19.0 cents/kWh
      Then trades on the Grid market clear with 17.0 cents/kWh
-     Then trades on the Neighborhood 2 market clear with 16.0 or 16.15 cents/kWh
-     Then trades on the House 2 market clear with 16.0 or 16.15 cents/kWh
+     Then trades on the Neighborhood 2 market clear using a rate of either 16.0 or 16.15 cents/kWh
+     Then trades on the House 2 market clear using a rate of either 16.0 or 16.15 cents/kWh
 
   Scenario Outline: Unmatched loads are the same with and without keeping the past markets
      Given we have a scenario named <scenario>
