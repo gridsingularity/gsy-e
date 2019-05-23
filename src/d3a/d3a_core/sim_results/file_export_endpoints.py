@@ -229,7 +229,8 @@ class ExportLeafData(ExportData):
         return [self._row(m.time_slot, m) for m in self.area.parent.past_markets]
 
     def _traded(self, market):
-        return market.traded_energy[self.area.name]
+        return market.traded_energy[self.area.name] \
+            if self.area.name in market.traded_energy else 0
 
     def _row(self, slot, market):
         return [slot,
