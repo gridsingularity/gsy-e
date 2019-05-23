@@ -60,6 +60,10 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                  cap_price_strategy: bool=False,
                  min_allowed_soc=None):
 
+        self.initial_capacity_kWh = initial_capacity_kWh
+        self.initial_soc = initial_soc
+        self.battery_capacity_kWh = battery_capacity_kWh
+        self.max_abs_battery_power_kW = max_abs_battery_power_kW
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
 
