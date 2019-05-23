@@ -139,3 +139,19 @@ Feature: Run integration tests
      |  default_2a  |
      |  default_3a  |
      |  default_3b  |
+
+  Scenario Outline: Price energy day results are the same with and without keeping the past markets
+     Given we have a scenario named <scenario>
+     And d3a is installed
+     And the past markets are kept in memory
+     When we run the simulation with setup file <scenario> and parameters [24, 60, <tick_length>, 0, 1]
+     And the reported price energy day results are saved
+     And the past markets are not kept in memory
+     And we run the simulation with setup file <scenario> and parameters [24, 60, <tick_length>, 0, 1]
+     Then the price energy day results are identical no matter if the past markets are kept
+
+  Examples: Settings
+     | scenario     | tick_length |
+     |  default_2a  |    60       |
+     |  default_3a  |    15       |
+     |  default_3b  |    60       |

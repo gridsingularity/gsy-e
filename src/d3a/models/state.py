@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from collections import defaultdict
 from pendulum import duration
 
 from math import isclose
 from d3a.models.const import ConstSettings
 from d3a import limit_float_precision
+from d3a.d3a_core.util import generate_market_slot_list
 
 StorageSettings = ConstSettings.StorageSettings
 
@@ -41,12 +41,14 @@ StorageSettings = ConstSettings.StorageSettings
 
 class PVState:
     def __init__(self):
-        self.available_energy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        self.available_energy_kWh = \
+            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
 
 
 class LoadState:
     def __init__(self):
-        self.desired_energy_Wh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        self.desired_energy_Wh = \
+            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
 
 
 class StorageState:
@@ -81,19 +83,27 @@ class StorageState:
         self.max_abs_battery_power_kW = max_abs_battery_power_kW
 
         # storage capacity, that is already sold:
-        self.pledged_sell_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        self.pledged_sell_kWh = \
+            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
         # storage capacity, that has been offered (but not traded yet):
-        self.offered_sell_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        self.offered_sell_kWh = \
+            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
         # energy, that has been bought:
-        self.pledged_buy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        self.pledged_buy_kWh = \
+            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
         # energy, that the storage wants to buy (but not traded yet):
-        self.offered_buy_kWh = defaultdict(lambda: 0)  # type: Dict[DateTime, float]
+        self.offered_buy_kWh = \
+            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
 
-        self.charge_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
-        self.charge_history_kWh = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
-        self.offered_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
-        self.used_history = defaultdict(lambda: '-')  # type: Dict[DateTime, float]
-        self.energy_to_buy_dict = defaultdict(lambda: 0.)
+        self.charge_history = \
+            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+        self.charge_history_kWh = \
+            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+        self.offered_history = \
+            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+        self.used_history = \
+            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+        self.energy_to_buy_dict = {slot: 0. for slot in generate_market_slot_list()}
 
         self._used_storage = initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
