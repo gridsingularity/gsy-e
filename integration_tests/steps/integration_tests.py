@@ -327,6 +327,12 @@ def save_reported_energy_trade_profile(context):
     context.energy_trade_profile_redis = \
         deepcopy(context.simulation.endpoint_buffer.energy_trade_profile_redis)
 
+    
+@when('the reported price energy day results are saved')
+def step_impl(context):
+    context.price_energy_day = deepcopy(context.simulation.endpoint_buffer.price_energy_day)
+
+
 
 @when('the past markets are not kept in memory')
 def past_markets_not_in_memory(context):
@@ -878,3 +884,9 @@ def identical_energy_trade_profiles(context):
     for _, v in energy_trade_profile_redis.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0
                    for _, old_area_results in context.energy_trade_profile_redis.items())
+
+        
+@then('the price energy day results are identical no matter if the past markets are kept')
+def indentical_price_energy_day(context):
+    price_energy_day = context.simulation.endpoint_buffer.price_energy_day
+    assert len(DeepDiff(price_energy_day, context.price_energy_day)) == 0
