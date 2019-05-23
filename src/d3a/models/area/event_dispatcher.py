@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from random import random
 from typing import Union
-from collections import defaultdict
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import \
@@ -27,15 +26,14 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSide
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.util import append_or_create_key
 
 
 class AreaDispatcher:
     def __init__(self, area):
         self.listeners = []
-        self._inter_area_agents = \
-            defaultdict(list)  # type: Dict[DateTime, List[OneSidedAgent]]
-        self._balancing_agents = \
-            defaultdict(list)  # type: Dict[DateTime, List[BalancingAgent]]
+        self._inter_area_agents = {}  # type: Dict[DateTime, List[OneSidedAgent]]
+        self._balancing_agents = {}  # type: Dict[DateTime, List[BalancingAgent]]
         self.area = area
 
     @property
@@ -154,9 +152,11 @@ class AreaDispatcher:
                 lower_market=market,
             )
             # Attach agent to own IAA list
-            self.interarea_agents[market.time_slot].append(iaa)
+            self._inter_area_agents = append_or_create_key(
+                self._inter_area_agents, market.time_slot, iaa)
             # And also to parents to allow events to flow form both markets
-            self.area.parent.dispatcher.interarea_agents[market.time_slot].append(iaa)
+            self.area.parent.dispatcher._inter_area_agents = append_or_create_key(
+                self.area.parent.dispatcher._inter_area_agents, market.time_slot, iaa)
         else:
             if market.time_slot in self.balancing_agents or \
                     market.time_slot not in self.area.parent._markets.balancing_markets:
@@ -166,8 +166,11 @@ class AreaDispatcher:
                 higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
                 lower_market=market
             )
-            self.balancing_agents[market.time_slot].append(ba)
-            self.area.parent.dispatcher.balancing_agents[market.time_slot].append(ba)
+            self._balancing_agents = \
+                append_or_create_key(self._balancing_agents, market.time_slot, ba)
+            self.area.parent.dispatcher._balancing_agents = \
+                append_or_create_key(self.area.parent.dispatcher._balancing_agents,
+                                     market.time_slot, ba)
 
         if self.area.parent:
             # Add inter area appliance to report energy

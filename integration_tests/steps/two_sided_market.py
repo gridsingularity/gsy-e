@@ -118,7 +118,7 @@ def final_soc_full(context, soc_level):
     storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
     if soc_level == '0':
         soc_level = ConstSettings.StorageSettings.MIN_ALLOWED_SOC * 100.0
-    final_soc = list(storage.strategy.state.charge_history.values())[-1]
+    final_soc = list(storage.strategy.state.charge_history.values())[-2]
     assert isclose(final_soc, float(soc_level))
 
 

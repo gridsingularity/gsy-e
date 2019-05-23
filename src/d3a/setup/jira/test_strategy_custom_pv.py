@@ -31,7 +31,7 @@ class CustomPvStrategy(PVStrategy):
         Returns flat PV production curve.
         """
 
-        for slot_time in generate_market_slot_list(self.area):
+        for slot_time in generate_market_slot_list(area=self.area):
             self.energy_production_forecast_kWh[slot_time] = 100
 
     def calculate_initial_sell_rate(self, current_time_h):
