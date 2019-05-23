@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import string
-from collections import defaultdict
 from math import isclose
 
 import pytest
@@ -36,6 +35,7 @@ from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.const import ConstSettings
+from d3a.d3a_core.util import add_or_create_key, substract_or_create_key
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 device_registry_dict = {
@@ -573,13 +573,6 @@ def test_market_issuance_acct_reverse(market: OneSidedMarket, last_offer_size, t
     assert market.traded_energy['A'] == traded_energy
 
 
-def test_market_iou(market: OneSidedMarket):
-    offer = market.offer(10, 20, 'A')
-    market.accept_offer(offer, 'B')
-
-    assert market.ious['B']['A'] == 10.0
-
-
 @pytest.mark.parametrize("market, offer, accept_offer", [
     (OneSidedMarket(area=FakeArea("FakeArea", transfer_fee_pct=0)),
      "offer", "accept_offer"),
@@ -637,31 +630,13 @@ class MarketStateMachine(RuleBasedStateMachine):
     @precondition(lambda self: self.market.traded_energy)
     @rule()
     def check_acct(self):
-        actor_sums = defaultdict(int)
+        actor_sums = {}
         for t in self.market.trades:
-            actor_sums[t.seller] += t.offer.energy
-            actor_sums[t.buyer] -= t.offer.energy
+            actor_sums = add_or_create_key(actor_sums, t.seller, t.offer.energy)
+            actor_sums = substract_or_create_key(actor_sums, t.buyer, t.offer.energy)
         for actor, sum_ in actor_sums.items():
             assert self.market.traded_energy[actor] == sum_
         assert sum(self.market.traded_energy.values()) == 0
-
-    @precondition(lambda self: self.market.traded_energy)
-    @rule()
-    def check_iou_balance(self):
-        seller_ious = defaultdict(int)
-        buyer_ious = defaultdict(int)
-        for t in self.market.trades:
-            seller_ious[t.seller] += t.offer.price
-            buyer_ious[t.buyer] += t.offer.price
-        trade_sum = sum(t.offer.price for t in self.market.trades)
-
-        for seller, iou in seller_ious.items():
-            assert isclose(iou, sum(ious[seller] for ious in self.market.ious.values()))
-
-        for buyer, iou in buyer_ious.items():
-            assert isclose(iou, sum(self.market.ious[buyer].values()))
-
-        assert isclose(trade_sum, sum(sum(i.values()) for i in self.market.ious.values()))
 
 
 TestMarketIOU = MarketStateMachine.TestCase

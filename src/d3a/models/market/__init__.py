@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import random
 import uuid
-from collections import defaultdict
 from logging import getLogger
 from typing import Dict, List  # noqa
 import sys
@@ -28,7 +27,7 @@ from terminaltables.other_tables import SingleTable
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
-
+from d3a.d3a_core.util import add_or_create_key, substract_or_create_key
 
 log = getLogger(__name__)
 
@@ -53,12 +52,7 @@ class Market:
         self.transfer_fee_const = area.transfer_fee_const
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
-        self.ious = defaultdict(lambda: defaultdict(int))
-        self.traded_energy = defaultdict(int)
-        # Store actual energy consumption in a nested dict in the form of
-        # Timestamp -> Actor -> Value
-        self.actual_energy = defaultdict(
-            lambda: defaultdict(int))  # type: Dict[DateTime, Dict[str, float]]
+        self.traded_energy = {}
         self.accumulated_actual_energy_agg = {}
         self.min_trade_price = sys.maxsize
         self._avg_trade_price = None
@@ -89,9 +83,8 @@ class Market:
         if not already_tracked:
             self.trades.append(trade)
         self._update_accumulated_trade_price_energy(trade)
-        self.traded_energy[offer.seller] += offer.energy
-        self.traded_energy[buyer] -= offer.energy
-        self.ious[buyer][offer.seller] += offer.price
+        self.traded_energy = add_or_create_key(self.traded_energy, offer.seller, offer.energy)
+        self.traded_energy = substract_or_create_key(self.traded_energy, buyer, offer.energy)
         self._update_min_max_avg_trade_prices(offer.price / offer.energy)
         # Recalculate offer min/max price since offer was removed
         self._update_min_max_avg_offer_prices()
@@ -159,7 +152,6 @@ class Market:
         return DateTime.now(tz=TIME_ZONE)
 
     def set_actual_energy(self, time, reporter, value):
-        self.actual_energy[time][reporter] += value
         if reporter in self.accumulated_actual_energy_agg:
             self.accumulated_actual_energy_agg[reporter] += value
         else:

@@ -106,7 +106,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         # This forecast ist based on the real PV system data provided by enphase
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
-        for slot_time in generate_market_slot_list(self.area):
+        for slot_time in generate_market_slot_list(area=self.area):
             if slot_time >= self.area.now:
                 difference_to_midnight_in_minutes = \
                     slot_time.diff(self.area.now.start_of("day")).in_minutes() % (60 * 24)
