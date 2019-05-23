@@ -129,14 +129,14 @@ Feature: Run integration tests
      |  default_3a  |
      |  default_3b  |
 
-  Scenario: Cumulative Grid Trades is the same with and without keeping the past markets
-     Given we have a scenario named default_2a
+  Scenario: Cumulative Grid Trades are the same with and without keeping the past markets
+     Given we have a scenario named balancing_market.default_2a
      And d3a is installed
      And the past markets are kept in memory
-     When we run the simulation with setup file default_2a and parameters [24, 60, 60, 0, 1]
+     When we run the simulation with setup file balancing_market.default_2a and parameters [24, 60, 60, 0, 1]
      And the reported cumulative grid trades are saved
      And the past markets are not kept in memory
-     And we run the simulation with setup file default_2a and parameters [24, 60, 60, 0, 1]
+     And we run the simulation with setup file balancing_market.default_2a and parameters [24, 60, 60, 0, 1]
      Then the cumulative grid trades are identical no matter if the past markets are kept
 
   Scenario Outline: Price energy day results are the same with and without keeping the past markets

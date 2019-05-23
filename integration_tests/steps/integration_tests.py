@@ -333,7 +333,7 @@ def past_markets_not_in_memory(context):
 @when('the reported cumulative grid trades are saved')
 def save_reported_cumulative_grid_trade_profile(context):
     context.cumulative_grid_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_trades)
+        context.simulation.endpoint_buffer.accumulated_trades)
     context.cumulative_grid_trades_redis = \
         deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades_redis)
     context.cumulative_grid_balancing_trades = deepcopy(
@@ -875,17 +875,14 @@ def identical_unmatched_loads(context):
 
 @then('the cumulative grid trades are identical no matter if the past markets are kept')
 def identical_energy_trade_profiles(context):
-    # cumulative_grid_trades = context.simulation.endpoint_buffer.cumulative_grid_trades
-
-    cumulative_grid_trades_redis = context.simulation.endpoint_buffer.cumulative_grid_trades_redis
-
-    assert len(DeepDiff(cumulative_grid_trades_redis, context.cumulative_grid_trades_redis)) == 0
-
-    # The 2 simulation runs do not assign the same uuids to the same areas
-    # therefore we have to search whether there are elements with the same values
-    # for _, v in energy_trade_profile_redis.items():
-    #     assert any(len(DeepDiff(v, old_area_results)) == 0
-    #                for _, old_area_results in context.energy_trade_profile_redis.items())
+    cumulative_grid_trades = \
+        context.simulation.endpoint_buffer.accumulated_trades
+    cumulative_grid_balancing_trades = \
+        context.simulation.endpoint_buffer.cumulative_grid_balancing_trades
+    assert len(DeepDiff(cumulative_grid_trades, context.cumulative_grid_trades,
+                        significant_digits=5)) == 0
+    assert len(DeepDiff(cumulative_grid_balancing_trades, context.cumulative_grid_balancing_trades,
+                        significant_digits=5)) == 0
 
 
 @then('the price energy day results are identical no matter if the past markets are kept')

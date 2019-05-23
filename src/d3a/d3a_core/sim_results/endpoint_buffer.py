@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
-    export_cumulative_loads, export_price_energy_day, generate_inter_area_trade_details, \
-    export_cumulative_grid_trades_redis, MarketPriceEnergyDay
+    export_cumulative_grid_trades_redis, export_cumulative_loads, export_price_energy_day, \
+    generate_inter_area_trade_details, MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import energy_bills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
@@ -48,6 +48,9 @@ class SimulationEndpointBuffer:
         self.price_energy_day = {}
         self.market_price_energy_day = MarketPriceEnergyDay()
         self.cumulative_grid_trades = {}
+        self.accumulated_trades = {}
+        self.accumulated_trades_redis = {}
+        self.accumulated_balancing_trades = {}
         self.cumulative_grid_trades_redis = {}
         self.cumulative_grid_balancing_trades = {}
         self.tree_summary = {}
@@ -125,18 +128,26 @@ class SimulationEndpointBuffer:
             "price-energy-day": export_price_energy_day(area)
         }
         market_type = \
-            "current_market" if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS else "past_markets"
-
-        self.cumulative_grid_trades_redis = \
-            export_cumulative_grid_trades_redis(area, market_type)
-        self.cumulative_grid_trades = export_cumulative_grid_trades(
-            area, market_type, all_devices=True
-        )
-        balancing_market_type = "current_balancing_market" \
+            "past_markets" if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS else "current_market"
+        balancing_market_type = "past_balancing_markets" \
             if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS \
-            else "past_balancing_markets"
-        self.cumulative_grid_balancing_trades = \
-            export_cumulative_grid_trades(area, balancing_market_type)
+            else "current_balancing_market"
+
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            self.accumulated_trades = {}
+            self.accumulated_trades_redis = {}
+            self.accumulated_balancing_trades = {}
+
+        self.accumulated_trades_redis, self.cumulative_grid_trades_redis = \
+            export_cumulative_grid_trades_redis(area, self.accumulated_trades_redis,
+                                                market_type)
+        self.accumulated_trades, self.cumulative_grid_trades = \
+            export_cumulative_grid_trades(area, self.accumulated_trades,
+                                          market_type, all_devices=True)
+        self.accumulated_balancing_trades, self.cumulative_grid_balancing_trades = \
+            export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
+                                          balancing_market_type)
+
         self.bills = self._update_bills(area, "past_markets")
         self.bills_redis = self._calculate_redis_bills(area, self.bills)
 

@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple, OrderedDict
 from statistics import mean
+from copy import deepcopy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
@@ -134,14 +135,17 @@ def _is_prosumer_node(area):
 
 def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower, past_market_types):
     if load.name not in accumulated_trades:
+        # print(f"{load.name} NOT EXIST")
         accumulated_trades[load.name] = {
             "type": "cell_tower" if is_cell_tower else "load",
-            "id": load.area_id,
             "produced": 0.0,
             "earned": 0.0,
             "consumedFrom": {},
             "spentTo": {},
         }
+    else:
+        # print(f"{load.name} | accumulated_trades: {accumulated_trades[load.name]}")
+        pass
 
     markets = getattr(grid, past_market_types)
     if markets is None:
@@ -161,14 +165,17 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower, past_
 
 
 def _accumulate_producer_trades(producer, grid, accumulated_trades, past_market_types):
-    assert producer.name not in accumulated_trades
-    accumulated_trades[producer.name] = {
-        "id": producer.area_id,
-        "produced": 0.0,
-        "earned": 0.0,
-        "consumedFrom": {},
-        "spentTo": {},
-    }
+    if producer.name not in accumulated_trades:
+        # print(f"{producer.name} NOT EXIST")
+        accumulated_trades[producer.name] = {
+            "produced": 0.0,
+            "earned": 0.0,
+            "consumedFrom": {},
+            "spentTo": {},
+        }
+    else:
+        pass
+
     markets = getattr(grid, past_market_types)
     if markets is None:
         return accumulated_trades
@@ -181,6 +188,7 @@ def _accumulate_producer_trades(producer, grid, accumulated_trades, past_market_
                 if trade.offer.seller == producer.name:
                     accumulated_trades[producer.name]["produced"] -= trade.offer.energy
                     accumulated_trades[producer.name]["earned"] += trade.offer.price
+        # print(f"{producer.name} | accumulated_trades: {accumulated_trades[producer.name]}")
         return accumulated_trades
 
 
@@ -188,7 +196,6 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
     if house.name not in accumulated_trades:
         accumulated_trades[house.name] = {
             "type": "house",
-            "id": house.area_id,
             "produced": 0.0,
             "earned": 0.0,
             "consumedFrom": {},
@@ -339,23 +346,27 @@ def _generate_self_consumption_entries(accumulated_trades):
 def _generate_intraarea_consumption_entries(accumulated_trades):
     # Flatten consumedFrom entries from dictionaries to list of tuples, to be able to pop them
     # irregardless of their keys
-    for area_name, area_data in accumulated_trades.items():
+    copied_accumulated_trades = deepcopy(accumulated_trades)
+    for area_name, area_data in copied_accumulated_trades.items():
         area_data["consumedFrom"] = list(area_data["consumedFrom"].items())
         area_data["spentTo"] = list(area_data["spentTo"].items())
 
     consumption_rows = []
     # Exhaust all consumedFrom entries from all houses
-    while not all(not area_data["consumedFrom"] for k, area_data in accumulated_trades.items()):
+    while not all(not area_data["consumedFrom"]
+                  for k, area_data in copied_accumulated_trades.items()):
         consumption_row = []
-        for area_name in sorted(accumulated_trades.keys()):
+        for area_name in sorted(copied_accumulated_trades.keys()):
             target_area = area_name
             p_target_area = area_name
             consumption = 0
             spent_to = 0
-            if accumulated_trades[area_name]["consumedFrom"]:
-                target_area, consumption = accumulated_trades[area_name]["consumedFrom"].pop()
-            if accumulated_trades[area_name]["spentTo"]:
-                p_target_area, spent_to = accumulated_trades[area_name]["spentTo"].pop()
+            if copied_accumulated_trades[area_name]["consumedFrom"]:
+                target_area, consumption = \
+                    copied_accumulated_trades[area_name]["consumedFrom"].pop()
+            if copied_accumulated_trades[area_name]["spentTo"]:
+                p_target_area, spent_to = \
+                    copied_accumulated_trades[area_name]["spentTo"].pop()
                 assert p_target_area == target_area
             consumption_row.append({
                 "areaName": area_name,
@@ -449,11 +460,12 @@ def generate_cumulative_grid_trades_for_all_areas(accumulated_trades, area, resu
     return results
 
 
-def export_cumulative_grid_trades(area, past_market_types, all_devices=False):
-    accumulated_trades = _accumulate_grid_trades_all_devices(area, {}, past_market_types) \
-        if all_devices \
-        else _accumulate_grid_trades(area, {}, past_market_types)
-    return {
+def export_cumulative_grid_trades(area, accumulated_trades, past_market_types, all_devices=False):
+    accumulated_trades = _accumulate_grid_trades_all_devices(area, accumulated_trades,
+                                                             past_market_types) \
+        if all_devices else _accumulate_grid_trades(area, {}, past_market_types)
+
+    return accumulated_trades, {
         "unit": "kWh",
         "areas": sorted(accumulated_trades.keys()),
         "cumulative-grid-trades": [
@@ -462,13 +474,16 @@ def export_cumulative_grid_trades(area, past_market_types, all_devices=False):
             # Then self consumption energy for all areas
             _generate_self_consumption_entries(accumulated_trades),
             # Then consumption entries for intra-house trades
-            *_generate_intraarea_consumption_entries(accumulated_trades)]
+            *_generate_intraarea_consumption_entries(accumulated_trades)
+        ]
     }
 
 
-def export_cumulative_grid_trades_redis(area, past_market_types):
-    accumulated_trades = _accumulate_grid_trades_all_devices(area, {}, past_market_types)
-    return generate_cumulative_grid_trades_for_all_areas(accumulated_trades, area, {})
+def export_cumulative_grid_trades_redis(area, accumulated_trades_redis, past_market_types):
+    accumulated_trades = \
+        _accumulate_grid_trades_all_devices(area, accumulated_trades_redis, past_market_types)
+    return accumulated_trades, generate_cumulative_grid_trades_for_all_areas(accumulated_trades,
+                                                                             area, {})
 
 
 def export_price_energy_day(area):
