@@ -301,6 +301,14 @@ class Area:
         except IndexError:
             return None
 
+    @property
+    def current_balancing_market(self):
+        """Returns the 'current' balancing market (i.e. the one currently 'running')"""
+        try:
+            return list(self._markets.past_balancing_markets.values())[-1]
+        except IndexError:
+            return None
+
     def get_future_market_from_id(self, _id):
         try:
             return [m for m in self._markets.markets.values() if m.id == _id][0]

@@ -77,7 +77,7 @@ class FileExportEndpoints:
                 self.balancing_traded_energy[area.name] = {"sold_energy": {}, "bought_energy": {}}
             if len(area.past_balancing_markets) > 0:
                 self._calculate_devices_sold_bought_energy(self.balancing_traded_energy[area.name],
-                                                           area.past_balancing_markets[-1])
+                                                           area.current_balancing_market)
 
         self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
         self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(area)
