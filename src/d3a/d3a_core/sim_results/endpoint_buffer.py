@@ -113,20 +113,7 @@ class SimulationEndpointBuffer:
                 area
             )
 
-    def update_stats(self, area, simulation_status):
-        self.status = simulation_status
-        self._update_unmatched_loads(area)
-        self._update_price_energy_day(area)
-        self.cumulative_loads = {
-            "price-currency": "Euros",
-            "load-unit": "kWh",
-            "cumulative-load-price": export_cumulative_loads(area)
-        }
-        self.price_energy_day = {
-            "price-currency": "Euros",
-            "load-unit": "kWh",
-            "price-energy-day": export_price_energy_day(area)
-        }
+    def _update_cumulative_grid_trades(self, area):
         market_type = \
             "past_markets" if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS else "current_market"
         balancing_market_type = "past_balancing_markets" \
@@ -147,6 +134,23 @@ class SimulationEndpointBuffer:
         self.accumulated_balancing_trades, self.cumulative_grid_balancing_trades = \
             export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
                                           balancing_market_type)
+
+    def update_stats(self, area, simulation_status):
+        self.status = simulation_status
+        self._update_unmatched_loads(area)
+        self._update_price_energy_day(area)
+        self.cumulative_loads = {
+            "price-currency": "Euros",
+            "load-unit": "kWh",
+            "cumulative-load-price": export_cumulative_loads(area)
+        }
+        self.price_energy_day = {
+            "price-currency": "Euros",
+            "load-unit": "kWh",
+            "price-energy-day": export_price_energy_day(area)
+        }
+
+        self._update_cumulative_grid_trades(area)
 
         self.bills = self._update_bills(area, "past_markets")
         self.bills_redis = self._calculate_redis_bills(area, self.bills)
