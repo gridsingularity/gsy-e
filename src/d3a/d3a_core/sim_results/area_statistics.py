@@ -15,15 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from collections import namedtuple, defaultdict, OrderedDict
+from collections import namedtuple, OrderedDict
 from statistics import mean
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
-from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, round_floats_for_ui
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
+    round_floats_for_ui, add_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
+
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
 prices_pv_stor_energy = namedtuple('prices_pv_stor_energy', ['price', 'pv_energ', 'stor_energ'])
@@ -39,14 +41,15 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
                 slot = market.time_slot
                 if slot.hour not in load_price_lists.keys():
                     load_price_lists[slot.hour] = loads_avg_prices(load=[], price=[])
-                load_price_lists[slot.hour].load.append(abs(market.traded_energy[child.name]))
-                trade_prices = [
-                    # Convert from cents to euro
-                    t.offer.price / 100.0 / t.offer.energy
-                    for t in market.trades
-                    if t.buyer == child.name
-                ]
-                load_price_lists[slot.hour].price.extend(trade_prices)
+                if child.name in market.traded_energy:
+                    load_price_lists[slot.hour].load.append(abs(market.traded_energy[child.name]))
+                    trade_prices = [
+                        # Convert from cents to euro
+                        t.offer.price / 100.0 / t.offer.energy
+                        for t in market.trades
+                        if t.buyer == child.name
+                    ]
+                    load_price_lists[slot.hour].price.extend(trade_prices)
         else:
             load_price_lists = gather_area_loads_and_trade_prices(child, load_price_lists)
     return load_price_lists
@@ -57,40 +60,45 @@ def gather_prices_pv_storage_energy(area, price_energ_lists):
         for market in child.parent.past_markets:
             slot = market.time_slot
             slot_time_str = "%02d:00" % slot.hour
-            if slot_time_str not in price_energ_lists.keys():
-                price_energ_lists[slot_time_str] = prices_pv_stor_energy(price=[],
-                                                                         pv_energ=[],
-                                                                         stor_energ=[])
-            trade_prices = [
-                # Convert from cents to euro
-                t.offer.price / 100.0 / t.offer.energy
-                for t in market.trades
-                if t.buyer == child.name
-            ]
-            price_energ_lists[slot_time_str].price.extend(trade_prices)
-
-            if child.children == [] and isinstance(child.strategy, PVStrategy):
-                traded_energy = [
-                    t.offer.energy
-                    for t in market.trades
-                    if t.seller == child.name
-                ]
-                price_energ_lists[slot_time_str].pv_energ.extend(traded_energy)
-
-            if child.children == [] and \
-                    (isinstance(child.strategy, StorageStrategy)):
-                traded_energy = []
-
-                for t in market.trades:
-                    if t.seller == child.name:
-                        traded_energy.append(-t.offer.energy)
-                    elif t.buyer == child.name:
-                        traded_energy.append(t.offer.energy)
-                price_energ_lists[slot_time_str].stor_energ.extend(traded_energy)
+            calculate_prices_pv_storage_energy_one_market(child, market,
+                                                          price_energ_lists, slot_time_str)
 
         if child.children != []:
             price_energ_lists = gather_prices_pv_storage_energy(child, price_energ_lists)
     return price_energ_lists
+
+
+def calculate_prices_pv_storage_energy_one_market(child, market, price_energ_lists, slot):
+    if slot not in price_energ_lists.keys():
+        price_energ_lists[slot] = prices_pv_stor_energy(price=[],
+                                                        pv_energ=[],
+                                                        stor_energ=[])
+    trade_prices = [
+        # Convert from cents to euro
+        t.offer.price / 100.0 / t.offer.energy
+        for t in market.trades
+        if t.buyer == child.name
+    ]
+    price_energ_lists[slot].price.extend(trade_prices)
+
+    if child.children == [] and isinstance(child.strategy, PVStrategy):
+        traded_energy = [
+            t.offer.energy
+            for t in market.trades
+            if t.seller == child.name
+        ]
+        price_energ_lists[slot].pv_energ.extend(traded_energy)
+
+    if child.children == [] and \
+            (isinstance(child.strategy, StorageStrategy)):
+        traded_energy = []
+
+        for t in market.trades:
+            if t.seller == child.name:
+                traded_energy.append(-t.offer.energy)
+            elif t.buyer == child.name:
+                traded_energy.append(t.offer.energy)
+        price_energ_lists[slot].stor_energ.extend(traded_energy)
 
 
 def export_cumulative_loads(area):
@@ -131,8 +139,8 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower, past_
             "id": load.area_id,
             "produced": 0.0,
             "earned": 0.0,
-            "consumedFrom": defaultdict(int),
-            "spentTo": defaultdict(int),
+            "consumedFrom": {},
+            "spentTo": {},
         }
 
     markets = getattr(grid, past_market_types)
@@ -145,8 +153,10 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower, past_
             for trade in market.trades:
                 if trade.buyer == load.name:
                     sell_id = area_name_from_area_or_iaa_name(trade.seller)
-                    accumulated_trades[load.name]["consumedFrom"][sell_id] += trade.offer.energy
-                    accumulated_trades[load.name]["spentTo"][sell_id] += trade.offer.price
+                    accumulated_trades[load.name]["consumedFrom"] = add_or_create_key(
+                        accumulated_trades[load.name]["consumedFrom"], sell_id, trade.offer.energy)
+                    accumulated_trades[load.name]["spentTo"] = add_or_create_key(
+                        accumulated_trades[load.name]["spentTo"], sell_id, trade.offer.price)
         return accumulated_trades
 
 
@@ -156,8 +166,8 @@ def _accumulate_producer_trades(producer, grid, accumulated_trades, past_market_
         "id": producer.area_id,
         "produced": 0.0,
         "earned": 0.0,
-        "consumedFrom": defaultdict(int),
-        "spentTo": defaultdict(int),
+        "consumedFrom": {},
+        "spentTo": {},
     }
     markets = getattr(grid, past_market_types)
     if markets is None:
@@ -181,8 +191,8 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
             "id": house.area_id,
             "produced": 0.0,
             "earned": 0.0,
-            "consumedFrom": defaultdict(int),
-            "spentTo": defaultdict(int),
+            "consumedFrom": {},
+            "spentTo": {},
             "producedForExternal": 0.0,
             "earnedFromExternal": 0.0,
             "consumedFromExternal": 0.0,
@@ -202,9 +212,12 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
                     # House self-consumption trade
                     accumulated_trades[house.name]["produced"] -= trade.offer.energy
                     accumulated_trades[house.name]["earned"] += trade.offer.price
-                    accumulated_trades[house.name]["consumedFrom"][house.name] +=\
-                        trade.offer.energy
-                    accumulated_trades[house.name]["spentTo"][house.name] += trade.offer.price
+                    accumulated_trades[house.name]["consumedFrom"] = \
+                        add_or_create_key(accumulated_trades[house.name]["consumedFrom"],
+                                          house.name, trade.offer.energy)
+                    accumulated_trades[house.name]["spentTo"] = \
+                        add_or_create_key(accumulated_trades[house.name]["spentTo"],
+                                          house.name, trade.offer.price)
                 elif trade.buyer == house_IAA_name:
                     accumulated_trades[house.name]["earned"] += trade.offer.price
                     accumulated_trades[house.name]["produced"] -= trade.offer.energy
@@ -227,8 +240,12 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
             for trade in market.trades:
                 if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
                     seller_id = area_name_from_area_or_iaa_name(trade.seller)
-                    accumulated_trades[house.name]["consumedFrom"][seller_id] += trade.offer.energy
-                    accumulated_trades[house.name]["spentTo"][seller_id] += trade.offer.price
+                    accumulated_trades[house.name]["consumedFrom"] = \
+                        add_or_create_key(accumulated_trades[house.name]["consumedFrom"],
+                                          seller_id, trade.offer.energy)
+                    accumulated_trades[house.name]["spentTo"] = \
+                        add_or_create_key(accumulated_trades[house.name]["spentTo"],
+                                          seller_id, trade.offer.price)
 
     return accumulated_trades
 
@@ -467,3 +484,57 @@ def export_price_energy_day(area):
             "cum_stor_prof": round(sum(trades.stor_energ), 2)
         } for ii, (hour, trades) in enumerate(price_lists.items())
     ]
+
+
+class MarketPriceEnergyDay:
+    def __init__(self):
+        self.timeslot_results = {}
+        self.hourly_results = {
+            "price-currency": "Euros",
+            "load-unit": "kWh",
+            "price-energy-day": []
+        }
+
+    def update_and_get_last_past_market(self, area):
+        if len(area.past_markets) == 0:
+            return self.hourly_results
+
+        hour = area.past_markets[-1].time_slot.hour
+        hour_str = "%02d:00" % hour
+        # Keep only the current hour results to save memory
+        self.timeslot_results = {ts: trades
+                                 for ts, trades in self.timeslot_results.items()
+                                 if ts.hour == hour}
+        self.timeslot_results = self._gather_prices_pv_storage_energy_last_past_market(
+            area, self.timeslot_results
+        )
+        self.hourly_results["price-energy-day"] = [
+            r for r in self.hourly_results["price-energy-day"] if r["time"] is not hour_str
+        ]
+        current_hour_results = [{
+            "time": hour_str,
+            "av_price": round(mean(trades.price) if len(trades.price) > 0 else 0, 2),
+            "min_price": round(min(trades.price) if len(trades.price) > 0 else 0, 2),
+            "max_price": round(max(trades.price) if len(trades.price) > 0 else 0, 2),
+            "cum_pv_gen": round(-1 * sum(trades.pv_energ), 2),
+            "cum_stor_prof": round(sum(trades.stor_energ), 2)
+        } for ii, (timeslot, trades) in enumerate(self.timeslot_results.items())]
+        self.hourly_results["price-energy-day"].extend(current_hour_results)
+        # Populating timeslot properly according to the order of current_hour_results
+        self.hourly_results["price-energy-day"] = [
+            {"timeslot": i, **v} for i, v in enumerate(self.hourly_results["price-energy-day"])
+        ]
+        return self.hourly_results
+
+    @classmethod
+    def _gather_prices_pv_storage_energy_last_past_market(cls, area, price_energ_lists):
+        for child in area.children:
+            market = child.parent.past_markets[-1]
+            slot = market.time_slot
+            calculate_prices_pv_storage_energy_one_market(child, market, price_energ_lists,
+                                                          slot)
+
+            if child.children != []:
+                price_energ_lists = cls._gather_prices_pv_storage_energy_last_past_market(
+                    child, price_energ_lists)
+        return price_energ_lists

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
     export_cumulative_loads, export_price_energy_day, generate_inter_area_trade_details, \
-    export_cumulative_grid_trades_redis
+    export_cumulative_grid_trades_redis, MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import energy_bills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
@@ -46,6 +46,7 @@ class SimulationEndpointBuffer:
         self.market_unmatched_loads = MarketUnmatchedLoads()
         self.cumulative_loads = {}
         self.price_energy_day = {}
+        self.market_price_energy_day = MarketPriceEnergyDay()
         self.cumulative_grid_trades = {}
         self.cumulative_grid_trades_redis = {}
         self.cumulative_grid_balancing_trades = {}
@@ -97,9 +98,22 @@ class SimulationEndpointBuffer:
             self.unmatched_loads, self.unmatched_loads_redis = \
                 self.market_unmatched_loads.update_and_get_unmatched_loads(area)
 
+    def _update_price_energy_day(self, area):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            self.price_energy_day = {
+                "price-currency": "Euros",
+                "load-unit": "kWh",
+                "price-energy-day": export_price_energy_day(area)
+            }
+        else:
+            self.price_energy_day = self.market_price_energy_day.update_and_get_last_past_market(
+                area
+            )
+
     def update_stats(self, area, simulation_status):
         self.status = simulation_status
         self._update_unmatched_loads(area)
+        self._update_price_energy_day(area)
         self.cumulative_loads = {
             "price-currency": "Euros",
             "load-unit": "kWh",
