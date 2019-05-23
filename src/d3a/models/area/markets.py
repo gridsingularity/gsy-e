@@ -60,10 +60,11 @@ class AreaMarkets:
             if timeframe < current_time:
                 market = markets.pop(timeframe)
                 market.readonly = True
-                if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is False:
-                    for pm in past_markets:
-                        if abs(pm - timeframe) >= GlobalConfig.slot_length:
-                            del past_markets[pm]
+                if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+                    delete_markets = [pm for pm in past_markets if
+                                      abs(pm - timeframe) >= GlobalConfig.slot_length]
+                    for pm in delete_markets:
+                        del past_markets[pm]
                 past_markets[timeframe] = market
                 if not first:
                     # Remove inter area agent
