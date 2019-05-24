@@ -60,6 +60,7 @@ class SimulationEndpointBuffer:
         self.device_statistics_time_str_dict = {}
         self.energy_trade_profile = {}
         self.energy_trade_profile_redis = {}
+        self.file_export_endpoints = FileExportEndpoints()
 
     def generate_result_report(self):
         return {
@@ -140,10 +141,10 @@ class SimulationEndpointBuffer:
         self.device_statistics_time_str_dict = convert_datetime_to_str_keys(
             self.device_statistics.device_stats_dict, {})
 
-        exported_endpoints = FileExportEndpoints(area)
-        self.energy_trade_profile = exported_endpoints.traded_energy_profile
+        self.file_export_endpoints(area)
+        self.energy_trade_profile = self.file_export_endpoints.traded_energy_profile
         self.energy_trade_profile_redis = self._round_energy_trade_profile(
-            exported_endpoints.traded_energy_profile_redis)
+            self.file_export_endpoints.traded_energy_profile_redis)
 
     def _update_tree_summary(self, area):
         price_energy_list = export_price_energy_day(area)
