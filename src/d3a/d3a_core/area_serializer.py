@@ -36,6 +36,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
 from d3a.models.leaves import Leaf # NOQA
 from d3a.models.leaves import *  # NOQA
+from d3a.d3a_core.util import convert_datetime_to_str_keys
 
 
 class AreaEncoder(json.JSONEncoder):
@@ -65,10 +66,12 @@ class AreaEncoder(json.JSONEncoder):
 
     def _encode_subobject(self, obj):
         result = {"type": obj.__class__.__name__}
-        kwargs = {key: getattr(obj, key) for key in getattr(obj, 'parameters', [])}
+        kwargs = {key: getattr(obj, key) for key in getattr(obj, 'parameters', [])
+                  if hasattr(obj, key)}
         if getattr(obj, 'non_attr_parameters', None):
             kwargs.update(obj.non_attr_parameters())
         if kwargs:
+            kwargs = _convert_member_dt_to_string(kwargs)
             result['kwargs'] = kwargs
         return result
 
@@ -77,7 +80,20 @@ class AreaEncoder(json.JSONEncoder):
                        "type": obj.__class__.__name__,
                        "display_type": obj.display_type}
         description.update(obj.parameters)
+        description = _convert_member_dt_to_string(description)
         return description
+
+
+def _convert_member_dt_to_string(in_dict):
+    """
+    Converts Datetime keys of members of in_dict into strings
+    """
+    for key, value in in_dict.items():
+        if type(value) == dict:
+            outdict = {}
+            convert_datetime_to_str_keys(value, outdict)
+            in_dict[key] = outdict
+    return in_dict
 
 
 def area_to_string(area):
