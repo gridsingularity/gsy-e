@@ -135,7 +135,6 @@ def _is_prosumer_node(area):
 
 def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower, past_market_types):
     if load.name not in accumulated_trades:
-        # print(f"{load.name} NOT EXIST")
         accumulated_trades[load.name] = {
             "type": "cell_tower" if is_cell_tower else "load",
             "produced": 0.0,
@@ -143,9 +142,6 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower, past_
             "consumedFrom": {},
             "spentTo": {},
         }
-    else:
-        # print(f"{load.name} | accumulated_trades: {accumulated_trades[load.name]}")
-        pass
 
     markets = getattr(grid, past_market_types)
     if markets is None:
@@ -166,15 +162,12 @@ def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower, past_
 
 def _accumulate_producer_trades(producer, grid, accumulated_trades, past_market_types):
     if producer.name not in accumulated_trades:
-        # print(f"{producer.name} NOT EXIST")
         accumulated_trades[producer.name] = {
             "produced": 0.0,
             "earned": 0.0,
             "consumedFrom": {},
             "spentTo": {},
         }
-    else:
-        pass
 
     markets = getattr(grid, past_market_types)
     if markets is None:
@@ -188,7 +181,6 @@ def _accumulate_producer_trades(producer, grid, accumulated_trades, past_market_
                 if trade.offer.seller == producer.name:
                     accumulated_trades[producer.name]["produced"] -= trade.offer.energy
                     accumulated_trades[producer.name]["earned"] += trade.offer.price
-        # print(f"{producer.name} | accumulated_trades: {accumulated_trades[producer.name]}")
         return accumulated_trades
 
 

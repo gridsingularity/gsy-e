@@ -320,6 +320,14 @@ def save_reported_unmatched_loads(context):
         deepcopy(context.simulation.endpoint_buffer.unmatched_loads_redis)
 
 
+@when('the reported energy trade profile are saved')
+def save_reported_energy_trade_profile(context):
+    context.energy_trade_profile = deepcopy(
+        context.simulation.endpoint_buffer.energy_trade_profile)
+    context.energy_trade_profile_redis = \
+        deepcopy(context.simulation.endpoint_buffer.energy_trade_profile_redis)
+
+
 @when('the reported price energy day results are saved')
 def step_impl(context):
     context.price_energy_day = deepcopy(context.simulation.endpoint_buffer.price_energy_day)
@@ -874,7 +882,7 @@ def identical_unmatched_loads(context):
 
 
 @then('the cumulative grid trades are identical no matter if the past markets are kept')
-def identical_energy_trade_profiles(context):
+def identical_cumulative_grid_trades(context):
     cumulative_grid_trades = \
         context.simulation.endpoint_buffer.accumulated_trades
     cumulative_grid_balancing_trades = \
@@ -883,6 +891,20 @@ def identical_energy_trade_profiles(context):
                         significant_digits=5)) == 0
     assert len(DeepDiff(cumulative_grid_balancing_trades, context.cumulative_grid_balancing_trades,
                         significant_digits=5)) == 0
+
+
+@then('the energy trade profiles are identical no matter if the past markets are kept')
+def identical_energy_trade_profiles(context):
+    energy_trade_profile = context.simulation.endpoint_buffer.energy_trade_profile
+    energy_trade_profile_redis = context.simulation.endpoint_buffer.energy_trade_profile_redis
+
+    assert len(DeepDiff(energy_trade_profile, context.energy_trade_profile)) == 0
+
+    # The 2 simulation runs do not assign the same uuids to the same areas
+    # therefore we have to search whether there are elements with the same values
+    for _, v in energy_trade_profile_redis.items():
+        assert any(len(DeepDiff(v, old_area_results)) == 0
+                   for _, old_area_results in context.energy_trade_profile_redis.items())
 
 
 @then('the price energy day results are identical no matter if the past markets are kept')
