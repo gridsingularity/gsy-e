@@ -29,7 +29,7 @@ from sortedcontainers import SortedDict
 from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
-from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints, KPI
+from d3a.d3a_core.sim_results.file_export_endpoints import KPI
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict
 from d3a.models.market.market_structures import MarketClearingState
@@ -67,8 +67,8 @@ class ExportAndPlot:
 
     def __init__(self, root_area: Area, path: str, subdir: str, endpoint_buffer):
         self.area = root_area
-        self.export_data = FileExportEndpoints(root_area)
         self.endpoint_buffer = endpoint_buffer
+        self.export_data = self.endpoint_buffer.file_export_endpoints
         self.kpi = KPI()
         try:
             if path is not None:
@@ -333,12 +333,15 @@ class ExportAndPlot:
         data.extend(self._plot_energy_graph(self.export_data.traded_energy,
                                             market_name, "bought_energy_lists",
                                             "-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
-        data.extend(self._plot_energy_graph(self.export_data.balancing_traded_energy,
-                                            market_name, "sold_energy_lists",
-                                            "-balancing-seller", key, ENERGY_SELLER_SIGN_PLOTS))
-        data.extend(self._plot_energy_graph(self.export_data.balancing_traded_energy,
-                                            market_name, "bought_energy_lists",
-                                            "-balancing-buyer", key, ENERGY_BUYER_SIGN_PLOTS))
+        if "sold_energy_lists" in self.export_data.balancing_traded_energy[market_name]:
+            data.extend(self._plot_energy_graph(self.export_data.balancing_traded_energy,
+                                                market_name, "sold_energy_lists",
+                                                "-balancing-seller", key,
+                                                ENERGY_SELLER_SIGN_PLOTS))
+            data.extend(self._plot_energy_graph(self.export_data.balancing_traded_energy,
+                                                market_name, "bought_energy_lists",
+                                                "-balancing-buyer", key,
+                                                ENERGY_BUYER_SIGN_PLOTS))
         if len(data) == 0:
             return
         if all([len(da.y) == 0 for da in data]):
