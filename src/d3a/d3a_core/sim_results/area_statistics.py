@@ -184,9 +184,30 @@ def _accumulate_producer_trades(producer, grid, accumulated_trades, past_market_
         return accumulated_trades
 
 
-def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types):
-    if house.name not in accumulated_trades:
-        accumulated_trades[house.name] = {
+def _area_trade_from_parent(area, parent, accumulated_trades, past_market_types):
+    area_IAA_name = make_iaa_name(area)
+    parent_markets = getattr(parent, past_market_types)
+    if parent_markets is not None:
+        if type(parent_markets) != list:
+            parent_markets = [parent_markets]
+
+        for market in parent_markets:
+            for trade in market.trades:
+                if trade.buyer == area_IAA_name and trade.buyer == area.name:
+                    seller_id = area_name_from_area_or_iaa_name(trade.seller)
+                    accumulated_trades[area.name]["consumedFrom"] = \
+                        add_or_create_key(accumulated_trades[area.name]["consumedFrom"],
+                                          seller_id, trade.offer.energy)
+                    accumulated_trades[area.name]["spentTo"] = \
+                        add_or_create_key(accumulated_trades[area.name]["spentTo"],
+                                          seller_id, trade.offer.price)
+
+    return accumulated_trades
+
+
+def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types):
+    if area.name not in accumulated_trades:
+        accumulated_trades[area.name] = {
             "type": "house",
             "produced": 0.0,
             "earned": 0.0,
@@ -197,54 +218,41 @@ def _accumulate_house_trades(house, grid, accumulated_trades, past_market_types)
             "consumedFromExternal": 0.0,
             "spentToExternal": 0.0,
         }
-    house_IAA_name = make_iaa_name(house)
-    child_names = [c.name for c in house.children]
-    house_markets = getattr(house, past_market_types)
-    grid_markets = getattr(grid, past_market_types)
-    if house_markets is not None:
-        if type(house_markets) != list:
-            house_markets = [house_markets]
-        for market in house_markets:
+    area_IAA_name = make_iaa_name(area)
+    child_names = [c.name for c in area.children]
+    area_markets = getattr(area, past_market_types)
+    if area_markets is not None:
+        if type(area_markets) != list:
+            area_markets = [area_markets]
+        for market in area_markets:
             for trade in market.trades:
                 if area_name_from_area_or_iaa_name(trade.seller) in child_names and \
                         area_name_from_area_or_iaa_name(trade.buyer) in child_names:
                     # House self-consumption trade
-                    accumulated_trades[house.name]["produced"] -= trade.offer.energy
-                    accumulated_trades[house.name]["earned"] += trade.offer.price
-                    accumulated_trades[house.name]["consumedFrom"] = \
-                        add_or_create_key(accumulated_trades[house.name]["consumedFrom"],
-                                          house.name, trade.offer.energy)
-                    accumulated_trades[house.name]["spentTo"] = \
-                        add_or_create_key(accumulated_trades[house.name]["spentTo"],
-                                          house.name, trade.offer.price)
-                elif trade.buyer == house_IAA_name:
-                    accumulated_trades[house.name]["earned"] += trade.offer.price
-                    accumulated_trades[house.name]["produced"] -= trade.offer.energy
-        for market in house_markets:
+                    accumulated_trades[area.name]["produced"] -= trade.offer.energy
+                    accumulated_trades[area.name]["earned"] += trade.offer.price
+                    accumulated_trades[area.name]["consumedFrom"] = \
+                        add_or_create_key(accumulated_trades[area.name]["consumedFrom"],
+                                          area.name, trade.offer.energy)
+                    accumulated_trades[area.name]["spentTo"] = \
+                        add_or_create_key(accumulated_trades[area.name]["spentTo"],
+                                          area.name, trade.offer.price)
+                elif trade.buyer == area_IAA_name:
+                    accumulated_trades[area.name]["earned"] += trade.offer.price
+                    accumulated_trades[area.name]["produced"] -= trade.offer.energy
+        for market in area_markets:
             for trade in market.trades:
                 if area_name_from_area_or_iaa_name(trade.seller) == \
-                        house.name and trade.buyer not in child_names:
-                    accumulated_trades[house.name]["consumedFromExternal"] += trade.offer.energy
-                    accumulated_trades[house.name]["spentToExternal"] += trade.offer.price
+                        area.name and trade.buyer not in child_names:
+                    accumulated_trades[area.name]["consumedFromExternal"] += trade.offer.energy
+                    accumulated_trades[area.name]["spentToExternal"] += trade.offer.price
                 elif area_name_from_area_or_iaa_name(trade.buyer) == \
-                        house.name and trade.seller not in child_names:
-                    accumulated_trades[house.name]["producedForExternal"] -= trade.offer.energy
-                    accumulated_trades[house.name]["earnedFromExternal"] += trade.offer.price
+                        area.name and trade.seller not in child_names:
+                    accumulated_trades[area.name]["producedForExternal"] -= trade.offer.energy
+                    accumulated_trades[area.name]["earnedFromExternal"] += trade.offer.price
 
-    if grid_markets is not None:
-        if type(grid_markets) != list:
-            grid_markets = [grid_markets]
-
-        for market in grid_markets:
-            for trade in market.trades:
-                if trade.buyer == house_IAA_name and trade.buyer != trade.offer.seller:
-                    seller_id = area_name_from_area_or_iaa_name(trade.seller)
-                    accumulated_trades[house.name]["consumedFrom"] = \
-                        add_or_create_key(accumulated_trades[house.name]["consumedFrom"],
-                                          seller_id, trade.offer.energy)
-                    accumulated_trades[house.name]["spentTo"] = \
-                        add_or_create_key(accumulated_trades[house.name]["spentTo"],
-                                          seller_id, trade.offer.price)
+    accumulated_trades = \
+        _area_trade_from_parent(area, parent, accumulated_trades, past_market_types)
 
     return accumulated_trades
 
@@ -258,7 +266,7 @@ def _accumulate_grid_trades(area, accumulated_trades, past_market_types):
             )
         elif _is_house_node(child):
             accumulated_trades = \
-                _accumulate_house_trades(child, area, accumulated_trades, past_market_types)
+                _accumulate_area_trades(child, area, accumulated_trades, past_market_types)
         elif child.children == []:
             # Leaf node, no need for calculating cumulative trades, continue iteration
             continue
@@ -291,7 +299,7 @@ def _accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_ty
             # Leaf node, no need for calculating cumulative trades, continue iteration
             continue
         else:
-            accumulated_trades = _accumulate_house_trades(
+            accumulated_trades = _accumulate_area_trades(
                 child, area, accumulated_trades, past_market_types
             )
             accumulated_trades = _accumulate_grid_trades_all_devices(
