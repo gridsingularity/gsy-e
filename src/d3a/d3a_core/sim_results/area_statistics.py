@@ -133,6 +133,37 @@ def _is_prosumer_node(area):
     return isinstance(area.strategy, StorageStrategy)
 
 
+def _accumulate_storage_trade(storage, area, accumulated_trades, past_market_types):
+    if storage.name not in accumulated_trades:
+        accumulated_trades[storage.name] = {
+            "type": "Storage",
+            "produced": 0.0,
+            "earned": 0.0,
+            "consumedFrom": {},
+            "spentTo": {},
+        }
+
+    markets = getattr(area, past_market_types)
+    if markets is None:
+        return accumulated_trades
+    else:
+        if type(markets) != list:
+            markets = [markets]
+        for market in markets:
+            for trade in market.trades:
+                if trade.buyer == storage.name:
+                    sell_id = area_name_from_area_or_iaa_name(trade.seller)
+                    accumulated_trades[storage.name]["consumedFrom"] = add_or_create_key(
+                        accumulated_trades[storage.name]["consumedFrom"],
+                        sell_id, trade.offer.energy)
+                    accumulated_trades[storage.name]["spentTo"] = add_or_create_key(
+                        accumulated_trades[storage.name]["spentTo"], sell_id, trade.offer.price)
+                elif trade.offer.seller == storage.name:
+                    accumulated_trades[storage.name]["produced"] -= trade.offer.energy
+                    accumulated_trades[storage.name]["earned"] += trade.offer.price
+        return accumulated_trades
+
+
 def _accumulate_load_trades(load, grid, accumulated_trades, is_cell_tower, past_market_types):
     if load.name not in accumulated_trades:
         accumulated_trades[load.name] = {
@@ -193,7 +224,7 @@ def _area_trade_from_parent(area, parent, accumulated_trades, past_market_types)
 
         for market in parent_markets:
             for trade in market.trades:
-                if trade.buyer == area_IAA_name and trade.buyer == area.name:
+                if trade.buyer == area_IAA_name:
                     seller_id = area_name_from_area_or_iaa_name(trade.seller)
                     accumulated_trades[area.name]["consumedFrom"] = \
                         add_or_create_key(accumulated_trades[area.name]["consumedFrom"],
@@ -243,11 +274,11 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
         for market in area_markets:
             for trade in market.trades:
                 if area_name_from_area_or_iaa_name(trade.seller) == \
-                        area.name and trade.buyer not in child_names:
+                        area.name and trade.buyer in child_names:
                     accumulated_trades[area.name]["consumedFromExternal"] += trade.offer.energy
                     accumulated_trades[area.name]["spentToExternal"] += trade.offer.price
                 elif area_name_from_area_or_iaa_name(trade.buyer) == \
-                        area.name and trade.seller not in child_names:
+                        area.name and trade.seller in child_names:
                     accumulated_trades[area.name]["producedForExternal"] -= trade.offer.energy
                     accumulated_trades[area.name]["earnedFromExternal"] += trade.offer.price
 
@@ -294,6 +325,9 @@ def _accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_ty
                 child, area, accumulated_trades,
                 past_market_types=past_market_types
             )
+        elif _is_prosumer_node(child):
+            accumulated_trades = \
+                _accumulate_storage_trade(child, area, accumulated_trades, past_market_types)
 
         elif child.children == []:
             # Leaf node, no need for calculating cumulative trades, continue iteration
@@ -394,6 +428,33 @@ def generate_inter_area_trade_details(area, past_market_types):
     return trade_details
 
 
+def _external_trade_entries(child, accumulated_trades):
+    results = {"areaName": "External Trades"}
+    area_data = accumulated_trades[child.name]
+    results["bars"] = []
+    # External Trades entries
+    if "consumedFromExternal" in area_data:
+        incoming_energy = round_floats_for_ui(area_data["consumedFromExternal"])
+        spent = round_floats_for_ui(area_data["spentToExternal"])
+        results["bars"].append({
+            "energy": incoming_energy,
+            "targetArea": child.name,
+            "energyLabel": f"{child.name} consumed {abs(incoming_energy)} "
+                           f"kWh from external sources",
+            "priceLabel": f"{child.name} spent {abs(spent)} cents to external sources"
+
+        })
+        outgoing_energy = round_floats_for_ui(area_data["producedForExternal"])
+        earned = round_floats_for_ui(area_data["earnedFromExternal"])
+        results["bars"].append({
+            "energy": outgoing_energy,
+            "targetArea": child.name,
+            "energyLabel": f"{child.name} sent {abs(outgoing_energy)} kWh to external consumers",
+            "priceLabel": f"{child.name} earned {earned} cents from external consumers."
+        })
+    return results
+
+
 def generate_area_cumulative_trade_redis(child, accumulated_trades):
     results = {"areaName": child.name}
     area_data = accumulated_trades[child.name]
@@ -421,27 +482,8 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
             "priceLabel": f"{child.name} spent "
                           f"{str(round_floats_for_ui(money))} cents on energy from {producer}",
         })
-    # External Trades entries
-    if "consumedFromExternal" in area_data:
-        incoming_energy = round_floats_for_ui(area_data["consumedFromExternal"])
-        spent = round_floats_for_ui(area_data["spentToExternal"])
-        results["bars"].append({
-            "energy": incoming_energy,
-            "marketArea": child.name,
-            "energyLabel": f"{child.name} consumed {abs(incoming_energy)} "
-                           f"kWh from external sources",
-            "priceLabel": f"{child.name} spent {abs(spent)} cents to external sources"
 
-        })
-        outgoing_energy = round_floats_for_ui(area_data["producedForExternal"])
-        earned = round_floats_for_ui(area_data["earnedFromExternal"])
-        results["bars"].append({
-            "energy": outgoing_energy,
-            "marketArea": child.name,
-            "energyLabel": f"{child.name} sent {abs(outgoing_energy)} kWh to external consumers",
-            "priceLabel": f"{child.name} earned {earned} cents from external consumers."
-        })
-
+    results["bars"].extend(_external_trade_entries(child, accumulated_trades)["bars"])
     return results
 
 
@@ -454,6 +496,8 @@ def generate_cumulative_grid_trades_for_all_areas(accumulated_trades, area, resu
         for child in area.children
         if child.name in accumulated_trades
     ]
+    if area.parent is not None:
+        results[area.uuid].append(_external_trade_entries(area, accumulated_trades))
 
     for child in area.children:
         results = generate_cumulative_grid_trades_for_all_areas(accumulated_trades, child, results)
