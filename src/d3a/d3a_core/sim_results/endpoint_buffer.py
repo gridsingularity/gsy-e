@@ -19,7 +19,7 @@ from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trad
     export_cumulative_grid_trades_redis, export_cumulative_loads, export_price_energy_day, \
     generate_inter_area_trade_details, MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.sim_results.stats import energy_bills
+from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.util import convert_datetime_to_str_keys, round_floats_for_ui
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
@@ -55,6 +55,7 @@ class SimulationEndpointBuffer:
         self.cumulative_grid_balancing_trades = {}
         self.tree_summary = {}
         self.tree_summary_redis = {}
+        self.market_bills = MarketEnergyBills()
         self.bills = {}
         self.bills_redis = {}
         self.balancing_energy_bills = {}
@@ -191,7 +192,7 @@ class SimulationEndpointBuffer:
                 self._update_tree_summary(child)
 
     def _update_bills(self, area, past_market_types):
-        result = energy_bills(area, past_market_types)
+        result = self.market_bills.update(area, past_market_types)
         return OrderedDict(sorted(result.items()))
 
     def _calculate_redis_bills(self, area, energy_bills):

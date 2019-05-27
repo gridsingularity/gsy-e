@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 from math import isclose
 
 from d3a.models.market.market_structures import Trade
-from d3a.d3a_core.sim_results.stats import energy_bills, primary_unit_prices, \
+from d3a.d3a_core.sim_results.stats import MarketEnergyBills, primary_unit_prices, \
     recursive_current_markets, total_avg_trade_price
 
 from d3a.d3a_core.util import make_iaa_name
@@ -127,7 +127,7 @@ def grid():
 
 
 def test_energy_bills(grid):
-    result = energy_bills(grid, "past_markets")
+    result = MarketEnergyBills().update(grid, "past_markets")
     assert result['house2']['bought'] == result['commercial']['sold'] == 13
     assert result['house2']['spent'] == result['commercial']['earned'] == 0.03
     assert result['commercial']['spent'] == result['commercial']['bought'] == 0
@@ -153,11 +153,11 @@ def grid2():
 
 
 def test_energy_bills_finds_iaas(grid2):
-    result = energy_bills(grid2, "past_markets")
+    result = MarketEnergyBills().update(grid2, "past_markets")
     assert result['house1']['bought'] == result['house2']['sold'] == 3
 
 
 def test_energy_bills_ensure_device_types_are_populated(grid2):
-    result = energy_bills(grid2, "past_markets")
+    result = MarketEnergyBills().update(grid2, "past_markets")
     assert result["house1"]["type"] == "House 1 type"
     assert result["house2"]["type"] == "House 2 type"

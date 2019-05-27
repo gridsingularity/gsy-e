@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
+from d3a.models.const import ConstSettings
 
 
 def recursive_current_markets(area):
@@ -50,48 +51,76 @@ def total_avg_trade_price(markets):
     )
 
 
-def _store_bought_trade(result_dict, trade_offer):
-    result_dict['bought'] += trade_offer.energy
-    result_dict['spent'] += trade_offer.price / 100.
-    result_dict['total_energy'] += trade_offer.energy
-    result_dict['total_cost'] += trade_offer.price / 100.
+class MarketEnergyBills:
+    def __init__(self):
+        self.results = {}
 
+    @classmethod
+    def _store_bought_trade(cls, result_dict, trade_offer):
+        result_dict['bought'] += trade_offer.energy
+        result_dict['spent'] += trade_offer.price / 100.
+        result_dict['total_energy'] += trade_offer.energy
+        result_dict['total_cost'] += trade_offer.price / 100.
 
-def _store_sold_trade(result_dict, trade_offer):
-    result_dict['sold'] += trade_offer.energy
-    result_dict['earned'] += trade_offer.price / 100.
-    result_dict['total_energy'] -= trade_offer.energy
-    result_dict['total_cost'] -= trade_offer.price / 100.
+    @classmethod
+    def _store_sold_trade(cls, result_dict, trade_offer):
+        result_dict['sold'] += trade_offer.energy
+        result_dict['earned'] += trade_offer.price / 100.
+        result_dict['total_energy'] -= trade_offer.energy
+        result_dict['total_cost'] -= trade_offer.price / 100.
 
+    @classmethod
+    def _get_past_markets_from_area(cls, area, past_market_types):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            return getattr(area, past_market_types)
+        else:
+            return [getattr(area, past_market_types)[-1]]
 
-def energy_bills(area, past_market_types):
-    """
-    Return a bill for each of area's children with total energy bought
-    and sold (in kWh) and total money earned and spent (in cents).
-    Compute bills recursively for children of children etc.
-    """
-    if not area.children:
-        return None
-    result = {child.name: dict(bought=0.0, sold=0.0,
-                               spent=0.0, earned=0.0,
-                               total_energy=0, total_cost=0,
-                               type=child.display_type)
-              for child in area.children}
-    result["market_fee"] = 0
-    for market in getattr(area, past_market_types):
-        result["market_fee"] += market.market_fee
-        for trade in market.trades:
-            buyer = area_name_from_area_or_iaa_name(trade.buyer)
-            seller = area_name_from_area_or_iaa_name(trade.seller)
-            if buyer in result:
-                _store_bought_trade(result[buyer], trade.offer)
-            if seller in result:
-                _store_sold_trade(result[seller], trade.offer)
+    def _get_child_data(self, area):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            return {child.name: dict(bought=0.0, sold=0.0,
+                                     spent=0.0, earned=0.0,
+                                     total_energy=0, total_cost=0,
+                                     type=child.display_type)
+                    for child in area.children}
+        else:
+            if area.name not in self.results:
+                self.results[area.name] =  \
+                    {child.name: dict(bought=0.0, sold=0.0,
+                                      spent=0.0, earned=0.0,
+                                      total_energy=0, total_cost=0,
+                                      type=child.display_type)
+                        for child in area.children}
+            return self.results[area.name]
 
-    for child in area.children:
-        child_result = energy_bills(child, past_market_types)
-        if child_result is not None:
-            result[child.name]['market_fee'] = child_result.pop("market_fee")
-            result[child.name]['children'] = child_result
+    def energy_bills(self, area, past_market_types):
+        """
+        Return a bill for each of area's children with total energy bought
+        and sold (in kWh) and total money earned and spent (in cents).
+        Compute bills recursively for children of children etc.
+        """
+        if not area.children:
+            return None
+        result = self._get_child_data(area)
+        result["market_fee"] = 0
+        for market in self._get_past_markets_from_area(area, past_market_types):
+            result["market_fee"] += market.market_fee
+            for trade in market.trades:
+                buyer = area_name_from_area_or_iaa_name(trade.buyer)
+                seller = area_name_from_area_or_iaa_name(trade.seller)
+                if buyer in result:
+                    self._store_bought_trade(result[buyer], trade.offer)
+                if seller in result:
+                    self._store_sold_trade(result[seller], trade.offer)
 
-    return result
+        for child in area.children:
+            child_result = self.energy_bills(child, past_market_types)
+            if child_result is not None:
+                result[child.name]['market_fee'] = child_result.pop("market_fee")
+                result[child.name]['children'] = child_result
+
+        return result
+
+    def update(self, area, past_market_types):
+        self.results = self.energy_bills(area, past_market_types)
+        return self.results
