@@ -287,7 +287,7 @@ class MarketUnmatchedLoads:
                 for _, hours in target_ul[timestamp]['unmatched_times'].items():
                     unm_count += len(hours)
 
-                    target_ul['unmatched_count'] = unm_count
+                    target_ul[timestamp]['unmatched_count'] = unm_count
 
     @classmethod
     def _copy_accumulated_unmatched_loads(cls, accumulated_results, current_results, area):
