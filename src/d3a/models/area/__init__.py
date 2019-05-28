@@ -54,7 +54,6 @@ DEFAULT_CONFIG = SimulationConfig(
 
 
 class Area:
-    _area_id_counter = 1
 
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
@@ -73,8 +72,6 @@ class Area:
         self.name = name
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
-        self.area_id = Area._area_id_counter
-        Area._area_id_counter += 1
         self.parent = None
         self.children = children if children is not None else []
         for child in self.children:
