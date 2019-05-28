@@ -64,7 +64,7 @@ def default_profile_dict(val=None) -> Dict[DateTime, int]:
     iter_date = GlobalConfig.start_date
     end_date = GlobalConfig.start_date.add(days=GlobalConfig.sim_duration.days,
                                            hours=GlobalConfig.sim_duration.hours)
-    while iter_date <= end_date:
+    while iter_date < end_date:
         outdict[iter_date] = val
         iter_date = iter_date.add(seconds=GlobalConfig.slot_length.seconds)
 
@@ -174,7 +174,7 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
             }
 
 
-def _fill_gaps_in_profile(input_profile: Dict=None) -> Dict:
+def _fill_gaps_in_profile(input_profile: Dict = None) -> Dict:
     """
     Fills time steps, where no value is provided, with the value value of the
     last available time step.
