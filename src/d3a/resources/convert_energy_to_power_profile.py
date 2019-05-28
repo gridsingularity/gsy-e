@@ -42,9 +42,8 @@ def convert_energy_profile_to_power(input_profile, output_file):
     _eval_time_period_consensus(profile)
     # Create a minute-resolution profile, filling the empty slots with previous values
     profile = _fill_gaps_in_profile(profile)
-
+    GlobalConfig.sim_duration = duration(days=1) - duration(minutes=1)
     output_dict = default_profile_dict(0)
-    print(output_dict.keys())
     for k, v in output_dict.items():
         # Average market slot values
         iter_duration = duration(minutes=0)
@@ -55,8 +54,9 @@ def convert_energy_profile_to_power(input_profile, output_file):
         averaged_value /= GlobalConfig.slot_length.minutes
         output_dict[k] = averaged_value
 
-    def convert_energy_to_power(e): e * (duration(hours=1) / GlobalConfig.slot_length)
-    power_profile = {k: convert_energy_to_power(v) for k, v in output_dict.items()}
+    def convert_energy_to_power(e):
+        return round(e * (duration(hours=1) / GlobalConfig.slot_length), 4)
+    power_profile = {k: convert_energy_to_power(float(v)) for k, v in output_dict.items()}
     with open(output_file, 'w') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in power_profile.items():
