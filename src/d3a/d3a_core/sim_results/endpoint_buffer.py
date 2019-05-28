@@ -75,7 +75,7 @@ class SimulationEndpointBuffer:
             "bills": self.bills_redis,
             "tree_summary": self.tree_summary_redis,
             "status": self.status,
-            "device_statistics": self.device_statistics.flat_results_dict,
+            "device_statistics": self.device_statistics.flat_results_time_str,
             "energy_trade_profile": self.energy_trade_profile_redis
         }
 
@@ -90,8 +90,8 @@ class SimulationEndpointBuffer:
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status,
-            "device_statistics": self.device_statistics.device_stats_dict,
-            "device_statistics_redis": self.device_statistics.flat_results_dict,
+            "device_statistics": self.device_statistics.device_stats_time_str,
+            "device_statistics_redis": self.device_statistics.flat_results_time_str,
             "energy_trade_profile": self.energy_trade_profile
         }
 

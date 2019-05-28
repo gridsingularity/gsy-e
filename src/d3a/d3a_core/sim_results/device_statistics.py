@@ -24,6 +24,8 @@ class DeviceStatistics:
     def __init__(self):
         self.device_stats_dict = {}
         self.flat_results_dict = {}
+        self.device_stats_time_str = {}
+        self.flat_stats_time_str = {}
 
     @staticmethod
     def _calc_min_max_from_sim_dict(subdict: Dict, key: str):
@@ -116,8 +118,8 @@ class DeviceStatistics:
 
     def update(self, area):
         self.gather_device_statistics(area, self.device_stats_dict)
-        self.flat_results_dict = convert_datetime_to_str_keys(self.flat_results_dict, {})
-        self.device_stats_dict = convert_datetime_to_str_keys(self.device_stats_dict, {})
+        self.flat_results_time_str = convert_datetime_to_str_keys(self.flat_results_dict, {})
+        self.device_stats_time_str = convert_datetime_to_str_keys(self.device_stats_dict, {})
 
     def gather_device_statistics(self, area: Area, subdict: Dict):
         for child in area.children:
