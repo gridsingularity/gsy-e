@@ -132,6 +132,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                 f"||| Clearing Market {self.markets.source.area.name}")
             self.markets.source.state.clearing[time] = (clearing_rate, clearing_energy)
 
+        accepted_bids = self._accept_cleared_bids(clearing_rate, clearing_energy)
+        self._accept_cleared_offers(clearing_rate, clearing_energy, accepted_bids)
+
+    def _accept_cleared_bids(self, clearing_rate, clearing_energy):
         cumulative_traded_bids = 0
         accepted_bids = []
         for bid in self.sorted_bids:
@@ -163,7 +167,9 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
             accepted_bids.append(trade)
             self._delete_forwarded_bid_entries(bid)
+        return accepted_bids
 
+    def _accept_cleared_offers(self, clearing_rate, clearing_energy, accepted_bids):
         cumulative_traded_offers = 0
         for offer in self.sorted_offers:
             if cumulative_traded_offers >= clearing_energy:
@@ -175,7 +181,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 # implemented, we should use the original bid rate for calculating the fees
                 # on the source offers, similar to the two sided pay as bid market.
 
-                # energy == None means to use the bid energy instead of this
+                # energy == None means to use the bid energy instead of the remaining clearing
+                # energy
                 accepted_bids = self._exhaust_offer_for_selected_bids(
                     offer, accepted_bids, clearing_rate, None
                 )
