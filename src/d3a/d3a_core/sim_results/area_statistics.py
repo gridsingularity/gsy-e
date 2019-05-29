@@ -24,7 +24,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
-    round_floats_for_ui, add_or_create_key, substract_or_create_key
+    round_floats_for_ui, add_or_create_key, subtract_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
@@ -160,16 +160,7 @@ def _accumulate_storage_trade(storage, area, accumulated_trades, past_market_typ
                         accumulated_trades[storage.name]["spentTo"], sell_id, trade.offer.price)
                 elif trade.offer.seller == storage.name:
                     accumulated_trades[storage.name]["produced"] -= trade.offer.energy
-                    # buyer = area_name_from_area_or_iaa_name(trade.buyer)
-                    # accumulated_trades[storage.name]["producedFor"] = \
-                    #     substract_or_create_key(accumulated_trades[storage.name]["producedFor"],
-                    #                             buyer,
-                    #                             trade.offer.energy)
                     accumulated_trades[storage.name]["earned"] += trade.offer.price
-                    # accumulated_trades[storage.name]["earnedFrom"] = \
-                    #     add_or_create_key(accumulated_trades[storage.name]["earnedFrom"],
-                    #                       buyer,
-                    #                       trade.offer.price)
         return accumulated_trades
 
 
@@ -220,15 +211,7 @@ def _accumulate_producer_trades(producer, grid, accumulated_trades, past_market_
             for trade in market.trades:
                 if trade.offer.seller == producer.name:
                     accumulated_trades[producer.name]["produced"] -= trade.offer.energy
-                    # accumulated_trades[producer.name]["producedFor"] = \
-                    #     substract_or_create_key(accumulated_trades[producer.name]["producedFor"],
-                    #                             area_name_from_area_or_iaa_name(trade.buyer),
-                    #                             trade.offer.energy)
                     accumulated_trades[producer.name]["earned"] += trade.offer.price
-                    # accumulated_trades[producer.name]["earnedFrom"] = \
-                    #     add_or_create_key(accumulated_trades[producer.name]["earnedFrom"],
-                    #                       area_name_from_area_or_iaa_name(trade.buyer),
-                    #                       trade.offer.price)
         return accumulated_trades
 
 
@@ -293,20 +276,20 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
                 if area_name_from_area_or_iaa_name(trade.seller) == \
                         area.name and area_name_from_area_or_iaa_name(trade.buyer) in child_names:
                     accumulated_trades[area.name]["consumedFromExternal"] = \
-                        substract_or_create_key(accumulated_trades[area.name]
-                                                ["consumedFromExternal"],
-                                                area_name_from_area_or_iaa_name(trade.buyer),
-                                                trade.offer.energy)
+                        add_or_create_key(accumulated_trades[area.name]["consumedFromExternal"],
+                                          area_name_from_area_or_iaa_name(trade.buyer),
+                                          trade.offer.energy)
                     accumulated_trades[area.name]["spentToExternal"] = \
-                        substract_or_create_key(accumulated_trades[area.name]["spentToExternal"],
-                                                area_name_from_area_or_iaa_name(trade.buyer),
-                                                trade.offer.price)
+                        add_or_create_key(accumulated_trades[area.name]["spentToExternal"],
+                                          area_name_from_area_or_iaa_name(trade.buyer),
+                                          trade.offer.price)
                 elif area_name_from_area_or_iaa_name(trade.buyer) == \
                         area.name and area_name_from_area_or_iaa_name(trade.seller) in child_names:
                     accumulated_trades[area.name]["producedForExternal"] = \
-                        add_or_create_key(accumulated_trades[area.name]["producedForExternal"],
-                                          area_name_from_area_or_iaa_name(trade.seller),
-                                          trade.offer.energy)
+                        subtract_or_create_key(accumulated_trades[area.name]
+                                               ["producedForExternal"],
+                                               area_name_from_area_or_iaa_name(trade.seller),
+                                               trade.offer.energy)
                     accumulated_trades[area.name]["earnedFromExternal"] = \
                         add_or_create_key(accumulated_trades[area.name]["earnedFromExternal"],
                                           area_name_from_area_or_iaa_name(trade.seller),
@@ -510,13 +493,14 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
     # Consumer entries
     for producer, energy in area_data["consumedFrom"].items():
         money = round_floats_for_ui(area_data["spentTo"][producer])
+        tag = "external" if producer == child.parent.name else producer
         results["bars"].append({
             "energy": round_floats_for_ui(energy),
             "targetArea": producer,
             "energyLabel": f"{child.name} bought "
-                           f"{str(round_floats_for_ui(energy))} kWh from {producer}",
+                           f"{str(round_floats_for_ui(energy))} kWh from {tag}",
             "priceLabel": f"{child.name} spent "
-                          f"{str(round_floats_for_ui(money))} cents on energy from {producer}",
+                          f"{str(round_floats_for_ui(money))} cents on energy from {tag}",
         })
 
     return results

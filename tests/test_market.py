@@ -35,7 +35,7 @@ from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.util import add_or_create_key, substract_or_create_key
+from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 device_registry_dict = {
@@ -633,7 +633,7 @@ class MarketStateMachine(RuleBasedStateMachine):
         actor_sums = {}
         for t in self.market.trades:
             actor_sums = add_or_create_key(actor_sums, t.seller, t.offer.energy)
-            actor_sums = substract_or_create_key(actor_sums, t.buyer, t.offer.energy)
+            actor_sums = subtract_or_create_key(actor_sums, t.buyer, t.offer.energy)
         for actor, sum_ in actor_sums.items():
             assert self.market.traded_energy[actor] == sum_
         assert sum(self.market.traded_energy.values()) == 0
