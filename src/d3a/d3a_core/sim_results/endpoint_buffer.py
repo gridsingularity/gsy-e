@@ -21,7 +21,7 @@ from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trad
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import energy_bills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
-from d3a.d3a_core.util import convert_datetime_to_str_keys, round_floats_for_ui
+from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     MarketUnmatchedLoads
 from d3a.models.const import ConstSettings
@@ -60,7 +60,6 @@ class SimulationEndpointBuffer:
         self.balancing_energy_bills = {}
         self.trade_details = {}
         self.device_statistics = DeviceStatistics()
-        self.device_statistics_time_str_dict = {}
         self.energy_trade_profile = {}
         self.energy_trade_profile_redis = {}
         self.file_export_endpoints = FileExportEndpoints()
@@ -76,7 +75,7 @@ class SimulationEndpointBuffer:
             "bills": self.bills_redis,
             "tree_summary": self.tree_summary_redis,
             "status": self.status,
-            "device_statistics": self.device_statistics_time_str_dict,
+            "device_statistics": self.device_statistics.flat_results_time_str,
             "energy_trade_profile": self.energy_trade_profile_redis
         }
 
@@ -91,7 +90,7 @@ class SimulationEndpointBuffer:
             "bills": self.bills,
             "tree_summary": self.tree_summary,
             "status": self.status,
-            "device_statistics": self.device_statistics_time_str_dict,
+            "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.energy_trade_profile
         }
 
@@ -161,10 +160,7 @@ class SimulationEndpointBuffer:
         self._update_tree_summary(area)
         self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 
-        self.device_statistics.gather_device_statistics(area,
-                                                        self.device_statistics.device_stats_dict)
-        self.device_statistics_time_str_dict = convert_datetime_to_str_keys(
-            self.device_statistics.device_stats_dict, {})
+        self.device_statistics.update(area)
 
         self.file_export_endpoints(area)
         self.energy_trade_profile = self.file_export_endpoints.traded_energy_profile
