@@ -330,7 +330,9 @@ def save_reported_energy_trade_profile(context):
 
 @when('the reported price energy day results are saved')
 def step_impl(context):
-    context.price_energy_day = deepcopy(context.simulation.endpoint_buffer.price_energy_day)
+    context.price_energy_day = deepcopy(
+        context.simulation.endpoint_buffer.price_energy_day.csv_output
+    )
 
 
 @when('the past markets are not kept in memory')
@@ -909,5 +911,5 @@ def identical_energy_trade_profiles(context):
 
 @then('the price energy day results are identical no matter if the past markets are kept')
 def indentical_price_energy_day(context):
-    price_energy_day = context.simulation.endpoint_buffer.price_energy_day
+    price_energy_day = context.simulation.endpoint_buffer.price_energy_day.csv_output
     assert len(DeepDiff(price_energy_day, context.price_energy_day)) == 0
