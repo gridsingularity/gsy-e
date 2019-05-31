@@ -452,7 +452,7 @@ def _external_trade_entries(child, accumulated_trades):
             spent = round_floats_for_ui(area_data["spentToExternal"][k])
             results["bars"].append({
                 "energy": incoming_energy,
-                "targetArea": child.name,
+                "targetArea": k,
                 "energyLabel": f"External sources bought {abs(incoming_energy)} "
                                f"kWh from {k}",
                 "priceLabel": f"External sources spent {abs(spent)} cents"
@@ -465,7 +465,7 @@ def _external_trade_entries(child, accumulated_trades):
             earned = round_floats_for_ui(area_data["earnedFromExternal"][k])
             results["bars"].append({
                 "energy": outgoing_energy,
-                "targetArea": child.name,
+                "targetArea": k,
                 "energyLabel": f"External sources sold {abs(outgoing_energy)} kWh ",
                 "priceLabel": f"{child.name} earned {earned} cents."
             })
