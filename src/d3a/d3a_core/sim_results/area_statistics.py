@@ -276,9 +276,10 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
                 if area_name_from_area_or_iaa_name(trade.seller) == \
                         area.name and area_name_from_area_or_iaa_name(trade.buyer) in child_names:
                     accumulated_trades[area.name]["consumedFromExternal"] = \
-                        add_or_create_key(accumulated_trades[area.name]["consumedFromExternal"],
-                                          area_name_from_area_or_iaa_name(trade.buyer),
-                                          trade.offer.energy)
+                        subtract_or_create_key(accumulated_trades[area.name]
+                                               ["consumedFromExternal"],
+                                               area_name_from_area_or_iaa_name(trade.buyer),
+                                               trade.offer.energy)
                     accumulated_trades[area.name]["spentToExternal"] = \
                         add_or_create_key(accumulated_trades[area.name]["spentToExternal"],
                                           area_name_from_area_or_iaa_name(trade.buyer),
@@ -286,10 +287,9 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
                 elif area_name_from_area_or_iaa_name(trade.buyer) == \
                         area.name and area_name_from_area_or_iaa_name(trade.seller) in child_names:
                     accumulated_trades[area.name]["producedForExternal"] = \
-                        subtract_or_create_key(accumulated_trades[area.name]
-                                               ["producedForExternal"],
-                                               area_name_from_area_or_iaa_name(trade.seller),
-                                               trade.offer.energy)
+                        add_or_create_key(accumulated_trades[area.name]["producedForExternal"],
+                                          area_name_from_area_or_iaa_name(trade.seller),
+                                          trade.offer.energy)
                     accumulated_trades[area.name]["earnedFromExternal"] = \
                         add_or_create_key(accumulated_trades[area.name]["earnedFromExternal"],
                                           area_name_from_area_or_iaa_name(trade.seller),
@@ -453,8 +453,8 @@ def _external_trade_entries(child, accumulated_trades):
             results["bars"].append({
                 "energy": incoming_energy,
                 "targetArea": k,
-                "energyLabel": f"External sources bought {abs(incoming_energy)} "
-                               f"kWh from {k}",
+                "energyLabel": f"External sources sold {abs(incoming_energy)} "
+                               f"kWh to {k}",
                 "priceLabel": f"External sources spent {abs(spent)} cents"
 
             })
@@ -466,7 +466,8 @@ def _external_trade_entries(child, accumulated_trades):
             results["bars"].append({
                 "energy": outgoing_energy,
                 "targetArea": k,
-                "energyLabel": f"External sources sold {abs(outgoing_energy)} kWh ",
+                "energyLabel": f"External sources bought {abs(outgoing_energy)} kWh "
+                               f"from {child.name}",
                 "priceLabel": f"{child.name} earned {earned} cents."
             })
     return results
