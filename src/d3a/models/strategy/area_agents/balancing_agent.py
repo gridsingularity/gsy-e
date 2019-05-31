@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from random import random
 from d3a.d3a_core.util import make_ba_name, make_iaa_name
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_engine import BalancingEngine
@@ -100,11 +101,11 @@ class BalancingAgent(OneSidedAgent):
         return trade
 
     def event_balancing_trade(self, *, market_id, trade, offer=None):
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_trade(trade=trade)
 
     def event_balancing_offer_changed(self, *, market_id, existing_offer, new_offer):
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_offer_changed(market_id=market_id,
                                        existing_offer=existing_offer,
                                        new_offer=new_offer)

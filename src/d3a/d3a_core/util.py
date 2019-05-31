@@ -420,7 +420,7 @@ def add_or_create_key(dict, key, value):
     return dict
 
 
-def substract_or_create_key(dict, key, value):
+def subtract_or_create_key(dict, key, value):
     if key in dict:
         dict[key] -= value
     else:
