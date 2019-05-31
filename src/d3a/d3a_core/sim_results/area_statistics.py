@@ -453,9 +453,9 @@ def _external_trade_entries(child, accumulated_trades):
             results["bars"].append({
                 "energy": incoming_energy,
                 "targetArea": child.name,
-                "energyLabel": f"{child.name} bought {abs(incoming_energy)} "
-                               f"kWh from external sources for {k}",
-                "priceLabel": f"{child.name} spent {abs(spent)} cents for {k} to external sources"
+                "energyLabel": f"External sources bought {abs(incoming_energy)} "
+                               f"kWh from {k}",
+                "priceLabel": f"External sources spent {abs(spent)} cents"
 
             })
 
@@ -466,10 +466,8 @@ def _external_trade_entries(child, accumulated_trades):
             results["bars"].append({
                 "energy": outgoing_energy,
                 "targetArea": child.name,
-                "energyLabel": f"{child.name} sold {abs(outgoing_energy)} kWh "
-                               f"of {k} to external consumers",
-                "priceLabel": f"{child.name} earned {earned} cents  "
-                              f"of {k} from external consumers."
+                "energyLabel": f"External sources sold {abs(outgoing_energy)} kWh ",
+                "priceLabel": f"{child.name} earned {earned} cents."
             })
     return results
 
@@ -483,7 +481,7 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
         results["bars"].append(
             {"energy": round_floats_for_ui(area_data["produced"]), "targetArea": child.name,
              "energyLabel":
-                 f"{child.name} produced "
+                 f"{child.name} sold "
                  f"{str(round_floats_for_ui(abs(area_data['produced'])))} kWh",
              "priceLabel":
                  f"{child.name} earned "
@@ -493,7 +491,7 @@ def generate_area_cumulative_trade_redis(child, accumulated_trades):
     # Consumer entries
     for producer, energy in area_data["consumedFrom"].items():
         money = round_floats_for_ui(area_data["spentTo"][producer])
-        tag = "external" if producer == child.parent.name else producer
+        tag = "external sources" if producer == child.parent.name else producer
         results["bars"].append({
             "energy": round_floats_for_ui(energy),
             "targetArea": producer,
