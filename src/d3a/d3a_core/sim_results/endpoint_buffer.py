@@ -154,15 +154,13 @@ class SimulationEndpointBuffer:
         price_energy_list = self.price_energy_day.csv_output
 
         def calculate_prices(key, functor):
-            # Need to convert to euro cents to avoid having to change the backend
-            # TODO: Both this and the frontend have to remove the recalculation
             if area.name not in price_energy_list:
                 return 0.
             energy_prices = [
                 price_energy[key]
                 for price_energy in price_energy_list[area.name]["price-energy-day"]
             ]
-            return round(100 * functor(energy_prices), 2) if len(energy_prices) > 0 else 0.0
+            return round(functor(energy_prices), 2) if len(energy_prices) > 0 else 0.0
 
         self.tree_summary[area.slug] = {
             "min_trade_price": calculate_prices("min_price", min),
