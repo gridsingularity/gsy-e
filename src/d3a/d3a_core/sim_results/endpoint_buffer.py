@@ -136,7 +136,7 @@ class SimulationEndpointBuffer:
         self._update_cumulative_grid_trades(area)
 
         self.bills = self._update_bills(area, "past_markets")
-        self.bills_redis = self._calculate_redis_bills(area, self.bills)
+        self._bills_for_redis(area)
 
         self.balancing_energy_bills = self._update_bills(area, "past_balancing_markets")
 
@@ -169,20 +169,26 @@ class SimulationEndpointBuffer:
         }
         self.tree_summary_redis[area.uuid] = self.tree_summary[area.slug]
         for child in area.children:
-            if child.children != []:
+            if child.children:
                 self._update_tree_summary(child)
 
     def _update_bills(self, area, past_market_types):
         result = energy_bills(area, past_market_types)
-        return OrderedDict(sorted(result.items()))
-
-    def _calculate_redis_bills(self, area, energy_bills):
-        flattened = self._flatten_energy_bills(deepcopy(energy_bills), {})
+        flattened = self._flatten_energy_bills(OrderedDict(sorted(result.items())), {})
         return self._accumulate_by_children(area, flattened, {})
+
+    def _bills_for_redis(self, area):
+        if area.name in self.bills:
+            self.bills_redis[area.uuid] = \
+                self._round_area_bill_result_redis(deepcopy(self.bills[area.name]))
+        for child in area.children:
+            if child.children:
+                self._bills_for_redis(child)
 
     def _flatten_energy_bills(self, energy_bills, flat_results):
         for k, v in energy_bills.items():
             if k == "market_fee":
+                flat_results["market_fee"] = v
                 continue
             if "children" in v:
                 self._flatten_energy_bills(v["children"], flat_results)
@@ -193,12 +199,10 @@ class SimulationEndpointBuffer:
     def _accumulate_by_children(self, area, flattened, results):
         if not area.children:
             # This is a device
-            results[area.uuid] = flattened[area.name]
+            results[area.name] = flattened[area.name]
         else:
-            results[area.uuid] = [
-                {c.name: flattened[c.name]}
-                for c in area.children
-            ]
+            results[area.name] = {c.name: flattened[c.name] for c in area.children}
+
             results.update(**self._generate_external_and_total_bills(area, results, flattened))
 
             for c in area.children:
@@ -220,28 +224,31 @@ class SimulationEndpointBuffer:
 
     @classmethod
     def _round_area_bill_result_redis(cls, results):
-        for i, _ in enumerate(results):
-            for k in results[i].keys():
-                results[i][k]['bought'] = round_floats_for_ui(results[i][k]['bought'])
-                results[i][k]['sold'] = round_floats_for_ui(results[i][k]['sold'])
-                results[i][k]['spent'] = round_floats_for_ui(results[i][k]['spent'])
-                results[i][k]['earned'] = round_floats_for_ui(results[i][k]['earned'])
-                results[i][k]['total_energy'] = round_floats_for_ui(results[i][k]['total_energy'])
-                results[i][k]['total_cost'] = round_floats_for_ui(results[i][k]['total_cost'])
+        for k in results.keys():
+            results[k]['bought'] = round_floats_for_ui(results[k]['bought'])
+            results[k]['sold'] = round_floats_for_ui(results[k]['sold'])
+            results[k]['spent'] = round_floats_for_ui(results[k]['spent'])
+            results[k]['earned'] = round_floats_for_ui(results[k]['earned'])
+            results[k]['total_energy'] = round_floats_for_ui(results[k]['total_energy'])
+            results[k]['total_cost'] = round_floats_for_ui(results[k]['total_cost'])
+            if "market_fee" in results[k]:
+                results[k]["market_fee"] = round_floats_for_ui(results[k]['market_fee'])
         return results
 
     def _generate_external_and_total_bills(self, area, results, flattened):
-        all_child_results = [v for i in results[area.uuid] for _, v in i.items()]
-        results[area.uuid].append({"Accumulated Trades": {
+        all_child_results = [v for v in results[area.name].values()]
+        results[area.name].update({"Accumulated Trades": {
             'bought': sum(v['bought'] for v in all_child_results),
             'sold': sum(v['sold'] for v in all_child_results),
             'spent': sum(v['spent'] for v in all_child_results),
             'earned': sum(v['earned'] for v in all_child_results),
             'total_energy': sum(v['total_energy'] for v in all_child_results),
             'total_cost': sum(v['total_cost'] for v in all_child_results),
+            'market_fee': flattened[area.name]["market_fee"]
+            if area.name in flattened else flattened["market_fee"]
         }})
 
         if area.name in flattened:
-            results[area.uuid].append({"External Trades": flattened[area.name]})
-        results[area.uuid] = self._round_area_bill_result_redis(results[area.uuid])
+            external = {k: v for k, v in flattened[area.name].items() if k != 'market_fee'}
+            results[area.name].update({"External Trades": external})
         return results
