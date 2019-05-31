@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from random import random
+from numpy.random import random
 from d3a.models.strategy import BaseStrategy, _TradeLookerUpper
 from d3a.constants import TIME_FORMAT
 

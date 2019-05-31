@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import random
+from numpy import random
 from pendulum import duration
 from typing import Union
 from collections import namedtuple
