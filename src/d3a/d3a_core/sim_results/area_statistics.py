@@ -455,7 +455,7 @@ def _external_trade_entries(child, accumulated_trades):
                 "targetArea": k,
                 "energyLabel": f"External sources sold {abs(incoming_energy)} "
                                f"kWh to {k}",
-                "priceLabel": f"External sources spent {abs(spent)} cents"
+                "priceLabel": f"External sources earned {abs(spent)} cents"
 
             })
 
@@ -468,7 +468,7 @@ def _external_trade_entries(child, accumulated_trades):
                 "targetArea": k,
                 "energyLabel": f"External sources bought {abs(outgoing_energy)} kWh "
                                f"from {child.name}",
-                "priceLabel": f"{child.name} earned {earned} cents."
+                "priceLabel": f"{child.name} spent {earned} cents."
             })
     return results
 
