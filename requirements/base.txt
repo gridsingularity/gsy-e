@@ -31,6 +31,7 @@ jsonschema==2.6.0         # via nbformat
 jupyter-core==4.4.0       # via nbformat
 lru-dict==1.1.6           # via web3
 nbformat==4.4.0           # via plotly
+numpy==1.16.4
 parsimonious==0.8.1       # via eth-abi
 pendulum==2.0.4
 pip-tools==3.3.2

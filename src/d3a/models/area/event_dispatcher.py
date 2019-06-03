@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from random import random
+from numpy.random import random
 from typing import Union
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent

@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import random
+from numpy.random import random
 import uuid
 from logging import getLogger
 from typing import Dict, List  # noqa
@@ -73,7 +73,7 @@ class Market:
 
     def _notify_listeners(self, event, **kwargs):
         # Deliver notifications in random order to ensure fairness
-        for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
+        for listener in sorted(self.notification_listeners, key=lambda l: random()):
             listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):

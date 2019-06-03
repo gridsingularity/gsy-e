@@ -35,6 +35,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
     get_number_of_unmatched_loads
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
+ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades"]
 
 
 @given('we have a scenario named {scenario}')
@@ -635,20 +636,17 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 @then('the energy bills report the correct accumulated traded energy price')
 def test_accumulated_energy_price(context):
     bills = context.simulation.endpoint_buffer.bills
-    cell_tower = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
-    house1 = bills["House 1"]["earned"] - bills["House 1"]["spent"]
-    area_net_traded_energy_price = \
-        sum([v["earned"] - v["spent"] for v in bills["House 1"]["children"].values()])
-
-    assert isclose(area_net_traded_energy_price, house1, rel_tol=1e-02), \
-        f"area: {area_net_traded_energy_price} house {house1}"
-
-    house2 = bills["House 2"]["earned"] - bills["House 2"]["spent"]
-    area_net_traded_energy_price = \
-        sum([v["earned"] - v["spent"] for v in bills["House 2"]["children"].values()])
-    assert isclose(area_net_traded_energy_price, house2, rel_tol=1e-02)
-
-    net_traded_energy_price = cell_tower + house1 + house2
+    cell_tower_bill = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
+    net_traded_energy_price = cell_tower_bill
+    for house_key in ["House 1", "House 2"]:
+        house_bill = bills[house_key]["Accumulated Trades"]["earned"] - \
+                     bills[house_key]["Accumulated Trades"]["spent"]
+        area_net_traded_energy_price = \
+            sum([v["earned"] - v["spent"] for k, v in bills[house_key].items()
+                if k not in ACCUMULATED_KEYS_LIST])
+        assert isclose(area_net_traded_energy_price, house_bill, rel_tol=1e-02), \
+            f"area: {area_net_traded_energy_price} house {house_bill}"
+        net_traded_energy_price += area_net_traded_energy_price
 
     assert isclose(net_traded_energy_price, 0, abs_tol=1e-10)
 
@@ -656,20 +654,16 @@ def test_accumulated_energy_price(context):
 @then('the traded energy report the correct accumulated traded energy')
 def test_accumulated_energy(context):
     bills = context.simulation.endpoint_buffer.bills
-
-    cell_tower = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
-
-    house1 = bills["House 1"]["sold"] - bills["House 1"]["bought"]
-    area_net_energy = \
-        sum([v["sold"] - v["bought"] for v in bills["House 1"]["children"].values()])
-    assert isclose(area_net_energy, house1, rel_tol=1e-02)
-
-    house2 = bills["House 2"]["sold"] - bills["House 2"]["bought"]
-    area_net_energy = \
-        sum([v["sold"] - v["bought"] for v in bills["House 2"]["children"].values()])
-    assert isclose(area_net_energy, house2, rel_tol=1e-02)
-
-    net_energy = cell_tower + house1 + house2
+    cell_tower_net = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
+    net_energy = cell_tower_net
+    for house_key in ["House 1", "House 2"]:
+        house_net = bills[house_key]["Accumulated Trades"]["sold"] - \
+                    bills[house_key]["Accumulated Trades"]["bought"]
+        area_net_energy = \
+            sum([v["sold"] - v["bought"] for k, v in bills[house_key].items()
+                 if k not in ACCUMULATED_KEYS_LIST])
+        assert isclose(area_net_energy, house_net, rel_tol=1e-02)
+        net_energy += house_net
 
     assert isclose(net_energy, 0, abs_tol=1e-10)
 
