@@ -136,7 +136,7 @@ class SimulationEndpointBuffer:
         self._update_cumulative_grid_trades(area)
 
         self.bills = self._update_bills(area, "past_markets")
-        self._bills_for_redis(area)
+        self._bills_for_redis(area, deepcopy(self.bills))
 
         self.balancing_energy_bills = self._update_bills(area, "past_balancing_markets")
 
@@ -177,16 +177,16 @@ class SimulationEndpointBuffer:
         flattened = self._flatten_energy_bills(OrderedDict(sorted(result.items())), {})
         return self._accumulate_by_children(area, flattened, {})
 
-    def _bills_for_redis(self, area):
-        if area.name in self.bills:
+    def _bills_for_redis(self, area, bills_results):
+        if area.name in bills_results:
             self.bills_redis[area.uuid] = \
-                self._round_area_bill_result_redis(deepcopy(self.bills[area.name]))
+                self._round_area_bill_result_redis(bills_results[area.name])
         for child in area.children:
             if child.children:
-                self._bills_for_redis(child)
+                self._bills_for_redis(child, bills_results)
             elif child.name in self.bills:
                 self.bills_redis[child.uuid] = \
-                    self._round_child_bill_results(self.bills[child.name])
+                    self._round_child_bill_results(bills_results[child.name])
 
     def _flatten_energy_bills(self, energy_bills, flat_results):
         for k, v in energy_bills.items():
