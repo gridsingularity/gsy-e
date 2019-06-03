@@ -54,7 +54,7 @@ class ConstSettings:
         # Energy rate decrease option for unsold ESS offers
         # Default value 1 stands for percentage/RISK based energy rate decrease
         # Option 2, use the constant energy rate decrease
-        RATE_DECREASE_OPTION = 1
+        RATE_DECREASE_OPTION = 2
         # Energy sell break-even point, storage never sells for less than this value.
         # Unit is ct/kWh.
         BREAK_EVEN_SELL = 25
