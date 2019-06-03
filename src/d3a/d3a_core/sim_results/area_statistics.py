@@ -399,19 +399,21 @@ def _external_trade_entries(child, accumulated_trades):
     results = {"areaName": "External Trades"}
     area_data = accumulated_trades[child.name]
     results["bars"] = []
+    incoming_energy = 0
+    spent = 0
     # External Trades entries
     if "consumedFromExternal" in area_data:
         for k, v in area_data["consumedFromExternal"].items():
-            incoming_energy = round_floats_for_ui(area_data["consumedFromExternal"][k])
-            spent = round_floats_for_ui(area_data["spentToExternal"][k])
-            results["bars"].append({
-                "energy": incoming_energy,
-                "targetArea": k,
-                "energyLabel": f"External sources sold {abs(incoming_energy)} "
-                               f"kWh to {k}",
-                "priceLabel": f"External sources earned {abs(spent)} cents"
+            incoming_energy += round_floats_for_ui(area_data["consumedFromExternal"][k])
+            spent += round_floats_for_ui(area_data["spentToExternal"][k])
+        results["bars"].append({
+            "energy": incoming_energy,
+            "targetArea": child.name,
+            "energyLabel": f"External sources sold "
+                           f"{abs(round_floats_for_ui(incoming_energy))} kWh",
+            "priceLabel": f"External sources earned {abs(round_floats_for_ui(spent))} cents"
 
-            })
+        })
 
     if "producedForExternal" in area_data:
         for k, v in area_data["producedForExternal"].items():
@@ -421,7 +423,7 @@ def _external_trade_entries(child, accumulated_trades):
                 "energy": outgoing_energy,
                 "targetArea": k,
                 "energyLabel": f"External sources bought {abs(outgoing_energy)} kWh "
-                               f"from {child.name}",
+                               f"from {k}",
                 "priceLabel": f"{child.name} spent {earned} cents."
             })
     return results
