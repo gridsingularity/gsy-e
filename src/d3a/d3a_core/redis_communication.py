@@ -20,7 +20,8 @@ import json
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
-
+from rq import get_current_job
+from rq.exceptions import NoSuchJobError
 
 log = getLogger(__name__)
 
@@ -87,11 +88,23 @@ class RedisSimulationCommunication:
             return
         self._simulation.slowdown = slowdown
 
+    def _handle_redis_job_metadata(self):
+        should_exit = True
+        try:
+            job = get_current_job()
+            job.refresh()
+            should_exit = "terminated" in job.meta and job.meta["terminated"]
+        except NoSuchJobError:
+            pass
+        if should_exit:
+            self._simulation.stop()
+
     def publish_results(self, endpoint_buffer):
         if not hasattr(self, 'pubsub'):
             return
         self.redis_db.publish(self.result_channel,
                               json.dumps(endpoint_buffer.generate_result_report()))
+        self._handle_redis_job_metadata()
 
     def publish_intermediate_results(self, endpoint_buffer):
         # Should have a different format in the future, hence the code duplication
