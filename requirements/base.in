@@ -5,6 +5,7 @@ click
 click-default-group
 colorlog
 dill
+numpy
 pendulum
 pip-tools
 plotly

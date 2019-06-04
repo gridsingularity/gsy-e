@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import random
+from numpy import random
 from importlib import import_module
 from logging import getLogger
 import time
@@ -73,6 +73,7 @@ class Simulation:
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
+        self.sim_status = "initialized"
 
         if export_subdir is None:
             self.export_subdir = \
@@ -138,14 +139,12 @@ class Simulation:
         self.pause_after = pause_after
         self.slowdown = slowdown
 
-        # TODO: An issue was experienced when comparing random behaviour of the simulation between
-        # cli-call and behave integration tests
-        # Furthermore, random.seed() is also called before this following block by setuptools
         if seed is not None:
-            random.seed(seed)
+            random.seed(int(seed))
         else:
             random_seed = random.randint(0, 1000000)
             random.seed(random_seed)
+            self.initial_params["seed"] = random_seed
             log.error("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
@@ -198,6 +197,7 @@ class Simulation:
                 self.deactivate_areas(child)
 
     def run(self, resume=False) -> (Period, duration):
+        self.sim_status = "running"
         if resume:
             log.critical("Resuming simulation")
             self._info()
@@ -289,7 +289,7 @@ class Simulation:
                 self.redis_connection.publish_intermediate_results(
                     self.endpoint_buffer
                 )
-
+        self.sim_status = "finished"
         self.deactivate_areas(self.area)
         self.endpoint_buffer.update_stats(self.area, self.status)
 
@@ -434,14 +434,12 @@ class Simulation:
     def status(self):
         if self.is_stopped:
             return "stopped"
-        elif self.finished:
-            return "finished"
         elif self.paused:
             return "paused"
         elif self.ready.is_set():
             return "ready"
         else:
-            return "running"
+            return self.sim_status
 
     def __getstate__(self):
         state = self.__dict__.copy()

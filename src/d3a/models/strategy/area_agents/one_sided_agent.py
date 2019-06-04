@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.util import make_iaa_name
+from numpy.random import random
 
 
 class OneSidedAgent(InterAreaAgent):
@@ -47,20 +48,19 @@ class OneSidedAgent(InterAreaAgent):
         if area != self.owner:
             # We're connected to both areas but only want tick events from our owner
             return
-
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.tick(area=area)
 
     def event_trade(self, *, market_id, trade):
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_trade(trade=trade)
 
     def event_offer_deleted(self, *, market_id, offer):
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_offer_deleted(offer=offer)
 
     def event_offer_changed(self, *, market_id, existing_offer, new_offer):
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_offer_changed(market_id=market_id,
                                        existing_offer=existing_offer,
                                        new_offer=new_offer)

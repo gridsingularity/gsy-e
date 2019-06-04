@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from numpy.random import random
 from d3a.models.strategy import BaseStrategy, _TradeLookerUpper
 from d3a.constants import TIME_FORMAT
 
@@ -55,7 +56,7 @@ class InterAreaAgent(BaseStrategy):
     def area_reconfigure_event(self, min_offer_age):
         self._validate_constructor_arguments(min_offer_age)
         self.min_offer_age = min_offer_age
-        for engine in self.engines:
+        for engine in sorted(self.engines, key=lambda _: random()):
             engine.min_offer_age = min_offer_age
 
     @property

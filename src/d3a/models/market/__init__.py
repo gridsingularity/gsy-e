@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import random
+from numpy.random import random
 import uuid
 from logging import getLogger
 from typing import Dict, List  # noqa
@@ -27,7 +27,7 @@ from terminaltables.other_tables import SingleTable
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import add_or_create_key, substract_or_create_key
+from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 
 log = getLogger(__name__)
 
@@ -73,7 +73,7 @@ class Market:
 
     def _notify_listeners(self, event, **kwargs):
         # Deliver notifications in random order to ensure fairness
-        for listener in sorted(self.notification_listeners, key=lambda l: random.random()):
+        for listener in sorted(self.notification_listeners, key=lambda l: random()):
             listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):
@@ -84,7 +84,7 @@ class Market:
             self.trades.append(trade)
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(self.traded_energy, offer.seller, offer.energy)
-        self.traded_energy = substract_or_create_key(self.traded_energy, buyer, offer.energy)
+        self.traded_energy = subtract_or_create_key(self.traded_energy, buyer, offer.energy)
         self._update_min_max_avg_trade_prices(offer.price / offer.energy)
         # Recalculate offer min/max price since offer was removed
         self._update_min_max_avg_offer_prices()

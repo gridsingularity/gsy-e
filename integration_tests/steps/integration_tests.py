@@ -35,6 +35,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
     get_number_of_unmatched_loads
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
+ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades"]
 
 
 @given('we have a scenario named {scenario}')
@@ -215,6 +216,12 @@ def two_sided_pay_as_bid_market(context):
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
 
+@given('d3a uses an two-sided pay-as-clear market')
+def two_sided_pay_as_clear_market(context):
+    from d3a.models.const import ConstSettings
+    ConstSettings.IAASettings.MARKET_TYPE = 3
+
+
 @given('the past markets are kept in memory')
 def past_markets_in_memory(context):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
@@ -330,7 +337,9 @@ def save_reported_energy_trade_profile(context):
 
 @when('the reported price energy day results are saved')
 def step_impl(context):
-    context.price_energy_day = deepcopy(context.simulation.endpoint_buffer.price_energy_day)
+    context.price_energy_day = deepcopy(
+        context.simulation.endpoint_buffer.price_energy_day.csv_output
+    )
 
 
 @when('the past markets are not kept in memory')
@@ -627,20 +636,17 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 @then('the energy bills report the correct accumulated traded energy price')
 def test_accumulated_energy_price(context):
     bills = context.simulation.endpoint_buffer.bills
-    cell_tower = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
-    house1 = bills["House 1"]["earned"] - bills["House 1"]["spent"]
-    area_net_traded_energy_price = \
-        sum([v["earned"] - v["spent"] for v in bills["House 1"]["children"].values()])
-
-    assert isclose(area_net_traded_energy_price, house1, rel_tol=1e-02), \
-        f"area: {area_net_traded_energy_price} house {house1}"
-
-    house2 = bills["House 2"]["earned"] - bills["House 2"]["spent"]
-    area_net_traded_energy_price = \
-        sum([v["earned"] - v["spent"] for v in bills["House 2"]["children"].values()])
-    assert isclose(area_net_traded_energy_price, house2, rel_tol=1e-02)
-
-    net_traded_energy_price = cell_tower + house1 + house2
+    cell_tower_bill = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
+    net_traded_energy_price = cell_tower_bill
+    for house_key in ["House 1", "House 2"]:
+        house_bill = bills[house_key]["Accumulated Trades"]["earned"] - \
+                     bills[house_key]["Accumulated Trades"]["spent"]
+        area_net_traded_energy_price = \
+            sum([v["earned"] - v["spent"] for k, v in bills[house_key].items()
+                if k not in ACCUMULATED_KEYS_LIST])
+        assert isclose(area_net_traded_energy_price, house_bill, rel_tol=1e-02), \
+            f"area: {area_net_traded_energy_price} house {house_bill}"
+        net_traded_energy_price += area_net_traded_energy_price
 
     assert isclose(net_traded_energy_price, 0, abs_tol=1e-10)
 
@@ -648,20 +654,16 @@ def test_accumulated_energy_price(context):
 @then('the traded energy report the correct accumulated traded energy')
 def test_accumulated_energy(context):
     bills = context.simulation.endpoint_buffer.bills
-
-    cell_tower = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
-
-    house1 = bills["House 1"]["sold"] - bills["House 1"]["bought"]
-    area_net_energy = \
-        sum([v["sold"] - v["bought"] for v in bills["House 1"]["children"].values()])
-    assert isclose(area_net_energy, house1, rel_tol=1e-02)
-
-    house2 = bills["House 2"]["sold"] - bills["House 2"]["bought"]
-    area_net_energy = \
-        sum([v["sold"] - v["bought"] for v in bills["House 2"]["children"].values()])
-    assert isclose(area_net_energy, house2, rel_tol=1e-02)
-
-    net_energy = cell_tower + house1 + house2
+    cell_tower_net = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
+    net_energy = cell_tower_net
+    for house_key in ["House 1", "House 2"]:
+        house_net = bills[house_key]["Accumulated Trades"]["sold"] - \
+                    bills[house_key]["Accumulated Trades"]["bought"]
+        area_net_energy = \
+            sum([v["sold"] - v["bought"] for k, v in bills[house_key].items()
+                 if k not in ACCUMULATED_KEYS_LIST])
+        assert isclose(area_net_energy, house_net, rel_tol=1e-02)
+        net_energy += house_net
 
     assert isclose(net_energy, 0, abs_tol=1e-10)
 
@@ -848,23 +850,37 @@ def test_config_parameters(context):
                 for rate in grid.config.market_maker_rate.values()])
 
 
-@then('trades on the {market_name} market clear with {trade_rate} cents/kWh')
-def assert_trade_rates(context, market_name, trade_rate):
+def _filter_markets_by_market_name(context, market_name):
     grid = context.simulation.area
     neigh1 = list(filter(lambda x: x.name == "Neighborhood 1", grid.children))[0]
     neigh2 = list(filter(lambda x: x.name == "Neighborhood 2", grid.children))[0]
     if market_name == "Grid":
-        markets = grid.past_markets
+        return grid.past_markets
     elif market_name in ["Neighborhood 1", "Neighborhood 2"]:
-        markets = (list(filter(lambda x: x.name == market_name, grid.children))[0]).past_markets
+        return (list(filter(lambda x: x.name == market_name, grid.children))[0]).past_markets
     elif market_name == "House 1":
-        markets = (list(filter(lambda x: x.name == market_name, neigh1.children))[0]).past_markets
+        return (list(filter(lambda x: x.name == market_name, neigh1.children))[0]).past_markets
     elif market_name == "House 2":
-        markets = (list(filter(lambda x: x.name == market_name, neigh2.children))[0]).past_markets
+        return (list(filter(lambda x: x.name == market_name, neigh2.children))[0]).past_markets
+
+
+@then('trades on the {market_name} market clear with {trade_rate} cents/kWh')
+def assert_trade_rates(context, market_name, trade_rate):
+    markets = _filter_markets_by_market_name(context, market_name)
 
     for market in markets:
         for t in market.trades:
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
+
+
+@then('trades on the {market_name} market clear using a rate of either {trade_rate1} or '
+      '{trade_rate2} cents/kWh')
+def assert_multiple_trade_rates_any(context, market_name, trade_rate1, trade_rate2):
+    markets = _filter_markets_by_market_name(context, market_name)
+    for market in markets:
+        for t in market.trades:
+            assert isclose(t.offer.price / t.offer.energy, float(trade_rate1)) or \
+                   isclose(t.offer.price / t.offer.energy, float(trade_rate2))
 
 
 @then('the unmatched loads are identical no matter if the past markets are kept')
@@ -909,5 +925,5 @@ def identical_energy_trade_profiles(context):
 
 @then('the price energy day results are identical no matter if the past markets are kept')
 def indentical_price_energy_day(context):
-    price_energy_day = context.simulation.endpoint_buffer.price_energy_day
+    price_energy_day = context.simulation.endpoint_buffer.price_energy_day.csv_output
     assert len(DeepDiff(price_energy_day, context.price_energy_day)) == 0
