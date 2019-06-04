@@ -44,7 +44,9 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-if platform.python_implementation() != "PyPy":
+
+if platform.python_implementation() != "PyPy" and \
+        ConstSettings.BlockchainSettings.ENABLE_BC is True:
     from d3a.blockchain import BlockChainInterface
 
 log = getLogger(__name__)
