@@ -18,13 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 from unittest.mock import MagicMock
 from math import isclose
-
+from uuid import uuid4
 from d3a.models.market.market_structures import Trade
 from d3a.d3a_core.sim_results.stats import MarketEnergyBills, primary_unit_prices, \
     recursive_current_markets, total_avg_trade_price
 
 from d3a.d3a_core.util import make_iaa_name
 from d3a.models.strategy import BaseStrategy
+from d3a.models.const import ConstSettings
 
 
 class FakeArea:
@@ -34,6 +35,7 @@ class FakeArea:
         self.children = children
         self.past_markets = past_markets
         self.strategy = MagicMock(spec=BaseStrategy)
+        self.uuid = uuid4()
 
     @property
     def current_market(self):
@@ -127,14 +129,33 @@ def grid():
 
 
 def test_energy_bills(grid):
-    result = MarketEnergyBills().update(grid, "past_markets")
-    assert result['house2']['bought'] == result['commercial']['sold'] == 13
-    assert result['house2']['spent'] == result['commercial']['earned'] == 0.03
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    m_bills = MarketEnergyBills()
+    m_bills.update(grid)
+    result = m_bills.bills_results
+    assert result['house2']['Accumulated Trades']['bought'] == result['commercial']['sold'] == 13
+    assert result['house2']['Accumulated Trades']['spent'] == \
+        result['commercial']['earned'] == \
+        0.03
     assert result['commercial']['spent'] == result['commercial']['bought'] == 0
-    result1 = result['house1']['children']
-    assert result1['fridge']['bought'] == 5 and isclose(result1['fridge']['spent'], 0.06)
-    assert result1['pv']['sold'] == 4 and isclose(result1['pv']['earned'], 0.03)
-    assert 'children' not in result1
+    assert result['fridge']['bought'] == 5 and isclose(result['fridge']['spent'], 0.06)
+    assert result['pv']['sold'] == 4 and isclose(result['pv']['earned'], 0.03)
+    assert 'children' not in result
+
+
+def test_energy_bills_last_past_market(grid):
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
+    m_bills = MarketEnergyBills()
+    m_bills.update(grid)
+    result = m_bills.bills_results
+    assert result['house2']['Accumulated Trades']['bought'] == result['commercial']['sold'] == 1
+    assert result['house2']['Accumulated Trades']['spent'] == \
+        result['commercial']['earned'] == \
+        0.01
+    assert result['commercial']['spent'] == result['commercial']['bought'] == 0
+    assert result['fridge']['bought'] == 2 and isclose(result['fridge']['spent'], 0.01)
+    assert result['pv']['sold'] == 2 and isclose(result['pv']['earned'], 0.01)
+    assert 'children' not in result
 
 
 @pytest.fixture
@@ -153,11 +174,15 @@ def grid2():
 
 
 def test_energy_bills_finds_iaas(grid2):
-    result = MarketEnergyBills().update(grid2, "past_markets")
+    m_bills = MarketEnergyBills()
+    m_bills.update(grid2)
+    result = m_bills.bills_results
     assert result['house1']['bought'] == result['house2']['sold'] == 3
 
 
 def test_energy_bills_ensure_device_types_are_populated(grid2):
-    result = MarketEnergyBills().update(grid2, "past_markets")
+    m_bills = MarketEnergyBills()
+    m_bills.update(grid2)
+    result = m_bills.bills_results
     assert result["house1"]["type"] == "House 1 type"
     assert result["house2"]["type"] == "House 2 type"

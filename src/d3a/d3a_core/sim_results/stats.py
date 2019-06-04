@@ -15,6 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from collections import OrderedDict
+from copy import deepcopy
+from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a.models.const import ConstSettings
 
@@ -52,8 +55,10 @@ def total_avg_trade_price(markets):
 
 
 class MarketEnergyBills:
-    def __init__(self):
-        self.results = {}
+    def __init__(self, is_spot_market=True):
+        self.is_spot_market = is_spot_market
+        self.bills_results = {}
+        self.bills_redis_results = {}
 
     @classmethod
     def _store_bought_trade(cls, result_dict, trade_offer):
@@ -71,27 +76,31 @@ class MarketEnergyBills:
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
+        if not hasattr(area, past_market_types):
+            return []
         if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             return getattr(area, past_market_types)
         else:
+            if len(getattr(area, past_market_types)) < 1:
+                return []
             return [getattr(area, past_market_types)[-1]]
 
     def _get_child_data(self, area):
         if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             return {child.name: dict(bought=0.0, sold=0.0,
                                      spent=0.0, earned=0.0,
-                                     total_energy=0, total_cost=0,
+                                     total_energy=0.0, total_cost=0.0,
                                      type=child.display_type)
                     for child in area.children}
         else:
-            if area.name not in self.results:
-                self.results[area.name] =  \
+            if area.name not in self.bills_results:
+                self.bills_results[area.name] =  \
                     {child.name: dict(bought=0.0, sold=0.0,
                                       spent=0.0, earned=0.0,
-                                      total_energy=0, total_cost=0,
+                                      total_energy=0.0, total_cost=0.0,
                                       type=child.display_type)
                         for child in area.children}
-            return self.results[area.name]
+            return self.bills_results[area.name]
 
     def energy_bills(self, area, past_market_types):
         """
@@ -102,7 +111,7 @@ class MarketEnergyBills:
         if not area.children:
             return None
         result = self._get_child_data(area)
-        result["market_fee"] = 0
+        result["market_fee"] = 0.0
         for market in self._get_past_markets_from_area(area, past_market_types):
             result["market_fee"] += market.market_fee
             for trade in market.trades:
@@ -121,6 +130,85 @@ class MarketEnergyBills:
 
         return result
 
-    def update(self, area, past_market_types):
-        self.results = self.energy_bills(area, past_market_types)
-        return self.results
+    def update(self, area):
+        market_type = "past_markets" if self.is_spot_market else "past_balancing_markets"
+        bills = self.energy_bills(area, market_type)
+        flattened = self._flatten_energy_bills(OrderedDict(sorted(bills.items())), {})
+        self.bills_results = self._accumulate_by_children(area, flattened, {})
+        self._bills_for_redis(area, deepcopy(self.bills_results))
+
+    @classmethod
+    def _flatten_energy_bills(cls, energy_bills, flat_results):
+        for k, v in energy_bills.items():
+            if k == "market_fee":
+                flat_results["market_fee"] = v
+                continue
+            if "children" in v:
+                cls._flatten_energy_bills(v["children"], flat_results)
+            flat_results[k] = v
+            flat_results[k].pop("children", None)
+        return flat_results
+
+    @classmethod
+    def _accumulate_by_children(cls, area, flattened, results):
+        if not area.children:
+            # This is a device
+            results[area.name] = flattened[area.name]
+        else:
+            results[area.name] = {c.name: flattened[c.name] for c in area.children}
+
+            results.update(**cls._generate_external_and_total_bills(area, results, flattened))
+
+            for c in area.children:
+                results.update(
+                    **cls._accumulate_by_children(c, flattened, results)
+                )
+        return results
+
+    @classmethod
+    def _generate_external_and_total_bills(cls, area, results, flattened):
+        all_child_results = [v for v in results[area.name].values()]
+        results[area.name].update({"Accumulated Trades": {
+            'bought': sum(v['bought'] for v in all_child_results),
+            'sold': sum(v['sold'] for v in all_child_results),
+            'spent': sum(v['spent'] for v in all_child_results),
+            'earned': sum(v['earned'] for v in all_child_results),
+            'total_energy': sum(v['total_energy'] for v in all_child_results),
+            'total_cost': sum(v['total_cost'] for v in all_child_results),
+            'market_fee': flattened[area.name]["market_fee"]
+            if area.name in flattened else flattened["market_fee"]
+        }})
+
+        if area.name in flattened:
+            external = {k: v for k, v in flattened[area.name].items() if k != 'market_fee'}
+            results[area.name].update({"External Trades": external})
+        return results
+
+    def _bills_for_redis(self, area, bills_results):
+        if area.name in bills_results:
+            self.bills_redis_results[area.uuid] = \
+                self._round_area_bill_result_redis(bills_results[area.name])
+        for child in area.children:
+            if child.children:
+                self._bills_for_redis(child, bills_results)
+            elif child.name in bills_results:
+                self.bills_redis_results[child.uuid] = \
+                    self._round_child_bill_results(bills_results[child.name])
+
+    @classmethod
+    def _round_child_bill_results(cls, results):
+        results['bought'] = round_floats_for_ui(results['bought'])
+        results['sold'] = round_floats_for_ui(results['sold'])
+        results['spent'] = round_floats_for_ui(results['spent'])
+        results['earned'] = round_floats_for_ui(results['earned'])
+        results['total_energy'] = round_floats_for_ui(results['total_energy'])
+        results['total_cost'] = round_floats_for_ui(results['total_cost'])
+        if "market_fee" in results:
+            results["market_fee"] = round_floats_for_ui(results['market_fee'])
+        return results
+
+    @classmethod
+    def _round_area_bill_result_redis(cls, results):
+        for k in results.keys():
+            results[k] = cls._round_child_bill_results(results[k])
+        return results
