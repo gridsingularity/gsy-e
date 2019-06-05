@@ -342,6 +342,14 @@ def step_impl(context):
     )
 
 
+@when('the reported energy bills are saved')
+def save_reported_bills(context):
+    context.energy_bills = deepcopy(
+        context.simulation.endpoint_buffer.market_bills.bills_results)
+    context.energy_bills_redis = \
+        deepcopy(context.simulation.endpoint_buffer.market_bills.bills_redis_results)
+
+
 @when('the past markets are not kept in memory')
 def past_markets_not_in_memory(context):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
@@ -636,7 +644,7 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 
 @then('the energy bills report the correct accumulated traded energy price')
 def test_accumulated_energy_price(context):
-    bills = context.simulation.endpoint_buffer.bills
+    bills = context.simulation.endpoint_buffer.market_bills.bills_results
     cell_tower_bill = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
     net_traded_energy_price = cell_tower_bill
     for house_key in ["House 1", "House 2"]:
@@ -654,7 +662,7 @@ def test_accumulated_energy_price(context):
 
 @then('the traded energy report the correct accumulated traded energy')
 def test_accumulated_energy(context):
-    bills = context.simulation.endpoint_buffer.bills
+    bills = context.simulation.endpoint_buffer.market_bills.bills_results
     cell_tower_net = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
     net_energy = cell_tower_net
     for house_key in ["House 1", "House 2"]:
@@ -925,6 +933,18 @@ def identical_energy_trade_profiles(context):
 
 
 @then('the price energy day results are identical no matter if the past markets are kept')
-def indentical_price_energy_day(context):
+def identical_price_energy_day(context):
     price_energy_day = context.simulation.endpoint_buffer.price_energy_day.csv_output
     assert len(DeepDiff(price_energy_day, context.price_energy_day)) == 0
+
+
+@then('the energy bills are identical no matter if the past markets are kept')
+def identical_energy_bills(context):
+    energy_bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    energy_bills_redis = context.simulation.endpoint_buffer.market_bills.bills_redis_results
+    print(DeepDiff(energy_bills, context.energy_bills))
+
+    assert len(DeepDiff(energy_bills, context.energy_bills)) == 0
+    for _, v in energy_bills_redis.items():
+        assert any(len(DeepDiff(v, old_area_results)) == 0
+                   for _, old_area_results in context.energy_bills_redis.items())
