@@ -284,7 +284,7 @@ class Simulation:
                         self._handle_input(console, diff_slowdown)
 
                 if ConstSettings.GeneralSettings.RUN_REAL_TIME:
-                    sleep(tick_lengths_s - realtime_tick_length)
+                    sleep(abs(tick_lengths_s - realtime_tick_length))
 
             with page_lock:
                 self.endpoint_buffer.update_stats(self.area, self.status)
