@@ -1,6 +1,5 @@
 from d3a.models.const import GlobalConfig
-from d3a.models.read_user_profile import _readCSV, _eval_time_period_consensus, \
-    default_profile_dict
+from d3a.models.read_user_profile import _readCSV, default_profile_dict
 from pendulum import duration
 import csv
 import argparse
@@ -37,9 +36,12 @@ def _fill_gaps_in_profile(input_profile):
     return out_profile
 
 
+def convert_energy_to_power(e):
+    return round(e * (duration(hours=1) / GlobalConfig.slot_length), 4)
+
+
 def convert_energy_profile_to_power(input_profile, output_file):
     profile = _readCSV(input_profile)
-    _eval_time_period_consensus(profile)
     # Create a minute-resolution profile, filling the empty slots with previous values
     profile = _fill_gaps_in_profile(profile)
     GlobalConfig.sim_duration = duration(days=1) - duration(minutes=1)
@@ -54,8 +56,6 @@ def convert_energy_profile_to_power(input_profile, output_file):
         averaged_value /= GlobalConfig.slot_length.minutes
         output_dict[k] = averaged_value
 
-    def convert_energy_to_power(e):
-        return round(e * (duration(hours=1) / GlobalConfig.slot_length), 4)
     power_profile = {k: convert_energy_to_power(float(v)) for k, v in output_dict.items()}
     with open(output_file, 'w') as csv_file:
         writer = csv.writer(csv_file)
