@@ -231,10 +231,24 @@ class Simulation:
         with NonBlockingConsole() as console:
             self._execute_simulation(slot_resume, tick_resume, console)
 
+    def _update_and_send_results(self, is_final=False):
+        with page_lock:
+            self.endpoint_buffer.update_stats(self.area, self.status)
+            if is_final:
+                self.redis_connection.publish_results(
+                    self.endpoint_buffer
+                )
+            else:
+                self.redis_connection.publish_intermediate_results(
+                    self.endpoint_buffer
+                )
+
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
         tick_lengths_s = config.tick_length.total_seconds()
         slot_count = int(config.sim_duration / config.slot_length)
+
+        self._update_and_send_results()
         for slot_no in range(slot_resume, slot_count):
             run_duration = (
                     DateTime.now(tz=TIME_ZONE) - self.run_start -
@@ -284,14 +298,11 @@ class Simulation:
                 if ConstSettings.GeneralSettings.RUN_REAL_TIME:
                     sleep(tick_lengths_s - realtime_tick_length)
 
-            with page_lock:
-                self.endpoint_buffer.update_stats(self.area, self.status)
-                self.redis_connection.publish_intermediate_results(
-                    self.endpoint_buffer
-                )
+            self._update_and_send_results()
+
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
-        self.endpoint_buffer.update_stats(self.area, self.status)
+        self._update_and_send_results(is_final=True)
 
         run_duration = (
                 DateTime.now(tz=TIME_ZONE) - self.run_start -
@@ -299,7 +310,6 @@ class Simulation:
         )
         paused_duration = duration(seconds=self.paused_time)
 
-        self.redis_connection.publish_results(self.endpoint_buffer)
         if not self.is_stopped:
             log.error(
                 "Run finished in %s%s / %.2fx real time",

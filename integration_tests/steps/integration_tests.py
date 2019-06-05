@@ -510,7 +510,8 @@ def final_results(context):
 
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
-    assert context.interm_results_count == 12
+    # Add an extra result for the start of the simulation
+    assert context.interm_results_count == 12 + 1
 
 
 @then('final results are transmitted once')
