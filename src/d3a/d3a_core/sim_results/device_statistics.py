@@ -1,11 +1,12 @@
 from typing import Dict
-
+from copy import deepcopy
 from d3a.constants import TIME_FORMAT
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.area import Area
+from d3a.d3a_core.util import convert_datetime_to_str_keys
 from d3a import limit_float_precision
 
 
@@ -22,6 +23,9 @@ class DeviceStatistics:
 
     def __init__(self):
         self.device_stats_dict = {}
+        self.flat_results_dict = {}
+        self.device_stats_time_str = {}
+        self.flat_stats_time_str = {}
 
     @staticmethod
     def _calc_min_max_from_sim_dict(subdict: Dict, key: str):
@@ -112,8 +116,12 @@ class DeviceStatistics:
 
         self._calc_min_max_from_sim_dict(subdict, key_name)
 
-    def gather_device_statistics(self, area: Area, subdict: Dict):
+    def update(self, area):
+        self.gather_device_statistics(area, self.device_stats_dict)
+        self.flat_results_time_str = convert_datetime_to_str_keys(self.flat_results_dict, {})
+        self.device_stats_time_str = convert_datetime_to_str_keys(self.device_stats_dict, {})
 
+    def gather_device_statistics(self, area: Area, subdict: Dict):
         for child in area.children:
             if child.name not in subdict.keys():
                 subdict.update({child.name: {}})
@@ -143,3 +151,5 @@ class DeviceStatistics:
             market = list(area.parent.past_markets)[-1]
             _create_or_append_dict(subdict, "production_kWh",
                                    {market.time_slot: area.strategy.energy_per_slot_kWh})
+
+        self.flat_results_dict[area.uuid] = deepcopy(subdict)

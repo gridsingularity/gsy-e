@@ -242,7 +242,7 @@ def commercial_never_trades(context):
 
 @then('the device statistics are correct')
 def device_statistics(context):
-    output_dict = context.simulation.endpoint_buffer.device_statistics_time_str_dict
+    output_dict = context.simulation.endpoint_buffer.device_statistics.device_stats_dict
     assert list(output_dict.keys()) == \
         ['House 1', 'House 2', 'Finite Commercial Producer', 'Commercial Energy Producer']
     assert list(output_dict['House 1'].keys()) == ['H1 DefinedLoad', 'H1 Storage1']
