@@ -23,7 +23,7 @@ from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market import Market # noqa
-from d3a.models.const import ConstSettings
+from d3a.models.const import ConstSettings, GlobalConfig
 from collections import OrderedDict
 
 
@@ -60,6 +60,11 @@ class AreaMarkets:
             if timeframe < current_time:
                 market = markets.pop(timeframe)
                 market.readonly = True
+                if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+                    delete_markets = [pm for pm in past_markets if
+                                      abs(pm - timeframe) >= GlobalConfig.slot_length]
+                    for pm in delete_markets:
+                        del past_markets[pm]
                 past_markets[timeframe] = market
                 if not first:
                     # Remove inter area agent
