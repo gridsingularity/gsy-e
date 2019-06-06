@@ -296,6 +296,7 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
 
     if input_profile is not None:
         filled_profile = _fill_gaps_in_profile(profile)
+        _eval_time_period_consensus(filled_profile)
 
         if profile_type == InputProfileTypes.POWER:
             return _calculate_energy_from_power_profile(filled_profile, GlobalConfig.slot_length)

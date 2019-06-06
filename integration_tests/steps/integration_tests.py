@@ -461,7 +461,8 @@ def create_sim_object(context, scenario):
                                          market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
-                                         iaa_fee=5)
+                                         iaa_fee=5,
+                                         start_date=today(tz=TIME_ZONE))
 
     context.simulation = Simulation(
         scenario, simulation_config, 0, 0, False, duration(), False, False, None, None,
@@ -942,7 +943,6 @@ def identical_price_energy_day(context):
 def identical_energy_bills(context):
     energy_bills = context.simulation.endpoint_buffer.market_bills.bills_results
     energy_bills_redis = context.simulation.endpoint_buffer.market_bills.bills_redis_results
-    print(DeepDiff(energy_bills, context.energy_bills))
 
     assert len(DeepDiff(energy_bills, context.energy_bills)) == 0
     for _, v in energy_bills_redis.items():
