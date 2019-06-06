@@ -132,6 +132,7 @@ class ConstSettings:
             ALT_PRICING_MARKET_MAKER_NAME = "AGENT"
 
     class BlockchainSettings:
+        BC_INSTALLED = True
         # Blockchain URL, default is localhost.
         URL = "http://127.0.0.1:8545"
         # Controls whether a local Ganache blockchain will start automatically by D3A.
