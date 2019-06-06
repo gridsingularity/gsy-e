@@ -23,7 +23,7 @@ import platform
 
 
 if platform.python_implementation() != "PyPy" and \
-        ConstSettings.BlockchainSettings.ENABLE_BC is True:
+        ConstSettings.BlockchainSettings.BC_INSTALLED is True:
     from d3a.models.market.blockchain_utils import create_market_contract, create_new_offer, \
         cancel_offer, trade_offer
 
