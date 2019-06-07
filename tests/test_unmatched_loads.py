@@ -28,6 +28,7 @@ from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.constants import DATE_TIME_FORMAT, TIME_ZONE
 from d3a.d3a_core.sim_results.export_unmatched_loads import get_number_of_unmatched_loads
+from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 
 
 class TestUnmatchedLoad(unittest.TestCase):
@@ -170,3 +171,21 @@ class TestUnmatchedLoad(unittest.TestCase):
         assert "type" not in unmatched_loads["Grid"]
         assert unmatched_loads["Grid"]["House1"]["type"] == "Area"
         assert unmatched_loads_redis[self.grid.uuid]["House1"]["type"] == "Area"
+
+    def test_export_none_if_no_loads_in_setup(self):
+        house1 = Area("House1", [])
+        self.grid = Area("Grid", [house1])
+        epb = SimulationEndpointBuffer("1", {"seed": 0}, 0)
+        epb._update_unmatched_loads(self.grid)
+        unmatched_loads = epb.unmatched_loads
+        assert unmatched_loads["House1"] is None
+        assert unmatched_loads["Grid"] is None
+
+    def test_export_something_if_loads_in_setup(self):
+        house1 = Area("House1", [self.area1, self.area3])
+        self.grid = Area("Grid", [house1])
+        epb = SimulationEndpointBuffer("1", {"seed": 0}, len(house1.children))
+        epb._update_unmatched_loads(self.grid)
+        unmatched_loads = epb.unmatched_loads
+        assert unmatched_loads["House1"] is not None
+        assert unmatched_loads["Grid"] is not None

@@ -35,7 +35,7 @@ _NO_VALUE = {
 
 
 class SimulationEndpointBuffer:
-    def __init__(self, job_id, initial_params):
+    def __init__(self, job_id, initial_params, load_count):
         self.job_id = job_id
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
@@ -59,6 +59,7 @@ class SimulationEndpointBuffer:
         self.energy_trade_profile = {}
         self.energy_trade_profile_redis = {}
         self.file_export_endpoints = FileExportEndpoints()
+        self.load_count = load_count
 
     def generate_result_report(self):
         return {
@@ -90,12 +91,21 @@ class SimulationEndpointBuffer:
             "energy_trade_profile": self.energy_trade_profile
         }
 
+    def _write_none_to_unmatched_loads(self, area):
+        self.unmatched_loads[area.name] = None
+        self.unmatched_loads_redis[area.uuid] = None
+        for child in area.children:
+            self._write_none_to_unmatched_loads(child)
+
     def _update_unmatched_loads(self, area):
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            self.unmatched_loads, self.unmatched_loads_redis = ExportUnmatchedLoads(area)()
+        if self.load_count == 0:
+            self._write_none_to_unmatched_loads(area)
         else:
-            self.unmatched_loads, self.unmatched_loads_redis = \
-                self.market_unmatched_loads.update_and_get_unmatched_loads(area)
+            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+                self.unmatched_loads, self.unmatched_loads_redis = ExportUnmatchedLoads(area)()
+            else:
+                self.unmatched_loads, self.unmatched_loads_redis = \
+                    self.market_unmatched_loads.update_and_get_unmatched_loads(area)
 
     def _update_cumulative_grid_trades(self, area):
         market_type = \

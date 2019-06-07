@@ -44,6 +44,7 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
+from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
@@ -71,6 +72,7 @@ class Simulation:
             pause_after=pause_after
         )
 
+        self.load_count = 0
         self.simulation_config = simulation_config
         self.use_repl = repl
         self.export_on_finish = not no_export
@@ -86,7 +88,6 @@ class Simulation:
         self.setup_module_name = setup_module_name
         self.use_bc = enable_bc
         self.is_stopped = False
-        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
         self._started_from_cli = redis_job_id is None
 
@@ -97,6 +98,17 @@ class Simulation:
         self._init(**self.initial_params)
         self._init_events()
         validate_const_settings_for_simulation()
+        self.count_load_devices_in_setup(self.area, self.load_count)
+        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
+                                                        self.load_count)
+
+    @classmethod
+    def count_load_devices_in_setup(cls, area, load_count):
+        for child in area.children:
+            if isinstance(child.strategy, LoadHoursStrategy):
+                load_count += 1
+            if child.children:
+                cls.count_load_devices_in_setup(child, load_count)
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
