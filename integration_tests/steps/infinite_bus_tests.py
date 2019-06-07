@@ -49,5 +49,7 @@ def check_buy_behaviour_ib(context):
                                load.strategy.avg_power_W / 1000. -
                                pv.strategy.energy_production_forecast_kWh[market.time_slot])
 
-    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)()
+    unmatched, unmatched_redis = \
+        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
+            all_past_markets=True)
     assert get_number_of_unmatched_loads(unmatched) == 0

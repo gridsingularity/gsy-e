@@ -86,7 +86,6 @@ class Simulation:
         self.setup_module_name = setup_module_name
         self.use_bc = enable_bc
         self.is_stopped = False
-        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
         self._started_from_cli = redis_job_id is None
 
@@ -97,6 +96,8 @@ class Simulation:
         self._init(**self.initial_params)
         self._init_events()
         validate_const_settings_for_simulation()
+        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
+                                                        self.area)
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
