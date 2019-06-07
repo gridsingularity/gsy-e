@@ -29,13 +29,17 @@ RATE_UPPER_THRESHOLD = 18
 
 @then('the load has no unmatched loads')
 def no_unmatched_loads(context):
-    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)()
+    unmatched, unmatched_redis = \
+        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
+            all_past_markets=True)
     assert get_number_of_unmatched_loads(unmatched) == 0
 
 
 @then('the load has unmatched loads')
 def has_unmatched_loads(context):
-    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)()
+    unmatched, unmatched_redis = \
+        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
+            all_past_markets=True)
     assert get_number_of_unmatched_loads(unmatched) > 0
 
 

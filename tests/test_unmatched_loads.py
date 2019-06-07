@@ -73,7 +73,8 @@ class TestUnmatchedLoad(unittest.TestCase):
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
 
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
+        unmatched_loads, unmatched_loads_redis = \
+            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
 
         assert list(unmatched_loads[self.grid.name].keys()) == ['House1']
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
@@ -92,7 +93,8 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market.traded_energy = {"load1": -0.09, "load2": -0.07}
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
+        unmatched_loads, unmatched_loads_redis = \
+            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
         assert get_number_of_unmatched_loads(unmatched_loads) == 20
 
     def test_export_unmatched_loads_is_reported_correctly_for_half_loads_unmatched(self):
@@ -109,7 +111,8 @@ class TestUnmatchedLoad(unittest.TestCase):
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
 
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
+        unmatched_loads, unmatched_loads_redis = \
+            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
         assert get_number_of_unmatched_loads(unmatched_loads) == 10
 
     def test_export_unmatched_loads_reports_cell_tower_areas(self):
@@ -137,7 +140,8 @@ class TestUnmatchedLoad(unittest.TestCase):
 
             self.grid._markets.past_markets[timeslot] = mock_market
 
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
+        unmatched_loads, unmatched_loads_redis = \
+            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
         assert get_number_of_unmatched_loads(unmatched_loads) == 30
 
     def test_export_unmatched_loads_is_reported_correctly_for_predefined_load_strategy(self):
@@ -153,7 +157,8 @@ class TestUnmatchedLoad(unittest.TestCase):
             mock_market.traded_energy = {"load1": -0.099, "load3": -0.079}
             house1._markets.past_markets[timeslot] = mock_market
             self.grid._markets.past_markets[timeslot] = mock_market
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
+        unmatched_loads, unmatched_loads_redis = \
+            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
         assert get_number_of_unmatched_loads(unmatched_loads) == 20
 
     def test_export_unmatched_loads_is_reporting_correctly_the_device_types(self):
@@ -161,7 +166,8 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.area3.display_type = "Area 3 type"
         house1 = Area("House1", [self.area1, self.area3])
         self.grid = Area("Grid", [house1])
-        unmatched_loads, unmatched_loads_redis = ExportUnmatchedLoads(self.grid)()
+        unmatched_loads, unmatched_loads_redis = \
+            ExportUnmatchedLoads(self.grid).get_current_market_results(all_past_markets=True)
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
         assert "type" not in unmatched_loads["House1"]
         assert unmatched_loads["House1"]["load1"]["type"] == "Area 1 type"
@@ -175,7 +181,7 @@ class TestUnmatchedLoad(unittest.TestCase):
     def test_export_none_if_no_loads_in_setup(self):
         house1 = Area("House1", [])
         self.grid = Area("Grid", [house1])
-        epb = SimulationEndpointBuffer("1", {"seed": 0}, 0)
+        epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid)
         epb._update_unmatched_loads(self.grid)
         unmatched_loads = epb.unmatched_loads
         assert unmatched_loads["House1"] is None
@@ -184,7 +190,7 @@ class TestUnmatchedLoad(unittest.TestCase):
     def test_export_something_if_loads_in_setup(self):
         house1 = Area("House1", [self.area1, self.area3])
         self.grid = Area("Grid", [house1])
-        epb = SimulationEndpointBuffer("1", {"seed": 0}, len(house1.children))
+        epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid)
         epb._update_unmatched_loads(self.grid)
         unmatched_loads = epb.unmatched_loads
         assert unmatched_loads["House1"] is not None

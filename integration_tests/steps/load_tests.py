@@ -81,7 +81,9 @@ def check_user_pv_dict_profile(context):
 def check_user_rate_profile_dict(context):
     house = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
 
-    unmatched, unmatched_redis = ExportUnmatchedLoads(context.simulation.area)()
+    unmatched, unmatched_redis = \
+        ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
+            all_past_markets=True)
     number_of_loads = 2
     # There are two loads with the same final_buying_rate profile that should report unmatched
     # energy demand for the first 6 hours of the day:

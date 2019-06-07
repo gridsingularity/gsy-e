@@ -55,22 +55,21 @@ class ExportUnmatchedLoads:
         self.name_uuid_map = {area.name: area.uuid}
         self.name_type_map = {area.name: area.display_type}
         self.area = area
+        self.load_count = 0
+        self.count_load_devices_in_setup(self.area)
 
-    def get_current_market_results(self):
+    def count_load_devices_in_setup(self, area):
+        for child in area.children:
+            if isinstance(child.strategy, LoadHoursStrategy):
+                self.load_count += 1
+            if child.children:
+                self.count_load_devices_in_setup(child)
+
+    def get_current_market_results(self, all_past_markets=False):
         unmatched_loads = self.arrange_output(self.append_device_type(
             self.expand_to_ul_to_hours(
                 self.expand_ul_to_parents(
-                    self.find_unmatched_loads(self.area, {}, False)[self.area.name],
-                    self.area.name, {}
-                ))), self.area)
-
-        return unmatched_loads, self.change_name_to_uuid(unmatched_loads)
-
-    def __call__(self):
-        unmatched_loads = self.arrange_output(self.append_device_type(
-            self.expand_to_ul_to_hours(
-                self.expand_ul_to_parents(
-                    self.find_unmatched_loads(self.area, {}, True)[self.area.name],
+                    self.find_unmatched_loads(self.area, {}, all_past_markets)[self.area.name],
                     self.area.name, {}
                 ))), self.area)
 
@@ -227,6 +226,13 @@ class MarketUnmatchedLoads:
         self._unmatched_loads_incremental = {}
         self._unmatched_loads_incremental_uuid = {}
 
+    def write_none_to_unmatched_loads(self, area, unmatched_loads, unmatched_loads_redis):
+        unmatched_loads[area.name] = None
+        unmatched_loads_redis[area.uuid] = None
+        for child in area.children:
+            self.write_none_to_unmatched_loads(child, unmatched_loads, unmatched_loads_redis)
+        return unmatched_loads, unmatched_loads_redis
+
     @classmethod
     def _merge_base_area_unmatched_loads(cls, accumulated_results, current_results, area):
         """
@@ -324,14 +330,13 @@ class MarketUnmatchedLoads:
                     )
         return accumulated_results
 
-    def update_and_get_unmatched_loads(self, area):
+    def update_and_get_unmatched_loads(self, current_results, current_results_uuid):
         """
         Calculates and returns unmatched loads for the last market
-        :param area: Root area for which the unmatched load calculation will start
+        :param current_results: Output from ExportUnmatchedLoads.get_current_market_results()
+        :param current_results_uuid: Output from ExportUnmatchedLoads.get_current_market_results()
         :return: Tuple with unmatched loads using area names and uuids
         """
-        current_results, current_results_uuid = \
-            ExportUnmatchedLoads(area).get_current_market_results()
         self._unmatched_loads_incremental = self._iterate_on_base_areas(
             self._unmatched_loads_incremental, current_results
         )

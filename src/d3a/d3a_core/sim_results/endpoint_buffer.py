@@ -35,12 +35,13 @@ _NO_VALUE = {
 
 
 class SimulationEndpointBuffer:
-    def __init__(self, job_id, initial_params, load_count):
+    def __init__(self, job_id, initial_params, area):
         self.job_id = job_id
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.unmatched_loads = {}
         self.unmatched_loads_redis = {}
+        self.export_unmatched_loads = ExportUnmatchedLoads(area)
         self.market_unmatched_loads = MarketUnmatchedLoads()
         self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
@@ -59,7 +60,6 @@ class SimulationEndpointBuffer:
         self.energy_trade_profile = {}
         self.energy_trade_profile_redis = {}
         self.file_export_endpoints = FileExportEndpoints()
-        self.load_count = load_count
 
     def generate_result_report(self):
         return {
@@ -91,21 +91,22 @@ class SimulationEndpointBuffer:
             "energy_trade_profile": self.energy_trade_profile
         }
 
-    def _write_none_to_unmatched_loads(self, area):
-        self.unmatched_loads[area.name] = None
-        self.unmatched_loads_redis[area.uuid] = None
-        for child in area.children:
-            self._write_none_to_unmatched_loads(child)
-
     def _update_unmatched_loads(self, area):
-        if self.load_count == 0:
-            self._write_none_to_unmatched_loads(area)
+        if self.export_unmatched_loads.load_count == 0:
+            self.unmatched_loads, self.unmatched_loads_redis =\
+                self.market_unmatched_loads.write_none_to_unmatched_loads(area, {}, {})
         else:
+            current_results, current_results_uuid = \
+                self.export_unmatched_loads.get_current_market_results(
+                    all_past_markets=ConstSettings.GeneralSettings.KEEP_PAST_MARKETS)
+
             if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-                self.unmatched_loads, self.unmatched_loads_redis = ExportUnmatchedLoads(area)()
+                self.unmatched_loads = current_results
+                self.unmatched_loads_redis = current_results_uuid
             else:
                 self.unmatched_loads, self.unmatched_loads_redis = \
-                    self.market_unmatched_loads.update_and_get_unmatched_loads(area)
+                    self.market_unmatched_loads.update_and_get_unmatched_loads(
+                        current_results, current_results_uuid)
 
     def _update_cumulative_grid_trades(self, area):
         market_type = \
