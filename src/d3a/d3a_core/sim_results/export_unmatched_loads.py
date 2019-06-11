@@ -59,7 +59,7 @@ class ExportUnmatchedLoads:
         if hasattr(self.area, "past_markets") and len(list(self.area.past_markets)) > 0:
             self.latest_time_slot = list(self.area.past_markets)[-1].time_slot
         else:
-            self.latest_time_slot = self.hour_list[-1]
+            self.latest_time_slot = self.hour_list[0]
 
     def count_load_devices_in_setup(self, area):
         for child in area.children:

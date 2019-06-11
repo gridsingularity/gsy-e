@@ -95,3 +95,5 @@ requirements/local.*
 .vagrant/
 
 .pytest_cache
+
+d3a-simulation
