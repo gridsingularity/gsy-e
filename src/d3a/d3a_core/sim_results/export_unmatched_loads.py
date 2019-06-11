@@ -47,16 +47,19 @@ class ExportUnmatchedLoads:
     def __init__(self, area):
 
         self.hour_list = hour_list()
-        # This is for only returning data until the current time_slot:
-        if hasattr(area, "past_markets") and len(list(area.past_markets)) > 0:
-            self.latest_time_slot = list(area.past_markets)[-1].time_slot
-        else:
-            self.latest_time_slot = self.hour_list[0]
+        self.latest_time_slot = None
         self.name_uuid_map = {area.name: area.uuid}
         self.name_type_map = {area.name: area.display_type}
         self.area = area
         self.load_count = 0
         self.count_load_devices_in_setup(self.area)
+
+    def _set_latest_time_slot(self):
+        # This is for only returning data until the current time_slot:
+        if hasattr(self.area, "past_markets") and len(list(self.area.past_markets)) > 0:
+            self.latest_time_slot = list(self.area.past_markets)[-1].time_slot
+        else:
+            self.latest_time_slot = self.hour_list[0]
 
     def count_load_devices_in_setup(self, area):
         for child in area.children:
@@ -66,6 +69,7 @@ class ExportUnmatchedLoads:
                 self.count_load_devices_in_setup(child)
 
     def get_current_market_results(self, all_past_markets=False):
+        self._set_latest_time_slot()
         unmatched_loads = self.arrange_output(self.append_device_type(
             self.expand_to_ul_to_hours(
                 self.expand_ul_to_parents(
