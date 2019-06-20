@@ -12,6 +12,7 @@ RUN pip install --upgrade virtualenv setuptools && \
     virtualenv /venv && \
     /venv/bin/pip install pip-tools && \
     /venv/bin/pip-sync /app/requirements/*.txt && \
-    /venv/bin/pip install -e .
+    /venv/bin/pip install -e . && \
+    /venv/bin/pip install git+https://github.com/Jonasmpi/py-solc.git
 
 ENTRYPOINT ["/venv/bin/d3a"]

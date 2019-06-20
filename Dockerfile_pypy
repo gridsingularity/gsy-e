@@ -9,5 +9,6 @@ RUN pip install -r/app/requirements/dev.txt && \
     pip install -e . && \
     pip install git+https://github.com/Jonasmpi/py-solc.git
 
-ENTRYPOINT ["pypy3", "src/d3a/d3a_core/launcher.py"]
+RUN which d3a
+ENTRYPOINT ["d3a"]
 
