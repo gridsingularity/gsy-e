@@ -9,6 +9,5 @@ RUN pip install -r/app/requirements/dev.txt && \
     pip install -e . && \
     pip install git+https://github.com/Jonasmpi/py-solc.git
 
-RUN which d3a
 ENTRYPOINT ["d3a"]
 
