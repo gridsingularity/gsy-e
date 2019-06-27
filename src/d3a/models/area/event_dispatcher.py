@@ -65,8 +65,10 @@ class AreaDispatcher:
            event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]:
             return
         # Broadcast to children in random order to ensure fairness
-        for child in sorted(self.area.children, key=lambda _: random()):
+        lala = sorted(self.area.children, key=lambda _: random())
+        for child in lala:
             child.dispatcher.event_listener(event_type, **kwargs)
+        del lala
         # Also broadcast to IAAs. Again in random order
         for time_slot, agents in self._inter_area_agents.items():
             if time_slot not in self.area._markets.markets:
@@ -75,9 +77,12 @@ class AreaDispatcher:
 
             if not self.area.events.is_connected:
                 break
+            # TODO: Replace agents with just one agent, since one object is
+            # there fore every market slot
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         # Also broadcast to BAs. Again in random order
+        # TODO: Refactor to reuse the spot market mechanism
         for time_slot, agents in self._balancing_agents.items():
             if time_slot not in self.area._markets.balancing_markets:
                 # exclude past BAs

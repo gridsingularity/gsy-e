@@ -158,7 +158,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                     self.owner.name,
                     original_offer_price=offer_price
                 )
-                self.offers.post(offer, market)
+                self.offers.post(offer, market.id)
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)

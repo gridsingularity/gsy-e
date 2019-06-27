@@ -60,7 +60,6 @@ class Market:
         self.min_offer_price = sys.maxsize
         self._avg_offer_price = None
         self.max_offer_price = 0
-        self._sorted_offers = []
         self.accumulated_trade_price = 0
         self.accumulated_trade_energy = 0
         if notification_listener:
@@ -135,7 +134,7 @@ class Market:
 
     @property
     def sorted_offers(self):
-        return self._sorted_offers
+        return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
 
     @property
     def most_affordable_offers(self):

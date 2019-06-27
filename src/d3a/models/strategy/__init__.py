@@ -56,26 +56,26 @@ class Offers:
 
     def __init__(self, strategy):
         self.strategy = strategy
-        self.bought = {}  # type: Dict[Offer, Market]
-        self.posted = {}  # type: Dict[Offer, Market]
-        self.sold = {}  # type: Dict[Market, List[str]]
+        self.bought = {}  # type: Dict[Offer, Str]
+        self.posted = {}  # type: Dict[Offer, Str]
+        self.sold = {}  # type: Dict[Str, List[str]]
         self.changed = {}  # type: Dict[str, Offer]
 
     @property
     def open(self):
         open_offers = {}
-        for offer, market in self.posted.items():
-            if market not in self.sold:
-                self.sold[market] = []
-            if offer.id not in self.sold[market]:
-                open_offers[offer] = market
+        for offer, market_id in self.posted.items():
+            if market_id not in self.sold:
+                self.sold[market_id] = []
+            if offer.id not in self.sold[market_id]:
+                open_offers[offer] = market_id
         return open_offers
 
-    def bought_offer(self, offer, market):
-        self.bought[offer] = market
+    def bought_offer(self, offer, market_id):
+        self.bought[offer] = market_id
 
-    def sold_offer(self, offer_id, market):
-        self.sold = append_or_create_key(self.sold, market, offer_id)
+    def sold_offer(self, offer_id, market_id):
+        self.sold = append_or_create_key(self.sold, market_id, offer_id)
 
     def _update_offer(self, offer):
         old_offer_list = [o for o in self.posted.keys() if o.id == offer.id]
@@ -83,35 +83,39 @@ class Offers:
         old_offer = old_offer_list[0]
         self.posted[offer] = self.posted.pop(old_offer)
 
-    def bought_in_market(self, market):
-        return [offer for offer, _market in self.bought.items() if market == _market]
+    # def bought_in_market(self, market):
+    #     return [offer for offer, _market in self.bought.items() if market == _market]
 
-    def open_in_market(self, market):
-        return [offer
-                for offer, _market in self.posted.items()
-                if market == _market and offer.id not in self.sold[market]]
+    # def open_in_market(self, market):
+    #     return [offer
+    #             for offer, _market in self.posted.items()
+    #             if market == _market and offer.id not in self.sold[market]]
 
-    def posted_in_market(self, market):
-        return [offer for offer, _market in self.posted.items() if market == _market]
+    def posted_in_market(self, market_id):
+        return [offer for offer, _market in self.posted.items() if market_id == _market]
 
-    def sold_in_market(self, market):
+    def sold_in_market(self, market_id):
         sold_offers = []
-        for offer in self.posted_in_market(market):
-            if market not in self.sold:
-                self.sold[market] = []
-            if offer.id in self.sold[market]:
+        for offer in self.posted_in_market(market_id):
+            if market_id not in self.sold:
+                self.sold[market_id] = []
+            if offer.id in self.sold[market_id]:
                 sold_offers.append(offer)
         return sold_offers
 
-    def post(self, offer, market):
-        self.posted[offer] = market
+    def post(self, offer, market_id):
+        self.posted[offer] = market_id
+        # print(f"SOLD {self.sold}")
+        # print(f"POSTED {self.posted}")
+        # print(f"CHANGED {self.changed}")
 
     def remove(self, offer):
         try:
-            market = self.posted.pop(offer)
-            if market in self.sold and offer.id in self.sold[market]:
+            market_id = self.posted.pop(offer)
+            assert type(market_id) == str
+            if market_id in self.sold and offer.id in self.sold[market_id]:
                 self.strategy.log.error("Offer already sold, cannot remove it.")
-                self.posted[offer] = market
+                self.posted[offer] = market_id
             else:
                 return True
         except KeyError:
@@ -119,15 +123,15 @@ class Offers:
 
     def replace(self, old_offer, new_offer, market):
         if self.remove(old_offer):
-            self.post(new_offer, market)
+            self.post(new_offer, market.id)
 
-    def on_trade(self, market, trade):
+    def on_trade(self, market_id, trade):
         try:
             if trade.offer.seller == self.strategy.owner.name:
                 if trade.offer.id in self.changed:
                     self._update_offer(trade.offer)
-                    self.post(self.changed.pop(trade.offer.id), market)
-                self.sold_offer(trade.offer.id, market)
+                    self.post(self.changed.pop(trade.offer.id), market_id)
+                self.sold_offer(trade.offer.id, market_id)
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")
 
@@ -135,7 +139,9 @@ class Offers:
         if existing_offer.seller == self.strategy.owner.name:
             assert existing_offer.id not in self.changed, \
                    "Offer should only change once before each trade."
+            print("CHANGING")
             self.changed[existing_offer.id] = new_offer
+            print(self.changed)
 
 
 class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
@@ -173,15 +179,16 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
         Negative values indicate bought energy, postive ones sold energy.
         """
-        if not allow_open_market and not market.readonly:
-            raise ValueError(
-                'Energy balance for open market requested and `allow_open_market` no passed')
-        return sum(
-            t.offer.energy * -1
-            if t.buyer == self.owner.name
-            else t.offer.energy
-            for t in self.trades[market]
-        )
+        return 0
+        # if not allow_open_market and not market.readonly:
+        #     raise ValueError(
+        #         'Energy balance for open market requested and `allow_open_market` no passed')
+        # return sum(
+        #     t.offer.energy * -1
+        #     if t.buyer == self.owner.name
+        #     else t.offer.energy
+        #     for t in self.trades[market]
+        # )
 
     @property
     def is_eligible_for_balancing_market(self):
@@ -199,7 +206,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         trade = market.accept_offer(offer, buyer, energy=energy, trade_rate=trade_rate,
                                     already_tracked=already_tracked,
                                     original_trade_rate=original_trade_rate)
-        self.offers.bought_offer(trade.offer, market)
+        self.offers.bought_offer(trade.offer, market.id)
         return trade
 
     def post(self, **data):
@@ -226,8 +233,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             super().event_listener(event_type, **kwargs)
 
     def event_trade(self, *, market_id, trade):
-        market = self.area.get_future_market_from_id(market_id)
-        self.offers.on_trade(market, trade)
+        # market = self.area.get_future_market_from_id(market_id)
+        self.offers.on_trade(market_id, trade)
 
     def event_offer_changed(self, *, market_id, existing_offer, new_offer):
         self.offers.on_offer_changed(existing_offer, new_offer)

@@ -170,10 +170,11 @@ class OfferUpdateFrequencyMixin:
                                        self._calculate_price_decrease_rate(market))
 
     def _decrease_offer_price(self, market, reduced_rate):
-        if market not in self.offers.open.values():
+        if market.id not in self.offers.open.values():
             return
 
-        for offer, iterated_market in self.offers.open.items():
+        for offer, iterated_market_id in self.offers.open.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
             if iterated_market != market:
                 continue
             try:
@@ -219,10 +220,11 @@ class OfferUpdateFrequencyMixin:
             self.reset_price_on_market_cycle(market)
 
     def reset_price_on_market_cycle(self, market):
-        if market not in self.offers.open.values():
+        if market.id not in self.offers.open.values():
             return
 
-        for offer, iterated_market in self.offers.open.items():
+        for offer, iterated_market_id in self.offers.open.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
             if iterated_market != market:
                 continue
             try:

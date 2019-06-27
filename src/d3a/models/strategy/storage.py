@@ -329,7 +329,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                         self.owner.name,
                         original_offer_price=energy * selling_rate
                     )
-                    self.offers.post(offer, market)
+                    self.offers.post(offer, market.id)
                     self.state.offered_sell_kWh[market.time_slot] += offer.energy
 
     def select_market_to_sell(self):
