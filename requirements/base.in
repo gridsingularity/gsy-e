@@ -12,7 +12,6 @@ plotly
 # TODO: Deactivating solidity compiler due to bug
 # py-solc
 python-rex
-terminaltables
 redis
 rq
 web3
