@@ -64,6 +64,14 @@ class AreaMarkets:
                     delete_markets = [pm for pm in past_markets if
                                       abs(pm - timeframe) >= GlobalConfig.slot_length]
                     for pm in delete_markets:
+                        past_markets[pm].offers = {}
+                        past_markets[pm].trades = {}
+                        past_markets[pm].offer_history = {}
+                        past_markets[pm].notification_listeners = {}
+                        past_markets[pm].bids = {}
+                        past_markets[pm].bid_history = {}
+                        past_markets[pm].traded_energy = {}
+                        past_markets[pm].accumulated_actual_energy_agg = {}
                         del past_markets[pm]
                 past_markets[timeframe] = market
                 if not first:
