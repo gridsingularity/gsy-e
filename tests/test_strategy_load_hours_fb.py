@@ -339,7 +339,7 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
-        repr(trade_market)
+        repr(trade_market.id)
 
 
 def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_strategy_test5,
@@ -362,7 +362,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
     assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
-        repr(trade_market)
+        repr(trade_market.id)
 
 
 @pytest.fixture

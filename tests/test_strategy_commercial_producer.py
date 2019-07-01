@@ -74,14 +74,14 @@ class FakeMarket:
         self.created_offers = []
         self.created_balancing_offers = []
 
-    def offer(self, price, energy, seller, market=None, original_offer_price=None):
-        offer = Offer('id', price, energy, seller, market, original_offer_price)
+    def offer(self, price, energy, seller, original_offer_price=None):
+        offer = Offer('id', price, energy, seller, original_offer_price)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
 
-    def balancing_offer(self, price, energy, seller, market=None):
-        offer = BalancingOffer('id', price, energy, seller, market)
+    def balancing_offer(self, price, energy, seller):
+        offer = BalancingOffer('id', price, energy, seller)
         self.created_balancing_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -231,17 +231,17 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
 
     assert len(commercial_test2.offers.posted) == 2
     assert new_offer in commercial_test2.offers.posted
-    assert commercial_test2.offers.posted[new_offer] == area_test2.test_market
+    assert commercial_test2.offers.posted[new_offer] == area_test2.test_market.id
     assert len(commercial_test2.offers.changed) == 0
     assert len(commercial_test2.offers.sold) == 1
-    assert existing_offer.id in commercial_test2.offers.sold[area_test2.test_market]
+    assert existing_offer.id in commercial_test2.offers.sold[area_test2.test_market.id]
 
 
 def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, commercial_test2):
     commercial_test2.event_activate()
     commercial_test2.offer_energy(area_test2.test_market)
     assert len(commercial_test2.offers.posted) == 1
-    assert list(commercial_test2.offers.posted.values())[0] == area_test2.test_market
+    assert list(commercial_test2.offers.posted.values())[0] == area_test2.test_market.id
 
 
 """TEST3"""

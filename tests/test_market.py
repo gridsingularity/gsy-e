@@ -92,7 +92,6 @@ def test_market_bid(market: TwoSidedPayAsBid):
     assert bid.buyer == 'bidder'
     assert bid.seller == 'seller'
     assert len(bid.id) == 36
-    assert bid.market == market
 
 
 def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
@@ -103,7 +102,6 @@ def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
     assert bid.energy == 2
     assert bid.buyer == 'bidder'
     assert bid.seller == 'seller'
-    assert bid.market == market
 
     # Update existing bid is tested here
     bid = market.bid(3, 4, 'updated_bidder', 'updated_seller', bid_id='123')
@@ -113,7 +111,6 @@ def test_market_bid_accepts_bid_id(market: TwoSidedPayAsBid):
     assert bid.energy == 4
     assert bid.buyer == 'updated_bidder'
     assert bid.seller == 'updated_seller'
-    assert bid.market == market
 
 
 def test_market_offer_invalid(market: OneSidedMarket):

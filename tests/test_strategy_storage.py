@@ -119,25 +119,25 @@ class FakeArea:
 class FakeMarket:
     def __init__(self, count):
         self.count = count
-        self.id = count
-        self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'FakeArea', self),
+        self.id = str(count)
+        self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'FakeArea'),
                            'FakeArea', 'buyer'
                            )
         self.created_offers = []
-        self.offers = {'id': Offer('id', 11.8, 0.5, 'FakeArea', self),
-                       'id2': Offer('id2', 20, 0.5, 'A', self),
-                       'id3': Offer('id3', 20, 1, 'A', self),
-                       'id4': Offer('id4', 19, 5.1, 'A', self)}
+        self.offers = {'id': Offer('id', 11.8, 0.5, 'FakeArea'),
+                       'id2': Offer('id2', 20, 0.5, 'A'),
+                       'id3': Offer('id3', 20, 1, 'A'),
+                       'id4': Offer('id4', 19, 5.1, 'A')}
         self.bids = {}
         self.created_balancing_offers = []
 
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', 11.8, 0.5, 'A', self)],
-            [Offer('id2', 20, 0.5, 'A', self)],
-            [Offer('id3', 20, 1, 'A', self)],
-            [Offer('id4', 19, 5.1, 'A', self)]
+            [Offer('id', 11.8, 0.5, 'A')],
+            [Offer('id2', 20, 0.5, 'A')],
+            [Offer('id3', 20, 1, 'A')],
+            [Offer('id4', 19, 5.1, 'A')]
         ]
         return offers[self.count]
 
@@ -152,13 +152,13 @@ class FakeMarket:
     def delete_offer(self, offer_id):
         return
 
-    def offer(self, price, energy, seller, market=None, original_offer_price=None):
-        offer = Offer('id', price, energy, seller, market, original_offer_price)
+    def offer(self, price, energy, seller, original_offer_price=None):
+        offer = Offer('id', price, energy, seller, original_offer_price)
         self.created_offers.append(offer)
         return offer
 
-    def balancing_offer(self, price, energy, seller, market=None):
-        offer = BalancingOffer('id', price, energy, seller, market)
+    def balancing_offer(self, price, energy, seller):
+        offer = BalancingOffer('id', price, energy, seller)
         self.created_balancing_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -328,14 +328,14 @@ def storage_strategy_test5(area_test5, called):
     s.area = area_test5
     s.sell_energy = called
     area_test5.past_market.offers = {
-        'id': Offer('id', 20, 1, 'A', market=area_test5.past_market),
-        'id2': Offer('id2', 20, 3, 'FakeArea', market=area_test5.past_market),
-        'id3': Offer('id3', 100, 1, 'FakeArea', market=area_test5.past_market)
+        'id': Offer('id', 20, 1, 'A'),
+        'id2': Offer('id2', 20, 3, 'FakeArea'),
+        'id3': Offer('id3', 100, 1, 'FakeArea')
     }
 
-    s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market)
-    s.offers.post(area_test5.past_market.offers['id3'], area_test5.past_market)
-    s.offers.post(area_test5.past_market.offers['id2'], area_test5.past_market)
+    s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market.id)
+    s.offers.post(area_test5.past_market.offers['id3'], area_test5.past_market.id)
+    s.offers.post(area_test5.past_market.offers['id2'], area_test5.past_market.id)
     s.offers.sold_offer('id2', area_test5.past_market)
     assert s.state.used_storage == 5
     return s
@@ -369,7 +369,7 @@ def storage_strategy_test6(area_test6, market_test6, called):
     s.owner = area_test6
     s.area = area_test6
     s.accept_offer = called
-    s.offers.post(market_test6.trade.offer, market_test6)
+    s.offers.post(market_test6.trade.offer, market_test6.id)
     return s
 
 
@@ -378,7 +378,7 @@ def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
         lambda _id: market_test6 if _id == market_test6.id else None
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
     assert market_test6.trade.offer in \
-        storage_strategy_test6.offers.sold_in_market(market_test6)
+        storage_strategy_test6.offers.sold_in_market(market_test6.id)
     assert market_test6.trade.offer not in storage_strategy_test6.offers.open
 
 
@@ -412,7 +412,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     assert storage_strategy_test7.state.used_storage == 3.0
     assert area_test7._markets_return["Fake Market"].created_offers[0].energy == \
         energy_sell_dict[sell_market.time_slot]
-    assert len(storage_strategy_test7.offers.posted_in_market(sell_market)) > 0
+    assert len(storage_strategy_test7.offers.posted_in_market(sell_market.id)) > 0
 
 
 def test_calculate_initial_sell_energy_rate_lower_bound(storage_strategy_test7):
@@ -445,8 +445,7 @@ def storage_strategy_test7_2(area_test7):
                         max_abs_battery_power_kW=5.21, initial_rate_option=2, break_even=(16, 17))
     s.owner = area_test7
     s.area = area_test7
-    s.offers.posted = {Offer('id', 30, 1, 'FakeArea',
-                             market=area_test7.current_market): area_test7.current_market}
+    s.offers.posted = {Offer('id', 30, 1, 'FakeArea'): area_test7.current_market.id}
     return s
 
 
@@ -456,9 +455,14 @@ def test_calculate_risk_factor(storage_strategy_test7_2, area_test7, risk):
     assert len(storage_strategy_test7_2.offers.posted.items()) == 1
     storage_strategy_test7_2.event_activate()
     storage_strategy_test7_2.event_market_cycle()
+    storage_strategy_test7_2.offers.posted = \
+        {Offer('id', 30, 1, 'FakeArea'): area_test7.current_market.id}
 
     old_offer = list(storage_strategy_test7_2.offers.posted.keys())[0]
     area_test7.current_tick += 7
+
+    storage_strategy_test7_2.area.next_market = area_test7.current_market
+
     dec_rate = storage_strategy_test7_2._calculate_price_decrease_rate(area_test7.current_market)
     storage_strategy_test7_2._decrease_offer_price(area_test7.current_market, dec_rate)
     new_offer = list(storage_strategy_test7_2.offers.posted.keys())[-1]
@@ -482,8 +486,7 @@ def storage_strategy_test7_3(area_test7):
                         max_abs_battery_power_kW=5.21, initial_rate_option=1, break_even=(16, 17))
     s.owner = area_test7
     s.area = area_test7
-    s.offers.posted = {Offer('id', 30, 1, 'FakeArea',
-                             market=area_test7.current_market): area_test7.current_market}
+    s.offers.posted = {Offer('id', 30, 1, 'FakeArea'): area_test7.current_market.id}
     s.market = area_test7.current_market
     return s
 
@@ -551,7 +554,7 @@ def test_sell_energy_function_with_stored_capacity(storage_strategy_test8, area_
     assert area_test8._markets_return["Fake Market"].created_offers[0].energy == \
         100 - storage_strategy_test8.state.capacity * ConstSettings.StorageSettings.MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(
-        area_test8._markets_return["Fake Market"])
+        area_test8._markets_return["Fake Market"].id)
     ) > 0
 
 
@@ -568,7 +571,7 @@ def test_first_market_cycle_with_initial_capacity(storage_strategy_test8: Storag
         100.0 - storage_strategy_test8.state.capacity * \
         ConstSettings.StorageSettings.MIN_ALLOWED_SOC
     assert len(storage_strategy_test8.offers.posted_in_market(
-        area_test8._markets_return["Fake Market"])
+        area_test8._markets_return["Fake Market"].id)
     ) > 0
 
 
