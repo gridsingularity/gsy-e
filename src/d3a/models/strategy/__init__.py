@@ -61,6 +61,12 @@ class Offers:
         self.sold = {}  # type: Dict[Str, List[str]]
         self.changed = {}  # type: Dict[str, Offer]
 
+    def delete_past_markets(self):
+        self.bought = {}
+        self.sold = {}
+        self.posted = {}
+        self.changed = {}
+
     @property
     def open(self):
         open_offers = {}
@@ -83,14 +89,6 @@ class Offers:
         old_offer = old_offer_list[0]
         self.posted[offer] = self.posted.pop(old_offer)
 
-    # def bought_in_market(self, market):
-    #     return [offer for offer, _market in self.bought.items() if market == _market]
-
-    # def open_in_market(self, market):
-    #     return [offer
-    #             for offer, _market in self.posted.items()
-    #             if market == _market and offer.id not in self.sold[market]]
-
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
 
@@ -105,9 +103,6 @@ class Offers:
 
     def post(self, offer, market_id):
         self.posted[offer] = market_id
-        # print(f"SOLD {self.sold}")
-        # print(f"POSTED {self.posted}")
-        # print(f"CHANGED {self.changed}")
 
     def remove(self, offer):
         try:
@@ -139,9 +134,7 @@ class Offers:
         if existing_offer.seller == self.strategy.owner.name:
             assert existing_offer.id not in self.changed, \
                    "Offer should only change once before each trade."
-            print("CHANGING")
             self.changed[existing_offer.id] = new_offer
-            print(self.changed)
 
 
 class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
@@ -179,16 +172,15 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
         Negative values indicate bought energy, postive ones sold energy.
         """
-        return 0
-        # if not allow_open_market and not market.readonly:
-        #     raise ValueError(
-        #         'Energy balance for open market requested and `allow_open_market` no passed')
-        # return sum(
-        #     t.offer.energy * -1
-        #     if t.buyer == self.owner.name
-        #     else t.offer.energy
-        #     for t in self.trades[market]
-        # )
+        if not allow_open_market and not market.readonly:
+            raise ValueError(
+                'Energy balance for open market requested and `allow_open_market` no passed')
+        return sum(
+            t.offer.energy * -1
+            if t.buyer == self.owner.name
+            else t.offer.energy
+            for t in self.trades[market]
+        )
 
     @property
     def is_eligible_for_balancing_market(self):
@@ -233,11 +225,13 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             super().event_listener(event_type, **kwargs)
 
     def event_trade(self, *, market_id, trade):
-        # market = self.area.get_future_market_from_id(market_id)
         self.offers.on_trade(market_id, trade)
 
     def event_offer_changed(self, *, market_id, existing_offer, new_offer):
         self.offers.on_offer_changed(existing_offer, new_offer)
+
+    def event_market_cycle(self):
+        self.offers.delete_past_markets()
 
 
 class BidEnabledStrategy(BaseStrategy):
@@ -254,65 +248,68 @@ class BidEnabledStrategy(BaseStrategy):
             self.area.name,
             original_bid_price=price
         )
-        self.add_bid_to_posted(market, bid)
+        self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def remove_bid_from_pending(self, bid_id, market):
+    def remove_bid_from_pending(self, bid_id, market_id):
+        market = self.area.get_future_market_from_id(market_id)
         if bid_id in market.bids.keys():
             market.delete_bid(bid_id)
-        self._bids[market] = [bid for bid in self._bids[market] if bid.id != bid_id]
+        self._bids[market.id] = [bid for bid in self._bids[market.id] if bid.id != bid_id]
 
-    def add_bid_to_posted(self, market, bid):
-        if market not in self._bids.keys():
-            self._bids[market] = []
-        self._bids[market].append(bid)
+    def add_bid_to_posted(self, market_id, bid):
+        if market_id not in self._bids.keys():
+            self._bids[market_id] = []
+        self._bids[market_id].append(bid)
 
-    def add_bid_to_bought(self, bid, market, remove_bid=True):
-        if market not in self._traded_bids:
-            self._traded_bids[market] = []
-        self._traded_bids[market].append(bid)
+    def add_bid_to_bought(self, bid, market_id, remove_bid=True):
+        if market_id not in self._traded_bids:
+            self._traded_bids[market_id] = []
+        self._traded_bids[market_id].append(bid)
         if remove_bid:
-            self.remove_bid_from_pending(bid.id, market)
+            self.remove_bid_from_pending(bid.id, market_id)
 
     def get_traded_bids_from_market(self, market):
-        if market not in self._traded_bids:
+        if market.id not in self._traded_bids:
             return []
         else:
-            return self._traded_bids[market]
+            return self._traded_bids[market.id]
 
-    def are_bids_posted(self, market):
-        if market not in self._bids:
+    def are_bids_posted(self, market_id):
+        if market_id not in self._bids:
             return False
-        return len(self._bids[market]) > 0
+        return len(self._bids[market_id]) > 0
 
     def get_posted_bids(self, market):
-        if market not in self._bids:
+        if market.id not in self._bids:
             return {}
-        return self._bids[market]
+        return self._bids[market.id]
 
     def event_bid_deleted(self, *, market_id, bid):
         assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
-        market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
 
         if bid.buyer != self.owner.name:
             return
-        self.remove_bid_from_pending(bid.id, market)
+        self.remove_bid_from_pending(bid.id, market_id)
 
     def event_bid_changed(self, *, market_id, existing_bid, new_bid):
         assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
-        market = self.area.get_future_market_from_id(market_id)
         if new_bid.buyer != self.owner.name:
             return
-        self.add_bid_to_posted(market=market, bid=new_bid)
+        self.add_bid_to_posted(market_id, bid=new_bid)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
-        market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
 
         if bid_trade.buyer == self.owner.name:
-            self.add_bid_to_bought(bid_trade.offer, self.area.get_future_market_from_id(market_id))
+            self.add_bid_to_bought(bid_trade.offer, market_id)
+
+    def event_market_cycle(self):
+        from d3a.models.const import ConstSettings
+        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            self._bids = {}
+            self._traded_bids = {}
+            super().event_market_cycle()

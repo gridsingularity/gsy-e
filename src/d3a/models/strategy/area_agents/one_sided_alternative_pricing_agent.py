@@ -61,7 +61,7 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                     else:
                         raise MarketException
                     offer.price = offer.energy * sell_rate
-                    self.accept_offer(offer.market, offer)
+                    self.accept_offer(self.lower_market, offer)
 
         except MarketException:
             self.log.exception("Alternative pricing scheme: "

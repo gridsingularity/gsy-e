@@ -27,6 +27,7 @@ from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import append_or_create_key
+from d3a.models.const import GlobalConfig
 
 
 class AreaDispatcher:
@@ -61,15 +62,12 @@ class AreaDispatcher:
         return self._broadcast_notification
 
     def _broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-
         if not self.area.events.is_enabled and \
            event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]:
             return
         # Broadcast to children in random order to ensure fairness
-        lala = sorted(self.area.children, key=lambda _: random())
-        for child in lala:
+        for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
-        del lala
         # Also broadcast to IAAs. Again in random order
         for time_slot, agents in self._inter_area_agents.items():
             if time_slot not in self.area._markets.markets:
@@ -157,17 +155,7 @@ class AreaDispatcher:
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
             )
-            if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-                from d3a.models.const import GlobalConfig
-                delete_agents = [pm for pm in self._inter_area_agents if
-                                 abs(pm - market.time_slot) >= GlobalConfig.slot_length]
-                for pm in delete_agents:
-                    for i in self._inter_area_agents[pm]:
-                        del i.offers
-                        del i.engines
-                        i.higher_market = None
-                        i.lower_market = None
-                    del self._inter_area_agents[pm]
+            self._delete_past_agents(market.time_slot, self._inter_area_agents)
 
             # Attach agent to own IAA list
             self._inter_area_agents = append_or_create_key(
@@ -194,3 +182,19 @@ class AreaDispatcher:
         if self.area.parent:
             # Add inter area appliance to report energy
             self.area.appliance = InterAreaAppliance(self.area.parent, self.area)
+
+    @staticmethod
+    def _delete_past_agents(timeslot, area_agent_member):
+        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            delete_agents = [pm for pm in area_agent_member if
+                             abs(pm - timeslot) >= GlobalConfig.slot_length]
+            for pm in delete_agents:
+                for i in area_agent_member[pm]:
+                    del i.offers
+                    for j in i.engines:
+                        del j.forwarded_offers
+                        del j.forwarded_bids
+                    del i.engines
+                    i.higher_market = None
+                    i.lower_market = None
+                del area_agent_member[pm]

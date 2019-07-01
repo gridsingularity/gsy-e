@@ -60,7 +60,7 @@ class BalancingMarket(OneSidedMarket):
         if iaa_fee:
             price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
 
-        offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller, self)
+        offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller)
         self.offers[offer.id] = offer
         self._sorted_offers = \
             sorted(self.offers.values(), key=lambda o: o.price / o.energy)
@@ -122,8 +122,7 @@ class BalancingMarket(OneSidedMarket):
                     accepted_offer_id,
                     abs(final_price),
                     energy,
-                    offer.seller,
-                    offer.market
+                    offer.seller
                 )
 
                 residual_price = (1 - energy_portion) * offer.price
@@ -136,7 +135,6 @@ class BalancingMarket(OneSidedMarket):
                     abs(residual_price),
                     residual_energy,
                     offer.seller,
-                    offer.market,
                     original_offer_price=original_residual_price
                 )
                 self.offers[residual_offer.id] = residual_offer
