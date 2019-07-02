@@ -66,7 +66,7 @@ class Offers:
         # TODO: Remove the owner and area distinction from the AreaBehaviorBase class
         return self.strategy.area if self.strategy.area is not None else self.strategy.owner
 
-    def filter_offers_in_future_markets(self, existing_offers):
+    def _delete_past_offers(self, existing_offers):
         offers = {}
         for offer, market_id in existing_offers.items():
             market = self.area.get_future_market_from_id(market_id)
@@ -74,9 +74,9 @@ class Offers:
                 offers[offer] = market_id
         return offers
 
-    def delete_past_markets(self):
-        self.posted = self.filter_offers_in_future_markets(self.posted)
-        self.bought = self.filter_offers_in_future_markets(self.bought)
+    def delete_past_markets_offers(self):
+        self.posted = self._delete_past_offers(self.posted)
+        self.bought = self._delete_past_offers(self.bought)
         self.changed = {}
 
     @property
@@ -243,7 +243,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offers.on_offer_changed(existing_offer, new_offer)
 
     def event_market_cycle(self):
-        self.offers.delete_past_markets()
+        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            self.offers.delete_past_markets_offers()
 
 
 class BidEnabledStrategy(BaseStrategy):
@@ -322,7 +323,6 @@ class BidEnabledStrategy(BaseStrategy):
             self.add_bid_to_bought(bid_trade.offer, market_id)
 
     def event_market_cycle(self):
-        from d3a.models.const import ConstSettings
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             self._bids = {}
             self._traded_bids = {}

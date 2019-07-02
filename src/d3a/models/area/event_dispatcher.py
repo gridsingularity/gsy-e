@@ -75,8 +75,6 @@ class AreaDispatcher:
 
             if not self.area.events.is_connected:
                 break
-            # TODO: Replace agents with just one agent, since one object is
-            # there fore every market slot
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         # Also broadcast to BAs. Again in random order
@@ -187,13 +185,13 @@ class AreaDispatcher:
             delete_agents = [pm for pm in area_agent_member.keys() if
                              self.area.current_market and pm < self.area.current_market.time_slot]
             for pm in delete_agents:
-                for i in area_agent_member[pm]:
-                    del i.offers
-                    for j in i.engines:
-                        del j.forwarded_offers
-                        if hasattr(j, "forwarded_bids"):
-                            del j.forwarded_bids
-                    del i.engines
-                    i.higher_market = None
-                    i.lower_market = None
+                for agent in area_agent_member[pm]:
+                    del agent.offers
+                    for engine in agent.engines:
+                        del engine.forwarded_offers
+                        if hasattr(engine, "forwarded_bids"):
+                            del engine.forwarded_bids
+                    del agent.engines
+                    agent.higher_market = None
+                    agent.lower_market = None
                 del area_agent_member[pm]
