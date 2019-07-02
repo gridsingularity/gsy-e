@@ -175,7 +175,7 @@ class OfferUpdateFrequencyMixin:
 
         for offer, iterated_market_id in self.offers.open.items():
             iterated_market = self.area.get_future_market_from_id(iterated_market_id)
-            if iterated_market.id != market.id:
+            if market is None or iterated_market is None or iterated_market.id != market.id:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
@@ -225,7 +225,7 @@ class OfferUpdateFrequencyMixin:
 
         for offer, iterated_market_id in self.offers.open.items():
             iterated_market = self.area.get_future_market_from_id(iterated_market_id)
-            if iterated_market != market:
+            if market is None or iterated_market is None or iterated_market != market:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)

@@ -61,10 +61,22 @@ class Offers:
         self.sold = {}  # type: Dict[Str, List[str]]
         self.changed = {}  # type: Dict[str, Offer]
 
+    @property
+    def area(self):
+        # TODO: Remove the owner and area distinction from the AreaBehaviorBase class
+        return self.strategy.area if self.strategy.area is not None else self.strategy.owner
+
+    def filter_offers_in_future_markets(self, existing_offers):
+        offers = {}
+        for offer, market_id in existing_offers.items():
+            market = self.area.get_future_market_from_id(market_id)
+            if market is not None:
+                offers[offer] = market_id
+        return offers
+
     def delete_past_markets(self):
-        self.bought = {}
-        self.sold = {}
-        self.posted = {}
+        self.posted = self.filter_offers_in_future_markets(self.posted)
+        self.bought = self.filter_offers_in_future_markets(self.bought)
         self.changed = {}
 
     @property
@@ -253,6 +265,8 @@ class BidEnabledStrategy(BaseStrategy):
 
     def remove_bid_from_pending(self, bid_id, market_id):
         market = self.area.get_future_market_from_id(market_id)
+        if market is None:
+            return
         if bid_id in market.bids.keys():
             market.delete_bid(bid_id)
         self._bids[market.id] = [bid for bid in self._bids[market.id] if bid.id != bid_id]

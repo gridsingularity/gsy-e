@@ -27,7 +27,6 @@ from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import append_or_create_key
-from d3a.models.const import GlobalConfig
 
 
 class AreaDispatcher:
@@ -183,17 +182,17 @@ class AreaDispatcher:
             # Add inter area appliance to report energy
             self.area.appliance = InterAreaAppliance(self.area.parent, self.area)
 
-    @staticmethod
-    def _delete_past_agents(timeslot, area_agent_member):
+    def _delete_past_agents(self, timeslot, area_agent_member):
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            delete_agents = [pm for pm in area_agent_member if
-                             abs(pm - timeslot) >= GlobalConfig.slot_length]
+            delete_agents = [pm for pm in area_agent_member.keys() if
+                             self.area.current_market and pm < self.area.current_market.time_slot]
             for pm in delete_agents:
                 for i in area_agent_member[pm]:
                     del i.offers
                     for j in i.engines:
                         del j.forwarded_offers
-                        del j.forwarded_bids
+                        if hasattr(j, "forwarded_bids"):
+                            del j.forwarded_bids
                     del i.engines
                     i.higher_market = None
                     i.lower_market = None

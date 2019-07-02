@@ -50,6 +50,10 @@ class FakeArea:
         return self.test_market
 
     @property
+    def current_market(self):
+        return self.test_market
+
+    @property
     def config(self):
         change_global_config(**DEFAULT_CONFIG.__dict__)
         return DEFAULT_CONFIG

@@ -44,6 +44,10 @@ class FakeArea():
         return self.test_market
 
     @property
+    def current_market(self):
+        return self.test_market
+
+    @property
     def config(self):
         return DEFAULT_CONFIG
 

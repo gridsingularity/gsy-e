@@ -62,6 +62,10 @@ class FakeStrategy:
         return FakeOwner()
 
     @property
+    def area(self):
+        return FakeOwner()
+
+    @property
     def log(self):
         return FakeLog()
 
