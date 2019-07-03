@@ -66,9 +66,8 @@ class OneSidedMarket(Market):
             + self.transfer_fee_const * energy
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
-        offer = Offer(offer_id, price, energy, seller, self, original_offer_price)
+        offer = Offer(offer_id, price, energy, seller, original_offer_price)
         self.offers[offer.id] = offer
-        self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self.offer_history.append(offer)
         log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
@@ -85,7 +84,6 @@ class OneSidedMarket(Market):
 
         self.bc_interface.cancel_offer(offer)
 
-        self._sorted_offers = sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
@@ -140,8 +138,6 @@ class OneSidedMarket(Market):
             offer, original_trade_rate
         )
 
-        self._sorted_offers = sorted(self.offers.values(),
-                                     key=lambda o: o.price / o.energy)
         try:
             if time is None:
                 time = self._now
@@ -166,8 +162,7 @@ class OneSidedMarket(Market):
                     accepted_offer_id,
                     final_price,
                     energy,
-                    offer.seller,
-                    offer.market
+                    offer.seller
                 )
 
                 residual_price = (1 - energy_portion) * offer.price
@@ -180,7 +175,6 @@ class OneSidedMarket(Market):
                     residual_price,
                     residual_energy,
                     offer.seller,
-                    offer.market,
                     original_offer_price=original_residual_price
                 )
                 self.offers[residual_offer.id] = residual_offer
@@ -189,8 +183,6 @@ class OneSidedMarket(Market):
                 offer = accepted_offer
 
                 self.bc_interface.change_offer(offer, original_offer, residual_offer)
-                self._sorted_offers = sorted(self.offers.values(),
-                                             key=lambda o: o.price / o.energy)
                 self._notify_listeners(
                     MarketEvent.OFFER_CHANGED,
                     existing_offer=original_offer,
@@ -207,8 +199,6 @@ class OneSidedMarket(Market):
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
-            self._sorted_offers = sorted(self.offers.values(),
-                                         key=lambda o: o.price / o.energy)
             raise
 
         trade_id, residual_offer = \

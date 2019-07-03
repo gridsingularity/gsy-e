@@ -21,33 +21,41 @@ from d3a.events.event_structures import MarketEvent, AreaEvent
 
 class EventMixin:
 
-    @property
-    def _event_mapping(self):
-        try:
-            return self._event_map
-        except AttributeError:
-            self._event_map = {
-                AreaEvent.TICK: self.event_tick,
-                AreaEvent.MARKET_CYCLE: self.event_market_cycle,
-                AreaEvent.BALANCING_MARKET_CYCLE: self.event_balancing_market_cycle,
-                AreaEvent.ACTIVATE: self.event_activate,
-                MarketEvent.OFFER: self.event_offer,
-                MarketEvent.OFFER_CHANGED: self.event_offer_changed,
-                MarketEvent.OFFER_DELETED: self.event_offer_deleted,
-                MarketEvent.TRADE: self.event_trade,
-                MarketEvent.BID_TRADED: self.event_bid_traded,
-                MarketEvent.BID_DELETED: self.event_bid_deleted,
-                MarketEvent.BID_CHANGED: self.event_bid_changed,
-                MarketEvent.BALANCING_OFFER: self.event_balancing_offer,
-                MarketEvent.BALANCING_OFFER_CHANGED: self.event_balancing_offer_changed,
-                MarketEvent.BALANCING_OFFER_DELETED: self.event_balancing_offer_deleted,
-                MarketEvent.BALANCING_TRADE: self.event_balancing_trade
-            }
-            return self._event_map
+    def _event_mapping(self, event):
+        if event == AreaEvent.TICK:
+            return self.event_tick
+        elif event == AreaEvent.MARKET_CYCLE:
+            return self.event_market_cycle
+        elif event == AreaEvent.BALANCING_MARKET_CYCLE:
+            return self.event_balancing_market_cycle
+        elif event == AreaEvent.ACTIVATE:
+            return self.event_activate
+        elif event == MarketEvent.OFFER:
+            return self.event_offer
+        elif event == MarketEvent.OFFER_CHANGED:
+            return self.event_offer_changed
+        elif event == MarketEvent.OFFER_DELETED:
+            return self.event_offer_deleted
+        elif event == MarketEvent.TRADE:
+            return self.event_trade
+        elif event == MarketEvent.BID_TRADED:
+            return self.event_bid_traded
+        elif event == MarketEvent.BID_DELETED:
+            return self.event_bid_deleted
+        elif event == MarketEvent.BID_CHANGED:
+            return self.event_bid_changed
+        elif event == MarketEvent.BALANCING_OFFER:
+            return self.event_balancing_offer
+        elif event == MarketEvent.BALANCING_OFFER_CHANGED:
+            return self.event_balancing_offer_changed
+        elif event == MarketEvent.BALANCING_OFFER_DELETED:
+            return self.event_balancing_offer_deleted
+        elif event == MarketEvent.BALANCING_TRADE:
+            return self.event_balancing_trade
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         self.log.debug("Dispatching event %s", event_type.name)
-        self._event_mapping[event_type](**kwargs)
+        self._event_mapping(event_type)(**kwargs)
 
     def event_tick(self, *, area):
         pass

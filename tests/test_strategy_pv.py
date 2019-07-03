@@ -19,6 +19,7 @@ import pytest
 import pendulum
 import uuid
 from pendulum import DateTime
+from math import isclose
 
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
@@ -40,6 +41,10 @@ class FakeArea():
         self.test_market = FakeMarket(0)
 
     def get_future_market_from_id(self, id):
+        return self.test_market
+
+    @property
+    def current_market(self):
         return self.test_market
 
     @property
@@ -73,12 +78,12 @@ class FakeArea():
 class FakeMarket:
     def __init__(self, count):
         self.count = count
-        self.id = count
+        self.id = str(count)
         self.created_offers = []
-        self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A', market=self)}
+        self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A')}
 
-    def offer(self, price, energy, seller, market=None, original_offer_price=None):
-        offer = Offer(str(uuid.uuid4()), price, energy, seller, market, original_offer_price)
+    def offer(self, price, energy, seller, original_offer_price=None):
+        offer = Offer(str(uuid.uuid4()), price, energy, seller, original_offer_price)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -189,8 +194,7 @@ def pv_test3(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
-                       area_test3.test_market}
+    p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
     return p
 
 
@@ -229,7 +233,7 @@ def pv_test4(area_test3, called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', price=20, energy=1, seller='FakeArea'): area_test3.test_market
+        Offer(id='id', price=20, energy=1, seller='FakeArea'): area_test3.test_market.id
     }
     return p
 
@@ -359,8 +363,7 @@ def pv_test7(area_test3):
                    initial_selling_rate=30, energy_rate_decrease_option=1)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
-                       area_test3.test_market}
+    p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
     return p
 
 
@@ -384,7 +387,7 @@ def testing_low_risk(area_test3, pv_test7):
         reduced_price = \
             pv_test7.calculate_initial_sell_rate(area_test3.test_market.time_slot) - \
             price_dec_per_update * pv_test7._price_update_interval
-        assert new_offer.price == old_offer.energy * reduced_price
+        assert isclose(new_offer.price, old_offer.energy * reduced_price)
 
 
 """TEST8"""
@@ -396,8 +399,7 @@ def pv_test8(area_test3):
                    initial_selling_rate=30, energy_rate_decrease_option=1)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 1, 1, 'FakeArea', market=area_test3.test_market):
-                       area_test3.test_market}
+    p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
     return p
 
 
@@ -420,7 +422,7 @@ def testing_high_risk(area_test3, pv_test8):
         reduced_price = \
             pv_test8.calculate_initial_sell_rate(area_test3.test_market.time_slot) - \
             price_dec_per_update * pv_test8._price_update_interval
-        assert new_offer.price == old_offer.energy * reduced_price
+        assert isclose(new_offer.price, old_offer.energy * reduced_price)
 
 
 """TEST9"""

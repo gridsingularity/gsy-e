@@ -78,6 +78,7 @@ class AreaDispatcher:
             for agent in sorted(agents, key=lambda _: random()):
                 agent.event_listener(event_type, **kwargs)
         # Also broadcast to BAs. Again in random order
+        # TODO: Refactor to reuse the spot market mechanism
         for time_slot, agents in self._balancing_agents.items():
             if time_slot not in self.area._markets.balancing_markets:
                 # exclude past BAs
@@ -151,6 +152,8 @@ class AreaDispatcher:
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
             )
+            self._delete_past_agents(market.time_slot, self._inter_area_agents)
+
             # Attach agent to own IAA list
             self._inter_area_agents = append_or_create_key(
                 self._inter_area_agents, market.time_slot, iaa)
@@ -166,6 +169,7 @@ class AreaDispatcher:
                 higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
                 lower_market=market
             )
+
             self._balancing_agents = \
                 append_or_create_key(self._balancing_agents, market.time_slot, ba)
             self.area.parent.dispatcher._balancing_agents = \
@@ -175,3 +179,19 @@ class AreaDispatcher:
         if self.area.parent:
             # Add inter area appliance to report energy
             self.area.appliance = InterAreaAppliance(self.area.parent, self.area)
+
+    def _delete_past_agents(self, timeslot, area_agent_member):
+        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            delete_agents = [pm for pm in area_agent_member.keys() if
+                             self.area.current_market and pm < self.area.current_market.time_slot]
+            for pm in delete_agents:
+                for agent in area_agent_member[pm]:
+                    del agent.offers
+                    for engine in agent.engines:
+                        del engine.forwarded_offers
+                        if hasattr(engine, "forwarded_bids"):
+                            del engine.forwarded_bids
+                    del agent.engines
+                    agent.higher_market = None
+                    agent.lower_market = None
+                del area_agent_member[pm]

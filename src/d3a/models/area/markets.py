@@ -23,7 +23,7 @@ from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market import Market # noqa
-from d3a.models.const import ConstSettings, GlobalConfig
+from d3a.models.const import ConstSettings
 from collections import OrderedDict
 
 
@@ -60,11 +60,7 @@ class AreaMarkets:
             if timeframe < current_time:
                 market = markets.pop(timeframe)
                 market.readonly = True
-                if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-                    delete_markets = [pm for pm in past_markets if
-                                      abs(pm - timeframe) >= GlobalConfig.slot_length]
-                    for pm in delete_markets:
-                        del past_markets[pm]
+                self._delete_past_markets(past_markets, timeframe)
                 past_markets[timeframe] = market
                 if not first:
                     # Remove inter area agent
@@ -73,6 +69,21 @@ class AreaMarkets:
                     first = False
                 self.log.debug("Moving {t:%H:%M} {m} to past"
                                .format(t=timeframe, m=past_markets[timeframe].area.name))
+
+    def _delete_past_markets(self, past_markets, timeframe):
+        if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            delete_markets = [pm for pm in past_markets if
+                              pm not in self.markets.values()]
+            for pm in delete_markets:
+                past_markets[pm].offers = {}
+                past_markets[pm].trades = {}
+                past_markets[pm].offer_history = {}
+                past_markets[pm].notification_listeners = {}
+                past_markets[pm].bids = {}
+                past_markets[pm].bid_history = {}
+                past_markets[pm].traded_energy = {}
+                past_markets[pm].accumulated_actual_energy_agg = {}
+                del past_markets[pm]
 
     @staticmethod
     def select_market_class(is_spot_market):

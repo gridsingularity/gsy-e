@@ -805,6 +805,7 @@ def test_infinite_plant_energy_rate(context, plant_name):
     for market in grid.past_markets:
         for trade in market.trades:
             assert trade.buyer is not finite.name
+            trade.offer.market = market
             if trade.seller == finite.name:
                 trades_sold.append(trade)
 
