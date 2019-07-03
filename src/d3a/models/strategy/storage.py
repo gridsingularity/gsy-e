@@ -40,7 +40,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
     parameters = ('risk', 'initial_capacity_kWh', 'initial_soc', 'initial_rate_option',
                   'energy_rate_decrease_option', 'energy_rate_decrease_per_update',
                   'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
-                  'initial_selling_rate')
+                  'initial_selling_rate', 'initial_buying_rate')
 
     def __init__(self, risk: int = GeneralSettings.DEFAULT_RISK,
                  initial_capacity_kWh: float = None,

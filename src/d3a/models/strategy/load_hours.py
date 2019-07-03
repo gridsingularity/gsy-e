@@ -35,7 +35,8 @@ BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 
 class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
-    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'final_buying_rate')
+    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'final_buying_rate',
+                  'initial_buying_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, daily_budget=None,
                  initial_buying_rate: Union[float, dict, str] =
