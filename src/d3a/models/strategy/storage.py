@@ -210,7 +210,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
 
-                if self.are_bids_posted(market):
+                if self.are_bids_posted(market.id):
                     self.update_posted_bids_over_ticks(market)
                 else:
                     energy_kWh = self.state.energy_to_buy_dict[market.time_slot]
@@ -239,6 +239,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 
     def event_market_cycle(self):
+        super().event_market_cycle()
         self.update_market_cycle_offers(self.break_even[self.area.now].sell)
         current_market = self.area.next_market
         past_market = self.area.last_past_market
@@ -329,7 +330,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                         self.owner.name,
                         original_offer_price=energy * selling_rate
                     )
-                    self.offers.post(offer, market)
+                    self.offers.post(offer, market.id)
                     self.state.offered_sell_kWh[market.time_slot] += offer.energy
 
     def select_market_to_sell(self):

@@ -92,8 +92,8 @@ class FakeMarket:
         self.calls_offers.append(offer)
         if energy < offer.energy:
             residual_energy = offer.energy - energy
-            residual = Offer('res', offer.price, residual_energy, offer.seller, offer.market)
-            traded = Offer(offer.id, offer.price, energy, offer.seller, offer.market)
+            residual = Offer('res', offer.price, residual_energy, offer.seller)
+            traded = Offer(offer.id, offer.price, energy, offer.seller)
             return Trade('trade_id', time, traded, traded.seller, buyer, residual)
         else:
             return Trade('trade_id', time, offer, offer.seller, buyer)
@@ -111,11 +111,11 @@ class FakeMarket:
         market_bid = [b for b in self._bids if b.id == bid.id][0]
         if energy < market_bid.energy:
             residual_energy = bid.energy - energy
-            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller, bid.market)
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller, bid.market)
+            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller)
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual)
         else:
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller, bid.market)
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer)
 
     def delete_offer(self, *args):
@@ -128,14 +128,14 @@ class FakeMarket:
         self.offer_count += 1
         price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller,
-                                     market=self, original_offer_price=original_offer_price)
+                                     original_offer_price=original_offer_price)
         return self.forwarded_offer
 
     def bid(self, price, energy, buyer, seller, original_bid_price=None, source_market=None):
         price = price * (1 - self.transfer_fee_ratio) - self.transfer_fee_const * energy
         self.bid_count += 1
         self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller,
-                                 market=self, original_bid_price=original_bid_price)
+                                 original_bid_price=original_bid_price)
         return self.forwarded_bid
 
 

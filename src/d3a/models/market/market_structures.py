@@ -20,14 +20,13 @@ from typing import Dict # noqa
 
 
 class Offer:
-    def __init__(self, id, price, energy, seller, market=None, original_offer_price=None):
+    def __init__(self, id, price, energy, seller, original_offer_price=None):
         self.id = str(id)
         self.real_id = id
         self.price = price
         self.original_offer_price = original_offer_price
         self.energy = energy
         self.seller = seller
-        self.market = market
 
     def __repr__(self):
         return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
@@ -47,11 +46,11 @@ class Offer:
 
 
 class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
-                             'market', 'original_bid_price'))):
-    def __new__(cls, id, price, energy, buyer, seller, market=None, original_bid_price=None):
+                             'original_bid_price'))):
+    def __new__(cls, id, price, energy, buyer, seller, original_bid_price=None):
         # overridden to give the residual field a default value
         return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller,
-                                       market, original_bid_price)
+                                       original_bid_price)
 
     def __repr__(self):
         return (
@@ -141,7 +140,7 @@ class MarketClearingState:
     def __init__(self):
         self.cumulative_offers = dict()  # type Dict[Datetime, dict()]
         self.cumulative_bids = dict()  # type Dict[Datetime, dict()]
-        self.clearing = {}  # type: Dict[DateTime, tuple()]
+        self.clearing = {}  # type: Dict[Datetime, tuple()]
 
     @classmethod
     def _csv_fields(cls):

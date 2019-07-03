@@ -140,6 +140,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         return round((gauss_forecast / 1000) * w_to_wh_factor, 4)
 
     def event_market_cycle(self):
+        super().event_market_cycle()
         self.update_market_cycle_offers(self.final_selling_rate)
 
         # Iterate over all markets open in the future
@@ -158,7 +159,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                     self.owner.name,
                     original_offer_price=offer_price
                 )
-                self.offers.post(offer, market)
+                self.offers.post(offer, market.id)
 
     def trigger_risk(self, new_risk: int = 0):
         new_risk = int(new_risk)

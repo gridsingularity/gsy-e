@@ -62,6 +62,10 @@ class FakeStrategy:
         return FakeOwner()
 
     @property
+    def area(self):
+        return FakeOwner()
+
+    @property
     def log(self):
         return FakeLog()
 
@@ -87,13 +91,15 @@ class FakeMarket:
             return Trade('trade', 0, offer, offer.seller, 'FakeOwner')
 
     def bid(self, price, energy, buyer, seller, original_bid_price=None):
-        return Bid(123, price, energy, buyer, seller, self, original_bid_price)
+        return Bid(123, price, energy, buyer, seller, original_bid_price)
 
 
 @pytest.fixture
 def offers():
+    market = FakeMarket(raises=False, id='market')
     fixture = Offers(FakeStrategy())
-    fixture.post(FakeOffer('id'), 'market')
+    fixture.post(FakeOffer('id'), market.id)
+    fixture.__fake_market = market
     return fixture
 
 
@@ -104,10 +110,11 @@ def test_offers_open(offers):
 
 
 def test_offers_replace_open_offer(offers):
-    old_offer = offers.posted_in_market('market')[0]
+    market = offers.__fake_market
+    old_offer = offers.posted_in_market(market.id)[0]
     new_offer = FakeOffer('new_id')
-    offers.replace(old_offer, new_offer, 'market')
-    assert offers.posted_in_market('market')[0].id == 'new_id'
+    offers.replace(old_offer, new_offer, market)
+    assert offers.posted_in_market(market.id)[0].id == 'new_id'
     assert 'id' not in offers.posted
 
 
@@ -155,10 +162,8 @@ def test_offers_partial_offer(offer1, offers3):
     trade = Trade('trade_id', pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, 'buyer')
     offers3.on_offer_changed(offer1, residual_offer)
     offers3.on_trade('market', trade)
-    assert len(offers3.open_in_market('market')) == 2
     assert len(offers3.sold_in_market('market')) == 1
     assert accepted_offer in offers3.sold_in_market('market')
-    assert residual_offer in offers3.open_in_market('market')
 
 
 @pytest.fixture
@@ -177,13 +182,15 @@ def base():
 def test_accept_offer(base, offer_to_accept):
     market = FakeMarket(raises=False)
     base.accept_offer(market, offer_to_accept)
-    assert offer_to_accept in base.offers.bought_in_market(market)
+    assert offer_to_accept in base.offers.bought.keys()
+    assert market.id == base.offers.bought[offer_to_accept]
 
 
 def test_accept_partial_offer(base, offer_to_accept):
     market = FakeMarket(raises=False)
     base.accept_offer(market, offer_to_accept, energy=0.1)
-    assert base.offers.bought_in_market(market)[0].energy == 0.1
+
+    assert list(base.offers.bought.keys())[0].energy == 0.1
 
 
 def test_accept_offer_handles_market_exception(base, offer_to_accept):
@@ -192,14 +199,14 @@ def test_accept_offer_handles_market_exception(base, offer_to_accept):
         base.accept_offer(market, offer_to_accept, energy=0.5)
     except MarketException:
         pass
-    assert len(base.offers.bought_in_market(market)) == 0
+    assert len(base.offers.bought.keys()) == 0
 
 
 def test_accept_post_bid(base):
     market = FakeMarket(raises=True)
 
     bid = base.post_bid(market, 10, 5)
-    assert base.are_bids_posted(market)
+    assert base.are_bids_posted(market.id)
     assert len(base.get_posted_bids(market)) == 1
     assert base.get_posted_bids(market)[0] == bid
     assert bid.energy == 5
@@ -210,22 +217,22 @@ def test_accept_post_bid(base):
 
 def test_remove_bid_from_pending(base):
     market = FakeMarket(raises=True)
-
+    base.area._market = market
     bid = base.post_bid(market, 10, 5)
-    assert base.are_bids_posted(market)
+    assert base.are_bids_posted(market.id)
 
-    base.remove_bid_from_pending(bid.id, market)
-    assert not base.are_bids_posted(market)
+    base.remove_bid_from_pending(bid.id, market.id)
+    assert not base.are_bids_posted(market.id)
 
 
 def test_add_bid_to_bought(base):
     market = FakeMarket(raises=True)
-
+    base.area._market = market
     bid = base.post_bid(market, 10, 5)
-    assert base.are_bids_posted(market)
+    assert base.are_bids_posted(market.id)
 
-    base.add_bid_to_bought(bid, market)
-    assert not base.are_bids_posted(market)
+    base.add_bid_to_bought(bid, market.id)
+    assert not base.are_bids_posted(market.id)
     assert len(base.get_traded_bids_from_market(market)) == 1
     assert base.get_traded_bids_from_market(market) == [bid]
 
@@ -246,7 +253,7 @@ def test_bid_deleted_removes_bid_from_posted(base):
     test_bid = Bid("123", 12, 23, base.owner.name, 'B')
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
-    base._bids[market] = [test_bid]
+    base._bids[market.id] = [test_bid]
     base.event_bid_deleted(market_id=21, bid=test_bid)
     assert base.get_posted_bids(market) == []
 
@@ -256,7 +263,7 @@ def test_bid_changed_adds_bid_to_posted(base):
     test_bid = Bid("123", 12, 23, base.owner.name, 'B')
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
-    base._bids[market] = []
+    base._bids[market.id] = []
     base.event_bid_changed(market_id=21, existing_bid=test_bid, new_bid=test_bid)
     assert base.get_posted_bids(market) == [test_bid]
 
@@ -269,7 +276,7 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     trade.offer = test_bid
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
-    base._bids[market] = [test_bid]
+    base._bids[market.id] = [test_bid]
     base.event_bid_traded(market_id=21, bid_trade=trade)
     assert base.get_posted_bids(market) == []
     assert base.get_traded_bids_from_market(market) == [test_bid]

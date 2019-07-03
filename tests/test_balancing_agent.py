@@ -64,8 +64,8 @@ class FakeBalancingMarket:
         if abs(energy) < abs(offer.energy):
             residual_energy = offer.energy - energy
             residual = BalancingOffer('res', offer.price, residual_energy,
-                                      offer.seller, offer.market)
-            traded = BalancingOffer(offer.id, offer.price, energy, offer.seller, offer.market)
+                                      offer.seller)
+            traded = BalancingOffer(offer.id, offer.price, energy, offer.seller)
             return BalancingTrade('trade_id', time, traded, traded.seller, buyer, residual)
         else:
             return BalancingTrade('trade_id', time, offer, offer.seller, buyer)

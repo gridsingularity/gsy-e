@@ -83,7 +83,7 @@ class BidUpdateFrequencyMixin:
                 bid = market.bids[bid.id]
             market.delete_bid(bid.id)
 
-            self.remove_bid_from_pending(bid.id, market)
+            self.remove_bid_from_pending(bid.id, market.id)
             rate = self._get_current_energy_rate(current_tick_number, market)
             self.post_bid(market,
                           bid.energy * rate,
@@ -170,11 +170,12 @@ class OfferUpdateFrequencyMixin:
                                        self._calculate_price_decrease_rate(market))
 
     def _decrease_offer_price(self, market, reduced_rate):
-        if market not in self.offers.open.values():
+        if market.id not in self.offers.open.values():
             return
 
-        for offer, iterated_market in self.offers.open.items():
-            if iterated_market != market:
+        for offer, iterated_market_id in self.offers.open.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            if market is None or iterated_market is None or iterated_market.id != market.id:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
@@ -219,11 +220,12 @@ class OfferUpdateFrequencyMixin:
             self.reset_price_on_market_cycle(market)
 
     def reset_price_on_market_cycle(self, market):
-        if market not in self.offers.open.values():
+        if market.id not in self.offers.open.values():
             return
 
-        for offer, iterated_market in self.offers.open.items():
-            if iterated_market != market:
+        for offer, iterated_market_id in self.offers.open.items():
+            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+            if market is None or iterated_market is None or iterated_market != market:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)

@@ -26,11 +26,3 @@ def test_offer_id_stringified(offer):
 
     assert isinstance(offer.id, str)
     assert "<object object at" in offer.id
-
-
-@pytest.mark.parametrize("offer", [Offer, BalancingOffer])
-def test_offer_market(offer):
-    market = object()
-    offer = offer('a', 10, 20, 'A', market)
-
-    assert offer.market == market

@@ -77,14 +77,14 @@ class FakeMarket:
     def time_slot(self):
         return TIME
 
-    def offer(self, price, energy, seller, market=None, original_offer_price=None):
-        offer = Offer('id', price, energy, seller, market)
+    def offer(self, price, energy, seller, original_offer_price=None):
+        offer = Offer('id', price, energy, seller)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
 
-    def balancing_offer(self, price, energy, seller, market=None):
-        offer = BalancingOffer('id', price, energy, seller, market)
+    def balancing_offer(self, price, energy, seller):
+        offer = BalancingOffer('id', price, energy, seller)
         self.created_balancing_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -96,7 +96,7 @@ class FakeMarket:
         return trade
 
     def bid(self, price, energy, buyer, seller, original_bid_price=None):
-        bid = Bid("bid_id", price, energy, buyer, seller, market=self)
+        bid = Bid("bid_id", price, energy, buyer, seller)
         return bid
 
 
@@ -235,17 +235,17 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
 
     assert len(bus_test2.offers.posted) == 2
     assert new_offer in bus_test2.offers.posted
-    assert bus_test2.offers.posted[new_offer] == area_test2.test_market
+    assert bus_test2.offers.posted[new_offer] == area_test2.test_market.id
     assert len(bus_test2.offers.changed) == 0
     assert len(bus_test2.offers.sold) == 1
-    assert existing_offer.id in bus_test2.offers.sold[area_test2.test_market]
+    assert existing_offer.id in bus_test2.offers.sold[area_test2.test_market.id]
 
 
 def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, bus_test2):
     bus_test2.event_activate()
     bus_test2.offer_energy(area_test2.test_market)
     assert len(bus_test2.offers.posted) == 1
-    assert list(bus_test2.offers.posted.values())[0] == area_test2.test_market
+    assert list(bus_test2.offers.posted.values())[0] == area_test2.test_market.id
 
 
 """COPY of CEP tests above"""
@@ -303,6 +303,6 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test4):
     bus_test4.event_activate()
     bus_test4.event_market_cycle()
     assert len(bus_test4._bids) == 1
-    assert bus_test4._bids[area_test4.test_market][-1].energy == sys.maxsize
-    assert bus_test4._bids[area_test4.test_market][-1].price == 30 * sys.maxsize
+    assert bus_test4._bids[area_test4.test_market.id][-1].energy == sys.maxsize
+    assert bus_test4._bids[area_test4.test_market.id][-1].price == 30 * sys.maxsize
     ConstSettings.IAASettings.MARKET_TYPE = 1

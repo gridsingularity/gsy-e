@@ -163,7 +163,7 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
         return (time_slot - self._simulation_start_timestamp).days
 
     def _double_sided_market_event_tick(self, market):
-        if self.are_bids_posted(market):
+        if self.are_bids_posted(market.id):
             self.update_posted_bids_over_ticks(market)
 
     def event_tick(self, *, area):
@@ -187,6 +187,7 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
                 * (self.area.config.slot_length / duration(hours=1)))
 
     def event_market_cycle(self):
+        super().event_market_cycle()
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day[current_day] <= 0:
@@ -203,7 +204,7 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
                             self.state.desired_energy_Wh[market.time_slot]
                     else:
                         bid_energy = self.energy_requirement_Wh[market.time_slot]
-                    if not self.are_bids_posted(market):
+                    if not self.are_bids_posted(market.id):
                         self.post_first_bid(market, bid_energy)
         self.update_market_cycle_bids()
 

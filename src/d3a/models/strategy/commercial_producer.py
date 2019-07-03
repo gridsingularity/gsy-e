@@ -68,7 +68,7 @@ class CommercialStrategy(BaseStrategy):
             original_offer_price=self.energy_per_slot_kWh * energy_rate
         )
 
-        self.offers.post(offer, market)
+        self.offers.post(offer, market.id)
 
     def _offer_balancing_energy(self, market):
         if not self.is_eligible_for_balancing_market:
@@ -84,4 +84,4 @@ class CommercialStrategy(BaseStrategy):
             self.energy_per_slot_kWh,
             self.owner.name
         )
-        self.offers.post(offer, market)
+        self.offers.post(offer, market.id)

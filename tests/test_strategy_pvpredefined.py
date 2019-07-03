@@ -38,7 +38,7 @@ ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
-class FakeArea():
+class FakeArea:
     def __init__(self, count):
         self.current_tick = 2
         self.appliance = None
@@ -47,6 +47,10 @@ class FakeArea():
         self.test_market = FakeMarket(0)
 
     def get_future_market_from_id(self, id):
+        return self.test_market
+
+    @property
+    def current_market(self):
         return self.test_market
 
     @property
@@ -79,12 +83,12 @@ class FakeArea():
 class FakeMarket:
     def __init__(self, count):
         self.count = count
-        self.id = count
+        self.id = str(count)
         self.created_offers = []
-        self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A', market=self)}
+        self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A')}
 
-    def offer(self, price, energy, seller, market=None, original_offer_price=None):
-        offer = Offer(str(uuid.uuid4()), price, energy, seller, market, original_offer_price)
+    def offer(self, price, energy, seller, original_offer_price=None):
+        offer = Offer(str(uuid.uuid4()), price, energy, seller, original_offer_price)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -151,8 +155,7 @@ def pv_test3(area_test3):
     p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 30, 1, 'FakeArea', market=area_test3.test_market):
-                       area_test3.test_market}
+    p.offers.posted = {Offer('id', 30, 1, 'FakeArea'): area_test3.test_market.id}
     return p
 
 
@@ -178,7 +181,7 @@ def pv_test4(area_test3, called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', price=20, energy=1, seller='FakeArea'): area_test3.test_market
+        Offer(id='id', price=20, energy=1, seller='FakeArea'): area_test3.test_market.id
     }
     return p
 
