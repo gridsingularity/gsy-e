@@ -22,7 +22,6 @@ from typing import Dict, List  # noqa
 import sys
 
 from pendulum import DateTime
-from terminaltables.other_tables import SingleTable
 
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -159,43 +158,6 @@ class Market:
     @property
     def actual_energy_agg(self):
         return self.accumulated_actual_energy_agg
-
-    def display(self):  # pragma: no cover
-        out = []
-        if self.offers:
-            out.append("Offers:")
-            offer_table = [['From', 'kWh', 'Value']] + [
-                [o.seller, o.energy, o.price]
-                for o in self.offers.values()
-            ]
-            try:
-                out.append(SingleTable(offer_table).table)
-            except UnicodeError:
-                # Could blow up with certain unicode characters
-                pass
-        if self.trades:
-            out.append("Trades:")
-            trade_table = [['From', 'To', 'kWh', 'Value']] + [
-                [trade.seller, trade.buyer, trade.offer.energy, trade.offer.price]
-                for trade in self.trades
-            ]
-            try:
-                out.append(SingleTable(trade_table).table)
-            except UnicodeError:
-                # Could blow up with certain unicode characters
-                pass
-        if self.traded_energy:
-            out.append("Traded Energy:")
-            acct_table = [['Actor', 'Sum (kWh)']] + [
-                [actor, energy]
-                for actor, energy in self.traded_energy.items()
-            ]
-            try:
-                out.append(SingleTable(acct_table).table)
-            except UnicodeError:
-                # Could blow up with certain unicode characters
-                pass
-        return "\n".join(out)
 
     def bought_energy(self, buyer):
         return sum(trade.offer.energy for trade in self.trades if trade.buyer == buyer)

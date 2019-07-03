@@ -50,7 +50,6 @@ rlp==1.1.0                # via eth-rlp
 rq==1.0
 six==1.12.0               # via attrdict, jsonschema, parsimonious, pip-tools, plotly, pyrsistent, python-dateutil, python-rex, retrying, traitlets
 sortedcontainers==2.1.0
-terminaltables==3.1.0
 toolz==0.9.0              # via cytoolz
 traitlets==4.3.2          # via jupyter-core, nbformat
 unidecode==0.4.21         # via awesome-slugify
