@@ -185,4 +185,9 @@ Feature: Run integration tests
      |  default_2a  |    60       |
      |  default_3a  |    15       |
      |  default_3b  |    60       |
- 
+
+  Scenario: Uploaded one-day-profile gets duplicated when running the simulations for multiple days
+    Given we have a scenario named strategy_tests.user_profile_load_csv
+    And d3a is installed
+    When we run the d3a simulation with strategy_tests.user_profile_load_csv [48, 60, 60]
+    Then the load profile schould be identical on each day

@@ -950,3 +950,13 @@ def identical_energy_bills(context):
     for _, v in energy_bills_redis.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0
                    for _, old_area_results in context.energy_bills_redis.items())
+
+
+@then("the load profile schould be identical on each day")
+def identical_profiles(context):
+    device_stats_dict = context.simulation.endpoint_buffer.device_statistics.device_stats_dict
+    load_profile = device_stats_dict['House 1']['H1 DefinedLoad']['load_profile_kWh']
+    for time_slot, value in load_profile.items():
+        day_plus_one_key = time_slot.add(days=1)
+        if day_plus_one_key in load_profile:
+            assert value == load_profile[time_slot.add(days=1)]
