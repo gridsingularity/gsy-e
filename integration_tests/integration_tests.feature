@@ -190,4 +190,4 @@ Feature: Run integration tests
     Given we have a scenario named strategy_tests.user_profile_load_csv
     And d3a is installed
     When we run the d3a simulation with strategy_tests.user_profile_load_csv [48, 60, 60]
-    Then the load profile schould be identical on each day
+    Then the load profile should be identical on each day
