@@ -29,7 +29,7 @@ from d3a.d3a_core.util import available_simulation_scenarios
 from d3a.d3a_core.util import update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
 from d3a.constants import TIME_ZONE, DATE_FORMAT
-from d3a.models.const import GlobalConfig
+from d3a.models.const import GlobalConfig, ConstSettings
 
 
 @job('d3a')
@@ -47,6 +47,13 @@ def start(scenario, settings):
     advanced_settings = settings.get('advanced_settings', None)
     if advanced_settings is not None:
         update_advanced_settings(ast.literal_eval(advanced_settings))
+
+    spot_market_type = settings.get('spot_market_type', None)
+    if spot_market_type is not None:
+        if not 1 <= spot_market_type <= 3:
+            logging.getLogger().error(f"Invalid value ({spot_market_type} for spot market type.)")
+        else:
+            ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
 
     config = SimulationConfig(
         sim_duration=duration(days=settings['duration'].days)
