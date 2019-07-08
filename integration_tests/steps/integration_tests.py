@@ -957,5 +957,5 @@ def identical_profiles(context):
     device_stats_dict = context.simulation.endpoint_buffer.device_statistics.device_stats_dict
     load_profile = device_stats_dict['House 1']['H1 DefinedLoad']['load_profile_kWh']
     for time_slot, value in load_profile.items():
-        if not today().add(days=2):
+        if time_slot.add(days=1) < today(tz=TIME_ZONE).add(days=2):
             assert value == load_profile[time_slot.add(days=1)]
