@@ -24,6 +24,7 @@ from statistics import mean
 from typing import Dict
 from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
 from d3a.models.const import GlobalConfig
+from d3a.d3a_core.util import generate_market_slot_list
 
 """
 Exposes mixins that can be used from strategy classes.
@@ -211,7 +212,6 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
     if os.path.isfile(str(input_profile)):
         # input is csv file
         profile = _readCSV(input_profile)
-        _eval_time_period_consensus(profile)
 
     elif isinstance(input_profile, dict) or isinstance(input_profile, str):
         # input is profile
@@ -278,6 +278,21 @@ def _eval_time_period_consensus(input_profile: Dict):
                          f"{simulation_time_list[-1].format(DATE_TIME_FORMAT)})")
 
 
+def time_str(hour, minute):
+    return "{:02d}{:02d}".format(hour, minute)
+
+
+def copy_profile_to_multiple_days(profile):
+    daytime_dict = dict((time_str(time.hour, time.minute), time) for time in profile.keys())
+    for slot_time in generate_market_slot_list():
+        if slot_time not in profile.keys():
+            time_key = time_str(slot_time.hour, slot_time.minute)
+            if time_key in daytime_dict:
+                profile[slot_time] = profile[daytime_dict[time_key]]
+
+    return profile
+
+
 def read_arbitrary_profile(profile_type: InputProfileTypes,
                            input_profile) -> Dict[DateTime, float]:
     """
@@ -289,12 +304,17 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
     or a dict with hourly data (Dict[int, float])
     or a dict with arbitrary time data (Dict[str, float])
     or a string containing a serialized dict of the aforementioned structure
+    :param copy:
     :return: a mapping from time to profile values
     """
 
     profile = _read_from_different_sources_todict(input_profile)
+    profile_time_list = list(profile.keys())
+    profile_duration = profile_time_list[-1] - profile_time_list[0]
+    if GlobalConfig.sim_duration > duration(days=1) and profile_duration <= duration(days=1):
+        copy_profile_to_multiple_days(profile)
 
-    if input_profile is not None:
+    if profile is not None:
         filled_profile = _fill_gaps_in_profile(profile)
         _eval_time_period_consensus(filled_profile)
 

@@ -12,7 +12,7 @@ chardet==3.0.4            # via requests
 coverage==4.5.3
 deepdiff==4.0.6
 docopt==0.6.2             # via ptpython
-flake8-tuple==0.3.1
+flake8-tuple==0.4.0
 flake8==3.5.0
 hypothesis==4.24.5
 idna==2.8                 # via requests
