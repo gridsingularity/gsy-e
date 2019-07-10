@@ -186,12 +186,14 @@ class AreaDispatcher:
                              self.area.current_market and pm < self.area.current_market.time_slot]
             for pm in delete_agents:
                 for agent in area_agent_member[pm]:
-                    del agent.offers
+                    if hasattr(agent, "offers"):
+                        del agent.offers
                     for engine in agent.engines:
                         del engine.forwarded_offers
                         if hasattr(engine, "forwarded_bids"):
                             del engine.forwarded_bids
-                    del agent.engines
+                    if hasattr(agent, "engines"):
+                        del agent.engines
                     agent.higher_market = None
                     agent.lower_market = None
                 del area_agent_member[pm]
