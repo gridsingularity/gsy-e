@@ -188,11 +188,11 @@ class AreaDispatcher:
                 for agent in area_agent_member[pm]:
                     if hasattr(agent, "offers"):
                         del agent.offers
-                    for engine in agent.engines:
-                        del engine.forwarded_offers
-                        if hasattr(engine, "forwarded_bids"):
-                            del engine.forwarded_bids
                     if hasattr(agent, "engines"):
+                        for engine in agent.engines:
+                            del engine.forwarded_offers
+                            if hasattr(engine, "forwarded_bids"):
+                                del engine.forwarded_bids
                         del agent.engines
                     agent.higher_market = None
                     agent.lower_market = None
