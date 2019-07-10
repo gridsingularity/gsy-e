@@ -51,6 +51,8 @@ def generate_settings_events(settings_events):
 
 
 def deserialize_events_to_areas(events, root_area):
+    if not events:
+        return
     event_list = generate_settings_events(events.get("settings_events", [])) \
         if "settings_events" in events else []
     assign_events_to_areas(root_area, events.get("area_events", []), event_list)
