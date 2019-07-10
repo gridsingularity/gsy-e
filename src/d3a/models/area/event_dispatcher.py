@@ -152,7 +152,9 @@ class AreaDispatcher:
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
             )
-            self._delete_past_agents(market.time_slot, self._inter_area_agents)
+
+            self._delete_past_agents(self._inter_area_agents)
+            self._delete_past_agents(self.area.parent.dispatcher._inter_area_agents)
 
             # Attach agent to own IAA list
             self._inter_area_agents = append_or_create_key(
@@ -180,20 +182,12 @@ class AreaDispatcher:
             # Add inter area appliance to report energy
             self.area.appliance = InterAreaAppliance(self.area.parent, self.area)
 
-    def _delete_past_agents(self, timeslot, area_agent_member):
+    def _delete_past_agents(self, area_agent_member):
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             delete_agents = [pm for pm in area_agent_member.keys() if
                              self.area.current_market and pm < self.area.current_market.time_slot]
             for pm in delete_agents:
                 for agent in area_agent_member[pm]:
-                    if hasattr(agent, "offers"):
-                        del agent.offers
-                    if hasattr(agent, "engines"):
-                        for engine in agent.engines:
-                            del engine.forwarded_offers
-                            if hasattr(engine, "forwarded_bids"):
-                                del engine.forwarded_bids
-                        del agent.engines
-                    agent.higher_market = None
-                    agent.lower_market = None
+                    if agent in area_agent_member[pm]:
+                        area_agent_member[pm].remove(agent)
                 del area_agent_member[pm]
