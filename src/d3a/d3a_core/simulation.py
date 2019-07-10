@@ -44,6 +44,7 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
+from d3a.models.area.event_deserializer import deserialize_events_to_areas
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
@@ -61,8 +62,9 @@ class _SimulationInterrupted(Exception):
 
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
-                 slowdown: int = 0, seed=None, paused: bool = False, pause_after: duration = None,
-                 repl: bool = False, no_export: bool = False, export_path: str = None,
+                 simulation_events: str = None, slowdown: int = 0, seed=None,
+                 paused: bool = False, pause_after: duration = None, repl: bool = False,
+                 no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False):
         self.initial_params = dict(
             slowdown=slowdown,
@@ -94,7 +96,12 @@ class Simulation:
 
         self._load_setup_module()
         self._init(**self.initial_params)
+        # TODO: Deprecated event mechanism since D3ASIM-1328 is about to be merged.
+        # Candidate for deletion.
         self._init_events()
+
+        deserialize_events_to_areas(simulation_events, self.area)
+
         validate_const_settings_for_simulation()
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
                                                         self.area)
@@ -470,8 +477,8 @@ class Simulation:
         self._init_events()
 
 
-def run_simulation(setup_module_name="", simulation_config=None, slowdown=None,
-                   redis_job_id=None, kwargs=None):
+def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
+                   slowdown=None, redis_job_id=None, kwargs=None):
 
     try:
         if "pricing_scheme" in kwargs:
@@ -480,6 +487,7 @@ def run_simulation(setup_module_name="", simulation_config=None, slowdown=None,
         simulation = Simulation(
             setup_module_name=setup_module_name,
             simulation_config=simulation_config,
+            simulation_events=simulation_events,
             slowdown=slowdown,
             redis_job_id=redis_job_id,
             **kwargs

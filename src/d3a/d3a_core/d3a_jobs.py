@@ -33,7 +33,7 @@ from d3a.models.const import GlobalConfig, ConstSettings
 
 
 @job('d3a')
-def start(scenario, settings):
+def start(scenario, settings, events):
     logging.getLogger().setLevel(logging.ERROR)
 
     job = get_current_job()
@@ -84,6 +84,7 @@ def start(scenario, settings):
     try:
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
+                       simulation_events=events,
                        slowdown=settings.get('slowdown', 0),
                        redis_job_id=job.id,
                        kwargs=kwargs)

@@ -119,7 +119,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             for pricing_scheme in range(0, 4):
                 kwargs["pricing_scheme"] = pricing_scheme
                 p = Process(target=run_simulation, args=(setup_module_name, simulation_config,
-                                                         slowdown, None, kwargs)
+                                                         None, slowdown, None, kwargs)
                             )
                 p.start()
                 processes.append(p)
@@ -128,7 +128,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
                 p.join()
 
         else:
-            run_simulation(setup_module_name, simulation_config, slowdown, None,
+            run_simulation(setup_module_name, simulation_config, None, slowdown, None,
                            kwargs)
 
     except D3AException as ex:
