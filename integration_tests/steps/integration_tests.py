@@ -79,12 +79,12 @@ def json_string_profile(context, device):
 
     profile = "{"
     for i in range(24):
-            if i < 10:
-                profile += f"\"{i:02}:00\": 100, "
-            elif 10 <= i < 20:
-                profile += f"\"{i:02}:00\": 50, "
-            else:
-                profile += f"\"{i:02}:00\": 25, "
+        if i < 10:
+            profile += f"\"{i:02}:00\": 100, "
+        elif 10 <= i < 20:
+            profile += f"\"{i:02}:00\": 50, "
+        else:
+            profile += f"\"{i:02}:00\": 25, "
     profile += "}"
     context._device_profile = profile
 
@@ -244,6 +244,7 @@ def running_the_simulation(context):
     context.simulation = Simulation(
         'json_arg',
         context._settings,
+        None,
         slowdown,
         seed,
         paused,
@@ -298,6 +299,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
     context.simulation = Simulation(
         scenario,
         simulation_config,
+        None,
         slowdown,
         seed,
         paused,
@@ -465,7 +467,7 @@ def create_sim_object(context, scenario):
                                          start_date=today(tz=TIME_ZONE))
 
     context.simulation = Simulation(
-        scenario, simulation_config, 0, 0, False, duration(), False, False, None, None,
+        scenario, simulation_config, None, 0, 0, False, duration(), False, False, None, None,
         "1234", False
     )
 
@@ -556,6 +558,7 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
     context.simulation = Simulation(
         scenario,
         simulation_config,
+        None,
         slowdown,
         seed,
         paused,
@@ -612,6 +615,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
     context.simulation = Simulation(
         scenario,
         simulation_config,
+        None,
         slowdown,
         seed,
         paused,
