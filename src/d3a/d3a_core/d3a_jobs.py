@@ -33,7 +33,7 @@ from d3a.models.const import GlobalConfig, ConstSettings
 
 
 @job('d3a')
-def start(scenario, settings):
+def start(scenario, settings, events):
     logging.getLogger().setLevel(logging.ERROR)
 
     job = get_current_job()
@@ -47,6 +47,9 @@ def start(scenario, settings):
     advanced_settings = settings.get('advanced_settings', None)
     if advanced_settings is not None:
         update_advanced_settings(ast.literal_eval(advanced_settings))
+
+    if events is not None:
+        events = ast.literal_eval(events)
 
     spot_market_type = settings.get('spot_market_type', None)
     if spot_market_type is not None:
@@ -84,6 +87,7 @@ def start(scenario, settings):
     try:
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
+                       simulation_events=events,
                        slowdown=settings.get('slowdown', 0),
                        redis_job_id=job.id,
                        kwargs=kwargs)

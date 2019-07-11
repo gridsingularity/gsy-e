@@ -63,8 +63,8 @@ class Area:
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=[],
-                 transfer_fee_pct: float =None,
-                 transfer_fee_const: float=None):
+                 transfer_fee_pct: float = None,
+                 transfer_fee_const: float = None):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -90,6 +90,9 @@ class Area:
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
+
+    def set_events(self, event_list):
+        self.events = Events(event_list, self)
 
     def activate(self, bc=None):
         if bc:
