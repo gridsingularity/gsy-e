@@ -26,14 +26,14 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSide
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.util import append_or_create_key
+from d3a.d3a_core.util import create_subdict_or_update
 
 
 class AreaDispatcher:
     def __init__(self, area):
         self.listeners = []
-        self._inter_area_agents = {}  # type: Dict[DateTime, List[OneSidedAgent]]
-        self._balancing_agents = {}  # type: Dict[DateTime, List[BalancingAgent]]
+        self._inter_area_agents = {}  # type: Dict[DateTime, Dict[String, OneSidedAgent]]
+        self._balancing_agents = {}  # type: Dict[DateTime, Dict[String, BalancingAgent]]
         self.area = area
 
     @property
@@ -75,8 +75,8 @@ class AreaDispatcher:
 
             if not self.area.events.is_connected:
                 break
-            for agent in sorted(agents, key=lambda _: random()):
-                agent.event_listener(event_type, **kwargs)
+            for area_name in sorted(agents, key=lambda _: random()):
+                agents[area_name].event_listener(event_type, **kwargs)
         # Also broadcast to BAs. Again in random order
         # TODO: Refactor to reuse the spot market mechanism
         for time_slot, agents in self._balancing_agents.items():
@@ -86,8 +86,8 @@ class AreaDispatcher:
 
             if not self.area.events.is_connected:
                 break
-            for agent in sorted(agents, key=lambda _: random()):
-                agent.event_listener(event_type, **kwargs)
+            for area_name in sorted(agents, key=lambda _: random()):
+                agents[area_name].event_listener(event_type, **kwargs)
         for listener in self.listeners:
             listener.event_listener(event_type, **kwargs)
 
@@ -152,14 +152,19 @@ class AreaDispatcher:
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
             )
-            self._delete_past_agents(market.time_slot, self._inter_area_agents)
+
+            self._delete_past_agents(self._inter_area_agents)
+            self._delete_past_agents(self.area.parent.dispatcher._inter_area_agents)
 
             # Attach agent to own IAA list
-            self._inter_area_agents = append_or_create_key(
-                self._inter_area_agents, market.time_slot, iaa)
-            # And also to parents to allow events to flow form both markets
-            self.area.parent.dispatcher._inter_area_agents = append_or_create_key(
-                self.area.parent.dispatcher._inter_area_agents, market.time_slot, iaa)
+            self._inter_area_agents = create_subdict_or_update(self._inter_area_agents,
+                                                               market.time_slot,
+                                                               {self.area.name: iaa})
+            # And also to parents to allow events to flow from both markets
+            self.area.parent.dispatcher._inter_area_agents = create_subdict_or_update(
+                self.area.parent.dispatcher._inter_area_agents, market.time_slot,
+                {self.area.name: iaa})
+
         else:
             if market.time_slot in self.balancing_agents or \
                     market.time_slot not in self.area.parent._markets.balancing_markets:
@@ -170,22 +175,24 @@ class AreaDispatcher:
                 lower_market=market
             )
 
-            self._balancing_agents = \
-                append_or_create_key(self._balancing_agents, market.time_slot, ba)
-            self.area.parent.dispatcher._balancing_agents = \
-                append_or_create_key(self.area.parent.dispatcher._balancing_agents,
-                                     market.time_slot, ba)
+            self._balancing_agents = create_subdict_or_update(self._balancing_agents,
+                                                              market.time_slot,
+                                                              {self.area.name: ba})
+            self.area.parent.dispatcher._balancing_agents = create_subdict_or_update(
+                self.area.parent.dispatcher._balancing_agents, market.time_slot,
+                {self.area.name: ba})
 
         if self.area.parent:
             # Add inter area appliance to report energy
             self.area.appliance = InterAreaAppliance(self.area.parent, self.area)
 
-    def _delete_past_agents(self, timeslot, area_agent_member):
+    def _delete_past_agents(self, area_agent_member):
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             delete_agents = [pm for pm in area_agent_member.keys() if
                              self.area.current_market and pm < self.area.current_market.time_slot]
             for pm in delete_agents:
-                for agent in area_agent_member[pm]:
+                for area_name in area_agent_member[pm]:
+                    agent = area_agent_member[pm][area_name]
                     if hasattr(agent, "offers"):
                         del agent.offers
                     if hasattr(agent, "engines"):

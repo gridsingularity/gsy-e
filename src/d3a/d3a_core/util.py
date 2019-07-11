@@ -434,3 +434,11 @@ def append_or_create_key(dict, key, obj):
     else:
         dict[key] = [obj]
     return dict
+
+
+def create_subdict_or_update(indict, key, subdict):
+    if key in indict:
+        indict[key].update(subdict)
+    else:
+        indict[key] = subdict
+    return indict
