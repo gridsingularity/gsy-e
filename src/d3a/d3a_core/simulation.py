@@ -21,7 +21,7 @@ from logging import getLogger
 import time
 from time import sleep
 from pathlib import Path
-from threading import Event, Thread, Lock
+from threading import Lock
 import dill
 import click
 import platform
@@ -44,6 +44,7 @@ from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
+from d3a.models.area.event_deserializer import deserialize_events_to_areas
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
@@ -55,14 +56,15 @@ log = getLogger(__name__)
 page_lock = Lock()
 
 
-class _SimulationInterrupted(Exception):
+class SimulationResetException(Exception):
     pass
 
 
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
-                 slowdown: int = 0, seed=None, paused: bool = False, pause_after: duration = None,
-                 repl: bool = False, no_export: bool = False, export_path: str = None,
+                 simulation_events: str = None, slowdown: int = 0, seed=None,
+                 paused: bool = False, pause_after: duration = None, repl: bool = False,
+                 no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False):
         self.initial_params = dict(
             slowdown=slowdown,
@@ -94,7 +96,9 @@ class Simulation:
 
         self._load_setup_module()
         self._init(**self.initial_params)
-        self._init_events()
+
+        deserialize_events_to_areas(simulation_events, self.area)
+
         validate_const_settings_for_simulation()
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
                                                         self.area)
@@ -131,12 +135,6 @@ class Simulation:
             raise SimulationException(
                 "Invalid setup module '{}'".format(self.setup_module_name)) from ex
 
-    def _init_events(self):
-        self.interrupt = Event()
-        self.interrupted = Event()
-        self.ready = Event()
-        self.ready.set()
-
     def _init(self, slowdown, seed, paused, pause_after):
         self.paused = paused
         self.pause_after = pause_after
@@ -170,21 +168,14 @@ class Simulation:
     def time_since_start(self):
         return self.area.current_tick * self.simulation_config.tick_length
 
-    def reset(self, sync=True):
+    def reset(self):
         """
         Reset simulation to initial values and restart the run.
-
-        *IMPORTANT*: This method *MUST* be called from another thread, otherwise a deadlock will
-        occur!
         """
         log.error("=" * 15 + " Simulation reset requested " + "=" * 15)
-        if sync:
-            self.interrupted.clear()
-            self.interrupt.set()
-            self.interrupted.wait()
-            self.interrupt.clear()
         self._init(**self.initial_params)
-        self.ready.set()
+        self.run()
+        raise SimulationResetException
 
     def stop(self):
         self.is_stopped = True
@@ -206,8 +197,6 @@ class Simulation:
             self._info()
         self.is_stopped = False
         while True:
-            self.ready.wait()
-            self.ready.clear()
             if resume:
                 # FIXME: Fix resume time calculation
                 if self.run_start is None or self.paused_time is None:
@@ -223,9 +212,9 @@ class Simulation:
                 self._run_cli_execute_cycle(slot_resume, tick_resume) \
                     if self._started_from_cli \
                     else self._execute_simulation(slot_resume, tick_resume)
-            except _SimulationInterrupted:
-                self.interrupted.set()
             except KeyboardInterrupt:
+                break
+            except SimulationResetException:
                 break
             else:
                 break
@@ -341,8 +330,6 @@ class Simulation:
             timeout = sleep / 100
             start = time.monotonic()
         while True:
-            if self.interrupt.is_set():
-                raise _SimulationInterrupted()
             cmd = console.get_char(timeout)
             if cmd:
                 if cmd not in {'i', 'p', 'q', 'r', 'S', 'R', 's', '+', '-'}:
@@ -363,7 +350,7 @@ class Simulation:
                     continue
 
                 if cmd == 'r':
-                    Thread(target=lambda: self.reset()).start()
+                    self.reset()
                 elif cmd == 'R':
                     self._start_repl()
                 elif cmd == 'i':
@@ -398,7 +385,7 @@ class Simulation:
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             self.endpoint_buffer.update_stats(self.area, self.status)
             self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
-            while self.paused and not self.interrupt.is_set():
+            while self.paused:
                 self._handle_input(console, 0.1)
             log.critical("Simulation resumed")
             return time.monotonic() - start
@@ -449,17 +436,12 @@ class Simulation:
             return "stopped"
         elif self.paused:
             return "paused"
-        elif self.ready.is_set():
-            return "ready"
         else:
             return self.sim_status
 
     def __getstate__(self):
         state = self.__dict__.copy()
         state['_random_state'] = random.getstate()
-        del state['interrupt']
-        del state['interrupted']
-        del state['ready']
         del state['setup_module']
         return state
 
@@ -467,11 +449,10 @@ class Simulation:
         random.setstate(state.pop('_random_state'))
         self.__dict__.update(state)
         self._load_setup_module()
-        self._init_events()
 
 
-def run_simulation(setup_module_name="", simulation_config=None, slowdown=None,
-                   redis_job_id=None, kwargs=None):
+def run_simulation(setup_module_name="", simulation_config=None, simulation_events=None,
+                   slowdown=None, redis_job_id=None, kwargs=None):
 
     try:
         if "pricing_scheme" in kwargs:
@@ -480,6 +461,7 @@ def run_simulation(setup_module_name="", simulation_config=None, slowdown=None,
         simulation = Simulation(
             setup_module_name=setup_module_name,
             simulation_config=simulation_config,
+            simulation_events=simulation_events,
             slowdown=slowdown,
             redis_job_id=redis_job_id,
             **kwargs
