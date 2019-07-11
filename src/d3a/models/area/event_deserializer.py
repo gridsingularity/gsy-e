@@ -35,7 +35,7 @@ def assign_events_to_areas(area, area_events, settings_events):
 
 
 def generate_settings_events(settings_events):
-    output_events = []
+    config_events_list = []
     for event in settings_events:
         event_time = datetime.datetime.fromtimestamp(event["time"])
         market_maker_rate = event["market_maker_rate_file"] \
@@ -46,13 +46,13 @@ def generate_settings_events(settings_events):
                   'pv_user_profile': event.get("pv_user_profile", None),
                   'transfer_fee_pct': event.get("iaa_fee", None),
                   'market_maker_rate': market_maker_rate}
-        output_events.append(ConfigEvents(event_time, params))
-    return output_events
+        config_events_list.append(ConfigEvents(event_time, params))
+    return config_events_list
 
 
 def deserialize_events_to_areas(events, root_area):
     if not events:
         return
-    event_list = generate_settings_events(events.get("settings_events", [])) \
+    settings_event_list = generate_settings_events(events.get("settings_events", [])) \
         if "settings_events" in events else []
-    assign_events_to_areas(root_area, events.get("area_events", []), event_list)
+    assign_events_to_areas(root_area, events.get("area_events", []), settings_event_list)

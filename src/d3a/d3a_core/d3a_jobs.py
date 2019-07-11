@@ -48,6 +48,9 @@ def start(scenario, settings, events):
     if advanced_settings is not None:
         update_advanced_settings(ast.literal_eval(advanced_settings))
 
+    if events is not None:
+        events = ast.literal_eval(events)
+
     spot_market_type = settings.get('spot_market_type', None)
     if spot_market_type is not None:
         if not 1 <= spot_market_type <= 3:
