@@ -69,6 +69,8 @@ def start(scenario, settings, events):
         cloud_coverage=settings.get('cloud_coverage', GlobalConfig.cloud_coverage),
         pv_user_profile=settings.get('pv_user_profile', None),
         iaa_fee=settings.get('iaa_fee', GlobalConfig.iaa_fee),
+        market_maker_rate=settings.get('market_maker_rate', str(
+            ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
         start_date=from_format(settings.get('start_date'), DATE_FORMAT, tz=TIME_ZONE)
         if 'start_date' in settings else GlobalConfig.start_date
     )
