@@ -34,7 +34,7 @@ from d3a.models.const import GlobalConfig, ConstSettings
 
 @job('d3a')
 def start(scenario, settings, events):
-    logging.getLogger().setLevel(logging.CRITICAL)
+    logging.getLogger().setLevel(logging.ERROR)
 
     job = get_current_job()
     job.save_meta()
