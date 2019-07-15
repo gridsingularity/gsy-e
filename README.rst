@@ -4,7 +4,7 @@ d3a: Decentralized Autonomous Area Agent
 
 The D3A is a blockchain-based, distributed energy market model developed by Grid Singularity with
 the objective of supporting the Energy Web Foundation (EWF) mission to enable a decarbonized,
-decentralized, democratized and digitized energy system.
+decentralized, democratized and digitized energy system. See more on https://www.d3a.io .
 
 
 Code of Conduct
@@ -69,17 +69,6 @@ s   Save current state of simulation to file (see below for resuming)
 `+` Increase 'slowdown' factor
 `-` Decrease 'slowdown' factor
 === =======
-
-
-
-Resuming a previously saved run
--------------------------------
-
-To resume a previously saved simulation state use the `resume` subcommand::
-
-    ~# d3a resume <save-file>
-
-
 
 Development
 ===========
