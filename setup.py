@@ -16,10 +16,10 @@ VERSION = '1.0.0a0'
 
 setup(
     name="d3a",
-    description="GridSingularity AreaManager",
+    description="decentralised energy exchange developed by Grid Singularity",
     long_description=README,
     author='GridSingularity',
-    author_email='info@gridsingularity.com',
+    author_email='d3a@gridsingularity.com',
     url='https://github.com/gridsingularity/d3a',
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),

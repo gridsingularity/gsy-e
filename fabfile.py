@@ -149,6 +149,11 @@ def sync():
         local('pip install --no-deps -e .')
         # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
         local('pip install git+https://github.com/Jonasmpi/py-solc.git')
+
+        # Installing d3a-interface
+        local('pip install '
+              'git+https://github.com/gridsingularity/d3a-interface.git#egg=d3a-interface')
+
     _post_check()
 
 
