@@ -18,8 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union
 from collections import namedtuple
 
+from d3a import limit_float_precision
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.state import StorageState
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name
+from d3a.models.state import StorageState, ESSEnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, \
@@ -226,15 +228,45 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
         super().event_trade(market_id=market_id, trade=trade)
+        if trade.buyer == self.owner.name:
+            self._energy_bought_type(trade)
         if trade.offer.seller == self.owner.name:
+            self._energy_sell_type(trade)
             self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy
             self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
+
+    def _is_local(self, trade):
+        for child in self.area.children:
+            if child.name == trade.seller:
+                return True
+
+    def _energy_sell_type(self, trade):
+        energy = trade.offer.energy
+        while limit_float_precision(energy) > 0:
+            recent_energy = self.state.get_used_storage_share[-1].value
+            if energy >= recent_energy:
+                energy -= recent_energy
+                self.state.get_used_storage_share.pop()
+            elif energy < recent_energy:
+                last = self.state.get_used_storage_share.pop()
+                residual = recent_energy - energy
+                self.state.update_used_storage_share(residual, last.origin)
+                energy = 0
+
+    def _energy_bought_type(self, trade):
+        if area_name_from_area_or_iaa_name(trade.seller) == self.area.name:
+            self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.EXTERNAL)
+        elif self._is_local(trade):
+            self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.LOCAL)
+        else:
+            self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.UNKNOWN)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         market = self.area.get_future_market_from_id(market_id)
 
         if bid_trade.offer.buyer == self.owner.name:
+            self._energy_bought_type(bid_trade)
             self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer.energy
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 

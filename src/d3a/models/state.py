@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration
-
+from collections import namedtuple
+from enum import Enum
 from math import isclose
 from d3a.models.const import ConstSettings
 from d3a import limit_float_precision
@@ -49,6 +50,15 @@ class LoadState:
     def __init__(self):
         self.desired_energy_Wh = \
             {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+
+
+class ESSEnergyOrigin(Enum):
+    LOCAL = 1
+    EXTERNAL = 2
+    UNKNOWN = 3
+
+
+EnergyOrigin = namedtuple('EnergyOrigin', ('origin', 'value'))
 
 
 class StorageState:
@@ -107,6 +117,8 @@ class StorageState:
 
         self._used_storage = initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
+        # list of namedtuple
+        self._used_storage_share = [EnergyOrigin(ESSEnergyOrigin.UNKNOWN, initial_capacity_kWh)]
 
     @property
     def used_storage(self):
@@ -114,6 +126,13 @@ class StorageState:
         Current stored energy
         """
         return self._used_storage
+
+    def update_used_storage_share(self, energy, source=ESSEnergyOrigin.UNKNOWN):
+        self._used_storage_share.append(EnergyOrigin(source, energy))
+
+    @property
+    def get_used_storage_share(self):
+        return self._used_storage_share
 
     def free_storage(self, time_slot):
         """

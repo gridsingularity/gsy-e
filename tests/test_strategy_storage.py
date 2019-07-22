@@ -365,7 +365,7 @@ def market_test6():
 
 @pytest.fixture()
 def storage_strategy_test6(area_test6, market_test6, called):
-    s = StorageStrategy()
+    s = StorageStrategy(initial_capacity_kWh=0.5)
     s.owner = area_test6
     s.area = area_test6
     s.accept_offer = called
