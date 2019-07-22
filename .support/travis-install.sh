@@ -18,4 +18,8 @@ if [ "$TOXENV" == "py36,coverage" ] || [ "$TOXENV" == "py36" ] || [ "$TOXENV" ==
 	dpkg -x solc_0.5.1-0ubuntu1_trusty_amd64.deb $HOME/solc
 fi
 
+if [[ "$TOXENV" == "travis" ]]; then
+    ./.support/install_d3a-interface.sh ${GITHUB_USER} ${GITHUB_KEY}
+fi
+
 pip install -U tox
