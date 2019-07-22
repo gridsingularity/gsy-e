@@ -9,10 +9,7 @@ branches:
 jobs:
  include:
    - python: 3.6
-     env:
-       - TOXENV=travis
-       - GITHUB_USER=$GITHUB_USER
-       - GITHUB_KEY=$GITHUB_KEY
+     env: TOXENV=travis GITHUB_USER=$GITHUB_USER GITHUB_KEY=$GITHUB_KEY
      install: .support/travis-install.sh
      script: .support/travis-run.sh
 # this is to trigger a new build of d3a-web for every push to master or production
