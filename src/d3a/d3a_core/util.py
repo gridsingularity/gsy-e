@@ -442,3 +442,11 @@ def create_subdict_or_update(indict, key, subdict):
     else:
         indict[key] = subdict
     return indict
+
+
+def is_installed(module_name):
+    try:
+        __import__(module_name)
+        return True
+    except ModuleNotFoundError:
+        return False
