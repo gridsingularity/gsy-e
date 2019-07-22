@@ -7,7 +7,7 @@ WORKDIR /app
 # TODO: Workaround for pysolc due to https://github.com/ethereum/py-solc/issues/64
 RUN pip install -r/app/requirements/dev.txt && \
     pip install -e . && \
-    pip install git+https://github.com/Jonasmpi/py-solc.git && \
+    pip install git+https://github.com/Jonasmpi/py-solc.git
 
 ENTRYPOINT ["d3a"]
 
