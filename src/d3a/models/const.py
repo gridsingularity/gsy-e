@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pendulum import today, duration
 from d3a.constants import TIME_ZONE
+from d3a.is_installed import is_installed
 
 
 class ConstSettings:
@@ -157,6 +158,7 @@ class ConstSettings:
 
 
 class GlobalConfig:
+    # TODO: Use global default values from d3a-web
     start_date = today(tz=TIME_ZONE)
     sim_duration = duration(hours=24)
     market_count = 1
@@ -168,3 +170,8 @@ class GlobalConfig:
     iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
     iaa_fee_const = ConstSettings.IAASettings.FEE_CONSTANT
     market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+
+
+if is_installed("d3a-interface"):
+    from d3a_interface.constants_limits import Constants
+    ConstSettings = Constants
