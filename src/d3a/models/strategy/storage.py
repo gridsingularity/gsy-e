@@ -243,12 +243,12 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
     def _energy_sell_type(self, trade):
         energy = trade.offer.energy
         while limit_float_precision(energy) > 0:
-            recent_energy = self.state.get_used_storage_share[-1].value
+            recent_energy = self.state.get_used_storage_share[0].value
             if energy >= recent_energy:
                 energy -= recent_energy
-                self.state.get_used_storage_share.pop()
+                self.state.get_used_storage_share.pop(0)
             elif energy < recent_energy:
-                last = self.state.get_used_storage_share.pop()
+                last = self.state.get_used_storage_share.pop(0)
                 residual = recent_energy - energy
                 self.state.update_used_storage_share(residual, last.origin)
                 energy = 0

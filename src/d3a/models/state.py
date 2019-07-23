@@ -104,6 +104,11 @@ class StorageState:
         # energy, that the storage wants to buy (but not traded yet):
         self.offered_buy_kWh = \
             {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+        self.time_series_ess_share = \
+            {slot: {ESSEnergyOrigin.UNKNOWN: 0.,
+                    ESSEnergyOrigin.LOCAL: 0.,
+                    ESSEnergyOrigin.EXTERNAL: 0.}
+             for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
 
         self.charge_history = \
             {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
@@ -243,3 +248,6 @@ class StorageState:
 
         self.calculate_soc_for_time_slot(time_slot)
         self.offered_history[time_slot] = self.offered_sell_kWh[time_slot]
+
+        for energy_type in self._used_storage_share:
+            self.time_series_ess_share[past_time_slot][energy_type.origin] += energy_type.value
