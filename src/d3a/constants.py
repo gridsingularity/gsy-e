@@ -15,15 +15,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from d3a.is_installed import is_installed
+
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
 VERSION = "1.0.0a0"
 
-TIME_FORMAT = "HH:mm"
-DATE_FORMAT = "YYYY-MM-DD"
-DATE_TIME_FORMAT = f"{DATE_FORMAT}T{TIME_FORMAT}"
-DATE_TIME_UI_FORMAT = "MMMM DD YYYY, HH:mm [h]"
-
-TIME_ZONE = "UTC"
+if is_installed("d3a_interface"):
+    from d3a_interface.constants_limits import TimeConstants
+    TIME_FORMAT = TimeConstants.TIME_FORMAT
+    DATE_FORMAT = TimeConstants.DATE_FORMAT
+    DATE_TIME_FORMAT = TimeConstants.DATE_TIME_FORMAT
+    DATE_TIME_UI_FORMAT = TimeConstants.DATE_TIME_UI_FORMAT
+    TIME_ZONE = TimeConstants.TIME_ZONE
+else:
+    TIME_FORMAT = "HH:mm"
+    DATE_FORMAT = "YYYY-MM-DD"
+    DATE_TIME_FORMAT = f"{DATE_FORMAT}T{TIME_FORMAT}"
+    DATE_TIME_UI_FORMAT = "MMMM DD YYYY, HH:mm [h]"
+    TIME_ZONE = "UTC"
 
 DEFAULT_PRECISION = 8
 FLOATING_POINT_TOLERANCE = 0.000001

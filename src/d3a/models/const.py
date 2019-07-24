@@ -158,18 +158,21 @@ class ConstSettings:
 
 
 class GlobalConfig:
-    # TODO: Use global default values from d3a-web
-    start_date = today(tz=TIME_ZONE)
-    sim_duration = duration(hours=24)
-    market_count = 1
-    slot_length = duration(minutes=15)
-    tick_length = duration(seconds=1)
-    ticks_per_slot = 900
-    total_ticks = 86400
-    cloud_coverage = ConstSettings.PVSettings.DEFAULT_POWER_PROFILE
-    iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
-    iaa_fee_const = ConstSettings.IAASettings.FEE_CONSTANT
-    market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    if is_installed("d3a-interface"):
+        from d3a_interface.constants_limits import GlobalConfigSetting
+        GlobalConfigSetting.__init__()
+    else:
+        start_date = today(tz=TIME_ZONE)
+        sim_duration = duration(hours=24)
+        market_count = 1
+        slot_length = duration(minutes=15)
+        tick_length = duration(seconds=1)
+        ticks_per_slot = int(slot_length / tick_length)
+        total_ticks = int(sim_duration / tick_length)
+        cloud_coverage = ConstSettings.PVSettings.DEFAULT_POWER_PROFILE
+        iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
+        iaa_fee_const = ConstSettings.IAASettings.FEE_CONSTANT
+        market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
 
 if is_installed("d3a-interface"):
