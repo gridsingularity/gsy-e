@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
 from collections import namedtuple
+from enum import Enum
 
 from d3a import limit_float_precision
 from d3a.d3a_core.exceptions import MarketException
@@ -50,6 +51,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                  initial_rate_option: int = StorageSettings.INITIAL_RATE_OPTION,
                  initial_selling_rate: float = StorageSettings.MAX_SELLING_RATE,
                  initial_buying_rate: float = StorageSettings.MIN_BUYING_RATE,
+                 initial_energy_origin: Enum = ESSEnergyOrigin.UNKNOWN,
                  energy_rate_decrease_option: int = StorageSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update:
                  float = GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
@@ -93,6 +95,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         self.risk = risk
         self.state = StorageState(initial_capacity_kWh=initial_capacity_kWh,
                                   initial_soc=initial_soc,
+                                  initial_energy_origin=initial_energy_origin,
                                   capacity=battery_capacity_kWh,
                                   max_abs_battery_power_kW=max_abs_battery_power_kW,
                                   loss_per_hour=0.0,
