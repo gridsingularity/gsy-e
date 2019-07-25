@@ -65,7 +65,7 @@ class StorageState:
     def __init__(self,
                  initial_capacity_kWh=None,
                  initial_soc=None,
-                 initial_energy_origin=ESSEnergyOrigin.UNKNOWN,
+                 initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
                  capacity=StorageSettings.CAPACITY,
                  max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
                  loss_per_hour=0.01,

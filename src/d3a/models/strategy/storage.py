@@ -22,7 +22,7 @@ from enum import Enum
 from d3a import limit_float_precision
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
-from d3a.models.state import StorageState, ESSEnergyOrigin
+from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin, \
@@ -51,7 +51,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                  initial_rate_option: int = StorageSettings.INITIAL_RATE_OPTION,
                  initial_selling_rate: float = StorageSettings.MAX_SELLING_RATE,
                  initial_buying_rate: float = StorageSettings.MIN_BUYING_RATE,
-                 initial_energy_origin: Enum = ESSEnergyOrigin.UNKNOWN,
+                 initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL,
                  energy_rate_decrease_option: int = StorageSettings.RATE_DECREASE_OPTION,
                  energy_rate_decrease_per_update:
                  float = GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,  # NOQA
@@ -251,9 +251,9 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                 energy -= recent_energy
                 self.state.get_used_storage_share.pop(0)
             elif energy < recent_energy:
-                last = self.state.get_used_storage_share.pop(0)
+                last = self.state.get_used_storage_share[0]
                 residual = recent_energy - energy
-                self.state.update_used_storage_share(residual, last.origin)
+                self.state._used_storage_share[0] = EnergyOrigin(last.origin, residual)
                 energy = 0
 
     def _energy_bought_type(self, trade):

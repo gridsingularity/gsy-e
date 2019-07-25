@@ -20,11 +20,13 @@ import logging
 from pendulum import Duration, DateTime, today
 from logging import getLogger
 from math import isclose
+from copy import deepcopy
 
 from d3a.d3a_core.util import change_global_config
 from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy, BreakEven
+from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
 from d3a.models.const import ConstSettings
 from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
@@ -831,3 +833,66 @@ def test_initial_selling_rate(storage_strategy_test14, area_test14):
     storage_strategy_test14.sell_energy()
     created_offer = area_test14.all_markets[0].created_offers[0]
     assert created_offer.price/created_offer.energy == 25
+
+
+"""TEST15"""
+
+
+@pytest.fixture()
+def area_test15():
+    return FakeArea(0)
+
+
+@pytest.fixture
+def market_test15():
+    return FakeMarket(0)
+
+
+@pytest.fixture()
+def storage_strategy_test15(area_test15, called):
+    s = StorageStrategy(initial_capacity_kWh=15, battery_capacity_kWh=30,
+                        max_abs_battery_power_kW=10, initial_selling_rate=25,
+                        initial_rate_option=3)
+    s.owner = area_test15
+    s.area = area_test15
+    s.area.parent = deepcopy(area_test15)
+    s.area.parent.name = "ParentArea"
+    s.area.children = deepcopy([area_test15])
+    s.area.children[0].name = "ChildArea"
+    s.accept_offer = called
+    return s
+
+
+def test_energy_origin(storage_strategy_test15, market_test15):
+    storage_strategy_test15.event_activate()
+    assert len(storage_strategy_test15.state.get_used_storage_share) == 1
+    assert storage_strategy_test15.state.get_used_storage_share[0] == EnergyOrigin(
+        ESSEnergyOrigin.EXTERNAL, 15)
+
+    storage_strategy_test15.area.current_market.trade = \
+        Trade('id', 'time', Offer('id', 20, 1.0, 'ChildArea'), 'ChildArea', 'FakeArea')
+    storage_strategy_test15.event_trade(market_id=market_test15.id,
+                                        trade=storage_strategy_test15.area.current_market.trade)
+    storage_strategy_test15.event_market_cycle()
+    assert len(storage_strategy_test15.state.get_used_storage_share) == 2
+    assert storage_strategy_test15.state.get_used_storage_share == [EnergyOrigin(
+        ESSEnergyOrigin.EXTERNAL, 15), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
+
+    storage_strategy_test15.area.current_market.trade = \
+        Trade('id', 'time', Offer('id', 20, 2.0, 'FakeArea'), 'FakeArea', 'A')
+    storage_strategy_test15.event_trade(market_id=market_test15.id,
+                                        trade=storage_strategy_test15.area.current_market.trade)
+    storage_strategy_test15.event_market_cycle()
+    assert len(storage_strategy_test15.state.get_used_storage_share) == 2
+    assert storage_strategy_test15.state.get_used_storage_share == [EnergyOrigin(
+        ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
+
+    storage_strategy_test15.area.current_market.trade = \
+        Trade('id', 'time', Offer('id', 20, 1.0, 'ParentArea'), 'FakeArea', 'FakeArea')
+    storage_strategy_test15.event_trade(market_id=market_test15.id,
+                                        trade=storage_strategy_test15.area.current_market.trade)
+    storage_strategy_test15.event_market_cycle()
+    assert len(storage_strategy_test15.state.get_used_storage_share) == 3
+    assert storage_strategy_test15.state.get_used_storage_share == [EnergyOrigin(
+        ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1),
+        EnergyOrigin(ESSEnergyOrigin.EXTERNAL, 1)]
