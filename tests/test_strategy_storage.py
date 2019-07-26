@@ -868,12 +868,10 @@ def test_energy_origin(storage_strategy_test15, market_test15):
     assert len(storage_strategy_test15.state.get_used_storage_share) == 1
     assert storage_strategy_test15.state.get_used_storage_share[0] == EnergyOrigin(
         ESSEnergyOrigin.EXTERNAL, 15)
-
     storage_strategy_test15.area.current_market.trade = \
         Trade('id', 'time', Offer('id', 20, 1.0, 'ChildArea'), 'ChildArea', 'FakeArea')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
-    storage_strategy_test15.event_market_cycle()
     assert len(storage_strategy_test15.state.get_used_storage_share) == 2
     assert storage_strategy_test15.state.get_used_storage_share == [EnergyOrigin(
         ESSEnergyOrigin.EXTERNAL, 15), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
@@ -882,7 +880,6 @@ def test_energy_origin(storage_strategy_test15, market_test15):
         Trade('id', 'time', Offer('id', 20, 2.0, 'FakeArea'), 'FakeArea', 'A')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
-    storage_strategy_test15.event_market_cycle()
     assert len(storage_strategy_test15.state.get_used_storage_share) == 2
     assert storage_strategy_test15.state.get_used_storage_share == [EnergyOrigin(
         ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
@@ -891,7 +888,6 @@ def test_energy_origin(storage_strategy_test15, market_test15):
         Trade('id', 'time', Offer('id', 20, 1.0, 'ParentArea'), 'FakeArea', 'FakeArea')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
-    storage_strategy_test15.event_market_cycle()
     assert len(storage_strategy_test15.state.get_used_storage_share) == 3
     assert storage_strategy_test15.state.get_used_storage_share == [EnergyOrigin(
         ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1),

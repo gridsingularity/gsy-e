@@ -232,9 +232,9 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         market = self.area.get_future_market_from_id(market_id)
         super().event_trade(market_id=market_id, trade=trade)
         if trade.buyer == self.owner.name:
-            self._energy_bought_type(trade)
+            self._track_energy_bought_type(trade)
         if trade.offer.seller == self.owner.name:
-            self._energy_sell_type(trade)
+            self._track_energy_sell_type(trade)
             self.state.pledged_sell_kWh[market.time_slot] += trade.offer.energy
             self.state.offered_sell_kWh[market.time_slot] -= trade.offer.energy
 
@@ -243,20 +243,21 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
             if child.name == trade.seller:
                 return True
 
-    def _energy_sell_type(self, trade):
+    # ESS Energy being utilized based on FIRST-IN FIRST-OUT mechanism
+    def _track_energy_sell_type(self, trade):
         energy = trade.offer.energy
         while limit_float_precision(energy) > 0:
-            recent_energy = self.state.get_used_storage_share[0].value
-            if energy >= recent_energy:
-                energy -= recent_energy
+            first_in_energy_with_origin = self.state.get_used_storage_share[0]
+            if energy >= first_in_energy_with_origin.value:
+                energy -= first_in_energy_with_origin.value
                 self.state.get_used_storage_share.pop(0)
-            elif energy < recent_energy:
-                last = self.state.get_used_storage_share[0]
-                residual = recent_energy - energy
-                self.state._used_storage_share[0] = EnergyOrigin(last.origin, residual)
+            elif energy < first_in_energy_with_origin.value:
+                residual = first_in_energy_with_origin.value - energy
+                self.state._used_storage_share[0] = \
+                    EnergyOrigin(first_in_energy_with_origin.origin, residual)
                 energy = 0
 
-    def _energy_bought_type(self, trade):
+    def _track_energy_bought_type(self, trade):
         if area_name_from_area_or_iaa_name(trade.seller) == self.area.name:
             self.state.update_used_storage_share(trade.offer.energy, ESSEnergyOrigin.EXTERNAL)
         elif self._is_local(trade):
@@ -269,7 +270,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         market = self.area.get_future_market_from_id(market_id)
 
         if bid_trade.offer.buyer == self.owner.name:
-            self._energy_bought_type(bid_trade)
+            self._track_energy_bought_type(bid_trade)
             self.state.pledged_buy_kWh[market.time_slot] += bid_trade.offer.energy
             self.state.offered_buy_kWh[market.time_slot] -= bid_trade.offer.energy
 

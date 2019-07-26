@@ -123,7 +123,6 @@ class StorageState:
 
         self._used_storage = initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
-        # list of namedtuple
         self._used_storage_share = [EnergyOrigin(initial_energy_origin, initial_capacity_kWh)]
 
     @property
