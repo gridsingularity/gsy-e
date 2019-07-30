@@ -19,11 +19,12 @@ from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.util import make_iaa_name
 from numpy.random import random
+from d3a.models.const import ConstSettings
 
 
 class OneSidedAgent(InterAreaAgent):
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=0, engine_type=IAAEngine):
+                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE, engine_type=IAAEngine):
         super().__init__(engine_type=engine_type, owner=owner, higher_market=higher_market,
                          lower_market=lower_market, min_offer_age=min_offer_age)
         self.name = make_iaa_name(owner)

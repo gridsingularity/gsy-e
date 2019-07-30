@@ -18,12 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from numpy.random import random
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSidedPayAsBidEngine
+from d3a.models.const import ConstSettings
 
 
 class TwoSidedPayAsBidAgent(OneSidedAgent):
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=0, engine_type=TwoSidedPayAsBidEngine):
+                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
+                 engine_type=TwoSidedPayAsBidEngine):
         super().__init__(engine_type=engine_type, owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age)

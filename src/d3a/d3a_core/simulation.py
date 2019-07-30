@@ -104,8 +104,9 @@ class Simulation:
                                                         self.area)
 
     def _set_traversal_length(self):
+        from d3a.models.const import ConstSettings
         no_of_levels = self._get_setup_levels(self.area) + 1
-        num_ticks_to_propagate = no_of_levels * 2
+        num_ticks_to_propagate = no_of_levels * 2 * ConstSettings.IAASettings.MIN_OFFER_AGE
         ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
         time_to_propagate_minutes = num_ticks_to_propagate * \
             self.simulation_config.tick_length.seconds / 60.
