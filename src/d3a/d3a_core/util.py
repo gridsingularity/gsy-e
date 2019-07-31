@@ -33,7 +33,7 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
 from d3a.models.const import GlobalConfig
 
 import d3a
@@ -442,3 +442,19 @@ def create_subdict_or_update(indict, key, subdict):
     else:
         indict[key] = subdict
     return indict
+
+
+def str_to_pendulum(input_str: str):
+    try:
+        pendulum_time = from_format(input_str, TIME_FORMAT)
+    except ValueError:
+        try:
+            pendulum_time = from_format(input_str, DATE_TIME_FORMAT)
+        except ValueError:
+            raise Exception(f"Format is not one of ('{TIME_FORMAT}', '{DATE_TIME_FORMAT}')")
+    return pendulum_time
+
+
+def convert_str_to_pauseafter_intervall(start_time,  input_str):
+    pause_time = str_to_pendulum(input_str)
+    return pause_time - start_time

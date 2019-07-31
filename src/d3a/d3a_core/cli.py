@@ -31,10 +31,10 @@ from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import DateType
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
-    read_settings_from_file, update_advanced_settings
+    read_settings_from_file, update_advanced_settings, convert_str_to_pauseafter_intervall
 
 from d3a.d3a_core.simulation import run_simulation
-from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT
+from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT, TIME_FORMAT
 
 log = getLogger(__name__)
 
@@ -85,8 +85,9 @@ _setup_modules = available_simulation_scenarios
 @click.option('--seed', help="Manually specify random seed")
 @click.option('--paused', is_flag=True, default=False, show_default=True,
               help="Start simulation in paused state")
-@click.option('--pause-after', type=IntervalType('H:M'), default="0",
-              help="Automatically pause after a certain time.  [default: disabled]")
+@click.option('--pause-at', type=str, default=None,
+              help=f"Automatically pause at a certain time. "
+              f"Accepted Input formats: ({DATE_FORMAT}, {TIME_FORMAT}) [default: disabled]")
 @click.option('--repl/--no-repl', default=False, show_default=True,
               help="Start REPL after simulation run.")
 @click.option('--no-export', is_flag=True, default=False, help="Skip export of simulation data")
@@ -99,7 +100,7 @@ _setup_modules = available_simulation_scenarios
               default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
-        market_count, cloud_coverage, compare_alt_pricing, start_date, **kwargs):
+        market_count, cloud_coverage, compare_alt_pricing, start_date, pause_at, **kwargs):
 
     try:
         if settings_file is not None:
@@ -128,6 +129,8 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
                 p.join()
 
         else:
+            if pause_at is not None:
+                kwargs["pause_after"] = convert_str_to_pauseafter_intervall(start_date, pause_at)
             run_simulation(setup_module_name, simulation_config, None, slowdown, None,
                            kwargs)
 
