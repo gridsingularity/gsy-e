@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration
-
+from collections import namedtuple
+from enum import Enum
 from math import isclose
 from d3a.models.const import ConstSettings
 from d3a import limit_float_precision
@@ -51,10 +52,20 @@ class LoadState:
             {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
 
 
+class ESSEnergyOrigin(Enum):
+    LOCAL = 1
+    EXTERNAL = 2
+    UNKNOWN = 3
+
+
+EnergyOrigin = namedtuple('EnergyOrigin', ('origin', 'value'))
+
+
 class StorageState:
     def __init__(self,
                  initial_capacity_kWh=None,
                  initial_soc=None,
+                 initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
                  capacity=StorageSettings.CAPACITY,
                  max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
                  loss_per_hour=0.01,
@@ -94,6 +105,11 @@ class StorageState:
         # energy, that the storage wants to buy (but not traded yet):
         self.offered_buy_kWh = \
             {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+        self.time_series_ess_share = \
+            {slot: {ESSEnergyOrigin.UNKNOWN: 0.,
+                    ESSEnergyOrigin.LOCAL: 0.,
+                    ESSEnergyOrigin.EXTERNAL: 0.}
+             for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
 
         self.charge_history = \
             {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
@@ -107,6 +123,7 @@ class StorageState:
 
         self._used_storage = initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
+        self._used_storage_share = [EnergyOrigin(initial_energy_origin, initial_capacity_kWh)]
 
     @property
     def used_storage(self):
@@ -114,6 +131,13 @@ class StorageState:
         Current stored energy
         """
         return self._used_storage
+
+    def update_used_storage_share(self, energy, source=ESSEnergyOrigin.UNKNOWN):
+        self._used_storage_share.append(EnergyOrigin(source, energy))
+
+    @property
+    def get_used_storage_share(self):
+        return self._used_storage_share
 
     def free_storage(self, time_slot):
         """
@@ -224,3 +248,6 @@ class StorageState:
 
         self.calculate_soc_for_time_slot(time_slot)
         self.offered_history[time_slot] = self.offered_sell_kWh[time_slot]
+
+        for energy_type in self._used_storage_share:
+            self.time_series_ess_share[past_time_slot][energy_type.origin] += energy_type.value

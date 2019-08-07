@@ -218,7 +218,7 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
 
         if isinstance(input_profile, str):
             # input in JSON formatting
-            profile = ast.literal_eval(input_profile)
+            profile = ast.literal_eval(input_profile.encode('utf-8').decode("utf-8-sig"))
             # Remove filename entry to support d3a-web profiles
             profile.pop("filename", None)
             profile = _remove_header(profile)
