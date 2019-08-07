@@ -19,7 +19,7 @@ if [ "$TOXENV" == "py36,coverage" ] || [ "$TOXENV" == "py36" ] || [ "$TOXENV" ==
 fi
 
 if [[ "$TOXENV" == "travis" ]]; then
-    ./.support/install_d3a-interface.sh ${GITHUB_USER} ${GITHUB_KEY}
+    ./.support/install_d3a-interface.sh
 fi
 
 pip install -U tox
