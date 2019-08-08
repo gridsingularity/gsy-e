@@ -30,14 +30,14 @@ from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.util import TaggedLogWrapper, is_market_in_simulation_duration
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
 from d3a.models.area.event_dispatcher import AreaDispatcher
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
-from d3a.models.const import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig
 
 log = getLogger(__name__)
 

@@ -20,7 +20,7 @@ import pathlib
 from pendulum import DateTime
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.util import d3a_path
 from typing import Dict

@@ -26,7 +26,7 @@ from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHours
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
     round_floats_for_ui, add_or_create_key, subtract_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])

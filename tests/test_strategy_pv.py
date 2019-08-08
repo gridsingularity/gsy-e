@@ -25,7 +25,7 @@ from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import TIME_FORMAT
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]

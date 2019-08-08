@@ -30,7 +30,7 @@ from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import KPI
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy

@@ -21,7 +21,7 @@ from pendulum import duration, Duration, DateTime, today
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import format_interval
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.d3a_core.util import change_global_config

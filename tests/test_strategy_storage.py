@@ -27,7 +27,7 @@ from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy, BreakEven
 from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.device_registry import DeviceRegistry

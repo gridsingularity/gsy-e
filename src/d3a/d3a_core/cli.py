@@ -28,7 +28,7 @@ from pendulum import DateTime, today
 
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import DateType
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
     read_settings_from_file, update_advanced_settings, convert_str_to_pauseafter_intervall

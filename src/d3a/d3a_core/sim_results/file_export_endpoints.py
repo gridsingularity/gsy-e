@@ -28,7 +28,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.d3a_core.util import convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import generate_market_slot_list
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 class FileExportEndpoints:

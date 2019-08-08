@@ -23,7 +23,7 @@ from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market import Market # noqa
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from collections import OrderedDict
 
 

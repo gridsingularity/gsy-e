@@ -22,7 +22,7 @@ from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent

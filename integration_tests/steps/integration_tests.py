@@ -30,7 +30,7 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
 
@@ -206,19 +206,19 @@ def load_profile_scenario(context):
 
 @given('d3a uses an one-sided market')
 def one_sided_market(context):
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 @given('d3a uses an two-sided pay-as-bid market')
 def two_sided_pay_as_bid_market(context):
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
 
 @given('d3a uses an two-sided pay-as-clear market')
 def two_sided_pay_as_clear_market(context):
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 3
 
 

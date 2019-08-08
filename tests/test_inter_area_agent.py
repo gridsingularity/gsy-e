@@ -28,7 +28,7 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedP
 from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
 from d3a.models.strategy.area_agents.one_sided_engine import OfferInfo
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.market.market_structures import MarketClearingState
 
 
@@ -357,7 +357,7 @@ def iaa2():
 
 @pytest.fixture
 def iaa_double_sided():
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S')], transfer_fee_ratio=0.01)
@@ -474,7 +474,7 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
 
 @pytest.fixture
 def iaa_double_sided_2():
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
     lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S', original_bid_price=10)])
@@ -514,7 +514,7 @@ def test_iaa_double_sided_performs_pay_as_bid_matching(iaa_double_sided_2):
 
 @pytest.fixture
 def iaa_double_sided_pay_as_clear():
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 3
     lower_market = FakeMarket(sorted_offers=[],
                               bids=[])

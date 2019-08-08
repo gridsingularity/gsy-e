@@ -19,7 +19,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 def recursive_current_markets(area):
