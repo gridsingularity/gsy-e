@@ -7,19 +7,9 @@ if [[ -d "$INSTALL_DIR" ]]; then
     exit 1
 fi
 
-if [[ "$1" = "" ]]; then
-    echo "Enter github username"
-    read GITHUB_USER
-    echo "Enter github key"
-    read GITHUB_KEY
-else
-    GITHUB_USER=$1
-    GITHUB_KEY=$2
-fi
-
 mkdir -p ${INSTALL_DIR}
 cd ${INSTALL_DIR}
-git clone https://${GITHUB_USER}:${GITHUB_KEY}@github.com/gridsingularity/d3a-interface.git
+git clone https://github.com/gridsingularity/d3a-interface.git
 cd d3a-interface
 python setup.py install
 rm -rf ${INSTALL_DIR}

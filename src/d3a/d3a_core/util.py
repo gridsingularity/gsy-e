@@ -444,6 +444,14 @@ def create_subdict_or_update(indict, key, subdict):
     return indict
 
 
+def is_installed(module_name):
+    try:
+        __import__(module_name)
+        return True
+    except ModuleNotFoundError:
+        return False
+
+
 def str_to_pendulum(input_str: str):
     try:
         pendulum_time = from_format(input_str, TIME_FORMAT)
@@ -455,6 +463,6 @@ def str_to_pendulum(input_str: str):
     return pendulum_time
 
 
-def convert_str_to_pauseafter_intervall(start_time,  input_str):
+def convert_str_to_pauseafter_intervall(start_time, input_str):
     pause_time = str_to_pendulum(input_str)
     return pause_time - start_time
