@@ -154,13 +154,8 @@ class Area:
         if self.budget_keeper and _market_cycle:
             self.budget_keeper.process_market_cycle()
 
-        now = self.now
-        time_in_hour = duration(minutes=now.minute, seconds=now.second)
-        now = now.at(now.hour, minute=0, second=0) + \
-            ((time_in_hour // self.config.slot_length) * self.config.slot_length)
-
         self.log.info("Cycling markets")
-        self._markets.rotate_markets(now, self.stats, self.dispatcher)
+        self._markets.rotate_markets(self.now, self.stats, self.dispatcher)
         if deactivate:
             return
 
@@ -168,11 +163,11 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now, True, self)
+        changed = self._markets.create_future_markets(self.now, True, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(now, False, self)
+            changed_balancing_market = self._markets.create_future_markets(self.now, False, self)
         else:
             changed_balancing_market = None
 

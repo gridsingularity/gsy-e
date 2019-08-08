@@ -638,7 +638,7 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
                 all_past_markets=True)
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
     # (check if number of last slot is the maximal number of slots):
-    no_of_slots = (int(sim_duration) * 60 / int(slot_length))
+    no_of_slots = int(int(sim_duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
     if scenario == "default":
         street1 = list(filter(lambda x: x.name == "Street 1", context.simulation.area.children))[0]
