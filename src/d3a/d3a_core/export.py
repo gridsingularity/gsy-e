@@ -31,8 +31,10 @@ from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offe
 from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import KPI
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.util import constsettings_to_dict
+from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
+from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.state import ESSEnergyOrigin
 from d3a.d3a_core.sim_results.plotly_graph import PlotlyGraph
 from functools import reduce  # forward compatibility for Python 3
 
@@ -123,6 +125,7 @@ class ExportAndPlot:
         self.plot_all_unmatched_loads()
         self.plot_avg_trade_price(self.area, self.plot_dir)
         self.plot_ess_soc_history(self.area, self.plot_dir)
+        self.plot_ess_energy_trace(self.area, self.plot_dir)
         if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
             self.plot_device_stats(self.area, [])
         if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
@@ -434,6 +437,53 @@ class ExportAndPlot:
         plot_dir = os.path.join(self.plot_dir, subdir)
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
+        PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def plot_ess_energy_trace(self, area, subdir):
+        """
+        Wrapper for _plot_ess_energy_trace.
+        """
+
+        new_subdir = os.path.join(subdir, area.slug)
+        storage_list = [child for child in area.children
+                        if isinstance(child.strategy, StorageStrategy)]
+        for element in storage_list:
+            self._plot_ess_energy_trace(element.strategy.state.time_series_ess_share,
+                                        new_subdir, area.slug)
+        for child in area.children:
+            if child.children:
+                self.plot_ess_energy_trace(child, new_subdir)
+
+    def _plot_ess_energy_trace(self, energy: dict, subdir: str, root_name: str):
+        """
+        Plots ess energy trace for each knot in the hierarchy
+        """
+
+        data = list()
+        barmode = "stack"
+        title = 'ESS ENERGY SHARE ({})'.format(root_name)
+        xtitle = 'Time'
+        ytitle = 'Energy [kWh]'
+
+        temp = {ESSEnergyOrigin.UNKNOWN: {slot: 0. for slot in generate_market_slot_list()},
+                ESSEnergyOrigin.LOCAL: {slot: 0. for slot in generate_market_slot_list()},
+                ESSEnergyOrigin.EXTERNAL: {slot: 0. for slot in generate_market_slot_list()}}
+
+        for time, energy_info in energy.items():
+            temp[ESSEnergyOrigin.EXTERNAL][time] = energy_info[ESSEnergyOrigin.EXTERNAL]
+            temp[ESSEnergyOrigin.LOCAL][time] = energy_info[ESSEnergyOrigin.LOCAL]
+            temp[ESSEnergyOrigin.UNKNOWN][time] = energy_info[ESSEnergyOrigin.UNKNOWN]
+        for energy_type in [ESSEnergyOrigin.EXTERNAL, ESSEnergyOrigin.LOCAL,
+                            ESSEnergyOrigin.UNKNOWN]:
+            data_obj = go.Bar(x=list(temp[energy_type].keys()),
+                              y=list(temp[energy_type].values()),
+                              name=f"{energy_type}")
+            data.append(data_obj)
+        if len(data) == 0:
+            return
+        plot_dir = os.path.join(self.plot_dir, subdir)
+        mkdir_from_str(plot_dir)
+        output_file = os.path.join(plot_dir, 'ess_energy_share_{}.html'.format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
 
     def plot_supply_demand_curve(self, area, subdir):
