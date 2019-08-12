@@ -77,6 +77,7 @@ class Simulation:
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
+
         self.sim_status = "initialized"
 
         if export_subdir is None:
@@ -102,6 +103,9 @@ class Simulation:
         validate_const_settings_for_simulation()
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
                                                         self.area)
+        if self.export_on_finish:
+            self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
+                                        self.endpoint_buffer)
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
@@ -291,6 +295,8 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
+            if self.export_on_finish:
+                self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
@@ -311,8 +317,7 @@ class Simulation:
             )
         if self.export_on_finish:
             log.error("Exporting simulation data.")
-            ExportAndPlot(self.area, self.export_path, self.export_subdir,
-                          self.endpoint_buffer)
+            self.export.export()
 
         if self.use_repl:
             self._start_repl()
