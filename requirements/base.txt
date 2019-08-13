@@ -34,7 +34,7 @@ nbformat==4.4.0           # via plotly
 numpy==1.16.4
 parsimonious==0.8.1       # via eth-abi
 pendulum==2.0.4
-pip-tools==3.8.0
+pip-tools==4.0.0
 plotly==3.10.0
 pycryptodome==3.8.2       # via eth-hash, eth-keyfile
 pyrsistent==0.15.2        # via jsonschema
