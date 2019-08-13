@@ -19,7 +19,7 @@ if [ "$TOXENV" == "py36,coverage" ] || [ "$TOXENV" == "py36" ] || [ "$TOXENV" ==
 fi
 
 if [[ "$TOXENV" == "travis" ]]; then
-    ./.support/install_d3a-interface.sh
+    pip install git+https://github.com/gridsingularity/d3a-interface.git
 fi
 
 pip install -U tox
