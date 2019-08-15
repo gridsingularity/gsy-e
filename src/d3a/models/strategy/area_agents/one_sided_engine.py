@@ -76,8 +76,6 @@ class IAAEngine:
             return
         self.forwarded_offers.pop(offer_info.target_offer.id, None)
         self.forwarded_offers.pop(offer_info.source_offer.id, None)
-        self.offer_age.pop(offer_info.target_offer.id, None)
-        self.offer_age.pop(offer_info.source_offer.id, None)
 
     def tick(self, *, area):
         self.propagate_offer(area.current_tick)
@@ -112,9 +110,6 @@ class IAAEngine:
             # If we ever again reach a situation like this, we should never forward the offer.
             if self.owner.name == offer.seller:
                 continue
-
-            # if offer_id in self.trade_residual:
-            #     continue
 
             forwarded_offer = self._forward_offer(offer, offer_id)
             if forwarded_offer:
@@ -243,7 +238,6 @@ class IAAEngine:
                 return
             self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
             offer_info = self.forwarded_offers[existing_offer.id]
-            # self.markets.target.delete_offer(offer_info.target_offer)
             forwarded = self._forward_offer(new_offer, new_offer.id)
             if not forwarded:
                 return
