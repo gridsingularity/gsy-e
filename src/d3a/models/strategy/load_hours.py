@@ -145,6 +145,8 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
                     round(acceptable_offer.price / acceptable_offer.energy, 8) <= \
                     self.final_buying_rate[market.time_slot]:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
+                if max_energy < FLOATING_POINT_TOLERANCE:
+                    return
                 current_day = self._get_day_of_timestamp(market.time_slot)
                 if acceptable_offer.energy > max_energy:
                     self.accept_offer(market, acceptable_offer, energy=max_energy)
@@ -168,9 +170,9 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
 
     def event_tick(self, *, area):
         for market in self.active_markets:
-            if self.energy_requirement_Wh[market.time_slot] <= 0:
-                continue
             if market.time_slot not in self.energy_requirement_Wh:
+                continue
+            if self.energy_requirement_Wh[market.time_slot] <= 0:
                 continue
 
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
@@ -178,6 +180,13 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self._double_sided_market_event_tick(market)
+
+    def event_offer(self, *, market_id, offer):
+        super().event_offer(market_id=market_id, offer=offer)
+        market = self.area.get_future_market_from_id(market_id)
+        if market.time_slot in self.energy_requirement_Wh and \
+                self.energy_requirement_Wh[market.time_slot] > 0:
+            self._one_sided_market_event_tick(market)
 
     def _allowed_operating_hours(self, time):
         return time.hour in self.hrs_of_day

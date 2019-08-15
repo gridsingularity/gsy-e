@@ -53,7 +53,7 @@ class OneSidedMarket(Market):
         assert False
 
     def offer(self, price: float, energy: float, seller: str,
-              original_offer_price=None) -> Offer:
+              original_offer_price=None, send_event=True) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -67,11 +67,13 @@ class OneSidedMarket(Market):
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, original_offer_price)
-        self.offers[offer.id] = offer
+        from copy import deepcopy
+        self.offers[offer.id] = deepcopy(offer)
         self.offer_history.append(offer)
         log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
-        self._notify_listeners(MarketEvent.OFFER, offer=offer)
+        if send_event is True:
+            self._notify_listeners(MarketEvent.OFFER, offer=offer)
         return offer
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):

@@ -169,6 +169,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         self.log.warning("Risk changed to %s", new_risk)
 
     def event_offer_deleted(self, *, market_id, offer):
+        super().event_offer_deleted(market_id=market_id, offer=offer)
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return

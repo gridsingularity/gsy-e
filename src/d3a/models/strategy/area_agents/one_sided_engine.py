@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict, Set  # noqa
+from copy import deepcopy
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
@@ -56,12 +57,17 @@ class IAAEngine:
             offer.price,
             offer.energy,
             self.owner.name,
-            offer.original_offer_price
+            offer.original_offer_price,
+            send_event=False
         )
-        offer_info = OfferInfo(offer, forwarded_offer)
+        offer_info = OfferInfo(deepcopy(offer), deepcopy(forwarded_offer))
         self.forwarded_offers[forwarded_offer.id] = offer_info
         self.forwarded_offers[offer_id] = offer_info
         self.owner.log.debug(f"Forwarding offer {offer} to {forwarded_offer}")
+        # TODO: Ugly solution, required in order to decouple offer placement from
+        # new offer event triggering
+        from d3a.events.event_structures import MarketEvent
+        self.markets.target._notify_listeners(MarketEvent.OFFER, offer=offer)
         return forwarded_offer
 
     def _delete_forwarded_offer_entries(self, offer):
@@ -70,23 +76,32 @@ class IAAEngine:
             return
         self.forwarded_offers.pop(offer_info.target_offer.id, None)
         self.forwarded_offers.pop(offer_info.source_offer.id, None)
+        self.offer_age.pop(offer_info.target_offer.id, None)
+        self.offer_age.pop(offer_info.source_offer.id, None)
 
     def tick(self, *, area):
+        self.propagate_offer(area.current_tick)
+
+    def propagate_offer(self, current_tick):
         # Store age of offer
         for offer in self.markets.source.sorted_offers:
             if offer.id not in self.offer_age:
-                self.offer_age[offer.id] = area.current_tick
+                self.offer_age[offer.id] = current_tick
 
         # Use `list()` to avoid in place modification errors
         for offer_id, age in list(self.offer_age.items()):
             if offer_id in self.forwarded_offers:
                 continue
-            if area.current_tick - age < self.min_offer_age:
+            if current_tick - age < self.min_offer_age:
                 continue
             offer = self.markets.source.offers.get(offer_id)
             if not offer:
                 # Offer has gone - remove from age dict
-                del self.offer_age[offer_id]
+                # Because an offer forwarding might trigger a trade event, the offer_age dict might
+                # be modified, thus causing a removal from the offer_age dict. In such a case, even
+                # if the offer is no longer in the offer_age dict, the execution should continue
+                # normally.
+                self.offer_age.pop(offer_id, None)
                 continue
             if not self.owner.usable_offer(offer):
                 # Forbidden offer (i.e. our counterpart's)
@@ -97,6 +112,9 @@ class IAAEngine:
             # If we ever again reach a situation like this, we should never forward the offer.
             if self.owner.name == offer.seller:
                 continue
+
+            # if offer_id in self.trade_residual:
+            #     continue
 
             forwarded_offer = self._forward_offer(offer, offer_id)
             if forwarded_offer:
@@ -225,6 +243,7 @@ class IAAEngine:
                 return
             self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
             offer_info = self.forwarded_offers[existing_offer.id]
+            # self.markets.target.delete_offer(offer_info.target_offer)
             forwarded = self._forward_offer(new_offer, new_offer.id)
             if not forwarded:
                 return
@@ -236,6 +255,10 @@ class IAAEngine:
             # Do not delete the forwarded offer entries for the case of residual offers
             if existing_offer.seller != new_offer.seller:
                 self._delete_forwarded_offer_entries(offer_info.source_offer)
+
+    def event_offer(self, *, market_id, offer):
+        if offer.seller != self.owner.name:
+            self.propagate_offer(self.owner.owner.current_tick)
 
 
 class BalancingEngine(IAAEngine):
