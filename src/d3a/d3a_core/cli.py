@@ -35,6 +35,7 @@ from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
 
 from d3a.d3a_core.simulation import run_simulation
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT, TIME_FORMAT
+from d3a_interface.settings_validators import validate_global_settings
 
 log = getLogger(__name__)
 
@@ -106,8 +107,15 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
             update_advanced_settings(advanced_settings)
+            validate_global_settings(simulation_settings)
             simulation_config = SimulationConfig(**simulation_settings)
         else:
+            global_settings = {"sim_duration": duration,
+                               "slot_length": slot_length,
+                               "tick_length": tick_length,
+                               "cloud_coverage": cloud_coverage,
+                               "market_count": market_count}
+            validate_global_settings(global_settings)
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
                                  cloud_coverage, start_date=start_date)

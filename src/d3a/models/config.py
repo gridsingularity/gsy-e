@@ -53,7 +53,7 @@ class SimulationConfig:
 
         change_global_config(**self.__dict__)
 
-        self.read_cloud_coverage(cloud_coverage)
+        self.cloud_coverage = cloud_coverage
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
@@ -87,7 +87,7 @@ class SimulationConfig:
                                  transfer_fee_pct=None, market_maker_rate=None,
                                  transfer_fee_const=None):
         if cloud_coverage is not None:
-            self.read_cloud_coverage(cloud_coverage)
+            self.cloud_coverage = cloud_coverage
         if pv_user_profile is not None:
             self.read_pv_user_profile(pv_user_profile)
         if transfer_fee_pct is not None:
@@ -96,14 +96,6 @@ class SimulationConfig:
             self.iaa_fee_const = transfer_fee_const
         if market_maker_rate is not None:
             self.read_market_maker_rate(market_maker_rate)
-
-    def read_cloud_coverage(self, cloud_coverage=0):
-        # TODO: Once the d3a uses a common API to the d3a-web, this should be removed
-        # since this limitation already exists on d3a-web
-        if 0 <= cloud_coverage <= 2:
-            self.cloud_coverage = cloud_coverage
-        else:
-            raise D3AException("Invalid cloud coverage value ({}).".format(cloud_coverage))
 
     def read_pv_user_profile(self, pv_user_profile=None):
         self.pv_user_profile = None \
