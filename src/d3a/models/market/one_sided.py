@@ -53,7 +53,7 @@ class OneSidedMarket(Market):
         assert False
 
     def offer(self, price: float, energy: float, seller: str,
-              original_offer_price=None, send_event=True) -> Offer:
+              original_offer_price=None, dispatch_event=True) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -72,9 +72,12 @@ class OneSidedMarket(Market):
         self.offer_history.append(offer)
         log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
-        if send_event is True:
-            self._notify_listeners(MarketEvent.OFFER, offer=offer)
+        if dispatch_event is True:
+            self.dispatch_market_offer_event(offer)
         return offer
+
+    def dispatch_market_offer_event(self, offer):
+        self._notify_listeners(MarketEvent.OFFER, offer=offer)
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
         if self.readonly:

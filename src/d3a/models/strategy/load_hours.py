@@ -72,12 +72,14 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
 
     @property
     def active_markets(self):
-        markets = []
-        for market in self.area.all_markets:
-            if self._allowed_operating_hours(market.time_slot) and \
-                    is_market_in_simulation_duration(self.area.config, market):
-                markets.append(market)
-        return markets
+        return [market for market in self.area.all_markets
+                if self._is_market_active(market)]
+
+    def _is_market_active(self, market):
+        return self._allowed_operating_hours(market.time_slot) and \
+            is_market_in_simulation_duration(self.area.config, market) and \
+            (not self.area.current_market or
+             market.time_slot >= self.area.current_market.time_slot)
 
     def assign_hours_of_per_day(self, hrs_of_day, hrs_per_day):
         if hrs_of_day is None:
@@ -185,8 +187,13 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
         super().event_offer(market_id=market_id, offer=offer)
         market = self.area.get_future_market_from_id(market_id)
         if market.time_slot in self.energy_requirement_Wh and \
-                self.energy_requirement_Wh[market.time_slot] > 0:
-            self._one_sided_market_event_tick(market)
+                self._is_market_active(market) and \
+                self.energy_requirement_Wh[market.time_slot] > FLOATING_POINT_TOLERANCE:
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                self._one_sided_market_event_tick(market)
+            elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+                    ConstSettings.IAASettings.MARKET_TYPE == 3:
+                self._double_sided_market_event_tick(market)
 
     def _allowed_operating_hours(self, time):
         return time.hour in self.hrs_of_day

@@ -58,7 +58,7 @@ class IAAEngine:
             offer.energy,
             self.owner.name,
             offer.original_offer_price,
-            send_event=False
+            dispatch_event=False
         )
         offer_info = OfferInfo(deepcopy(offer), deepcopy(forwarded_offer))
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -66,8 +66,7 @@ class IAAEngine:
         self.owner.log.debug(f"Forwarding offer {offer} to {forwarded_offer}")
         # TODO: Ugly solution, required in order to decouple offer placement from
         # new offer event triggering
-        from d3a.events.event_structures import MarketEvent
-        self.markets.target._notify_listeners(MarketEvent.OFFER, offer=offer)
+        self.markets.target.dispatch_market_offer_event(offer)
         return forwarded_offer
 
     def _delete_forwarded_offer_entries(self, offer):

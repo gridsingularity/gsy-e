@@ -26,6 +26,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-706, multi-day simulation for load and pv
      Given we have a scenario named default_3
      And d3a is installed
+     And the min offer age is set to 1 tick
      When we run a multi-day d3a simulation with default_3 [None, 72, 15, 60]
      Then pv produces the same energy on each corresponding time slot regardless of the day
      And all loads consume the same energy on each corresponding time slot regardless of the day

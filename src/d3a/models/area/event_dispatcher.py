@@ -151,6 +151,7 @@ class AreaDispatcher:
                 owner=self.area,
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
+                min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
             )
 
             self._delete_past_agents(self._inter_area_agents)
