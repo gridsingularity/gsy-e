@@ -44,7 +44,6 @@ Feature: Jira Issues Tests
      When we run the simulation with setup file jira.d3asim_778 and parameters [24, 60, 60, 0, 1]
      Then there should be trades on all markets using the max load rate
 
-
   Scenario: D3ASIM-871, unmatched loads are not reported if hours per day are covered
      Given we have a scenario named jira/d3asim_871
      And d3a is installed
@@ -70,3 +69,10 @@ Feature: Jira Issues Tests
     And d3a is installed
     When we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
     Then the device statistics are correct
+
+   @slow
+   Scenario: D3ASIM-1139, no unmatched loads on setup with many loads and only one CEP
+     Given we have a scenario named jira/d3asim_1139
+     And d3a is installed
+     When we run the simulation with setup file jira.d3asim_1139 and parameters [24, 60, 60, 0, 1]
+     Then there should be no unmatched loads
