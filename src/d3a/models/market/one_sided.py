@@ -19,6 +19,7 @@ import uuid
 from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
+from copy import deepcopy
 
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
@@ -67,7 +68,7 @@ class OneSidedMarket(Market):
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, original_offer_price)
-        from copy import deepcopy
+
         self.offers[offer.id] = deepcopy(offer)
         self.offer_history.append(offer)
         log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
