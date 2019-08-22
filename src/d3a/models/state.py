@@ -63,31 +63,16 @@ EnergyOrigin = namedtuple('EnergyOrigin', ('origin', 'value'))
 
 class StorageState:
     def __init__(self,
-                 initial_capacity_kWh=None,
-                 initial_soc=None,
+                 initial_soc=StorageSettings.MIN_ALLOWED_SOC,
                  initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
                  capacity=StorageSettings.CAPACITY,
                  max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
                  loss_per_hour=0.01,
-                 strategy=None,
-                 min_allowed_soc=None):
+                 min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC):
 
-        if initial_soc is not None:
-            if initial_capacity_kWh:
-                strategy.log.warning("Ignoring initial_capacity_kWh parameter since "
-                                     "initial_soc has also been given.")
-            initial_capacity_kWh = capacity * initial_soc / 100
-        if initial_soc is None and initial_capacity_kWh is None:
-            initial_capacity_kWh = StorageSettings.MIN_ALLOWED_SOC * StorageSettings.CAPACITY
+        initial_capacity_kWh = capacity * initial_soc / 100
 
-        if min_allowed_soc is None:
-            min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
-
-        assert limit_float_precision(initial_capacity_kWh / capacity) >= min_allowed_soc, \
-            f"Initial capacity ({initial_capacity_kWh} kWh) is less than " \
-            f"min allowed soc ({min_allowed_soc*100.0}%)."
-
-        self.min_allowed_soc = min_allowed_soc
+        self.min_allowed_soc_ratio = min_allowed_soc / 100
 
         self.capacity = capacity
         self.loss_per_hour = loss_per_hour
@@ -182,7 +167,7 @@ class StorageState:
         energy = self.used_storage \
             - accumulated_pledged \
             - accumulated_offered \
-            - self.min_allowed_soc * self.capacity
+            - self.min_allowed_soc_ratio * self.capacity
         storage_dict = {}
         for time_slot in market_slot_time_list:
             storage_dict[time_slot] = limit_float_precision(min(
@@ -219,9 +204,9 @@ class StorageState:
         Sanity check of the state variables.
         """
         charge = limit_float_precision(self.used_storage / self.capacity)
-        max_value = self.capacity - self.min_allowed_soc * self.capacity
-        assert self.min_allowed_soc < charge or \
-            isclose(self.min_allowed_soc, charge, rel_tol=1e-06)
+        max_value = self.capacity - self.min_allowed_soc_ratio * self.capacity
+        assert self.min_allowed_soc_ratio < charge or \
+            isclose(self.min_allowed_soc_ratio, charge, rel_tol=1e-06)
         assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value

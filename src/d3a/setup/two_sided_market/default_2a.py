@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+# from d3a.models.strategy.load_hours import LoadHoursStrategy  # , CellTowerLoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
@@ -41,47 +41,42 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=6,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 18)),
-                                                                       final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(
-                        initial_capacity_kWh=0.6,
-                        break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
-                         appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(
-                        initial_capacity_kWh=0.6,
-                        break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
-                         appliance=SwitchableAppliance()),
+                    # Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    #                                                    hrs_per_day=6,
+                    #                                                    hrs_of_day=list(
+                    #                                                        range(12, 18)),
+                    #                                                    final_buying_rate=35),
+                    #      appliance=SwitchableAppliance()),
+                    # Area('H1 Storage1', strategy=StorageStrategy(
+                    #     initial_capacity_kWh=0.6,
+                    #     break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
+                    #                 ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
+                    #      appliance=SwitchableAppliance()),
+                    Area('H1 Storage2', strategy=StorageStrategy(),
+                         appliance=SwitchableAppliance())
                 ]
             ),
             Area(
                 'House 2',
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(
-                        avg_power_W=100,
-                        hrs_per_day=4,
-                        hrs_of_day=list(
-                            range(12, 16)),
-                        initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
-                        final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4, 0),
+                    # Area('H2 General Load', strategy=LoadHoursStrategy(
+                    #     avg_power_W=100,
+                    #     hrs_per_day=24,
+                    #     hrs_of_day=list(range(24))),
+                    #      appliance=SwitchableAppliance()),
+                    Area('H2 PV', strategy=PVStrategy(4, initial_selling_rate=40,
+                                                      final_selling_rate=35),
                          appliance=PVAppliance()),
 
                 ]
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(
-                avg_power_W=100,
-                hrs_per_day=24,
-                hrs_of_day=list(range(0, 24)),
-                initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
-                final_buying_rate=35),
-                 appliance=SwitchableAppliance())
+            # Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(
+            #     avg_power_W=100,
+            #     hrs_per_day=24,
+            #     hrs_of_day=list(range(0, 24)),
+            #     initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
+            #     final_buying_rate=35),
+            #      appliance=SwitchableAppliance())
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
             #      appliance=SimpleAppliance()
