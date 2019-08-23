@@ -19,6 +19,7 @@ import uuid
 from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
+from copy import deepcopy
 
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
@@ -53,7 +54,7 @@ class OneSidedMarket(Market):
         assert False
 
     def offer(self, price: float, energy: float, seller: str,
-              original_offer_price=None) -> Offer:
+              original_offer_price=None, dispatch_event=True) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -67,12 +68,17 @@ class OneSidedMarket(Market):
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, price, energy, seller, original_offer_price)
-        self.offers[offer.id] = offer
+
+        self.offers[offer.id] = deepcopy(offer)
         self.offer_history.append(offer)
         log.debug(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
-        self._notify_listeners(MarketEvent.OFFER, offer=offer)
+        if dispatch_event is True:
+            self.dispatch_market_offer_event(offer)
         return offer
+
+    def dispatch_market_offer_event(self, offer):
+        self._notify_listeners(MarketEvent.OFFER, offer=offer)
 
     def delete_offer(self, offer_or_id: Union[str, Offer]):
         if self.readonly:

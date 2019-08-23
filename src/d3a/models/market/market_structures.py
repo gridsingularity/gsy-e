@@ -36,6 +36,16 @@ class Offer:
         return "{{{s.id!s:.6s}}} [{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
             .format(s=self, rate=self.price / self.energy)
 
+    def __hash__(self):
+        return hash(self.id)
+
+    def __eq__(self, other):
+        return self.id == other.id and \
+            self.price == other.price and \
+            self.original_offer_price == other.original_offer_price and \
+            self.energy == other.energy and \
+            self.seller == other.seller
+
     @classmethod
     def _csv_fields(cls):
         return 'id', 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'seller'

@@ -97,7 +97,9 @@ class Offers:
 
     def _update_offer(self, offer):
         old_offer_list = [o for o in self.posted.keys() if o.id == offer.id]
-        assert len(old_offer_list) == 1, "Expected to find a unique offer to update"
+        assert len(old_offer_list) <= 1, "Expected to find a unique offer to update"
+        if len(old_offer_list) == 0:
+            return
         old_offer = old_offer_list[0]
         self.posted[offer] = self.posted.pop(old_offer)
 
