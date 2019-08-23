@@ -165,7 +165,6 @@ class OfferUpdateFrequencyMixin:
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
         if elapsed_seconds > self._decrease_price_timepoint_s[market.time_slot]:
             self._decrease_price_timepoint_s[market.time_slot] += self._decrease_price_every_nr_s
-
             self._decrease_offer_price(market,
                                        self._calculate_price_decrease_rate(market))
 
@@ -184,9 +183,9 @@ class OfferUpdateFrequencyMixin:
                     updated_price,
                     offer.energy,
                     self.owner.name,
-                    original_offer_price=updated_price
+                    original_offer_price=updated_price,
                 )
-                if (new_offer.price/new_offer.energy) < self.final_selling_rate:
+                if (new_offer.price / new_offer.energy) < self.final_selling_rate:
                     new_offer.price = self.final_selling_rate * new_offer.energy
                 self.offers.replace(offer, new_offer, iterated_market)
             except MarketException:
@@ -203,13 +202,19 @@ class OfferUpdateFrequencyMixin:
             reduced_price = \
                 self.calculate_initial_sell_rate(market.time_slot) - \
                 price_dec_per_update * self._price_update_interval
+            if reduced_price < self.final_selling_rate:
+                reduced_price = self.final_selling_rate
             return reduced_price
         elif self.energy_rate_decrease_option is \
                 RateDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
             reduced_price = \
                 self.calculate_initial_sell_rate(market.time_slot) - \
                 self.energy_rate_decrease_per_update * self._price_update_interval
+            if reduced_price < self.final_selling_rate:
+                reduced_price = self.final_selling_rate
             return reduced_price
+        else:
+            assert False
 
     def update_market_cycle_offers(self, final_selling_rate):
         self.final_selling_rate = final_selling_rate

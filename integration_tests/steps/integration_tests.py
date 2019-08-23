@@ -527,6 +527,11 @@ def method_called(context, method):
     assert context.ctrl_callback_call_count == 1
 
 
+@given('the min offer age is set to {min_offer_age} tick')
+def min_offer_age_nr_ticks(context, min_offer_age):
+    ConstSettings.IAASettings.MIN_OFFER_AGE = int(min_offer_age)
+
+
 @when('we run a multi-day d3a simulation with {scenario} [{start_date}, {total_duration}, '
       '{slot_length}, {tick_length}]')
 def run_sim_multiday(context, scenario, start_date, total_duration, slot_length, tick_length):

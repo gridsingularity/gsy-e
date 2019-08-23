@@ -124,12 +124,15 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller, original_offer_price=None):
+    def offer(self, price, energy, seller, original_offer_price=None, dispatch_event=True):
         self.offer_count += 1
         price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller,
                                      original_offer_price=original_offer_price)
         return self.forwarded_offer
+
+    def dispatch_market_offer_event(self, offer):
+        pass
 
     def bid(self, price, energy, buyer, seller, original_bid_price=None, source_market=None):
         price = price * (1 - self.transfer_fee_ratio) - self.transfer_fee_const * energy

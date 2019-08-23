@@ -48,6 +48,7 @@
       "MAX_WIND_TURBINE_OUTPUT_W": 160
     },
     "IAASettings": {
+      "MIN_OFFER_AGE": 0,
       "FEE_PERCENTAGE": 1,
       "MARKET_TYPE": 1,
       "AlternativePricing": {
