@@ -63,7 +63,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                   price, energy, buyer, seller, original_bid_price)
         self.bids[bid.id] = bid
         self.bid_history.append(bid)
-        log.info(f"[BID][NEW][{self.time_slot_str}] {bid}")
+        log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
         return bid
 
     def delete_bid(self, bid_or_id: Union[str, Bid]):
@@ -72,7 +72,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFound(bid_or_id)
-        log.info(f"[BID][DEL][{self.time_slot_str}] {bid}")
+        log.debug(f"[BID][DEL][{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def _update_bid_fee_and_calculate_final_price(self, energy, trade_rate,
@@ -146,7 +146,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
-            log.warning(f"[TRADE][BID] [{self.time_slot_str}] {trade}")
+            log.info(f"[TRADE][BID] [{self.time_slot_str}] {trade}")
             final_bid = bid._replace(price=final_price)
             trade = trade._replace(offer=final_bid)
 

@@ -42,8 +42,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
         if (bid.price * (1 - self.markets.target.transfer_fee_ratio)
                 - self.markets.target.transfer_fee_const * bid.energy) <= 0:
-            self.owner.log.info("Bid is not forwarded because bid price lower "
-                                "than transfer_fee_const")
+            self.owner.log.debug("Bid is not forwarded because bid price lower "
+                                 "than transfer_fee_const")
             return
 
         forwarded_bid = self.markets.target.bid(
@@ -57,7 +57,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         bid_coupling = BidInfo(bid, forwarded_bid)
         self.forwarded_bids[forwarded_bid.id] = bid_coupling
         self.forwarded_bids[bid.id] = bid_coupling
-        self.owner.log.debug(f"Forwarding bid {bid} to {forwarded_bid}")
+        self.owner.log.trace(f"Forwarding bid {bid} to {forwarded_bid}")
         return forwarded_bid
 
     def _perform_pay_as_bid_matching(self):
@@ -136,7 +136,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         try:
             self.markets.target.delete_bid(bid_info.target_bid)
         except BidNotFound:
-            self.owner.log.debug(f"Bid {bid_info.target_bid.id} not "
+            self.owner.log.trace(f"Bid {bid_info.target_bid.id} not "
                                  f"found in the target market.")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
 
@@ -227,5 +227,5 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             bid_info = self.forwarded_bids.get(existing_bid.id)
             forwarded = self._forward_bid(new_bid)
             if forwarded:
-                self.owner.log.info("Bid %s changed to residual bid %s",
-                                    bid_info.target_bid, forwarded)
+                self.owner.log.debug("Bid %s changed to residual bid %s",
+                                     bid_info.target_bid, forwarded)

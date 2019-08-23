@@ -51,7 +51,7 @@ def unlock_account(chain, address):
         return
     else:
         account_pass = os.getenv("BLOCKCHAIN_ACCOUNT_PASSWORD", "testgsy")
-        log.info(f"Account: {address})")
+        log.debug(f"Account: {address})")
         unlock = \
             chain.personal.unlockAccount(address, account_pass)
-        log.info(f"Unlocking: {unlock}")
+        log.debug(f"Unlocking: {unlock}")

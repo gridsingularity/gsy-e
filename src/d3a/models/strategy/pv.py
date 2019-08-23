@@ -166,7 +166,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if not (-1 < new_risk < 101):
             raise ValueError("'new_risk' value has to be in range 0 - 100")
         self.risk = new_risk
-        self.log.warning("Risk changed to %s", new_risk)
+        self.log.info("Risk changed to %s", new_risk)
 
     def event_offer_deleted(self, *, market_id, offer):
         market = self.area.get_future_market_from_id(market_id)

@@ -49,7 +49,7 @@ class IAAEngine:
 
     def _forward_offer(self, offer, offer_id):
         if offer.price == 0:
-            self.owner.log.info("Offer is not forwarded because price=0")
+            self.owner.log.debug("Offer is not forwarded because price=0")
             return
 
         forwarded_offer = self.markets.target.offer(
@@ -61,7 +61,7 @@ class IAAEngine:
         offer_info = OfferInfo(offer, forwarded_offer)
         self.forwarded_offers[forwarded_offer.id] = offer_info
         self.forwarded_offers[offer_id] = offer_info
-        self.owner.log.debug(f"Forwarding offer {offer} to {forwarded_offer}")
+        self.owner.log.trace(f"Forwarding offer {offer} to {forwarded_offer}")
         return forwarded_offer
 
     def _delete_forwarded_offer_entries(self, offer):
@@ -100,7 +100,7 @@ class IAAEngine:
 
             forwarded_offer = self._forward_offer(offer, offer_id)
             if forwarded_offer:
-                self.owner.log.info("Offering %s", forwarded_offer)
+                self.owner.log.debug("Offering %s", forwarded_offer)
 
     def event_trade(self, *, trade):
         offer_info = self.forwarded_offers.get(trade.offer.id)
@@ -139,7 +139,7 @@ class IAAEngine:
 
             except OfferNotFoundException:
                 raise OfferNotFoundException()
-            self.owner.log.info(
+            self.owner.log.debug(
                 f"[{self.markets.source.time_slot_str}] Offer accepted {trade_source}")
 
             if residual_info is not None:
@@ -152,7 +152,7 @@ class IAAEngine:
                         self.offer_age[trade_source.residual.id] = residual_info.age
                         self.ignored_offers.add(trade_source.residual.id)
                 else:
-                    self.owner.log.error(
+                    self.owner.log.warning(
                         "Expected residual offer in source market trade {} - deleting "
                         "corresponding offer in target market".format(trade_source)
                     )
@@ -229,9 +229,9 @@ class IAAEngine:
             if not forwarded:
                 return
 
-            self.owner.log.info("Offer %s changed to residual offer %s",
-                                offer_info.target_offer,
-                                forwarded)
+            self.owner.log.debug("Offer %s changed to residual offer %s",
+                                 offer_info.target_offer,
+                                 forwarded)
 
             # Do not delete the forwarded offer entries for the case of residual offers
             if existing_offer.seller != new_offer.seller:
@@ -250,5 +250,5 @@ class BalancingEngine(IAAEngine):
         offer_info = OfferInfo(offer, forwarded_balancing_offer)
         self.forwarded_offers[forwarded_balancing_offer.id] = offer_info
         self.forwarded_offers[offer_id] = offer_info
-        self.owner.log.debug(f"Forwarding balancing offer {offer} to {forwarded_balancing_offer}")
+        self.owner.log.trace(f"Forwarding balancing offer {offer} to {forwarded_balancing_offer}")
         return forwarded_balancing_offer

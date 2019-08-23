@@ -76,15 +76,15 @@ class RedisSimulationCommunication:
         data = json.loads(message["data"])
         slowdown = data.get('slowdown')
         if not slowdown:
-            log.error("'slowdown' parameter missing from incoming message.")
+            log.warning("'slowdown' parameter missing from incoming message.")
             return
         try:
             slowdown = int(slowdown)
         except ValueError:
-            log.error("'slowdown' parameter must be numeric")
+            log.warning("'slowdown' parameter must be numeric")
             return
         if not -1 < slowdown < 101:
-            log.error("'slowdown' must be in range 0 - 100")
+            log.warning("'slowdown' must be in range 0 - 100")
             return
         self._simulation.slowdown = slowdown
 

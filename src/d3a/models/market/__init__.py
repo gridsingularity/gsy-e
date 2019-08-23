@@ -146,7 +146,7 @@ class Market:
     def _now(self):
         if self.area:
             return self.area.now
-        log.error("No area available. Using real system time!")
+        log.warning("No area available. Using real system time!")
         return DateTime.now(tz=TIME_ZONE)
 
     def set_actual_energy(self, time, reporter, value):
