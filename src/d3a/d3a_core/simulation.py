@@ -21,7 +21,6 @@ from logging import getLogger
 import time
 from time import sleep
 from pathlib import Path
-from threading import Lock
 import dill
 import click
 import platform
@@ -51,9 +50,6 @@ if platform.python_implementation() != "PyPy" and \
     from d3a.blockchain import BlockChainInterface
 
 log = getLogger(__name__)
-
-
-page_lock = Lock()
 
 
 class SimulationResetException(Exception):
@@ -228,16 +224,15 @@ class Simulation:
             self._execute_simulation(slot_resume, tick_resume, console)
 
     def _update_and_send_results(self, is_final=False):
-        with page_lock:
-            self.endpoint_buffer.update_stats(self.area, self.status)
-            if is_final:
-                self.redis_connection.publish_results(
-                    self.endpoint_buffer
-                )
-            else:
-                self.redis_connection.publish_intermediate_results(
-                    self.endpoint_buffer
-                )
+        self.endpoint_buffer.update_stats(self.area, self.status)
+        if is_final:
+            self.redis_connection.publish_results(
+                self.endpoint_buffer
+            )
+        else:
+            self.redis_connection.publish_intermediate_results(
+                self.endpoint_buffer
+            )
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
@@ -278,8 +273,7 @@ class Simulation:
                     (tick_no + 1) / config.ticks_per_slot * 100,
                 )
 
-                with page_lock:
-                    self.area.tick(is_root_area=True)
+                self.area.tick(is_root_area=True)
 
                 realtime_tick_length = time.monotonic() - tick_start
                 if self.slowdown and realtime_tick_length < tick_lengths_s:

@@ -25,7 +25,6 @@ import json
 import operator
 from slugify import slugify
 from sortedcontainers import SortedDict
-from threading import Lock
 
 from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
@@ -42,7 +41,6 @@ from functools import reduce  # forward compatibility for Python 3
 
 _log = logging.getLogger(__name__)
 
-page_lock = Lock()
 
 ENERGY_BUYER_SIGN_PLOTS = 1
 ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
@@ -134,7 +132,6 @@ class ExportAndPlot:
         self.export_json_data(self.directory)
 
     def data_to_csv(self, area, is_first):
-        with page_lock:
             self._export_area_with_children(area, self.directory, is_first)
 
     def move_root_plot_folder(self):
