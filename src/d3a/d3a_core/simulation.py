@@ -21,7 +21,6 @@ from logging import getLogger
 import time
 from time import sleep
 from pathlib import Path
-from threading import Lock
 import dill
 import click
 import platform
@@ -53,9 +52,6 @@ if platform.python_implementation() != "PyPy" and \
 log = getLogger(__name__)
 
 
-page_lock = Lock()
-
-
 class SimulationResetException(Exception):
     pass
 
@@ -77,6 +73,7 @@ class Simulation:
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
+
         self.sim_status = "initialized"
 
         if export_subdir is None:
@@ -102,6 +99,9 @@ class Simulation:
         validate_const_settings_for_simulation()
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
                                                         self.area)
+        if self.export_on_finish:
+            self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
+                                        self.endpoint_buffer)
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
@@ -224,16 +224,15 @@ class Simulation:
             self._execute_simulation(slot_resume, tick_resume, console)
 
     def _update_and_send_results(self, is_final=False):
-        with page_lock:
-            self.endpoint_buffer.update_stats(self.area, self.status)
-            if is_final:
-                self.redis_connection.publish_results(
-                    self.endpoint_buffer
-                )
-            else:
-                self.redis_connection.publish_intermediate_results(
-                    self.endpoint_buffer
-                )
+        self.endpoint_buffer.update_stats(self.area, self.status)
+        if is_final:
+            self.redis_connection.publish_results(
+                self.endpoint_buffer
+            )
+        else:
+            self.redis_connection.publish_intermediate_results(
+                self.endpoint_buffer
+            )
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
@@ -274,8 +273,7 @@ class Simulation:
                     (tick_no + 1) / config.ticks_per_slot * 100,
                 )
 
-                with page_lock:
-                    self.area.tick(is_root_area=True)
+                self.area.tick(is_root_area=True)
 
                 realtime_tick_length = time.monotonic() - tick_start
                 if self.slowdown and realtime_tick_length < tick_lengths_s:
@@ -291,6 +289,8 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
+            if self.export_on_finish:
+                self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
@@ -311,8 +311,7 @@ class Simulation:
             )
         if self.export_on_finish:
             log.info("Exporting simulation data.")
-            ExportAndPlot(self.area, self.export_path, self.export_subdir,
-                          self.endpoint_buffer)
+            self.export.export()
 
         if self.use_repl:
             self._start_repl()
