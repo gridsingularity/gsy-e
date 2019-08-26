@@ -165,7 +165,8 @@ class ExportAndPlot:
         self._export_area_stats_csv_file(area, directory, balancing=True, is_first=is_first)
 
         if area.children:
-            # self.kpi.update_kpis_from_area(area) To be uncommented once KPI is implemented
+            # TODO: To be uncommented once KPI is implemented
+            # self.kpi.update_kpis_from_area(area)
             self._export_trade_csv_files(area, directory, balancing=False, is_first=is_first)
             self._export_trade_csv_files(area, directory, balancing=True, is_first=is_first)
             self._export_area_offers_bids_csv_files(area, directory, "offers", Offer,
