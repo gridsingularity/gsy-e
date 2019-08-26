@@ -160,7 +160,7 @@ class PVStrategy(BaseStrategy):
         if not (-1 < new_risk < 101):
             raise ValueError("'new_risk' value has to be in range 0 - 100")
         self.risk = new_risk
-        self.log.warning("Risk changed to %s", new_risk)
+        self.log.info("Risk changed to %s", new_risk)
 
     def event_offer_deleted(self, *, market_id, offer):
         super().event_offer_deleted(market_id=market_id, offer=offer)

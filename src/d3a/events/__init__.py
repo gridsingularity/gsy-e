@@ -54,7 +54,7 @@ class EventMixin:
             return self.event_balancing_trade
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
-        self.log.debug("Dispatching event %s", event_type.name)
+        self.log.trace("Dispatching event %s", event_type.name)
         self._event_mapping(event_type)(**kwargs)
 
     def event_tick(self, *, area):

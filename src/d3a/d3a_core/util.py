@@ -19,7 +19,7 @@ import select
 import sys
 import termios
 import tty
-from logging import LoggerAdapter, getLogger
+from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 import json
 import time
 
@@ -41,8 +41,6 @@ import inspect
 import os
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
-log = getLogger(__name__)
-
 
 INTERVAL_DH_RE = rex("/^(?:(?P<days>[0-9]{1,4})[d:])?(?:(?P<hours>[0-9]{1,2})[h:])?$/")
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
@@ -51,11 +49,46 @@ IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
 
 _CONTRACT_CACHE = {}
 
+TRACE = 5
+
+
+class TraceLogger(getLoggerClass()):
+    def __init__(self, name, level=NOTSET):
+        super().__init__(name, level)
+
+        addLevelName(TRACE, "TRACE")
+
+    def trace(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'TRACE'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.trace("Houston, we have a %s", "thorny problem", exc_info=1)
+        """
+        if self.isEnabledFor(TRACE):
+            self._log(TRACE, msg, args, **kwargs)
+
+
+setLoggerClass(TraceLogger)
+
+log = getLogger(__name__)
+
 
 class TaggedLogWrapper(LoggerAdapter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def process(self, msg, kwargs):
         msg = "[{}] {}".format(self.extra, msg)
         return msg, kwargs
+
+    def trace(self, msg, *args, **kwargs):
+        """
+        Delegate a trace call to the underlying logger.
+        """
+        self.log(TRACE, msg, *args, **kwargs)
 
 
 class DateType(ParamType):
@@ -152,7 +185,7 @@ class ContractJoiner(object):
             return []
 
         self.seen.add(contract_file.name)
-        log.debug('Reading contract file "%s"', contract_file.name)
+        log.trace('Reading contract file "%s"', contract_file.name)
 
         for line in contract_file:
             line = line.strip('\r\n')
@@ -357,7 +390,7 @@ def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
     try:
         return functor(*args, **kwargs)
     except (AssertionError, D3AException) as e:
-        log.info(f"Retrying action {functor.__name__} for the {retry_count+1} time.")
+        log.debug(f"Retrying action {functor.__name__} for the {retry_count+1} time.")
         if retry_count >= max_retries:
             raise e
         return recursive_retry(functor, retry_count+1, max_retries, *args, **kwargs)

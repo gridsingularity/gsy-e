@@ -123,7 +123,7 @@ class Offers:
             market_id = self.posted.pop(offer)
             assert type(market_id) == str
             if market_id in self.sold and offer.id in self.sold[market_id]:
-                self.strategy.log.error("Offer already sold, cannot remove it.")
+                self.strategy.log.warning("Offer already sold, cannot remove it.")
                 self.posted[offer] = market_id
             else:
                 return True
@@ -223,11 +223,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def trigger_enable(self, **kw):
         self.enabled = True
-        self.log.warning("Trading has been enabled")
+        self.log.info("Trading has been enabled")
 
     def trigger_disable(self):
         self.enabled = False
-        self.log.warning("Trading has been disabled")
+        self.log.info("Trading has been disabled")
         # We've been disabled - remove all future open offers
         for market in self.area.markets.values():
             for offer in list(market.offers.values()):
