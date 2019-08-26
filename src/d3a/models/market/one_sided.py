@@ -71,7 +71,7 @@ class OneSidedMarket(Market):
 
         self.offers[offer.id] = deepcopy(offer)
         self.offer_history.append(offer)
-        log.info(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
+        log.debug(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
         if dispatch_event is True:
             self.dispatch_market_offer_event(offer)
@@ -93,7 +93,7 @@ class OneSidedMarket(Market):
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
-        log.info(f"[OFFER][DEL][{self.time_slot_str}] {offer}")
+        log.debug(f"[OFFER][DEL][{self.time_slot_str}] {offer}")
 
         # TODO: Once we add event-driven blockchain, this should be asynchronous
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
@@ -184,8 +184,8 @@ class OneSidedMarket(Market):
                     original_offer_price=original_residual_price
                 )
                 self.offers[residual_offer.id] = residual_offer
-                log.info(f"[OFFER][CHANGED][{self.time_slot_str}] "
-                         f"{original_offer} -> {residual_offer}")
+                log.debug(f"[OFFER][CHANGED][{self.time_slot_str}] "
+                          f"{original_offer} -> {residual_offer}")
                 offer = accepted_offer
 
                 self.bc_interface.change_offer(offer, original_offer, residual_offer)
@@ -217,7 +217,7 @@ class OneSidedMarket(Market):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer, buyer)
-            log.warning(f"[TRADE] [{self.time_slot_str}] {trade}")
+            log.info(f"[TRADE] [{self.time_slot_str}] {trade}")
 
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.

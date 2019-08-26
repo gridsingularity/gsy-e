@@ -55,7 +55,7 @@ def create_market_contract(bc_interface, duration_s, listeners=[]):
         .transact({'from': bc_interface.chain.eth.accounts[0]})
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     status = tx_receipt["status"]
-    log.info(f"tx_receipt Status: {status}")
+    log.debug(f"tx_receipt Status: {status}")
     approve_retval = clearing_contract_instance.events \
         .ApproveClearingMember() \
         .processReceipt(tx_receipt)
@@ -75,11 +75,11 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
         bc_energy,
         int(price * BC_NUM_FACTOR)).transact({"from": bc_interface.users[seller].address})
     tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
-    log.info(f"tx_hash of New Offer {tx_hash_hex}")
+    log.debug(f"tx_hash of New Offer {tx_hash_hex}")
 
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     status = tx_receipt["status"]
-    log.info(f"tx_receipt Status: {status}")
+    log.debug(f"tx_receipt Status: {status}")
     assert status > 0
     wait_for_node_synchronization(bc_interface)
 
@@ -90,7 +90,7 @@ def create_new_offer(bc_interface, bc_contract, energy, price, seller):
 
     offer_id = get_offer_id()
 
-    log.info(f"offer_id: {offer_id}")
+    log.debug(f"offer_id: {offer_id}")
     assert offer_id is not 0
     return offer_id
 
@@ -111,10 +111,10 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
     tx_hash = bc_contract.functions.trade(offer_id, trade_energy). \
         transact({"from": bc_interface.users[buyer].address})
     tx_hash_hex = hex(int.from_bytes(tx_hash, byteorder='big'))
-    log.info(f"tx_hash of Trade {tx_hash_hex}")
+    log.debug(f"tx_hash of Trade {tx_hash_hex}")
     tx_receipt = bc_interface.chain.eth.waitForTransactionReceipt(tx_hash)
     status = tx_receipt["status"]
-    log.info(f"tx_receipt Status: {status}")
+    log.debug(f"tx_receipt Status: {status}")
     assert status > 0
 
     wait_for_node_synchronization(bc_interface)
@@ -125,7 +125,7 @@ def trade_offer(bc_interface, bc_contract, offer_id, energy, buyer):
                                     is not 0,
                                     timeout=20)
         new_trade_retval = bc_contract.events.NewTrade().processReceipt(tx_receipt)
-        log.info(f"new_trade_retval after retry: {new_trade_retval}")
+        log.debug(f"new_trade_retval after retry: {new_trade_retval}")
 
     offer_changed_retval = bc_contract.events \
         .OfferChanged() \

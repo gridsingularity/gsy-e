@@ -126,5 +126,5 @@ class TriggerMixin(metaclass=TriggerMeta):
     def fire_trigger(self, name, **params):
         if name not in self._trigger_names:
             raise RuntimeError("Unknown trigger '{}'".format(name))
-        self.log.debug("Firing trigger '%s'", name)
+        self.log.trace("Firing trigger '%s'", name)
         return getattr(self, 'trigger_{}'.format(name))(**params)

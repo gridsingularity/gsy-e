@@ -29,9 +29,9 @@ from pendulum import DateTime, today
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
 from d3a.models.const import ConstSettings
-from d3a.d3a_core.util import DateType
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
-    read_settings_from_file, update_advanced_settings, convert_str_to_pauseafter_intervall
+    read_settings_from_file, update_advanced_settings, convert_str_to_pauseafter_intervall, \
+    DateType
 
 from d3a.d3a_core.simulation import run_simulation
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT, TIME_FORMAT
@@ -41,7 +41,7 @@ log = getLogger(__name__)
 
 @click.group(name='d3a', cls=DefaultGroup, default='run', default_if_no_args=True,
              context_settings={'max_content_width': 120})
-@click.option('-l', '--log-level', type=Choice(list(logging._nameToLevel.keys())), default='DEBUG',
+@click.option('-l', '--log-level', type=Choice(list(logging._nameToLevel.keys())), default='INFO',
               show_default=True, help="Log level")
 def main(log_level):
     handler = logging.StreamHandler()

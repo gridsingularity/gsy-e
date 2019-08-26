@@ -26,8 +26,7 @@ from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
-from d3a.d3a_core.util import available_simulation_scenarios
-from d3a.d3a_core.util import update_advanced_settings
+from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
 from d3a.models.const import GlobalConfig, ConstSettings
 
@@ -55,8 +54,8 @@ def start(scenario, settings, events):
         spot_market_type = settings.get('spot_market_type', None)
         if spot_market_type is not None:
             if not 1 <= spot_market_type <= 3:
-                logging.getLogger().error(f"Invalid value ({spot_market_type} "
-                                          f"for spot market type.)")
+                logging.getLogger().warning(f"Invalid value ({spot_market_type} "
+                                            f"for spot market type.)")
             else:
                 ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
 

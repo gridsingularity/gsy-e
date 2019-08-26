@@ -65,7 +65,7 @@ class BalancingMarket(OneSidedMarket):
         self._sorted_offers = \
             sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self.offer_history.append(offer)
-        log.info(f"[BALANCING_OFFER][NEW][{self.time_slot_str}] {offer}")
+        log.debug(f"[BALANCING_OFFER][NEW][{self.time_slot_str}] {offer}")
         self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
 
@@ -138,8 +138,8 @@ class BalancingMarket(OneSidedMarket):
                     original_offer_price=original_residual_price
                 )
                 self.offers[residual_offer.id] = residual_offer
-                log.info(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
-                         f"{original_offer} -> {residual_offer}")
+                log.debug(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
+                          f"{original_offer} -> {residual_offer}")
                 offer = accepted_offer
 
                 self.bc_interface.change_offer(offer, original_offer, residual_offer)
@@ -175,7 +175,7 @@ class BalancingMarket(OneSidedMarket):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer, buyer)
-            log.warning(f"[BALANCING_TRADE] [{self.time_slot_str}] {trade}")
+            log.info(f"[BALANCING_TRADE] [{self.time_slot_str}] {trade}")
 
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.
@@ -192,7 +192,7 @@ class BalancingMarket(OneSidedMarket):
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
-        log.info(f"[BALANCING_OFFER][DEL][{self.time_slot_str}] {offer}")
+        log.debug(f"[BALANCING_OFFER][DEL][{self.time_slot_str}] {offer}")
         self._notify_listeners(MarketEvent.BALANCING_OFFER_DELETED, offer=offer)
 
     def _update_accumulated_trade_price_energy(self, trade):
