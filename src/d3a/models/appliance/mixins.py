@@ -35,8 +35,8 @@ class SwitchableMixin:
 
     def trigger_on(self):
         self.is_on = True
-        self.log.warning("Turning on")
+        self.log.info("Turning on")
 
     def trigger_off(self):
         self.is_on = False
-        self.log.warning("Turning off")
+        self.log.info("Turning off")

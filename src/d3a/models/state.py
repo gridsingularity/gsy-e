@@ -74,8 +74,8 @@ class StorageState:
 
         if initial_soc is not None:
             if initial_capacity_kWh:
-                strategy.log.warning("Ignoring initial_capacity_kWh parameter since "
-                                     "initial_soc has also been given.")
+                strategy.log.info("Ignoring initial_capacity_kWh parameter since "
+                                  "initial_soc has also been given.")
             initial_capacity_kWh = capacity * initial_soc / 100
         if initial_soc is None and initial_capacity_kWh is None:
             initial_capacity_kWh = StorageSettings.MIN_ALLOWED_SOC * StorageSettings.CAPACITY
