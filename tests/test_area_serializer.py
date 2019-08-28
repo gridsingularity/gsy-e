@@ -59,9 +59,8 @@ def test_raises_unknown_class():
 
 
 def test_strategy_roundtrip_with_params():
-    area = Area('area', [], None, PVStrategy(panel_count=42, risk=1))
+    area = Area('area', [], None, PVStrategy(panel_count=42))
     area_str = area_to_string(area)
-    assert json.loads(area_str)['strategy']['kwargs']['risk'] == 1
     recovered = area_from_string(area_str)
     assert recovered.strategy.panel_count == 42
 
@@ -69,7 +68,7 @@ def test_strategy_roundtrip_with_params():
 def test_non_attr_param():
     area1 = Area('area1', [], None, PVStrategy())
     recovered1 = area_from_string(area_to_string(area1))
-    assert recovered1.strategy.final_selling_rate == ConstSettings.PVSettings.FINAL_SELLING_RATE
+    assert recovered1.strategy.max_panel_power_W == ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
 
 
 @pytest.fixture
@@ -95,24 +94,24 @@ def test_leaf_deserialization():
         '''{
              "name": "house",
              "children":[
-                 {"name": "pv1", "type": "PV", "panel_count": 4, "risk": 50, "display_type": "PV"},
-                 {"name": "pv2", "type": "PV", "panel_count": 1, "risk": 10, "display_type": "PV"}
+                 {"name": "pv1", "type": "PV", "panel_count": 4, "display_type": "PV"},
+                 {"name": "pv2", "type": "PV", "panel_count": 1, "display_type": "PV"}
              ]
            }
         '''
     )
     pv1, pv2 = recovered.children
     assert isinstance(pv1, PV)
-    assert pv1.strategy.panel_count == 4 and pv1.strategy.risk == 50
+    assert pv1.strategy.panel_count == 4
     assert pv1.display_type == "PV"
     assert isinstance(pv2, PV)
-    assert pv2.strategy.panel_count == 1 and pv2.strategy.risk == 10
+    assert pv2.strategy.panel_count == 1
     assert pv2.display_type == "PV"
 
 
 @pytest.fixture
 def fixture_with_leaves():
-    area = Area("house", [PV("pv1", panel_count=1, risk=5), PV("pv2", panel_count=4, risk=10)])
+    area = Area("house", [PV("pv1", panel_count=1), PV("pv2", panel_count=4)])
     return area_to_string(area)
 
 

@@ -18,11 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.const import ConstSettings
+from datetime import timedelta
 
 
 class UpdateFrequencyMixin:
     def __init__(self, initial_rate, final_rate, fit_to_limit=True,
-                 energy_rate_change_per_update=1, update_interval=5):
+                 energy_rate_change_per_update=1, update_interval=timedelta(minutes=5)):
         self.fit_to_limit = fit_to_limit
         self.initial_rate = initial_rate
         self.final_rate = final_rate
@@ -31,8 +32,8 @@ class UpdateFrequencyMixin:
         self.update_counter = 0
 
     def update_on_activate(self, strategy):
-        assert self.update_interval * 60 >= strategy.area.config.tick_length.seconds * \
-               ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH
+        assert self.update_interval.seconds >= \
+               ConstSettings.GeneralSettings.UPDATE_RATE * 60
         self.number_of_available_updates = \
             self._calculate_number_of_available_updates_per_slot(strategy)
         self.energy_rate_change_per_update = \
@@ -48,7 +49,7 @@ class UpdateFrequencyMixin:
 
     def _calculate_number_of_available_updates_per_slot(self, strategy):
         number_of_available_updates = \
-            int(strategy.area.config.slot_length.seconds / (self.update_interval * 60)) - 1
+            int(strategy.area.config.slot_length.seconds / (self.update_interval.seconds)) - 1
         return number_of_available_updates
 
     def reset_on_market_cycle(self):
@@ -62,7 +63,7 @@ class UpdateFrequencyMixin:
     def get_price_update_point(self, strategy):
         current_tick_number = strategy.area.current_tick % strategy.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * strategy.area.config.tick_length.seconds
-        if elapsed_seconds >= self.update_interval * 60 * (self.update_counter+1):
+        if elapsed_seconds >= self.update_interval.seconds * (self.update_counter+1):
             self.update_counter += 1
             return True
         else:

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # from typing import Union
 from collections import namedtuple
 from enum import Enum
+from datetime import timedelta
 
 from d3a import limit_float_precision
 from d3a.d3a_core.exceptions import MarketException
@@ -39,10 +40,10 @@ BalancingSettings = ConstSettings.BalancingSettings
 
 
 class StorageStrategy(BidEnabledStrategy):
-    parameters = ('risk', 'initial_capacity_kWh', 'initial_soc', 'initial_rate_option',
-                  'energy_rate_decrease_option', 'energy_rate_change_per_update',
-                  'battery_capacity_kWh', 'max_abs_battery_power_kW', 'break_even',
-                  'initial_selling_rate', 'initial_buying_rate')
+    parameters = ('initial_soc', 'min_allowed_soc', 'battery_capacity_kWh',
+                  'max_abs_battery_power_kW', 'cap_price_strategy', 'initial_selling_rate',
+                  'final_selling_rate', 'initial_buying_rate', 'final_buying_rate', 'fit_to_limit',
+                  'update_interval', 'initial_energy_origin', 'balancing_energy_ratio')
 
     def __init__(self, initial_soc: float = StorageSettings.MIN_ALLOWED_SOC,
                  min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC,
@@ -53,6 +54,8 @@ class StorageStrategy(BidEnabledStrategy):
                  final_selling_rate: float = StorageSettings.BREAK_EVEN_SELL,
                  initial_buying_rate: float = StorageSettings.MIN_BUYING_RATE,
                  final_buying_rate: float = StorageSettings.BREAK_EVEN_BUY,
+                 fit_to_limit=True, energy_rate_change_per_update=1,
+                 update_interval=timedelta(minutes=5),
                  initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL,
                  balancing_energy_ratio: tuple = (BalancingSettings.OFFER_DEMAND_RATIO,
                                                   BalancingSettings.OFFER_SUPPLY_RATIO)):
@@ -66,16 +69,25 @@ class StorageStrategy(BidEnabledStrategy):
                                              initial_buying_rate, final_buying_rate)
         BidEnabledStrategy.__init__(self)
 
-        self.offer_update = UpdateFrequencyMixin(initial_rate=initial_selling_rate,
-                                                 final_rate=final_selling_rate)
-        self.bid_update = UpdateFrequencyMixin(initial_rate=initial_buying_rate,
-                                               final_rate=final_buying_rate)
-        self.state = StorageState(initial_soc=initial_soc,
-                                  initial_energy_origin=initial_energy_origin,
-                                  capacity=battery_capacity_kWh,
-                                  max_abs_battery_power_kW=max_abs_battery_power_kW,
-                                  loss_per_hour=0.0,
-                                  min_allowed_soc=min_allowed_soc)
+        self.offer_update = \
+            UpdateFrequencyMixin(initial_rate=initial_selling_rate,
+                                 final_rate=final_selling_rate,
+                                 fit_to_limit=fit_to_limit,
+                                 energy_rate_change_per_update=energy_rate_change_per_update,
+                                 update_interval=update_interval)
+        self.bid_update = \
+            UpdateFrequencyMixin(initial_rate=initial_buying_rate,
+                                 final_rate=final_buying_rate,
+                                 fit_to_limit=fit_to_limit,
+                                 energy_rate_change_per_update=energy_rate_change_per_update,
+                                 update_interval=update_interval)
+        self.state = \
+            StorageState(initial_soc=initial_soc,
+                         initial_energy_origin=initial_energy_origin,
+                         capacity=battery_capacity_kWh,
+                         max_abs_battery_power_kW=max_abs_battery_power_kW,
+                         loss_per_hour=0.0,
+                         min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
@@ -132,9 +144,9 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("Battery capacity should be a positive integer")
         if max_abs_battery_power_kW < 0:
             raise ValueError("Battery Power rating must be a positive integer.")
-        if 0 > initial_soc > 100:
+        if 0 < initial_soc > 100:
             raise ValueError("initial SOC must be in between 0-100 %")
-        if 0 > min_allowed_soc > 100:
+        if 0 < min_allowed_soc > 100:
             raise ValueError("initial SOC must be in between 0-100 %")
         if initial_soc < min_allowed_soc:
             raise ValueError("Initial charge must be more than the minimum allowed soc.")

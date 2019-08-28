@@ -19,7 +19,7 @@ from numpy import random
 from pendulum import duration
 from typing import Union
 from collections import namedtuple
-
+from datetime import timedelta
 from d3a.d3a_core.util import generate_market_slot_list, is_market_in_simulation_duration
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
@@ -35,10 +35,13 @@ BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 
 class LoadHoursStrategy(BidEnabledStrategy):
-    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'initial_buying_rate',
-                  'final_buying_rate')
+    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'fit_to_limit',
+                  'energy_rate_change_per_update', 'update_interval', 'initial_buying_rate',
+                  'final_buying_rate', 'balancing_energy_ratio')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
+                 fit_to_limit=True, energy_rate_change_per_update=None,
+                 update_interval=timedelta(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                  final_buying_rate: Union[float, dict, str] =
@@ -52,8 +55,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                                           initial_buying_rate)
         self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                         final_buying_rate)
-        self.bid_update = UpdateFrequencyMixin(initial_rate=initial_buying_rate,
-                                               final_rate=final_buying_rate)
+        self.bid_update = \
+            UpdateFrequencyMixin(initial_rate=initial_buying_rate,
+                                 final_rate=final_buying_rate,
+                                 fit_to_limit=fit_to_limit,
+                                 energy_rate_change_per_update=energy_rate_change_per_update,
+                                 update_interval=update_interval)
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 

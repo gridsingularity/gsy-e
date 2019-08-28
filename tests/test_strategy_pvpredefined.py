@@ -130,9 +130,9 @@ def pv_test1(area_test1):
     return p
 
 
-def test_activation(pv_test1, area_test1):
+def test_activation(pv_test1):
     pv_test1.event_activate()
-    assert pv_test1._decrease_price_every_nr_s > 0
+    assert pv_test1.offer_update.number_of_available_updates > 0
     global ENERGY_FORECAST
     ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh
 
@@ -164,10 +164,8 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
     old_offer = list(pv_test3.offers.posted.keys())[0]
-    area_test3.current_tick += 7
-    dec_rate = pv_test3._calculate_price_decrease_rate(area_test3.test_market)
-    pv_test3._decrease_offer_price(area_test3.test_market, dec_rate)
-
+    area_test3.current_tick += 310
+    pv_test3.event_tick(area=area_test3)
     new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
 

@@ -23,7 +23,8 @@ from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 # from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
-from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
+# from d3a.models.strategy.pv import PVStrategy
 
 
 def get_setup(config):
@@ -55,8 +56,11 @@ def get_setup(config):
                     #                                                        range(12, 16)),
                     #                                                    final_buying_rate=35),
                     #      appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4, initial_selling_rate=30,
-                                                      final_selling_rate=5),
+                    Area('H2 PV',
+                         strategy=PVPredefinedStrategy(panel_count=4,
+                                                       initial_selling_rate=30,
+                                                       final_selling_rate=5,
+                                                       cloud_coverage=0),
                          appliance=PVAppliance()),
 
                 ],

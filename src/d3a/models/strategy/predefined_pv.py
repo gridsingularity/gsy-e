@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pathlib
 
 from pendulum import DateTime
+from datetime import timedelta
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.const import ConstSettings
@@ -39,28 +40,32 @@ class PVPredefinedStrategy(PVStrategy):
                   'energy_rate_decrease_per_update', 'initial_selling_rate')
 
     def __init__(
-            self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK, panel_count: int=1,
+            self, panel_count: int=1,
+            initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
             cloud_coverage: int=None,
-            initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
-            initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-            energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
-            ENERGY_RATE_DECREASE_PER_UPDATE,
+            fit_to_limit: bool = True,
+            update_interval=timedelta(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+            energy_rate_change_per_update:
+            float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         """
         Constructor of PVPredefinedStrategy
-        :param risk: PV risk parameter
-        :param panel_count: number of solar panels for this PV plant
-        :param final_selling_rate: lower threshold for the PV sale price
+        :param panel_count: Number of solar panels for this PV plant
+        :param initial_selling_rate: Upper Threshold for PV offers
+        :param final_selling_rate: Lower Threshold for PV offers
         :param cloud_coverage: cloud conditions. 0=sunny, 1=partially cloudy, 2=cloudy
+        :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
+        :param update_interval: Interval after which PV will update its offer
+        :param energy_rate_change_per_update: Slope of PV Offer change per update
+        :param max_panel_power_W:
         """
-        super().__init__(panel_count=panel_count, risk=risk,
-                         final_selling_rate=final_selling_rate,
-                         initial_rate_option=initial_rate_option,
+        super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
-                         energy_rate_decrease_option=energy_rate_decrease_option,
-                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
+                         final_selling_rate=final_selling_rate,
+                         fit_to_limit=fit_to_limit,
+                         update_interval=update_interval,
+                         energy_rate_change_per_update=energy_rate_change_per_update,
                          max_panel_power_W=max_panel_power_W
                          )
         self._power_profile_index = cloud_coverage
@@ -115,14 +120,13 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                   'energy_rate_decrease_per_update', 'power_profile', 'initial_selling_rate')
 
     def __init__(
-            self, power_profile, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
-            panel_count: int=1,
-            final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-            initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
+            self, power_profile, panel_count: int=1,
             initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-            energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
-            ENERGY_RATE_DECREASE_PER_UPDATE,
+            final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            fit_to_limit: bool = True,
+            update_interval=timedelta(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+            energy_rate_change_per_update:
+            float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         """
         Constructor of PVUserProfileStrategy
@@ -133,14 +137,13 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         :param panel_count: number of solar panels for this PV plant
         :param final_selling_rate: lower threshold for the PV sale price
         """
-        super().__init__(risk=risk, panel_count=panel_count,
-                         final_selling_rate=final_selling_rate,
-                         initial_rate_option=initial_rate_option,
+        super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
-                         energy_rate_decrease_option=energy_rate_decrease_option,
-                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_panel_power_W
-                         )
+                         final_selling_rate=final_selling_rate,
+                         fit_to_limit=fit_to_limit,
+                         update_interval=update_interval,
+                         energy_rate_change_per_update=energy_rate_change_per_update,
+                         max_panel_power_W=max_panel_power_W)
         self._power_profile_W = power_profile
 
     def _read_predefined_profile_for_pv(self) -> Dict[DateTime, float]:
