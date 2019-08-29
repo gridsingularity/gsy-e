@@ -121,6 +121,11 @@ class UpdateFrequencyMixin:
             else:
                 raise MarketException
 
+    def update_offer(self, strategy):
+        if self.get_price_update_point(strategy):
+            for market in strategy.area.all_markets:
+                self.update_energy_price(market, strategy)
+
     #############
     # BID_METHOD#
     #############
@@ -128,9 +133,9 @@ class UpdateFrequencyMixin:
         self.reset_on_market_cycle()
         # decrease energy rate for each market again, except for the newly created one
         for market in strategy.area.all_markets[:-1]:
-            self._update_posted_bids(market, strategy)
+            self._post_bids(market, strategy)
 
-    def _update_posted_bids(self, market, strategy):
+    def _post_bids(self, market, strategy):
         existing_bids = list(strategy.get_posted_bids(market))
         for bid in existing_bids:
             assert bid.buyer == strategy.owner.name
@@ -142,4 +147,6 @@ class UpdateFrequencyMixin:
             strategy.post_bid(market, bid.energy * self._get_updated_rate(market), bid.energy)
 
     def update_posted_bids_over_ticks(self, market, strategy):
-        self._update_posted_bids(market, strategy)
+        if self.get_price_update_point(strategy):
+            if strategy.are_bids_posted(market.id):
+                self._post_bids(market, strategy)

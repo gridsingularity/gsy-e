@@ -21,7 +21,7 @@ from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy
 # from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy
+# from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 # from d3a.models.strategy.pv import PVStrategy
@@ -50,12 +50,12 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=4,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 16)),
-                                                                       final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
+                    # Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    #                                                    hrs_per_day=4,
+                    #                                                    hrs_of_day=list(
+                    #                                                        range(12, 16)),
+                    #                                                    final_buying_rate=35),
+                    #      appliance=SwitchableAppliance()),
                     Area('H2 PV',
                          strategy=PVPredefinedStrategy(panel_count=4,
                                                        initial_selling_rate=30,

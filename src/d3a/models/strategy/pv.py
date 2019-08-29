@@ -101,9 +101,7 @@ class PVStrategy(BaseStrategy):
         self.produced_energy_forecast_kWh()
 
     def event_tick(self, *, area):
-        if self.offer_update.get_price_update_point(self):
-            for market in self.area.all_markets:
-                self.offer_update.update_energy_price(market, self)
+        self.offer_update.update_offer(self)
 
     def produced_energy_forecast_kWh(self):
         # This forecast ist based on the real PV system data provided by enphase

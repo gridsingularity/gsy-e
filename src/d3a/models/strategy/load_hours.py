@@ -167,10 +167,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return (time_slot - self._simulation_start_timestamp).days
 
     def _double_sided_market_event_tick(self, market):
-        if self.bid_update.get_price_update_point(self):
-            print(f"bid_update_point")
-            if self.are_bids_posted(market.id):
-                self.bid_update.update_posted_bids_over_ticks(market, self)
+        self.bid_update.update_posted_bids_over_ticks(market, self)
 
     def event_tick(self, *, area):
         for market in self.active_markets:
@@ -193,9 +190,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.energy_requirement_Wh[market.time_slot] > FLOATING_POINT_TOLERANCE:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 self._one_sided_market_event_tick(market)
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
-                    ConstSettings.IAASettings.MARKET_TYPE == 3:
-                self._double_sided_market_event_tick(market)
 
     def _allowed_operating_hours(self, time):
         return time.hour in self.hrs_of_day
