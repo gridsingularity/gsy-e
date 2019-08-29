@@ -309,7 +309,7 @@ class BidEnabledStrategy(BaseStrategy):
             return None
         return self.post_bid(
             market,
-            energy_Wh * self.bid_update.initial_rate / 1000.0,
+            energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
             energy_Wh / 1000.0
         )
 

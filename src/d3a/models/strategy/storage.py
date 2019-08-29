@@ -100,8 +100,6 @@ class StorageStrategy(BidEnabledStrategy):
 
         # self._validate_constructor_arguments(risk, None, None, battery_capacity_kWh,
         #                                      min_allowed_soc, self.initial_selling_rate)
-        # self.assign_offermixin_arguments(initial_rate_option, energy_rate_decrease_option,
-        #                                  energy_rate_change_per_update)
         if battery_capacity_kWh is not None:
             self.state.capacity = battery_capacity_kWh
         if max_abs_battery_power_kW is not None:
@@ -282,7 +280,7 @@ class StorageStrategy(BidEnabledStrategy):
                                                                               self.owner.name)
 
     def buy_energy(self, market):
-        max_affordable_offer_rate = self.bid_update.initial_rate
+        max_affordable_offer_rate = self.bid_update.initial_rate[market.time_slot]
         for offer in market.sorted_offers:
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
@@ -356,7 +354,7 @@ class StorageStrategy(BidEnabledStrategy):
             # break_even_sell = self.break_even[market.time_slot].sell
             # max_selling_rate = self.calculate_initial_sell_rate(market.time_slot)
             # return max(max_selling_rate, break_even_sell)
-            return self.offer_update.initial_rate
+            return self.offer_update.initial_rate[market.time_slot]
 
     def capacity_dependant_sell_rate(self, market):
         if self.state.charge_history[market.time_slot] is '-':

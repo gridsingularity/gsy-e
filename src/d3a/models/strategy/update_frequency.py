@@ -16,20 +16,44 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from datetime import timedelta
+
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.const import ConstSettings
-from datetime import timedelta
+from d3a.models.read_user_profile import read_arbitrary_profile
+from d3a.models.read_user_profile import InputProfileTypes
+from d3a.d3a_core.util import generate_market_slot_list
 
 
 class UpdateFrequencyMixin:
     def __init__(self, initial_rate, final_rate, fit_to_limit=True,
                  energy_rate_change_per_update=1, update_interval=timedelta(minutes=5)):
         self.fit_to_limit = fit_to_limit
-        self.initial_rate = initial_rate
-        self.final_rate = final_rate
-        self.energy_rate_change_per_update = energy_rate_change_per_update
+        self.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                   initial_rate)
+        self.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                 final_rate)
+        self.energy_rate_change_per_update = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                    energy_rate_change_per_update)
         self.update_interval = update_interval
         self.update_counter = 0
+        self.number_of_available_updates = 0
+
+    def _get_energy_rate_change_per_update(self):
+        energy_rate_change_per_update = {}
+        for slot in generate_market_slot_list():
+            if self.fit_to_limit:
+                energy_rate_change_per_update[slot] = \
+                    (self.initial_rate[slot] - self.final_rate[slot]) / \
+                    self.number_of_available_updates
+            else:
+                energy_rate_change_per_update[slot] = self.energy_rate_change_per_update[slot]
+        return energy_rate_change_per_update
+
+    def _calculate_number_of_available_updates_per_slot(self, strategy):
+        number_of_available_updates = \
+            int(strategy.area.config.slot_length.seconds / self.update_interval.seconds) - 1
+        return number_of_available_updates
 
     def update_on_activate(self, strategy):
         assert self.update_interval.seconds >= \
@@ -39,25 +63,12 @@ class UpdateFrequencyMixin:
         self.energy_rate_change_per_update = \
             self._get_energy_rate_change_per_update()
 
-    def _get_energy_rate_change_per_update(self):
-        if self.fit_to_limit:
-            energy_rate_change_per_update = \
-                (self.initial_rate - self.final_rate) / self.number_of_available_updates
-        else:
-            energy_rate_change_per_update = self.energy_rate_change_per_update
-        return energy_rate_change_per_update
-
-    def _calculate_number_of_available_updates_per_slot(self, strategy):
-        number_of_available_updates = \
-            int(strategy.area.config.slot_length.seconds / (self.update_interval.seconds)) - 1
-        return number_of_available_updates
-
     def reset_on_market_cycle(self):
         self.update_counter = 0
 
-    @property
-    def _get_updated_rate(self):
-        updated_rate = self.initial_rate - self.energy_rate_change_per_update * self.update_counter
+    def _get_updated_rate(self, market):
+        updated_rate = self.initial_rate[market.time_slot] - \
+                       self.energy_rate_change_per_update[market.time_slot] * self.update_counter
         return updated_rate
 
     def get_price_update_point(self, strategy):
@@ -79,7 +90,7 @@ class UpdateFrequencyMixin:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
-                updated_price = round(offer.energy * self._get_updated_rate, 10)
+                updated_price = round(offer.energy * self._get_updated_rate(market), 10)
                 new_offer = iterated_market.offer(
                     updated_price,
                     offer.energy,
@@ -128,7 +139,7 @@ class UpdateFrequencyMixin:
             market.delete_bid(bid.id)
 
             strategy.remove_bid_from_pending(bid.id, market.id)
-            strategy.post_bid(market, bid.energy * self._get_updated_rate, bid.energy)
+            strategy.post_bid(market, bid.energy * self._get_updated_rate(market), bid.energy)
 
     def update_posted_bids_over_ticks(self, market, strategy):
         self._update_posted_bids(market, strategy)

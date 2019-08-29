@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy
-# from d3a.models.strategy.load_hours import LoadHoursStrategy  # , CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy  # , CellTowerLoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
@@ -59,11 +59,11 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    # Area('H2 General Load', strategy=LoadHoursStrategy(
-                    #     avg_power_W=100,
-                    #     hrs_per_day=24,
-                    #     hrs_of_day=list(range(24))),
-                    #      appliance=SwitchableAppliance()),
+                    Area('H2 General Load', strategy=LoadHoursStrategy(
+                        avg_power_W=100,
+                        hrs_per_day=24,
+                        hrs_of_day=list(range(24))),
+                         appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVStrategy(4, initial_selling_rate=40,
                                                       final_selling_rate=35),
                          appliance=PVAppliance()),

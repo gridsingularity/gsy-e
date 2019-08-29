@@ -95,8 +95,6 @@ class PVStrategy(BaseStrategy):
         self.produced_energy_forecast_kWh()
 
     def event_activate(self):
-        # if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-        #     self.assign_offermixin_arguments(3, 2, 0)
 
         # Calculating the produced energy
         self.offer_update.update_on_activate(self)
@@ -156,7 +154,7 @@ class PVStrategy(BaseStrategy):
             if self.state.available_energy_kWh[market.time_slot] > 0:
                 print(f"initial_rate: {self.offer_update.initial_rate}")
                 offer_price = \
-                    self.offer_update.initial_rate * \
+                    self.offer_update.initial_rate[market.time_slot] * \
                     self.state.available_energy_kWh[market.time_slot]
                 offer = market.offer(
                     offer_price,

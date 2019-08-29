@@ -40,7 +40,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                   'final_buying_rate', 'balancing_energy_ratio')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
-                 fit_to_limit=True, energy_rate_change_per_update=None,
+                 fit_to_limit=True, energy_rate_change_per_update=1,
                  update_interval=timedelta(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
@@ -51,10 +51,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
 
         BidEnabledStrategy.__init__(self)
-        self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                          initial_buying_rate)
-        self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                        final_buying_rate)
         self.bid_update = \
             UpdateFrequencyMixin(initial_rate=initial_buying_rate,
                                  final_rate=final_buying_rate,
@@ -149,7 +145,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             acceptable_offer = self._find_acceptable_offer(market)
             if acceptable_offer and \
                     round(acceptable_offer.price / acceptable_offer.energy, 8) <= \
-                    self.final_buying_rate[market.time_slot]:
+                    self.bid_update.final_rate[market.time_slot]:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
                 if max_energy < FLOATING_POINT_TOLERANCE:
                     return
