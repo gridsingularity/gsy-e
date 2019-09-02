@@ -108,10 +108,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
 
     def event_activate(self):
-        # if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-        #     self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
-        #     self.final_buying_rate = read_arbitrary_profile(
-        #         InputProfileTypes.IDENTITY, self.area.config.market_maker_rate)
         self.bid_update.update_on_activate(self)
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.sim_duration.days + 1)}
@@ -198,9 +194,15 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return (((energy * 1000) / self.energy_per_slot_Wh)
                 * (self.area.config.slot_length / duration(hours=1)))
 
+    def _set_alternative_pricing_scheme(self, market):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            self.bid_update.reassign_mixin_arguments(self, market, initial_rate=0,
+                                                     final_rate=self.area.config.market_maker_rate)
+
     def event_market_cycle(self):
         super().event_market_cycle()
         for market in self.active_markets:
+            self._set_alternative_pricing_scheme(market)
             current_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day[current_day] <= 0:
                 self.energy_requirement_Wh[market.time_slot] = 0.0

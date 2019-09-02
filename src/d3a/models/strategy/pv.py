@@ -28,6 +28,7 @@ from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.state import PVState
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.exceptions import MarketException
 
 
 class PVStrategy(BaseStrategy):
@@ -146,8 +147,7 @@ class PVStrategy(BaseStrategy):
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
-            # self.set_initial_selling_rate_alternative_pricing_scheme(market)
-            # initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot)
+            self._set_alternative_pricing_scheme(market)
             assert self.state.available_energy_kWh[market.time_slot] >= -FLOATING_POINT_TOLERANCE
             if self.state.available_energy_kWh[market.time_slot] > 0:
                 print(f"initial_rate: {self.offer_update.initial_rate}")
@@ -187,3 +187,18 @@ class PVStrategy(BaseStrategy):
         # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
         if offer.seller == self.owner.name:
             self.state.available_energy_kWh[market.time_slot] -= offer.energy
+
+    def _set_alternative_pricing_scheme(self, market):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                self.offer_update.reassign_mixin_arguments(self, market, initial_rate=0)
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                rate = \
+                    self.area.config.market_maker_rate[market.time_slot] * \
+                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / 100
+                self.offer_update.reassign_mixin_arguments(self, market, initial_rate=rate)
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                rate = self.area.config.market_maker_rate[market.time_slot]
+                self.offer_update.reassign_mixin_arguments(self, market, initial_rate=rate)
+            else:
+                raise MarketException

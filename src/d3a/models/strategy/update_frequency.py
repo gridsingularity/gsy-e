@@ -39,6 +39,23 @@ class UpdateFrequencyMixin:
         self.update_counter = 0
         self.number_of_available_updates = 0
 
+    def reassign_mixin_arguments(self, strategy, market, initial_rate=None, final_rate=None,
+                                 fit_to_limit=None, energy_rate_change_per_update=None,
+                                 update_interval=None):
+        if initial_rate is not None:
+            self.initial_rate[market.time_slot] = initial_rate[market.time_slot]
+        if final_rate is not None:
+            self.final_rate[market.time_slot] = final_rate[market.time_slot]
+        if fit_to_limit is not None:
+            self.fit_to_limit = fit_to_limit
+        if energy_rate_change_per_update is not None:
+            self.energy_rate_change_per_update[market.time_slot] = \
+                energy_rate_change_per_update[market.time_slot]
+        if update_interval is not None:
+            self.update_interval = update_interval
+
+        self.update_on_activate(strategy)
+
     def _get_energy_rate_change_per_update(self):
         energy_rate_change_per_update = {}
         for slot in generate_market_slot_list():
@@ -105,21 +122,6 @@ class UpdateFrequencyMixin:
         self.reset_on_market_cycle()
         for market in strategy.area.all_markets[:-1]:
             self.update_energy_price(market, strategy)
-
-    # copied
-    def set_initial_selling_rate_alternative_pricing_scheme(self, market):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                self.initial_selling_rate = 0
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                self.initial_selling_rate = \
-                    self.area.config.market_maker_rate[market.time_slot] * \
-                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / 100
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                self.initial_selling_rate = \
-                    self.area.config.market_maker_rate[market.time_slot]
-            else:
-                raise MarketException
 
     def update_offer(self, strategy):
         if self.get_price_update_point(strategy):
