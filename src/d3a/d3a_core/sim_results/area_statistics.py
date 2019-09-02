@@ -57,6 +57,7 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
 
 
 def export_cumulative_loads(area):
+    # TODO: Figure out whether this export is needed or can be removed
     load_price_lists = gather_area_loads_and_trade_prices(area, {})
     return [
         {
