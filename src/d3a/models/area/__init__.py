@@ -125,8 +125,8 @@ class Area:
         self._cycle_markets(_trigger_event=False)
 
         if not self.strategy and self.parent is not None:
-            self.log.info("No strategy. Using inter area agent.")
-        self.log.info('Activating area')
+            self.log.debug("No strategy. Using inter area agent.")
+        self.log.debug('Activating area')
         self.active = True
         self.dispatcher.broadcast_activate()
 
@@ -154,7 +154,7 @@ class Area:
         if self.budget_keeper and _market_cycle:
             self.budget_keeper.process_market_cycle()
 
-        self.log.info("Cycling markets")
+        self.log.debug("Cycling markets")
         self._markets.rotate_markets(self.now, self.stats, self.dispatcher)
         if deactivate:
             return
@@ -230,7 +230,7 @@ class Area:
 
     def get_now(self) -> DateTime:
         """Compatibility wrapper"""
-        warnings.warn("The '.get_now()' method has been replaced by the '.now' property. "
+        warnings.info("The '.get_now()' method has been replaced by the '.now' property. "
                       "Please use that in the future.")
         return self.now
 

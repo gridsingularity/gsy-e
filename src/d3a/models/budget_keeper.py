@@ -72,8 +72,8 @@ class BudgetKeeper:
         self.compute_remaining()
         if self.area.now >= self.period_end:
             self.begin_period()
-            self.area.log.info("End of budget period, {} of {} spent."
-                               .format(self.budget - self.remaining, self.budget))
+            self.area.log.debug("End of budget period, {} of {} spent."
+                                .format(self.budget - self.remaining, self.budget))
         else:
             self.update_forecast()
             self.decide()
@@ -99,8 +99,8 @@ class BudgetKeeper:
         slot_cost_estimate = sum(self.forecast[child] for child in self.enabled)
         slots_left = (self.period_end - self.area.now) / self.area.config.slot_length
         acceptable = self.remaining / slots_left
-        self.area.log.error('Consumption forecast: {} expected, {} acceptable'
-                            .format(slot_cost_estimate, acceptable))
+        self.area.log.info('Consumption forecast: {} expected, {} acceptable'
+                           .format(slot_cost_estimate, acceptable))
         if slot_cost_estimate > acceptable:
             for child in sorted(self.enabled,
                                 key=lambda c: (self.priority[c], -self.forecast[c])):
@@ -118,7 +118,7 @@ class BudgetKeeper:
     def _disable(self, child):
         self.enabled.remove(child)
         child._fire_trigger('disable')
-        self.area.log.error('BudgetKeeper disabled {}'.format(child.name))
+        self.area.log.info('BudgetKeeper disabled {}'.format(child.name))
 
     def _enable(self, child):
         self.enabled.add(child)

@@ -67,7 +67,7 @@ class AreaMarkets:
                     area_agent.pop(market, None)
                 else:
                     first = False
-                self.log.debug("Moving {t:%H:%M} {m} to past"
+                self.log.trace("Moving {t:%H:%M} {m} to past"
                                .format(t=timeframe, m=past_markets[timeframe].area.name))
 
     def _delete_past_markets(self, past_markets, timeframe):
@@ -115,7 +115,7 @@ class AreaMarkets:
                 area.dispatcher.create_area_agents(is_spot_market, market)
                 markets[timeframe] = market
                 changed = True
-                self.log.debug("Adding {t:{format}} market".format(
+                self.log.trace("Adding {t:{format}} market".format(
                     t=timeframe,
                     format="%H:%M"
                            if area.config.slot_length.total_seconds() > 60

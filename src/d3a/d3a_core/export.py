@@ -41,6 +41,7 @@ from functools import reduce  # forward compatibility for Python 3
 
 _log = logging.getLogger(__name__)
 
+
 ENERGY_BUYER_SIGN_PLOTS = 1
 ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
 
@@ -90,9 +91,6 @@ class ExportAndPlot:
         if not os.path.exists(self.plot_dir):
             os.makedirs(self.plot_dir)
 
-        self.export()
-        self.export_json_data(self.directory)
-
     def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
@@ -119,7 +117,6 @@ class ExportAndPlot:
     def export(self):
         """Wrapping function, executes all export and plotting functions"""
 
-        self._export_area_with_children(self.area, self.directory)
         self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
         self.plot_energy_profile(self.area, self.plot_dir)
         self.plot_all_unmatched_loads()
@@ -132,6 +129,10 @@ class ExportAndPlot:
                 ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
             self.plot_supply_demand_curve(self.area, self.plot_dir)
         self.move_root_plot_folder()
+        self.export_json_data(self.directory)
+
+    def data_to_csv(self, area, is_first):
+            self._export_area_with_children(area, self.directory, is_first)
 
     def move_root_plot_folder(self):
         """
@@ -147,40 +148,47 @@ class ExportAndPlot:
             shutil.move(os.path.join(old_dir, si), self.plot_dir)
         shutil.rmtree(old_dir)
 
-    def _export_area_with_children(self, area: Area, directory: dir):
+    def _export_area_with_children(self, area: Area, directory: dir, is_first: bool = False):
         """
         Uses the FileExportEndpoints object and writes them to csv files
         Runs _export_area_energy and _export_area_stats_csv_file
         """
+
         if area.children:
             subdirectory = pathlib.Path(directory, area.slug.replace(' ', '_'))
-            subdirectory.mkdir(exist_ok=True, parents=True)
+            if not subdirectory.exists():
+                subdirectory.mkdir(exist_ok=True, parents=True)
             for child in area.children:
-                self._export_area_with_children(child, subdirectory)
+                self._export_area_with_children(child, subdirectory, is_first)
 
-        self._export_area_stats_csv_file(area, directory, balancing=False)
-        self._export_area_stats_csv_file(area, directory, balancing=True)
+        self._export_area_stats_csv_file(area, directory, balancing=False, is_first=is_first)
+        self._export_area_stats_csv_file(area, directory, balancing=True, is_first=is_first)
+
         if area.children:
-            self.kpi.update_kpis_from_area(area)
-            self._export_trade_csv_files(area, directory, balancing=False)
-            self._export_trade_csv_files(area, directory, balancing=True)
-            self._export_area_offers_bids_csv_files(area, directory, "offers",
-                                                    Offer, "offer_history", area.past_markets)
-            self._export_area_offers_bids_csv_files(area, directory, "bids",
-                                                    Bid, "bid_history", area.past_markets)
+            # TODO: To be uncommented once KPI is implemented
+            # self.kpi.update_kpis_from_area(area)
+            self._export_trade_csv_files(area, directory, balancing=False, is_first=is_first)
+            self._export_trade_csv_files(area, directory, balancing=True, is_first=is_first)
+            self._export_area_offers_bids_csv_files(area, directory, "offers", Offer,
+                                                    "offer_history", area.past_markets,
+                                                    is_first=is_first)
+            self._export_area_offers_bids_csv_files(area, directory, "bids", Bid,
+                                                    "bid_history", area.past_markets,
+                                                    is_first=is_first)
             self._export_area_offers_bids_csv_files(area, directory, "balancing-offers",
                                                     BalancingOffer, "offer_history",
-                                                    area.past_balancing_markets)
+                                                    area.past_balancing_markets, is_first=is_first)
             if ConstSettings.IAASettings.MARKET_TYPE == 3:
-                self._export_area_clearing_rate(area, directory, "market-clearing-rate")
+                self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
-    def _export_area_clearing_rate(self, area, directory, file_suffix):
+    def _export_area_clearing_rate(self, area, directory, file_suffix, is_first):
         file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
         labels = ("slot",) + MarketClearingState._csv_fields()
         try:
-            with open(file_path, 'w') as csv_file:
+            with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file)
-                writer.writerow(labels)
+                if is_first:
+                    writer.writerow(labels)
                 for market in area.past_markets:
                     for time, clearing in market.state.clearing.items():
                         row = (market.time_slot, time, clearing[0])
@@ -189,7 +197,8 @@ class ExportAndPlot:
             _log.exception("Could not export area market_clearing_rate")
 
     def _export_area_offers_bids_csv_files(self, area, directory, file_suffix,
-                                           offer_type, market_member, past_markets):
+                                           offer_type, market_member, past_markets,
+                                           is_first: bool):
         """
         Exports files containing individual offers, bids or balancing offers
         (*-bids/offers/balancing-offers.csv files)
@@ -198,9 +207,10 @@ class ExportAndPlot:
         file_path = self._file_path(directory, f"{area.slug}-{file_suffix}")
         labels = ("slot",) + offer_type._csv_fields()
         try:
-            with open(file_path, 'w') as csv_file:
+            with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file)
-                writer.writerow(labels)
+                if is_first:
+                    writer.writerow(labels)
                 for market in past_markets:
                     for offer in getattr(market, market_member):
                         row = (market.time_slot,) + offer._to_csv()
@@ -208,7 +218,8 @@ class ExportAndPlot:
         except OSError:
             _log.exception("Could not export area balancing offers")
 
-    def _export_trade_csv_files(self, area: Area, directory: dir, balancing: bool = False):
+    def _export_trade_csv_files(self, area: Area, directory: dir, balancing: bool = False,
+                                is_first: bool = False):
         """
         Exports files containing individual trades  (*-trades.csv  files)
         return: dict[out_keys]
@@ -224,9 +235,10 @@ class ExportAndPlot:
             past_markets = area.past_markets
 
         try:
-            with open(file_path, 'w') as csv_file:
+            with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file)
-                writer.writerow(labels)
+                if is_first:
+                    writer.writerow(labels)
                 for market in past_markets:
                     for trade in market.trades:
                         row = (market.time_slot,) + trade._to_csv()
@@ -234,7 +246,8 @@ class ExportAndPlot:
         except OSError:
             _log.exception("Could not export area trades")
 
-    def _export_area_stats_csv_file(self, area: Area, directory: dir, balancing: bool):
+    def _export_area_stats_csv_file(self, area: Area, directory: dir,
+                                    balancing: bool, is_first: bool):
         """
         Exports stats (*.csv files)
         """
@@ -244,13 +257,14 @@ class ExportAndPlot:
             area_name += "-balancing"
         data = self.export_data.generate_market_export_data(area, balancing)
         rows = data.rows()
-        if not rows:
+        if not rows and not is_first:
             return
 
         try:
-            with open(self._file_path(directory, area_name), 'w') as csv_file:
+            with open(self._file_path(directory, area_name), 'a') as csv_file:
                 writer = csv.writer(csv_file)
-                writer.writerow(data.labels())
+                if is_first:
+                    writer.writerow(data.labels())
                 for row in rows:
                     writer.writerow(row)
         except Exception as ex:

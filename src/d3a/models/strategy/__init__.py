@@ -97,7 +97,9 @@ class Offers:
 
     def _update_offer(self, offer):
         old_offer_list = [o for o in self.posted.keys() if o.id == offer.id]
-        assert len(old_offer_list) == 1, "Expected to find a unique offer to update"
+        assert len(old_offer_list) <= 1, "Expected to find a unique offer to update"
+        if len(old_offer_list) == 0:
+            return
         old_offer = old_offer_list[0]
         self.posted[offer] = self.posted.pop(old_offer)
 
@@ -121,7 +123,7 @@ class Offers:
             market_id = self.posted.pop(offer)
             assert type(market_id) == str
             if market_id in self.sold and offer.id in self.sold[market_id]:
-                self.strategy.log.error("Offer already sold, cannot remove it.")
+                self.strategy.log.warning("Offer already sold, cannot remove it.")
                 self.posted[offer] = market_id
             else:
                 return True
@@ -221,11 +223,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def trigger_enable(self, **kw):
         self.enabled = True
-        self.log.warning("Trading has been enabled")
+        self.log.info("Trading has been enabled")
 
     def trigger_disable(self):
         self.enabled = False
-        self.log.warning("Trading has been disabled")
+        self.log.info("Trading has been disabled")
         # We've been disabled - remove all future open offers
         for market in self.area.markets.values():
             for offer in list(market.offers.values()):

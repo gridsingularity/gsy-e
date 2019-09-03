@@ -127,9 +127,9 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             return
         clearing_rate, clearing_energy = clearing
         if clearing_energy > 0:
-            log.warning(f"Market Clearing Rate: {clearing_rate} "
-                        f"||| Clearing Energy: {clearing_energy} "
-                        f"||| Clearing Market {self.markets.source.area.name}")
+            log.info(f"Market Clearing Rate: {clearing_rate} "
+                     f"||| Clearing Energy: {clearing_energy} "
+                     f"||| Clearing Market {self.markets.source.area.name}")
             self.markets.source.state.clearing[time] = (clearing_rate, clearing_energy)
 
         accepted_bids = self._accept_cleared_bids(clearing_rate, clearing_energy)

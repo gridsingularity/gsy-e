@@ -197,7 +197,7 @@ def test_market_trade(market, offer, accept_offer):
     assert trade == market.trades[0]
     assert trade.id
     assert trade.time == now
-    assert trade.offer is e_offer
+    assert trade.offer == e_offer
     assert trade.seller == 'A'
     assert trade.buyer == 'B'
 
