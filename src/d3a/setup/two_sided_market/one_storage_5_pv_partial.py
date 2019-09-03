@@ -51,12 +51,9 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage',
-                         strategy=StorageStrategy(initial_capacity_kWh=1.1,
+                         strategy=StorageStrategy(initial_soc=11,
                                                   battery_capacity_kWh=10,
                                                   max_abs_battery_power_kW=5,
-                                                  break_even=(
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL),
                                                   initial_buying_rate=0
                                                   ),
                          appliance=SwitchableAppliance()),
@@ -66,23 +63,23 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 PV1',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                     Area('H2 PV2',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                     Area('H2 PV3',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                     Area('H2 PV4',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                     Area('H2 PV5',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                 ]

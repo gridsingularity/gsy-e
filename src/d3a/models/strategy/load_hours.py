@@ -126,9 +126,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.assign_energy_requirement(avg_power_W)
 
         if final_buying_rate is not None:
-            self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                            final_buying_rate)
-            self._final_rate_profile = self.final_buying_rate
+            self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                final_buying_rate)
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers
@@ -196,8 +195,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _set_alternative_pricing_scheme(self, market):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            final_rate = self.area.config.market_maker_rate[market.time_slot]
             self.bid_update.reassign_mixin_arguments(self, market, initial_rate=0,
-                                                     final_rate=self.area.config.market_maker_rate)
+                                                     final_rate=final_rate)
 
     def event_market_cycle(self):
         super().event_market_cycle()

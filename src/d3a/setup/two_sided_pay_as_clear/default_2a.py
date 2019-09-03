@@ -50,30 +50,22 @@ def get_setup(config):
                                                                        initial_buying_rate=35,
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(
-                        initial_capacity_kWh=0.6,
-                        break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(
-                        initial_capacity_kWh=0.6,
-                        break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                 ]
             ),
             Area(
                 'House 2',
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(
-                        avg_power_W=100,
-                        hrs_per_day=4,
-                        hrs_of_day=list(
-                            range(12, 16)),
-                        initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
-                        final_buying_rate=35),
+                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                                                                       hrs_per_day=4,
+                                                                       hrs_of_day=list(range(12,
+                                                                                             16)),
+                                                                       final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4, 0),
+                    Area('H2 PV', strategy=PVStrategy(4),
                          appliance=PVAppliance()),
                     Area('H2 CEP',
                          strategy=CommercialStrategy(energy_rate=10),
@@ -82,12 +74,11 @@ def get_setup(config):
 
                 ]
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(
-                avg_power_W=100,
-                hrs_per_day=24,
-                hrs_of_day=list(range(0, 24)),
-                initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
-                final_buying_rate=35),
+            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
+                                                                   hrs_per_day=24,
+                                                                   hrs_of_day=list(range(0,
+                                                                                         24)),
+                                                                   final_buying_rate=35),
                  appliance=SwitchableAppliance()),
         ],
         config=config

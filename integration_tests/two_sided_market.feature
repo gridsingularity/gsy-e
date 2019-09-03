@@ -5,8 +5,8 @@ Feature: Two sided market tests
      And d3a is installed
      When we run the simulation with setup file two_sided_market.one_load_one_storage and parameters [24, 60, 60, 0, 1]
      Then the storage is never buying energy and is always selling energy
-     And the storage final SOC is 0%
-     And all the trade rates are between break even sell and market maker rate price
+     And the storage final SOC is 10%
+     And all the trade rates are between load device buying boundaries
 
   Scenario: One pv, one load
      Given we have a scenario named two_sided_market/one_pv_one_load
@@ -39,7 +39,7 @@ Feature: Two sided market tests
   Scenario: LoadHoursStrategy buys energy in the min rate range provided by the user as dict profile
     Given we have a scenario named two_sided_market/user_min_rate_profile_load_dict
     And d3a is installed
-    When we run the simulation with setup file two_sided_market.user_min_rate_profile_load_dict and parameters [24, 60, 60, 1, 4]
+    When we run the simulation with setup file two_sided_market.user_min_rate_profile_load_dict and parameters [24, 60, 60, 0, 4]
     Then LoadHoursStrategy buys energy with rates equal to the initial buying rate profile
 
   Scenario: LoadHoursStrategy buys energy in the min energy rate

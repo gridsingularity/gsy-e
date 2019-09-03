@@ -27,12 +27,11 @@ from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.models.const import ConstSettings
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
-# from d3a.models.read_user_profile import read_arbitrary_profile
-# from d3a.models.read_user_profile import InputProfileTypes
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
-BreakEven = namedtuple('BreakEven', ('buy', 'sell'))
+# BreakEven = namedtuple('BreakEven', ('buy', 'sell'))
 
 StorageSettings = ConstSettings.StorageSettings
 GeneralSettings = ConstSettings.GeneralSettings
@@ -79,7 +78,7 @@ class StorageStrategy(BidEnabledStrategy):
             UpdateFrequencyMixin(initial_rate=initial_buying_rate,
                                  final_rate=final_buying_rate,
                                  fit_to_limit=fit_to_limit,
-                                 energy_rate_change_per_update=energy_rate_change_per_update,
+                                 energy_rate_change_per_update=-1 * energy_rate_change_per_update,
                                  update_interval=update_interval)
         self.state = \
             StorageState(initial_soc=initial_soc,
@@ -91,19 +90,41 @@ class StorageStrategy(BidEnabledStrategy):
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
-    def area_reconfigure_event(self, risk=None, initial_rate_option=None,
-                               energy_rate_decrease_option=None,
-                               energy_rate_change_per_update=None,
-                               battery_capacity_kWh=None,
-                               max_abs_battery_power_kW=None, break_even=None,
-                               min_allowed_soc=None):
+    def area_reconfigure_event(self, cap_price_strategy=None,
+                               initial_selling_rate=None, final_selling_rate=None,
+                               initial_buying_rate=None, final_buying_rate=None,
+                               fit_to_limit=None, update_interval=None,
+                               energy_rate_change_per_update=None):
 
-        # self._validate_constructor_arguments(risk, None, None, battery_capacity_kWh,
-        #                                      min_allowed_soc, self.initial_selling_rate)
-        if battery_capacity_kWh is not None:
-            self.state.capacity = battery_capacity_kWh
-        if max_abs_battery_power_kW is not None:
-            self.state.max_abs_battery_power_kW = max_abs_battery_power_kW
+        self._validate_constructor_arguments(
+            initial_selling_rate=initial_selling_rate,
+            final_selling_rate=final_selling_rate,
+            initial_buying_rate=initial_buying_rate,
+            final_buying_rate=final_buying_rate,
+            energy_rate_change_per_update=energy_rate_change_per_update)
+        if cap_price_strategy is not None:
+            self.cap_price_strategy = cap_price_strategy
+        if initial_selling_rate is not None:
+            self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                    initial_selling_rate)
+        if final_selling_rate is not None:
+            self.offer_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                  final_selling_rate)
+        if initial_buying_rate is not None:
+            self.bid_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                  initial_buying_rate)
+        if final_buying_rate is not None:
+            self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                final_buying_rate)
+        if energy_rate_change_per_update is not None:
+            self.offer_update.energy_rate_change_per_update = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                       energy_rate_change_per_update)
+            self.bid_update.energy_rate_change_per_update = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                       energy_rate_change_per_update)
+        self.offer_update.update_on_activate(self)
+        self.bid_update.update_on_activate(self)
 
     def event_on_disabled_area(self):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
@@ -138,38 +159,48 @@ class StorageStrategy(BidEnabledStrategy):
                 raise MarketException
 
     @staticmethod
-    def _validate_constructor_arguments(initial_soc, min_allowed_soc,
-                                        battery_capacity_kWh, max_abs_battery_power_kW,
-                                        initial_selling_rate, final_selling_rate,
-                                        initial_buying_rate, final_buying_rate):
-        if battery_capacity_kWh < 0:
+    def _validate_constructor_arguments(initial_soc=None, min_allowed_soc=None,
+                                        battery_capacity_kWh=None, max_abs_battery_power_kW=None,
+                                        initial_selling_rate=None, final_selling_rate=None,
+                                        initial_buying_rate=None, final_buying_rate=None,
+                                        energy_rate_change_per_update=None):
+        if battery_capacity_kWh is not None and battery_capacity_kWh < 0:
             raise ValueError("Battery capacity should be a positive integer")
-        if max_abs_battery_power_kW < 0:
+        if max_abs_battery_power_kW is not None and max_abs_battery_power_kW < 0:
             raise ValueError("Battery Power rating must be a positive integer.")
-        if 0 < initial_soc > 100:
+        if initial_soc is not None and 0 < initial_soc > 100:
             raise ValueError("initial SOC must be in between 0-100 %")
-        if 0 < min_allowed_soc > 100:
+        if min_allowed_soc is not None and 0 < min_allowed_soc > 100:
             raise ValueError("initial SOC must be in between 0-100 %")
-        if initial_soc < min_allowed_soc:
+        if initial_soc is not None and min_allowed_soc is not None and \
+                initial_soc < min_allowed_soc:
             raise ValueError("Initial charge must be more than the minimum allowed soc.")
-        if initial_selling_rate < 0:
+        if initial_selling_rate is not None and initial_selling_rate < 0:
             raise ValueError("Initial selling rate must be greater equal 0.")
-        if final_selling_rate < 0:
+        if final_selling_rate is not None and final_selling_rate < 0:
             raise ValueError("Final selling rate must be greater equal 0.")
-        if initial_selling_rate < final_selling_rate:
+        if initial_selling_rate is not None and final_selling_rate is not None and \
+                initial_selling_rate < final_selling_rate:
             raise ValueError("Initial selling rate must be greater than final selling rate.")
-        if initial_buying_rate < 0:
+        if initial_buying_rate is not None and initial_buying_rate < 0:
             raise ValueError("Initial buying rate must be greater equal 0.")
-        if final_buying_rate < 0:
+        if final_buying_rate is not None and final_buying_rate < 0:
             raise ValueError("Final buying rate must be greater equal 0.")
-        if initial_buying_rate > final_buying_rate:
+        if initial_buying_rate is not None and final_buying_rate is not None and \
+                initial_buying_rate > final_buying_rate:
             raise ValueError("Initial buying rate must be less than final buying rate.")
+        if final_selling_rate is not None and final_buying_rate is not None and \
+                final_selling_rate < final_buying_rate:
+            raise ValueError("ESS should buy low and sell high.")
+        if energy_rate_change_per_update is not None and energy_rate_change_per_update < 0:
+            raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 
     def event_tick(self, *, area):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self.buy_energy(market)
+                if self.bid_update.get_price_update_point(self):
+                    self.buy_energy(market)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
 
@@ -238,6 +269,7 @@ class StorageStrategy(BidEnabledStrategy):
             self._set_alternative_pricing_scheme(market)
 
         self.offer_update.update_market_cycle_offers(self)
+        self.bid_update.update_market_cycle_bids(self)
         current_market = self.area.next_market
         past_market = self.area.last_past_market
 
@@ -282,7 +314,8 @@ class StorageStrategy(BidEnabledStrategy):
                                                                               self.owner.name)
 
     def buy_energy(self, market):
-        max_affordable_offer_rate = self.bid_update.initial_rate[market.time_slot]
+        max_affordable_offer_rate = min(self.bid_update.get_updated_rate(market),
+                                        self.bid_update.final_rate[market.time_slot])
         for offer in market.sorted_offers:
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
@@ -360,8 +393,8 @@ class StorageStrategy(BidEnabledStrategy):
             soc = self.state.used_storage / self.state.capacity
         else:
             soc = self.state.charge_history[market.time_slot] / 100.0
-        max_selling_rate = self.bid_update.initial_rate(market.time_slot)
-        min_selling_rate = self.bid_update.final_rate[market.time_slot].sell
+        max_selling_rate = self.offer_update.initial_rate[market.time_slot]
+        min_selling_rate = self.offer_update.final_rate[market.time_slot]
         if max_selling_rate < min_selling_rate:
             return min_selling_rate
         else:

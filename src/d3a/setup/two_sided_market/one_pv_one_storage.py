@@ -39,10 +39,7 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage',
-                         strategy=StorageStrategy(initial_capacity_kWh=0.6,
-                                                  break_even=(
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL),
+                         strategy=StorageStrategy(initial_soc=50,
                                                   initial_selling_rate=30,
                                                   initial_buying_rate=0
                                                   ),
@@ -53,7 +50,7 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 PV',
-                         strategy=PVStrategy(4, 0),
+                         strategy=PVStrategy(4),
                          appliance=PVAppliance()
                          ),
 

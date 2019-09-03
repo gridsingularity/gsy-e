@@ -203,7 +203,7 @@ def trades_on_all_markets_max_load_rate(context):
     grid = context.simulation.area
     house1 = [child for child in grid.children if child.name == "House 1"][0]
     load1 = [child for child in house1.children if child.name == "H1 General Load"][0]
-    max_rate = load1.strategy.final_buying_rate
+    max_rate = load1.strategy.bid_update.final_rate
 
     for market in grid.past_markets:
         assert len(market.trades) == 1

@@ -21,10 +21,9 @@ from d3a.models.area import Area
 # from d3a.models.strategy.commercial_producer import CommercialStrategy
 # from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.storage import StorageStrategy
-# from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-# from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.pv import PVStrategy
 
 
 def get_setup(config):
@@ -34,15 +33,15 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    # Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                    #                                                    hrs_per_day=6,
-                    #                                                    hrs_of_day=list(
-                    #                                                        range(12, 18)),
-                    #                                                    final_buying_rate=35),
-                    #      appliance=SwitchableAppliance()),
-                    # Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
-                    #      appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(),
+                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                                                                       hrs_per_day=6,
+                                                                       hrs_of_day=list(
+                                                                           range(12, 18)),
+                                                                       final_buying_rate=35),
+                         appliance=SwitchableAppliance()),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
+                         appliance=SwitchableAppliance()),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                 ],
                 transfer_fee_pct=0, transfer_fee_const=0,
@@ -50,28 +49,25 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    # Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                    #                                                    hrs_per_day=4,
-                    #                                                    hrs_of_day=list(
-                    #                                                        range(12, 16)),
-                    #                                                    final_buying_rate=35),
-                    #      appliance=SwitchableAppliance()),
-                    Area('H2 PV',
-                         strategy=PVPredefinedStrategy(panel_count=4,
-                                                       initial_selling_rate=30,
-                                                       final_selling_rate=5,
-                                                       cloud_coverage=0),
+                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                                                                       hrs_per_day=4,
+                                                                       hrs_of_day=list(
+                                                                           range(12, 16)),
+                                                                       final_buying_rate=35),
+                         appliance=SwitchableAppliance()),
+                    Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+                                                      final_selling_rate=5),
                          appliance=PVAppliance()),
 
                 ],
                 transfer_fee_pct=0, transfer_fee_const=0,
 
             ),
-            # Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
-            #                                                        hrs_per_day=24,
-            #                                                        hrs_of_day=list(range(0, 24)),
-            #                                                        final_buying_rate=2),
-            #      appliance=SwitchableAppliance()),
+            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
+                                                                   hrs_per_day=24,
+                                                                   hrs_of_day=list(range(0, 24)),
+                                                                   final_buying_rate=35),
+                 appliance=SwitchableAppliance()),
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_rate=30),
             #      appliance=SimpleAppliance()

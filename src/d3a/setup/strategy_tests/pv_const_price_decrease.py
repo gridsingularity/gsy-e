@@ -37,16 +37,7 @@ Once Spyros is back, it has to be discussed.
 """
 
 
-market_maker_rate = {
-    0: 35, 1: 35, 2: 35, 3: 35, 4: 35, 5: 35, 6: 35, 7: 35,
-    8: 35, 9: 35, 10: 35, 11: 35, 12: 35, 13: 35, 14: 35,
-    15: 35, 16: 35, 17: 35, 18: 35, 19: 35, 20: 35, 21: 35,
-    22: 35, 23: 35
-}
-
-
 def get_setup(config):
-    config.read_market_maker_rate(market_maker_rate)
     area = Area(
         'Grid',
         [
@@ -61,10 +52,8 @@ def get_setup(config):
                             final_buying_rate=30.1
                         ),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1,
-                                                                initial_rate_option=2,
-                                                                energy_rate_decrease_per_update=4,
-                                                                energy_rate_decrease_option=2,
+                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1, fit_to_limit=False,
+                                                                energy_rate_change_per_update=4,
                                                                 cloud_coverage=2),
                          appliance=PVAppliance()),
                 ],

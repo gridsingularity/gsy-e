@@ -20,7 +20,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.setup.jira.test_strategy_custom_storage import CustomStorageStrategy
+from d3a.setup.jira.custom_storage_strategy import CustomStorageStrategy
 
 """
 For testing CustomStorageStrategy
@@ -41,7 +41,7 @@ def get_setup(config):
                                                                            range(12, 18)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=CustomStorageStrategy(initial_capacity_kWh=0.6),
+                    Area('H1 Storage1', strategy=CustomStorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                 ],
                 transfer_fee_pct=0,
@@ -55,7 +55,7 @@ def get_setup(config):
                                                                            range(12, 16)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4, 80),
+                    Area('H2 PV', strategy=PVStrategy(4),
                          appliance=PVAppliance()),
 
                 ],
