@@ -31,7 +31,6 @@ from d3a.d3a_core.util import create_subdict_or_update
 
 class AreaDispatcher:
     def __init__(self, area):
-        self.listeners = []
         self._inter_area_agents = {}  # type: Dict[DateTime, Dict[String, OneSidedAgent]]
         self._balancing_agents = {}  # type: Dict[DateTime, Dict[String, BalancingAgent]]
         self.area = area
@@ -48,7 +47,7 @@ class AreaDispatcher:
         return self._broadcast_notification(AreaEvent.ACTIVATE, **kwargs)
 
     def broadcast_tick(self, area, **kwargs):
-        return self._broadcast_notification(AreaEvent.TICK, area=area, **kwargs)
+        return self._broadcast_notification(AreaEvent.TICK, **kwargs)
 
     def broadcast_market_cycle(self, **kwargs):
         return self._broadcast_notification(AreaEvent.MARKET_CYCLE, **kwargs)
@@ -88,11 +87,6 @@ class AreaDispatcher:
                 break
             for area_name in sorted(agents, key=lambda _: random()):
                 agents[area_name].event_listener(event_type, **kwargs)
-        for listener in self.listeners:
-            listener.event_listener(event_type, **kwargs)
-
-    def add_listener(self, listener):
-        self.listeners.append(listener)
 
     def _should_dispatch_to_strategies_appliances(self, event_type):
         if event_type is AreaEvent.ACTIVATE:

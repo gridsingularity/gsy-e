@@ -31,8 +31,8 @@ class BalancingAgent(OneSidedAgent):
                          min_offer_age=min_offer_age, engine_type=BalancingEngine)
         self.name = make_ba_name(self.owner)
 
-    def event_tick(self, *, area):
-        super().event_tick(area=area)
+    def event_tick(self):
+        super().event_tick()
         if self.lower_market.unmatched_energy_downward > 0.0 or \
                 self.lower_market.unmatched_energy_upward > 0.0:
             self._trigger_balancing_trades(self.lower_market.unmatched_energy_upward,

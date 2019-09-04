@@ -68,7 +68,8 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
             self.log.exception("Alternative pricing scheme: "
                                "An Error occurred while buying an offer")
 
-    def event_tick(self, *, area):
+    def event_tick(self):
+        area = self.owner
         if area.current_tick_in_slot >= self.MIN_SLOT_AGE and \
                 ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._buy_energy_alternative_pricing_schemes(area)

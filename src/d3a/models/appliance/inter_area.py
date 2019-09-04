@@ -30,7 +30,7 @@ class InterAreaAppliance(SimpleAppliance):
         self.own_market = None
         self.area_market = None
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         if not self.own_market:
             self.own_market = self.owner.current_market
             if not self.own_market:

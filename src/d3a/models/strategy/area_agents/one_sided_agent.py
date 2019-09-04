@@ -46,10 +46,8 @@ class OneSidedAgent(InterAreaAgent):
         else:
             return None
 
-    def event_tick(self, *, area):
-        if area != self.owner:
-            # We're connected to both areas but only want tick events from our owner
-            return
+    def event_tick(self):
+        area = self.owner
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.tick(area=area)
 

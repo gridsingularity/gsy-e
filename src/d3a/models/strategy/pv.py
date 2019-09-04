@@ -98,7 +98,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
         return rounded_energy_rate
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         for market in self.area.all_markets:
             self.decrease_energy_price_over_ticks(market)
 

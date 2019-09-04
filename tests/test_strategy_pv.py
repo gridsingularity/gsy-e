@@ -157,7 +157,7 @@ def pv_test2(area_test2):
 @pytest.mark.skip('broken as event_tick does not decrease offer price with every tick')
 def testing_event_tick(pv_test2, market_test2, area_test2):
     pv_test2.event_activate()
-    pv_test2.event_tick(area=area_test2)
+    pv_test2.event_tick()
     assert len(market_test2.created_offers) == 1
     assert len(pv_test2.offers.posted.items()) == 1
     offer_id1 = list(pv_test2.offers.posted.keys())[0]
@@ -168,7 +168,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
                pendulum.today(tz=TIME_ZONE).at(hour=0, minute=0, second=2)
            ] == 0
     area_test2.current_tick = DEFAULT_CONFIG.ticks_per_slot - 2
-    pv_test2.event_tick(area=area_test2)
+    pv_test2.event_tick()
     offer_id2 = list(pv_test2.offers.posted.keys())[0]
     offer2 = market_test2.offers[offer_id2]
     assert offer1 != offer2
@@ -341,7 +341,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     fake_trade = FakeTrade(market_test3.created_offers[0])
     pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
-    pv_test6.event_tick(area=area_test3)
+    pv_test6.event_tick()
     assert not market_test3.created_offers
 
 

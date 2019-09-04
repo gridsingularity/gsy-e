@@ -293,7 +293,7 @@ def bus_test4(area_test4):
 
 def testing_event_tick_buy_energy(bus_test4, area_test4):
     bus_test4.event_activate()
-    bus_test4.event_tick(area=area_test4)
+    bus_test4.event_tick()
     assert len(area_test4.test_market.traded_offers) == 1
     assert area_test4.test_market.traded_offers[-1].offer.energy == 1
 

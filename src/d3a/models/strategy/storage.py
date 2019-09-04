@@ -207,7 +207,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         if initial_selling_rate < 0:
             raise ValueError("Initial selling rate must be greater equal 0.")
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
@@ -224,7 +224,7 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
                         if first_bid is not None:
                             self.state.offered_buy_kWh[market.time_slot] += first_bid.energy
 
-            self.state.tick(area, market.time_slot)
+            self.state.tick(self.area, market.time_slot)
             if self.cap_price_strategy is False:
                 self.decrease_energy_price_over_ticks(market)
 
