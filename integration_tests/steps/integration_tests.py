@@ -595,6 +595,8 @@ def run_sim_market_count(context, scenario):
 
 @when('we run the simulation with setup file {scenario} and parameters '
       '[{total_duration}, {slot_length}, {tick_length}, {iaa_fee}, {market_count}]')
+@then('we run the simulation with setup file {scenario} and parameters '
+      '[{total_duration}, {slot_length}, {tick_length}, {iaa_fee}, {market_count}]')
 def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee,
             market_count):
 
