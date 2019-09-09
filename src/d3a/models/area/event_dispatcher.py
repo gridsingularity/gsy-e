@@ -25,7 +25,7 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedP
 from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import create_subdict_or_update
 
 

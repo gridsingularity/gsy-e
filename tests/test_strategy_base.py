@@ -23,7 +23,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BidEnabledStrategy, Offers
 from d3a.models.market.market_structures import Offer, Trade, Bid
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 def teardown_function():

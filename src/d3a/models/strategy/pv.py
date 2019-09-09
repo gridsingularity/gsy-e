@@ -23,7 +23,7 @@ from pendulum import duration
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.events.event_structures import Trigger
 from d3a.models.strategy import BaseStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
 from d3a.models.state import PVState
 from d3a.constants import FLOATING_POINT_TOLERANCE

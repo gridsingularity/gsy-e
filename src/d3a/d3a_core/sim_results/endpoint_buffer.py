@@ -23,7 +23,7 @@ from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     MarketUnmatchedLoads
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import round_floats_for_ui
 from statistics import mean
 

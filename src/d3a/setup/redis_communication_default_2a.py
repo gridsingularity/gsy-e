@@ -15,29 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-# from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a_interface.constants_limits import ConstSettings
-
-
-device_registry_dict = {
-    "H1 General Load": (33, 35),
-    "H2 General Load": (33, 35),
-    "H1 Storage1": (33, 35),
-    "H1 Storage2": (33, 35),
-}
 
 
 def get_setup(config):
-    DeviceRegistry.REGISTRY = device_registry_dict
-    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     area = Area(
         'Grid',
         [
@@ -54,7 +40,8 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage2', strategy=StorageStrategy(initial_capacity_kWh=0.6),
                          appliance=SwitchableAppliance()),
-                ]
+                ],
+                transfer_fee_pct=0, transfer_fee_const=0,
             ),
             Area(
                 'House 2',
@@ -68,17 +55,15 @@ def get_setup(config):
                     Area('H2 PV', strategy=PVStrategy(4, 80),
                          appliance=PVAppliance()),
 
-                ]
+                ],
+                transfer_fee_pct=0, transfer_fee_const=0,
+
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
                                                                    final_buying_rate=35),
                  appliance=SwitchableAppliance()),
-            # Area('Commercial Energy Producer',
-            #      strategy=CommercialStrategy(energy_rate=30),
-            #      appliance=SimpleAppliance()
-            #      ),
 
         ],
         config=config

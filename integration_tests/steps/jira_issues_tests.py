@@ -222,7 +222,7 @@ def trades_on_all_markets_max_load_rate(context):
 
 @then('the Load of House 1 should only buy energy from IAA between 5:00 and 8:00')
 def house1_load_only_from_iaa(context):
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     load1 = [child for child in house1.children if child.name == "H1 General Load"][0]
 
