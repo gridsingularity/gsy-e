@@ -204,6 +204,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 if bid_energy > energy:
                     bid_energy = energy
                 energy -= bid_energy
+            else:
+                energy = bid_energy
 
             already_tracked = trade.offer.buyer == offer.seller
             if bid_energy == offer.energy:
