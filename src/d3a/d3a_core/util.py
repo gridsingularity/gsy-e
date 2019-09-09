@@ -474,14 +474,6 @@ def create_subdict_or_update(indict, key, subdict):
     return indict
 
 
-def is_installed(module_name):
-    try:
-        __import__(module_name)
-        return True
-    except ModuleNotFoundError:
-        return False
-
-
 def str_to_pendulum(input_str: str):
     try:
         pendulum_time = from_format(input_str, TIME_FORMAT)
