@@ -80,4 +80,4 @@ Feature: Jira Issues Tests
    Scenario: D3ASIM-1475, default_2off finishes successfully for two-sided pay as clear market
      Given we have a scenario named jira/default_2off_d3asim_1475
      And d3a is installed
-     When we run the simulation with setup file jira.default_2off_d3asim_1475 and parameters [24, 60, 60, 0, 1]
+     Then we run the simulation with setup file jira.default_2off_d3asim_1475 and parameters [24, 60, 60, 0, 1]
