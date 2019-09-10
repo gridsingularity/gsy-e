@@ -22,7 +22,8 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
-
+from d3a.models.strategy.area_agents.two_sided_revenue_fee import \
+    update_forwarded_offer_with_fee, update_forwarded_offer_trade_original_info
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
@@ -54,7 +55,7 @@ class IAAEngine:
             return
 
         forwarded_offer = self.markets.target.offer(
-            offer.price,
+            update_forwarded_offer_with_fee(offer.price, offer.original_offer_price),
             offer.energy,
             self.owner.name,
             offer.original_offer_price,
@@ -146,7 +147,9 @@ class IAAEngine:
                     energy=trade.offer.energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
-                    original_trade_rate=trade.original_trade_rate
+                    trade_bid_info=update_forwarded_offer_trade_original_info(
+                        trade.offer_bid_trade_info, offer_info.source_offer
+                    )
                 )
 
             except OfferNotFoundException:

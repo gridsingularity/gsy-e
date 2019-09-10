@@ -19,6 +19,8 @@ from collections import namedtuple
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
 from d3a.models.market.market_structures import Bid
+from d3a.models.strategy.area_agents.two_sided_revenue_fee import update_forwarded_bid_with_fee, \
+    update_forwarded_bid_trade_original_info
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
@@ -40,14 +42,15 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
         if self.owner.name == self.markets.target.area.name:
             return
-        if (bid.price * (1 - self.markets.target.transfer_fee_ratio)
-                - self.markets.target.transfer_fee_const * bid.energy) <= 0:
-            self.owner.log.debug("Bid is not forwarded because bid price lower "
-                                 "than transfer_fee_const")
-            return
+        # if (bid.price * (1 - self.markets.target.transfer_fee_ratio)
+        #         - self.markets.target.transfer_fee_const * bid.energy) <= 0:
+        #     self.owner.log.debug("Bid is not forwarded because bid price lower "
+        #                          "than transfer_fee_const")
+        #     return
 
         forwarded_bid = self.markets.target.bid(
-            bid.price,
+            update_forwarded_bid_with_fee(
+                bid.price, bid.original_bid_price, self.markets.source.transfer_fee_ratio),
             bid.energy,
             self.owner.name,
             self.markets.target.area.name,
@@ -102,13 +105,18 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             original_bid_rate = bid.original_bid_price / bid.energy
             matched_rate = bid.price / bid.energy
 
+            trade_bid_info = [
+                original_bid_rate, bid.price/bid.energy,
+                offer.original_offer_price/offer.energy, offer.price/offer.energy,
+                original_bid_rate]
+
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
                                     buyer=bid.buyer,
                                     energy=selected_energy,
                                     trade_rate=matched_rate,
                                     already_tracked=False,
-                                    original_trade_rate=original_bid_rate)
+                                    trade_bid_info=trade_bid_info)
             self._delete_forwarded_offer_entries(offer)
             self.markets.source.accept_bid(bid,
                                            selected_energy,
@@ -116,7 +124,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                                            buyer=bid.buyer,
                                            already_tracked=True,
                                            trade_rate=matched_rate,
-                                           original_trade_rate=original_bid_rate)
+                                           trade_offer_info=trade_bid_info)
 
             bid_info = self.forwarded_bids.get(bid.id, None)
             if bid_info is not None:
@@ -157,14 +165,15 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             trade_rate = (bid_trade.offer.price/bid_trade.offer.energy)
-
             source_trade = self.markets.source.accept_bid(
                 market_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
-                original_trade_rate=bid_trade.original_trade_rate
+                trade_offer_info=update_forwarded_bid_trade_original_info(
+                    bid_trade.offer_bid_trade_info, market_bid
+                )
             )
 
             self.after_successful_trade_event(source_trade, bid_info)

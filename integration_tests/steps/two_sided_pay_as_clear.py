@@ -55,11 +55,14 @@ def test_cumulative_offer_bid_energy(context):
     areas.append(house1)
 
     for area in areas:
+        child_names = [child.name for child in area.children]
         for market in area.past_markets:
             cumulative_traded_bid_energy = 0
             cumulative_traded_offer_energy = 0
             for trade in market.trades:
-                if len(market.trades) == 1:
+
+                if len(market.trades) == 1 or \
+                        (trade.seller in child_names and trade.buyer in child_names):
                     # Device-to-device trading, no bid tracked
                     continue
                 if type(trade.offer) == Bid and str(trade.seller) != str(make_iaa_name(area)):
