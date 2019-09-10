@@ -103,9 +103,9 @@ class RedisSimulationCommunication:
     def publish_results(self, endpoint_buffer):
         if not hasattr(self, 'pubsub'):
             return
-        results = json.dumps(endpoint_buffer.generate_result_report())
+        results = endpoint_buffer.generate_result_report()
         results_validator(results)
-        self.redis_db.publish(self.result_channel, results)
+        self.redis_db.publish(self.result_channel, json.dumps(results))
         self._handle_redis_job_metadata()
 
     def publish_intermediate_results(self, endpoint_buffer):
