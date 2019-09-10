@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import warnings
 from logging import getLogger
 from typing import List  # noqa
 from cached_property import cached_property
@@ -34,7 +33,7 @@ from d3a.models.const import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
-from d3a.models.area.event_dispatcher import AreaDispatcher
+from d3a.models.area.event_dispatcher import AreaDispatcher, RedisAreaDispatcher
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a.models.const import GlobalConfig
@@ -51,6 +50,8 @@ DEFAULT_CONFIG = SimulationConfig(
     iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
     start_date=today(tz=TIME_ZONE)
 )
+
+EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
 
 
 class Area:
@@ -74,8 +75,14 @@ class Area:
         self.slug = slugify(name, to_lower=True)
         self.parent = None
         self.children = children if children is not None else []
+        self.dispatcher = RedisAreaDispatcher(self) \
+            if EVENT_DISPATCHING_VIA_REDIS else AreaDispatcher(self)
         for child in self.children:
             child.parent = self
+            if EVENT_DISPATCHING_VIA_REDIS:
+                child.dispatcher.subscribe_to_area_event(self)
+                self.dispatcher.subscribe_to_area_event(child, response_channel=True)
+
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
@@ -86,7 +93,6 @@ class Area:
         self._bc = None
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
-        self.dispatcher = AreaDispatcher(self)
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
@@ -128,7 +134,9 @@ class Area:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
         self.active = True
-        self.dispatcher.broadcast_activate()
+        print("#+#+#+#+# activating ", self.name)
+        if self.children != []:
+            self.dispatcher.broadcast_activate()
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)
@@ -184,7 +192,7 @@ class Area:
         self.events.update_events(self.now)
         if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()
-        self.dispatcher.broadcast_tick(area=self)
+        self.dispatcher.broadcast_tick()
         self.current_tick += 1
 
     def __repr__(self):
@@ -227,12 +235,6 @@ class Area:
                 areas.remove(area)
                 areas.extend(area.children)
         return slug_map
-
-    def get_now(self) -> DateTime:
-        """Compatibility wrapper"""
-        warnings.info("The '.get_now()' method has been replaced by the '.now' property. "
-                      "Please use that in the future.")
-        return self.now
 
     @property
     def now(self) -> DateTime:

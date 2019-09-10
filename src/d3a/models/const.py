@@ -40,6 +40,8 @@ class ConstSettings:
         # Boolean flag which forces d3a to run in real-time
         RUN_REAL_TIME = False
         KEEP_PAST_MARKETS = False
+        # Boolean flag which forces d3a to dispatch events via redis channels
+        EVENT_DISPATCHING_VIA_REDIS = True
 
     class StorageSettings:
         # Max battery capacity in kWh.

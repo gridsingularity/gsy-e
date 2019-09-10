@@ -276,9 +276,12 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self.update_market_cycle_offers(self.break_even[self.area.now].sell)
+        self.update_market_cycle_offers(self.break_even[self.area.next_market.time_slot].sell)
         current_market = self.area.next_market
         past_market = self.area.last_past_market
+
+        # if past_market is None:
+        #     return
 
         self.state.market_cycle(
             past_market.time_slot if past_market else current_market.time_slot,
