@@ -79,9 +79,10 @@ class Area:
             if EVENT_DISPATCHING_VIA_REDIS else AreaDispatcher(self)
         for child in self.children:
             child.parent = self
-            if EVENT_DISPATCHING_VIA_REDIS:
-                child.dispatcher.subscribe_to_area_event(self)
-                self.dispatcher.subscribe_to_area_event(child, response_channel=True)
+        if EVENT_DISPATCHING_VIA_REDIS:
+            if self.children != []:
+                self.dispatcher.subscribe_to_response_channel()
+            self.dispatcher.subscribe_to_area_event_channel()
 
         self.strategy = strategy
         self.appliance = appliance

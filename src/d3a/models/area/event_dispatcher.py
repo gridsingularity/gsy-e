@@ -212,35 +212,41 @@ class RedisAreaDispatcher(AreaDispatcher):
     def __init__(self, area):
         super().__init__(area)
         self.area_event = Event()
-        # self.area_events_list = ["tick", "activate", "market_cycle"]
+        self.number_of_children = len(list(self.area.children))
+        self.area_event_counter = {"tick": 0,
+                                   "activate": 0,
+                                   "market_cycle": 0}
 
-    def subscribe_to_area_event(self, target_area, response_channel=False):
-        channel_suffix = "area_event_response" if response_channel else "area_event"
-        callback = self.response_callback if response_channel else self.event_listener_redis
+    def subscribe_to_response_channel(self):
+        channel = f"{self.area.slug}/area_event_response"
+        print(f"if {channel} is triggered, response_callback of {self.area.slug} is called")
+        global_redis_chanel_dict.update({channel: self.response_callback})
 
-        channel = f"{target_area.slug}/{channel_suffix}"
-        print(self.area.slug, " ++++  subscribes to", channel, callback)
-        global_redis_chanel_dict.update({channel: callback})
+    def subscribe_to_area_event_channel(self):
+        channel = f"{self.area.slug}/area_event"
+        print(f"if {channel} is triggered, event_listener_redis of {self.area.slug} is called")
+        global_redis_chanel_dict.update({channel: self.event_listener_redis})
 
     def response_callback(self, payload):
         data = json.loads(payload["data"])
         if "response" in data:
-            print("response_callback", data)
-            print("#################")
-            self.area_event.set()
-            return True
-        else:
-            assert False
+            event_type = data["response"]
+            self.area_event_counter[event_type] += 1
+            if self.area_event_counter[event_type] == self.number_of_children:
+                print("response_callback", data, self.area.slug)
+                print("#################")
+                self.area_event_counter[event_type] = 0
+                self.area_event.set()
+            else:
+                print(f"{self.area.slug} {event_type} "
+                      f"{self.area_event_counter[event_type]} / {self.number_of_children}")
 
-    def publish_and_response(self, area_slug, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+    @staticmethod
+    def publish_event(area_slug, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
-        # dispatch_chanel = f"{area_slug}/area_event_{event_type.name.lower()}"
         dispatch_chanel = f"{area_slug}/area_event"
         print("§§§§§§§§§  publishing ", event_type, "on", dispatch_chanel)
         global_redis_db.publish(dispatch_chanel, json.dumps(send_data))
-        print("§§§§§§§§§  waiting to finish publishing", event_type, "on", dispatch_chanel)
-        self.area_event.wait()
-        print("§§§§§§§§§  finished waiting on ", dispatch_chanel)
 
     def _broadcast_event_redis(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if not self.area.events.is_enabled and \
@@ -248,8 +254,11 @@ class RedisAreaDispatcher(AreaDispatcher):
             return
         # Broadcast to children in random order to ensure fairness
         if isinstance(event_type, AreaEvent):
-            # print("try publishing on", self.area.slug)
-            self.publish_and_response(self.area.slug, event_type, **kwargs)
+            print(f"üüüü I am {self.area.slug} and broadcast the events to my children")
+            for child in sorted(self.area.children, key=lambda _: random()):
+                self.publish_event(child.slug, event_type, **kwargs)
+            print(f"üüüü  {self.area.slug} waiting to finish publishing to children", event_type, )
+            self.area_event.wait()
         else:
             # Also broadcast to IAAs. Again in random order
             for time_slot, agents in self._inter_area_agents.items():
@@ -281,17 +290,16 @@ class RedisAreaDispatcher(AreaDispatcher):
         response_data = json.dumps({"response": event_type.name.lower()})
 
         print("received event", event_type, "on ", self.area.slug)
-        # print(response_channel)
-        # assert False
         if event_type is AreaEvent.TICK:
             self.area.tick()
-            global_redis_db.publish(response_channel, response_data)
+            global_redis_db.publish_event(response_channel, response_data)
         if event_type is AreaEvent.MARKET_CYCLE:
             self.area._cycle_markets(_trigger_event=True)
-            global_redis_db.publish(response_channel, response_data)
+            global_redis_db.publish_event(response_channel, response_data)
         elif event_type is AreaEvent.ACTIVATE:
             self.area.activate()
-            global_redis_db.publish(response_channel, response_data)
+            print("publishing", event_type, " on response channel ", response_channel)
+            global_redis_db.publish_event(response_channel, response_data)
 
         if self._should_dispatch_to_strategies_appliances(event_type):
             if self.area.strategy:

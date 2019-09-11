@@ -54,6 +54,7 @@ TRACE = 5
 EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
 
 if EVENT_DISPATCHING_VIA_REDIS:
+    # TODO: put this into a class
     from redis import StrictRedis
     from d3a.d3a_core.redis_communication import REDIS_URL
     global_redis_chanel_dict = {}
