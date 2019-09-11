@@ -25,7 +25,7 @@ from d3a.d3a_core.sim_results.stats import MarketEnergyBills, primary_unit_price
 
 from d3a.d3a_core.util import make_iaa_name
 from d3a.models.strategy import BaseStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 class FakeArea:

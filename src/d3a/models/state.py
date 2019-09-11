@@ -19,7 +19,7 @@ from pendulum import duration
 from collections import namedtuple
 from enum import Enum
 from math import isclose
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a import limit_float_precision
 from d3a.d3a_core.util import generate_market_slot_list
 

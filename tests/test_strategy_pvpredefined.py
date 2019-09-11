@@ -26,7 +26,7 @@ from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-from d3a.models.const import ConstSettings, GlobalConfig
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 

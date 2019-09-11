@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then
 from math import isclose
 from pendulum import duration
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import DEFAULT_PRECISION
 
 

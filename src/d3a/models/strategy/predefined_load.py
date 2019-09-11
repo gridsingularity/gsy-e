@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
 
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile

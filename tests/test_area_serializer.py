@@ -22,7 +22,7 @@ from d3a.d3a_core.area_serializer import area_to_string, area_from_string, are_a
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
 from d3a.models.leaves import PV
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.pv import PVStrategy
 

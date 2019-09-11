@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 import platform
 
 

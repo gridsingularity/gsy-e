@@ -19,7 +19,7 @@ from pendulum import duration
 from itertools import product
 from copy import deepcopy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.const import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig
 from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
 
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"

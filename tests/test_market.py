@@ -34,7 +34,7 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 
 from d3a.d3a_core.device_registry import DeviceRegistry

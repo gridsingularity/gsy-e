@@ -23,7 +23,7 @@ from pendulum import duration, from_format, from_timestamp, today, DateTime
 from statistics import mean
 from typing import Dict
 from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
-from d3a.models.const import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig
 from d3a.d3a_core.util import generate_market_slot_list
 
 """

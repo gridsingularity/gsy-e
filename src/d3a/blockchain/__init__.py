@@ -27,7 +27,7 @@ from subprocess import Popen, DEVNULL
 from d3a.d3a_core.util import get_cached_joined_contract_source, wait_until_timeout_blocking
 from d3a.blockchain.users import BCUsers
 from d3a.blockchain.utils import unlock_account
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 log = getLogger(__name__)
