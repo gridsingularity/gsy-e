@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from numpy.random import random
 from d3a.models.strategy import BaseStrategy, _TradeLookerUpper
 from d3a.constants import TIME_FORMAT
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 class InterAreaAgent(BaseStrategy):
