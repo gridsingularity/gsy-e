@@ -51,16 +51,6 @@ _CONTRACT_CACHE = {}
 
 TRACE = 5
 
-EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
-
-if EVENT_DISPATCHING_VIA_REDIS:
-    # TODO: put this into a class
-    from redis import StrictRedis
-    from d3a.d3a_core.redis_communication import REDIS_URL
-    global_redis_chanel_dict = {}
-    global_redis_db = StrictRedis.from_url(REDIS_URL)
-    global_pubsub = global_redis_db.pubsub()
-
 
 class TraceLogger(getLoggerClass()):
     def __init__(self, name, level=NOTSET):

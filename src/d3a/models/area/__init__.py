@@ -80,7 +80,7 @@ class Area:
         for child in self.children:
             child.parent = self
         if EVENT_DISPATCHING_VIA_REDIS:
-            if self.children != []:
+            if len(self.children) != 0:
                 self.dispatcher.subscribe_to_response_channel()
             self.dispatcher.subscribe_to_area_event_channel()
 
@@ -135,8 +135,7 @@ class Area:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
         self.active = True
-        print("#+#+#+#+# activating ", self.name)
-        if self.children != []:
+        if len(self.children) != 0:
             self.dispatcher.broadcast_activate()
 
     def deactivate(self):
@@ -153,7 +152,6 @@ class Area:
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
         """
-
         self.events.update_events(self.now)
 
         if not self.children:
@@ -193,7 +191,8 @@ class Area:
         self.events.update_events(self.now)
         if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()
-        self.dispatcher.broadcast_tick()
+        if len(self.children) != 0:
+            self.dispatcher.broadcast_tick()
         self.current_tick += 1
 
     def __repr__(self):

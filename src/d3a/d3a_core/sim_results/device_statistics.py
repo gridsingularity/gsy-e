@@ -41,8 +41,6 @@ class DeviceStatistics:
             trade_stats_daily[time.format(TIME_FORMAT)] += value
 
         for time_str, value in trade_stats_daily.items():
-            # if value != ['-']:
-            #     print(time_str, value)
             min_trade_stats_daily[time_str] = limit_float_precision(min(value)) \
                 if len(value) > 0 else FILL_VALUE
             max_trade_stats_daily[time_str] = limit_float_precision(max(value)) \

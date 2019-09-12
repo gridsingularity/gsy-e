@@ -20,6 +20,7 @@ from numpy.random import random
 from typing import Union
 from logging import getLogger
 from threading import Event
+from redis import StrictRedis
 
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
@@ -31,9 +32,11 @@ from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a.models.const import ConstSettings
 from d3a.d3a_core.util import create_subdict_or_update
-from d3a.d3a_core.util import global_redis_chanel_dict, global_redis_db
+from d3a.d3a_core.redis_communication import REDIS_URL
 
 log = getLogger(__name__)
+
+EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
 
 
 class AreaDispatcher:
@@ -215,17 +218,21 @@ class RedisAreaDispatcher(AreaDispatcher):
         self.number_of_children = len(list(self.area.children))
         self.area_event_counter = {"tick": 0,
                                    "activate": 0,
-                                   "market_cycle": 0}
+                                   "market_cycle": 0,
+                                   "balancing_market_cycle": 0}
+        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.pubsub = self.redis_db.pubsub()
+        self.pubsub_response = self.redis_db.pubsub()
 
     def subscribe_to_response_channel(self):
         channel = f"{self.area.slug}/area_event_response"
-        print(f"if {channel} is triggered, response_callback of {self.area.slug} is called")
-        global_redis_chanel_dict.update({channel: self.response_callback})
+        self.pubsub_response.subscribe(**{channel: self.response_callback})
+        self.pubsub_response.run_in_thread(daemon=True)
 
     def subscribe_to_area_event_channel(self):
         channel = f"{self.area.slug}/area_event"
-        print(f"if {channel} is triggered, event_listener_redis of {self.area.slug} is called")
-        global_redis_chanel_dict.update({channel: self.event_listener_redis})
+        self.pubsub.subscribe(**{channel: self.event_listener_redis})
+        self.pubsub.run_in_thread(daemon=True)
 
     def response_callback(self, payload):
         data = json.loads(payload["data"])
@@ -233,20 +240,15 @@ class RedisAreaDispatcher(AreaDispatcher):
             event_type = data["response"]
             self.area_event_counter[event_type] += 1
             if self.area_event_counter[event_type] == self.number_of_children:
-                print("response_callback", data, self.area.slug)
-                print("#################")
                 self.area_event_counter[event_type] = 0
                 self.area_event.set()
-            else:
-                print(f"{self.area.slug} {event_type} "
-                      f"{self.area_event_counter[event_type]} / {self.number_of_children}")
+        else:
+            assert False, "Should never reach this point"
 
-    @staticmethod
-    def publish_event(area_slug, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+    def publish_event(self, area_slug, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
         dispatch_chanel = f"{area_slug}/area_event"
-        print("§§§§§§§§§  publishing ", event_type, "on", dispatch_chanel)
-        global_redis_db.publish(dispatch_chanel, json.dumps(send_data))
+        self.redis_db.publish(dispatch_chanel, json.dumps(send_data))
 
     def _broadcast_event_redis(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if not self.area.events.is_enabled and \
@@ -254,61 +256,43 @@ class RedisAreaDispatcher(AreaDispatcher):
             return
         # Broadcast to children in random order to ensure fairness
         if isinstance(event_type, AreaEvent):
-            print(f"üüüü I am {self.area.slug} and broadcast the events to my children")
             for child in sorted(self.area.children, key=lambda _: random()):
                 self.publish_event(child.slug, event_type, **kwargs)
-            print(f"üüüü  {self.area.slug} waiting to finish publishing to children", event_type, )
             self.area_event.wait()
         else:
-            # Also broadcast to IAAs. Again in random order
-            for time_slot, agents in self._inter_area_agents.items():
-                if time_slot not in self.area._markets.markets:
-                    # exclude past IAAs
-                    continue
+            for child in sorted(self.area.children, key=lambda _: random()):
+                child.dispatcher.event_listener(event_type, **kwargs)
+        # Also broadcast to IAAs. Again in random order
+        for time_slot, agents in self._inter_area_agents.items():
+            if time_slot not in self.area._markets.markets:
+                # exclude past IAAs
+                continue
 
-                if not self.area.events.is_connected:
-                    break
-                for area_name in sorted(agents, key=lambda _: random()):
-                    agents[area_name].event_listener(event_type, **kwargs)
-            # Also broadcast to BAs. Again in random order
-            # TODO: Refactor to reuse the spot market mechanism
-            for time_slot, agents in self._balancing_agents.items():
-                if time_slot not in self.area._markets.balancing_markets:
-                    # exclude past BAs
-                    continue
+            if not self.area.events.is_connected:
+                break
+            for area_name in sorted(agents, key=lambda _: random()):
+                agents[area_name].event_listener(event_type, **kwargs)
+        # Also broadcast to BAs. Again in random order
+        # TODO: Refactor to reuse the spot market mechanism
+        for time_slot, agents in self._balancing_agents.items():
+            if time_slot not in self.area._markets.balancing_markets:
+                # exclude past BAs
+                continue
 
-                if not self.area.events.is_connected:
-                    break
-                for area_name in sorted(agents, key=lambda _: random()):
-                    agents[area_name].event_listener(event_type, **kwargs)
+            if not self.area.events.is_connected:
+                break
+            for area_name in sorted(agents, key=lambda _: random()):
+                agents[area_name].event_listener(event_type, **kwargs)
 
-    def event_listener_redis(self, payload, **kwargs):
+    def event_listener_redis(self, payload):
         data = json.loads(payload["data"])
+        kwargs = data["kwargs"]
         event_type = AreaEvent(data["event_type"])
-
         response_channel = f"{self.area.parent.slug}/area_event_response"
         response_data = json.dumps({"response": event_type.name.lower()})
 
-        print("received event", event_type, "on ", self.area.slug)
-        if event_type is AreaEvent.TICK:
-            self.area.tick()
-            global_redis_db.publish_event(response_channel, response_data)
-        if event_type is AreaEvent.MARKET_CYCLE:
-            self.area._cycle_markets(_trigger_event=True)
-            global_redis_db.publish_event(response_channel, response_data)
-        elif event_type is AreaEvent.ACTIVATE:
-            self.area.activate()
-            print("publishing", event_type, " on response channel ", response_channel)
-            global_redis_db.publish_event(response_channel, response_data)
-
-        if self._should_dispatch_to_strategies_appliances(event_type):
-            if self.area.strategy:
-                self.area.strategy.event_listener(event_type, **kwargs)
-            if self.area.appliance:
-                self.area.appliance.event_listener(event_type, **kwargs)
-        elif (not self.area.events.is_enabled or not self.area.events.is_connected) \
-                and event_type == AreaEvent.MARKET_CYCLE:
-            self.area.strategy.event_on_disabled_area()
+        self.event_listener(event_type, **kwargs)
+        self.redis_db.publish(response_channel, response_data)
 
     def broadcast_activate(self, **kwargs):
         self._broadcast_event_redis(AreaEvent.ACTIVATE, **kwargs)

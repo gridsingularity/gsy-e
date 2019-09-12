@@ -51,10 +51,6 @@ if platform.python_implementation() != "PyPy" and \
 
 log = getLogger(__name__)
 
-EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
-if EVENT_DISPATCHING_VIA_REDIS:
-    from d3a.d3a_core.util import global_redis_chanel_dict, global_pubsub
-
 
 class SimulationResetException(Exception):
     pass
@@ -161,13 +157,6 @@ class Simulation:
         self._set_traversal_length()
 
         are_all_areas_unique(self.area, set())
-
-        if EVENT_DISPATCHING_VIA_REDIS:
-            for k, v in global_redis_chanel_dict.items():
-                print(k, "  callback  ", v)
-            print()
-            global_pubsub.subscribe(**global_redis_chanel_dict)
-            global_pubsub.run_in_thread(daemon=True)
 
         self.area.activate(self.bc)
 
