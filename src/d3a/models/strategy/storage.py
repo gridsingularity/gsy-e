@@ -280,9 +280,6 @@ class StorageStrategy(BidEnabledStrategy, OfferUpdateFrequencyMixin, BidUpdateFr
         current_market = self.area.next_market
         past_market = self.area.last_past_market
 
-        # if past_market is None:
-        #     return
-
         self.state.market_cycle(
             past_market.time_slot if past_market else current_market.time_slot,
             current_market.time_slot

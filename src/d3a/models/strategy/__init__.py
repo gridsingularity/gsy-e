@@ -238,10 +238,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):
             super().event_listener(event_type, **kwargs)
 
-    # def event_listener_redis(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
-    #     if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):
-    #         super().event_listener(event_type, **kwargs)
-
     def event_trade(self, *, market_id, trade):
         self.offers.on_trade(market_id, trade)
 
