@@ -98,11 +98,15 @@ def check_min_user_rate_profile_dict(context):
     load2 = next(filter(lambda x: x.name == "H1 General Load 2", house.children))
 
     for market in house.past_markets:
+        print(f"NAME: {market.area.name}")
+        print(f"TIME: {market.time_slot}")
         assert len(market.trades) > 0
         for trade in market.trades:
             trade_rate = trade.offer.price / trade.offer.energy
             if trade.buyer == load1.name:
                 min_rate = load1.strategy.bid_update.initial_rate[market.time_slot]
+                print(f"TRADE: {trade}")
+                print(f"MINRATE: {min_rate}")
                 assert trade_rate - min_rate < FLOATING_POINT_TOLERANCE
             elif trade.buyer == load2.name:
                 min_rate = load2.strategy.bid_update.initial_rate[market.time_slot]

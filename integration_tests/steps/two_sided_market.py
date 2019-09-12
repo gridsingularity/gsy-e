@@ -24,9 +24,6 @@ from d3a.d3a_core.util import make_iaa_name
 from d3a import limit_float_precision
 from d3a.constants import DEFAULT_PRECISION
 
-RATE_LOWER_THRESHOLD = 13
-RATE_UPPER_THRESHOLD = 18
-
 
 @then('the load has no unmatched loads')
 def no_unmatched_loads(context):
@@ -79,11 +76,6 @@ def device_partially_fulfill_bid(context, device):
                    for trade in house2.get_past_market(slot).trades)
         assert all(trade.seller in pv_names
                    for trade in house2.get_past_market(slot).trades)
-
-        # assert all(pv_names[0].strategy.offer_update.ini <
-        #            trade.offer.price / trade.offer.energy <
-        #            ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-        #            for trade in market.trades)
 
 
 @then('the PV always provides constant power according to load demand')

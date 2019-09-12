@@ -19,7 +19,6 @@ from numpy import random
 from pendulum import duration
 from typing import Union
 from collections import namedtuple
-from datetime import timedelta
 from d3a.d3a_core.util import generate_market_slot_list, is_market_in_simulation_duration
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
@@ -41,7 +40,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_change_per_update=1,
-                 update_interval=timedelta(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                  final_buying_rate: Union[float, dict, str] =
@@ -113,6 +112,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                             for day in range(self.area.config.sim_duration.days + 1)}
         self._simulation_start_timestamp = self.area.now
         self.assign_energy_requirement(self.avg_power_W)
+        self._set_alternative_pricing_scheme()
 
     def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None,
                                hrs_of_day=None, final_buying_rate=None):
@@ -193,16 +193,16 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return (((energy * 1000) / self.energy_per_slot_Wh)
                 * (self.area.config.slot_length / duration(hours=1)))
 
-    def _set_alternative_pricing_scheme(self, market):
+    def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            final_rate = self.area.config.market_maker_rate[market.time_slot]
-            self.bid_update.reassign_mixin_arguments(self, market, initial_rate=0,
-                                                     final_rate=final_rate)
+            for time_slot in generate_market_slot_list():
+                final_rate = self.area.config.market_maker_rate[time_slot]
+                self.bid_update.reassign_mixin_arguments(self, time_slot, initial_rate=0,
+                                                         final_rate=final_rate)
 
     def event_market_cycle(self):
         super().event_market_cycle()
         for market in self.active_markets:
-            self._set_alternative_pricing_scheme(market)
             current_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day[current_day] <= 0:
                 self.energy_requirement_Wh[market.time_slot] = 0.0
@@ -220,7 +220,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                         bid_energy = self.energy_requirement_Wh[market.time_slot]
                     if not self.are_bids_posted(market.id):
                         self.post_first_bid(market, bid_energy)
-        self.bid_update.update_market_cycle_bids(self)
+                    else:
+                        self.bid_update.update_market_cycle_bids(self)
 
     def event_balancing_market_cycle(self):
         for market in self.active_markets:

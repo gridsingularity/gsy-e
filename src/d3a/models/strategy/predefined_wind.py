@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy
-from datetime import timedelta
+from pendulum import duration
 
 """
 Creates a WindStrategy that uses a profile as input for its power values.
@@ -32,7 +32,7 @@ class WindUserProfileStrategy(PVUserProfileStrategy):
                  float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  final_selling_rate: float=ConstSettings.WindSettings.FINAL_SELLING_RATE,
                  fit_to_limit: bool = True,
-                 update_interval=timedelta(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
                  energy_rate_change_per_update:
                  float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
                  max_wind_turbine_power_W: float =

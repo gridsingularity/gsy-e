@@ -40,9 +40,9 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
-    ConstSettings.StorageSettings.MIN_BUYING_RATE = 0
-    ConstSettings.StorageSettings.BREAK_EVEN_BUY = 29.9
-    ConstSettings.StorageSettings.BREAK_EVEN_SELL = 30
+    ConstSettings.StorageSettings.BUYING_RANGE[0] = 0
+    ConstSettings.StorageSettings.BUYING_RANGE[1] = 29.9
+    ConstSettings.StorageSettings.SELLING_RANGE[1] = 30
 
     area = Area(
         'Grid',

@@ -78,10 +78,8 @@
       ],
       "INITIAL_RATE_OPTION": 2,
       "RATE_DECREASE_OPTION": 1,
-      "BREAK_EVEN_SELL": 25,
-      "BREAK_EVEN_BUY": 24.9,
-      "MIN_BUYING_RATE": 24.9,
-      "MAX_SELLING_RATE": 30,
+      "BUYING_RANGE": [0, 24.9],
+      "SELLING_RANGE": [30, 25],
       "MIN_ALLOWED_SOC": 0.1,
       "SELL_ON_MOST_EXPENSIVE_MARKET": false
     },

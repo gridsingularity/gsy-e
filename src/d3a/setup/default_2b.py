@@ -36,7 +36,7 @@ def get_setup(config):
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
-                                                                       final_buying_rate=26),
+                                                                       final_buying_rate=25),
                          appliance=SwitchableAppliance(), transfer_fee_pct=0),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance(), transfer_fee_pct=0),

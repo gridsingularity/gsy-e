@@ -55,11 +55,10 @@ def pv_price_decrease(context):
     number_of_available_updates = \
         int(pv.config.slot_length.seconds / pv.strategy.offer_update.update_interval.seconds) - 1
     energy_rate_change_per_update = 4
-    rate_list = []
-    for i in range(number_of_available_updates):
-        rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE - \
-               i * energy_rate_change_per_update
-        rate_list.append(rate)
+    rate_list = \
+        [ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE - i *
+         energy_rate_change_per_update
+         for i in range(number_of_available_updates)]
 
     if pv.strategy.offer_update.fit_to_limit is False:
         for market in house.past_markets:

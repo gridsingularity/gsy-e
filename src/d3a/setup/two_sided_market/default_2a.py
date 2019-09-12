@@ -31,9 +31,9 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.StorageSettings.MIN_BUYING_RATE = 24.99
-    ConstSettings.StorageSettings.BREAK_EVEN_BUY = 25
-    ConstSettings.StorageSettings.BREAK_EVEN_SELL = 25.01
+    ConstSettings.StorageSettings.BUYING_RANGE[0] = 24.99
+    ConstSettings.StorageSettings.BUYING_RANGE[1] = 25
+    ConstSettings.StorageSettings.SELLING_RANGE[1] = 25.01
 
     area = Area(
         'Grid',

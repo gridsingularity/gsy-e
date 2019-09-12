@@ -17,8 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from pendulum import DateTime
-from datetime import timedelta
+from pendulum import DateTime, duration
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -45,7 +44,7 @@ class PVPredefinedStrategy(PVStrategy):
             final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
             cloud_coverage: int=None,
             fit_to_limit: bool = True,
-            update_interval=timedelta(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+            update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
             energy_rate_change_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
@@ -124,7 +123,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
             fit_to_limit: bool = True,
-            update_interval=timedelta(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+            update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
             energy_rate_change_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):

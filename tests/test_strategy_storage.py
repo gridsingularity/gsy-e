@@ -325,7 +325,7 @@ def area_test5():
 
 @pytest.fixture()
 def storage_strategy_test5(area_test5, called):
-    s = StorageStrategy(initial_soc=99.8, battery_capacity_kWh=5.01)
+    s = StorageStrategy(initial_soc=100, battery_capacity_kWh=5)
     s.owner = area_test5
     s.area = area_test5
     s.sell_energy = called
@@ -339,14 +339,14 @@ def storage_strategy_test5(area_test5, called):
     s.offers.post(area_test5.past_market.offers['id3'], area_test5.past_market.id)
     s.offers.post(area_test5.past_market.offers['id2'], area_test5.past_market.id)
     s.offers.sold_offer('id2', area_test5.past_market)
-    assert(isclose(s.state.used_storage, 5, rel_tol=1e-05))
+    assert s.state.used_storage == 5
     return s
 
 
 def test_if_storage_handles_capacity_correctly(storage_strategy_test5, area_test5):
     storage_strategy_test5.event_activate()
     storage_strategy_test5.event_market_cycle()
-    assert(isclose(storage_strategy_test5.state.used_storage, 5, rel_tol=1e-05))
+    assert storage_strategy_test5.state.used_storage == 5
     assert len(storage_strategy_test5.sell_energy.calls) == 1
 
 
