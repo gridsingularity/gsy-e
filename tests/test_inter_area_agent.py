@@ -134,7 +134,7 @@ class FakeMarket:
     def dispatch_market_offer_event(self, offer):
         pass
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None, source_market=None):
+    def bid(self, price, energy, buyer, seller, original_bid_price=None):
         self.bid_count += 1
         self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller,
                                  original_bid_price=original_bid_price)
