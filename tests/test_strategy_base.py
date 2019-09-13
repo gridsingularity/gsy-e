@@ -83,7 +83,7 @@ class FakeMarket:
         self.id = id
 
     def accept_offer(self, offer, id, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, original_trade_rate=None):
+                     trade_rate: float = None, trade_bid_info=None):
         if self.raises:
             raise MarketException
         else:

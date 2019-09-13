@@ -90,7 +90,7 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, original_trade_rate=None):
+                     trade_rate: float = None, trade_bid_info=None):
         trade = Trade('trade_id', time, offer, offer.seller, buyer)
         self.traded_offers.append(trade)
         return trade
