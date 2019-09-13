@@ -19,14 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pendulum import duration
 
 from d3a.d3a_core.exceptions import MarketException
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.util import generate_market_slot_list
 
 
 class UpdateFrequencyMixin:
     def __init__(self, initial_rate, final_rate, fit_to_limit=True,
-                 energy_rate_change_per_update=1, update_interval=duration(minutes=5)):
+                 energy_rate_change_per_update=1,
+                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE)):
         self.fit_to_limit = fit_to_limit
         self.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                    initial_rate)
@@ -38,7 +39,7 @@ class UpdateFrequencyMixin:
         self.update_counter = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
         self.number_of_available_updates = 0
 
-    def reassign_mixin_arguments(self, strategy, time_slot, initial_rate=None, final_rate=None,
+    def reassign_mixin_arguments(self, time_slot, initial_rate=None, final_rate=None,
                                  fit_to_limit=None, energy_rate_change_per_update=None,
                                  update_interval=None):
         if initial_rate is not None:
@@ -53,7 +54,7 @@ class UpdateFrequencyMixin:
         if update_interval is not None:
             self.update_interval = update_interval
 
-        self.update_on_activate(strategy)
+        self.update_on_activate()
 
     def _set_or_update_energy_rate_change_per_update(self):
         energy_rate_change_per_update = {}
@@ -66,16 +67,17 @@ class UpdateFrequencyMixin:
                 energy_rate_change_per_update[slot] = self.energy_rate_change_per_update[slot]
         self.energy_rate_change_per_update = energy_rate_change_per_update
 
-    def _calculate_number_of_available_updates_per_slot(self, strategy):
+    @property
+    def _calculate_number_of_available_updates_per_slot(self):
         number_of_available_updates = \
-            int(strategy.area.config.slot_length.seconds / self.update_interval.seconds) - 1
+            int(GlobalConfig.slot_length.seconds / self.update_interval.seconds) - 1
         return number_of_available_updates
 
-    def update_on_activate(self, strategy):
+    def update_on_activate(self):
         assert self.update_interval.seconds >= \
                ConstSettings.GeneralSettings.UPDATE_RATE * 60
         self.number_of_available_updates = \
-            self._calculate_number_of_available_updates_per_slot(strategy)
+            self._calculate_number_of_available_updates_per_slot
         self._set_or_update_energy_rate_change_per_update()
 
     def get_updated_rate(self, time_slot):

@@ -106,7 +106,7 @@ class PVStrategy(BaseStrategy):
     def event_activate(self):
         # Calculating the produced energy
         self._set_alternative_pricing_scheme()
-        self.offer_update.update_on_activate(self)
+        self.offer_update.update_on_activate()
         self.produced_energy_forecast_kWh()
 
     def event_tick(self, *, area):
@@ -198,7 +198,7 @@ class PVStrategy(BaseStrategy):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
                 for time_slot in generate_market_slot_list():
-                    self.offer_update.reassign_mixin_arguments(self, time_slot, initial_rate=0,
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                                final_rate=0)
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                 for time_slot in generate_market_slot_list():
@@ -206,12 +206,12 @@ class PVStrategy(BaseStrategy):
                         self.area.config.market_maker_rate[time_slot] * \
                         ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
                         100
-                    self.offer_update.reassign_mixin_arguments(self, time_slot,
-                                                               initial_rate=rate, final_rate=rate)
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
+                                                               final_rate=rate)
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                 for time_slot in generate_market_slot_list():
                     rate = self.area.config.market_maker_rate[time_slot]
-                    self.offer_update.reassign_mixin_arguments(self, time_slot,
-                                                               initial_rate=rate, final_rate=rate)
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
+                                                               final_rate=rate)
             else:
                 raise MarketException

@@ -92,38 +92,38 @@ Feature: Run integration tests
      Then aggregated result files are exported
 
   # TODO: Tobe fixed after the incorporation of new grid fee method
-#  Scenario: Grid fees are calculated based on the original offer rate
-#     Given we have a scenario named non_compounded_grid_fees
-#     And d3a is installed
-#     And d3a uses an one-sided market
-#     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
-#     Then trades on the House 1 market clear with 12.0 cents/kWh
-#     Then trades on the Neighborhood 1 market clear with 11.5 cents/kWh
-#     Then trades on the Grid market clear with 10.5 cents/kWh
-#     Then trades on the Neighborhood 2 market clear with 10.0 cents/kWh
-#     Then trades on the House 2 market clear with 10.0 cents/kWh
-#
-#  Scenario: Grid fees are calculated based on the original bid rate
-#     Given we have a scenario named non_compounded_grid_fees
-#     And d3a is installed
-#     And d3a uses an two-sided pay-as-bid market
-#     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
-#     Then trades on the House 1 market clear with 20.0 cents/kWh
-#     Then trades on the Neighborhood 1 market clear with 19.0 cents/kWh
-#     Then trades on the Grid market clear with 17.0 cents/kWh
-#     Then trades on the Neighborhood 2 market clear with 16.0 cents/kWh
-#     Then trades on the House 2 market clear with 16.0 cents/kWh
-#
-#  Scenario: Grid fees are calculated based on the clearing rate for pay as clear
-#     Given we have a scenario named non_compounded_grid_fees
-#     And d3a is installed
-#     And d3a uses an two-sided pay-as-clear market
-#     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
-#     Then trades on the House 1 market clear with 20.0 cents/kWh
-#     Then trades on the Neighborhood 1 market clear with 19.0 cents/kWh
-#     Then trades on the Grid market clear with 17.0 cents/kWh
-#     Then trades on the Neighborhood 2 market clear using a rate of either 16.0 or 16.15 cents/kWh
-#     Then trades on the House 2 market clear using a rate of either 16.0 or 16.15 cents/kWh
+  Scenario: Grid fees are calculated based on the original offer rate
+     Given we have a scenario named non_compounded_grid_fees
+     And d3a is installed
+     And d3a uses an one-sided market
+     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
+     Then trades on the House 1 market clear with 12.0 cents/kWh
+     Then trades on the Neighborhood 1 market clear with 11.5 cents/kWh
+     Then trades on the Grid market clear with 10.5 cents/kWh
+     Then trades on the Neighborhood 2 market clear with 10.0 cents/kWh
+     Then trades on the House 2 market clear with 10.0 cents/kWh
+
+  Scenario: Grid fees are calculated based on the original bid rate
+     Given we have a scenario named non_compounded_grid_fees
+     And d3a is installed
+     And d3a uses an two-sided pay-as-bid market
+     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
+     Then trades on the House 1 market clear with 20.0 cents/kWh
+     Then trades on the Neighborhood 1 market clear with 19.0 cents/kWh
+     Then trades on the Grid market clear with 17.0 cents/kWh
+     Then trades on the Neighborhood 2 market clear with 16.0 cents/kWh
+     Then trades on the House 2 market clear with 16.0 cents/kWh
+
+  Scenario: Grid fees are calculated based on the clearing rate for pay as clear
+     Given we have a scenario named non_compounded_grid_fees
+     And d3a is installed
+     And d3a uses an two-sided pay-as-clear market
+     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
+     Then trades on the House 1 market clear with 20.0 cents/kWh
+     Then trades on the Neighborhood 1 market clear with 19.0 cents/kWh
+     Then trades on the Grid market clear with 17.0 cents/kWh
+     Then trades on the Neighborhood 2 market clear using a rate of either 16.0 or 16.15 cents/kWh
+     Then trades on the House 2 market clear using a rate of either 16.0 or 16.15 cents/kWh
 
   Scenario Outline: Unmatched loads are the same with and without keeping the past markets
      Given we have a scenario named <scenario>

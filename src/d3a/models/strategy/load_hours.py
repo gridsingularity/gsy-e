@@ -107,7 +107,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
 
     def event_activate(self):
-        self.bid_update.update_on_activate(self)
+        self.bid_update.update_on_activate()
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.sim_duration.days + 1)}
         self._simulation_start_timestamp = self.area.now
@@ -197,7 +197,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             for time_slot in generate_market_slot_list():
                 final_rate = self.area.config.market_maker_rate[time_slot]
-                self.bid_update.reassign_mixin_arguments(self, time_slot, initial_rate=0,
+                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                          final_rate=final_rate)
 
     def event_market_cycle(self):

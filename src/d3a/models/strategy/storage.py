@@ -52,7 +52,7 @@ class StorageStrategy(BidEnabledStrategy):
                  initial_buying_rate: float = StorageSettings.BUYING_RANGE[0],
                  final_buying_rate: float = StorageSettings.BUYING_RANGE[1],
                  fit_to_limit=True, energy_rate_change_per_update=1,
-                 update_interval=duration(minutes=5),
+                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
                  initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL,
                  balancing_energy_ratio: tuple = (BalancingSettings.OFFER_DEMAND_RATIO,
                                                   BalancingSettings.OFFER_SUPPLY_RATIO)):
@@ -88,20 +88,9 @@ class StorageStrategy(BidEnabledStrategy):
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
-    def area_reconfigure_event(self, cap_price_strategy=None,
-                               initial_selling_rate=None, final_selling_rate=None,
-                               initial_buying_rate=None, final_buying_rate=None,
-                               fit_to_limit=None, update_interval=None,
-                               energy_rate_change_per_update=None):
-
-        self._validate_constructor_arguments(
-            initial_selling_rate=initial_selling_rate,
-            final_selling_rate=final_selling_rate,
-            initial_buying_rate=initial_buying_rate,
-            final_buying_rate=final_buying_rate,
-            energy_rate_change_per_update=energy_rate_change_per_update)
-        if cap_price_strategy is not None:
-            self.cap_price_strategy = cap_price_strategy
+    def _update_rate_parameters(self, initial_selling_rate, final_selling_rate,
+                                initial_buying_rate, final_buying_rate,
+                                energy_rate_change_per_update):
         if initial_selling_rate is not None:
             self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                     initial_selling_rate)
@@ -121,25 +110,43 @@ class StorageStrategy(BidEnabledStrategy):
             self.bid_update.energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                        energy_rate_change_per_update)
-        self.offer_update.update_on_activate(self)
-        self.bid_update.update_on_activate(self)
+
+    def area_reconfigure_event(self, cap_price_strategy=None,
+                               initial_selling_rate=None, final_selling_rate=None,
+                               initial_buying_rate=None, final_buying_rate=None,
+                               fit_to_limit=None, update_interval=None,
+                               energy_rate_change_per_update=None):
+
+        self._validate_constructor_arguments(
+            initial_selling_rate=initial_selling_rate,
+            final_selling_rate=final_selling_rate,
+            initial_buying_rate=initial_buying_rate,
+            final_buying_rate=final_buying_rate,
+            energy_rate_change_per_update=energy_rate_change_per_update)
+        if cap_price_strategy is not None:
+            self.cap_price_strategy = cap_price_strategy
+        self._update_rate_parameters(initial_selling_rate, final_selling_rate,
+                                     initial_buying_rate, final_buying_rate,
+                                     energy_rate_change_per_update)
+        self.offer_update.update_on_activate()
+        self.bid_update.update_on_activate()
 
     def event_on_disabled_area(self):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
 
     def event_activate(self):
         self.state.set_battery_energy_per_slot(self.area.config.slot_length)
-        self.offer_update.update_on_activate(self)
-        self.bid_update.update_on_activate(self)
+        self.offer_update.update_on_activate()
+        self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
                 for time_slot in generate_market_slot_list():
-                    self.bid_update.reassign_mixin_arguments(self, time_slot, initial_rate=0,
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                              final_rate=0)
-                    self.offer_update.reassign_mixin_arguments(self, time_slot, initial_rate=0,
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                                final_rate=0)
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
                 for time_slot in generate_market_slot_list():
@@ -147,17 +154,17 @@ class StorageStrategy(BidEnabledStrategy):
                         self.area.config.market_maker_rate[time_slot] * \
                         ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
                         100
-                    self.bid_update.reassign_mixin_arguments(self, time_slot, initial_rate=0,
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                              final_rate=rate)
-                    self.offer_update.reassign_mixin_arguments(self, time_slot,
+                    self.offer_update.reassign_mixin_arguments(time_slot,
                                                                initial_rate=rate,
                                                                final_rate=rate)
             elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
                 for time_slot in generate_market_slot_list():
                     rate = self.area.config.market_maker_rate[time_slot]
-                    self.bid_update.reassign_mixin_arguments(self, time_slot, initial_rate=0,
+                    self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
                                                              final_rate=rate)
-                    self.offer_update.reassign_mixin_arguments(self, time_slot,
+                    self.offer_update.reassign_mixin_arguments(time_slot,
                                                                initial_rate=rate,
                                                                final_rate=rate)
             else:
@@ -196,7 +203,7 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("Initial buying rate must be less than final buying rate.")
         if final_selling_rate is not None and final_buying_rate is not None and \
                 final_selling_rate <= final_buying_rate:
-            raise ValueError("ESS should buy low and sell high.")
+            raise ValueError("final_buying_rate should be higher than final_selling_rate.")
         if energy_rate_change_per_update is not None and energy_rate_change_per_update < 0:
             raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 
