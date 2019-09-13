@@ -141,6 +141,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             revenue, fees, trade_price = calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
             )
+            self.market_fee += fees
             final_price = energy * trade_price
             bid = Bid(bid.id, final_price, energy, buyer, seller,
                       original_bid_price=energy_portion * orig_price)
@@ -148,6 +149,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             revenue, fees, trade_price = calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
             )
+            self.market_fee += fees
             final_price = energy * trade_price
             bid = bid._replace(price=final_price)
 

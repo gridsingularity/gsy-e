@@ -119,7 +119,7 @@ class OneSidedMarket(Market):
 
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
-                     already_tracked: bool=False, trade_rate: float = None,
+                     already_tracked: bool = False, trade_rate: float = None,
                      trade_bid_info=None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
@@ -164,6 +164,7 @@ class OneSidedMarket(Market):
                 else:
                     revenue, fees, trade_rate_incl_fees = \
                         calculate_trade_price_and_fees(trade_bid_info, self.transfer_fee_ratio)
+                    self.market_fee += fees
                     final_price = energy * trade_rate_incl_fees
 
                 accepted_offer = Offer(
@@ -208,6 +209,7 @@ class OneSidedMarket(Market):
                     revenue, fees, trade_price = calculate_trade_price_and_fees(
                         trade_bid_info, self.transfer_fee_ratio
                     )
+                    self.market_fee += fees
                     offer.price = energy * trade_price
 
         except Exception:
