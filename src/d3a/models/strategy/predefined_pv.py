@@ -47,7 +47,7 @@ class PVPredefinedStrategy(PVStrategy):
             energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
             energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
             ENERGY_RATE_DECREASE_PER_UPDATE,
-            max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
+            max_panel_power_W: float=None):
         """
         Constructor of PVPredefinedStrategy
         :param risk: PV risk parameter
