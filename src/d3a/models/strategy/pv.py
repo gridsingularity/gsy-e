@@ -46,7 +46,7 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
          energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
          energy_rate_decrease_per_update:
          float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-         max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
+         max_panel_power_W: float=None):
         self._validate_constructor_arguments(panel_count, risk, max_panel_power_W,
                                              initial_selling_rate)
         BaseStrategy.__init__(self)
@@ -56,8 +56,8 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                                            energy_rate_decrease_per_update)
         self.risk = risk
         self.panel_count = panel_count
-        self.max_panel_power_W = max_panel_power_W
         self.final_selling_rate = final_selling_rate
+        self.max_panel_power_W = max_panel_power_W
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
@@ -87,6 +87,8 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self.assign_offermixin_arguments(3, 2, 0)
 
+        if self.max_panel_power_W is None:
+            self.max_panel_power_W = self.area.config.max_panel_power_W
         # Calculating the produced energy
         self.update_on_activate()
         self.produced_energy_forecast_kWh()

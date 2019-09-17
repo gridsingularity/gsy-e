@@ -58,3 +58,9 @@ Feature: PV Tests
      And d3a is installed
      When we run the d3a simulation with strategy_tests.pv_max_panel_output [24, 60, 60]
      Then the load buys at most the energy equivalent of 200 W
+
+  Scenario: PV global setting max_panel_power_W changes power of all PV panels
+     Given we have a scenario named strategy_tests/pv_max_panel_power_global
+     And d3a is installed
+     When we run the d3a simulation with strategy_tests.pv_max_panel_power_global [24, 60, 60]
+     Then the load buys at most the energy equivalent of 400 W
