@@ -66,8 +66,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
         return update_incoming_bid_with_fee(bid_price, original_bid_price)
 
-    def bid(self, price: float, energy: float, buyer: str, seller: str, bid_id: str=None,
-            original_bid_price=None, source_market=None) -> Bid:
+    def bid(self, price: float, energy: float, buyer: str, seller: str,
+            bid_id: str = None, original_bid_price=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -129,8 +129,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
             changed_bid = Bid(
                 str(uuid.uuid4()), residual_price, residual_energy,
                 buyer, seller,
-                original_bid_price=energy_portion * orig_price
+                original_bid_price=(1 - energy_portion) * orig_price
             )
+
             self.bids[changed_bid.id] = changed_bid
             self.bid_history.append(changed_bid)
 
@@ -140,6 +141,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             revenue, fees, trade_price = calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
             )
+            self.market_fee += fees
             final_price = energy * trade_price
             bid = Bid(bid.id, final_price, energy, buyer, seller,
                       original_bid_price=energy_portion * orig_price)
@@ -147,6 +149,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             revenue, fees, trade_price = calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
             )
+            self.market_fee += fees
             final_price = energy * trade_price
             bid = bid._replace(price=final_price)
 
