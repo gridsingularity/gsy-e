@@ -71,7 +71,9 @@ def start(scenario, settings, events):
             "market_count": settings.get('market_count', GlobalConfig.market_count),
             "cloud_coverage": settings.get('cloud_coverage', GlobalConfig.cloud_coverage),
             "pv_user_profile": settings.get('pv_user_profile', None),
-            "iaa_fee": settings.get('iaa_fee', GlobalConfig.iaa_fee)
+            "iaa_fee": settings.get('iaa_fee', GlobalConfig.iaa_fee),
+            "max_panel_power_W": settings.get('max_panel_power_W',
+                                              ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W)
         }
 
         validate_global_settings(config_settings)
