@@ -48,7 +48,7 @@ class PVStrategy(BaseStrategy):
                  float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
                  fit_to_limit: bool=True,
                  update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
-                 energy_rate_change_per_update:
+                 energy_rate_decrease_per_update:
                  float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
                  max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         """
@@ -57,14 +57,14 @@ class PVStrategy(BaseStrategy):
         :param final_selling_rate: Lower Threshold for PV offers
         :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
         :param update_interval: Interval after which PV will update its offer
-        :param energy_rate_change_per_update: Slope of PV Offer change per update
+        :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
         self._validate_constructor_arguments(panel_count, max_panel_power_W,
                                              initial_selling_rate, final_selling_rate)
         BaseStrategy.__init__(self)
         self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
-                                                 fit_to_limit, energy_rate_change_per_update,
+                                                 fit_to_limit, energy_rate_decrease_per_update,
                                                  update_interval)
         self.panel_count = panel_count
         self.max_panel_power_W = max_panel_power_W

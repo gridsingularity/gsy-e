@@ -35,11 +35,11 @@ BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 class LoadHoursStrategy(BidEnabledStrategy):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'fit_to_limit',
-                  'energy_rate_change_per_update', 'update_interval', 'initial_buying_rate',
+                  'energy_rate_increase_per_update', 'update_interval', 'initial_buying_rate',
                   'final_buying_rate', 'balancing_energy_ratio')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
-                 fit_to_limit=True, energy_rate_change_per_update=1,
+                 fit_to_limit=True, energy_rate_increase_per_update=1,
                  update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
@@ -54,7 +54,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             UpdateFrequencyMixin(initial_rate=initial_buying_rate,
                                  final_rate=final_buying_rate,
                                  fit_to_limit=fit_to_limit,
-                                 energy_rate_change_per_update=energy_rate_change_per_update,
+                                 energy_rate_change_per_update=energy_rate_increase_per_update,
                                  update_interval=update_interval)
         self.state = LoadState()
         self.avg_power_W = avg_power_W

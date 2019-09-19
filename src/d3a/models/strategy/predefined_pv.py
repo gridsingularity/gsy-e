@@ -45,7 +45,7 @@ class PVPredefinedStrategy(PVStrategy):
             cloud_coverage: int=None,
             fit_to_limit: bool = True,
             update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
-            energy_rate_change_per_update:
+            energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         """
@@ -56,7 +56,7 @@ class PVPredefinedStrategy(PVStrategy):
         :param cloud_coverage: cloud conditions. 0=sunny, 1=partially cloudy, 2=cloudy
         :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
         :param update_interval: Interval after which PV will update its offer
-        :param energy_rate_change_per_update: Slope of PV Offer change per update
+        :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
         super().__init__(panel_count=panel_count,
@@ -64,7 +64,7 @@ class PVPredefinedStrategy(PVStrategy):
                          final_selling_rate=final_selling_rate,
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
-                         energy_rate_change_per_update=energy_rate_change_per_update,
+                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          max_panel_power_W=max_panel_power_W
                          )
         self._power_profile_index = cloud_coverage
@@ -124,7 +124,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
             fit_to_limit: bool = True,
             update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
-            energy_rate_change_per_update:
+            energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
         """
@@ -141,7 +141,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                          final_selling_rate=final_selling_rate,
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
-                         energy_rate_change_per_update=energy_rate_change_per_update,
+                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          max_panel_power_W=max_panel_power_W)
         self._power_profile_W = power_profile
 

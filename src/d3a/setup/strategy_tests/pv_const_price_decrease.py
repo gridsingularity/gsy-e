@@ -53,7 +53,7 @@ def get_setup(config):
                         ),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1, fit_to_limit=False,
-                                                                energy_rate_change_per_update=4,
+                                                                energy_rate_decrease_per_update=4,
                                                                 cloud_coverage=2),
                          appliance=PVAppliance()),
                 ],
