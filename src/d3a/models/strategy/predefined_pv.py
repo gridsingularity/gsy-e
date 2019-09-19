@@ -47,7 +47,7 @@ class PVPredefinedStrategy(PVStrategy):
             update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
             energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-            max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
+            max_panel_power_W: float = None):
         """
         Constructor of PVPredefinedStrategy
         :param panel_count: Number of solar panels for this PV plant
@@ -126,7 +126,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
             energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-            max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
+            max_panel_power_W: float = None):
         """
         Constructor of PVUserProfileStrategy
         :param power_profile: input profile for a day. Can be either a csv file path,

@@ -38,7 +38,7 @@ class PVStrategy(BaseStrategy):
     ]
 
     parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate',
-                  'fit_to_limit', 'update_interval', 'energy_rate_change_per_update',
+                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
                   'max_panel_power_W')
 
     def __init__(self, panel_count: int=1,
@@ -50,7 +50,7 @@ class PVStrategy(BaseStrategy):
                  update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
                  energy_rate_decrease_per_update:
                  float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-                 max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
+                 max_panel_power_W: float=None):
         """
         :param panel_count: Number of solar panels for this PV plant
         :param initial_selling_rate: Upper Threshold for PV offers
@@ -67,6 +67,7 @@ class PVStrategy(BaseStrategy):
                                                  fit_to_limit, energy_rate_decrease_per_update,
                                                  update_interval)
         self.panel_count = panel_count
+        self.final_selling_rate = final_selling_rate
         self.max_panel_power_W = max_panel_power_W
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
@@ -76,7 +77,7 @@ class PVStrategy(BaseStrategy):
                                         initial_selling_rate, final_selling_rate):
         if panel_count is not None and panel_count <= 0:
             raise ValueError("Number of Panels should be a non-zero and positive value.")
-        if max_panel_output_W < 0:
+        if max_panel_output_W is not None and max_panel_output_W < 0:
             raise ValueError("Max panel output in Watts should always be positive.")
         if initial_selling_rate < 0:
             raise ValueError("Min selling rate should be positive.")
@@ -104,6 +105,8 @@ class PVStrategy(BaseStrategy):
         self.offer_update.update_offer(self)
 
     def event_activate(self):
+        if self.max_panel_power_W is None:
+            self.max_panel_power_W = self.area.config.max_panel_power_W
         # Calculating the produced energy
         self._set_alternative_pricing_scheme()
         self.offer_update.update_on_activate()
