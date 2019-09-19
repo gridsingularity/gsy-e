@@ -241,15 +241,16 @@ class RedisAreaDispatcher(AreaDispatcher):
         data = json.loads(payload["data"])
         if "response" in data:
             event_type = data["response"]
-            # print("####", event_type, self.area.slug)
             if event_type == "tick":
+                print(f"receive release of tick event for {self.area.slug}")
+                # for the tick event also release the waiter for the tick of the children
                 self.tick_event.set()
-                # print(f"-> finished Waiting for tick in {self.area.slug} to finish")
-            else:
+            if self.number_of_children > 0:
                 self.area_event_counter[event_type] += 1
                 if self.area_event_counter[event_type] == self.number_of_children:
                     self.area_event_counter[event_type] = 0
                     self.area_event.set()
+
         else:
             assert False, "Should never reach this point"
 
@@ -264,13 +265,16 @@ class RedisAreaDispatcher(AreaDispatcher):
             return
         # Broadcast to children in random order to ensure fairness
         if isinstance(event_type, AreaEvent):
-            # if self.area.slug == "grid":
-                # print("#+#+#+#+#+#+#+#+#+   new tick ")
-            for child in sorted(self.area.children, key=lambda _: random()):
-                self.publish_event(child.slug, event_type, **kwargs)
-                if event_type == AreaEvent.TICK:
-                    # print(f"Waiting for tick in {child.slug} to finish")
-                    self.tick_event.wait()
+            if event_type == AreaEvent.TICK:
+                for child in sorted(self.area.children, key=lambda _: random()):
+                    if self.tick_event.is_set():
+                        self.publish_event(child.slug, event_type, **kwargs)
+                        # parent waits for each children to perform tick individually
+                        self.tick_event.wait()
+            else:
+                for child in sorted(self.area.children, key=lambda _: random()):
+                    self.publish_event(child.slug, event_type, **kwargs)
+
             self.area_event.wait()
         else:
             for child in sorted(self.area.children, key=lambda _: random()):
@@ -305,11 +309,7 @@ class RedisAreaDispatcher(AreaDispatcher):
         response_data = json.dumps({"response": event_type.name.lower()})
 
         if event_type is AreaEvent.TICK:
-            # print("TICK!", self.area.slug)
             self.area.tick()
-            # response_channel_tick = f"{self.area.slug}/area_event_response"
-            # self.redis_db.publish(response_channel_tick, response_data)
-            # print("posting tick", self.area.slug)
         if event_type is AreaEvent.MARKET_CYCLE:
             self.area._cycle_markets(_trigger_event=True)
         elif event_type is AreaEvent.ACTIVATE:
@@ -323,7 +323,6 @@ class RedisAreaDispatcher(AreaDispatcher):
                 and event_type == AreaEvent.MARKET_CYCLE:
             self.area.strategy.event_on_disabled_area()
 
-        # print("---- response ", self.area.slug, response_channel, response_data)
         self.redis_db.publish(response_channel, response_data)
 
     def broadcast_activate(self, **kwargs):
