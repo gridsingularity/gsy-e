@@ -80,8 +80,9 @@ class ExportAndPlot:
                 subdir = os.path.join(subdir, alternative_pricing_subdirs[
                                       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME])
 
-            self.directory = pathlib.Path(path or str(pathlib.Path.home()) + "/d3a-simulation",
-                                          subdir)
+            self.rootdir = pathlib.Path(path or str(pathlib.Path.home()) + "/d3a-simulation")
+            self.directory = pathlib.Path(self.rootdir, subdir)
+            self.zip_filename = pathlib.Path(self.rootdir, subdir + "_results")
             mkdir_from_str(str(self.directory))
         except Exception as ex:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
@@ -114,6 +115,17 @@ class ExportAndPlot:
         file_name = ("%s.csv" % slug).replace(' ', '_')
         return directory.joinpath(file_name).as_posix()
 
+    def export_to_zip_file(self):
+        self.export()
+        shutil.make_archive(self.zip_filename, 'zip', self.directory)
+        return str(self.zip_filename) + ".zip"
+
+    def delete_exported_files(self):
+        zip_file_with_ext = str(self.zip_filename) + ".zip"
+        if os.path.isfile(zip_file_with_ext):
+            os.remove(zip_file_with_ext)
+        shutil.rmtree(str(self.directory))
+
     def export(self):
         """Wrapping function, executes all export and plotting functions"""
 
@@ -132,7 +144,7 @@ class ExportAndPlot:
         self.export_json_data(self.directory)
 
     def data_to_csv(self, area, is_first):
-            self._export_area_with_children(area, self.directory, is_first)
+        self._export_area_with_children(area, self.directory, is_first)
 
     def move_root_plot_folder(self):
         """

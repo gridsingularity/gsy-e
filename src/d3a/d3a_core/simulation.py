@@ -99,7 +99,7 @@ class Simulation:
         validate_const_settings_for_simulation()
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
                                                         self.area)
-        if self.export_on_finish:
+        if self.export_on_finish or self.redis_connection.is_enabled:
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.endpoint_buffer)
 
@@ -225,10 +225,17 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status)
+        if not self.redis_connection.is_enabled:
+            return
         if is_final:
             self.redis_connection.publish_results(
                 self.endpoint_buffer
             )
+            # Generate and send zip file results to d3a-web
+            filename = self.export.export_to_zip_file()
+            self.redis_connection.write_zip_results(filename)
+            self.export.delete_exported_files()
+
         else:
             self.redis_connection.publish_intermediate_results(
                 self.endpoint_buffer
@@ -289,12 +296,11 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
-            if self.export_on_finish:
+            if self.export_on_finish or self.redis_connection.is_enabled:
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
-        self._update_and_send_results(is_final=True)
 
         run_duration = (
                 DateTime.now(tz=TIME_ZONE) - self.run_start -
@@ -309,7 +315,10 @@ class Simulation:
                 " ({} paused)".format(paused_duration) if paused_duration else "",
                 config.sim_duration / (run_duration - paused_duration)
             )
-        if self.export_on_finish:
+
+        if self.redis_connection.is_enabled:
+            self._update_and_send_results(is_final=True)
+        elif self.export_on_finish:
             log.info("Exporting simulation data.")
             self.export.export()
 
