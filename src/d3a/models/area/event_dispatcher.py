@@ -215,6 +215,7 @@ class RedisAreaDispatcher(AreaDispatcher):
     def __init__(self, area):
         super().__init__(area)
         self.area_event = Event()
+        self.tick_event = Event()
         self.number_of_children = len(list(self.area.children))
         self.area_event_counter = {"tick": 0,
                                    "activate": 0,
@@ -226,11 +227,13 @@ class RedisAreaDispatcher(AreaDispatcher):
 
     def subscribe_to_response_channel(self):
         channel = f"{self.area.slug}/area_event_response"
+        print("creating", channel)
         self.pubsub_response.subscribe(**{channel: self.response_callback})
         self.pubsub_response.run_in_thread(daemon=True)
 
     def subscribe_to_area_event_channel(self):
         channel = f"{self.area.slug}/area_event"
+        print("creating", channel)
         self.pubsub.subscribe(**{channel: self.event_listener_redis})
         self.pubsub.run_in_thread(daemon=True)
 
@@ -238,10 +241,15 @@ class RedisAreaDispatcher(AreaDispatcher):
         data = json.loads(payload["data"])
         if "response" in data:
             event_type = data["response"]
-            self.area_event_counter[event_type] += 1
-            if self.area_event_counter[event_type] == self.number_of_children:
-                self.area_event_counter[event_type] = 0
-                self.area_event.set()
+            # print("####", event_type, self.area.slug)
+            if event_type == "tick":
+                self.tick_event.set()
+                # print(f"-> finished Waiting for tick in {self.area.slug} to finish")
+            else:
+                self.area_event_counter[event_type] += 1
+                if self.area_event_counter[event_type] == self.number_of_children:
+                    self.area_event_counter[event_type] = 0
+                    self.area_event.set()
         else:
             assert False, "Should never reach this point"
 
@@ -256,8 +264,13 @@ class RedisAreaDispatcher(AreaDispatcher):
             return
         # Broadcast to children in random order to ensure fairness
         if isinstance(event_type, AreaEvent):
+            # if self.area.slug == "grid":
+                # print("#+#+#+#+#+#+#+#+#+   new tick ")
             for child in sorted(self.area.children, key=lambda _: random()):
                 self.publish_event(child.slug, event_type, **kwargs)
+                if event_type == AreaEvent.TICK:
+                    # print(f"Waiting for tick in {child.slug} to finish")
+                    self.tick_event.wait()
             self.area_event.wait()
         else:
             for child in sorted(self.area.children, key=lambda _: random()):
@@ -291,7 +304,26 @@ class RedisAreaDispatcher(AreaDispatcher):
         response_channel = f"{self.area.parent.slug}/area_event_response"
         response_data = json.dumps({"response": event_type.name.lower()})
 
-        self.event_listener(event_type, **kwargs)
+        if event_type is AreaEvent.TICK:
+            # print("TICK!", self.area.slug)
+            self.area.tick()
+            # response_channel_tick = f"{self.area.slug}/area_event_response"
+            # self.redis_db.publish(response_channel_tick, response_data)
+            # print("posting tick", self.area.slug)
+        if event_type is AreaEvent.MARKET_CYCLE:
+            self.area._cycle_markets(_trigger_event=True)
+        elif event_type is AreaEvent.ACTIVATE:
+            self.area.activate()
+        if self._should_dispatch_to_strategies_appliances(event_type):
+            if self.area.strategy:
+                self.area.strategy.event_listener(event_type, **kwargs)
+            if self.area.appliance:
+                self.area.appliance.event_listener(event_type, **kwargs)
+        elif (not self.area.events.is_enabled or not self.area.events.is_connected) \
+                and event_type == AreaEvent.MARKET_CYCLE:
+            self.area.strategy.event_on_disabled_area()
+
+        # print("---- response ", self.area.slug, response_channel, response_data)
         self.redis_db.publish(response_channel, response_data)
 
     def broadcast_activate(self, **kwargs):

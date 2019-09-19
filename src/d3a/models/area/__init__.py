@@ -80,8 +80,7 @@ class Area:
         for child in self.children:
             child.parent = self
         if EVENT_DISPATCHING_VIA_REDIS:
-            if len(self.children) != 0:
-                self.dispatcher.subscribe_to_response_channel()
+            self.dispatcher.subscribe_to_response_channel()
             self.dispatcher.subscribe_to_area_event_channel()
 
         self.strategy = strategy
