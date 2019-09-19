@@ -99,7 +99,7 @@ class Simulation:
         validate_const_settings_for_simulation()
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
                                                         self.area)
-        if self.export_on_finish or self.redis_connection.is_enabled:
+        if self.export_on_finish or self.redis_connection.is_enabled():
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.endpoint_buffer)
 
@@ -225,7 +225,7 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status)
-        if not self.redis_connection.is_enabled:
+        if not self.redis_connection.is_enabled():
             return
         if is_final:
             self.redis_connection.publish_results(
@@ -296,7 +296,7 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
-            if self.export_on_finish or self.redis_connection.is_enabled:
+            if self.export_on_finish or self.redis_connection.is_enabled():
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
         self.sim_status = "finished"
@@ -316,9 +316,8 @@ class Simulation:
                 config.sim_duration / (run_duration - paused_duration)
             )
 
-        if self.redis_connection.is_enabled:
-            self._update_and_send_results(is_final=True)
-        elif self.export_on_finish:
+        self._update_and_send_results(is_final=True)
+        if self.export_on_finish:
             log.info("Exporting simulation data.")
             self.export.export()
 

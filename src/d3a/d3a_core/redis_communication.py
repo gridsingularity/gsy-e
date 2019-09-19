@@ -103,7 +103,7 @@ class RedisSimulationCommunication:
             self._simulation.stop()
 
     def publish_results(self, endpoint_buffer):
-        if not self.is_enabled:
+        if not self.is_enabled():
             return
         results = endpoint_buffer.generate_result_report()
         results_validator(results)
@@ -111,7 +111,7 @@ class RedisSimulationCommunication:
         self._handle_redis_job_metadata()
 
     def write_zip_results(self, zip_results):
-        if not self.is_enabled:
+        if not self.is_enabled():
             return
 
         fp = open(zip_results, 'rb')
@@ -130,7 +130,6 @@ class RedisSimulationCommunication:
         # Should have a different format in the future, hence the code duplication
         self.publish_results(endpoint_buffer)
 
-    @property
     def is_enabled(self):
         return hasattr(self, 'pubsub')
 
