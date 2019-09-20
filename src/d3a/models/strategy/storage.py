@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from typing import Union
 from collections import namedtuple
 from enum import Enum
 from pendulum import duration
@@ -47,10 +48,10 @@ class StorageStrategy(BidEnabledStrategy):
                  battery_capacity_kWh: float = StorageSettings.CAPACITY,
                  max_abs_battery_power_kW: float = StorageSettings.MAX_ABS_POWER,
                  cap_price_strategy: bool = False,
-                 initial_selling_rate: float = StorageSettings.SELLING_RANGE[0],
-                 final_selling_rate: float = StorageSettings.SELLING_RANGE[1],
-                 initial_buying_rate: float = StorageSettings.BUYING_RANGE[0],
-                 final_buying_rate: float = StorageSettings.BUYING_RANGE[1],
+                 initial_selling_rate: Union[float, dict] = StorageSettings.SELLING_RANGE[0],
+                 final_selling_rate: Union[float, dict] = StorageSettings.SELLING_RANGE[1],
+                 initial_buying_rate: Union[float, dict] = StorageSettings.BUYING_RANGE[0],
+                 final_buying_rate: Union[float, dict] = StorageSettings.BUYING_RANGE[1],
                  fit_to_limit=True, energy_rate_increase_per_update=1,
                  energy_rate_decrease_per_update=1,
                  update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
@@ -191,21 +192,43 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("Initial charge must be more than the minimum allowed soc.")
         if initial_selling_rate is not None and initial_selling_rate < 0:
             raise ValueError("Initial selling rate must be greater equal 0.")
-        if final_selling_rate is not None and final_selling_rate < 0:
-            raise ValueError("Final selling rate must be greater equal 0.")
-        if initial_selling_rate is not None and final_selling_rate is not None and \
-                initial_selling_rate < final_selling_rate:
-            raise ValueError("Initial selling rate must be greater than final selling rate.")
+        if final_selling_rate is not None:
+            if type(final_selling_rate) is float and final_selling_rate < 0:
+                raise ValueError("Final selling rate must be greater equal 0.")
+            elif type(final_selling_rate) is dict and \
+                    any(rate < 0 for _, rate in final_selling_rate.items()):
+                raise ValueError("Final selling rate must be greater equal 0.")
+        if initial_selling_rate is not None and final_selling_rate is not None:
+            initial_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                          initial_selling_rate)
+            final_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                        final_selling_rate)
+            if any(initial_selling_rate[hour] < final_selling_rate[hour]
+                   for hour, _ in initial_selling_rate.items()):
+                raise ValueError("Initial selling rate must be greater than final selling rate.")
         if initial_buying_rate is not None and initial_buying_rate < 0:
             raise ValueError("Initial buying rate must be greater equal 0.")
-        if final_buying_rate is not None and final_buying_rate < 0:
-            raise ValueError("Final buying rate must be greater equal 0.")
-        if initial_buying_rate is not None and final_buying_rate is not None and \
-                initial_buying_rate > final_buying_rate:
-            raise ValueError("Initial buying rate must be less than final buying rate.")
-        if final_selling_rate is not None and final_buying_rate is not None and \
-                final_selling_rate <= final_buying_rate:
-            raise ValueError("final_buying_rate should be higher than final_selling_rate.")
+        if final_buying_rate is not None:
+            final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                       final_buying_rate)
+            if any(rate < 0 for _, rate in final_buying_rate.items()):
+                raise ValueError("Final buying rate must be greater equal 0.")
+        if initial_buying_rate is not None and final_buying_rate is not None:
+            initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                         initial_buying_rate)
+            final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                       final_buying_rate)
+            if any(initial_buying_rate[hour] > final_buying_rate[hour]
+                   for hour, _ in initial_buying_rate.items()):
+                raise ValueError("Initial buying rate must be less than final buying rate.")
+        if final_selling_rate is not None and final_buying_rate is not None:
+            final_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                        final_selling_rate)
+            final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                       final_buying_rate)
+            if any(final_buying_rate[hour] >= final_selling_rate[hour]
+                   for hour, _ in final_selling_rate.items()):
+                raise ValueError("final_buying_rate should be higher than final_selling_rate.")
         if energy_rate_change_per_update is not None and energy_rate_change_per_update < 0:
             raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 

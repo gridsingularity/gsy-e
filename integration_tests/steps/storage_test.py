@@ -41,6 +41,32 @@ def check_storage_prices(context):
     assert len(trades_bought) > 0
 
 
+@then('the storage devices buy and sell energy respecting the hourly break even prices')
+def step_impl(context):
+    from d3a.setup.strategy_tests.storage_strategy_break_even_hourly import \
+        final_buying_rate_profile, final_selling_rate_profile, final_buying_rate_profile_2, \
+        final_selling_rate_profile_2
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    for name, final_buying_rate, final_selling_rate in \
+            [("H1 Storage1", final_buying_rate_profile, final_selling_rate_profile),
+             ("H1 Storage2", final_buying_rate_profile_2, final_selling_rate_profile_2)]:
+        trades_sold = []
+        trades_bought = []
+        for market in house1.past_markets:
+            slot = market.time_slot
+            for trade in market.trades:
+                if slot.hour in final_selling_rate.keys() and trade.seller == name:
+                    trades_sold.append(trade)
+                elif slot.hour in final_buying_rate.keys() and trade.buyer == name:
+                    trades_bought.append(trade)
+
+        assert all([round((trade.offer.price / trade.offer.energy), 2) >=
+                    round(final_selling_rate[trade.time.hour], 2) for trade in trades_sold])
+        assert all([round((trade.offer.price / trade.offer.energy), 2) <=
+                    round(final_buying_rate[trade.time.hour], 2) for trade in trades_bought])
+        assert len(trades_sold) > 0
+
+
 @then('the storage devices sell energy respecting the break even prices')
 def check_storage_sell_prices(context):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
