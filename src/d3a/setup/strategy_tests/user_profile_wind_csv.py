@@ -47,8 +47,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                 ]
             ),
-            Area('Wind Turbine', strategy=WindUserProfileStrategy(power_profile=user_profile_path,
-                                                                  risk=80),
+            Area('Wind Turbine', strategy=WindUserProfileStrategy(power_profile=user_profile_path),
                  appliance=PVAppliance()),
         ],
         config=config

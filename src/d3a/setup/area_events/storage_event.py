@@ -29,17 +29,18 @@ def get_setup(config):
             Area(
                 'House 1',
                 children=[
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance(),
-                         event_list=[StrategyEvents(0, {'risk': 0}),
-                                     StrategyEvents(12, {'risk': 100})]),
+                         event_list=[StrategyEvents(0, {'initial_selling_rate': 31}),
+                                     StrategyEvents(12, {'initial_selling_rate': 33})]),
                 ]
             ),
             Area('Grid Load', strategy=LoadHoursStrategy(avg_power_W=10,
                                                          hrs_per_day=24,
                                                          hrs_of_day=list(
                                                              range(0, 24)),
-                                                         final_buying_rate=26),
+                                                         initial_buying_rate=35,
+                                                         final_buying_rate=35),
                  appliance=SwitchableAppliance())
         ],
         config=config

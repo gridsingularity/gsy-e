@@ -47,7 +47,6 @@ def test_different_buyer_seller(context):
 
 @then('cumulative traded offer energy equal to cumulative bid energy')
 def test_cumulative_offer_bid_energy(context):
-    from d3a.models.market.market_structures import Bid, Offer
     areas = list()
     grid = context.simulation.area
     areas.append(grid)
@@ -55,6 +54,12 @@ def test_cumulative_offer_bid_energy(context):
     areas.append(house1)
 
     for area in areas:
+        children = []
+        if area.name != "House 1":
+            continue
+        for child in area.children:
+            children.append(child.name)
+
         for market in area.past_markets:
             cumulative_traded_bid_energy = 0
             cumulative_traded_offer_energy = 0
@@ -62,9 +67,9 @@ def test_cumulative_offer_bid_energy(context):
                 if len(market.trades) == 1:
                     # Device-to-device trading, no bid tracked
                     continue
-                if type(trade.offer) == Bid and str(trade.seller) != str(make_iaa_name(area)):
+                if trade.buyer in children:
                     cumulative_traded_bid_energy += trade.offer.energy
-                elif type(trade.offer) == Offer and str(trade.buyer) != str(make_iaa_name(area)):
+                if trade.seller in children:
                     cumulative_traded_offer_energy += trade.offer.energy
             residual = (cumulative_traded_offer_energy - cumulative_traded_bid_energy)
             assert isclose(residual, 0)
