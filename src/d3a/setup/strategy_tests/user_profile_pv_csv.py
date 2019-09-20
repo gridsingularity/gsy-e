@@ -49,8 +49,7 @@ def get_setup(config):
                                                                            range(7, 20))),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
-                                                                 panel_count=1,
-                                                                 risk=80),
+                                                                 panel_count=1),
                          appliance=PVAppliance()),
                 ]
             ),

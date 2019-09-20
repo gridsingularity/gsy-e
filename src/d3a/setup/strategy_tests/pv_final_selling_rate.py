@@ -31,13 +31,17 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 Storage1', strategy=StorageStrategy(risk=0, initial_capacity_kWh=1.5,
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=10,
                                                                  battery_capacity_kWh=15.0,
-                                                                 break_even=(23.99, 28.01)),
+                                                                 initial_buying_rate=0,
+                                                                 final_buying_rate=23.99,
+                                                                 final_selling_rate=28.01),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(risk=0, initial_capacity_kWh=1.5,
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=10,
                                                                  battery_capacity_kWh=15.0,
-                                                                 break_even=(22.99, 28.01)),
+                                                                 initial_buying_rate=0,
+                                                                 final_buying_rate=22.99,
+                                                                 final_selling_rate=28.01),
                          appliance=SwitchableAppliance()),
                 ],
                 transfer_fee_pct=0,
@@ -46,8 +50,7 @@ def get_setup(config):
                 'House 2',
                 [
 
-                    Area('H2 PV', strategy=PVStrategy(1, 0, final_selling_rate=23.0,
-                                                      initial_rate_option=2),
+                    Area('H2 PV', strategy=PVStrategy(1, final_selling_rate=23.0),
                          appliance=PVAppliance()),
 
                 ],

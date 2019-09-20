@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import unittest
 from unittest.mock import MagicMock, Mock
-from datetime import timedelta
 from pendulum import DateTime, duration, today
 from math import isclose
 from d3a.models.area import DEFAULT_CONFIG
@@ -80,7 +79,7 @@ class FakeArea:
         have passed.
         """
         return DateTime.now(tz=TIME_ZONE).start_of('day') + (
-            timedelta(hours=10) + self.config.tick_length * self.current_tick
+            duration(hours=10) + self.config.tick_length * self.current_tick
         )
 
     @property
