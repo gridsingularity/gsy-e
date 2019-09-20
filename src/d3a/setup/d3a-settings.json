@@ -6,15 +6,13 @@
     "market_count": 1,
     "cloud_coverage": 0,
     "iaa_fee": 0,
-    "start_date": "2019-09-02"
+    "start_date": "2019-09-20"
   },
   "advanced_settings": {
     "GeneralSettings": {
-      "MIN_RISK": 0,
-      "MAX_RISK": 100,
-      "DEFAULT_RISK": 50,
       "DEFAULT_MARKET_MAKER_RATE": 30,
       "MAX_OFFER_TRAVERSAL_LENGTH": 6,
+      "UPDATE_RATE": 5,
       "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
       "SUPPLY_DEMAND_PLOTS": true,
       "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
@@ -22,13 +20,13 @@
       "EXPORT_DEVICE_PLOTS": true,
       "RUN_REAL_TIME": false,
       "KEEP_PAST_MARKETS": false,
-      "RATE_DECREASE_OPTIONS": [
-        1,
-        2
-      ],
       "RATE_DECREASE_PER_UPDATE_RANGE": [
         0,
         100
+      ],
+      "RATE_CHANGE_PER_UPDATE": [
+        0,
+        10
       ],
       "INITIAL_RATE_OPTIONS": [
         1,
@@ -58,8 +56,12 @@
         0,
         9223372036854775807
       ],
+      "MIN_SOC_RANGE": [
+        10,
+        100
+      ],
       "INITIAL_CHARGE_RANGE": [
-        0,
+        10,
         100
       ],
       "BREAK_EVEN_RANGE": [
@@ -76,11 +78,31 @@
         0.0001,
         2000000
       ],
-      "INITIAL_RATE_OPTION": 2,
-      "RATE_DECREASE_OPTION": 1,
-      "BUYING_RANGE": [0, 24.9],
-      "SELLING_RANGE": [30, 25],
-      "MIN_ALLOWED_SOC": 0.1,
+      "BUYING_RANGE": [
+        0,
+        24.9
+      ],
+      "INITIAL_BUYING_RANGE": [
+        0,
+        1000
+      ],
+      "FINAL_BUYING_RANGE": [
+        0,
+        1000
+      ],
+      "SELLING_RANGE": [
+        30,
+        25
+      ],
+      "INITIAL_SELLING_RANGE": [
+        0,
+        1000
+      ],
+      "FINAL_SELLING_RANGE": [
+        0,
+        1000
+      ],
+      "MIN_ALLOWED_SOC": 10,
       "SELL_ON_MOST_EXPENSIVE_MARKET": false
     },
     "LoadSettings": {
@@ -121,8 +143,6 @@
         9223372036854775807
       ],
       "FINAL_SELLING_RATE": 0,
-      "INITIAL_RATE_OPTION": 2,
-      "RATE_DECREASE_OPTION": 1,
       "DEFAULT_POWER_PROFILE": 0,
       "CLOUD_COVERAGE_RANGE": [
         0,
@@ -132,8 +152,6 @@
     },
     "WindSettings": {
       "FINAL_SELLING_RATE": 0,
-      "INITIAL_RATE_OPTION": 2,
-      "RATE_DECREASE_OPTION": 1,
       "MAX_WIND_TURBINE_OUTPUT_W": 160
     },
     "IAASettings": {
@@ -153,6 +171,7 @@
         3
       ],
       "PAY_AS_CLEAR_AGGREGATION_ALGORITHM": 1,
+      "MIN_OFFER_AGE": 0,
       "AlternativePricing": {
         "COMPARE_PRICING_SCHEMES": false,
         "PRICING_SCHEME": 0,

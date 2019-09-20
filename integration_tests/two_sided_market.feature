@@ -21,7 +21,7 @@ Feature: Two sided market tests
      When we run the simulation with setup file two_sided_market.one_pv_one_storage and parameters [24, 60, 60, 0, 4]
      Then the storage is never selling energy
      And the storage final SOC is 100%
-     And the energy rate for all the trades is the mean of max and min pv/storage rate
+     And the energy rate for all trades are in between initial and final buying rate of storage
 
   Scenario: 5 pv, one load
      Given we have a scenario named two_sided_market/one_load_5_pv_partial

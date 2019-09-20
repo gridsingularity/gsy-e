@@ -124,7 +124,7 @@ def final_soc_full(context, soc_level):
     assert isclose(final_soc, float(soc_level))
 
 
-@then('the energy rate for all the trades is the mean of max and min pv/storage rate')
+@then('the energy rate for all trades are in between initial and final buying rate of storage')
 def energy_rate_average_between_min_and_max_ess_pv(context):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))

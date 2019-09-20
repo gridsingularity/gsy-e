@@ -68,7 +68,7 @@ def test_strategy_roundtrip_with_params():
 def test_non_attr_param():
     area1 = Area('area1', [], None, PVStrategy())
     recovered1 = area_from_string(area_to_string(area1))
-    assert recovered1.strategy.max_panel_power_W == ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
+    assert recovered1.strategy.max_panel_power_W is None
     assert recovered1.strategy.offer_update.final_rate[area1.config.start_date] == \
         ConstSettings.PVSettings.FINAL_SELLING_RATE
 

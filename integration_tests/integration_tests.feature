@@ -91,7 +91,6 @@ Feature: Run integration tests
      When we run the d3a simulation on console with default_2a
      Then aggregated result files are exported
 
-  # TODO: Tobe fixed after the incorporation of new grid fee method
   Scenario: Grid fees are calculated based on the original offer rate
      Given we have a scenario named non_compounded_grid_fees
      And d3a is installed

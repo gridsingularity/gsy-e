@@ -127,9 +127,6 @@ class UpdateFrequencyMixin:
             if self.get_price_update_point(strategy, market.time_slot):
                 self.update_energy_price(market, strategy)
 
-    #############
-    # BID_METHOD#
-    #############
     def update_market_cycle_bids(self, strategy):
         # decrease energy rate for each market again, except for the newly created one
         for market in strategy.area.all_markets[:-1]:
