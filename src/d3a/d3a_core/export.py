@@ -88,10 +88,6 @@ class ExportAndPlot:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
 
-        self.plot_dir = os.path.join(self.directory, 'plot')
-        if not os.path.exists(self.plot_dir):
-            os.makedirs(self.plot_dir)
-
     def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
@@ -116,7 +112,7 @@ class ExportAndPlot:
         return directory.joinpath(file_name).as_posix()
 
     def export_to_zip_file(self):
-        self.export()
+        self.export(export_plots=False)
         shutil.make_archive(self.zip_filename, 'zip', self.directory)
         return str(self.zip_filename) + ".zip"
 
@@ -126,21 +122,25 @@ class ExportAndPlot:
             os.remove(zip_file_with_ext)
         shutil.rmtree(str(self.directory))
 
-    def export(self):
+    def export(self, export_plots=True):
         """Wrapping function, executes all export and plotting functions"""
+        if export_plots:
+            self.plot_dir = os.path.join(self.directory, 'plot')
+            if not os.path.exists(self.plot_dir):
+                os.makedirs(self.plot_dir)
 
-        self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
-        self.plot_energy_profile(self.area, self.plot_dir)
-        self.plot_all_unmatched_loads()
-        self.plot_avg_trade_price(self.area, self.plot_dir)
-        self.plot_ess_soc_history(self.area, self.plot_dir)
-        self.plot_ess_energy_trace(self.area, self.plot_dir)
-        if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
-            self.plot_device_stats(self.area, [])
-        if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
-                ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
-            self.plot_supply_demand_curve(self.area, self.plot_dir)
-        self.move_root_plot_folder()
+            self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
+            self.plot_energy_profile(self.area, self.plot_dir)
+            self.plot_all_unmatched_loads()
+            self.plot_avg_trade_price(self.area, self.plot_dir)
+            self.plot_ess_soc_history(self.area, self.plot_dir)
+            self.plot_ess_energy_trace(self.area, self.plot_dir)
+            if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
+                self.plot_device_stats(self.area, [])
+            if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
+                    ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
+                self.plot_supply_demand_curve(self.area, self.plot_dir)
+            self.move_root_plot_folder()
         self.export_json_data(self.directory)
 
     def data_to_csv(self, area, is_first):
