@@ -31,13 +31,15 @@ class ElectrolyzerStrategy(StorageStrategy):
         initial_capacity_kWh = reservoir_initial_capacity_kg * conversion_factor_kg_to_kWh
         capacity_kWh = reservoir_capacity_kg * conversion_factor_kg_to_kWh
         production_rate_kW = production_rate_kg_h * conversion_factor_kg_to_kWh
+        initial_soc = (initial_capacity_kWh / capacity_kWh) * 100
 
-        super().__init__(0, initial_capacity_kWh=initial_capacity_kWh,
+        super().__init__(initial_soc=initial_soc,
                          battery_capacity_kWh=capacity_kWh,
                          max_abs_battery_power_kW=production_rate_kW,
                          min_allowed_soc=0.,
-                         break_even=(31, 32),
                          initial_buying_rate=31,
+                         final_buying_rate=31,
+                         final_selling_rate=32,
                          initial_selling_rate=32)
 
         self.discharge_profile = discharge_profile
@@ -55,7 +57,7 @@ class ElectrolyzerStrategy(StorageStrategy):
             self.load_profile_kWh[key] = value * self.conversion_factor_kWh_kg
 
     def event_market_cycle(self):
-        self.update_market_cycle_offers(self.break_even[self.area.now][1])
+        super().event_market_cycle()
         current_market = self.area.next_market
         if self.area.past_markets:
             past_market = self.area.last_past_market

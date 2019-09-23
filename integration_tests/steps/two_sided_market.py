@@ -22,9 +22,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import make_iaa_name
 from d3a import limit_float_precision
-
-RATE_LOWER_THRESHOLD = 13
-RATE_UPPER_THRESHOLD = 18
+from d3a.constants import DEFAULT_PRECISION
 
 
 @then('the load has no unmatched loads')
@@ -56,6 +54,10 @@ def device_partially_fulfill_bid(context, device):
         slot = market.time_slot
         if len(market.trades) == 0:
             continue
+        for trade in market.trades:
+            assert load_or_storage.strategy.bid_update.initial_rate[market.time_slot] <= \
+                   round(trade.offer.price / trade.offer.energy, DEFAULT_PRECISION) <= \
+                   load_or_storage.strategy.bid_update.final_rate[market.time_slot]
 
         # Assert one trade for each PV
         assert len(market.trades) == 5
@@ -74,10 +76,6 @@ def device_partially_fulfill_bid(context, device):
                    for trade in house2.get_past_market(slot).trades)
         assert all(trade.seller in pv_names
                    for trade in house2.get_past_market(slot).trades)
-        assert all(RATE_LOWER_THRESHOLD <
-                   trade.offer.price / trade.offer.energy <
-                   RATE_UPPER_THRESHOLD
-                   for trade in market.trades)
 
 
 @then('the PV always provides constant power according to load demand')
@@ -126,7 +124,7 @@ def final_soc_full(context, soc_level):
     assert isclose(final_soc, float(soc_level))
 
 
-@then('the energy rate for all the trades is the mean of max and min pv/storage rate')
+@then('the energy rate for all trades are in between initial and final buying rate of storage')
 def energy_rate_average_between_min_and_max_ess_pv(context):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
     storage = next(filter(lambda x: "H1 Storage" in x.name, house1.children))
@@ -134,20 +132,19 @@ def energy_rate_average_between_min_and_max_ess_pv(context):
     house2 = next(filter(lambda x: x.name == "House 2", context.simulation.area.children))
     pv = next(filter(lambda x: "H2 PV" in x.name, house2.children))
 
-    storage_rates_set = set()
-    pv_rates_set = set()
     for market in house1.past_markets:
         for trade in market.trades:
             if trade.buyer == storage.name:
-                storage_rates_set.add(trade.offer.price / trade.offer.energy)
+                initial = storage.strategy.bid_update.initial_rate[market.time_slot]
+                final = storage.strategy.bid_update.final_rate[market.time_slot]
+                assert initial <= (trade.offer.price / trade.offer.energy) <= final
 
     for market in house2.past_markets:
         for trade in market.trades:
             if trade.seller == pv.name:
-                pv_rates_set.add(trade.offer.price / trade.offer.energy)
-
-    assert all([RATE_LOWER_THRESHOLD < rate < RATE_UPPER_THRESHOLD for rate in storage_rates_set])
-    assert all([RATE_LOWER_THRESHOLD < rate < RATE_UPPER_THRESHOLD for rate in pv_rates_set])
+                initial = storage.strategy.bid_update.initial_rate[market.time_slot]
+                final = storage.strategy.bid_update.final_rate[market.time_slot]
+                assert initial <= (trade.offer.price / trade.offer.energy) <= final
 
 
 @then('the storage is never buying energy and is always selling energy')
@@ -161,7 +158,7 @@ def storage_never_buys_always_sells(context):
             assert trade.seller == storage.name
 
 
-@then('all the trade rates are between break even sell and market maker rate price')
+@then('all the trade rates are between load device buying boundaries')
 def trade_rates_break_even(context):
 
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
@@ -173,9 +170,9 @@ def trade_rates_break_even(context):
     for area in [house1, house2, storage, load]:
         for market in area.past_markets:
             for trade in market.trades:
-                assert ConstSettings.StorageSettings.BREAK_EVEN_SELL <= \
+                assert load.strategy.bid_update.initial_rate[market.time_slot] <= \
                        limit_float_precision(trade.offer.price / trade.offer.energy) <= \
-                       ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+                       load.strategy.bid_update.final_rate[market.time_slot]
 
 
 @then('CEP posted the residual offer at the old rate')

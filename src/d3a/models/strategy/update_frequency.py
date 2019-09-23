@@ -15,247 +15,137 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from enum import Enum
-from cached_property import cached_property
-from typing import Dict  # noqa
-from pendulum import Time  # noqa
+
+from pendulum import duration
 
 from d3a.d3a_core.exceptions import MarketException
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a.d3a_core.util import generate_market_slot_list
 
 
-class InitialRateOptions(Enum):
-    HISTORICAL_AVG_RATE = 1
-    MARKET_MAKER_RATE = 2
-    CUSTOM_RATE = 3
+class UpdateFrequencyMixin:
+    def __init__(self, initial_rate, final_rate, fit_to_limit=True,
+                 energy_rate_change_per_update=1,
+                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE)):
+        self.fit_to_limit = fit_to_limit
+        self.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                   initial_rate)
+        self.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                 final_rate)
+        self.energy_rate_change_per_update = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                    energy_rate_change_per_update)
+        self.update_interval = update_interval
+        self.update_counter = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
+        self.number_of_available_updates = 0
 
-
-class RateDecreaseOption(Enum):
-    PERCENTAGE_BASED_ENERGY_RATE_DECREASE = 1
-    CONST_ENERGY_RATE_DECREASE_PER_UPDATE = 2
-
-
-class BidUpdateFrequencyMixin:
-    def __init__(self,
-                 initial_rate_profile,
-                 final_rate_profile):
-        self._initial_rate_profile = initial_rate_profile
-        self._final_rate_profile = final_rate_profile
-        self._increase_rate_timepoint_s = {}
-
-    @cached_property
-    def _increase_frequency_s(self):
-        return self.area.config.tick_length.seconds * \
-               ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH
-
-    def post_first_bid(self, market, energy_Wh):
-        # TODO: It will be safe to remove this check once we remove the event_market_cycle being
-        # called twice, but still it is nice to have it here as a precaution. In general, there
-        # should be only bid from a device to a market at all times, which will be replaced if
-        # it needs to be updated. If this check is not there, the market cycle event will post
-        # one bid twice, which actually happens on the very first market slot cycle.
-        if not all(bid.buyer != self.owner.name for bid in market.bids.values()):
-            self.owner.log.warning(f"There is already another bid posted on the market, therefore"
-                                   f" do not repost another first bid.")
-            return None
-        return self.post_bid(
-            market,
-            energy_Wh * self._initial_rate_profile[market.time_slot] / 1000.0,
-            energy_Wh / 1000.0
-        )
-
-    def update_market_cycle_bids(self, final_rate=None):
+    def reassign_mixin_arguments(self, time_slot, initial_rate=None, final_rate=None,
+                                 fit_to_limit=None, energy_rate_change_per_update=None,
+                                 update_interval=None):
+        if initial_rate is not None:
+            self.initial_rate[time_slot] = initial_rate
         if final_rate is not None:
-            self._final_rate = final_rate
-        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
+            self.final_rate[time_slot] = final_rate
+        if fit_to_limit is not None:
+            self.fit_to_limit = fit_to_limit
+        if energy_rate_change_per_update is not None:
+            self.energy_rate_change_per_update[time_slot] = \
+                energy_rate_change_per_update
+        if update_interval is not None:
+            self.update_interval = update_interval
 
-        for market in self.area.all_markets:
-            self._increase_rate_timepoint_s[market.time_slot] = self._increase_frequency_s
-        # decrease energy rate for each market again, except for the newly created one
-        for market in self.area.all_markets[:-1]:
-            self._update_posted_bids(market, current_tick_number)
+        self.update_on_activate()
 
-    def _update_posted_bids(self, market, current_tick_number):
-        existing_bids = list(self.get_posted_bids(market))
-        for bid in existing_bids:
-            assert bid.buyer == self.owner.name
-            if bid.id in market.bids.keys():
-                bid = market.bids[bid.id]
-            market.delete_bid(bid.id)
-
-            self.remove_bid_from_pending(bid.id, market.id)
-            rate = self._get_current_energy_rate(current_tick_number, market)
-            self.post_bid(market,
-                          bid.energy * rate,
-                          bid.energy)
-
-    def update_posted_bids_over_ticks(self, market):
-        # Decrease the selling price over the ticks in a slot
-        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
-        elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
-        if elapsed_seconds > self._increase_rate_timepoint_s[market.time_slot]:
-            self._increase_rate_timepoint_s[market.time_slot] += self._increase_frequency_s
-            self._update_posted_bids(market, current_tick_number)
-
-    def _get_current_energy_rate(self, current_tick, market):
-        total_ticks = (self.area.config.ticks_per_slot -
-                       ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH)
-        percentage_of_rate = max(min(current_tick / total_ticks, 1.0), 0.0)
-        rate_range = self._final_rate_profile[market.time_slot] - \
-            self._initial_rate_profile[market.time_slot]
-        return rate_range * percentage_of_rate + self._initial_rate_profile[market.time_slot]
-
-
-class OfferUpdateFrequencyMixin:
-
-    def __init__(self,
-                 initial_rate_option,
-                 initial_selling_rate,
-                 energy_rate_decrease_option,
-                 energy_rate_decrease_per_update,
-                 ):
-        self.assign_offermixin_arguments(initial_rate_option, energy_rate_decrease_option,
-                                         energy_rate_decrease_per_update)
-        self._decrease_price_timepoint_s = {}  # type: Dict[Time, float]
-        self._decrease_price_every_nr_s = 0
-        self.initial_selling_rate = initial_selling_rate
-
-    def assign_offermixin_arguments(self, initial_rate_option, energy_rate_decrease_option,
-                                    energy_rate_decrease_per_update):
-        if initial_rate_option is not None:
-            self.initial_rate_option = InitialRateOptions(initial_rate_option)
-        if energy_rate_decrease_option is not None:
-            self.energy_rate_decrease_option = RateDecreaseOption(energy_rate_decrease_option)
-        if energy_rate_decrease_per_update is not None:
-            if energy_rate_decrease_per_update < 0:
-                raise ValueError("Energy rate decrease per update should be a positive value.")
-            self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
-
-    def update_on_activate(self):
-        # This update of _decrease_price_every_nr_s can only be done after activation as
-        # MAX_OFFER_TRAVERSAL_LENGTH is not known at construction
-        self._decrease_price_every_nr_s = \
-            (self.area.config.tick_length.seconds *
-             ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH + 1)
-
-    def calculate_initial_sell_rate(self, current_time_h):
-        if self.initial_rate_option is InitialRateOptions.HISTORICAL_AVG_RATE:
-            if self.area.historical_avg_rate == 0:
-                return self.area.config.market_maker_rate[current_time_h]
+    def _set_or_update_energy_rate_change_per_update(self):
+        energy_rate_change_per_update = {}
+        for slot in generate_market_slot_list():
+            if self.fit_to_limit:
+                energy_rate_change_per_update[slot] = \
+                    (self.initial_rate[slot] - self.final_rate[slot]) / \
+                    self.number_of_available_updates
             else:
-                return self.area.historical_avg_rate
-        elif self.initial_rate_option is InitialRateOptions.MARKET_MAKER_RATE:
-            return self.area.config.market_maker_rate[current_time_h]
-        elif self.initial_rate_option is InitialRateOptions.CUSTOM_RATE:
-            return self.initial_selling_rate
-        else:
-            raise ValueError("Initial rate option should be one of the InitialRateOptions.")
+                energy_rate_change_per_update[slot] = self.energy_rate_change_per_update[slot]
+        self.energy_rate_change_per_update = energy_rate_change_per_update
 
     @property
-    def _price_update_interval(self):
-        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
-        elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
-        return int(elapsed_seconds / self._decrease_price_every_nr_s)
+    def _calculate_number_of_available_updates_per_slot(self):
+        number_of_available_updates = \
+            int(GlobalConfig.slot_length.seconds / self.update_interval.seconds) - 1
+        return number_of_available_updates
 
-    def decrease_energy_price_over_ticks(self, market):
-        if market.time_slot not in self._decrease_price_timepoint_s:
-            self._decrease_price_timepoint_s[market.time_slot] = 0
-        # Decrease the selling price over the ticks in a slot
-        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
-        elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
-        if elapsed_seconds > self._decrease_price_timepoint_s[market.time_slot]:
-            self._decrease_price_timepoint_s[market.time_slot] += self._decrease_price_every_nr_s
-            self._decrease_offer_price(market,
-                                       self._calculate_price_decrease_rate(market))
+    def update_on_activate(self):
+        assert self.update_interval.seconds >= \
+               ConstSettings.GeneralSettings.UPDATE_RATE * 60
+        self.number_of_available_updates = \
+            self._calculate_number_of_available_updates_per_slot
+        self._set_or_update_energy_rate_change_per_update()
 
-    def _decrease_offer_price(self, market, reduced_rate):
-        if market.id not in self.offers.open.values():
+    def get_updated_rate(self, time_slot):
+        calculated_rate = \
+            self.initial_rate[time_slot] - \
+            self.energy_rate_change_per_update[time_slot] * self.update_counter[time_slot]
+        updated_rate = max(calculated_rate, self.final_rate[time_slot])
+        return updated_rate
+
+    def get_price_update_point(self, strategy, time_slot):
+        current_tick_number = strategy.area.current_tick % strategy.area.config.ticks_per_slot
+        elapsed_seconds = current_tick_number * strategy.area.config.tick_length.seconds
+        if elapsed_seconds >= self.update_interval.seconds * (self.update_counter[time_slot]+1):
+            self.update_counter[time_slot] += 1
+            return True
+        else:
+            return False
+
+    def update_energy_price(self, market, strategy):
+        if market.id not in strategy.offers.open.values():
             return
 
-        for offer, iterated_market_id in self.offers.open.items():
-            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
+        for offer, iterated_market_id in strategy.offers.open.items():
+            iterated_market = strategy.area.get_future_market_from_id(iterated_market_id)
             if market is None or iterated_market is None or iterated_market.id != market.id:
                 continue
             try:
                 iterated_market.delete_offer(offer.id)
-                updated_price = round(offer.energy * reduced_rate, 10)
+                updated_price = round(offer.energy * self.get_updated_rate(market.time_slot), 10)
                 new_offer = iterated_market.offer(
                     updated_price,
                     offer.energy,
-                    self.owner.name,
-                    original_offer_price=updated_price,
-                )
-                if (new_offer.price / new_offer.energy) < self.final_selling_rate:
-                    new_offer.price = self.final_selling_rate * new_offer.energy
-                self.offers.replace(offer, new_offer, iterated_market)
-            except MarketException:
-                continue
-
-    def _calculate_price_decrease_rate(self, market):
-        if self.energy_rate_decrease_option is \
-                RateDecreaseOption.PERCENTAGE_BASED_ENERGY_RATE_DECREASE:
-            price_dec_per_slot = self.calculate_initial_sell_rate(market.time_slot) * \
-                                 (1 - self.risk/ConstSettings.GeneralSettings.MAX_RISK)
-            price_updates_per_slot = int(self.area.config.slot_length.seconds
-                                         / self._decrease_price_every_nr_s)
-            price_dec_per_update = price_dec_per_slot / price_updates_per_slot
-            reduced_price = \
-                self.calculate_initial_sell_rate(market.time_slot) - \
-                price_dec_per_update * self._price_update_interval
-            if reduced_price < self.final_selling_rate:
-                reduced_price = self.final_selling_rate
-            return reduced_price
-        elif self.energy_rate_decrease_option is \
-                RateDecreaseOption.CONST_ENERGY_RATE_DECREASE_PER_UPDATE:
-            reduced_price = \
-                self.calculate_initial_sell_rate(market.time_slot) - \
-                self.energy_rate_decrease_per_update * self._price_update_interval
-            if reduced_price < self.final_selling_rate:
-                reduced_price = self.final_selling_rate
-            return reduced_price
-        else:
-            assert False
-
-    def update_market_cycle_offers(self, final_selling_rate):
-        self.final_selling_rate = final_selling_rate
-        # increase energy rate for each market again, except for the newly created one
-        for market in self.area.all_markets:
-            self._decrease_price_timepoint_s[market.time_slot] = self._decrease_price_every_nr_s
-        for market in self.area.all_markets[:-1]:
-            self.reset_price_on_market_cycle(market)
-
-    def reset_price_on_market_cycle(self, market):
-        if market.id not in self.offers.open.values():
-            return
-
-        for offer, iterated_market_id in self.offers.open.items():
-            iterated_market = self.area.get_future_market_from_id(iterated_market_id)
-            if market is None or iterated_market is None or iterated_market != market:
-                continue
-            try:
-                iterated_market.delete_offer(offer.id)
-                updated_price = round(
-                    offer.energy * self.calculate_initial_sell_rate(iterated_market.time_slot), 10)
-                new_offer = iterated_market.offer(
-                    updated_price,
-                    offer.energy,
-                    self.owner.name,
+                    strategy.owner.name,
                     original_offer_price=updated_price
                 )
-                self.offers.replace(offer, new_offer, iterated_market)
+                strategy.offers.replace(offer, new_offer, iterated_market)
             except MarketException:
                 continue
 
-    def set_initial_selling_rate_alternative_pricing_scheme(self, market):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
-                self.initial_selling_rate = 0
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
-                self.initial_selling_rate = \
-                    self.area.config.market_maker_rate[market.time_slot] * \
-                    ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / 100
-            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
-                self.initial_selling_rate = \
-                    self.area.config.market_maker_rate[market.time_slot]
-            else:
-                raise MarketException
+    def update_market_cycle_offers(self, strategy):
+        for market in strategy.area.all_markets[:-1]:
+            self.update_counter[market.time_slot] = 0
+            self.update_energy_price(market, strategy)
+
+    def update_offer(self, strategy):
+        for market in strategy.area.all_markets:
+            if self.get_price_update_point(strategy, market.time_slot):
+                self.update_energy_price(market, strategy)
+
+    def update_market_cycle_bids(self, strategy):
+        # decrease energy rate for each market again, except for the newly created one
+        for market in strategy.area.all_markets[:-1]:
+            self.update_counter[market.time_slot] = 0
+            self._post_bids(market, strategy)
+
+    def _post_bids(self, market, strategy):
+        existing_bids = list(strategy.get_posted_bids(market))
+        for bid in existing_bids:
+            assert bid.buyer == strategy.owner.name
+            if bid.id in market.bids.keys():
+                bid = market.bids[bid.id]
+            market.delete_bid(bid.id)
+
+            strategy.remove_bid_from_pending(bid.id, market.id)
+            strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
+                              bid.energy)
+
+    def update_posted_bids_over_ticks(self, market, strategy):
+        if self.get_price_update_point(strategy, market.time_slot):
+            if strategy.are_bids_posted(market.id):
+                self._post_bids(market, strategy)
