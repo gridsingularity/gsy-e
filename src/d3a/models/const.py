@@ -172,4 +172,3 @@ class GlobalConfig:
     iaa_fee = ConstSettings.IAASettings.FEE_PERCENTAGE
     iaa_fee_const = ConstSettings.IAASettings.FEE_CONSTANT
     market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-    event_dispatching_via_redis = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
