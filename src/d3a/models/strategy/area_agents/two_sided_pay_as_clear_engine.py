@@ -142,7 +142,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
             original_bid_rate = bid.original_bid_price / bid.energy
             trade_offer_info = [
                 original_bid_rate, bid.price/bid.energy,
-                clearing_rate, clearing_rate, original_bid_rate]
+                clearing_rate, clearing_rate, clearing_rate]
 
             if cumulative_traded_bids >= clearing_energy:
                 break
