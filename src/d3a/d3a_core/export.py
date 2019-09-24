@@ -30,7 +30,7 @@ from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 from d3a.d3a_core.sim_results.file_export_endpoints import KPI
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
@@ -80,16 +80,13 @@ class ExportAndPlot:
                 subdir = os.path.join(subdir, alternative_pricing_subdirs[
                                       ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME])
 
-            self.directory = pathlib.Path(path or str(pathlib.Path.home()) + "/d3a-simulation",
-                                          subdir)
+            self.rootdir = pathlib.Path(path or str(pathlib.Path.home()) + "/d3a-simulation")
+            self.directory = pathlib.Path(self.rootdir, subdir)
+            self.zip_filename = pathlib.Path(self.rootdir, subdir + "_results")
             mkdir_from_str(str(self.directory))
         except Exception as ex:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
-
-        self.plot_dir = os.path.join(self.directory, 'plot')
-        if not os.path.exists(self.plot_dir):
-            os.makedirs(self.plot_dir)
 
     def export_json_data(self, directory: dir):
         json_dir = os.path.join(directory, "aggregated_results")
@@ -114,25 +111,40 @@ class ExportAndPlot:
         file_name = ("%s.csv" % slug).replace(' ', '_')
         return directory.joinpath(file_name).as_posix()
 
-    def export(self):
-        """Wrapping function, executes all export and plotting functions"""
+    def export_to_zip_file(self):
+        self.export(export_plots=False)
+        shutil.make_archive(self.zip_filename, 'zip', self.directory)
+        return str(self.zip_filename) + ".zip"
 
-        self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
-        self.plot_energy_profile(self.area, self.plot_dir)
-        self.plot_all_unmatched_loads()
-        self.plot_avg_trade_price(self.area, self.plot_dir)
-        self.plot_ess_soc_history(self.area, self.plot_dir)
-        self.plot_ess_energy_trace(self.area, self.plot_dir)
-        if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
-            self.plot_device_stats(self.area, [])
-        if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
-                ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
-            self.plot_supply_demand_curve(self.area, self.plot_dir)
-        self.move_root_plot_folder()
+    def delete_exported_files(self):
+        zip_file_with_ext = str(self.zip_filename) + ".zip"
+        if os.path.isfile(zip_file_with_ext):
+            os.remove(zip_file_with_ext)
+        shutil.rmtree(str(self.directory))
+
+    def export(self, export_plots=True):
+        """Wrapping function, executes all export and plotting functions"""
+        if export_plots:
+            self.plot_dir = os.path.join(self.directory, 'plot')
+            if not os.path.exists(self.plot_dir):
+                os.makedirs(self.plot_dir)
+
+            self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
+            self.plot_energy_profile(self.area, self.plot_dir)
+            self.plot_all_unmatched_loads()
+            self.plot_avg_trade_price(self.area, self.plot_dir)
+            self.plot_ess_soc_history(self.area, self.plot_dir)
+            self.plot_ess_energy_trace(self.area, self.plot_dir)
+            if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
+                self.plot_device_stats(self.area, [])
+            if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
+                    ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
+                self.plot_supply_demand_curve(self.area, self.plot_dir)
+            self.move_root_plot_folder()
         self.export_json_data(self.directory)
 
     def data_to_csv(self, area, is_first):
-            self._export_area_with_children(area, self.directory, is_first)
+        self._export_area_with_children(area, self.directory, is_first)
 
     def move_root_plot_folder(self):
         """

@@ -16,25 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.appliance.pv import PVAppliance
-# from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-# from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-# from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-
-"""
-Setup file for displaying PVPredefinedStrategy.
-PredefinedPV Strategy requires risk, panel count, lower selling rate threshold &
-cloud_coverage parameters.
-Because the risk parameter is required, this is the risk or percentage based PV strategy
-There is another setup file in which Faizan has detailed how the risk based strategy works
-which will be added
-"""
 
 
 def get_setup(config):
+    config.update_config_parameters(max_panel_power_W=400)
     area = Area(
         'Grid',
         [
@@ -46,9 +35,7 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(7, 20))),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1,
-                                                                risk=80,
-                                                                cloud_coverage=2),
+                    Area('H1 PV', strategy=PVStrategy(panel_count=1),
                          appliance=PVAppliance()),
                 ]
             ),

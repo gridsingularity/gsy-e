@@ -1,11 +1,5 @@
 Feature: Storage tests
 
-  Scenario: Storage break even range profile
-     Given we have a scenario named strategy_tests/storage_strategy_break_even_range
-     And d3a is installed
-     When we run the d3a simulation with strategy_tests.storage_strategy_break_even_range [24, 60, 60]
-     Then the storage devices buy and sell energy respecting the break even prices
-
   Scenario: Storage sell offers decrease
      Given we have a scenario named strategy_tests/ess_sell_offer_decrease_based_on_risk_or_rate
      And d3a is installed

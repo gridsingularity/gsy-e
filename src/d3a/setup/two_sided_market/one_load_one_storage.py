@@ -19,7 +19,7 @@ from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
@@ -35,7 +35,7 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage',
-                         strategy=StorageStrategy(initial_capacity_kWh=0.6, risk=0),
+                         strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                 ]
             ),

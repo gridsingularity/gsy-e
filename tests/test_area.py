@@ -29,7 +29,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.config import SimulationConfig
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a.models.const import ConstSettings, GlobalConfig
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.area.event_dispatcher import AreaDispatcher

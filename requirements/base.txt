@@ -27,17 +27,17 @@ eth-utils==1.6.1          # via eth-abi, eth-account, eth-keyfile, eth-keys, eth
 hexbytes==0.2.0           # via eth-account, eth-rlp, web3
 idna==2.8                 # via requests
 ipython-genutils==0.2.0   # via nbformat, traitlets
-jsonschema==3.0.1         # via nbformat
+jsonschema==3.0.2         # via nbformat
 jupyter-core==4.5.0       # via nbformat
 lru-dict==1.1.6           # via web3
 nbformat==4.4.0           # via plotly
 numpy==1.16.4
 parsimonious==0.8.1       # via eth-abi
 pendulum==2.0.4
-pip-tools==3.8.0
+pip-tools==4.0.0
 plotly==3.10.0
 pycryptodome==3.8.2       # via eth-hash, eth-keyfile
-pyrsistent==0.15.2        # via jsonschema
+pyrsistent==0.15.4        # via jsonschema
 python-dateutil==2.8.0    # via pendulum
 python-rex==0.4
 pytz==2019.1              # via plotly

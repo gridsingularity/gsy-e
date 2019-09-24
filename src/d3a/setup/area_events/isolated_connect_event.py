@@ -38,7 +38,7 @@ def get_setup(config):
                                                                            range(0, 24)),
                                                                        final_buying_rate=27),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=15,
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50,
                                                                  battery_capacity_kWh=30,
                                                                  max_abs_battery_power_kW=1),
                          appliance=SwitchableAppliance()),

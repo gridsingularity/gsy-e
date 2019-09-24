@@ -20,7 +20,7 @@ import sys
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy import BidEnabledStrategy
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 INF_ENERGY = int(sys.maxsize)

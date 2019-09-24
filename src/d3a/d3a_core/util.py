@@ -31,10 +31,10 @@ from datetime import timedelta
 from functools import wraps
 
 from d3a import setup as d3a_setup
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
 from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
-from d3a.models.const import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig
 
 import d3a
 import inspect
@@ -296,9 +296,6 @@ def read_settings_from_file(settings_file):
             "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
-            "market_maker_rate": settings["basic_settings"].get(
-                'market_maker_rate', advanced_settings["GeneralSettings"]
-                ["DEFAULT_MARKET_MAKER_RATE"]),
             "iaa_fee": settings["basic_settings"].get(
                 'INTER_AREA_AGENT_FEE_PERCENTAGE',
                 advanced_settings["IAASettings"]["FEE_PERCENTAGE"])
@@ -406,7 +403,7 @@ def change_global_config(**kwargs):
 
 
 def validate_const_settings_for_simulation():
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     # If schemes are not compared and an individual scheme is selected
     # And the market type is not single sided market
     # This is a wrong configuration and an exception is raised
@@ -488,6 +485,6 @@ def str_to_pendulum(input_str: str):
     return pendulum_time
 
 
-def convert_str_to_pauseafter_intervall(start_time,  input_str):
+def convert_str_to_pauseafter_intervall(start_time, input_str):
     pause_time = str_to_pendulum(input_str)
     return pause_time - start_time

@@ -15,13 +15,23 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from d3a.models.appliance.pv import PVAppliance
+# from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
+# from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
+# from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.models.appliance.simple import SimpleAppliance
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.appliance.pv import PVAppliance
+
+"""
+Setup file for displaying PVPredefinedStrategy.
+PredefinedPV Strategy requires risk, panel count, lower selling rate threshold &
+cloud_coverage parameters.
+Because the risk parameter is required, this is the risk or percentage based PV strategy
+There is another setup file in which Faizan has detailed how the risk based strategy works
+which will be added
+"""
 
 
 def get_setup(config):
@@ -31,23 +41,16 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=500,
+                                                                       hrs_per_day=12,
                                                                        hrs_of_day=list(
-                                                                           range(0, 23)),
-                                                                       final_buying_rate=27,
-                                                                       initial_buying_rate=27),
+                                                                           range(7, 20))),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(panel_count=4,
-                                                      final_selling_rate=15,
-                                                      initial_selling_rate=24.1),
+                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1,
+                                                                cloud_coverage=2),
                          appliance=PVAppliance()),
-                ], transfer_fee_const=1
+                ]
             ),
-            Area('Infinite Bus', strategy=InfiniteBusStrategy(energy_buy_rate=24,
-                                                              energy_sell_rate=24),
-                 appliance=SimpleAppliance()
-                 ),
-
         ],
         config=config
     )

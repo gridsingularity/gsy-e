@@ -22,7 +22,7 @@ from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
@@ -296,6 +296,22 @@ class BidEnabledStrategy(BaseStrategy):
         if market_id not in self._bids:
             return False
         return len(self._bids[market_id]) > 0
+
+    def post_first_bid(self, market, energy_Wh):
+        # TODO: It will be safe to remove this check once we remove the event_market_cycle being
+        # called twice, but still it is nice to have it here as a precaution. In general, there
+        # should be only bid from a device to a market at all times, which will be replaced if
+        # it needs to be updated. If this check is not there, the market cycle event will post
+        # one bid twice, which actually happens on the very first market slot cycle.
+        if not all(bid.buyer != self.owner.name for bid in market.bids.values()):
+            self.owner.log.warning(f"There is already another bid posted on the market, therefore"
+                                   f" do not repost another first bid.")
+            return None
+        return self.post_bid(
+            market,
+            energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
+            energy_Wh / 1000.0
+        )
 
     def get_posted_bids(self, market):
         if market.id not in self._bids:

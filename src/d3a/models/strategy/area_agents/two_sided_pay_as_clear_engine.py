@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import TwoSidedPayAsBidEngine
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key
 import math
 from collections import OrderedDict
@@ -204,6 +204,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 if bid_energy > energy:
                     bid_energy = energy
                 energy -= bid_energy
+            else:
+                energy = bid_energy
 
             already_tracked = trade.offer.buyer == offer.seller
             if bid_energy == offer.energy:

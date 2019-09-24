@@ -22,7 +22,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHours
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 device_registry_dict = {
     "H1 General Load": (32, 35),
@@ -47,9 +47,9 @@ def get_setup(config):
                                                                            range(0, 18)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_capacity_kWh=0.6),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                 ]
             ),

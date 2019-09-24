@@ -18,14 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import unittest
 from unittest.mock import MagicMock, Mock
-from datetime import timedelta
 from pendulum import DateTime, duration, today
 from math import isclose
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 
@@ -80,7 +79,7 @@ class FakeArea:
         have passed.
         """
         return DateTime.now(tz=TIME_ZONE).start_of('day') + (
-            timedelta(hours=10) + self.config.tick_length * self.current_tick
+            duration(hours=10) + self.config.tick_length * self.current_tick
         )
 
     @property

@@ -25,7 +25,6 @@ from fabric.decorators import task, hosts
 from fabric.operations import local
 from fabric.tasks import execute
 from fabric.utils import abort, puts
-from default_settings_to_json_file import export_default_settings_to_json_file
 
 SOLIUM_VERSION = '0.2.2'
 HERE = Path().resolve()
@@ -149,6 +148,8 @@ def sync():
         local('pip install --no-deps -e .')
         # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
         local('pip install git+https://github.com/Jonasmpi/py-solc.git')
+        # Install d3a-interface
+        local('pip install git+https://github.com/gridsingularity/d3a-interface.git')
     _post_check()
 
 
@@ -163,4 +164,5 @@ def reqs():
 @task
 @hosts('localhost')
 def write_default_settings_file():
+    from default_settings_to_json_file import export_default_settings_to_json_file
     export_default_settings_to_json_file()
