@@ -75,10 +75,11 @@ class Area:
         self.slug = slugify(name, to_lower=True)
         self.parent = None
         self.children = children if children is not None else []
-        self.dispatcher = RedisAreaDispatcher(self) \
-            if EVENT_DISPATCHING_VIA_REDIS else AreaDispatcher(self)
         for child in self.children:
             child.parent = self
+
+        self.dispatcher = RedisAreaDispatcher(self) \
+            if EVENT_DISPATCHING_VIA_REDIS else AreaDispatcher(self)
         if EVENT_DISPATCHING_VIA_REDIS:
             self.dispatcher.subscribe_to_response_channel()
             self.dispatcher.subscribe_to_area_event_channel()

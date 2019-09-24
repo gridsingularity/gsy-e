@@ -215,25 +215,17 @@ class RedisAreaDispatcher(AreaDispatcher):
     def __init__(self, area):
         super().__init__(area)
         self.area_event = Event()
-        self.tick_event = Event()
-        self.number_of_children = len(list(self.area.children))
-        self.area_event_counter = {"tick": 0,
-                                   "activate": 0,
-                                   "market_cycle": 0,
-                                   "balancing_market_cycle": 0}
         self.redis_db = StrictRedis.from_url(REDIS_URL)
         self.pubsub = self.redis_db.pubsub()
         self.pubsub_response = self.redis_db.pubsub()
 
     def subscribe_to_response_channel(self):
         channel = f"{self.area.slug}/area_event_response"
-        print("creating", channel)
         self.pubsub_response.subscribe(**{channel: self.response_callback})
         self.pubsub_response.run_in_thread(daemon=True)
 
     def subscribe_to_area_event_channel(self):
         channel = f"{self.area.slug}/area_event"
-        print("creating", channel)
         self.pubsub.subscribe(**{channel: self.event_listener_redis})
         self.pubsub.run_in_thread(daemon=True)
 
@@ -241,18 +233,10 @@ class RedisAreaDispatcher(AreaDispatcher):
         data = json.loads(payload["data"])
         if "response" in data:
             event_type = data["response"]
-            if event_type == "tick":
-                print(f"receive release of tick event for {self.area.slug}")
-                # for the tick event also release the waiter for the tick of the children
-                self.tick_event.set()
-            if self.number_of_children > 0:
-                self.area_event_counter[event_type] += 1
-                if self.area_event_counter[event_type] == self.number_of_children:
-                    self.area_event_counter[event_type] = 0
-                    self.area_event.set()
-
-        else:
-            assert False, "Should never reach this point"
+            if event_type in ["tick", "market_cycle", "activate"]:
+                self.area_event.set()
+            else:
+                raise Exception("RedisAreaDispatcher: Should never reach this point")
 
     def publish_event(self, area_slug, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
@@ -260,46 +244,13 @@ class RedisAreaDispatcher(AreaDispatcher):
         self.redis_db.publish(dispatch_chanel, json.dumps(send_data))
 
     def _broadcast_event_redis(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-        if not self.area.events.is_enabled and \
-           event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]:
-            return
-        # Broadcast to children in random order to ensure fairness
         if isinstance(event_type, AreaEvent):
-            if event_type == AreaEvent.TICK:
-                for child in sorted(self.area.children, key=lambda _: random()):
-                    if self.tick_event.is_set():
-                        self.publish_event(child.slug, event_type, **kwargs)
-                        # parent waits for each children to perform tick individually
-                        self.tick_event.wait()
-            else:
-                for child in sorted(self.area.children, key=lambda _: random()):
-                    self.publish_event(child.slug, event_type, **kwargs)
-
-            self.area_event.wait()
-        else:
             for child in sorted(self.area.children, key=lambda _: random()):
-                child.dispatcher.event_listener(event_type, **kwargs)
-        # Also broadcast to IAAs. Again in random order
-        for time_slot, agents in self._inter_area_agents.items():
-            if time_slot not in self.area._markets.markets:
-                # exclude past IAAs
-                continue
-
-            if not self.area.events.is_connected:
-                break
-            for area_name in sorted(agents, key=lambda _: random()):
-                agents[area_name].event_listener(event_type, **kwargs)
-        # Also broadcast to BAs. Again in random order
-        # TODO: Refactor to reuse the spot market mechanism
-        for time_slot, agents in self._balancing_agents.items():
-            if time_slot not in self.area._markets.balancing_markets:
-                # exclude past BAs
-                continue
-
-            if not self.area.events.is_connected:
-                break
-            for area_name in sorted(agents, key=lambda _: random()):
-                agents[area_name].event_listener(event_type, **kwargs)
+                self.publish_event(child.slug, event_type, **kwargs)
+                self.area_event.wait()
+                self.area_event.clear()
+        else:
+            self._broadcast_notification(event_type=event_type, **kwargs)
 
     def event_listener_redis(self, payload):
         data = json.loads(payload["data"])
@@ -308,20 +259,7 @@ class RedisAreaDispatcher(AreaDispatcher):
         response_channel = f"{self.area.parent.slug}/area_event_response"
         response_data = json.dumps({"response": event_type.name.lower()})
 
-        if event_type is AreaEvent.TICK:
-            self.area.tick()
-        if event_type is AreaEvent.MARKET_CYCLE:
-            self.area._cycle_markets(_trigger_event=True)
-        elif event_type is AreaEvent.ACTIVATE:
-            self.area.activate()
-        if self._should_dispatch_to_strategies_appliances(event_type):
-            if self.area.strategy:
-                self.area.strategy.event_listener(event_type, **kwargs)
-            if self.area.appliance:
-                self.area.appliance.event_listener(event_type, **kwargs)
-        elif (not self.area.events.is_enabled or not self.area.events.is_connected) \
-                and event_type == AreaEvent.MARKET_CYCLE:
-            self.area.strategy.event_on_disabled_area()
+        self.event_listener(event_type=event_type, **kwargs)
 
         self.redis_db.publish(response_channel, response_data)
 
