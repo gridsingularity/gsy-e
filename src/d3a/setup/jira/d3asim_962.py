@@ -42,7 +42,7 @@ def get_setup(config):
                          strategy=DefinedLoadStrategy(daily_load_profile=profile_path,
                                                       final_buying_rate=36),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                 ]
             ),

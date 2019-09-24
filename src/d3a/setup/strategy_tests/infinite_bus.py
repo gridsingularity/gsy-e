@@ -38,7 +38,6 @@ def get_setup(config):
                                                                        final_buying_rate=25),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
-                                                      initial_rate_option=3,
                                                       initial_selling_rate=23.0,
                                                       final_selling_rate=23.0),
                          appliance=PVAppliance()),
