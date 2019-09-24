@@ -78,12 +78,6 @@ class Area:
         for child in self.children:
             child.parent = self
 
-        self.dispatcher = RedisAreaDispatcher(self) \
-            if EVENT_DISPATCHING_VIA_REDIS else AreaDispatcher(self)
-        if EVENT_DISPATCHING_VIA_REDIS:
-            self.dispatcher.subscribe_to_response_channel()
-            self.dispatcher.subscribe_to_area_event_channel()
-
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
@@ -94,6 +88,13 @@ class Area:
         self._bc = None
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
+
+        self.dispatcher = RedisAreaDispatcher(self) \
+            if EVENT_DISPATCHING_VIA_REDIS else AreaDispatcher(self)
+        if EVENT_DISPATCHING_VIA_REDIS:
+            self.dispatcher.subscribe_to_response_channel()
+            self.dispatcher.subscribe_to_area_event_channel()
+
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
