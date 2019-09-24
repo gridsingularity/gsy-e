@@ -399,7 +399,6 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
 
     expected_price = 10 * (1 - iaa_double_sided.lower_market.transfer_fee_ratio)
-    print(expected_price)
     assert iaa_double_sided.higher_market.forwarded_bid.price == expected_price
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10.0
 

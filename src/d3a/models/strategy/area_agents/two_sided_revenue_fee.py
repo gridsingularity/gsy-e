@@ -27,17 +27,6 @@ def calculate_fee_revenue_from_clearing_trade(
     return revenue, fee_n, trade_price
 
 
-def calculate_fee_revenue_from_propagated_trade(
-        bid_propagated, bid_original,
-        offer_propagated, offer_original, tax_percentage_n
-):
-    calculate_fee_revenue_from_clearing_trade(
-        bid_propagated, bid_original,
-        offer_propagated, offer_original,
-        bid_original, tax_percentage_n
-    )
-
-
 def update_forwarded_bid_with_fee(source_bid, original_bid, tax_percentage_n):
     if source_bid is None:
         return original_bid * (1 - tax_percentage_n)

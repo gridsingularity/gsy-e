@@ -44,11 +44,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
         if self.owner.name == self.markets.target.area.name:
             return
-        # if (bid.price * (1 - self.markets.target.transfer_fee_ratio)
-        #         - self.markets.target.transfer_fee_const * bid.energy) <= 0:
-        #     self.owner.log.debug("Bid is not forwarded because bid price lower "
-        #                          "than transfer_fee_const")
-        #     return
 
         forwarded_bid = self.markets.target.bid(
             update_forwarded_bid_with_fee(

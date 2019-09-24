@@ -218,10 +218,8 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(area=FakeA
 
 def test_market_bid_trade(market: TwoSidedPayAsBid):
     bid = market.bid(20, 10, 'A', 'B', original_bid_price=20)
-    print(bid)
 
     trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=[2, 2, 0.5, 0.5, 2])
-    print(trade)
     assert trade
     assert trade.id == market.trades[0].id
     assert trade.id
