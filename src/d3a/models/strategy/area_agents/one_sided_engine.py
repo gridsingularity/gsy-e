@@ -58,7 +58,8 @@ class IAAEngine:
             offer.energy,
             self.owner.name,
             offer.original_offer_price,
-            dispatch_event=False
+            dispatch_event=False,
+            energy_origin=offer.energy_origin
         )
         offer_info = OfferInfo(deepcopy(offer), deepcopy(forwarded_offer))
         self.forwarded_offers[forwarded_offer.id] = offer_info

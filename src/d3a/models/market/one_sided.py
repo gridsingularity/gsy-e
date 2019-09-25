@@ -54,7 +54,7 @@ class OneSidedMarket(Market):
         assert False
 
     def offer(self, price: float, energy: float, seller: str,
-              original_offer_price=None, dispatch_event=True) -> Offer:
+              original_offer_price=None, dispatch_event=True, energy_origin=None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -67,7 +67,8 @@ class OneSidedMarket(Market):
             + self.transfer_fee_const * energy
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
-        offer = Offer(offer_id, price, energy, seller, original_offer_price)
+        offer = Offer(offer_id, price, energy, seller, original_offer_price,
+                      energy_origin=energy_origin)
 
         self.offers[offer.id] = deepcopy(offer)
         self.offer_history.append(offer)
@@ -168,7 +169,8 @@ class OneSidedMarket(Market):
                     accepted_offer_id,
                     final_price,
                     energy,
-                    offer.seller
+                    offer.seller,
+                    energy_origin=offer.energy_origin
                 )
 
                 residual_price = (1 - energy_portion) * offer.price
@@ -181,7 +183,8 @@ class OneSidedMarket(Market):
                     residual_price,
                     residual_energy,
                     offer.seller,
-                    original_offer_price=original_residual_price
+                    original_offer_price=original_residual_price,
+                    energy_origin=offer.energy_origin
                 )
                 self.offers[residual_offer.id] = residual_offer
                 log.debug(f"[OFFER][CHANGED][{self.time_slot_str}] "
@@ -211,8 +214,10 @@ class OneSidedMarket(Market):
             self.bc_interface.handle_blockchain_trade_event(
                 offer, buyer, original_offer, residual_offer
             )
+
         trade = Trade(trade_id, time, offer, offer.seller, buyer,
-                      residual_offer, original_trade_rate=original_trade_rate)
+                      residual_offer, original_trade_rate=original_trade_rate,
+                      seller_origin=offer.energy_origin)
         self.bc_interface.track_trade_event(trade)
 
         if already_tracked is False:

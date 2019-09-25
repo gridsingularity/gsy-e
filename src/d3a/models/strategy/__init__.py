@@ -255,13 +255,14 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
-    def post_bid(self, market, price, energy):
+    def post_bid(self, market, price, energy, energy_origin=None):
         bid = market.bid(
             price,
             energy,
             self.owner.name,
             self.area.name,
-            original_bid_price=price
+            original_bid_price=price,
+            energy_origin=energy_origin
         )
         self.add_bid_to_posted(market.id, bid)
         return bid
@@ -310,7 +311,8 @@ class BidEnabledStrategy(BaseStrategy):
         return self.post_bid(
             market,
             energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
-            energy_Wh / 1000.0
+            energy_Wh / 1000.0,
+            energy_origin=self.owner.name
         )
 
     def get_posted_bids(self, market):

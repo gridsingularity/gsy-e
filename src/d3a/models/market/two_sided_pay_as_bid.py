@@ -49,7 +49,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                     )
 
     def bid(self, price: float, energy: float, buyer: str, seller: str, bid_id: str=None,
-            original_bid_price=None, source_market=None) -> Bid:
+            original_bid_price=None, source_market=None, energy_origin=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
@@ -60,7 +60,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             price = price - source_market.transfer_fee_ratio * original_bid_price - \
                   source_market.transfer_fee_const * energy
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  price, energy, buyer, seller, original_bid_price)
+                  price, energy, buyer, seller, original_bid_price, energy_origin)
         self.bids[bid.id] = bid
         self.bid_history.append(bid)
         log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
@@ -119,7 +119,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
             changed_bid = Bid(
                 str(uuid.uuid4()), residual_price, residual_energy,
                 buyer, seller,
-                original_bid_price=energy_portion * orig_price
+                original_bid_price=energy_portion * orig_price,
+                energy_origin=market_bid.energy_origin
             )
             self.bids[changed_bid.id] = changed_bid
             self.bid_history.append(changed_bid)
@@ -132,7 +133,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
                 energy, trade_rate, energy_portion, orig_price
             ) if already_tracked is False else energy * trade_rate
             bid = Bid(bid.id, energy * trade_rate, energy, buyer, seller,
-                      original_bid_price=energy_portion * orig_price)
+                      original_bid_price=energy_portion * orig_price,
+                      energy_origin=bid.energy_origin)
         else:
             final_price = self._update_bid_fee_and_calculate_final_price(
                 energy, trade_rate, 1, orig_price
@@ -142,7 +144,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         trade = Trade(str(uuid.uuid4()), self._now, bid, seller,
                       buyer, residual, already_tracked=already_tracked,
-                      original_trade_rate=original_trade_rate)
+                      original_trade_rate=original_trade_rate, buyer_origin=bid.energy_origin)
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)

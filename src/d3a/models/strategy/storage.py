@@ -391,7 +391,8 @@ class StorageStrategy(BidEnabledStrategy):
                         energy * selling_rate,
                         energy,
                         self.owner.name,
-                        original_offer_price=energy * selling_rate
+                        original_offer_price=energy * selling_rate,
+                        energy_origin=self.owner.name
                     )
                     self.offers.post(offer, market.id)
                     self.state.offered_sell_kWh[market.time_slot] += offer.energy

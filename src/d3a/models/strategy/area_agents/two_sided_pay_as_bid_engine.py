@@ -52,7 +52,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             self.owner.name,
             self.markets.target.area.name,
             original_bid_price=bid.original_bid_price,
-            source_market=self.markets.source
+            source_market=self.markets.source,
+            energy_origin=bid.energy_origin
         )
         bid_coupling = BidInfo(bid, forwarded_bid)
         self.forwarded_bids[forwarded_bid.id] = bid_coupling

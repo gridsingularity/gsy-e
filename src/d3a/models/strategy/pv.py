@@ -19,6 +19,7 @@ from typing import Dict  # noqa
 from pendulum import Time # noqa
 import math
 from pendulum import duration
+from copy import deepcopy
 
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.events.event_structures import Trigger
@@ -167,7 +168,8 @@ class PVStrategy(BaseStrategy):
                     offer_price,
                     self.state.available_energy_kWh[market.time_slot],
                     self.owner.name,
-                    original_offer_price=offer_price
+                    original_offer_price=offer_price,
+                    energy_origin=deepcopy(self.owner.name)
                 )
                 self.offers.post(offer, market.id)
 
