@@ -14,12 +14,16 @@ def update_incoming_offer_with_fee(source_offer_price, original_offer_price, tax
 
 # Protocol B
 def calculate_fee_revenue_from_clearing_trade(
-        bid_propagated, bid_original,
-        offer_propagated, offer_original,
+        bid_propagated_rate, bid_original_rate,
+        offer_propagated_rate, offer_original_rate,
         trade_rate_source, tax_percentage_n
 ):
-    demand_side_tax = 0 if bid_original == 0 else 1 - bid_propagated / bid_original
-    supply_side_tax = 0 if offer_original == 0 else offer_propagated / offer_original - 1
+    demand_side_tax = 0 \
+        if bid_original_rate == 0 \
+        else 1 - bid_propagated_rate / bid_original_rate
+    supply_side_tax = 0 \
+        if offer_original_rate == 0 \
+        else offer_propagated_rate / offer_original_rate - 1
     total_tax_percentage = demand_side_tax + supply_side_tax
     revenue = trade_rate_source / (1 + total_tax_percentage)
     fee_n = revenue * tax_percentage_n
@@ -59,7 +63,7 @@ def update_forwarded_offer_trade_original_info(trade_original_info, market_offer
             trade_rate_source]
 
 
-def propagate_offer_trade_original_info(trade_original_info, tax_percentage):
+def propagate_original_bid_info_on_offer_trade(trade_original_info, tax_percentage):
     if trade_original_info is None:
         return None
     original_bid_rate, bid_rate, _, _, trade_rate_source = trade_original_info
@@ -67,7 +71,7 @@ def propagate_offer_trade_original_info(trade_original_info, tax_percentage):
     return [original_bid_rate, bid_rate, trade_rate_source]
 
 
-def propagate_bid_trade_original_info(trade_original_info, tax_percentage):
+def propagate_original_offer_info_on_bid_trade(trade_original_info, tax_percentage):
     _, _, original_offer_rate, offer_rate, trade_rate_source = trade_original_info
     offer_rate = offer_rate + original_offer_rate * tax_percentage
     return [original_offer_rate, offer_rate, trade_rate_source]

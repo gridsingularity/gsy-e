@@ -25,6 +25,9 @@ from d3a.models.strategy.area_agents.two_sided_revenue_fee import update_forward
     update_forwarded_bid_trade_original_info
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
+TradeBidInfo = namedtuple('TradeBidInfo',
+                          ('original_bid_rate', 'propagated_bid_rate',
+                           'original_offer_rate', 'propagated_offer_rate', 'trade_rate'))
 
 
 class TwoSidedPayAsBidEngine(IAAEngine):
@@ -101,10 +104,12 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             original_bid_rate = bid.original_bid_price / bid.energy
             matched_rate = bid.price / bid.energy
 
-            trade_bid_info = [
-                original_bid_rate, bid.price/bid.energy,
-                offer.original_offer_price/offer.energy, offer.price/offer.energy,
-                original_bid_rate]
+            trade_bid_info = TradeBidInfo(
+                original_bid_rate=original_bid_rate,
+                propagated_bid_rate=bid.price/bid.energy,
+                original_offer_rate=offer.original_offer_price/offer.energy,
+                propagated_offer_rate=offer.price/offer.energy,
+                trade_rate=original_bid_rate)
 
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,

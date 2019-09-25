@@ -29,7 +29,7 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.models.strategy.area_agents.two_sided_revenue_fee import \
-    propagate_offer_trade_original_info, calculate_trade_price_and_fees
+    propagate_original_bid_info_on_offer_trade, calculate_trade_price_and_fees
 from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
@@ -223,7 +223,7 @@ class OneSidedMarket(Market):
             )
 
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
-                      offer_bid_trade_info=propagate_offer_trade_original_info(
+                      offer_bid_trade_info=propagate_original_bid_info_on_offer_trade(
                           trade_bid_info, self.transfer_fee_ratio)
                       )
         self.bc_interface.track_trade_event(trade)
