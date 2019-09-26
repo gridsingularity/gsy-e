@@ -127,8 +127,7 @@ class Area:
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug('Activating area')
         self.active = True
-        if len(self.children) != 0:
-            self.dispatcher.broadcast_activate()
+        self.dispatcher.broadcast_activate()
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)
@@ -183,8 +182,7 @@ class Area:
         self.events.update_events(self.now)
         if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()
-        if len(self.children) != 0:
-            self.dispatcher.broadcast_tick()
+        self.dispatcher.broadcast_tick()
         self.current_tick += 1
 
     def __repr__(self):
