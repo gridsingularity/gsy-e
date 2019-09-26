@@ -1,7 +1,7 @@
-from d3a.models.market.grid_fees import GridFees
+from d3a.models.market.grid_fees import BaseClassGridFees
 
 
-class BaseModel(GridFees):
+class GridFees(BaseClassGridFees):
 
     @staticmethod
     def update_incoming_bid_with_fee(source_bid, original_bid, tax_percentage=None):
@@ -84,7 +84,7 @@ class BaseModel(GridFees):
         original_bid_rate, bid_rate, original_offer_rate, \
             offer_rate, trade_rate_source = trade_bid_info
 
-        revenue, fees, trade_price = BaseModel.calculate_fee_revenue_from_clearing_trade(
+        revenue, fees, trade_price = GridFees.calculate_fee_revenue_from_clearing_trade(
             bid_rate, original_bid_rate,
             offer_rate, original_offer_rate,
             trade_rate_source, tax_percentage

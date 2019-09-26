@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class GridFees(ABC):
+class BaseClassGridFees(ABC):
 
     @staticmethod
     @abstractmethod
