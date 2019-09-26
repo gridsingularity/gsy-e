@@ -53,6 +53,8 @@ class SimulationConfig:
             ))
         self.total_ticks = self.sim_duration // self.slot_length * self.ticks_per_slot
 
+        change_global_config(**self.__dict__)
+
         self.cloud_coverage = cloud_coverage
 
         self.read_pv_user_profile(pv_user_profile)
@@ -65,8 +67,6 @@ class SimulationConfig:
         max_panel_power_W = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W \
             if max_panel_power_W is None else max_panel_power_W
         self.max_panel_power_W = max_panel_power_W
-
-        change_global_config(**self.__dict__)
 
     def __repr__(self):
         return (

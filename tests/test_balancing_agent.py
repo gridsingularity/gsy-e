@@ -91,6 +91,7 @@ def test_baa_event_trade(baa):
     fake_spot_market.set_time_slot(baa.lower_market.time_slot)
     baa.event_trade(trade=trade,
                     market_id=fake_spot_market.id)
+    print(baa.lower_market.__dict__)
     assert baa.lower_market.unmatched_energy_upward == 0
     assert baa.lower_market.unmatched_energy_downward == 0
 

@@ -165,7 +165,7 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     pv_test3.event_market_cycle()
     old_offer = list(pv_test3.offers.posted.keys())[0]
     area_test3.current_tick += 310
-    pv_test3.event_tick(area=area_test3)
+    pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
 

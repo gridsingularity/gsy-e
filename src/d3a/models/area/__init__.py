@@ -21,7 +21,6 @@ from cached_property import cached_property
 from pendulum import DateTime, duration, today
 from slugify import slugify
 from uuid import uuid4
-
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
@@ -33,7 +32,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
-from d3a.models.area.event_dispatcher import AreaDispatcher, RedisAreaDispatcher
+from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
@@ -50,8 +49,6 @@ DEFAULT_CONFIG = SimulationConfig(
     iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
     start_date=today(tz=TIME_ZONE)
 )
-
-EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
 
 
 class Area:
@@ -88,13 +85,7 @@ class Area:
         self._bc = None
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
-
-        self.dispatcher = RedisAreaDispatcher(self) \
-            if EVENT_DISPATCHING_VIA_REDIS else AreaDispatcher(self)
-        if EVENT_DISPATCHING_VIA_REDIS:
-            self.dispatcher.subscribe_to_response_channel()
-            self.dispatcher.subscribe_to_area_event_channel()
-
+        self.dispatcher = DispatcherFactory(self)()
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
