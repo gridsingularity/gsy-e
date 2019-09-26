@@ -5,22 +5,22 @@ class BaseClassGridFees(ABC):
 
     @staticmethod
     @abstractmethod
-    def update_incoming_bid_with_fee(source_bid, original_bid, tax_percentage=None):
+    def update_incoming_bid_with_fee(source_bid, original_bid, tax_ratio):
         pass
 
     @staticmethod
     @abstractmethod
-    def update_incoming_offer_with_fee(source_offer_price, original_offer_price, tax_percentage):
+    def update_incoming_offer_with_fee(source_offer_price, original_offer_price, tax_ratio):
         pass
 
     @staticmethod
     @abstractmethod
-    def update_forwarded_bid_with_fee(source_bid, original_bid, tax_percentage_n):
+    def update_forwarded_bid_with_fee(source_bid, original_bid, tax_ratio):
         pass
 
     @staticmethod
     @abstractmethod
-    def update_forwarded_offer_with_fee(source_offer, original_offer, tax_percentage_n):
+    def update_forwarded_offer_with_fee(source_offer, original_offer, tax_ratio):
         pass
 
     @staticmethod
@@ -35,15 +35,15 @@ class BaseClassGridFees(ABC):
 
     @staticmethod
     @abstractmethod
-    def propagate_original_bid_info_on_offer_trade(trade_original_info, tax_percentage):
+    def propagate_original_bid_info_on_offer_trade(trade_original_info, tax_ratio):
         pass
 
     @staticmethod
     @abstractmethod
-    def propagate_original_offer_info_on_bid_trade(trade_original_info, tax_percentage):
+    def propagate_original_offer_info_on_bid_trade(trade_original_info, tax_ratio):
         pass
 
     @staticmethod
     @abstractmethod
-    def calculate_trade_price_and_fees(trade_bid_info, tax_percentage):
+    def calculate_trade_price_and_fees(trade_bid_info, tax_ratio):
         pass
