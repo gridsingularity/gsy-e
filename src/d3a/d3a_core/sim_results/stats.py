@@ -139,9 +139,15 @@ class MarketEnergyBills:
         for child in area.children:
             self._accumulate_market_fees(child, past_market_types)
 
+    def _update_market_fees(self, area, market_type):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            # If all the past markets remain in memory, reinitialize the market fees
+            self.market_fees = {}
+        self._accumulate_market_fees(area, market_type)
+
     def update(self, area):
         market_type = "past_markets" if self.is_spot_market else "past_balancing_markets"
-        self._accumulate_market_fees(area, market_type)
+        self._update_market_fees(area, market_type)
         bills = self.energy_bills(area, market_type)
         flattened = self._flatten_energy_bills(OrderedDict(sorted(bills.items())), {})
         self.bills_results = self._accumulate_by_children(area, flattened, {})
