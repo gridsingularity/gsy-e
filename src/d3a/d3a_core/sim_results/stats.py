@@ -59,9 +59,11 @@ class MarketEnergyBills:
         self.is_spot_market = is_spot_market
         self.bills_results = {}
         self.bills_redis_results = {}
+        self.market_fees = {}
 
     @classmethod
     def _store_bought_trade(cls, result_dict, trade_offer):
+        # Division by 100 to convert cents to Euros
         result_dict['bought'] += trade_offer.energy
         result_dict['spent'] += trade_offer.price / 100.
         result_dict['total_energy'] += trade_offer.energy
@@ -69,6 +71,7 @@ class MarketEnergyBills:
 
     @classmethod
     def _store_sold_trade(cls, result_dict, trade_offer):
+        # Division by 100 to convert cents to Euros
         result_dict['sold'] += trade_offer.energy
         result_dict['earned'] += trade_offer.price / 100.
         result_dict['total_energy'] -= trade_offer.energy
@@ -76,7 +79,7 @@ class MarketEnergyBills:
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
-        if not hasattr(area, past_market_types):
+        if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
             return []
         if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             return getattr(area, past_market_types)
@@ -111,9 +114,7 @@ class MarketEnergyBills:
         if not area.children:
             return None
         result = self._get_child_data(area)
-        result["market_fee"] = 0.0
         for market in self._get_past_markets_from_area(area, past_market_types):
-            result["market_fee"] += market.market_fee
             for trade in market.trades:
                 buyer = area_name_from_area_or_iaa_name(trade.buyer)
                 seller = area_name_from_area_or_iaa_name(trade.seller)
@@ -121,17 +122,32 @@ class MarketEnergyBills:
                     self._store_bought_trade(result[buyer], trade.offer)
                 if seller in result:
                     self._store_sold_trade(result[seller], trade.offer)
-
         for child in area.children:
             child_result = self.energy_bills(child, past_market_types)
             if child_result is not None:
-                result[child.name]['market_fee'] = child_result.pop("market_fee")
                 result[child.name]['children'] = child_result
+                result[child.name]['market_fee'] = self.market_fees[child.name]
 
         return result
 
+    def _accumulate_market_fees(self, area, past_market_types):
+        if area.name not in self.market_fees:
+            self.market_fees[area.name] = 0.0
+        for market in self._get_past_markets_from_area(area, past_market_types):
+            # Converting cents to Euros
+            self.market_fees[market.area.name] += market.market_fee / 100.0
+        for child in area.children:
+            self._accumulate_market_fees(child, past_market_types)
+
+    def _update_market_fees(self, area, market_type):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            # If all the past markets remain in memory, reinitialize the market fees
+            self.market_fees = {}
+        self._accumulate_market_fees(area, market_type)
+
     def update(self, area):
         market_type = "past_markets" if self.is_spot_market else "past_balancing_markets"
+        self._update_market_fees(area, market_type)
         bills = self.energy_bills(area, market_type)
         flattened = self._flatten_energy_bills(OrderedDict(sorted(bills.items())), {})
         self.bills_results = self._accumulate_by_children(area, flattened, {})
@@ -149,24 +165,22 @@ class MarketEnergyBills:
             flat_results[k].pop("children", None)
         return flat_results
 
-    @classmethod
-    def _accumulate_by_children(cls, area, flattened, results):
+    def _accumulate_by_children(self, area, flattened, results):
         if not area.children:
             # This is a device
             results[area.name] = flattened[area.name]
         else:
             results[area.name] = {c.name: flattened[c.name] for c in area.children}
 
-            results.update(**cls._generate_external_and_total_bills(area, results, flattened))
+            results.update(**self._generate_external_and_total_bills(area, results, flattened))
 
             for c in area.children:
                 results.update(
-                    **cls._accumulate_by_children(c, flattened, results)
+                    **self._accumulate_by_children(c, flattened, results)
                 )
         return results
 
-    @classmethod
-    def _generate_external_and_total_bills(cls, area, results, flattened):
+    def _generate_external_and_total_bills(self, area, results, flattened):
         all_child_results = [v for v in results[area.name].values()]
         results[area.name].update({"Accumulated Trades": {
             'bought': sum(v['bought'] for v in all_child_results),
@@ -175,8 +189,7 @@ class MarketEnergyBills:
             'earned': sum(v['earned'] for v in all_child_results),
             'total_energy': sum(v['total_energy'] for v in all_child_results),
             'total_cost': sum(v['total_cost'] for v in all_child_results),
-            'market_fee': flattened[area.name]["market_fee"]
-            if area.name in flattened else flattened["market_fee"]
+            'market_fee': self.market_fees[area.name]
         }})
 
         if area.name in flattened:
