@@ -21,10 +21,12 @@ from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # N
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
 from d3a.models.market.market_structures import Bid
-from d3a.models.strategy.area_agents.two_sided_revenue_fee import update_forwarded_bid_with_fee, \
-    update_forwarded_bid_trade_original_info
+from d3a.models.market.grid_fees.base_model import BaseModel
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
+TradeBidInfo = namedtuple('TradeBidInfo',
+                          ('original_bid_rate', 'propagated_bid_rate',
+                           'original_offer_rate', 'propagated_offer_rate', 'trade_rate'))
 
 
 class TwoSidedPayAsBidEngine(IAAEngine):
@@ -46,7 +48,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
 
         forwarded_bid = self.markets.target.bid(
-            update_forwarded_bid_with_fee(
+            BaseModel.update_forwarded_bid_with_fee(
                 bid.price, bid.original_bid_price, self.markets.source.transfer_fee_ratio),
             bid.energy,
             self.owner.name,
@@ -101,10 +103,12 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             original_bid_rate = bid.original_bid_price / bid.energy
             matched_rate = bid.price / bid.energy
 
-            trade_bid_info = [
-                original_bid_rate, bid.price/bid.energy,
-                offer.original_offer_price/offer.energy, offer.price/offer.energy,
-                original_bid_rate]
+            trade_bid_info = TradeBidInfo(
+                original_bid_rate=original_bid_rate,
+                propagated_bid_rate=bid.price/bid.energy,
+                original_offer_rate=offer.original_offer_price/offer.energy,
+                propagated_offer_rate=offer.price/offer.energy,
+                trade_rate=original_bid_rate)
 
             self.owner.accept_offer(market=self.markets.source,
                                     offer=offer,
@@ -167,7 +171,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
-                trade_offer_info=update_forwarded_bid_trade_original_info(
+                trade_offer_info=BaseModel.update_forwarded_bid_trade_original_info(
                     bid_trade.offer_bid_trade_info, market_bid
                 )
             )

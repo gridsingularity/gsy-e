@@ -28,8 +28,7 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
-from d3a.models.strategy.area_agents.two_sided_revenue_fee import \
-    propagate_offer_trade_original_info, calculate_trade_price_and_fees
+from d3a.models.market.grid_fees.base_model import BaseModel
 from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
@@ -163,7 +162,9 @@ class OneSidedMarket(Market):
                     ) if already_tracked is False else energy * trade_rate
                 else:
                     revenue, fees, trade_rate_incl_fees = \
-                        calculate_trade_price_and_fees(trade_bid_info, self.transfer_fee_ratio)
+                        BaseModel.calculate_trade_price_and_fees(
+                            trade_bid_info, self.transfer_fee_ratio
+                        )
                     self.market_fee += fees
                     final_price = energy * trade_rate_incl_fees
 
@@ -206,7 +207,7 @@ class OneSidedMarket(Market):
                         energy, trade_rate, 1, orig_offer_price
                     ) if already_tracked is False else energy * trade_rate
                 else:
-                    revenue, fees, trade_price = calculate_trade_price_and_fees(
+                    revenue, fees, trade_price = BaseModel.calculate_trade_price_and_fees(
                         trade_bid_info, self.transfer_fee_ratio
                     )
                     self.market_fee += fees
@@ -223,7 +224,7 @@ class OneSidedMarket(Market):
             )
 
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
-                      offer_bid_trade_info=propagate_offer_trade_original_info(
+                      offer_bid_trade_info=BaseModel.propagate_original_bid_info_on_offer_trade(
                           trade_bid_info, self.transfer_fee_ratio)
                       )
         self.bc_interface.track_trade_event(trade)
