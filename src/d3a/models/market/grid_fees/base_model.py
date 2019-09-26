@@ -40,7 +40,7 @@ class BaseModel(GridFees):
         return source_bid - original_bid * tax_percentage_n
 
     @staticmethod
-    def update_forwarded_offer_with_fee(source_offer, original_offer):
+    def update_forwarded_offer_with_fee(source_offer, original_offer, tax_percentage_n):
         return source_offer
 
     @staticmethod

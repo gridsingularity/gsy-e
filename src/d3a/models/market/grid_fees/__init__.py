@@ -20,7 +20,7 @@ class GridFees(ABC):
 
     @staticmethod
     @abstractmethod
-    def update_forwarded_offer_with_fee(source_offer, original_offer):
+    def update_forwarded_offer_with_fee(source_offer, original_offer, tax_percentage_n):
         pass
 
     @staticmethod

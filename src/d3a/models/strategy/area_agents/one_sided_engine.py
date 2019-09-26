@@ -54,7 +54,9 @@ class IAAEngine:
             return
 
         forwarded_offer = self.markets.target.offer(
-            BaseModel.update_forwarded_offer_with_fee(offer.price, offer.original_offer_price),
+            BaseModel.update_forwarded_offer_with_fee(
+                offer.price, offer.original_offer_price, self.markets.target.transfer_fee_ratio
+            ),
             offer.energy,
             self.owner.name,
             offer.original_offer_price,
