@@ -79,7 +79,7 @@ class MarketEnergyBills:
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
-        if not hasattr(area, past_market_types):
+        if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
             return []
         if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             return getattr(area, past_market_types)
