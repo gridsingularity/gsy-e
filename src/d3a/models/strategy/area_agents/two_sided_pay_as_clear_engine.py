@@ -140,6 +140,10 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         accepted_bids = []
         for bid in self.sorted_bids:
             original_bid_rate = bid.original_bid_price / bid.energy
+            trade_offer_info = [
+                original_bid_rate, bid.price/bid.energy,
+                clearing_rate, clearing_rate, clearing_rate]
+
             if cumulative_traded_bids >= clearing_energy:
                 break
             elif (bid.price / bid.energy) >= clearing_rate and \
@@ -151,7 +155,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     seller=self.owner.name,
                     already_tracked=True,
                     trade_rate=clearing_rate,
-                    original_trade_rate=original_bid_rate
+                    trade_offer_info=trade_offer_info
                 )
             elif (bid.price / bid.energy) >= clearing_rate and \
                     (0 < (clearing_energy - cumulative_traded_bids) <= bid.energy):
@@ -162,7 +166,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     seller=self.owner.name,
                     already_tracked=True,
                     trade_rate=clearing_rate,
-                    original_trade_rate=original_bid_rate
+                    trade_offer_info=trade_offer_info
                 )
                 cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
             accepted_bids.append(trade)
@@ -208,6 +212,11 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 energy = bid_energy
 
             already_tracked = trade.offer.buyer == offer.seller
+            trade_bid_info = [
+                clearing_rate, clearing_rate,
+                offer.original_offer_price/offer.energy, offer.price/offer.energy,
+                clearing_rate]
+
             if bid_energy == offer.energy:
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
@@ -215,7 +224,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         energy=offer.energy,
                                         already_tracked=already_tracked,
                                         trade_rate=clearing_rate,
-                                        original_trade_rate=clearing_rate)
+                                        trade_bid_info=trade_bid_info)
                 return accepted_bids
             elif bid_energy > offer.energy:
                 self.owner.accept_offer(market=self.markets.source,
@@ -224,7 +233,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                                         energy=offer.energy,
                                         already_tracked=already_tracked,
                                         trade_rate=clearing_rate,
-                                        original_trade_rate=clearing_rate)
+                                        trade_bid_info=trade_bid_info)
                 updated_bid = trade.offer
                 updated_bid._replace(energy=trade.offer.energy - offer.energy)
                 trade._replace(offer=updated_bid)
@@ -238,7 +247,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     energy=bid_energy,
                     already_tracked=already_tracked,
                     trade_rate=clearing_rate,
-                    original_trade_rate=clearing_rate)
+                    trade_bid_info=trade_bid_info)
                 assert offer_trade.residual is not None
                 offer = offer_trade.residual
             if energy <= FLOATING_POINT_TOLERANCE:
