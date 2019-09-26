@@ -21,8 +21,7 @@ from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # N
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
 from d3a.models.market.market_structures import Bid
-from d3a.models.strategy.area_agents.two_sided_revenue_fee import update_forwarded_bid_with_fee, \
-    update_forwarded_bid_trade_original_info
+from d3a.models.market.grid_fees.base_model import BaseModel
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 TradeBidInfo = namedtuple('TradeBidInfo',
@@ -49,7 +48,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
 
         forwarded_bid = self.markets.target.bid(
-            update_forwarded_bid_with_fee(
+            BaseModel.update_forwarded_bid_with_fee(
                 bid.price, bid.original_bid_price, self.markets.source.transfer_fee_ratio),
             bid.energy,
             self.owner.name,
@@ -172,7 +171,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
-                trade_offer_info=update_forwarded_bid_trade_original_info(
+                trade_offer_info=BaseModel.update_forwarded_bid_trade_original_info(
                     bid_trade.offer_bid_trade_info, market_bid
                 )
             )
