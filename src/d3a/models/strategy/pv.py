@@ -79,11 +79,12 @@ class PVStrategy(BaseStrategy):
             raise ValueError("Number of Panels should be a non-zero and positive value.")
         if max_panel_output_W is not None and max_panel_output_W < 0:
             raise ValueError("Max panel output in Watts should always be positive.")
-        if initial_selling_rate < 0:
+        if initial_selling_rate is not None and initial_selling_rate < 0:
             raise ValueError("Min selling rate should be positive.")
-        if final_selling_rate < 0:
+        if final_selling_rate is not None and final_selling_rate < 0:
             raise ValueError("Min selling rate should be positive.")
-        if initial_selling_rate < final_selling_rate:
+        if initial_selling_rate and final_selling_rate and \
+                initial_selling_rate < final_selling_rate:
             raise ValueError("PV should start selling high and then offer lower price")
 
     def area_reconfigure_event(self, **kwargs):
@@ -95,10 +96,10 @@ class PVStrategy(BaseStrategy):
         for name, value in kwargs.items():
             setattr(self, name, value)
 
-        if kwargs['initial_selling_rate'] is not None:
+        if 'initial_selling_rate' in kwargs and kwargs['initial_selling_rate'] is not None:
             self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                     kwargs['initial_selling_rate'])
-        if kwargs['final_selling_rate'] is not None:
+        if 'final_selling_rate' in kwargs and kwargs['final_selling_rate'] is not None:
             self.offer_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                   kwargs['final_selling_rate'])
         self.produced_energy_forecast_kWh()

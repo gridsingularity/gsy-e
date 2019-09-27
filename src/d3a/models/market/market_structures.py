@@ -84,12 +84,12 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
-                                 'buyer', 'residual', 'already_tracked', 'original_trade_rate'))):
+                                 'buyer', 'residual', 'already_tracked', 'offer_bid_trade_info'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None,
-                already_tracked=False, original_trade_rate=None):
+                already_tracked=False, offer_bid_trade_info=None):
         # overridden to give the residual field a default value
         return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual,
-                                         already_tracked, original_trade_rate)
+                                         already_tracked, offer_bid_trade_info)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
@@ -122,11 +122,11 @@ class BalancingOffer(Offer):
 
 
 class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'seller',
-                                                   'buyer', 'residual', 'original_trade_rate'))):
-    def __new__(cls, id, time, offer, seller, buyer, residual=None, original_trade_rate=None):
+                                                   'buyer', 'residual', 'offer_bid_trade_info'))):
+    def __new__(cls, id, time, offer, seller, buyer, residual=None, offer_bid_trade_info=None):
         # overridden to give the residual field a default value
         return super(BalancingTrade, cls).__new__(cls, id, time, offer, seller,
-                                                  buyer, residual, original_trade_rate)
+                                                  buyer, residual, offer_bid_trade_info)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""

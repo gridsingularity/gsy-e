@@ -108,12 +108,13 @@ Feature: Run integration tests
      And d3a is installed
      And d3a uses an two-sided pay-as-bid market
      When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
-     Then trades on the House 1 market clear with 20.0 cents/kWh
-     Then trades on the Neighborhood 1 market clear with 19.0 cents/kWh
-     Then trades on the Grid market clear with 17.0 cents/kWh
-     Then trades on the Neighborhood 2 market clear with 16.0 cents/kWh
-     Then trades on the House 2 market clear with 16.0 cents/kWh
+     Then trades on the House 1 market clear with 30.0 cents/kWh
+     Then trades on the Neighborhood 1 market clear with 30 cents/kWh
+     Then trades on the Grid market clear with 28.75 cents/kWh
+     Then trades on the Neighborhood 2 market clear with 26.25 cents/kWh
+     Then trades on the House 2 market clear with 25.0 cents/kWh
 
+  @disabled
   Scenario: Grid fees are calculated based on the clearing rate for pay as clear
      Given we have a scenario named non_compounded_grid_fees
      And d3a is installed
