@@ -38,8 +38,7 @@ def get_setup(config):
                          appliance=PVAppliance()),
                     Area('H1 Storage1',
                          strategy=StorageStrategy(battery_capacity_kWh=12 * 1.2,
-                                                  max_abs_battery_power_kW=12 * 1.2,
-                                                  initial_capacity_kWh=0.6 * 12 * 1.2),
+                                                  max_abs_battery_power_kW=12 * 1.2),
                          appliance=SwitchableAppliance()),
                     Area('H1 General Load',
                          strategy=DefinedLoadStrategy(
@@ -57,8 +56,7 @@ def get_setup(config):
                          appliance=PVAppliance()),
                     Area('H2 Storage1',
                          strategy=StorageStrategy(battery_capacity_kWh=6 * 1.2,
-                                                  max_abs_battery_power_kW=6 * 1.2,
-                                                  initial_capacity_kWh=0.6 * 6 * 1.2),
+                                                  max_abs_battery_power_kW=6 * 1.2),
                          appliance=SwitchableAppliance()),
                     Area('H2 General Load',
                          strategy=DefinedLoadStrategy(
@@ -104,8 +102,7 @@ def get_setup(config):
                 [
                     Area('H5 Storage1',
                          strategy=StorageStrategy(battery_capacity_kWh=12 * 1.2,
-                                                  max_abs_battery_power_kW=12 * 1.2,
-                                                  initial_capacity_kWh=0.6 * 12 * 1.2),
+                                                  max_abs_battery_power_kW=12 * 1.2),
                          appliance=SwitchableAppliance()),
                     Area('H5 General Load',
                          strategy=DefinedLoadStrategy(
@@ -121,8 +118,7 @@ def get_setup(config):
                 [
                     Area('H6 Storage1',
                          strategy=StorageStrategy(battery_capacity_kWh=6 * 1.2,
-                                                  max_abs_battery_power_kW=6 * 1.2,
-                                                  initial_capacity_kWh=0.6 * 6 * 1.2),
+                                                  max_abs_battery_power_kW=6 * 1.2),
                          appliance=SwitchableAppliance()),
                     Area('H6 General Load',
                          strategy=DefinedLoadStrategy(

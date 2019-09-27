@@ -256,17 +256,7 @@ def pv_test5(area_test3, called):
     return p
 
 
-def testing_trigger_risk(pv_test5):
-    pv_test5.trigger_risk(99)
-    assert pv_test5.risk == 99
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(101)
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(-1)
-
-
 """ TEST 6"""
-# Testing with different risk test parameters
 
 
 @pytest.fixture()
@@ -355,8 +345,7 @@ def test_pv_constructor_rejects_incorrect_parameters():
 
 @pytest.fixture()
 def pv_test7(area_test3):
-    p = PVStrategy(panel_count=1, risk=95, initial_rate_option=1,
-                   initial_selling_rate=30, energy_rate_decrease_option=1)
+    p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
@@ -368,8 +357,7 @@ def pv_test7(area_test3):
 
 @pytest.fixture()
 def pv_test8(area_test3):
-    p = PVStrategy(panel_count=1, risk=10, initial_rate_option=1,
-                   initial_selling_rate=30, energy_rate_decrease_option=1)
+    p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}

@@ -58,7 +58,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     # The default value is 1, for historical average price
                     # Here a value of 2 is used, which is using the market maker rate
-                    Area('H1 PV', strategy=PVStrategy(4, 80, initial_rate_option=2),
+                    Area('H1 PV', strategy=PVStrategy(4),
                          appliance=PVAppliance()),
                 ],
                 transfer_fee_pct=0,

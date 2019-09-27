@@ -35,8 +35,8 @@ class PVPredefinedStrategy(PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-    parameters = ('panel_count', 'risk', 'final_selling_rate', 'energy_rate_decrease_option',
-                  'energy_rate_decrease_per_update', 'initial_selling_rate')
+    parameters = ('panel_count', 'final_selling_rate', 'energy_rate_decrease_per_update',
+                  'initial_selling_rate')
 
     def __init__(
             self, panel_count: int=1,
@@ -115,8 +115,8 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ('panel_count', 'risk', 'final_selling_rate', 'energy_rate_decrease_option',
-                  'energy_rate_decrease_per_update', 'power_profile', 'initial_selling_rate')
+    parameters = ('panel_count', 'final_selling_rate', 'energy_rate_decrease_per_update',
+                  'power_profile', 'initial_selling_rate')
 
     def __init__(
             self, power_profile, panel_count: int=1,
@@ -132,7 +132,6 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         :param power_profile: input profile for a day. Can be either a csv file path,
         or a dict with hourly data (Dict[int, float])
         or a dict with arbitrary time data (Dict[str, float])
-        :param risk: PV risk parameter
         :param panel_count: number of solar panels for this PV plant
         :param final_selling_rate: lower threshold for the PV sale price
         """

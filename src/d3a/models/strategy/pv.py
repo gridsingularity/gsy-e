@@ -21,7 +21,6 @@ import math
 from pendulum import duration
 
 from d3a.d3a_core.util import generate_market_slot_list
-from d3a.events.event_structures import Trigger
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
@@ -32,25 +31,21 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 
 
 class PVStrategy(BaseStrategy):
-    available_triggers = [
-        Trigger('risk', {'new_risk': int},
-                help="Change the risk parameter. Valid values are between 1 and 100.")
-    ]
 
     parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate',
                   'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
                   'max_panel_power_W')
 
-    def __init__(self, panel_count: int=1,
+    def __init__(self, panel_count: int = 1,
                  initial_selling_rate:
-                 float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+                 float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  final_selling_rate:
-                 float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-                 fit_to_limit: bool=True,
+                 float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+                 fit_to_limit: bool = True,
                  update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
                  energy_rate_decrease_per_update:
-                 float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-                 max_panel_power_W: float=None):
+                 float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+                 max_panel_power_W: float = None):
         """
         :param panel_count: Number of solar panels for this PV plant
         :param initial_selling_rate: Upper Threshold for PV offers
@@ -171,13 +166,6 @@ class PVStrategy(BaseStrategy):
                     original_offer_price=offer_price
                 )
                 self.offers.post(offer, market.id)
-
-    def trigger_risk(self, new_risk: int = 0):
-        new_risk = int(new_risk)
-        if not (-1 < new_risk < 101):
-            raise ValueError("'new_risk' value has to be in range 0 - 100")
-        self.risk = new_risk
-        self.log.info("Risk changed to %s", new_risk)
 
     def event_offer_deleted(self, *, market_id, offer):
         super().event_offer_deleted(market_id=market_id, offer=offer)
