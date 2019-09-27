@@ -23,7 +23,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHours
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, RangeLimit
 
 
 def get_setup(config):
@@ -33,9 +33,8 @@ def get_setup(config):
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.StorageSettings.BUYING_RANGE[0] = 24.99
-    ConstSettings.StorageSettings.BUYING_RANGE[1] = 25
-    ConstSettings.StorageSettings.SELLING_RANGE[1] = 25.01
+    ConstSettings.StorageSettings.BUYING_RANGE = RangeLimit(24.99, 25)
+    ConstSettings.StorageSettings.SELLING_RANGE = RangeLimit(30, 25.01)
 
     area = Area(
         'Grid',
