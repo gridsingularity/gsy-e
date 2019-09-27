@@ -33,9 +33,9 @@ def get_setup(config):
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.StorageSettings.BUYING_RANGE[0] = 24.99
-    ConstSettings.StorageSettings.BUYING_RANGE[1] = 25
-    ConstSettings.StorageSettings.SELLING_RANGE[1] = 25.01
+    ConstSettings.StorageSettings.BUYING_RANGE._replace(min=24.99)
+    ConstSettings.StorageSettings.BUYING_RANGE._replace(max=25)
+    ConstSettings.StorageSettings.SELLING_RANGE._replace(max=25.01)
 
     area = Area(
         'Grid',
