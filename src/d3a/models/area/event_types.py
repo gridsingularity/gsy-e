@@ -69,6 +69,7 @@ class StrategyEvents(SimpleEvent):
     def tick(self, current_time, strategy):
         if current_time.hour == self.event_time and not self._triggered:
             strategy.area_reconfigure_event(**self.params)
+            self._triggered = True
 
 
 class ConfigEvents(SimpleEvent):

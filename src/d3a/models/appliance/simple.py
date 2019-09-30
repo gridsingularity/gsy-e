@@ -25,7 +25,7 @@ class SimpleAppliance(BaseAppliance):
         super().__init__()
         self._market_energy = {}
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         if not self.owner:
             # Should not happen
             return
