@@ -885,7 +885,6 @@ def assert_trade_rates(context, market_name, trade_rate):
 
     for market in markets:
         for t in market.trades:
-            print(t.offer.price / t.offer.energy, float(trade_rate))
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
 
 

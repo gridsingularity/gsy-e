@@ -40,11 +40,12 @@ class PVPredefinedStrategy(PVStrategy):
 
     def __init__(
             self, panel_count: int=1,
-            initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-            cloud_coverage: int=None,
+            initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            cloud_coverage: int = None,
             fit_to_limit: bool = True,
-            update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+            update_interval=duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = None):
@@ -119,11 +120,12 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                   'power_profile', 'initial_selling_rate')
 
     def __init__(
-            self, power_profile, panel_count: int=1,
-            initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            self, power_profile, panel_count: int = 1,
+            initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
             fit_to_limit: bool = True,
-            update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+            update_interval=duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = None):

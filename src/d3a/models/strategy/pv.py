@@ -42,7 +42,8 @@ class PVStrategy(BaseStrategy):
                  final_selling_rate:
                  float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
                  fit_to_limit: bool = True,
-                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  energy_rate_decrease_per_update:
                  float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
                  max_panel_power_W: float = None):
