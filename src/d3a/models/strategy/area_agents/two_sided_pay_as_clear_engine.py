@@ -158,8 +158,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     trade_offer_info=trade_offer_info
                 )
             elif (bid.price / bid.energy) >= clearing_rate and \
-                    (0 < (clearing_energy - cumulative_traded_bids) <= bid.energy):
-
+                    (0 < (clearing_energy - cumulative_traded_bids) < bid.energy):
                 trade = self.markets.source.accept_bid(
                     bid=bid,
                     energy=(clearing_energy - cumulative_traded_bids),
@@ -180,7 +179,6 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 break
             elif (math.floor(offer.price / offer.energy)) <= clearing_rate and \
                     (clearing_energy - cumulative_traded_offers) >= offer.energy:
-                # TODO: Used the clearing_rate as the original_trade_rate for the offers, because
                 # currently an aggregated market is used. If/once a peer-to-peer market is
                 # implemented, we should use the original bid rate for calculating the fees
                 # on the source offers, similar to the two sided pay as bid market.
@@ -192,7 +190,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 )
                 cumulative_traded_offers += offer.energy
             elif (math.floor(offer.price / offer.energy)) <= clearing_rate and \
-                    (clearing_energy - cumulative_traded_offers) <= offer.energy:
+                    (clearing_energy - cumulative_traded_offers) < offer.energy:
                 accepted_bids = self._exhaust_offer_for_selected_bids(
                     offer, accepted_bids, clearing_rate, clearing_energy - cumulative_traded_offers
                 )
@@ -209,14 +207,13 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     bid_energy = energy
                 energy -= bid_energy
             else:
-                energy = bid_energy
+                energy = offer.energy
 
             already_tracked = trade.offer.buyer == offer.seller
             trade_bid_info = [
                 clearing_rate, clearing_rate,
                 offer.original_offer_price/offer.energy, offer.price/offer.energy,
                 clearing_rate]
-
             if bid_energy == offer.energy:
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
