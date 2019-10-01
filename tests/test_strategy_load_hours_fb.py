@@ -264,7 +264,7 @@ def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     cheapest_offer = market_test1.most_affordable_offers[0]
     load_hours_strategy_test1.energy_requirement_Wh = \
         {market_test1.time_slot: cheapest_offer.energy * 1000 + 1}
-    load_hours_strategy_test1.event_tick(area=area_test1)
+    load_hours_strategy_test1.event_tick()
     assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == repr(cheapest_offer)
 
 
@@ -282,7 +282,7 @@ def test_event_tick(load_hours_strategy_test1, market_test1):
     assert isclose(load_hours_strategy_test1.energy_requirement_Wh[TIME],
                    market_test1.most_affordable_energy * 1000)
 
-    load_hours_strategy_test1.event_tick(area=area_test1)
+    load_hours_strategy_test1.event_tick()
     assert load_hours_strategy_test1.energy_requirement_Wh[TIME] == 0
 
 
@@ -292,7 +292,7 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
     load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test2.event_market_cycle()
     requirement = load_hours_strategy_test2.energy_requirement_Wh[TIME] / 1000
-    load_hours_strategy_test2.event_tick(area=area_test2)
+    load_hours_strategy_test2.event_tick()
     assert load_hours_strategy_test2.energy_requirement_Wh[TIME] == 0
     assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
 
@@ -308,7 +308,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
     load_hours_strategy_test5.event_activate()
     # load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick(area=area_test2)
+    load_hours_strategy_test5.event_tick()
     assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
                    1000 / load_hours_strategy_test5.energy_per_slot_Wh) *
                   (load_hours_strategy_test5.area.config.slot_length / duration(hours=1))), 2) == \
@@ -326,7 +326,7 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick(area=area_test2)
+    load_hours_strategy_test5.event_tick()
     # Get the bid that was posted on event_market_cycle
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
 
@@ -351,7 +351,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick(area=area_test2)
+    load_hours_strategy_test5.event_tick()
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
     # Increase energy requirement to cover the energy from the bid + threshold
     load_hours_strategy_test5.energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009

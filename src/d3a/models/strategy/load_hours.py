@@ -166,7 +166,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _double_sided_market_event_tick(self, market):
         self.bid_update.update_posted_bids_over_ticks(market, self)
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         for market in self.active_markets:
             if market.time_slot not in self.energy_requirement_Wh:
                 continue

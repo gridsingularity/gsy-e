@@ -143,13 +143,13 @@ def test_switchable_appliance_switching(switchable_fixture):
 # trades/reports only when switched on
 
 def test_switchable_appliance_reports_when_on(switchable_fixture):
-    switchable_fixture.event_tick(area=switchable_fixture.area)
+    switchable_fixture.event_tick()
     assert switchable_fixture.area.reported_value is not None
 
 
 def test_switchable_appliance_no_report_when_off(switchable_fixture):
     switchable_fixture.fire_trigger("off")
-    switchable_fixture.event_tick(area=switchable_fixture.area)
+    switchable_fixture.event_tick()
     assert switchable_fixture.area.reported_value is None
 
 

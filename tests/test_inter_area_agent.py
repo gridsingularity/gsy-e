@@ -149,9 +149,9 @@ def iaa():
     iaa = OneSidedAgent(owner=owner,
                         higher_market=higher_market,
                         lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     return iaa
 
 
@@ -165,9 +165,9 @@ def iaa_grid_fee():
     iaa = OneSidedAgent(owner=owner,
                         higher_market=higher_market,
                         lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     return iaa
 
 
@@ -213,9 +213,9 @@ def iaa_bid():
     iaa = TwoSidedPayAsBidAgent(owner=owner,
                                 higher_market=higher_market,
                                 lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     yield iaa
 
 
@@ -254,9 +254,9 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
     iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
                                 higher_market=higher_market,
                                 lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
 
     assert iaa.higher_market.bid_count == 1
     assert iaa.higher_market.forwarded_bid.price == \
@@ -274,9 +274,9 @@ def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
     iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
                                 higher_market=higher_market,
                                 lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
 
     assert iaa.higher_market.bid_count == 1
     bid = list(iaa.lower_market.bids.values())[-1]
@@ -352,9 +352,9 @@ def iaa2():
     owner = FakeArea('owner')
     owner.future_market = lower_market
     iaa = OneSidedAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick += 2
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     return iaa
 
 
@@ -370,9 +370,9 @@ def iaa_double_sided():
                                 higher_market=higher_market)
     iaa.engines[0]._match_offers_bids = lambda: None
     iaa.engines[1]._match_offers_bids = lambda: None
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick += 2
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     yield iaa
 
 
@@ -486,7 +486,7 @@ def iaa_double_sided_2():
     owner = FakeArea('owner')
     iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
                                 higher_market=higher_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     yield iaa
 
 
@@ -526,7 +526,7 @@ def iaa_double_sided_pay_as_clear():
     owner = FakeArea('owner')
     iaa = TwoSidedPayAsClearAgent(owner=owner, lower_market=lower_market,
                                   higher_market=higher_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     yield iaa
 
 
