@@ -57,7 +57,7 @@ class EventMixin:
         self.log.trace("Dispatching event %s", event_type.name)
         self._event_mapping(event_type)(**kwargs)
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         pass
 
     def event_market_cycle(self):
