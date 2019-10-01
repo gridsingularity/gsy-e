@@ -179,6 +179,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 break
             elif (math.floor(offer.price / offer.energy)) <= clearing_rate and \
                     (clearing_energy - cumulative_traded_offers) >= offer.energy:
+                # TODO: Used the clearing_rate as the original_trade_rate for the offers, because
                 # currently an aggregated market is used. If/once a peer-to-peer market is
                 # implemented, we should use the original bid rate for calculating the fees
                 # on the source offers, similar to the two sided pay as bid market.
