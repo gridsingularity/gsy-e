@@ -113,7 +113,7 @@ class PVStrategy(BaseStrategy):
         self.offer_update.update_on_activate()
         self.produced_energy_forecast_kWh()
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         self.offer_update.update_offer(self)
 
     def produced_energy_forecast_kWh(self):

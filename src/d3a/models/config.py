@@ -30,11 +30,12 @@ from d3a.d3a_core.util import change_global_config
 class SimulationConfig:
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
                  market_count: int, cloud_coverage: int,
-                 iaa_fee: float=ConstSettings.IAASettings.FEE_PERCENTAGE,
+                 iaa_fee: float = ConstSettings.IAASettings.FEE_PERCENTAGE,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE),
                  max_panel_power_W=None):
+
         self.sim_duration = sim_duration
         self.start_date = start_date
         self.slot_length = slot_length
@@ -55,6 +56,7 @@ class SimulationConfig:
         change_global_config(**self.__dict__)
 
         self.cloud_coverage = cloud_coverage
+
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 

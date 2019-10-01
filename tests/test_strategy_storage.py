@@ -192,10 +192,10 @@ def storage_strategy_test1(area_test1, called):
 
 def test_if_storage_buys_cheap_energy(storage_strategy_test1, area_test1):
     storage_strategy_test1.event_activate()
-    storage_strategy_test1.event_tick(area=area_test1)
+    storage_strategy_test1.event_tick()
     for i in range(5):
         area_test1.current_tick += 310
-        storage_strategy_test1.event_tick(area=area_test1)
+        storage_strategy_test1.event_tick()
     assert storage_strategy_test1.accept_offer.calls[0][0][1] == repr(
         FakeMarket(0).sorted_offers[0])
 
@@ -221,7 +221,7 @@ def storage_strategy_test2(area_test2, called):
 
 def test_if_storage_doesnt_buy_30ct(storage_strategy_test2, area_test2):
     storage_strategy_test2.event_activate()
-    storage_strategy_test2.event_tick(area=area_test2)
+    storage_strategy_test2.event_tick()
     assert len(storage_strategy_test2.accept_offer.calls) == 0
 
 
@@ -231,12 +231,12 @@ def test_if_storage_doesnt_buy_above_break_even_point(storage_strategy_test2, ar
     area_test2.current_market.offers = {'id': Offer('id', 10.1, 1,
                                                     'FakeArea',
                                                     area_test2.current_market)}
-    storage_strategy_test2.event_tick(area=area_test2)
+    storage_strategy_test2.event_tick()
     assert len(storage_strategy_test2.accept_offer.calls) == 0
     area_test2.current_market.offers = {'id': Offer('id', 9.9, 1,
                                                     'FakeArea',
                                                     area_test2.current_market)}
-    storage_strategy_test2.event_tick(area=area_test2)
+    storage_strategy_test2.event_tick()
     assert len(storage_strategy_test2.accept_offer.calls) == 0
 
 
@@ -266,7 +266,7 @@ def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3)
     storage_strategy_test3.bid_update.final_rate = \
         read_arbitrary_profile(InputProfileTypes.IDENTITY, 1)
     storage_strategy_test3.event_activate()
-    storage_strategy_test3.event_tick(area=area_test3)
+    storage_strategy_test3.event_tick()
     assert len(storage_strategy_test3.accept_offer.calls) == 0
 
 
@@ -309,7 +309,7 @@ def storage_strategy_test4(area_test4, called):
 
 def test_if_storage_pays_respect_to_capacity_limits(storage_strategy_test4, area_test4):
     storage_strategy_test4.event_activate()
-    storage_strategy_test4.event_tick(area=area_test4)
+    storage_strategy_test4.event_tick()
     assert len(storage_strategy_test4.accept_offer.calls) == 0
 
 
@@ -627,10 +627,10 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
                                                                  area_test11):
     storage_strategy_test11.event_activate()
     buy_market = area_test11.all_markets[0]
-    storage_strategy_test11.event_tick(area=area_test11)
+    storage_strategy_test11.event_tick()
     for i in range(2):
         area_test11.current_tick += 310
-        storage_strategy_test11.event_tick(area=area_test11)
+        storage_strategy_test11.event_tick()
     te = storage_strategy_test11.state.energy_to_buy_dict[buy_market.time_slot]
     assert te == float(storage_strategy_test11.accept_offer.calls[0][1]['energy'])
     assert len(storage_strategy_test11.accept_offer.calls) >= 1
