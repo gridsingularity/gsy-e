@@ -319,6 +319,10 @@ def update_advanced_settings(advanced_settings):
             elif isinstance(set_val, dict):
                 nested_class = getattr(class_object, set_var)
                 update_nested_settings(nested_class, set_var, settings_dict[class_name])
+            elif isinstance(set_val, list):
+                from d3a_interface.constants_limits import RangeLimit
+                if isinstance(getattr(class_object, set_var), RangeLimit):
+                    setattr(class_object, set_var, RangeLimit(*set_val))
             else:
                 setattr(class_object, set_var, set_val)
 

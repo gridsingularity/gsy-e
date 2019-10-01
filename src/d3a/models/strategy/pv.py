@@ -24,6 +24,7 @@ from d3a.d3a_core.util import generate_market_slot_list
 from d3a.events.event_structures import Trigger
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.device_validator import validate_pv_device
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.state import PVState
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -60,39 +61,30 @@ class PVStrategy(BaseStrategy):
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
-        self._validate_constructor_arguments(panel_count, max_panel_power_W,
-                                             initial_selling_rate, final_selling_rate)
+        result = validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        if result is not True:
+            raise ValueError(result)
         BaseStrategy.__init__(self)
         self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
                                                  fit_to_limit, energy_rate_decrease_per_update,
                                                  update_interval)
+        for time_slot in generate_market_slot_list():
+            result = \
+                validate_pv_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
+                                   final_selling_rate=self.offer_update.final_rate[time_slot])
+            if result is not True:
+                raise ValueError(result)
         self.panel_count = panel_count
         self.final_selling_rate = final_selling_rate
         self.max_panel_power_W = max_panel_power_W
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
-    @staticmethod
-    def _validate_constructor_arguments(panel_count, max_panel_output_W,
-                                        initial_selling_rate, final_selling_rate):
-        if panel_count is not None and panel_count <= 0:
-            raise ValueError("Number of Panels should be a non-zero and positive value.")
-        if max_panel_output_W is not None and max_panel_output_W < 0:
-            raise ValueError("Max panel output in Watts should always be positive.")
-        if initial_selling_rate is not None and initial_selling_rate < 0:
-            raise ValueError("Min selling rate should be positive.")
-        if final_selling_rate is not None and final_selling_rate < 0:
-            raise ValueError("Min selling rate should be positive.")
-        if initial_selling_rate and final_selling_rate and \
-                initial_selling_rate < final_selling_rate:
-            raise ValueError("PV should start selling high and then offer lower price")
-
     def area_reconfigure_event(self, **kwargs):
         assert all(k in self.parameters for k in kwargs.keys())
-        self._validate_constructor_arguments(kwargs.get('panel_count', None),
-                                             kwargs.get('max_panel_power_W', None),
-                                             kwargs.get('initial_selling_rate', None),
-                                             kwargs.get('final_selling_rate', None))
+        message = validate_pv_device(**kwargs)
+        if message is not True:
+            raise ValueError(message)
         for name, value in kwargs.items():
             setattr(self, name, value)
 

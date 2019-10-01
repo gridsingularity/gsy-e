@@ -33,8 +33,9 @@ class UpdateFrequencyMixin:
                                                    initial_rate)
         self.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                  final_rate)
-        self.energy_rate_change_per_update = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                    energy_rate_change_per_update)
+        self.energy_rate_change_per_update = \
+            read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                   energy_rate_change_per_update)
         self.update_interval = update_interval
         self.update_counter = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
         self.number_of_available_updates = 0
