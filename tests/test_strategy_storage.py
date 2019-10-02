@@ -446,15 +446,6 @@ def test_calculate_initial_sell_energy_rate_upper_bound(storage_strategy_test7_1
 
 
 @pytest.fixture()
-def storage_strategy_test7_2(area_test7):
-    s = StorageStrategy(battery_capacity_kWh=3.01, max_abs_battery_power_kW=5.21)
-    s.owner = area_test7
-    s.area = area_test7
-    s.offers.posted = {Offer('id', 30, 1, 'FakeArea'): area_test7.current_market.id}
-    return s
-
-
-@pytest.fixture()
 def storage_strategy_test7_3(area_test7):
     s = StorageStrategy(initial_soc=19.96, battery_capacity_kWh=5.01,
                         max_abs_battery_power_kW=5.21, final_selling_rate=17,
