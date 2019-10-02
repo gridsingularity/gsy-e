@@ -50,6 +50,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
 
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
+
         BidEnabledStrategy.__init__(self)
         self.bid_update = \
             UpdateFrequencyMixin(initial_rate=initial_buying_rate,
