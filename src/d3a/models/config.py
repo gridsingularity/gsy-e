@@ -22,8 +22,8 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import format_interval
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.read_user_profile import read_arbitrary_profile
-from d3a.models.read_user_profile import InputProfileTypes
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+    read_and_convert_identity_profile_to_float
 from d3a.d3a_core.util import change_global_config
 
 
@@ -117,7 +117,4 @@ class SimulationConfig:
         """
         Reads market_maker_rate from arbitrary input types
         """
-        market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
-        self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                        market_maker_rate_parsed)
-        self.market_maker_rate = {k: float(v) for k, v in self.market_maker_rate.items()}
+        self.market_maker_rate = read_and_convert_identity_profile_to_float(market_maker_rate)

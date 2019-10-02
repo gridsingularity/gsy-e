@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
@@ -29,7 +28,6 @@ import os
 def get_setup(config):
 
     i_c = 12 * 1.2
-    i_c_f = 1
     area = Area(
         'Grid',
         [
@@ -47,7 +45,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(battery_capacity_kWh=i_c,
                                                                  max_abs_battery_power_kW=i_c,
-                                                                 initial_capacity_kWh=i_c_f * i_c),
+                                                                 initial_soc=100),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -65,7 +63,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H2 Storage1', strategy=StorageStrategy(battery_capacity_kWh=i_c,
                                                                  max_abs_battery_power_kW=i_c,
-                                                                 initial_capacity_kWh=i_c_f * i_c),
+                                                                 initial_soc=100),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -81,7 +79,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H3 Storage1', strategy=StorageStrategy(battery_capacity_kWh=i_c,
                                                                  max_abs_battery_power_kW=i_c,
-                                                                 initial_capacity_kWh=i_c_f * i_c),
+                                                                 initial_soc=100),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -97,7 +95,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H4 Storage1', strategy=StorageStrategy(battery_capacity_kWh=i_c,
                                                                  max_abs_battery_power_kW=i_c,
-                                                                 initial_capacity_kWh=i_c_f * i_c),
+                                                                 initial_soc=100),
                          appliance=SwitchableAppliance()),
                 ]
             ),
