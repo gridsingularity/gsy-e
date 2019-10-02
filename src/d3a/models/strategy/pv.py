@@ -56,6 +56,10 @@ class PVStrategy(BaseStrategy):
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
+
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
+
         self._validate_constructor_arguments(panel_count, max_panel_power_W,
                                              initial_selling_rate, final_selling_rate)
         BaseStrategy.__init__(self)

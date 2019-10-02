@@ -63,6 +63,9 @@ class StorageStrategy(BidEnabledStrategy):
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
 
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
+
         self._validate_constructor_arguments(initial_soc, min_allowed_soc,
                                              battery_capacity_kWh, max_abs_battery_power_kW,
                                              initial_selling_rate, final_selling_rate,
