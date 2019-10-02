@@ -62,6 +62,10 @@ class PVStrategy(BaseStrategy):
             validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
         except D3ADeviceException as e:
             raise D3ADeviceException(str(e))
+
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
+
         BaseStrategy.__init__(self)
         self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
                                                  fit_to_limit, energy_rate_decrease_per_update,
