@@ -19,14 +19,18 @@ import pytest
 import unittest
 from unittest.mock import MagicMock, Mock
 from pendulum import DateTime, duration, today
+from parameterized import parameterized
 from math import isclose
+import os
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import ConstSettings
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.util import d3a_path
 
 
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
@@ -418,3 +422,25 @@ def test_balancing_offers_are_created_if_device_in_registry(
         area_test2.test_balancing_market.created_balancing_offers[1].price
     assert actual_balancing_supply_price == expected_balancing_supply_energy * 40
     DeviceRegistry.REGISTRY = {}
+
+
+@parameterized.expand([
+    [True, 9, ], [False, 33, ]
+])
+def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
+    GlobalConfig.market_maker_rate = 9
+    load = LoadHoursStrategy(200, final_buying_rate=33, use_market_maker_rate=use_mmr)
+    assert all(v == expected_rate for v in load.bid_update.final_rate.values())
+
+
+@parameterized.expand([
+    [True, 9, ], [False, 33, ]
+])
+def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr, expected_rate):
+    GlobalConfig.market_maker_rate = 9
+    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    load = DefinedLoadStrategy(
+        daily_load_profile=user_profile_path,
+        final_buying_rate=33,
+        use_market_maker_rate=use_mmr)
+    assert all(v == expected_rate for v in load.bid_update.final_rate.values())

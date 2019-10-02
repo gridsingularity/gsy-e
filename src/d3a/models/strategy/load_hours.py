@@ -29,6 +29,7 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a_interface.constants_limits import GlobalConfig
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
@@ -36,7 +37,7 @@ BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 class LoadHoursStrategy(BidEnabledStrategy):
     parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'fit_to_limit',
                   'energy_rate_increase_per_update', 'update_interval', 'initial_buying_rate',
-                  'final_buying_rate', 'balancing_energy_ratio')
+                  'final_buying_rate', 'balancing_energy_ratio', 'use_market_maker_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=1,
@@ -48,7 +49,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
                  ConstSettings.LoadSettings.FINAL_BUYING_RATE,
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
+                 use_market_maker_rate: bool = False):
+
+        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
+        if use_market_maker_rate:
+            final_buying_rate = GlobalConfig.market_maker_rate
 
         BidEnabledStrategy.__init__(self)
         self.bid_update = \

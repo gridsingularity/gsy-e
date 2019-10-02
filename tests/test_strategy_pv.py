@@ -19,13 +19,17 @@ import pytest
 import pendulum
 import uuid
 from pendulum import DateTime
+from parameterized import parameterized
+import os
 
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.constants_limits import ConstSettings
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.constants import TIME_FORMAT
+from d3a.d3a_core.util import d3a_path
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -420,3 +424,28 @@ def test_initial_selling_rate(pv_strategy_test10, area_test10):
     pv_strategy_test10.event_market_cycle()
     created_offer = area_test10.all_markets[0].created_offers[0]
     assert created_offer.price/created_offer.energy == 25
+
+
+@parameterized.expand([
+    [PVStrategy, True, 12, ],
+    [PVStrategy, False, 19, ],
+    [PVPredefinedStrategy, True, 12, ],
+    [PVPredefinedStrategy, False, 19, ],
+])
+def test_use_mmr_parameter_is_respected(strategy_type, use_mmr, expected_rate):
+    GlobalConfig.market_maker_rate = 12
+    pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr)
+    assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
+
+
+@parameterized.expand([
+    [True, 13, ],
+    [False, 17, ],
+])
+def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
+    GlobalConfig.market_maker_rate = 13
+    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    pv = PVUserProfileStrategy(
+        power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr
+    )
+    assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
