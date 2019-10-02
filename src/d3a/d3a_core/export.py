@@ -113,7 +113,7 @@ class ExportAndPlot:
 
     def export_to_zip_file(self):
         self.export(export_plots=False)
-        shutil.make_archive(self.zip_filename, 'zip', self.directory)
+        shutil.make_archive(str(self.zip_filename), 'zip', str(self.directory))
         return str(self.zip_filename) + ".zip"
 
     def delete_exported_files(self):
