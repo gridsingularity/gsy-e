@@ -20,6 +20,7 @@ from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
@@ -56,6 +57,10 @@ class Leaf(Area):
 
 class CommercialProducer(Leaf):
     strategy_type = CommercialStrategy
+
+
+class MarketMaker(Leaf):
+    strategy_type = MarketMakerStrategy
 
 
 class PV(Leaf):
