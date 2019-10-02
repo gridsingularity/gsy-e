@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration
 from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 
 class FinitePowerPlant(CommercialStrategy):
@@ -24,26 +25,12 @@ class FinitePowerPlant(CommercialStrategy):
 
     def __init__(self, energy_rate=None, max_available_power_kW=None):
         super().__init__(energy_rate=energy_rate)
-        self.max_available_power_kW = self._sanitize_max_available_power(max_available_power_kW)
+        self.max_available_power_kW = max_available_power_kW
 
-    @staticmethod
-    def _sanitize_max_available_power(max_available_power_kW):
-        if isinstance(max_available_power_kW, int) or isinstance(max_available_power_kW, float):
-            max_available_power_kW = {i: max_available_power_kW for i in range(24)}
-        elif isinstance(max_available_power_kW, dict):
-            latest_entry = 0
-            for i in range(24):
-                if i not in max_available_power_kW:
-                    max_available_power_kW[i] = latest_entry
-                else:
-                    latest_entry = max_available_power_kW[i]
-                    max_available_power_kW[i] = latest_entry
-        else:
-            raise ValueError("Max available power should either be a numerical value, "
-                             "or an hourly dict of tuples.")
-        if not all(float(power) >= 0.0 for power in max_available_power_kW.values()):
-            raise ValueError("Max available power should be positive.")
-        return max_available_power_kW
+    def event_activate(self):
+        super().event_activate()
+        self.max_available_power_kW = \
+            read_arbitrary_profile(InputProfileTypes.IDENTITY, self.max_available_power_kW)
 
     def event_trade(self, *, market_id, trade):
         # Disable offering more energy than the initial offer, in order to adhere to the max
@@ -51,15 +38,8 @@ class FinitePowerPlant(CommercialStrategy):
         pass
 
     def event_market_cycle(self):
-        if not self.area.last_past_market:
-            max_available_power_kW = self.max_available_power_kW[0]
-        else:
-            target_market_time = (self.area.all_markets[-1]).time_slot
-            max_available_power_kW = self.max_available_power_kW[target_market_time.hour]
-
-        self.energy_per_slot_kWh = max_available_power_kW / \
+        self.energy_per_slot_kWh = self.max_available_power_kW[self.area.next_market.time_slot] / \
             (duration(hours=1) / self.area.config.slot_length)
         if self.energy_per_slot_kWh <= 0.0:
             return
-
         super().event_market_cycle()

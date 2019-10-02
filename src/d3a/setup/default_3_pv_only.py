@@ -37,8 +37,6 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(12, 16))),
                          appliance=SwitchableAppliance()),
-                    # Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
-                    #      appliance=SwitchableAppliance()),
                 ]
             ),
             Area(
