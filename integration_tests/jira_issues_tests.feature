@@ -82,7 +82,7 @@ Feature: Jira Issues Tests
     And d3a is installed
     Then we run the simulation with setup file jira.default_2off_d3asim_1475 and parameters [24, 60, 60, 0, 1]
 
-  Scenario: D3ASIM-1515, PAC simulation finishes without assert in PAC engine
+  Scenario: D3ASIM-1525, PAC simulation finishes without assert in PAC engine
     Given we have a scenario named jira/d3asim_1525
     And d3a is installed
     Then we run the simulation with setup file jira.d3asim_1525 and parameters [24, 60, 60, 0, 1]
