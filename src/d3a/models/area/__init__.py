@@ -15,14 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import warnings
 from logging import getLogger
 from typing import List  # noqa
 from cached_property import cached_property
 from pendulum import DateTime, duration, today
 from slugify import slugify
 from uuid import uuid4
-
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
@@ -34,7 +32,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
-from d3a.models.area.event_dispatcher import AreaDispatcher
+from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
@@ -76,6 +74,7 @@ class Area:
         self.children = children if children is not None else []
         for child in self.children:
             child.parent = self
+
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
@@ -86,7 +85,7 @@ class Area:
         self._bc = None
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
-        self.dispatcher = AreaDispatcher(self)
+        self.dispatcher = DispatcherFactory(self)()
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
@@ -144,7 +143,6 @@ class Area:
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
         """
-
         self.events.update_events(self.now)
 
         if not self.children:
@@ -184,7 +182,7 @@ class Area:
         self.events.update_events(self.now)
         if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()
-        self.dispatcher.broadcast_tick(area=self)
+        self.dispatcher.broadcast_tick()
         self.current_tick += 1
 
     def __repr__(self):
@@ -227,12 +225,6 @@ class Area:
                 areas.remove(area)
                 areas.extend(area.children)
         return slug_map
-
-    def get_now(self) -> DateTime:
-        """Compatibility wrapper"""
-        warnings.info("The '.get_now()' method has been replaced by the '.now' property. "
-                      "Please use that in the future.")
-        return self.now
 
     @property
     def now(self) -> DateTime:

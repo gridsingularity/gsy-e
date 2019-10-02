@@ -26,6 +26,7 @@ from d3a.models.appliance.inter_area import InterAreaAppliance  # NOQA
 from d3a.models.appliance.pv import PVAppliance  # NOQA
 from d3a.models.appliance.switchable import SwitchableAppliance # NOQA
 
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy  # NOQA
 from d3a.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from d3a.models.strategy.pv import PVStrategy  # NOQA
 from d3a.models.strategy.storage import StorageStrategy  # NOQA

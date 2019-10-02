@@ -157,7 +157,7 @@ def pv_test2(area_test2):
 @pytest.mark.skip('broken as event_tick does not decrease offer price with every tick')
 def testing_event_tick(pv_test2, market_test2, area_test2):
     pv_test2.event_activate()
-    pv_test2.event_tick(area=area_test2)
+    pv_test2.event_tick()
     assert len(market_test2.created_offers) == 1
     assert len(pv_test2.offers.posted.items()) == 1
     offer_id1 = list(pv_test2.offers.posted.keys())[0]
@@ -168,7 +168,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
                pendulum.today(tz=TIME_ZONE).at(hour=0, minute=0, second=2)
            ] == 0
     area_test2.current_tick = DEFAULT_CONFIG.ticks_per_slot - 2
-    pv_test2.event_tick(area=area_test2)
+    pv_test2.event_tick()
     offer_id2 = list(pv_test2.offers.posted.keys())[0]
     offer2 = market_test2.offers[offer_id2]
     assert offer1 != offer2
@@ -206,7 +206,7 @@ def testing_decrease_offer_price(area_test3, pv_test3):
     for i in range(2):
         area_test3.current_tick += 310
         old_offer = list(pv_test3.offers.posted.keys())[0]
-        pv_test3.event_tick(area=area_test3)
+        pv_test3.event_tick()
         new_offer = list(pv_test3.offers.posted.keys())[0]
         assert new_offer.price < old_offer.price
 
@@ -216,7 +216,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
     pv_test3.event_market_cycle()
     for _ in range(100):
         area_test3.current_tick += 10
-        pv_test3.event_tick(area=area_test3)
+        pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[-1]
     assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.FINAL_SELLING_RATE
 
@@ -257,17 +257,7 @@ def pv_test5(area_test3, called):
     return p
 
 
-def testing_trigger_risk(pv_test5):
-    pv_test5.trigger_risk(99)
-    assert pv_test5.risk == 99
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(101)
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(-1)
-
-
 """ TEST 6"""
-# Testing with different risk test parameters
 
 
 @pytest.fixture()
@@ -338,7 +328,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     fake_trade = FakeTrade(market_test3.created_offers[0])
     pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
-    pv_test6.event_tick(area=area_test3)
+    pv_test6.event_tick()
     assert not market_test3.created_offers
 
 
@@ -356,8 +346,7 @@ def test_pv_constructor_rejects_incorrect_parameters():
 
 @pytest.fixture()
 def pv_test7(area_test3):
-    p = PVStrategy(panel_count=1, risk=95, initial_rate_option=1,
-                   initial_selling_rate=30, energy_rate_decrease_option=1)
+    p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
@@ -369,8 +358,7 @@ def pv_test7(area_test3):
 
 @pytest.fixture()
 def pv_test8(area_test3):
-    p = PVStrategy(panel_count=1, risk=10, initial_rate_option=1,
-                   initial_selling_rate=30, energy_rate_decrease_option=1)
+    p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}

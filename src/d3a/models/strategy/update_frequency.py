@@ -26,8 +26,8 @@ from d3a.d3a_core.util import generate_market_slot_list
 
 class UpdateFrequencyMixin:
     def __init__(self, initial_rate, final_rate, fit_to_limit=True,
-                 energy_rate_change_per_update=1,
-                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE)):
+                 energy_rate_change_per_update=1, update_interval=duration(
+                    minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)):
         self.fit_to_limit = fit_to_limit
         self.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                    initial_rate)
@@ -76,7 +76,7 @@ class UpdateFrequencyMixin:
 
     def update_on_activate(self):
         assert self.update_interval.seconds >= \
-               ConstSettings.GeneralSettings.UPDATE_RATE * 60
+               ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL * 60
         self.number_of_available_updates = \
             self._calculate_number_of_available_updates_per_slot
         self._set_or_update_energy_rate_change_per_update()

@@ -56,7 +56,8 @@ class StorageStrategy(BidEnabledStrategy):
                  final_buying_rate: Union[float, dict] = StorageSettings.BUYING_RANGE[1],
                  fit_to_limit=True, energy_rate_increase_per_update=1,
                  energy_rate_decrease_per_update=1,
-                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL,
                  balancing_energy_ratio: tuple = (BalancingSettings.OFFER_DEMAND_RATIO,
                                                   BalancingSettings.OFFER_SUPPLY_RATIO)):
@@ -253,7 +254,7 @@ class StorageStrategy(BidEnabledStrategy):
         if energy_rate_change_per_update is not None and energy_rate_change_per_update < 0:
             raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
@@ -271,7 +272,7 @@ class StorageStrategy(BidEnabledStrategy):
                         if first_bid is not None:
                             self.state.offered_buy_kWh[market.time_slot] += first_bid.energy
 
-            self.state.tick(area, market.time_slot)
+            self.state.tick(self.area, market.time_slot)
             if self.cap_price_strategy is False:
                 self.offer_update.update_offer(self)
 
@@ -323,7 +324,6 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-
         self.offer_update.update_market_cycle_offers(self)
         for market in self.area.all_markets[:-1]:
             self.bid_update.update_counter[market.time_slot] = 0
