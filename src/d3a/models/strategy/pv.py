@@ -25,6 +25,7 @@ from d3a.events.event_structures import Trigger
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device
+from d3a_interface.exceptions import DeviceException
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.state import PVState
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -61,19 +62,20 @@ class PVStrategy(BaseStrategy):
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
-        result = validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
-        if result is not True:
-            raise ValueError(result)
+        try:
+            validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        except DeviceException as e:
+            raise DeviceException(str(e))
         BaseStrategy.__init__(self)
         self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
                                                  fit_to_limit, energy_rate_decrease_per_update,
                                                  update_interval)
         for time_slot in generate_market_slot_list():
-            result = \
+            try:
                 validate_pv_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
                                    final_selling_rate=self.offer_update.final_rate[time_slot])
-            if result is not True:
-                raise ValueError(result)
+            except DeviceException as e:
+                raise DeviceException(str(e))
         self.panel_count = panel_count
         self.final_selling_rate = final_selling_rate
         self.max_panel_power_W = max_panel_power_W
@@ -82,9 +84,10 @@ class PVStrategy(BaseStrategy):
 
     def area_reconfigure_event(self, **kwargs):
         assert all(k in self.parameters for k in kwargs.keys())
-        message = validate_pv_device(**kwargs)
-        if message is not True:
-            raise ValueError(message)
+        try:
+            validate_pv_device(**kwargs)
+        except DeviceException as e:
+            raise DeviceException(str(e))
         for name, value in kwargs.items():
             setattr(self, name, value)
 

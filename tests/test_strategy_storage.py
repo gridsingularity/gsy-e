@@ -28,6 +28,7 @@ from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.exceptions import DeviceException
 from d3a.models.config import SimulationConfig
 from d3a.constants import TIME_FORMAT, FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -564,27 +565,27 @@ def test_initial_charge(caplog):
 
 
 def test_storage_constructor_rejects_incorrect_parameters():
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(battery_capacity_kWh=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(initial_soc=101)
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(initial_soc=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(initial_selling_rate=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(final_selling_rate=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(initial_selling_rate=1, final_selling_rate=5)
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(initial_buying_rate=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(final_buying_rate=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(DeviceException):
         StorageStrategy(initial_buying_rate=10, final_buying_rate=1)
 
 
-with pytest.raises(ValueError):
+with pytest.raises(DeviceException):
     StorageStrategy(initial_selling_rate=-1)
 
 
