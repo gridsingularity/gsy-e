@@ -368,8 +368,8 @@ def iaa_double_sided():
     owner = FakeArea('owner')
     iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
                                 higher_market=higher_market)
-    iaa.engines[0]._match_offers_bids = lambda: None
-    iaa.engines[1]._match_offers_bids = lambda: None
+    iaa.engines[0].match_offers_bids = lambda: None
+    iaa.engines[1].match_offers_bids = lambda: None
     iaa.event_tick()
     iaa.owner.current_tick += 2
     iaa.event_tick()
@@ -604,7 +604,7 @@ def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
     low_high_engine.forwarded_offers['id'] = fwd_offerinfo
     low_high_engine.forwarded_offers['forwarded_id'] = fwd_offerinfo
 
-    low_high_engine._match_offers_bids()
+    low_high_engine.match_offers_bids()
     assert len(iaa_double_sided_2.lower_market.calls_offers) == 1
     offer = iaa_double_sided_2.lower_market.calls_offers[0]
     assert offer.id == 'id'
