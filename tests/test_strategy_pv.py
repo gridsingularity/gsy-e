@@ -25,13 +25,14 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_FORMAT
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
-class FakeArea():
+class FakeArea:
     def __init__(self, count):
         self.current_tick = 2
         self.appliance = None
@@ -332,11 +333,11 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
 
 
 def test_pv_constructor_rejects_incorrect_parameters():
-    with pytest.raises(ValueError):
+    with pytest.raises(D3ADeviceException):
         PVStrategy(panel_count=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(D3ADeviceException):
         PVStrategy(max_panel_power_W=-100)
-    with pytest.raises(ValueError):
+    with pytest.raises(D3ADeviceException):
         PVStrategy(initial_selling_rate=5, final_selling_rate=15)
 
 
