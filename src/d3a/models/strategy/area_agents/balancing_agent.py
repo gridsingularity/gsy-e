@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from numpy.random import random
+from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import make_ba_name, make_iaa_name
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_engine import BalancingEngine
@@ -31,8 +32,8 @@ class BalancingAgent(OneSidedAgent):
                          min_offer_age=min_offer_age, engine_type=BalancingEngine)
         self.name = make_ba_name(self.owner)
 
-    def event_tick(self, *, area):
-        super().event_tick(area=area)
+    def event_tick(self):
+        super().event_tick()
         if self.lower_market.unmatched_energy_downward > 0.0 or \
                 self.lower_market.unmatched_energy_upward > 0.0:
             self._trigger_balancing_trades(self.lower_market.unmatched_energy_upward,
@@ -72,12 +73,14 @@ class BalancingAgent(OneSidedAgent):
 
     def _trigger_balancing_trades(self, positive_balancing_energy, negative_balancing_energy):
         for offer in self.lower_market.sorted_offers:
-            if offer.energy > 0 and positive_balancing_energy > 0:
+            if offer.energy > FLOATING_POINT_TOLERANCE and \
+                    positive_balancing_energy > FLOATING_POINT_TOLERANCE:
                 balance_trade = self._balancing_trade(offer,
                                                       positive_balancing_energy)
                 if balance_trade is not None:
                     positive_balancing_energy -= abs(balance_trade.offer.energy)
-            elif offer.energy < 0 and negative_balancing_energy > 0:
+            elif offer.energy < FLOATING_POINT_TOLERANCE and \
+                    negative_balancing_energy > FLOATING_POINT_TOLERANCE:
                 balance_trade = self._balancing_trade(offer,
                                                       -negative_balancing_energy)
                 if balance_trade is not None:

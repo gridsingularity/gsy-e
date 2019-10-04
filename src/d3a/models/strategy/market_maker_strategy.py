@@ -15,15 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.mixins import SwitchableMixin
-from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.read_user_profile import read_and_convert_identity_profile_to_float
+from d3a_interface.constants_limits import GlobalConfig
 
 
-class SwitchableAppliance(SwitchableMixin, SimpleAppliance):
+class MarketMakerStrategy(CommercialStrategy):
+    parameters = ('energy_rate',)
 
-    def __init__(self):
-        super().__init__()
-
-    def event_tick(self):
-        if self.is_on:
-            super().event_tick()
+    def __init__(self, energy_rate=None):
+        GlobalConfig.market_maker_rate = read_and_convert_identity_profile_to_float(energy_rate)
+        super().__init__(energy_rate)

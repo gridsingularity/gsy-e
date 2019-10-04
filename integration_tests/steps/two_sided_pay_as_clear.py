@@ -54,22 +54,22 @@ def test_cumulative_offer_bid_energy(context):
     areas.append(house1)
 
     for area in areas:
-        children = []
         if area.name != "House 1":
             continue
-        for child in area.children:
-            children.append(child.name)
+        child_names = [child.name for child in area.children]
 
         for market in area.past_markets:
             cumulative_traded_bid_energy = 0
             cumulative_traded_offer_energy = 0
             for trade in market.trades:
-                if len(market.trades) == 1:
+
+                if len(market.trades) == 1 or \
+                        (trade.seller in child_names and trade.buyer in child_names):
                     # Device-to-device trading, no bid tracked
                     continue
-                if trade.buyer in children:
+                if trade.buyer in child_names:
                     cumulative_traded_bid_energy += trade.offer.energy
-                if trade.seller in children:
+                if trade.seller in child_names:
                     cumulative_traded_offer_energy += trade.offer.energy
             residual = (cumulative_traded_offer_energy - cumulative_traded_bid_energy)
             assert isclose(residual, 0)

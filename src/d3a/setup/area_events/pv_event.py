@@ -32,7 +32,7 @@ def get_setup(config):
                 children=[
                     Area('H2 PV', strategy=PVStrategy(1, 80),
                          appliance=PVAppliance(),
-                         event_list=[StrategyEvents(12, {'panel_count': 10,
+                         event_list=[StrategyEvents(12, {'panel_count': 5,
                                                          'max_panel_power_W': 320})])
                 ]
             ),

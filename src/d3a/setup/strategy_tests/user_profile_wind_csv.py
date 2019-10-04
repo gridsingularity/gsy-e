@@ -26,8 +26,6 @@ import os
 
 """
 Setup file for displaying WindUserProfileStrategy.
-WindUserProfileStrategy Strategy requires power_profile, risk &
-lower selling rate threshold.
 """
 
 user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")

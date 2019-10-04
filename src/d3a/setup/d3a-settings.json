@@ -6,13 +6,14 @@
     "market_count": 1,
     "cloud_coverage": 0,
     "iaa_fee": 0,
-    "start_date": "2019-09-20"
+    "start_date": "2019-09-30"
   },
   "advanced_settings": {
     "GeneralSettings": {
       "DEFAULT_MARKET_MAKER_RATE": 30,
       "MAX_OFFER_TRAVERSAL_LENGTH": 6,
-      "UPDATE_RATE": 5,
+      "DEFAULT_UPDATE_INTERVAL": 5,
+      "MIN_UPDATE_INTERVAL": 1,
       "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
       "SUPPLY_DEMAND_PLOTS": true,
       "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
@@ -20,13 +21,14 @@
       "EXPORT_DEVICE_PLOTS": true,
       "RUN_REAL_TIME": false,
       "KEEP_PAST_MARKETS": false,
+      "EVENT_DISPATCHING_VIA_REDIS": false,
       "RATE_DECREASE_PER_UPDATE_RANGE": [
         0,
-        100
+        1000
       ],
       "RATE_CHANGE_PER_UPDATE": [
         0,
-        10
+        1000
       ],
       "INITIAL_RATE_OPTIONS": [
         1,
@@ -52,13 +54,9 @@
       ]
     },
     "StorageSettings": {
-      "INITIAL_CAPACITY_RANGE": [
-        0,
-        9223372036854775807
-      ],
       "MIN_SOC_RANGE": [
         10,
-        100
+        99
       ],
       "INITIAL_CHARGE_RANGE": [
         10,
@@ -84,11 +82,11 @@
       ],
       "INITIAL_BUYING_RANGE": [
         0,
-        1000
+        10000
       ],
       "FINAL_BUYING_RANGE": [
         0,
-        1000
+        10000
       ],
       "SELLING_RANGE": [
         30,
@@ -96,11 +94,11 @@
       ],
       "INITIAL_SELLING_RANGE": [
         0,
-        1000
+        10000
       ],
       "FINAL_SELLING_RANGE": [
         0,
-        1000
+        10000
       ],
       "MIN_ALLOWED_SOC": 10,
       "SELL_ON_MOST_EXPENSIVE_MARKET": false
@@ -146,7 +144,7 @@
       "DEFAULT_POWER_PROFILE": 0,
       "CLOUD_COVERAGE_RANGE": [
         0,
-        2
+        3
       ],
       "MAX_PANEL_OUTPUT_W": 160
     },

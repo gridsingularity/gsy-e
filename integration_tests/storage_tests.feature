@@ -1,9 +1,9 @@
 Feature: Storage tests
 
   Scenario: Storage sell offers decrease
-     Given we have a scenario named strategy_tests/ess_sell_offer_decrease_based_on_risk_or_rate
+     Given we have a scenario named strategy_tests/ess_sell_offer_decrease_rate
      And d3a is installed
-     When we run the d3a simulation with strategy_tests.ess_sell_offer_decrease_based_on_risk_or_rate [24, 60, 60]
+     When we run the d3a simulation with strategy_tests.ess_sell_offer_decrease_rate [24, 60, 60]
      Then the storage devices sell energy respecting the break even prices
 
   Scenario: Storage break even hourly profile

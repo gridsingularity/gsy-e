@@ -22,19 +22,20 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import D3AException
 from d3a.d3a_core.util import format_interval
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.read_user_profile import read_arbitrary_profile
-from d3a.models.read_user_profile import InputProfileTypes
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes, \
+    read_and_convert_identity_profile_to_float
 from d3a.d3a_core.util import change_global_config
 
 
 class SimulationConfig:
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
                  market_count: int, cloud_coverage: int,
-                 iaa_fee: float=ConstSettings.IAASettings.FEE_PERCENTAGE,
+                 iaa_fee: float = ConstSettings.IAASettings.FEE_PERCENTAGE,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE),
                  max_panel_power_W=None):
+
         self.sim_duration = sim_duration
         self.start_date = start_date
         self.slot_length = slot_length
@@ -55,6 +56,7 @@ class SimulationConfig:
         change_global_config(**self.__dict__)
 
         self.cloud_coverage = cloud_coverage
+
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
@@ -115,7 +117,4 @@ class SimulationConfig:
         """
         Reads market_maker_rate from arbitrary input types
         """
-        market_maker_rate_parsed = ast.literal_eval(str(market_maker_rate))
-        self.market_maker_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                        market_maker_rate_parsed)
-        self.market_maker_rate = {k: float(v) for k, v in self.market_maker_rate.items()}
+        self.market_maker_rate = read_and_convert_identity_profile_to_float(market_maker_rate)

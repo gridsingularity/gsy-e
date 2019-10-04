@@ -90,7 +90,7 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, original_trade_rate=None):
+                     trade_rate: float = None, trade_bid_info=None):
         trade = Trade('trade_id', time, offer, offer.seller, buyer)
         self.traded_offers.append(trade)
         return trade
@@ -293,7 +293,7 @@ def bus_test4(area_test4):
 
 def testing_event_tick_buy_energy(bus_test4, area_test4):
     bus_test4.event_activate()
-    bus_test4.event_tick(area=area_test4)
+    bus_test4.event_tick()
     assert len(area_test4.test_market.traded_offers) == 1
     assert area_test4.test_market.traded_offers[-1].offer.energy == 1
 

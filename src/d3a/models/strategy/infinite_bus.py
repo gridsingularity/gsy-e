@@ -54,7 +54,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                     # Offer already gone etc., try next one.
                     continue
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             for market in self.area.all_markets:
                 self.buy_energy(market)

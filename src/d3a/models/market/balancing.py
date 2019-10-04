@@ -72,7 +72,7 @@ class BalancingMarket(OneSidedMarket):
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
                      energy: int = None, time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
-                     original_trade_rate: float = None) -> BalancingTrade:
+                     trade_bid_info: float = None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -92,8 +92,8 @@ class BalancingMarket(OneSidedMarket):
         if trade_rate is None:
             trade_rate = offer.price / offer.energy
 
-        orig_offer_price, orig_trade_price = self._calculate_original_prices(
-            offer, original_trade_rate
+        orig_offer_price = self._calculate_original_prices(
+            offer
         )
 
         self._sorted_offers = sorted(self.offers.values(),
@@ -115,7 +115,7 @@ class BalancingMarket(OneSidedMarket):
                 assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 
                 final_price = self._update_offer_fee_and_calculate_final_price(
-                    energy, trade_rate, energy_portion, orig_trade_price
+                    energy, trade_rate, energy_portion, orig_offer_price
                 ) if already_tracked is False else energy * trade_rate
 
                 accepted_offer = Offer(
@@ -155,7 +155,7 @@ class BalancingMarket(OneSidedMarket):
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 offer.price = self._update_offer_fee_and_calculate_final_price(
-                    energy, trade_rate, 1, orig_trade_price
+                    energy, trade_rate, 1, orig_offer_price
                 ) if already_tracked is False else energy * trade_rate
 
         except Exception:
@@ -170,7 +170,7 @@ class BalancingMarket(OneSidedMarket):
                 offer, buyer, original_offer, residual_offer
             )
         trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
-                               residual_offer, original_trade_rate=original_trade_rate)
+                               residual_offer)
         self.bc_interface.track_trade_event(trade)
 
         if already_tracked is False:

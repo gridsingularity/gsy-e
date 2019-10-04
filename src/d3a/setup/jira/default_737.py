@@ -40,7 +40,7 @@ def get_setup(config):
                                           production_rate_kg_h=2.8
                     ), appliance=SwitchableAppliance()),
 
-            Area('PV', strategy=PVPredefinedStrategy(panel_count=1, risk=80),
+            Area('PV', strategy=PVPredefinedStrategy(panel_count=1),
                  appliance=PVAppliance()),
 
 

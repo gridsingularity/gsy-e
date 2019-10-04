@@ -35,6 +35,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
 from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
 from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.constants_limits import RangeLimit
 
 import d3a
 import inspect
@@ -319,6 +320,9 @@ def update_advanced_settings(advanced_settings):
             elif isinstance(set_val, dict):
                 nested_class = getattr(class_object, set_var)
                 update_nested_settings(nested_class, set_var, settings_dict[class_name])
+            elif isinstance(set_val, list):
+                if isinstance(getattr(class_object, set_var), RangeLimit):
+                    setattr(class_object, set_var, RangeLimit(*set_val))
             else:
                 setattr(class_object, set_var, set_val)
 

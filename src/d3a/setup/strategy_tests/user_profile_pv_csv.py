@@ -29,8 +29,7 @@ import os
 
 """
 Setup file for displaying PVPredefinedStrategy.
-PVUserProfileStrategy Strategy requires power_profile, risk, panel count &
-lower selling rate threshold.
+PVUserProfileStrategy Strategy requires power_profile, panel count
 """
 
 user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")

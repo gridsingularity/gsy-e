@@ -165,7 +165,7 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     pv_test3.event_market_cycle()
     old_offer = list(pv_test3.offers.posted.keys())[0]
     area_test3.current_tick += 310
-    pv_test3.event_tick(area=area_test3)
+    pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
 
@@ -206,17 +206,7 @@ def pv_test5(area_test3, called):
     return p
 
 
-def testing_trigger_risk(pv_test5):
-    pv_test5.trigger_risk(99)
-    assert pv_test5.risk == 99
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(101)
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(-1)
-
-
 """ TEST 6"""
-# Testing with different risk test parameters
 
 
 @pytest.fixture()
@@ -279,7 +269,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     fake_trade = FakeTrade(market_test3.created_offers[0])
     pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
-    pv_test6.event_tick(area=area_test3)
+    pv_test6.event_tick()
     assert not market_test3.created_offers
 
 

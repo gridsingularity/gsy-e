@@ -25,14 +25,15 @@ Creates a WindStrategy that uses a profile as input for its power values.
 
 
 class WindUserProfileStrategy(PVUserProfileStrategy):
-    parameters = ('power_profile', 'risk', 'panel_count')
+    parameters = ('power_profile', 'panel_count')
 
     def __init__(self, power_profile,
                  initial_selling_rate:
                  float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-                 final_selling_rate: float=ConstSettings.WindSettings.FINAL_SELLING_RATE,
+                 final_selling_rate: float = ConstSettings.WindSettings.FINAL_SELLING_RATE,
                  fit_to_limit: bool = True,
-                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  energy_rate_decrease_per_update:
                  float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
                  max_wind_turbine_power_W: float =
