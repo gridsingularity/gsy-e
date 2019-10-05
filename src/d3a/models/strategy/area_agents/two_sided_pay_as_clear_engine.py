@@ -216,28 +216,33 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                 offer.original_offer_price/offer.energy, offer.price/offer.energy,
                 clearing_rate]
             if bid_energy == offer.energy:
+                trade._replace(seller_origin=offer.energy_origin)
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
                                         buyer=trade.offer.buyer,
                                         energy=offer.energy,
                                         already_tracked=already_tracked,
                                         trade_rate=clearing_rate,
-                                        trade_bid_info=trade_bid_info)
+                                        trade_bid_info=trade_bid_info,
+                                        buyer_origin=trade.buyer_origin)
                 return accepted_bids
             elif bid_energy > offer.energy:
+                trade._replace(seller_origin=offer.energy_origin)
                 self.owner.accept_offer(market=self.markets.source,
                                         offer=offer,
                                         buyer=trade.offer.buyer,
                                         energy=offer.energy,
                                         already_tracked=already_tracked,
                                         trade_rate=clearing_rate,
-                                        trade_bid_info=trade_bid_info)
+                                        trade_bid_info=trade_bid_info,
+                                        buyer_origin=trade.buyer_origin)
                 updated_bid = trade.offer
                 updated_bid._replace(energy=trade.offer.energy - offer.energy)
                 trade._replace(offer=updated_bid)
                 accepted_bids = [trade] + accepted_bids
                 return accepted_bids
             elif bid_energy < offer.energy:
+                trade._replace(seller_origin=offer.energy_origin)
                 offer_trade = self.owner.accept_offer(
                     market=self.markets.source,
                     offer=offer,
@@ -245,7 +250,8 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                     energy=bid_energy,
                     already_tracked=already_tracked,
                     trade_rate=clearing_rate,
-                    trade_bid_info=trade_bid_info)
+                    trade_bid_info=trade_bid_info,
+                    buyer_origin=trade.buyer_origin)
                 assert offer_trade.residual is not None
                 offer = offer_trade.residual
             if energy <= FLOATING_POINT_TOLERANCE:
