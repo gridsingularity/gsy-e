@@ -36,7 +36,6 @@ class ElectrolyzerStrategy(StorageStrategy):
         super().__init__(initial_soc=initial_soc,
                          battery_capacity_kWh=capacity_kWh,
                          max_abs_battery_power_kW=production_rate_kW,
-                         min_allowed_soc=0.,
                          initial_buying_rate=31,
                          final_buying_rate=31,
                          final_selling_rate=32,
