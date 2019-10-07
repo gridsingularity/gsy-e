@@ -174,8 +174,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     trade_offer_info=trade_offer_info
                 )
             elif (bid.price / bid.energy) >= clearing_rate and \
-                    (0 < (clearing_energy - cumulative_traded_bids) <= bid.energy):
-
+                    (0 < (clearing_energy - cumulative_traded_bids) < bid.energy):
                 trade = self.accept_bid(
                     bid=bid,
                     energy=(clearing_energy - cumulative_traded_bids),
@@ -207,7 +206,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                 )
                 cumulative_traded_offers += offer.energy
             elif (math.floor(offer.price / offer.energy)) <= clearing_rate and \
-                    (clearing_energy - cumulative_traded_offers) <= offer.energy:
+                    (clearing_energy - cumulative_traded_offers) < offer.energy:
                 accepted_bids = self._exhaust_offer_for_selected_bids(
                     offer, accepted_bids, clearing_rate, clearing_energy - cumulative_traded_offers
                 )
@@ -222,7 +221,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     bid_energy = energy
                 energy -= bid_energy
             else:
-                energy = bid_energy
+                energy = offer.energy
 
             already_tracked = trade.offer.buyer == offer.seller
             trade_bid_info = [

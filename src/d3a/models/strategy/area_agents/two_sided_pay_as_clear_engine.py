@@ -35,5 +35,4 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
                "{s.markets.source.time_slot:%H:%M}>".format(s=self)
 
     def tick(self, *, area):
-        # TODO: remove area
         super().tick(area=area)
