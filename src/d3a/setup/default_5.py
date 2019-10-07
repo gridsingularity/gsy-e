@@ -101,8 +101,6 @@ def get_setup(config):
                          appliance=PVAppliance()),
                     Area('H4 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
-                    # Area('H4 Storage2', strategy=StorageStrategy(initial_capacity_kWh=0.6),
-                    #      appliance=SwitchableAppliance()),
                 ]
             ),
             Area(

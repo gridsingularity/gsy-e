@@ -70,14 +70,19 @@ Feature: Jira Issues Tests
     When we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
     Then the device statistics are correct
 
-   @slow
-   Scenario: D3ASIM-1139, no unmatched loads on setup with many loads and only one CEP
-     Given we have a scenario named jira/d3asim_1139
-     And d3a is installed
-     When we run the simulation with setup file jira.d3asim_1139 and parameters [24, 60, 60, 0, 1]
-     Then there should be no unmatched loads
+  @slow
+  Scenario: D3ASIM-1139, no unmatched loads on setup with many loads and only one CEP
+    Given we have a scenario named jira/d3asim_1139
+    And d3a is installed
+    When we run the simulation with setup file jira.d3asim_1139 and parameters [24, 60, 60, 0, 1]
+    Then there should be no unmatched loads
 
-   Scenario: D3ASIM-1475, default_2off finishes successfully for two-sided pay as clear market
-     Given we have a scenario named jira/default_2off_d3asim_1475
-     And d3a is installed
-     Then we run the simulation with setup file jira.default_2off_d3asim_1475 and parameters [24, 60, 60, 0, 1]
+  Scenario: D3ASIM-1475, default_2off finishes successfully for two-sided pay as clear market
+    Given we have a scenario named jira/default_2off_d3asim_1475
+    And d3a is installed
+    Then we run the simulation with setup file jira.default_2off_d3asim_1475 and parameters [24, 60, 60, 0, 1]
+
+  Scenario: D3ASIM-1525, PAC simulation finishes without assert in PAC engine
+    Given we have a scenario named jira/d3asim_1525
+    And d3a is installed
+    Then we run the simulation with setup file jira.d3asim_1525 and parameters [24, 60, 60, 0, 1]

@@ -206,17 +206,7 @@ def pv_test5(area_test3, called):
     return p
 
 
-def testing_trigger_risk(pv_test5):
-    pv_test5.trigger_risk(99)
-    assert pv_test5.risk == 99
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(101)
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(-1)
-
-
 """ TEST 6"""
-# Testing with different risk test parameters
 
 
 @pytest.fixture()

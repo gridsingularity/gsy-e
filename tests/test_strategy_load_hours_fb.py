@@ -25,6 +25,7 @@ from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trad
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 
@@ -178,7 +179,7 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
 
     def test_LoadHoursStrategy_input(self):
         power_W = 620
-        with self.assertRaises(ValueError):
+        with self.assertRaises(D3ADeviceException):
             self.Mock_LoadHoursStrategy(power_W, 4, [1, 2])
 
 

@@ -25,13 +25,14 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_FORMAT
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
-class FakeArea():
+class FakeArea:
     def __init__(self, count):
         self.current_tick = 2
         self.appliance = None
@@ -256,17 +257,7 @@ def pv_test5(area_test3, called):
     return p
 
 
-def testing_trigger_risk(pv_test5):
-    pv_test5.trigger_risk(99)
-    assert pv_test5.risk == 99
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(101)
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(-1)
-
-
 """ TEST 6"""
-# Testing with different risk test parameters
 
 
 @pytest.fixture()
@@ -342,11 +333,11 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
 
 
 def test_pv_constructor_rejects_incorrect_parameters():
-    with pytest.raises(ValueError):
+    with pytest.raises(D3ADeviceException):
         PVStrategy(panel_count=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(D3ADeviceException):
         PVStrategy(max_panel_power_W=-100)
-    with pytest.raises(ValueError):
+    with pytest.raises(D3ADeviceException):
         PVStrategy(initial_selling_rate=5, final_selling_rate=15)
 
 
@@ -355,8 +346,7 @@ def test_pv_constructor_rejects_incorrect_parameters():
 
 @pytest.fixture()
 def pv_test7(area_test3):
-    p = PVStrategy(panel_count=1, risk=95, initial_rate_option=1,
-                   initial_selling_rate=30, energy_rate_decrease_option=1)
+    p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
@@ -368,8 +358,7 @@ def pv_test7(area_test3):
 
 @pytest.fixture()
 def pv_test8(area_test3):
-    p = PVStrategy(panel_count=1, risk=10, initial_rate_option=1,
-                   initial_selling_rate=30, energy_rate_decrease_option=1)
+    p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}

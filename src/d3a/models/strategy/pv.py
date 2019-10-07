@@ -21,9 +21,10 @@ import math
 from pendulum import duration
 
 from d3a.d3a_core.util import generate_market_slot_list
-from d3a.events.event_structures import Trigger
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.device_validator import validate_pv_device
+from d3a_interface.exceptions import D3ADeviceException
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.state import PVState
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -32,25 +33,22 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 
 
 class PVStrategy(BaseStrategy):
-    available_triggers = [
-        Trigger('risk', {'new_risk': int},
-                help="Change the risk parameter. Valid values are between 1 and 100.")
-    ]
 
     parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate',
                   'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
                   'max_panel_power_W')
 
-    def __init__(self, panel_count: int=1,
+    def __init__(self, panel_count: int = 1,
                  initial_selling_rate:
-                 float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+                 float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  final_selling_rate:
-                 float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-                 fit_to_limit: bool=True,
-                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+                 float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+                 fit_to_limit: bool = True,
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  energy_rate_decrease_per_update:
-                 float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-                 max_panel_power_W: float=None):
+                 float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+                 max_panel_power_W: float = None):
         """
         :param panel_count: Number of solar panels for this PV plant
         :param initial_selling_rate: Upper Threshold for PV offers
@@ -60,39 +58,36 @@ class PVStrategy(BaseStrategy):
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
-        self._validate_constructor_arguments(panel_count, max_panel_power_W,
-                                             initial_selling_rate, final_selling_rate)
+        try:
+            validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        except D3ADeviceException as e:
+            raise D3ADeviceException(str(e))
+
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
+
         BaseStrategy.__init__(self)
         self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
                                                  fit_to_limit, energy_rate_decrease_per_update,
                                                  update_interval)
+        for time_slot in generate_market_slot_list():
+            try:
+                validate_pv_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
+                                   final_selling_rate=self.offer_update.final_rate[time_slot])
+            except D3ADeviceException as e:
+                raise D3ADeviceException(str(e))
         self.panel_count = panel_count
         self.final_selling_rate = final_selling_rate
         self.max_panel_power_W = max_panel_power_W
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
-    @staticmethod
-    def _validate_constructor_arguments(panel_count, max_panel_output_W,
-                                        initial_selling_rate, final_selling_rate):
-        if panel_count is not None and panel_count <= 0:
-            raise ValueError("Number of Panels should be a non-zero and positive value.")
-        if max_panel_output_W is not None and max_panel_output_W < 0:
-            raise ValueError("Max panel output in Watts should always be positive.")
-        if initial_selling_rate is not None and initial_selling_rate < 0:
-            raise ValueError("Min selling rate should be positive.")
-        if final_selling_rate is not None and final_selling_rate < 0:
-            raise ValueError("Min selling rate should be positive.")
-        if initial_selling_rate and final_selling_rate and \
-                initial_selling_rate < final_selling_rate:
-            raise ValueError("PV should start selling high and then offer lower price")
-
     def area_reconfigure_event(self, **kwargs):
         assert all(k in self.parameters for k in kwargs.keys())
-        self._validate_constructor_arguments(kwargs.get('panel_count', None),
-                                             kwargs.get('max_panel_power_W', None),
-                                             kwargs.get('initial_selling_rate', None),
-                                             kwargs.get('final_selling_rate', None))
+        try:
+            validate_pv_device(**kwargs)
+        except D3ADeviceException as e:
+            raise D3ADeviceException(str(e))
         for name, value in kwargs.items():
             setattr(self, name, value)
 
@@ -171,13 +166,6 @@ class PVStrategy(BaseStrategy):
                     original_offer_price=offer_price
                 )
                 self.offers.post(offer, market.id)
-
-    def trigger_risk(self, new_risk: int = 0):
-        new_risk = int(new_risk)
-        if not (-1 < new_risk < 101):
-            raise ValueError("'new_risk' value has to be in range 0 - 100")
-        self.risk = new_risk
-        self.log.info("Risk changed to %s", new_risk)
 
     def event_offer_deleted(self, *, market_id, offer):
         super().event_offer_deleted(market_id=market_id, offer=offer)

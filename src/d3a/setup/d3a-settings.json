@@ -6,13 +6,14 @@
     "market_count": 1,
     "cloud_coverage": 0,
     "iaa_fee": 0,
-    "start_date": "2019-09-27"
+    "start_date": "2019-09-30"
   },
   "advanced_settings": {
     "GeneralSettings": {
       "DEFAULT_MARKET_MAKER_RATE": 30,
       "MAX_OFFER_TRAVERSAL_LENGTH": 6,
-      "UPDATE_RATE": 5,
+      "DEFAULT_UPDATE_INTERVAL": 5,
+      "MIN_UPDATE_INTERVAL": 1,
       "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
       "SUPPLY_DEMAND_PLOTS": true,
       "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
@@ -20,6 +21,7 @@
       "EXPORT_DEVICE_PLOTS": true,
       "RUN_REAL_TIME": false,
       "KEEP_PAST_MARKETS": false,
+      "EVENT_DISPATCHING_VIA_REDIS": false,
       "RATE_DECREASE_PER_UPDATE_RANGE": [
         0,
         1000

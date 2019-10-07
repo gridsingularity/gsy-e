@@ -138,7 +138,6 @@ def pv_profile_scenario(context):
                     {
                         "name": "H2 Storage",
                         "type": "Storage",
-                        "initial_capacity_kWh": 5,
                         "battery_capacity_kWh": 12.5,
                     }
                 ]
@@ -176,8 +175,7 @@ def load_profile_scenario(context):
             {
               "name": "H1 PV",
               "type": "PV",
-              "panel_count": 3,
-              "risk": 80
+              "panel_count": 3
             }
           ]
         },
@@ -187,7 +185,6 @@ def load_profile_scenario(context):
             {
               "name": "H2 Storage",
               "type": "Storage",
-              "initial_capacity_kWh": 5,
               "battery_capacity_kWh": 12.5,
             }
           ]
@@ -845,19 +842,8 @@ def test_finite_plant_max_power(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert sum([trade.offer.energy for trade in trades_sold]) <= \
-            finite.strategy.max_available_power_kW[market.time_slot.hour] / \
+            finite.strategy.max_available_power_kW[market.time_slot] / \
             (duration(hours=1) / finite.config.slot_length)
-
-
-@then('the PV sells energy at the market maker rate for every market slot')
-def test_pv_initial_pv_rate_option(context):
-    grid = context.simulation.area
-    house = list(filter(lambda x: x.name == "House", grid.children))[0]
-
-    for market in house.past_markets:
-        for trade in market.trades:
-            assert isclose(trade.offer.price / trade.offer.energy,
-                           grid.config.market_maker_rate[market.time_slot])
 
 
 @then("the results are the same for each simulation run")

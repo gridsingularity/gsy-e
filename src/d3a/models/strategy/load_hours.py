@@ -24,6 +24,8 @@ from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.device_validator import validate_load_device
+from d3a_interface.exceptions import D3ADeviceException
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile
@@ -40,7 +42,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=1,
-                 update_interval=duration(minutes=ConstSettings.GeneralSettings.UPDATE_RATE),
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                  final_buying_rate: Union[float, dict, str] =
@@ -49,6 +52,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
 
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
+
         BidEnabledStrategy.__init__(self)
         self.bid_update = \
             UpdateFrequencyMixin(initial_rate=initial_buying_rate,
@@ -56,6 +62,21 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                  fit_to_limit=fit_to_limit,
                                  energy_rate_change_per_update=energy_rate_increase_per_update,
                                  update_interval=update_interval)
+        try:
+            validate_load_device(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
+                                 hrs_of_day=hrs_of_day)
+        except D3ADeviceException as e:
+            raise D3ADeviceException(str(e))
+
+        for time_slot in generate_market_slot_list():
+            rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
+            try:
+                validate_load_device(
+                    initial_buying_rate=self.bid_update.initial_rate[time_slot],
+                    final_buying_rate=self.bid_update.final_rate[time_slot],
+                    energy_rate_increase_per_update=rate_change)
+            except D3ADeviceException as e:
+                raise D3ADeviceException(str(e))
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 

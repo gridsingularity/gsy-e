@@ -322,3 +322,9 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
             return _calculate_energy_from_power_profile(filled_profile, GlobalConfig.slot_length)
         else:
             return filled_profile
+
+
+def read_and_convert_identity_profile_to_float(profile):
+    parsed_profile = ast.literal_eval(str(profile))
+    generated_profile = read_arbitrary_profile(InputProfileTypes.IDENTITY, parsed_profile)
+    return {k: float(v) for k, v in generated_profile.items()}
