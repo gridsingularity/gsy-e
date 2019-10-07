@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from pendulum import duration
+
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
@@ -50,7 +52,9 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 PV',
-                         strategy=PVStrategy(4, 0),
+                         strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+                                             final_selling_rate=0, fit_to_limit=True,
+                                             update_interval=duration(minutes=5)),
                          appliance=PVAppliance()
                          ),
 
