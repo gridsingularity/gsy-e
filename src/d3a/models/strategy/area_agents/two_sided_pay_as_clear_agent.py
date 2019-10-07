@@ -28,9 +28,6 @@ class TwoSidedPayAsClearAgent(TwoSidedPayAsBidAgent):
                          higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age,
                          engine_type=TwoSidedPayAsClearEngine)
-        self.mcp_update_point = \
-            self.owner.config.ticks_per_slot / \
-            ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
 
     @property
     def current_tick(self):

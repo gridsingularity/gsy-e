@@ -23,7 +23,7 @@ from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.IAASettings.MARKET_TYPE = 3
     area = Area(
         'Grid',
         [

@@ -215,14 +215,12 @@ class TwoSidedPayAsBid(OneSidedMarket):
                 original_offer_rate=offer.original_offer_price/offer.energy,
                 propagated_offer_rate=offer.price/offer.energy,
                 trade_rate=original_bid_rate)
-
             self.accept_offer(offer_or_id=offer,
                               buyer=bid.buyer,
                               energy=selected_energy,
                               trade_rate=matched_rate,
                               already_tracked=False,
                               trade_bid_info=trade_bid_info)
-            # self._delete_forwarded_offer_entries(offer)
             self.accept_bid(bid=bid,
                             energy=selected_energy,
                             seller=offer.seller,
@@ -230,7 +228,3 @@ class TwoSidedPayAsBid(OneSidedMarket):
                             already_tracked=True,
                             trade_rate=matched_rate,
                             trade_offer_info=trade_bid_info)
-
-            # bid_info = self.forwarded_bids.get(bid.id, None)
-            # if bid_info is not None:
-            #     self.delete_forwarded_bids(bid_info)
