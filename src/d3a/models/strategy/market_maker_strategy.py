@@ -21,8 +21,13 @@ from d3a_interface.constants_limits import GlobalConfig
 
 
 class MarketMakerStrategy(CommercialStrategy):
-    parameters = ('energy_rate',)
+    parameters = ('energy_rate', 'grid_connected')
 
-    def __init__(self, energy_rate=None):
+    def __init__(self, energy_rate=None, grid_connected=True):
         GlobalConfig.market_maker_rate = read_and_convert_identity_profile_to_float(energy_rate)
+        self._grid_connected = grid_connected
         super().__init__(energy_rate)
+
+    def event_market_cycle(self):
+        if self._grid_connected is True:
+            super().event_market_cycle()
