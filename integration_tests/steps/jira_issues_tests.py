@@ -258,3 +258,9 @@ def device_statistics(context):
                     assert len(list(output_dict[house][device]["min_" + stats_name])) == 48
                     assert len(list(output_dict[house][device]["max_" + stats_name])) == 48
     assert counter == 12
+
+
+@then("an AreaException is raised")
+def area_exception_is_raised(context):
+    from d3a.d3a_core.exceptions import AreaException
+    assert type(context.sim_error) == AreaException
