@@ -30,13 +30,14 @@ from d3a.models.state import PVState
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.constants_limits import GlobalConfig
 
 
 class PVStrategy(BaseStrategy):
 
     parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate',
                   'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
-                  'max_panel_power_W')
+                  'max_panel_power_W', 'use_market_maker_rate')
 
     def __init__(self, panel_count: int = 1,
                  initial_selling_rate:
@@ -47,8 +48,9 @@ class PVStrategy(BaseStrategy):
                  update_interval=duration(
                      minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  energy_rate_decrease_per_update:
-                 float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-                 max_panel_power_W: float = None):
+                 float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+                 max_panel_power_W: float = None,
+                 use_market_maker_rate: bool = False):
         """
         :param panel_count: Number of solar panels for this PV plant
         :param initial_selling_rate: Upper Threshold for PV offers
@@ -58,6 +60,11 @@ class PVStrategy(BaseStrategy):
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
+
+        # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
+        if use_market_maker_rate:
+            initial_selling_rate = GlobalConfig.market_maker_rate
+
         try:
             validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
         except D3ADeviceException as e:
