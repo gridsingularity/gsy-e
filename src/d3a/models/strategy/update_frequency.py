@@ -71,12 +71,13 @@ class UpdateFrequencyMixin:
     @property
     def _calculate_number_of_available_updates_per_slot(self):
         number_of_available_updates = \
-            int(GlobalConfig.slot_length.seconds / self.update_interval.seconds) - 1
+            max(int((GlobalConfig.slot_length.seconds / self.update_interval.seconds) - 1), 1)
         return number_of_available_updates
 
     def update_on_activate(self):
-        assert self.update_interval.seconds >= \
-               ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL * 60
+        assert ConstSettings.GeneralSettings.MIN_UPDATE_INTERVAL * 60 <= \
+               self.update_interval.seconds < GlobalConfig.slot_length.seconds
+
         self.number_of_available_updates = \
             self._calculate_number_of_available_updates_per_slot
         self._set_or_update_energy_rate_change_per_update()
