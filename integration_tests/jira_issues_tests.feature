@@ -86,3 +86,17 @@ Feature: Jira Issues Tests
     Given we have a scenario named jira/d3asim_1525
     And d3a is installed
     Then we run the simulation with setup file jira.d3asim_1525 and parameters [24, 60, 60, 0, 1]
+
+  Scenario: D3ASIM-1531: Trades happen in simulation with only one PAB market in the root area
+    Given we have a scenario named jira/d3asim_1531
+    And d3a is installed
+    And d3a uses an two-sided pay-as-bid market
+    When we run the simulation with setup file jira.d3asim_1531 and parameters [24, 60, 60, 0, 1]
+    Then trades happen when the load seeks energy
+
+  Scenario: D3ASIM-1531: Trades happen in simulation with only one PAC market in the root area
+    Given we have a scenario named jira/d3asim_1531
+    And d3a is installed
+    And d3a uses an two-sided pay-as-clear market
+    When we run the simulation with setup file jira.d3asim_1531 and parameters [24, 60, 60, 0, 1]
+    Then trades happen when the load seeks energy

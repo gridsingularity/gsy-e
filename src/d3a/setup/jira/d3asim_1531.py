@@ -19,11 +19,9 @@ from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 3
     area = Area(
         'Grid',
         [
@@ -37,20 +35,3 @@ def get_setup(config):
         config=config
     )
     return area
-
-# This works:
-# def get_setup(config):
-#     ConstSettings.IAASettings.MARKET_TYPE = 2
-#     area = Area(
-#         'Grid',
-#             [ Area( "Street", children= [
-#                 Area('Finite Power Plant', strategy=FinitePowerPlant(energy_rate=30,
-#                                                                      max_available_power_kW=100),
-#                      appliance=SwitchableAppliance()),
-#                 Area('Load', strategy=LoadHoursStrategy(avg_power_W=100, hrs_per_day=9,
-#                                                                hrs_of_day=list(range(8, 18))),
-#                      appliance=SwitchableAppliance()),
-#             ])],
-#         config=config
-#     )
-#     return area

@@ -31,7 +31,7 @@ class TwoSidedPayAsClearEngine(TwoSidedPayAsBidEngine):
         super().__init__(name, market_1, market_2, min_offer_age, owner)
 
     def __repr__(self):
-        return "<TwoSidedPayAsClearE`gine [{s.owner.name}] {s.name} " \
+        return "<TwoSidedPayAsClearEngine [{s.owner.name}] {s.name} " \
                "{s.markets.source.time_slot:%H:%M}>".format(s=self)
 
     def tick(self, *, area):
