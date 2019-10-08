@@ -29,6 +29,13 @@ def trades_follow_strategy_mmr(context, energy_rate):
             assert isclose(trade.offer.price / trade.offer.energy, float(energy_rate))
 
 
+@then('no trades are performed')
+def no_trades_performed(context):
+    grid = context.simulation.area
+    load = [child for child in grid.children if child.name == "Load"][0]
+    assert all(len(market.trades) == 0 for market in load.past_markets)
+
+
 @then('the simulation market maker rate is the same as the strategy ({energy_rate})')
 def mmr_follows_market_maker_strategy_rate(context, energy_rate):
     assert all(isclose(v, float(energy_rate)) for v in GlobalConfig.market_maker_rate.values())

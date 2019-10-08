@@ -36,7 +36,7 @@ class PVPredefinedStrategy(PVStrategy):
         Strategy responsible for using one of the predefined PV profiles.
     """
     parameters = ('panel_count', 'final_selling_rate', 'energy_rate_decrease_per_update',
-                  'initial_selling_rate')
+                  'initial_selling_rate', 'use_market_maker_rate')
 
     def __init__(
             self, panel_count: int=1,
@@ -48,7 +48,8 @@ class PVPredefinedStrategy(PVStrategy):
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-            max_panel_power_W: float = None):
+            max_panel_power_W: float = None,
+            use_market_maker_rate: bool = False):
         """
         Constructor of PVPredefinedStrategy
         :param panel_count: Number of solar panels for this PV plant
@@ -66,7 +67,8 @@ class PVPredefinedStrategy(PVStrategy):
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_panel_power_W
+                         max_panel_power_W=max_panel_power_W,
+                         use_market_maker_rate=use_market_maker_rate
                          )
         self._power_profile_index = cloud_coverage
 
@@ -117,7 +119,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         Strategy responsible for reading a profile in the form of a dict of values.
     """
     parameters = ('panel_count', 'final_selling_rate', 'energy_rate_decrease_per_update',
-                  'power_profile', 'initial_selling_rate')
+                  'power_profile', 'initial_selling_rate', 'use_market_maker_rate')
 
     def __init__(
             self, power_profile, panel_count: int = 1,
@@ -128,7 +130,8 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-            max_panel_power_W: float = None):
+            max_panel_power_W: float = None,
+            use_market_maker_rate: bool = False):
         """
         Constructor of PVUserProfileStrategy
         :param power_profile: input profile for a day. Can be either a csv file path,
@@ -143,7 +146,8 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_panel_power_W)
+                         max_panel_power_W=max_panel_power_W,
+                         use_market_maker_rate=use_market_maker_rate)
         self._power_profile_W = power_profile
 
     def _read_predefined_profile_for_pv(self) -> Dict[DateTime, float]:
