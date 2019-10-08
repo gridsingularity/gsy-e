@@ -66,13 +66,13 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price)
 
     def bid(self, price: float, energy: float, buyer: str, seller: str,
-            bid_id: str = None, original_bid_price=None, energy_origin=None) -> Bid:
+            bid_id: str = None, original_bid_price=None, buyer_origin=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
         self._update_new_bid_price_with_fee(price, original_bid_price)
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  price, energy, buyer, seller, original_bid_price, energy_origin)
+                  price, energy, buyer, seller, original_bid_price, buyer_origin)
         self.bids[bid.id] = bid
         self.bid_history.append(bid)
         log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
@@ -129,7 +129,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                 str(uuid.uuid4()), residual_price, residual_energy,
                 buyer, seller,
                 original_bid_price=(1 - energy_portion) * orig_price,
-                energy_origin=market_bid.energy_origin
+                buyer_origin=market_bid.buyer_origin
             )
 
             self.bids[changed_bid.id] = changed_bid
@@ -146,7 +146,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             final_price = energy * final_trade_rate
             bid = Bid(bid.id, final_price, energy, buyer, seller,
                       original_bid_price=energy_portion * orig_price,
-                      energy_origin=bid.energy_origin)
+                      buyer_origin=bid.buyer_origin)
         else:
             revenue, fees, final_trade_rate = GridFees.calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
@@ -159,7 +159,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                       buyer, residual, already_tracked=already_tracked,
                       offer_bid_trade_info=GridFees.propagate_original_offer_info_on_bid_trade(
                           trade_offer_info, self.transfer_fee_ratio),
-                      buyer_origin=bid.energy_origin, seller_origin=seller_origin
+                      buyer_origin=bid.buyer_origin, seller_origin=seller_origin
                       )
 
         if already_tracked is False:

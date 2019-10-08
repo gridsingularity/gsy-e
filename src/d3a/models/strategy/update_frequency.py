@@ -113,7 +113,7 @@ class UpdateFrequencyMixin:
                     offer.energy,
                     strategy.owner.name,
                     original_offer_price=updated_price,
-                    energy_origin=offer.energy_origin
+                    seller_origin=offer.seller_origin
                 )
                 strategy.offers.replace(offer, new_offer, iterated_market)
             except MarketException:
@@ -145,7 +145,7 @@ class UpdateFrequencyMixin:
 
             strategy.remove_bid_from_pending(bid.id, market.id)
             strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
-                              bid.energy, energy_origin=bid.energy_origin)
+                              bid.energy, buyer_origin=bid.buyer_origin)
 
     def update_posted_bids_over_ticks(self, market, strategy):
         if self.get_price_update_point(strategy, market.time_slot):

@@ -45,13 +45,13 @@ class BalancingMarket(OneSidedMarket):
         super().__init__(time_slot, area, notification_listener, readonly)
 
     def offer(self, price: float, energy: float, seller: str, iaa_fee: bool = False,
-              energy_origin=None):
+              original_offer_price=None, seller_origin=None):
         assert False
 
     def balancing_offer(self, price: float, energy: float,
                         seller: str, from_agent: bool=False,
                         iaa_fee: bool = False,
-                        energy_origin=None) -> BalancingOffer:
+                        seller_origin=None) -> BalancingOffer:
         if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
@@ -63,7 +63,7 @@ class BalancingMarket(OneSidedMarket):
             price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
 
         offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller,
-                               energy_origin=energy_origin)
+                               seller_origin=seller_origin)
         self.offers[offer.id] = offer
         self._sorted_offers = \
             sorted(self.offers.values(), key=lambda o: o.price / o.energy)
@@ -127,7 +127,7 @@ class BalancingMarket(OneSidedMarket):
                     abs(final_price),
                     energy,
                     offer.seller,
-                    energy_origin=offer.energy_origin
+                    seller_origin=offer.seller_origin
                 )
 
                 residual_price = (1 - energy_portion) * offer.price
@@ -141,7 +141,7 @@ class BalancingMarket(OneSidedMarket):
                     residual_energy,
                     offer.seller,
                     original_offer_price=original_residual_price,
-                    energy_origin=offer.energy_origin
+                    seller_origin=offer.seller_origin
                 )
                 self.offers[residual_offer.id] = residual_offer
                 log.debug(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
@@ -176,7 +176,7 @@ class BalancingMarket(OneSidedMarket):
                 offer, buyer, original_offer, residual_offer
             )
         trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
-                               residual_offer, seller_origin=offer.energy_origin,
+                               residual_offer, seller_origin=offer.seller_origin,
                                buyer_origin=buyer_origin)
         self.bc_interface.track_trade_event(trade)
 

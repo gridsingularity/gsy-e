@@ -54,7 +54,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             self.owner.name,
             self.markets.target.area.name,
             original_bid_price=bid.original_bid_price,
-            energy_origin=bid.energy_origin
+            buyer_origin=bid.buyer_origin
         )
         bid_coupling = BidInfo(bid, forwarded_bid)
         self.forwarded_bids[forwarded_bid.id] = bid_coupling
@@ -118,7 +118,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                                     trade_rate=matched_rate,
                                     already_tracked=False,
                                     trade_bid_info=trade_bid_info,
-                                    buyer_origin=bid.energy_origin)
+                                    buyer_origin=bid.buyer_origin)
             self._delete_forwarded_offer_entries(offer)
             self.markets.source.accept_bid(bid,
                                            selected_energy,
@@ -127,7 +127,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                                            already_tracked=True,
                                            trade_rate=matched_rate,
                                            trade_offer_info=trade_bid_info,
-                                           seller_origin=offer.energy_origin)
+                                           seller_origin=offer.seller_origin)
 
             bid_info = self.forwarded_bids.get(bid.id, None)
             if bid_info is not None:

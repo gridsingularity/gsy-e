@@ -66,7 +66,7 @@ class CommercialStrategy(BaseStrategy):
             self.energy_per_slot_kWh,
             self.owner.name,
             original_offer_price=self.energy_per_slot_kWh * energy_rate,
-            energy_origin=self.owner.name
+            seller_origin=self.owner.name
         )
 
         self.offers.post(offer, market.id)

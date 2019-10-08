@@ -89,12 +89,12 @@ class FakeMarket:
         else:
             offer.energy = energy
             return Trade('trade', 0, offer, offer.seller, 'FakeOwner',
-                         seller_origin=offer.energy_origin, buyer_origin=buyer_origin)
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
     def bid(self, price, energy, buyer, seller, original_bid_price=None,
-            energy_origin=None):
+            buyer_origin=None):
         return Bid(123, price, energy, buyer, seller, original_bid_price,
-                   energy_origin=energy_origin)
+                   buyer_origin=buyer_origin)
 
 
 @pytest.fixture
