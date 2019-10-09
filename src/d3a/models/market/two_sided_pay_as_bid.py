@@ -186,16 +186,10 @@ class TwoSidedPayAsBid(OneSidedMarket):
         #    since the most affordable offers will be allocated for the most aggressive buyers.
 
         # Sorted bids in descending order
-        sorted_bids = list(reversed(sorted(
-            self.bids.values(),
-            key=lambda b: b.price / b.energy))
-        )
+        sorted_bids = self.sorting(self.bids, True)
 
         # Sorted offers in descending order
-        sorted_offers = list(reversed(sorted(
-            self.offers.values(),
-            key=lambda o: o.price / o.energy))
-        )
+        sorted_offers = self.sorting(self.offers, True)
 
         already_selected_bids = set()
         for offer in sorted_offers:

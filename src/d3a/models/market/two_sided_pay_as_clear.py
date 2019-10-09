@@ -54,19 +54,6 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     self.accumulated_trade_price
                     )
 
-    def _sorting(self, obj, reverse_order=False):
-        if reverse_order:
-            # Sorted bids in descending order
-            return list(reversed(sorted(
-                obj.values(),
-                key=lambda b: b.price / b.energy)))
-
-        else:
-            # Sorted bids in ascending order
-            return list(sorted(
-                obj.values(),
-                key=lambda b: b.price / b.energy))
-
     def _discrete_point_curve(self, obj_list, round_functor):
         cumulative = {}
         for obj in obj_list:
@@ -105,8 +92,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     return b_rate, b_energy
 
     def _perform_pay_as_clear_matching(self):
-        self.sorted_bids = self._sorting(self.bids, True)
-        # self.sorted_pac_offers = self._sorting(self.offers)
+        self.sorted_bids = self.sorting(self.bids, True)
 
         if len(self.sorted_bids) == 0 or len(self.sorted_offers) == 0:
             return
@@ -183,6 +169,8 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     trade_offer_info=trade_offer_info
                 )
                 cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
+            else:
+                assert False, "An error occurred, this point should never be reached."
             accepted_bids.append(trade)
         return accepted_bids
 
@@ -235,7 +223,8 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                                   energy=offer.energy,
                                   already_tracked=already_tracked,
                                   trade_rate=clearing_rate,
-                                  trade_bid_info=trade_bid_info)
+                                  trade_bid_info=trade_bid_info,
+                                  buyer_origin=trade.buyer_origin)
                 return accepted_bids
             elif bid_energy > offer.energy:
                 trade._replace(seller_origin=offer.seller_origin)
@@ -244,7 +233,8 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                                   energy=offer.energy,
                                   already_tracked=already_tracked,
                                   trade_rate=clearing_rate,
-                                  trade_bid_info=trade_bid_info)
+                                  trade_bid_info=trade_bid_info,
+                                  buyer_origin=trade.buyer_origin)
                 updated_bid = trade.offer
                 updated_bid._replace(energy=trade.offer.energy - offer.energy)
                 trade._replace(offer=updated_bid)
