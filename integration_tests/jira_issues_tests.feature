@@ -87,7 +87,6 @@ Feature: Jira Issues Tests
     And d3a is installed
     Then we run the simulation with setup file jira.d3asim_1525 and parameters [24, 60, 60, 0, 1]
 
-
   Scenario: D3ASIM-1535, User should not be able to add area to leaf area
     Given we have a scenario named jira/d3asim_1535
     And d3a is installed

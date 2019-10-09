@@ -262,13 +262,12 @@ def device_statistics(context):
     assert counter == 12
 
 
-
 @then("an AreaException is raised")
 def area_exception_is_raised(context):
     from d3a.d3a_core.exceptions import AreaException
     assert type(context.sim_error) == AreaException
-    
-    
+
+
 @then('trades happen when the load seeks energy')
 def trades_happen(context):
     trade_count = 0
@@ -278,4 +277,3 @@ def trades_happen(context):
                    <= today(tz=TIME_ZONE).add(hours=16)
             trade_count += 1
     assert trade_count == 9
-
