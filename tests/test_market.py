@@ -32,10 +32,13 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade, InvalidBalancingTradeException, InvalidBid, \
     BidNotFound, DeviceNotInRegistryError
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
+from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
+from d3a.models.market.market_structures import Bid, Offer, Trade
 from d3a.models.market.balancing import BalancingMarket
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
+from d3a_interface.constants_limits import GlobalConfig
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 device_registry_dict = {
@@ -53,8 +56,71 @@ class FakeArea:
         self.now = DateTime.now()
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = 0
+        self.config = GlobalConfig
+
         DeviceRegistry.REGISTRY = device_registry_dict
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
+
+
+class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
+    def __init__(self, bids=[], m_id=123, area=None):
+        super().__init__(area=area)
+        self.id = m_id
+        self._bids = bids
+        self.offer_count = 0
+        self.bid_count = 0
+        self.forwarded_offer_id = 'fwd'
+        self.forwarded_bid_id = 'fwd_bid_id'
+        self.calls_energy = []
+        self.calls_energy_bids = []
+        self.calls_offers = []
+        self.calls_bids = []
+        self.calls_bids_price = []
+        self.mcp_update_point = 20
+        self.area.current_tick = 19
+
+    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+
+        if isinstance(offer_or_id, Offer):
+            offer_or_id = offer_or_id.id
+        offer = self.offers.pop(offer_or_id, None)
+        if offer is None:
+            print(offer_or_id, self.offers)
+            assert False
+
+        self.calls_energy.append(energy)
+        self.calls_offers.append(offer)
+
+        if energy < offer.energy:
+            residual_energy = offer.energy - energy
+            residual = Offer('res', offer.price, residual_energy, offer.seller)
+            traded = Offer(offer.id, offer.price, energy, offer.seller)
+            return Trade('trade_id', time, traded, traded.seller, buyer, residual)
+        else:
+            return Trade('trade_id', time, offer, offer.seller, buyer)
+
+    def accept_bid(self, bid: Bid, energy: float = None,
+                   seller: str = None, buyer: str = None, already_tracked: bool = False,
+                   trade_rate: float = None, trade_offer_info=None, time=None,
+                   seller_origin=None):
+        self.calls_energy_bids.append(energy)
+        self.calls_bids.append(bid)
+        self.calls_bids_price.append(bid.price)
+        if trade_rate is None:
+            trade_rate = bid.price / bid.energy
+        else:
+            assert trade_rate <= (bid.price / bid.energy)
+
+        market_bid = [b for b in self.bids.values() if b.id == bid.id][0]
+        if energy < market_bid.energy:
+            residual_energy = bid.energy - energy
+            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller)
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
+            return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual)
+        else:
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
+            return Trade('trade_id', time, traded, traded.seller, bid.buyer)
 
 
 def teardown_function():
@@ -64,6 +130,32 @@ def teardown_function():
 @pytest.yield_fixture
 def market():
     return TwoSidedPayAsBid(area=FakeArea("FakeArea"))
+
+
+def test_double_sided_performs_pay_as_bid_matching(market):
+    market.offers = {"offer1": Offer('id', 2, 2, 'other', 2)}
+
+    market.bids = {"bid1": Bid('bid_id', 9, 10, 'B', 'S')}
+    matched = list(market._perform_pay_as_bid_matching())
+    assert len(matched) == 0
+    market.bids = {"bid1": Bid('bid_id', 10, 10, 'B', 'S')}
+    matched = list(market._perform_pay_as_bid_matching())
+    assert len(matched) == 1
+
+    bid, offer = matched[0]
+    assert bid == list(market.bids.values())[0]
+    assert offer == list(market.offers.values())[0]
+
+    market.bids = {"bid1": Bid('bid_id1', 11, 10, 'B', 'S'),
+                   "bid2": Bid('bid_id2', 9, 10, 'B', 'S'),
+                   "bid3": Bid('bid_id3', 12, 10, 'B', 'S')}
+    matched = list(market._perform_pay_as_bid_matching())
+    assert len(matched) == 1
+    bid, offer = matched[0]
+    assert bid.id == 'bid_id3'
+    assert bid.price == 12
+    assert bid.energy == 10
+    assert offer == list(market.offers.values())[0]
 
 
 def test_device_registry(market=BalancingMarket(area=FakeArea("FakeArea"))):
@@ -586,6 +678,87 @@ def test_market_accept_bid_yields_partial_bid_trade(market: TwoSidedPayAsBid):
     bid = market.bid(2.0, 4, 'buyer', 'seller')
     trade = market.accept_bid(bid, energy=1, seller='seller', trade_offer_info=[2, 2, 1, 1, 2])
     assert trade.offer.id == bid.id and trade.offer.energy == 1
+
+
+@pytest.yield_fixture
+def pac_market():
+    return TwoSidedPayAsClear(area=FakeArea("FakeArea"))
+
+
+@pytest.mark.parametrize("offer, bid, MCP", [
+    ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4),
+    ([1, 2, 3, 4, 5, 6, 7], [7, 6, 5, 4, 3, 2, 1], 4),
+    ([8, 9, 10, 11, 12, 13, 14], [8, 9, 10, 11, 12, 13, 14], 11),
+    ([2, 3, 3, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7], 5),
+])
+@pytest.mark.parametrize("algorithm", [1, 2])
+def test_double_sided_market_performs_pay_as_clear_matching(pac_market,
+                                                            offer, bid, MCP, algorithm):
+    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
+    pac_market.offers = {"offer1": Offer('id1', offer[0], 1, 'other'),
+                         "offer2": Offer('id2', offer[1], 1, 'other'),
+                         "offer3": Offer('id3', offer[2], 1, 'other'),
+                         "offer4": Offer('id4', offer[3], 1, 'other'),
+                         "offer5": Offer('id5', offer[4], 1, 'other'),
+                         "offer6": Offer('id6', offer[5], 1, 'other'),
+                         "offer7": Offer('id7', offer[6], 1, 'other')}
+
+    pac_market.bids = {"bid1": Bid('bid_id1', bid[0], 1, 'B', 'S'),
+                       "bid2": Bid('bid_id2', bid[1], 1, 'B', 'S'),
+                       "bid3": Bid('bid_id3', bid[2], 1, 'B', 'S'),
+                       "bid4": Bid('bid_id4', bid[3], 1, 'B', 'S'),
+                       "bid5": Bid('bid_id5', bid[4], 1, 'B', 'S'),
+                       "bid6": Bid('bid_id6', bid[5], 1, 'B', 'S'),
+                       "bid7": Bid('bid_id7', bid[6], 1, 'B', 'S')}
+
+    matched = pac_market._perform_pay_as_clear_matching()[0]
+    assert matched == MCP
+
+
+def test_double_sided_pay_as_clear_market_works_with_floats(pac_market):
+    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+    pac_market.offers = {"offer1": Offer('id1', 1.1, 1, 'other'),
+                         "offer2": Offer('id2', 2.2, 1, 'other'),
+                         "offer3": Offer('id3', 3.3, 1, 'other')}
+
+    pac_market.bids = {
+                    "bid1": Bid('bid_id1', 3.3, 1, 'B', 'S'),
+                    "bid2": Bid('bid_id2', 2.2, 1, 'B', 'S'),
+                    "bid3": Bid('bid_id3', 1.1, 1, 'B', 'S')}
+
+    matched = pac_market._perform_pay_as_clear_matching()[0]
+    assert matched == 2.2
+
+
+@pytest.yield_fixture
+def pab_market():
+    return FakeTwoSidedPayAsBid(area=FakeArea("FakeArea"))
+
+
+def test_double_sided_pay_as_bid_market_match_offer_bids(pab_market):
+    pab_market.calls_offers = []
+    pab_market.calls_bids = []
+    offer = Offer('offer1', 2, 2, 'other', 2)
+    pab_market.offers = {"offer1": offer}
+
+    source_bid = Bid('bid_id3', 12, 10, 'B', 'S', original_bid_price=12)
+    pab_market.bids = {"bid_id": Bid('bid_id', 10, 10, 'B', 'S'),
+                       "bid_id1": Bid('bid_id1', 11, 10, 'B', 'S'),
+                       "bid_id2": Bid('bid_id2', 9, 10, 'B', 'S'),
+                       "bid_id3": source_bid}
+
+    pab_market.match_offers_bids()
+    assert len(pab_market.calls_offers) == 1
+    offer = pab_market.calls_offers[0]
+    assert offer.id == offer.id
+    assert offer.energy == offer.energy
+    assert offer.price == offer.price
+
+    assert len(pab_market.calls_bids) == 1
+    bid = pab_market.calls_bids[0]
+    assert bid.id == source_bid.id
+    assert bid.energy == source_bid.energy
+    assert bid.price == source_bid.price
 
 
 class MarketStateMachine(RuleBasedStateMachine):

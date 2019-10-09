@@ -392,7 +392,8 @@ class StorageStrategy(BidEnabledStrategy):
                 try:
                     max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
                     if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
-                        self.accept_offer(market, offer, energy=max_energy)
+                        self.accept_offer(market, offer, energy=max_energy,
+                                          buyer_origin=self.owner.name)
                         self.state.pledged_buy_kWh[market.time_slot] += max_energy
                         return True
 
@@ -415,7 +416,8 @@ class StorageStrategy(BidEnabledStrategy):
                         energy * selling_rate,
                         energy,
                         self.owner.name,
-                        original_offer_price=energy * selling_rate
+                        original_offer_price=energy * selling_rate,
+                        seller_origin=self.owner.name
                     )
                     self.offers.post(offer, market.id)
                     self.state.offered_sell_kWh[market.time_slot] += offer.energy

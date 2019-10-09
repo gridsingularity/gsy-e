@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Dict  # noqa
-from pendulum import Time # noqa
+from pendulum import Time  # noqa
 import math
 from pendulum import duration
 
@@ -170,7 +170,8 @@ class PVStrategy(BaseStrategy):
                     offer_price,
                     self.state.available_energy_kWh[market.time_slot],
                     self.owner.name,
-                    original_offer_price=offer_price
+                    original_offer_price=offer_price,
+                    seller_origin=self.owner.name
                 )
                 self.offers.post(offer, market.id)
 

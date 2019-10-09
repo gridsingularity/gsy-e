@@ -185,3 +185,17 @@ def cep_offer_residual_offer_rate(context):
             for id, offer in market.offers.items():
                 assert isclose((offer.price / offer.energy),
                                cep.strategy.energy_rate[market.time_slot])
+
+
+@then('Energy producer is {producer} & consumer is {consumer}')
+def energy_origin(context, producer, consumer):
+    trade_count = 0
+
+    for market in context.simulation.area.past_markets:
+        if len(market.trades) > 0:
+            for trade in market.trades:
+                trade_count += 1
+                assert trade.buyer_origin == consumer
+                assert trade.seller_origin == producer
+
+    assert trade_count > 0

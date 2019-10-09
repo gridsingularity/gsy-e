@@ -60,7 +60,8 @@ class IAAEngine:
             offer.energy,
             self.owner.name,
             offer.original_offer_price,
-            dispatch_event=False
+            dispatch_event=False,
+            seller_origin=offer.seller_origin
         )
         offer_info = OfferInfo(deepcopy(offer), deepcopy(forwarded_offer))
         self.forwarded_offers[forwarded_offer.id] = offer_info
@@ -150,7 +151,7 @@ class IAAEngine:
                     trade_rate=trade_offer_rate,
                     trade_bid_info=GridFees.update_forwarded_offer_trade_original_info(
                         trade.offer_bid_trade_info, offer_info.source_offer
-                    )
+                    ), buyer_origin=trade.buyer_origin
                 )
 
             except OfferNotFoundException:
