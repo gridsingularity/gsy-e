@@ -224,11 +224,13 @@ class TwoSidedPayAsBid(OneSidedMarket):
                               energy=selected_energy,
                               trade_rate=matched_rate,
                               already_tracked=False,
-                              trade_bid_info=trade_bid_info)
+                              trade_bid_info=trade_bid_info,
+                              buyer_origin=bid.buyer_origin)
             self.accept_bid(bid=bid,
                             energy=selected_energy,
                             seller=offer.seller,
                             buyer=bid.buyer,
                             already_tracked=True,
                             trade_rate=matched_rate,
-                            trade_offer_info=trade_bid_info)
+                            trade_offer_info=trade_bid_info,
+                            seller_origin=offer.seller_origin)

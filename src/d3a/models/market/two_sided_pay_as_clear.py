@@ -229,6 +229,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                 clearing_rate]
 
             if bid_energy == offer.energy:
+                trade._replace(seller_origin=offer.seller_origin)
                 self.accept_offer(offer_or_id=offer,
                                   buyer=trade.offer.buyer,
                                   energy=offer.energy,
@@ -237,6 +238,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                                   trade_bid_info=trade_bid_info)
                 return accepted_bids
             elif bid_energy > offer.energy:
+                trade._replace(seller_origin=offer.seller_origin)
                 self.accept_offer(offer_or_id=offer,
                                   buyer=trade.offer.buyer,
                                   energy=offer.energy,
@@ -249,13 +251,15 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                 accepted_bids = [trade] + accepted_bids
                 return accepted_bids
             elif bid_energy < offer.energy:
+                trade._replace(seller_origin=offer.seller_origin)
                 offer_trade = self.accept_offer(
                     offer_or_id=offer,
                     buyer=trade.offer.buyer,
                     energy=bid_energy,
                     already_tracked=already_tracked,
                     trade_rate=clearing_rate,
-                    trade_bid_info=trade_bid_info)
+                    trade_bid_info=trade_bid_info,
+                    buyer_origin=trade.buyer_origin)
                 assert offer_trade.residual is not None
                 offer = offer_trade.residual
             if energy <= FLOATING_POINT_TOLERANCE:
