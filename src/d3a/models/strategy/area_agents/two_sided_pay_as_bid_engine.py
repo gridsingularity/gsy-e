@@ -24,9 +24,6 @@ from d3a.models.market.market_structures import Bid
 from d3a.models.market.grid_fees.base_model import GridFees
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
-TradeBidInfo = namedtuple('TradeBidInfo',
-                          ('original_bid_rate', 'propagated_bid_rate',
-                           'original_offer_rate', 'propagated_offer_rate', 'trade_rate'))
 
 
 class TwoSidedPayAsBidEngine(IAAEngine):
@@ -62,76 +59,12 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         self.owner.log.trace(f"Forwarding bid {bid} to {forwarded_bid}")
         return forwarded_bid
 
-    def _perform_pay_as_bid_matching(self):
-        # Pay as bid first
-        # There are 2 simplistic approaches to the problem
-        # 1. Match the cheapest offer with the most expensive bid. This will favor the sellers
-        # 2. Match the cheapest offer with the cheapest bid. This will favor the buyers,
-        #    since the most affordable offers will be allocated for the most aggressive buyers.
-
-        # Sorted bids in descending order
-        sorted_bids = list(reversed(sorted(
-            self.markets.source.bids.values(),
-            key=lambda b: b.price / b.energy))
-        )
-
-        # Sorted offers in descending order
-        sorted_offers = list(reversed(sorted(
-            self.markets.source.offers.values(),
-            key=lambda o: o.price / o.energy))
-        )
-
-        already_selected_bids = set()
-        for offer in sorted_offers:
-            for bid in sorted_bids:
-                if bid.id not in already_selected_bids and \
-                   offer.price / offer.energy <= bid.price / bid.energy and \
-                   offer.seller != bid.buyer:
-                    already_selected_bids.add(bid.id)
-                    yield bid, offer
-                    break
-
     def _delete_forwarded_bid_entries(self, bid):
         bid_info = self.forwarded_bids.pop(bid.id, None)
         if not bid_info:
             return
         self.forwarded_bids.pop(bid_info.target_bid.id, None)
         self.forwarded_bids.pop(bid_info.source_bid.id, None)
-
-    def _match_offers_bids(self):
-        for bid, offer in self._perform_pay_as_bid_matching():
-            selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-            original_bid_rate = bid.original_bid_price / bid.energy
-            matched_rate = bid.price / bid.energy
-
-            trade_bid_info = TradeBidInfo(
-                original_bid_rate=original_bid_rate,
-                propagated_bid_rate=bid.price/bid.energy,
-                original_offer_rate=offer.original_offer_price/offer.energy,
-                propagated_offer_rate=offer.price/offer.energy,
-                trade_rate=original_bid_rate)
-
-            self.owner.accept_offer(market=self.markets.source,
-                                    offer=offer,
-                                    buyer=bid.buyer,
-                                    energy=selected_energy,
-                                    trade_rate=matched_rate,
-                                    already_tracked=False,
-                                    trade_bid_info=trade_bid_info,
-                                    buyer_origin=bid.buyer_origin)
-            self._delete_forwarded_offer_entries(offer)
-            self.markets.source.accept_bid(bid,
-                                           selected_energy,
-                                           seller=offer.seller,
-                                           buyer=bid.buyer,
-                                           already_tracked=True,
-                                           trade_rate=matched_rate,
-                                           trade_offer_info=trade_bid_info,
-                                           seller_origin=offer.seller_origin)
-
-            bid_info = self.forwarded_bids.get(bid.id, None)
-            if bid_info is not None:
-                self.delete_forwarded_bids(bid_info)
 
     def tick(self, *, area):
         super().tick(area=area)
@@ -141,7 +74,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                     self.owner.usable_bid(bid) and \
                     self.owner.name != bid.buyer:
                 self._forward_bid(bid)
-        self._match_offers_bids()
 
     def delete_forwarded_bids(self, bid_info):
         try:

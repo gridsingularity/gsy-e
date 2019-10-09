@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
+from pendulum import today
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
@@ -258,3 +260,14 @@ def device_statistics(context):
                     assert len(list(output_dict[house][device]["min_" + stats_name])) == 48
                     assert len(list(output_dict[house][device]["max_" + stats_name])) == 48
     assert counter == 12
+
+
+@then('trades happen when the load seeks energy')
+def trades_happen(context):
+    trade_count = 0
+    for market in context.simulation.area.past_markets:
+        if len(market.trades) != 0:
+            assert today(tz=TIME_ZONE).add(hours=8) <= market.time_slot \
+                   <= today(tz=TIME_ZONE).add(hours=16)
+            trade_count += 1
+    assert trade_count == 9
