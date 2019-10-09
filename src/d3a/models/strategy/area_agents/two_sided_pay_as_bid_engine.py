@@ -50,7 +50,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             bid.energy,
             self.owner.name,
             self.markets.target.area.name,
-            original_bid_price=bid.original_bid_price
+            original_bid_price=bid.original_bid_price,
+            buyer_origin=bid.buyer_origin
         )
         bid_coupling = BidInfo(bid, forwarded_bid)
         self.forwarded_bids[forwarded_bid.id] = bid_coupling
@@ -107,7 +108,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 trade_rate=trade_rate,
                 trade_offer_info=GridFees.update_forwarded_bid_trade_original_info(
                     bid_trade.offer_bid_trade_info, market_bid
-                )
+                ), seller_origin=bid_trade.seller_origin
             )
 
             self.after_successful_trade_event(source_trade, bid_info)

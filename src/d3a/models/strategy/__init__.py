@@ -204,14 +204,14 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def accept_offer(self, market: Market, offer, *, buyer=None, energy=None,
                      already_tracked=False, trade_rate: float = None,
-                     trade_bid_info: float = None):
+                     trade_bid_info: float = None, buyer_origin=None):
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market.offers[offer]
         trade = market.accept_offer(offer, buyer, energy=energy, trade_rate=trade_rate,
                                     already_tracked=already_tracked,
-                                    trade_bid_info=trade_bid_info)
+                                    trade_bid_info=trade_bid_info, buyer_origin=buyer_origin)
         self.offers.bought_offer(trade.offer, market.id)
         return trade
 
@@ -255,13 +255,14 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
-    def post_bid(self, market, price, energy):
+    def post_bid(self, market, price, energy, buyer_origin=None):
         bid = market.bid(
             price,
             energy,
             self.owner.name,
             self.area.name,
-            original_bid_price=price
+            original_bid_price=price,
+            buyer_origin=buyer_origin
         )
         self.add_bid_to_posted(market.id, bid)
         return bid
@@ -310,7 +311,8 @@ class BidEnabledStrategy(BaseStrategy):
         return self.post_bid(
             market,
             energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
-            energy_Wh / 1000.0
+            energy_Wh / 1000.0,
+            buyer_origin=self.owner.name
         )
 
     def get_posted_bids(self, market):

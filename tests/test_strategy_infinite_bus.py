@@ -77,7 +77,8 @@ class FakeMarket:
     def time_slot(self):
         return TIME
 
-    def offer(self, price, energy, seller, original_offer_price=None):
+    def offer(self, price, energy, seller, original_offer_price=None,
+              seller_origin=None):
         offer = Offer('id', price, energy, seller)
         self.created_offers.append(offer)
         offer.id = 'id'
@@ -90,13 +91,15 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None):
-        trade = Trade('trade_id', time, offer, offer.seller, buyer)
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+        trade = Trade('trade_id', time, offer, offer.seller, buyer,
+                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None):
-        bid = Bid("bid_id", price, energy, buyer, seller)
+    def bid(self, price, energy, buyer, seller, original_bid_price=None,
+            buyer_origin=None):
+        bid = Bid("bid_id", price, energy, buyer, seller, buyer_origin=buyer_origin)
         return bid
 
 

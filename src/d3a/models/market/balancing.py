@@ -44,12 +44,14 @@ class BalancingMarket(OneSidedMarket):
 
         super().__init__(time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str, iaa_fee: bool = False):
+    def offer(self, price: float, energy: float, seller: str, iaa_fee: bool = False,
+              original_offer_price=None, seller_origin=None):
         assert False
 
     def balancing_offer(self, price: float, energy: float,
                         seller: str, from_agent: bool=False,
-                        iaa_fee: bool = False) -> BalancingOffer:
+                        iaa_fee: bool = False,
+                        seller_origin=None) -> BalancingOffer:
         if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
@@ -60,7 +62,8 @@ class BalancingMarket(OneSidedMarket):
         if iaa_fee:
             price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
 
-        offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller)
+        offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller,
+                               seller_origin=seller_origin)
         self.offers[offer.id] = offer
         self._sorted_offers = \
             sorted(self.offers.values(), key=lambda o: o.price / o.energy)
@@ -72,7 +75,8 @@ class BalancingMarket(OneSidedMarket):
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
                      energy: int = None, time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info: float = None) -> BalancingTrade:
+                     trade_bid_info: float = None,
+                     buyer_origin=None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -122,7 +126,8 @@ class BalancingMarket(OneSidedMarket):
                     accepted_offer_id,
                     abs(final_price),
                     energy,
-                    offer.seller
+                    offer.seller,
+                    seller_origin=offer.seller_origin
                 )
 
                 residual_price = (1 - energy_portion) * offer.price
@@ -135,7 +140,8 @@ class BalancingMarket(OneSidedMarket):
                     abs(residual_price),
                     residual_energy,
                     offer.seller,
-                    original_offer_price=original_residual_price
+                    original_offer_price=original_residual_price,
+                    seller_origin=offer.seller_origin
                 )
                 self.offers[residual_offer.id] = residual_offer
                 log.debug(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
@@ -170,7 +176,8 @@ class BalancingMarket(OneSidedMarket):
                 offer, buyer, original_offer, residual_offer
             )
         trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
-                               residual_offer)
+                               residual_offer, seller_origin=offer.seller_origin,
+                               buyer_origin=buyer_origin)
         self.bc_interface.track_trade_event(trade)
 
         if already_tracked is False:
