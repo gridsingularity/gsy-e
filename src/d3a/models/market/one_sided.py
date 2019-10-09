@@ -61,7 +61,7 @@ class OneSidedMarket(Market):
             + self.transfer_fee_const * energy
 
     def offer(self, price: float, energy: float, seller: str,
-              original_offer_price=None, dispatch_event=True) -> Offer:
+              original_offer_price=None, dispatch_event=True, seller_origin=None) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -72,7 +72,8 @@ class OneSidedMarket(Market):
         price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
 
         offer_id = self.bc_interface.create_new_offer(energy, price, seller)
-        offer = Offer(offer_id, price, energy, seller, original_offer_price)
+        offer = Offer(offer_id, price, energy, seller, original_offer_price,
+                      seller_origin=seller_origin)
 
         self.offers[offer.id] = deepcopy(offer)
         self.offer_history.append(offer)
@@ -119,7 +120,7 @@ class OneSidedMarket(Market):
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info=None) -> Trade:
+                     trade_bid_info=None, buyer_origin=None) -> Trade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -172,7 +173,8 @@ class OneSidedMarket(Market):
                     accepted_offer_id,
                     final_price,
                     energy,
-                    offer.seller
+                    offer.seller,
+                    seller_origin=offer.seller_origin
                 )
 
                 residual_price = (1 - energy_portion) * offer.price
@@ -185,7 +187,8 @@ class OneSidedMarket(Market):
                     residual_price,
                     residual_energy,
                     offer.seller,
-                    original_offer_price=original_residual_price
+                    original_offer_price=original_residual_price,
+                    seller_origin=offer.seller_origin
                 )
                 self.offers[residual_offer.id] = residual_offer
                 log.debug(f"[OFFER][CHANGED][{self.time_slot_str}] "
@@ -225,7 +228,8 @@ class OneSidedMarket(Market):
 
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=GridFees.propagate_original_bid_info_on_offer_trade(
-                          trade_bid_info, self.transfer_fee_ratio)
+                          trade_bid_info, self.transfer_fee_ratio),
+                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin
                       )
         self.bc_interface.track_trade_event(trade)
 

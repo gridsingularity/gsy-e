@@ -87,19 +87,22 @@ class FakeMarket:
         return {bid.id: bid for bid in self._bids}
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
         if energy < offer.energy:
             residual_energy = offer.energy - energy
-            residual = Offer('res', offer.price, residual_energy, offer.seller)
-            traded = Offer(offer.id, offer.price, energy, offer.seller)
-            return Trade('trade_id', time, traded, traded.seller, buyer, residual)
+            residual = Offer('res', offer.price, residual_energy, offer.seller,
+                             seller_origin='res')
+            traded = Offer(offer.id, offer.price, energy, offer.seller, seller_origin='res')
+            return Trade('trade_id', time, traded, traded.seller, buyer, residual,
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
         else:
-            return Trade('trade_id', time, offer, offer.seller, buyer)
+            return Trade('trade_id', time, offer, offer.seller, buyer,
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
     def accept_bid(self, bid, energy, seller, buyer=None, *, time=None, trade_rate: float = None,
-                   trade_offer_info=None, already_tracked=False):
+                   trade_offer_info=None, already_tracked=False, seller_origin=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
@@ -111,12 +114,17 @@ class FakeMarket:
         market_bid = [b for b in self._bids if b.id == bid.id][0]
         if energy < market_bid.energy:
             residual_energy = bid.energy - energy
-            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller)
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
-            return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual)
+            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller,
+                           buyer_origin='res')
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller,
+                         buyer_origin='res')
+            return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual,
+                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
         else:
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
-            return Trade('trade_id', time, traded, traded.seller, bid.buyer)
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller,
+                         buyer_origin=bid.id)
+            return Trade('trade_id', time, traded, traded.seller, bid.buyer,
+                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
 
     def delete_offer(self, *args):
         pass
@@ -124,20 +132,23 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller, original_offer_price=None, dispatch_event=True):
+    def offer(self, price, energy, seller, original_offer_price=None, dispatch_event=True,
+              seller_origin=None):
         self.offer_count += 1
         price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller,
-                                     original_offer_price=original_offer_price)
+                                     original_offer_price=original_offer_price,
+                                     seller_origin=seller_origin)
         return self.forwarded_offer
 
     def dispatch_market_offer_event(self, offer):
         pass
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None):
+    def bid(self, price, energy, buyer, seller, original_bid_price=None, buyer_origin=None):
         self.bid_count += 1
         self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller,
-                                 original_bid_price=original_bid_price)
+                                 original_bid_price=original_bid_price,
+                                 buyer_origin=buyer_origin)
         return self.forwarded_bid
 
 
@@ -205,9 +216,9 @@ def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
 @pytest.fixture
 def iaa_bid():
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other', 1)])
-    higher_market = FakeMarket([], [Bid('id2', 1, 1, 'child', 'owner', 1),
-                                    Bid('id3', 0.5, 1, 'child', 'owner', 1)])
+    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other', 1, buyer_origin='id')])
+    higher_market = FakeMarket([], [Bid('id2', 1, 1, 'child', 'owner', 1, buyer_origin='id2'),
+                                    Bid('id3', 0.5, 1, 'child', 'owner', 1, buyer_origin='id3')])
     owner = FakeArea('owner')
 
     iaa = TwoSidedPayAsBidAgent(owner=owner,
