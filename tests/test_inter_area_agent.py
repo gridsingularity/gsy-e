@@ -366,8 +366,6 @@ def iaa_double_sided():
     owner = FakeArea('owner')
     iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
                                 higher_market=higher_market)
-    iaa.engines[0].match_offers_bids = lambda: None
-    iaa.engines[1].match_offers_bids = lambda: None
     iaa.event_tick()
     iaa.owner.current_tick += 2
     iaa.event_tick()

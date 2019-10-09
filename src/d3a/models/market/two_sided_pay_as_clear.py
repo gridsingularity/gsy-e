@@ -35,7 +35,6 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         super().__init__(time_slot, area, notification_listener, readonly)
         self.state = MarketClearingState()
         self.sorted_bids = []
-        self.sorted_pac_offers = []
         self.mcp_update_point = \
             self.area.config.ticks_per_slot / \
             ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
@@ -107,22 +106,22 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
     def _perform_pay_as_clear_matching(self):
         self.sorted_bids = self._sorting(self.bids, True)
-        self.sorted_pac_offers = self._sorting(self.offers)
+        # self.sorted_pac_offers = self._sorting(self.offers)
 
-        if len(self.sorted_bids) == 0 or len(self.sorted_pac_offers) == 0:
+        if len(self.sorted_bids) == 0 or len(self.sorted_offers) == 0:
             return
 
         if ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM == 1:
             cumulative_bids = self._accumulated_energy_per_rate(self.sorted_bids)
-            cumulative_offers = self._accumulated_energy_per_rate(self.sorted_pac_offers)
+            cumulative_offers = self._accumulated_energy_per_rate(self.sorted_offers)
             ascending_rate_bids = OrderedDict(reversed(list(cumulative_bids.items())))
             return self._clearing_point_from_supply_demand_curve(
                 ascending_rate_bids, cumulative_offers)
         elif ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM == 2:
             cumulative_bids = self._discrete_point_curve(self.sorted_bids, math.floor)
-            cumulative_offers = self._discrete_point_curve(self.sorted_pac_offers, math.ceil)
+            cumulative_offers = self._discrete_point_curve(self.sorted_offers, math.ceil)
             max_rate = max(
-                math.floor(self.sorted_pac_offers[-1].price / self.sorted_pac_offers[-1].energy),
+                math.floor(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
                 math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)
             )
 
@@ -189,7 +188,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
     def _accept_cleared_offers(self, clearing_rate, clearing_energy, accepted_bids):
         cumulative_traded_offers = 0
-        for offer in self.sorted_pac_offers:
+        for offer in self.sorted_offers:
             if cumulative_traded_offers >= clearing_energy:
                 break
             elif (math.floor(offer.price / offer.energy)) <= clearing_rate and \
