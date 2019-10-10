@@ -17,6 +17,11 @@ from d3a.models.area import Area
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 
+"""
+This setup file should fail because leaf areas can not have children.
+Leaf areas are areas that have a strategy.
+"""
+
 
 def get_setup(config):
     area = Area(
