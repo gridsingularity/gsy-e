@@ -23,7 +23,7 @@ from pendulum import duration, from_format, from_timestamp, today, DateTime
 from statistics import mean
 from typing import Dict
 from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
-from d3a.models.const import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig
 from d3a.d3a_core.util import generate_market_slot_list
 
 """
@@ -218,7 +218,7 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
 
         if isinstance(input_profile, str):
             # input in JSON formatting
-            profile = ast.literal_eval(input_profile)
+            profile = ast.literal_eval(input_profile.encode('utf-8').decode("utf-8-sig"))
             # Remove filename entry to support d3a-web profiles
             profile.pop("filename", None)
             profile = _remove_header(profile)
@@ -322,3 +322,9 @@ def read_arbitrary_profile(profile_type: InputProfileTypes,
             return _calculate_energy_from_power_profile(filled_profile, GlobalConfig.slot_length)
         else:
             return filled_profile
+
+
+def read_and_convert_identity_profile_to_float(profile):
+    parsed_profile = ast.literal_eval(str(profile))
+    generated_profile = read_arbitrary_profile(InputProfileTypes.IDENTITY, parsed_profile)
+    return {k: float(v) for k, v in generated_profile.items()}

@@ -18,12 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.util import make_iaa_name
+from d3a_interface.constants_limits import ConstSettings
 from numpy.random import random
 
 
 class OneSidedAgent(InterAreaAgent):
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=0, engine_type=IAAEngine):
+                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
+                 engine_type=IAAEngine):
         super().__init__(engine_type=engine_type, owner=owner, higher_market=higher_market,
                          lower_market=lower_market, min_offer_age=min_offer_age)
         self.name = make_iaa_name(owner)
@@ -44,16 +46,18 @@ class OneSidedAgent(InterAreaAgent):
         else:
             return None
 
-    def event_tick(self, *, area):
-        if area != self.owner:
-            # We're connected to both areas but only want tick events from our owner
-            return
+    def event_tick(self):
+        area = self.owner
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.tick(area=area)
 
     def event_trade(self, *, market_id, trade):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_trade(trade=trade)
+
+    def event_offer(self, *, market_id, offer):
+        for engine in sorted(self.engines, key=lambda _: random()):
+            engine.event_offer(market_id=market_id, offer=offer)
 
     def event_offer_deleted(self, *, market_id, offer):
         for engine in sorted(self.engines, key=lambda _: random()):

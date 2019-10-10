@@ -29,6 +29,7 @@ This setup file is being modified to mimic a typical
 modern household having a hybrid PV-ESS system.
 Bug: The PV should be selling power cheaper than the Commercial Producer, but it's not selling
 '''
+# TODO: Try to reenact the bug behaviour and add an integration test.
 
 
 def get_setup(config):
@@ -45,19 +46,15 @@ def get_setup(config):
                                                                            range(0, 24)),
                                                                        final_buying_rate=14),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(risk=10,
-                                                                 initial_capacity_kWh=0.6,
-                                                                 initial_rate_option=2,
-                                                                 energy_rate_decrease_option=2,
-                                                                 energy_rate_decrease_per_update=7,
+                    Area('H1 Storage1', strategy=StorageStrategy(energy_rate_decrease_per_update=7,
                                                                  battery_capacity_kWh=1.2,
                                                                  max_abs_battery_power_kW=5,
-                                                                 break_even=(12, 17.01)),
+                                                                 final_buying_rate=12,
+                                                                 final_selling_rate=17.01),
+
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVStrategy(panel_count=4,
                                                       final_selling_rate=5,
-                                                      initial_rate_option=2,
-                                                      energy_rate_decrease_option=2,
                                                       energy_rate_decrease_per_update=7),
                          appliance=PVAppliance()),
 

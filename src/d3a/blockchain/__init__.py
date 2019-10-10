@@ -27,7 +27,7 @@ from subprocess import Popen, DEVNULL
 from d3a.d3a_core.util import get_cached_joined_contract_source, wait_until_timeout_blocking
 from d3a.blockchain.users import BCUsers
 from d3a.blockchain.utils import unlock_account
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 log = getLogger(__name__)
@@ -42,14 +42,14 @@ class BlockChainInterface:
             self._ganache_process = Popen(['ganache-cli', '-a', '50', '-e', '10000000000'],
                                           close_fds=False, stdout=DEVNULL, stderr=DEVNULL)
             self.chain = Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
-            log.info("Launching Ganache Blockchain")
+            log.debug("Launching Ganache Blockchain")
 
         else:
             self.chain = Web3(HTTPProvider(ConstSettings.BlockchainSettings.URL))
-            log.info("Connected to Remote Blockchain")
+            log.debug("Connected to Remote Blockchain")
 
             wait_until_timeout_blocking(lambda: self.chain.net.peerCount > 0, timeout=20)
-            log.info(f"Number of Peers: {self.chain.net.peerCount}")
+            log.debug(f"Number of Peers: {self.chain.net.peerCount}")
 
         self.contracts = {}  # type: Dict[str, Contract]
         self.users = BCUsers(self.chain, self.contracts, default_user_balance)
@@ -62,7 +62,7 @@ class BlockChainInterface:
     def init_contract(self, contract_filename: str, contract_name: str,
                       args: list, listeners: Optional[List] = None, id_: str = None):
 
-        log.debug("Initializing contract '%s'", contract_name)
+        log.trace("Initializing contract '%s'", contract_name)
         compiled_sol = compile_source(get_cached_joined_contract_source(contract_filename))
         contract_interface = compiled_sol['<stdin>:' + contract_name]
 
@@ -76,7 +76,7 @@ class BlockChainInterface:
         contract = self.chain.eth.contract(address=contract_address,
                                            abi=contract_interface['abi'],
                                            ContractFactoryClass=Contract)
-        log.info(f"{contract_name} SmartContract deployed with Address: {contract_address}")
+        log.debug(f"{contract_name} SmartContract deployed with Address: {contract_address}")
         self.contracts[contract.address] = contract
         if id_:
             self.contracts[id_] = contract

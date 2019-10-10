@@ -19,49 +19,75 @@ from numpy import random
 from pendulum import duration
 from typing import Union
 from collections import namedtuple
-
 from d3a.d3a_core.util import generate_market_slot_list, is_market_in_simulation_duration
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
-from d3a.models.const import ConstSettings
-from d3a.models.strategy.update_frequency import BidUpdateFrequencyMixin
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.device_validator import validate_load_device
+from d3a_interface.exceptions import D3ADeviceException
+from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a_interface.constants_limits import GlobalConfig
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 
-class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
-    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'final_buying_rate',
-                  'initial_buying_rate')
+class LoadHoursStrategy(BidEnabledStrategy):
+    parameters = ('avg_power_W', 'hrs_per_day', 'hrs_of_day', 'fit_to_limit',
+                  'energy_rate_increase_per_update', 'update_interval', 'initial_buying_rate',
+                  'final_buying_rate', 'balancing_energy_ratio', 'use_market_maker_rate')
 
-    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None, daily_budget=None,
+    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
+                 fit_to_limit=True, energy_rate_increase_per_update=1,
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                  final_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.FINAL_BUYING_RATE,
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
+                 use_market_maker_rate: bool = False):
+
+        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
+        if use_market_maker_rate:
+            final_buying_rate = GlobalConfig.market_maker_rate
+
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
 
         BidEnabledStrategy.__init__(self)
-        self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                          initial_buying_rate)
-        self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                        final_buying_rate)
-        BidUpdateFrequencyMixin.__init__(self,
-                                         initial_rate_profile=self.initial_buying_rate,
-                                         final_rate_profile=self.final_buying_rate)
+        self.bid_update = \
+            UpdateFrequencyMixin(initial_rate=initial_buying_rate,
+                                 final_rate=final_buying_rate,
+                                 fit_to_limit=fit_to_limit,
+                                 energy_rate_change_per_update=energy_rate_increase_per_update,
+                                 update_interval=update_interval)
+        try:
+            validate_load_device(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
+                                 hrs_of_day=hrs_of_day)
+        except D3ADeviceException as e:
+            raise D3ADeviceException(str(e))
+
+        for time_slot in generate_market_slot_list():
+            rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
+            try:
+                validate_load_device(
+                    initial_buying_rate=self.bid_update.initial_rate[time_slot],
+                    final_buying_rate=self.bid_update.final_rate[time_slot],
+                    energy_rate_increase_per_update=rate_change)
+            except D3ADeviceException as e:
+                raise D3ADeviceException(str(e))
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 
         # consolidated_cycle is KWh energy consumed for the entire year
         self.daily_energy_required = None
-        # Budget for a single day in eur
-        self.daily_budget = daily_budget * 100 if daily_budget is not None else None
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
         self.energy_requirement_Wh = {}  # type: Dict[Time, float]
@@ -72,12 +98,14 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
 
     @property
     def active_markets(self):
-        markets = []
-        for market in self.area.all_markets:
-            if self._allowed_operating_hours(market.time_slot) and \
-                    is_market_in_simulation_duration(self.area.config, market):
-                markets.append(market)
-        return markets
+        return [market for market in self.area.all_markets
+                if self._is_market_active(market)]
+
+    def _is_market_active(self, market):
+        return self._allowed_operating_hours(market.time_slot) and \
+            is_market_in_simulation_duration(self.area.config, market) and \
+            (not self.area.current_market or
+             market.time_slot >= self.area.current_market.time_slot)
 
     def assign_hours_of_per_day(self, hrs_of_day, hrs_per_day):
         if hrs_of_day is None:
@@ -106,15 +134,12 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
 
     def event_activate(self):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            self.initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
-            self.final_buying_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, self.area.config.market_maker_rate)
-
+        self.bid_update.update_on_activate()
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.sim_duration.days + 1)}
         self._simulation_start_timestamp = self.area.now
         self.assign_energy_requirement(self.avg_power_W)
+        self._set_alternative_pricing_scheme()
 
     def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None,
                                hrs_of_day=None, final_buying_rate=None):
@@ -128,9 +153,8 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
             self.assign_energy_requirement(avg_power_W)
 
         if final_buying_rate is not None:
-            self.final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                            final_buying_rate)
-            self._final_rate_profile = self.final_buying_rate
+            self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                final_buying_rate)
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers
@@ -141,17 +165,21 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
             if len(market.sorted_offers) < 1:
                 return
             acceptable_offer = self._find_acceptable_offer(market)
+            current_day = self._get_day_of_timestamp(market.time_slot)
             if acceptable_offer and \
+                    self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
                     round(acceptable_offer.price / acceptable_offer.energy, 8) <= \
-                    self.final_buying_rate[market.time_slot]:
+                    self.bid_update.final_rate[market.time_slot]:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
-                current_day = self._get_day_of_timestamp(market.time_slot)
+                if max_energy < FLOATING_POINT_TOLERANCE:
+                    return
                 if acceptable_offer.energy > max_energy:
-                    self.accept_offer(market, acceptable_offer, energy=max_energy)
+                    self.accept_offer(market, acceptable_offer, energy=max_energy,
+                                      buyer_origin=self.owner.name)
                     self.energy_requirement_Wh[market.time_slot] = 0
                     self.hrs_per_day[current_day] -= self._operating_hours(max_energy)
                 else:
-                    self.accept_offer(market, acceptable_offer)
+                    self.accept_offer(market, acceptable_offer, buyer_origin=self.owner.name)
                     self.energy_requirement_Wh[market.time_slot] -= \
                         acceptable_offer.energy * 1000.0
                     self.hrs_per_day[current_day] -= self._operating_hours(acceptable_offer.energy)
@@ -163,14 +191,13 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
         return (time_slot - self._simulation_start_timestamp).days
 
     def _double_sided_market_event_tick(self, market):
-        if self.are_bids_posted(market.id):
-            self.update_posted_bids_over_ticks(market)
+        self.bid_update.update_posted_bids_over_ticks(market, self)
 
-    def event_tick(self, *, area):
+    def event_tick(self):
         for market in self.active_markets:
-            if self.energy_requirement_Wh[market.time_slot] <= 0:
-                continue
             if market.time_slot not in self.energy_requirement_Wh:
+                continue
+            if self.energy_requirement_Wh[market.time_slot] <= 0:
                 continue
 
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
@@ -179,6 +206,15 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self._double_sided_market_event_tick(market)
 
+    def event_offer(self, *, market_id, offer):
+        super().event_offer(market_id=market_id, offer=offer)
+        market = self.area.get_future_market_from_id(market_id)
+        if market.time_slot in self.energy_requirement_Wh and \
+                self._is_market_active(market) and \
+                self.energy_requirement_Wh[market.time_slot] > FLOATING_POINT_TOLERANCE:
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                self._one_sided_market_event_tick(market)
+
     def _allowed_operating_hours(self, time):
         return time.hour in self.hrs_of_day
 
@@ -186,11 +222,18 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
         return (((energy * 1000) / self.energy_per_slot_Wh)
                 * (self.area.config.slot_length / duration(hours=1)))
 
+    def _set_alternative_pricing_scheme(self):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            for time_slot in generate_market_slot_list():
+                final_rate = self.area.config.market_maker_rate[time_slot]
+                self.bid_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                         final_rate=final_rate)
+
     def event_market_cycle(self):
         super().event_market_cycle()
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
-            if self.hrs_per_day[current_day] <= 0:
+            if self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
                 self.energy_requirement_Wh[market.time_slot] = 0.0
                 self.state.desired_energy_Wh[market.time_slot] = 0.0
 
@@ -206,7 +249,8 @@ class LoadHoursStrategy(BidEnabledStrategy, BidUpdateFrequencyMixin):
                         bid_energy = self.energy_requirement_Wh[market.time_slot]
                     if not self.are_bids_posted(market.id):
                         self.post_first_bid(market, bid_energy)
-        self.update_market_cycle_bids()
+                    else:
+                        self.bid_update.update_market_cycle_bids(self)
 
     def event_balancing_market_cycle(self):
         for market in self.active_markets:

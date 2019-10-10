@@ -23,7 +23,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, RangeLimit
 
 
 def get_setup(config):
@@ -32,9 +32,8 @@ def get_setup(config):
     ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.StorageSettings.MIN_BUYING_RATE = 24.99
-    ConstSettings.StorageSettings.BREAK_EVEN_BUY = 25
-    ConstSettings.StorageSettings.BREAK_EVEN_SELL = 25.01
+    ConstSettings.StorageSettings.BUYING_RANGE = RangeLimit(24.99, 25)
+    ConstSettings.StorageSettings.SELLING_RANGE = RangeLimit(30, 25.01)
 
     area = Area(
         'Grid',
@@ -49,16 +48,12 @@ def get_setup(config):
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(
-                        initial_capacity_kWh=0.6,
-                        break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
+                        initial_soc=50),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage2', strategy=StorageStrategy(
-                        initial_capacity_kWh=0.6,
-                        break_even=(ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL)),
+                        initial_soc=50),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(4, 0),
+                    Area('H1 PV', strategy=PVStrategy(4),
                          appliance=PVAppliance()),
                     Area('H1 CEP',
                          strategy=CommercialStrategy(energy_rate=30),

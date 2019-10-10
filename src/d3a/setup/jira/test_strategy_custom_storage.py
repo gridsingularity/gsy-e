@@ -56,6 +56,8 @@ class CustomStorageStrategy(StorageStrategy):
         # example for determining the current tick number:
         current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         if current_tick_number >= 0:
+            if reduced_rate < self.offer_update.final_rate[market.time_slot]:
+                reduced_rate = self.offer_update.final_rate[market.time_slot]
             self._decrease_offer_price(self.area.next_market, reduced_rate)
 
     def select_market_to_sell(self):

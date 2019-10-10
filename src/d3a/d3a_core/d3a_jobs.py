@@ -19,17 +19,17 @@ import logging
 from os import environ, getpid
 import ast
 
-from pendulum import now, duration, from_format
+from datetime import datetime
+from pendulum import now, duration, instance
 from redis import StrictRedis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
 from d3a.models.config import SimulationConfig
-from d3a.d3a_core.util import available_simulation_scenarios
-from d3a.d3a_core.util import update_advanced_settings
+from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
-from d3a.constants import TIME_ZONE, DATE_FORMAT
-from d3a.models.const import GlobalConfig, ConstSettings
+from d3a_interface.constants_limits import GlobalConfig, ConstSettings
+from d3a_interface.settings_validators import validate_global_settings
 
 
 @job('d3a')
@@ -39,52 +39,63 @@ def start(scenario, settings, events):
     job = get_current_job()
     job.save_meta()
 
-    if settings is None:
-        settings = {}
-    else:
-        settings = {k: v for k, v in settings.items() if v is not None and v != "None"}
-
-    advanced_settings = settings.get('advanced_settings', None)
-    if advanced_settings is not None:
-        update_advanced_settings(ast.literal_eval(advanced_settings))
-
-    if events is not None:
-        events = ast.literal_eval(events)
-
-    spot_market_type = settings.get('spot_market_type', None)
-    if spot_market_type is not None:
-        if not 1 <= spot_market_type <= 3:
-            logging.getLogger().error(f"Invalid value ({spot_market_type} for spot market type.)")
+    try:
+        if settings is None:
+            settings = {}
         else:
+            settings = {k: v for k, v in settings.items() if v is not None and v != "None"}
+
+        advanced_settings = settings.get('advanced_settings', None)
+        if advanced_settings is not None:
+            update_advanced_settings(ast.literal_eval(advanced_settings))
+
+        if events is not None:
+            events = ast.literal_eval(events)
+
+        config_settings = {
+            "start_date":
+                instance(datetime.combine(settings.get('start_date'), datetime.min.time()))
+                if 'start_date' in settings else GlobalConfig.start_date,
+            "sim_duration":
+                duration(days=settings['duration'].days)
+                if 'duration' in settings else GlobalConfig.sim_duration,
+            "slot_length":
+                duration(seconds=settings['slot_length'].seconds)
+                if 'slot_length' in settings else GlobalConfig.slot_length,
+            "tick_length":
+                duration(seconds=settings['tick_length'].seconds)
+                if 'tick_length' in settings else GlobalConfig.tick_length,
+            "market_maker_rate":
+                settings.get('market_maker_rate',
+                             str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
+            "market_count": settings.get('market_count', GlobalConfig.market_count),
+            "cloud_coverage": settings.get('cloud_coverage', GlobalConfig.cloud_coverage),
+            "pv_user_profile": settings.get('pv_user_profile', None),
+            "iaa_fee": settings.get('iaa_fee', GlobalConfig.iaa_fee),
+            "max_panel_power_W": settings.get('max_panel_power_W',
+                                              ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W)
+        }
+
+        validate_global_settings(config_settings)
+
+        config = SimulationConfig(**config_settings)
+
+        spot_market_type = settings.get('spot_market_type', None)
+        if spot_market_type is not None:
             ConstSettings.IAASettings.MARKET_TYPE = spot_market_type
 
-    config = SimulationConfig(
-        sim_duration=duration(days=settings['duration'].days)
-        if 'duration' in settings else GlobalConfig.sim_duration,
-        slot_length=duration(seconds=settings['slot_length'].seconds)
-        if 'slot_length' in settings else GlobalConfig.slot_length,
-        tick_length=duration(seconds=settings['tick_length'].seconds)
-        if 'tick_length' in settings else GlobalConfig.tick_length,
-        market_count=settings.get('market_count', GlobalConfig.market_count),
-        cloud_coverage=settings.get('cloud_coverage', GlobalConfig.cloud_coverage),
-        pv_user_profile=settings.get('pv_user_profile', None),
-        iaa_fee=settings.get('iaa_fee', GlobalConfig.iaa_fee),
-        start_date=from_format(settings.get('start_date'), DATE_FORMAT, tz=TIME_ZONE)
-        if 'start_date' in settings else GlobalConfig.start_date
-    )
+        if scenario is None:
+            scenario_name = "default_2a"
+        elif scenario in available_simulation_scenarios:
+            scenario_name = scenario
+        else:
+            scenario_name = 'json_arg'
+            config.area = scenario
 
-    if scenario is None:
-        scenario_name = "default"
-    elif scenario in available_simulation_scenarios:
-        scenario_name = scenario
-    else:
-        scenario_name = 'json_arg'
-        config.area = scenario
+        kwargs = {"no_export": True,
+                  "pricing_scheme": 0,
+                  "seed": settings.get('random_seed', 0)}
 
-    kwargs = {"no_export": True,
-              "pricing_scheme": 0,
-              "seed": settings.get('random_seed', 0)}
-    try:
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
                        simulation_events=events,

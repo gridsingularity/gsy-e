@@ -36,7 +36,7 @@ class PVAppliance(SwitchableMixin, SimpleAppliance):
         if self.cloud_duration != 0:
             self.cloud_duration -= 1
             if self.cloud_duration == 0:
-                self.log.warning("Cloud cover ended")
+                self.log.info("Cloud cover ended")
             if self.cloud_cover < 1:
                 super().report_energy(energy=energy * self.cloud_cover)
 

@@ -44,12 +44,14 @@ class BalancingMarket(OneSidedMarket):
 
         super().__init__(time_slot, area, notification_listener, readonly)
 
-    def offer(self, price: float, energy: float, seller: str, iaa_fee: bool = False):
+    def offer(self, price: float, energy: float, seller: str, iaa_fee: bool = False,
+              original_offer_price=None, seller_origin=None):
         assert False
 
     def balancing_offer(self, price: float, energy: float,
                         seller: str, from_agent: bool=False,
-                        iaa_fee: bool = False) -> BalancingOffer:
+                        iaa_fee: bool = False,
+                        seller_origin=None) -> BalancingOffer:
         if seller not in DeviceRegistry.REGISTRY.keys() and not from_agent:
             raise DeviceNotInRegistryError(f"Device {seller} "
                                            f"not in registry ({DeviceRegistry.REGISTRY}).")
@@ -60,19 +62,21 @@ class BalancingMarket(OneSidedMarket):
         if iaa_fee:
             price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
 
-        offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller)
+        offer = BalancingOffer(str(uuid.uuid4()), price, energy, seller,
+                               seller_origin=seller_origin)
         self.offers[offer.id] = offer
         self._sorted_offers = \
             sorted(self.offers.values(), key=lambda o: o.price / o.energy)
         self.offer_history.append(offer)
-        log.info(f"[BALANCING_OFFER][NEW][{self.time_slot_str}] {offer}")
+        log.debug(f"[BALANCING_OFFER][NEW][{self.time_slot_str}] {offer}")
         self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
 
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
                      energy: int = None, time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
-                     original_trade_rate: float = None) -> BalancingTrade:
+                     trade_bid_info: float = None,
+                     buyer_origin=None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
@@ -92,8 +96,8 @@ class BalancingMarket(OneSidedMarket):
         if trade_rate is None:
             trade_rate = offer.price / offer.energy
 
-        orig_offer_price, orig_trade_price = self._calculate_original_prices(
-            offer, original_trade_rate
+        orig_offer_price = self._calculate_original_prices(
+            offer
         )
 
         self._sorted_offers = sorted(self.offers.values(),
@@ -115,14 +119,15 @@ class BalancingMarket(OneSidedMarket):
                 assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 
                 final_price = self._update_offer_fee_and_calculate_final_price(
-                    energy, trade_rate, energy_portion, orig_trade_price
+                    energy, trade_rate, energy_portion, orig_offer_price
                 ) if already_tracked is False else energy * trade_rate
 
                 accepted_offer = Offer(
                     accepted_offer_id,
                     abs(final_price),
                     energy,
-                    offer.seller
+                    offer.seller,
+                    seller_origin=offer.seller_origin
                 )
 
                 residual_price = (1 - energy_portion) * offer.price
@@ -135,11 +140,12 @@ class BalancingMarket(OneSidedMarket):
                     abs(residual_price),
                     residual_energy,
                     offer.seller,
-                    original_offer_price=original_residual_price
+                    original_offer_price=original_residual_price,
+                    seller_origin=offer.seller_origin
                 )
                 self.offers[residual_offer.id] = residual_offer
-                log.info(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
-                         f"{original_offer} -> {residual_offer}")
+                log.debug(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
+                          f"{original_offer} -> {residual_offer}")
                 offer = accepted_offer
 
                 self.bc_interface.change_offer(offer, original_offer, residual_offer)
@@ -155,7 +161,7 @@ class BalancingMarket(OneSidedMarket):
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 offer.price = self._update_offer_fee_and_calculate_final_price(
-                    energy, trade_rate, 1, orig_trade_price
+                    energy, trade_rate, 1, orig_offer_price
                 ) if already_tracked is False else energy * trade_rate
 
         except Exception:
@@ -170,12 +176,13 @@ class BalancingMarket(OneSidedMarket):
                 offer, buyer, original_offer, residual_offer
             )
         trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
-                               residual_offer, original_trade_rate=original_trade_rate)
+                               residual_offer, seller_origin=offer.seller_origin,
+                               buyer_origin=buyer_origin)
         self.bc_interface.track_trade_event(trade)
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer, buyer)
-            log.warning(f"[BALANCING_TRADE] [{self.time_slot_str}] {trade}")
+            log.info(f"[BALANCING_TRADE] [{self.time_slot_str}] {trade}")
 
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.
@@ -192,7 +199,7 @@ class BalancingMarket(OneSidedMarket):
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
-        log.info(f"[BALANCING_OFFER][DEL][{self.time_slot_str}] {offer}")
+        log.debug(f"[BALANCING_OFFER][DEL][{self.time_slot_str}] {offer}")
         self._notify_listeners(MarketEvent.BALANCING_OFFER_DELETED, offer=offer)
 
     def _update_accumulated_trade_price_energy(self, trade):

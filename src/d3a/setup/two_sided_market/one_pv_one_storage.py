@@ -20,7 +20,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, RangeLimit
 
 
 def get_setup(config):
@@ -28,9 +28,8 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
-    ConstSettings.StorageSettings.MIN_BUYING_RATE = 0
-    ConstSettings.StorageSettings.BREAK_EVEN_BUY = 29.9
-    ConstSettings.StorageSettings.BREAK_EVEN_SELL = 30
+    ConstSettings.StorageSettings.BUYING_RANGE = RangeLimit(0, 29.9)
+    ConstSettings.StorageSettings.SELLING_RANGE = RangeLimit(30, 30)
 
     area = Area(
         'Grid',
@@ -39,10 +38,7 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage',
-                         strategy=StorageStrategy(initial_capacity_kWh=0.6,
-                                                  break_even=(
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL),
+                         strategy=StorageStrategy(initial_soc=50,
                                                   initial_selling_rate=30,
                                                   initial_buying_rate=0
                                                   ),
@@ -53,7 +49,7 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 PV',
-                         strategy=PVStrategy(4, 0),
+                         strategy=PVStrategy(4),
                          appliance=PVAppliance()
                          ),
 

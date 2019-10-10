@@ -22,6 +22,7 @@ from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
+from d3a_interface.results_validator import results_validator
 
 log = getLogger(__name__)
 
@@ -30,6 +31,8 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 
 ERROR_CHANNEL = "d3a-errors"
 RESULTS_CHANNEL = "d3a-results"
+ZIP_RESULTS_CHANNEL = "d3a-zip-results"
+ZIP_RESULTS_KEY = "d3a-zip-results-key/"
 
 
 class RedisSimulationCommunication:
@@ -76,15 +79,15 @@ class RedisSimulationCommunication:
         data = json.loads(message["data"])
         slowdown = data.get('slowdown')
         if not slowdown:
-            log.error("'slowdown' parameter missing from incoming message.")
+            log.warning("'slowdown' parameter missing from incoming message.")
             return
         try:
             slowdown = int(slowdown)
         except ValueError:
-            log.error("'slowdown' parameter must be numeric")
+            log.warning("'slowdown' parameter must be numeric")
             return
         if not -1 < slowdown < 101:
-            log.error("'slowdown' must be in range 0 - 100")
+            log.warning("'slowdown' must be in range 0 - 100")
             return
         self._simulation.slowdown = slowdown
 
@@ -100,15 +103,35 @@ class RedisSimulationCommunication:
             self._simulation.stop()
 
     def publish_results(self, endpoint_buffer):
-        if not hasattr(self, 'pubsub'):
+        if not self.is_enabled():
             return
-        self.redis_db.publish(self.result_channel,
-                              json.dumps(endpoint_buffer.generate_result_report()))
+        results = endpoint_buffer.generate_result_report()
+        results_validator(results)
+        self.redis_db.publish(self.result_channel, json.dumps(results))
         self._handle_redis_job_metadata()
+
+    def write_zip_results(self, zip_results):
+        if not self.is_enabled():
+            return
+
+        fp = open(zip_results, 'rb')
+        zip_data = fp.read()
+        fp.close()
+
+        zip_results_key = ZIP_RESULTS_KEY + str(self._simulation_id)
+        # Write results to a separate Redis key
+        self.redis_db.set(zip_results_key, zip_data)
+        # Inform d3a-web that a new zip file is available on this key
+        self.redis_db.publish(ZIP_RESULTS_CHANNEL, json.dumps(
+            {"job_id": self._simulation_id, "zip_redis_key": zip_results_key}
+        ))
 
     def publish_intermediate_results(self, endpoint_buffer):
         # Should have a different format in the future, hence the code duplication
         self.publish_results(endpoint_buffer)
+
+    def is_enabled(self):
+        return hasattr(self, 'pubsub')
 
 
 def publish_job_error_output(job_id, traceback):

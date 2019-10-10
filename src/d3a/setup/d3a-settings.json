@@ -1,55 +1,175 @@
 {
- "basic_settings": {
-   "sim_duration": "24h",
-   "slot_length": "60m",
-   "tick_length": "60s",
-   "market_count": 1,
-   "cloud_coverage": 0,
-   "iaa_fee": 1,
-  "start_date": "2019-01-01"
- },
+  "basic_settings": {
+    "sim_duration": "24h",
+    "slot_length": "15m",
+    "tick_length": "15s",
+    "market_count": 1,
+    "cloud_coverage": 0,
+    "iaa_fee": 0,
+    "start_date": "2019-09-30"
+  },
   "advanced_settings": {
     "GeneralSettings": {
-      "MAX_RISK": 100,
-      "DEFAULT_RISK": 50,
       "DEFAULT_MARKET_MAKER_RATE": 30,
       "MAX_OFFER_TRAVERSAL_LENGTH": 6,
+      "DEFAULT_UPDATE_INTERVAL": 5,
+      "MIN_UPDATE_INTERVAL": 1,
       "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
+      "SUPPLY_DEMAND_PLOTS": true,
       "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
-      "SETUP_FILE_PATH": null
+      "SETUP_FILE_PATH": null,
+      "EXPORT_DEVICE_PLOTS": true,
+      "RUN_REAL_TIME": false,
+      "KEEP_PAST_MARKETS": false,
+      "EVENT_DISPATCHING_VIA_REDIS": false,
+      "RATE_DECREASE_PER_UPDATE_RANGE": [
+        0,
+        1000
+      ],
+      "RATE_CHANGE_PER_UPDATE": [
+        0,
+        1000
+      ],
+      "INITIAL_RATE_OPTIONS": [
+        1,
+        2,
+        3
+      ],
+      "NUM_CLONES_RANGE": [
+        0,
+        100
+      ],
+      "MIN_NUM_TICKS": 10,
+      "MAX_SLOT_LENGTH_M": 60,
+      "MIN_TICK_LENGTH_S": 1
+    },
+    "CommercialProducerSettings": {
+      "ENERGY_RATE_RANGE": [
+        0,
+        10000
+      ],
+      "MAX_POWER_KW_RANGE": [
+        0,
+        10000000
+      ]
     },
     "StorageSettings": {
+      "MIN_SOC_RANGE": [
+        10,
+        99
+      ],
+      "INITIAL_CHARGE_RANGE": [
+        10,
+        100
+      ],
+      "BREAK_EVEN_RANGE": [
+        0,
+        10000
+      ],
       "CAPACITY": 1.2,
+      "CAPACITY_RANGE": [
+        0.0001,
+        2000000
+      ],
       "MAX_ABS_POWER": 5,
-      "INITIAL_RATE_OPTION": 2,
-      "RATE_DECREASE_OPTION": 1,
-      "BREAK_EVEN_SELL": 25,
-      "BREAK_EVEN_BUY": 24.9,
-      "MIN_BUYING_RATE": 24.9,
-      "MAX_SELLING_RATE": 30,
-      "MIN_ALLOWED_SOC": 0.1,
+      "MAX_ABS_POWER_RANGE": [
+        0.0001,
+        2000000
+      ],
+      "BUYING_RANGE": [
+        0,
+        24.9
+      ],
+      "INITIAL_BUYING_RANGE": [
+        0,
+        10000
+      ],
+      "FINAL_BUYING_RANGE": [
+        0,
+        10000
+      ],
+      "SELLING_RANGE": [
+        30,
+        25
+      ],
+      "INITIAL_SELLING_RANGE": [
+        0,
+        10000
+      ],
+      "FINAL_SELLING_RANGE": [
+        0,
+        10000
+      ],
+      "MIN_ALLOWED_SOC": 10,
       "SELL_ON_MOST_EXPENSIVE_MARKET": false
     },
     "LoadSettings": {
+      "AVG_POWER_RANGE": [
+        0,
+        9223372036854775807
+      ],
+      "HOURS_RANGE": [
+        0,
+        24
+      ],
       "INITIAL_BUYING_RATE": 0,
-      "FINAL_BUYING_RATE": 35
+      "INITIAL_BUYING_RATE_RANGE": [
+        0,
+        10000
+      ],
+      "FINAL_BUYING_RATE": 35,
+      "FINAL_BUYING_RATE_RANGE": [
+        0,
+        10000
+      ]
     },
     "PVSettings": {
+      "PANEL_COUNT_RANGE": [
+        1,
+        10000
+      ],
+      "MIN_SELL_RATE_RANGE": [
+        0,
+        10000
+      ],
+      "INITIAL_RATE_RANGE": [
+        0,
+        10000
+      ],
+      "MAX_PANEL_OUTPUT_W_RANGE": [
+        0,
+        9223372036854775807
+      ],
       "FINAL_SELLING_RATE": 0,
-      "INITIAL_RATE_OPTION": 2,
-      "RATE_DECREASE_OPTION": 1,
       "DEFAULT_POWER_PROFILE": 0,
+      "CLOUD_COVERAGE_RANGE": [
+        0,
+        3
+      ],
       "MAX_PANEL_OUTPUT_W": 160
     },
     "WindSettings": {
       "FINAL_SELLING_RATE": 0,
-      "INITIAL_RATE_OPTION": 2,
-      "RATE_DECREASE_OPTION": 1,
       "MAX_WIND_TURBINE_OUTPUT_W": 160
     },
     "IAASettings": {
-      "FEE_PERCENTAGE": 1,
+      "FEE_PERCENTAGE": 0,
+      "FEE_PERCENTAGE_RANGE": [
+        0,
+        100
+      ],
+      "FEE_CONSTANT": 0,
+      "FEE_CONSTANT_RANGE": [
+        0,
+        9223372036854775807
+      ],
       "MARKET_TYPE": 1,
+      "MARKET_TYPE_RANGE": [
+        1,
+        3
+      ],
+      "PAY_AS_CLEAR_AGGREGATION_ALGORITHM": 1,
+      "MIN_OFFER_AGE": 0,
       "AlternativePricing": {
         "COMPARE_PRICING_SCHEMES": false,
         "PRICING_SCHEME": 0,
@@ -58,6 +178,7 @@
       }
     },
     "BlockchainSettings": {
+      "BC_INSTALLED": true,
       "URL": "http://127.0.0.1:8545",
       "START_LOCAL_CHAIN": true,
       "TIMEOUT": 30

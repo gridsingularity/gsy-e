@@ -20,7 +20,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, RangeLimit
 
 
 '''
@@ -40,9 +40,8 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
-    ConstSettings.StorageSettings.MIN_BUYING_RATE = 0
-    ConstSettings.StorageSettings.BREAK_EVEN_BUY = 29.9
-    ConstSettings.StorageSettings.BREAK_EVEN_SELL = 30
+    ConstSettings.StorageSettings.BUYING_RANGE = RangeLimit(0, 29.9)
+    ConstSettings.StorageSettings.SELLING_RANGE = RangeLimit(30, 30)
 
     area = Area(
         'Grid',
@@ -51,12 +50,9 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 Storage',
-                         strategy=StorageStrategy(initial_capacity_kWh=1.1,
+                         strategy=StorageStrategy(initial_soc=11,
                                                   battery_capacity_kWh=10,
                                                   max_abs_battery_power_kW=5,
-                                                  break_even=(
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_BUY,
-                                                    ConstSettings.StorageSettings.BREAK_EVEN_SELL),
                                                   initial_buying_rate=0
                                                   ),
                          appliance=SwitchableAppliance()),
@@ -66,23 +62,23 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 PV1',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                     Area('H2 PV2',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                     Area('H2 PV3',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                     Area('H2 PV4',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                     Area('H2 PV5',
-                         strategy=PVStrategy(1, 0),
+                         strategy=PVStrategy(1),
                          appliance=PVAppliance()
                          ),
                 ]

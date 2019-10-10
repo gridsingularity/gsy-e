@@ -25,11 +25,11 @@ from d3a.d3a_core.sim_results.stats import MarketEnergyBills, primary_unit_price
 
 from d3a.d3a_core.util import make_iaa_name
 from d3a.models.strategy import BaseStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 class FakeArea:
-    def __init__(self, name, children=None, past_markets=None):
+    def __init__(self, name, children=[], past_markets=[]):
         self.name = name
         self.display_type = "Area"
         self.children = children
@@ -43,10 +43,12 @@ class FakeArea:
 
 
 class FakeMarket:
-    def __init__(self, trades):
+    def __init__(self, trades, name="Area", fees=0.0):
         self.trades = trades
         self.time_slot = 15
         self.market_fee = 0
+        self.area = FakeArea(name)
+        self.market_fee = fees
 
 
 class FakeOffer:
@@ -113,18 +115,18 @@ def grid():
         FakeArea('house1',
                  children=[FakeArea('fridge'), FakeArea('pv')],
                  past_markets=[FakeMarket((_trade(2, 'fridge', 2, 'pv'),
-                                           _trade(3, 'fridge', 1, 'iaa'))),
-                               FakeMarket((_trade(1, 'fridge', 2, 'pv'),))]),
+                                           _trade(3, 'fridge', 1, 'iaa')), 'house1'),
+                               FakeMarket((_trade(1, 'fridge', 2, 'pv'),), 'house1')]),
         FakeArea('house2',
                  children=[FakeArea('e-car')],
                  past_markets=[FakeMarket((_trade(1, 'e-car', 4, 'iaa'),
                                            _trade(1, 'e-car', 8, 'iaa'),
-                                           _trade(3, 'iaa', 5, 'e-car'))),
-                               FakeMarket((_trade(1, 'e-car', 1, 'iaa'),))]),
+                                           _trade(3, 'iaa', 5, 'e-car')), 'house2'),
+                               FakeMarket((_trade(1, 'e-car', 1, 'iaa'),), 'house2')]),
         FakeArea('commercial')
     ], past_markets=[
-        FakeMarket((_trade(2, 'house2', 12, 'commercial'),)),
-        FakeMarket((_trade(1, 'house2', 1, 'commercial'),))
+        FakeMarket((_trade(2, 'house2', 12, 'commercial'),), 'grid'),
+        FakeMarket((_trade(1, 'house2', 1, 'commercial'),), 'grid')
     ])
 
 
@@ -168,7 +170,7 @@ def grid2():
         'street',
         children=[house1, house2],
         past_markets=[FakeMarket(
-            (_trade(2, make_iaa_name(house1), 3, make_iaa_name(house2)),)
+            (_trade(2, make_iaa_name(house1), 3, make_iaa_name(house2)),), 'street'
         )]
     )
 
@@ -186,3 +188,55 @@ def test_energy_bills_ensure_device_types_are_populated(grid2):
     result = m_bills.bills_results
     assert result["house1"]["type"] == "House 1 type"
     assert result["house2"]["type"] == "House 2 type"
+
+
+@pytest.fixture
+def grid_fees():
+    house1 = FakeArea('house1',
+                      children=[FakeArea("testPV")],
+                      past_markets=[FakeMarket([], name='house1', fees=2.0),
+                                    FakeMarket([], name='house1', fees=6.0)])
+    house2 = FakeArea('house2',
+                      children=[FakeArea("testLoad")],
+                      past_markets=[FakeMarket([], name='house2', fees=3.0)])
+    house1.display_type = "House 1 type"
+    house2.display_type = "House 2 type"
+    return FakeArea(
+        'street',
+        children=[house1, house2],
+        past_markets=[FakeMarket(
+            (_trade(2, make_iaa_name(house1), 3, make_iaa_name(house2)),), 'street', fees=4.0
+        )]
+    )
+
+
+def test_energy_bills_accumulate_fees(grid_fees):
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    m_bills = MarketEnergyBills()
+    m_bills._update_market_fees(grid_fees, 'past_markets')
+    assert m_bills.market_fees['house2'] == 0.03
+    assert m_bills.market_fees['street'] == 0.04
+    assert m_bills.market_fees['house1'] == 0.08
+
+
+def test_energy_bills_use_only_last_market_if_not_keep_past_markets(grid_fees):
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
+    m_bills = MarketEnergyBills()
+    m_bills._update_market_fees(grid_fees, 'past_markets')
+    assert m_bills.market_fees['house2'] == 0.03
+    assert m_bills.market_fees['street'] == 0.04
+    assert m_bills.market_fees['house1'] == 0.06
+
+
+def test_energy_bills_report_correctly_market_fees(grid_fees):
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+    m_bills = MarketEnergyBills()
+    m_bills.update(grid_fees)
+    result = m_bills.bills_results
+    assert result["street"]["house1"]["market_fee"] == 0.08
+    assert result["street"]["house2"]["market_fee"] == 0.03
+    assert result["street"]['Accumulated Trades']["market_fee"] == 0.04
+    assert result["house1"]['Accumulated Trades']["market_fee"] == \
+        result["street"]["house1"]["market_fee"]
+    assert result["house2"]['Accumulated Trades']["market_fee"] == \
+        result["street"]["house2"]["market_fee"]

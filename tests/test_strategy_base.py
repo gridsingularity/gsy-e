@@ -23,7 +23,7 @@ from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.strategy import BidEnabledStrategy, Offers
 from d3a.models.market.market_structures import Offer, Trade, Bid
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 def teardown_function():
@@ -83,15 +83,18 @@ class FakeMarket:
         self.id = id
 
     def accept_offer(self, offer, id, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, original_trade_rate=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
         if self.raises:
             raise MarketException
         else:
             offer.energy = energy
-            return Trade('trade', 0, offer, offer.seller, 'FakeOwner')
+            return Trade('trade', 0, offer, offer.seller, 'FakeOwner',
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None):
-        return Bid(123, price, energy, buyer, seller, original_bid_price)
+    def bid(self, price, energy, buyer, seller, original_bid_price=None,
+            buyer_origin=None):
+        return Bid(123, price, energy, buyer, seller, original_bid_price,
+                   buyer_origin=buyer_origin)
 
 
 @pytest.fixture

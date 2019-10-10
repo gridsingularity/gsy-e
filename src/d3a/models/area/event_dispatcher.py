@@ -15,8 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import json
 from numpy.random import random
 from typing import Union
+from logging import getLogger
+from threading import Event
+from redis import StrictRedis
+
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.one_sided_alternative_pricing_agent import \
@@ -25,13 +30,17 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedP
 from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
 from d3a.models.strategy.area_agents.balancing_agent import BalancingAgent
 from d3a.models.appliance.inter_area import InterAreaAppliance
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import create_subdict_or_update
+from d3a.d3a_core.redis_communication import REDIS_URL
+
+log = getLogger(__name__)
+
+EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
 
 
 class AreaDispatcher:
     def __init__(self, area):
-        self.listeners = []
         self._inter_area_agents = {}  # type: Dict[DateTime, Dict[String, OneSidedAgent]]
         self._balancing_agents = {}  # type: Dict[DateTime, Dict[String, BalancingAgent]]
         self.area = area
@@ -47,8 +56,8 @@ class AreaDispatcher:
     def broadcast_activate(self, **kwargs):
         return self._broadcast_notification(AreaEvent.ACTIVATE, **kwargs)
 
-    def broadcast_tick(self, area, **kwargs):
-        return self._broadcast_notification(AreaEvent.TICK, area=area, **kwargs)
+    def broadcast_tick(self, **kwargs):
+        return self._broadcast_notification(AreaEvent.TICK, **kwargs)
 
     def broadcast_market_cycle(self, **kwargs):
         return self._broadcast_notification(AreaEvent.MARKET_CYCLE, **kwargs)
@@ -88,11 +97,6 @@ class AreaDispatcher:
                 break
             for area_name in sorted(agents, key=lambda _: random()):
                 agents[area_name].event_listener(event_type, **kwargs)
-        for listener in self.listeners:
-            listener.event_listener(event_type, **kwargs)
-
-    def add_listener(self, listener):
-        self.listeners.append(listener)
 
     def _should_dispatch_to_strategies_appliances(self, event_type):
         if event_type is AreaEvent.ACTIVATE:
@@ -101,7 +105,8 @@ class AreaDispatcher:
             return self.area.events.is_connected and self.area.events.is_enabled
 
     def event_listener(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
-        if event_type is AreaEvent.TICK:
+        if event_type is AreaEvent.TICK and \
+                self._should_dispatch_to_strategies_appliances(event_type):
             self.area.tick()
         if event_type is AreaEvent.MARKET_CYCLE:
             self.area._cycle_markets(_trigger_event=True)
@@ -113,7 +118,7 @@ class AreaDispatcher:
             if self.area.appliance:
                 self.area.appliance.event_listener(event_type, **kwargs)
         elif (not self.area.events.is_enabled or not self.area.events.is_connected) \
-                and event_type == AreaEvent.MARKET_CYCLE:
+                and event_type == AreaEvent.MARKET_CYCLE and self.area.strategy is not None:
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod
@@ -151,6 +156,7 @@ class AreaDispatcher:
                 owner=self.area,
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
+                min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
             )
 
             self._delete_past_agents(self._inter_area_agents)
@@ -204,3 +210,102 @@ class AreaDispatcher:
                     agent.higher_market = None
                     agent.lower_market = None
                 del area_agent_member[pm]
+
+
+class RedisAreaDispatcher(AreaDispatcher):
+    def __init__(self, area, redis_comm):
+        super().__init__(area)
+        self.redis = redis_comm
+        self.subscribe_to_response()
+        self.subscribe_to_area_event()
+        self.str_area_events = [event.name.lower() for event in AreaEvent]
+
+    def subscribe_to_response(self):
+        channel = f"{self.area.slug}/area_event_response"
+        self.redis.sub_to_response(channel, self.response_callback)
+
+    def subscribe_to_area_event(self):
+        channel = f"{self.area.slug}/area_event"
+        self.redis.sub_to_area_event(channel, self.event_listener_redis)
+
+    def response_callback(self, payload):
+        data = json.loads(payload["data"])
+        if "response" in data:
+            event_type = data["response"]
+            if event_type in self.str_area_events:
+                self.redis.resume()
+            else:
+                raise Exception("RedisAreaDispatcher: Should never reach this point")
+
+    def publish_event(self, area_slug, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+        send_data = {"event_type": event_type.value, "kwargs": kwargs}
+        dispatch_chanel = f"{area_slug}/area_event"
+        self.redis.publish(dispatch_chanel, json.dumps(send_data))
+
+    def _broadcast_event_redis(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+        if isinstance(event_type, AreaEvent):
+            for child in sorted(self.area.children, key=lambda _: random()):
+                self.publish_event(child.slug, event_type, **kwargs)
+                self.redis.wait()
+        else:
+            self._broadcast_notification(event_type=event_type, **kwargs)
+
+    def event_listener_redis(self, payload):
+        data = json.loads(payload["data"])
+        kwargs = data["kwargs"]
+        event_type = AreaEvent(data["event_type"])
+        response_channel = f"{self.area.parent.slug}/area_event_response"
+        response_data = json.dumps({"response": event_type.name.lower()})
+
+        self.event_listener(event_type=event_type, **kwargs)
+
+        self.redis.publish(response_channel, response_data)
+
+    def broadcast_activate(self, **kwargs):
+        self._broadcast_event_redis(AreaEvent.ACTIVATE, **kwargs)
+
+    def broadcast_tick(self, **kwargs):
+        return self._broadcast_event_redis(AreaEvent.TICK, **kwargs)
+
+    def broadcast_market_cycle(self, **kwargs):
+        return self._broadcast_event_redis(AreaEvent.MARKET_CYCLE, **kwargs)
+
+    def broadcast_balancing_market_cycle(self, **kwargs):
+        return self._broadcast_event_redis(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
+
+
+class RedisAreaCommunicator:
+    def __init__(self):
+        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.pubsub = self.redis_db.pubsub()
+        self.pubsub_response = self.redis_db.pubsub()
+        self.area_event = Event()
+
+    def publish(self, channel, data):
+        self.redis_db.publish(channel, data)
+
+    def wait(self):
+        self.area_event.wait()
+        self.area_event.clear()
+
+    def resume(self):
+        self.area_event.set()
+
+    def sub_to_response(self, channel, callback):
+        self.pubsub_response.subscribe(**{channel: callback})
+        self.pubsub_response.run_in_thread(daemon=True)
+
+    def sub_to_area_event(self, channel, callback):
+        self.pubsub.subscribe(**{channel: callback})
+        self.pubsub.run_in_thread(daemon=True)
+
+
+class DispatcherFactory:
+    def __init__(self, area):
+        self.event_dispatching_via_redis = \
+            ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
+        self.dispatcher = RedisAreaDispatcher(area, RedisAreaCommunicator()) \
+            if self.event_dispatching_via_redis else AreaDispatcher(area)
+
+    def __call__(self):
+        return self.dispatcher

@@ -23,7 +23,7 @@ from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bi
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import TIME_ZONE
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -77,7 +77,8 @@ class FakeMarket:
     def time_slot(self):
         return TIME
 
-    def offer(self, price, energy, seller, original_offer_price=None):
+    def offer(self, price, energy, seller, original_offer_price=None,
+              seller_origin=None):
         offer = Offer('id', price, energy, seller)
         self.created_offers.append(offer)
         offer.id = 'id'
@@ -90,13 +91,15 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, original_trade_rate=None):
-        trade = Trade('trade_id', time, offer, offer.seller, buyer)
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+        trade = Trade('trade_id', time, offer, offer.seller, buyer,
+                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None):
-        bid = Bid("bid_id", price, energy, buyer, seller)
+    def bid(self, price, energy, buyer, seller, original_bid_price=None,
+            buyer_origin=None):
+        bid = Bid("bid_id", price, energy, buyer, seller, buyer_origin=buyer_origin)
         return bid
 
 
@@ -293,7 +296,7 @@ def bus_test4(area_test4):
 
 def testing_event_tick_buy_energy(bus_test4, area_test4):
     bus_test4.event_activate()
-    bus_test4.event_tick(area=area_test4)
+    bus_test4.event_tick()
     assert len(area_test4.test_market.traded_offers) == 1
     assert area_test4.test_market.traded_offers[-1].offer.energy == 1
 

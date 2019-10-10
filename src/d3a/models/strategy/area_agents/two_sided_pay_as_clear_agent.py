@@ -17,20 +17,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_clear_engine import TwoSidedPayAsClearEngine
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 class TwoSidedPayAsClearAgent(TwoSidedPayAsBidAgent):
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=0):
+                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
         super().__init__(owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age,
                          engine_type=TwoSidedPayAsClearEngine)
-        self.mcp_update_point = \
-            self.owner.config.ticks_per_slot / \
-            ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
 
     @property
     def current_tick(self):

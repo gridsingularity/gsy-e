@@ -26,7 +26,7 @@ Feature: Run integration tests
   Examples: Settings
      | scenario               | duration | slot_length | tick_length |
      |         default_2      |    24    |      60     |      60     |
-     |        default_2b      |    24    |      60     |      60     |
+     |        default_2b      |    24    |      55     |      60     |
      |        default_3       |    24    |      60     |      60     |
      |        default_3a      |    24    |      60     |      60     |
      |        default_3b      |    24    |      60     |      60     |
@@ -69,6 +69,7 @@ Feature: Run integration tests
      When a simulation is created for scenario default_2a
      And the simulation is able to transmit intermediate results
      And the simulation is able to transmit final results
+     And the simulation is able to transmit zipped results
      And the configured simulation is running
      Then intermediate results are transmitted on every slot
      And final results are transmitted once
@@ -107,12 +108,13 @@ Feature: Run integration tests
      And d3a is installed
      And d3a uses an two-sided pay-as-bid market
      When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
-     Then trades on the House 1 market clear with 20.0 cents/kWh
-     Then trades on the Neighborhood 1 market clear with 19.0 cents/kWh
-     Then trades on the Grid market clear with 17.0 cents/kWh
-     Then trades on the Neighborhood 2 market clear with 16.0 cents/kWh
-     Then trades on the House 2 market clear with 16.0 cents/kWh
+     Then trades on the House 1 market clear with 30.0 cents/kWh
+     Then trades on the Neighborhood 1 market clear with 30 cents/kWh
+     Then trades on the Grid market clear with 28.75 cents/kWh
+     Then trades on the Neighborhood 2 market clear with 26.25 cents/kWh
+     Then trades on the House 2 market clear with 25.0 cents/kWh
 
+  @disabled
   Scenario: Grid fees are calculated based on the clearing rate for pay as clear
      Given we have a scenario named non_compounded_grid_fees
      And d3a is installed

@@ -26,7 +26,7 @@ from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-from d3a.models.const import ConstSettings, GlobalConfig
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 
@@ -87,8 +87,9 @@ class FakeMarket:
         self.created_offers = []
         self.offers = {'id': Offer(id='id', price=10, energy=0.5, seller='A')}
 
-    def offer(self, price, energy, seller, original_offer_price=None):
-        offer = Offer(str(uuid.uuid4()), price, energy, seller, original_offer_price)
+    def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None):
+        offer = Offer(str(uuid.uuid4()), price, energy, seller, original_offer_price,
+                      seller_origin=seller_origin)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -130,9 +131,9 @@ def pv_test1(area_test1):
     return p
 
 
-def test_activation(pv_test1, area_test1):
+def test_activation(pv_test1):
     pv_test1.event_activate()
-    assert pv_test1._decrease_price_every_nr_s > 0
+    assert pv_test1.offer_update.number_of_available_updates > 0
     global ENERGY_FORECAST
     ENERGY_FORECAST = pv_test1.energy_production_forecast_kWh
 
@@ -164,10 +165,8 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
     old_offer = list(pv_test3.offers.posted.keys())[0]
-    area_test3.current_tick += 7
-    dec_rate = pv_test3._calculate_price_decrease_rate(area_test3.test_market)
-    pv_test3._decrease_offer_price(area_test3.test_market, dec_rate)
-
+    area_test3.current_tick += 310
+    pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
 
@@ -208,17 +207,7 @@ def pv_test5(area_test3, called):
     return p
 
 
-def testing_trigger_risk(pv_test5):
-    pv_test5.trigger_risk(99)
-    assert pv_test5.risk == 99
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(101)
-    with pytest.raises(ValueError):
-        pv_test5.trigger_risk(-1)
-
-
 """ TEST 6"""
-# Testing with different risk test parameters
 
 
 @pytest.fixture()
@@ -281,7 +270,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     fake_trade = FakeTrade(market_test3.created_offers[0])
     pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
-    pv_test6.event_tick(area=area_test3)
+    pv_test6.event_tick()
     assert not market_test3.created_offers
 
 

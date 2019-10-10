@@ -23,7 +23,7 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
@@ -39,7 +39,7 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(0, 24))),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVStrategy(4, 0),
                          appliance=PVAppliance()),
@@ -55,7 +55,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVStrategy(4, 0),
                          appliance=PVAppliance()),
-                    Area('H2 Storage1', strategy=StorageStrategy(initial_capacity_kWh=1.2),
+                    Area('H2 Storage1', strategy=StorageStrategy(initial_soc=100),
                          appliance=SwitchableAppliance()),
                 ]
             ),

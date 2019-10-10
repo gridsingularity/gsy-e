@@ -28,20 +28,22 @@ from pendulum import DateTime, today
 
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.config import SimulationConfig
-from d3a.models.const import ConstSettings
-from d3a.d3a_core.util import DateType
+
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
-    read_settings_from_file, update_advanced_settings
+    read_settings_from_file, update_advanced_settings, convert_str_to_pauseafter_intervall, \
+    DateType
 
 from d3a.d3a_core.simulation import run_simulation
-from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT
+from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, DATE_FORMAT, TIME_FORMAT
+from d3a_interface.settings_validators import validate_global_settings
 
 log = getLogger(__name__)
 
 
 @click.group(name='d3a', cls=DefaultGroup, default='run', default_if_no_args=True,
              context_settings={'max_content_width': 120})
-@click.option('-l', '--log-level', type=Choice(list(logging._nameToLevel.keys())), default='DEBUG',
+@click.option('-l', '--log-level', type=Choice(list(logging._nameToLevel.keys())), default='INFO',
               show_default=True, help="Log level")
 def main(log_level):
     handler = logging.StreamHandler()
@@ -85,8 +87,9 @@ _setup_modules = available_simulation_scenarios
 @click.option('--seed', help="Manually specify random seed")
 @click.option('--paused', is_flag=True, default=False, show_default=True,
               help="Start simulation in paused state")
-@click.option('--pause-after', type=IntervalType('H:M'), default="0",
-              help="Automatically pause after a certain time.  [default: disabled]")
+@click.option('--pause-at', type=str, default=None,
+              help=f"Automatically pause at a certain time. "
+              f"Accepted Input formats: ({DATE_FORMAT}, {TIME_FORMAT}) [default: disabled]")
 @click.option('--repl/--no-repl', default=False, show_default=True,
               help="Start REPL after simulation run.")
 @click.option('--no-export', is_flag=True, default=False, help="Skip export of simulation data")
@@ -99,14 +102,21 @@ _setup_modules = available_simulation_scenarios
               default=today(tz=TIME_ZONE).format(DATE_FORMAT), show_default=True,
               help=f"Start date of the Simulation ({DATE_FORMAT})")
 def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_length,
-        market_count, cloud_coverage, compare_alt_pricing, start_date, **kwargs):
+        market_count, cloud_coverage, compare_alt_pricing, start_date, pause_at, **kwargs):
 
     try:
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
             update_advanced_settings(advanced_settings)
+            validate_global_settings(simulation_settings)
             simulation_config = SimulationConfig(**simulation_settings)
         else:
+            global_settings = {"sim_duration": duration,
+                               "slot_length": slot_length,
+                               "tick_length": tick_length,
+                               "cloud_coverage": cloud_coverage,
+                               "market_count": market_count}
+            validate_global_settings(global_settings)
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
                                  cloud_coverage, start_date=start_date)
@@ -128,6 +138,8 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
                 p.join()
 
         else:
+            if pause_at is not None:
+                kwargs["pause_after"] = convert_str_to_pauseafter_intervall(start_date, pause_at)
             run_simulation(setup_module_name, simulation_config, None, slowdown, None,
                            kwargs)
 

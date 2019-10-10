@@ -20,21 +20,33 @@ from typing import Dict # noqa
 
 
 class Offer:
-    def __init__(self, id, price, energy, seller, original_offer_price=None):
+    def __init__(self, id, price, energy, seller, original_offer_price=None, seller_origin=None):
         self.id = str(id)
         self.real_id = id
         self.price = price
         self.original_offer_price = original_offer_price
         self.energy = energy
         self.seller = seller
+        self.seller_origin = seller_origin
 
     def __repr__(self):
         return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
             .format(s=self, rate=self.price / self.energy)
 
     def __str__(self):
-        return "{{{s.id!s:.6s}}} [{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
+        return "{{{s.id!s:.6s}}} [origin: {s.seller_origin}] " \
+               "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
             .format(s=self, rate=self.price / self.energy)
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def __eq__(self, other):
+        return self.id == other.id and \
+            self.price == other.price and \
+            self.original_offer_price == other.original_offer_price and \
+            self.energy == other.energy and \
+            self.seller == other.seller
 
     @classmethod
     def _csv_fields(cls):
@@ -46,11 +58,12 @@ class Offer:
 
 
 class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
-                             'original_bid_price'))):
-    def __new__(cls, id, price, energy, buyer, seller, original_bid_price=None):
+                             'original_bid_price', 'buyer_origin'))):
+    def __new__(cls, id, price, energy, buyer, seller, original_bid_price=None,
+                buyer_origin=None):
         # overridden to give the residual field a default value
         return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller,
-                                       original_bid_price)
+                                       original_bid_price, buyer_origin)
 
     def __repr__(self):
         return (
@@ -60,7 +73,7 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
 
     def __str__(self):
         return (
-            "{{{s.id!s:.6s}}} [{s.buyer}] [{s.seller}] "
+            "{{{s.id!s:.6s}}} [origin: {s.buyer_origin}] [{s.buyer}] [{s.seller}] "
             "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.price / self.energy)
         )
 
@@ -74,18 +87,22 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
-                                 'buyer', 'residual', 'already_tracked', 'original_trade_rate'))):
+                                 'buyer', 'residual', 'already_tracked',
+                                 'offer_bid_trade_info', 'seller_origin', 'buyer_origin'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None,
-                already_tracked=False, original_trade_rate=None):
+                already_tracked=False, offer_bid_trade_info=None,
+                seller_origin=None, buyer_origin=None):
         # overridden to give the residual field a default value
         return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual,
-                                         already_tracked, original_trade_rate)
+                                         already_tracked, offer_bid_trade_info, seller_origin,
+                                         buyer_origin)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""
         return (
-            "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate} {s.offer.id}".
+            "{{{s.id!s:.6s}}} [origin: {s.seller_origin} -> {s.buyer_origin}] "
+            "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh {p} @ {s.offer.price} {rate} "
+            "{s.offer.id}".
             format(s=self, p=mark_partial, rate=round(self.offer.price / self.offer.energy, 8))
         )
 
@@ -112,11 +129,14 @@ class BalancingOffer(Offer):
 
 
 class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'seller',
-                                                   'buyer', 'residual', 'original_trade_rate'))):
-    def __new__(cls, id, time, offer, seller, buyer, residual=None, original_trade_rate=None):
+                                                   'buyer', 'residual', 'offer_bid_trade_info',
+                                                   'seller_origin', 'buyer_origin'))):
+    def __new__(cls, id, time, offer, seller, buyer, residual=None, offer_bid_trade_info=None,
+                seller_origin=None, buyer_origin=None):
         # overridden to give the residual field a default value
         return super(BalancingTrade, cls).__new__(cls, id, time, offer, seller,
-                                                  buyer, residual, original_trade_rate)
+                                                  buyer, residual, offer_bid_trade_info,
+                                                  seller_origin, buyer_origin)
 
     def __str__(self):
         mark_partial = "(partial)" if self.residual is not None else ""

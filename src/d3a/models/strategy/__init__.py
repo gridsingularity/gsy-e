@@ -22,7 +22,7 @@ from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
@@ -97,7 +97,9 @@ class Offers:
 
     def _update_offer(self, offer):
         old_offer_list = [o for o in self.posted.keys() if o.id == offer.id]
-        assert len(old_offer_list) == 1, "Expected to find a unique offer to update"
+        assert len(old_offer_list) <= 1, "Expected to find a unique offer to update"
+        if len(old_offer_list) == 0:
+            return
         old_offer = old_offer_list[0]
         self.posted[offer] = self.posted.pop(old_offer)
 
@@ -121,7 +123,7 @@ class Offers:
             market_id = self.posted.pop(offer)
             assert type(market_id) == str
             if market_id in self.sold and offer.id in self.sold[market_id]:
-                self.strategy.log.error("Offer already sold, cannot remove it.")
+                self.strategy.log.warning("Offer already sold, cannot remove it.")
                 self.posted[offer] = market_id
             else:
                 return True
@@ -202,14 +204,14 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def accept_offer(self, market: Market, offer, *, buyer=None, energy=None,
                      already_tracked=False, trade_rate: float = None,
-                     original_trade_rate: float = None):
+                     trade_bid_info: float = None, buyer_origin=None):
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market.offers[offer]
         trade = market.accept_offer(offer, buyer, energy=energy, trade_rate=trade_rate,
                                     already_tracked=already_tracked,
-                                    original_trade_rate=original_trade_rate)
+                                    trade_bid_info=trade_bid_info, buyer_origin=buyer_origin)
         self.offers.bought_offer(trade.offer, market.id)
         return trade
 
@@ -221,11 +223,11 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def trigger_enable(self, **kw):
         self.enabled = True
-        self.log.warning("Trading has been enabled")
+        self.log.info("Trading has been enabled")
 
     def trigger_disable(self):
         self.enabled = False
-        self.log.warning("Trading has been disabled")
+        self.log.info("Trading has been disabled")
         # We've been disabled - remove all future open offers
         for market in self.area.markets.values():
             for offer in list(market.offers.values()):
@@ -253,13 +255,14 @@ class BidEnabledStrategy(BaseStrategy):
         self._bids = {}
         self._traded_bids = {}
 
-    def post_bid(self, market, price, energy):
+    def post_bid(self, market, price, energy, buyer_origin=None):
         bid = market.bid(
             price,
             energy,
             self.owner.name,
             self.area.name,
-            original_bid_price=price
+            original_bid_price=price,
+            buyer_origin=buyer_origin
         )
         self.add_bid_to_posted(market.id, bid)
         return bid
@@ -294,6 +297,23 @@ class BidEnabledStrategy(BaseStrategy):
         if market_id not in self._bids:
             return False
         return len(self._bids[market_id]) > 0
+
+    def post_first_bid(self, market, energy_Wh):
+        # TODO: It will be safe to remove this check once we remove the event_market_cycle being
+        # called twice, but still it is nice to have it here as a precaution. In general, there
+        # should be only bid from a device to a market at all times, which will be replaced if
+        # it needs to be updated. If this check is not there, the market cycle event will post
+        # one bid twice, which actually happens on the very first market slot cycle.
+        if not all(bid.buyer != self.owner.name for bid in market.bids.values()):
+            self.owner.log.warning(f"There is already another bid posted on the market, therefore"
+                                   f" do not repost another first bid.")
+            return None
+        return self.post_bid(
+            market,
+            energy_Wh * self.bid_update.initial_rate[market.time_slot] / 1000.0,
+            energy_Wh / 1000.0,
+            buyer_origin=self.owner.name
+        )
 
     def get_posted_bids(self, market):
         if market.id not in self._bids:

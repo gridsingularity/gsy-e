@@ -24,8 +24,14 @@ from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
 from d3a.models.market.market_structures import Bid, Trade
 from d3a.events.event_structures import MarketEvent
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.models.market.grid_fees.base_model import GridFees
+from collections import namedtuple
 
 log = getLogger(__name__)
+
+TradeBidInfo = namedtuple('TradeBidInfo',
+                          ('original_bid_rate', 'propagated_bid_rate',
+                           'original_offer_rate', 'propagated_offer_rate', 'trade_rate'))
 
 
 class TwoSidedPayAsBid(OneSidedMarket):
@@ -48,22 +54,33 @@ class TwoSidedPayAsBid(OneSidedMarket):
                     self.accumulated_trade_price
                     )
 
-    def bid(self, price: float, energy: float, buyer: str, seller: str, bid_id: str=None,
-            original_bid_price=None, source_market=None) -> Bid:
+    def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
+        """
+        Override one sided market private method to abstract away the grid fee calculation
+        when placing an offer to a market.
+        :param offer_price: Price of the offer coming from the source market, in cents
+        :param original_offer_price: Price of the original offer from the device
+        :param energy: Not required here, added to comply with the one-sided market implementation
+        :return: Updated price for the forwarded offer on this market
+        """
+        return GridFees.update_incoming_offer_with_fee(
+            offer_price, original_offer_price, self.transfer_fee_ratio
+        )
+
+    def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
+        return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price)
+
+    def bid(self, price: float, energy: float, buyer: str, seller: str,
+            bid_id: str = None, original_bid_price=None, buyer_origin=None) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 
-        if original_bid_price is None:
-            original_bid_price = price
-
-        if price != 0 and source_market is not None:
-            price = price - source_market.transfer_fee_ratio * original_bid_price - \
-                  source_market.transfer_fee_const * energy
+        self._update_new_bid_price_with_fee(price, original_bid_price)
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  price, energy, buyer, seller, original_bid_price)
+                  price, energy, buyer, seller, original_bid_price, buyer_origin)
         self.bids[bid.id] = bid
         self.bid_history.append(bid)
-        log.info(f"[BID][NEW][{self.time_slot_str}] {bid}")
+        log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
         return bid
 
     def delete_bid(self, bid_or_id: Union[str, Bid]):
@@ -72,7 +89,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFound(bid_or_id)
-        log.info(f"[BID][DEL][{self.time_slot_str}] {bid}")
+        log.debug(f"[BID][DEL][{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def _update_bid_fee_and_calculate_final_price(self, energy, trade_rate,
@@ -84,7 +101,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
-                   trade_rate: float = None, original_trade_rate=None):
+                   trade_rate: float = None, trade_offer_info=None, seller_origin=None):
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFound("During accept bid: " + str(bid))
@@ -106,9 +123,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
         elif energy > market_bid.energy:
             raise InvalidTrade("Traded energy cannot be more than the bid energy.")
         elif energy < market_bid.energy:
-            if original_trade_rate is not None:
-                orig_price = original_trade_rate * market_bid.energy
-
             # Partial bidding
             energy_portion = energy / market_bid.energy
             residual_price = (1 - energy_portion) * market_bid.price
@@ -119,8 +133,10 @@ class TwoSidedPayAsBid(OneSidedMarket):
             changed_bid = Bid(
                 str(uuid.uuid4()), residual_price, residual_energy,
                 buyer, seller,
-                original_bid_price=energy_portion * orig_price
+                original_bid_price=(1 - energy_portion) * orig_price,
+                buyer_origin=market_bid.buyer_origin
             )
+
             self.bids[changed_bid.id] = changed_bid
             self.bid_history.append(changed_bid)
 
@@ -128,25 +144,32 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                    existing_bid=bid, new_bid=changed_bid)
             residual = changed_bid
 
-            final_price = self._update_bid_fee_and_calculate_final_price(
-                energy, trade_rate, energy_portion, orig_price
-            ) if already_tracked is False else energy * trade_rate
-            bid = Bid(bid.id, energy * trade_rate, energy, buyer, seller,
-                      original_bid_price=energy_portion * orig_price)
+            revenue, fees, final_trade_rate = GridFees.calculate_trade_price_and_fees(
+                trade_offer_info, self.transfer_fee_ratio
+            )
+            self.market_fee += fees
+            final_price = energy * final_trade_rate
+            bid = Bid(bid.id, final_price, energy, buyer, seller,
+                      original_bid_price=energy_portion * orig_price,
+                      buyer_origin=bid.buyer_origin)
         else:
-            final_price = self._update_bid_fee_and_calculate_final_price(
-                energy, trade_rate, 1, orig_price
-            ) if already_tracked is False else energy * trade_rate
-
-            bid = bid._replace(price=energy * trade_rate)
+            revenue, fees, final_trade_rate = GridFees.calculate_trade_price_and_fees(
+                trade_offer_info, self.transfer_fee_ratio
+            )
+            self.market_fee += fees
+            final_price = energy * final_trade_rate
+            bid = bid._replace(price=final_price)
 
         trade = Trade(str(uuid.uuid4()), self._now, bid, seller,
                       buyer, residual, already_tracked=already_tracked,
-                      original_trade_rate=original_trade_rate)
+                      offer_bid_trade_info=GridFees.propagate_original_offer_info_on_bid_trade(
+                          trade_offer_info, self.transfer_fee_ratio),
+                      buyer_origin=bid.buyer_origin, seller_origin=seller_origin
+                      )
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
-            log.warning(f"[TRADE][BID] [{self.time_slot_str}] {trade}")
+            log.info(f"[TRADE][BID] [{self.time_slot_str}] {trade}")
             final_bid = bid._replace(price=final_price)
             trade = trade._replace(offer=final_bid)
 
@@ -154,3 +177,54 @@ class TwoSidedPayAsBid(OneSidedMarket):
         if not trade.residual:
             self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
         return trade
+
+    def _perform_pay_as_bid_matching(self):
+        # Pay as bid first
+        # There are 2 simplistic approaches to the problem
+        # 1. Match the cheapest offer with the most expensive bid. This will favor the sellers
+        # 2. Match the cheapest offer with the cheapest bid. This will favor the buyers,
+        #    since the most affordable offers will be allocated for the most aggressive buyers.
+
+        # Sorted bids in descending order
+        sorted_bids = self.sorting(self.bids, True)
+
+        # Sorted offers in descending order
+        sorted_offers = self.sorting(self.offers, True)
+
+        already_selected_bids = set()
+        for offer in sorted_offers:
+            for bid in sorted_bids:
+                if bid.id not in already_selected_bids and \
+                   offer.price / offer.energy <= bid.price / bid.energy and \
+                   offer.seller != bid.buyer:
+                    already_selected_bids.add(bid.id)
+                    yield bid, offer
+                    break
+
+    def match_offers_bids(self):
+        for bid, offer in self._perform_pay_as_bid_matching():
+            selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+            original_bid_rate = bid.original_bid_price / bid.energy
+            matched_rate = bid.price / bid.energy
+
+            trade_bid_info = TradeBidInfo(
+                original_bid_rate=original_bid_rate,
+                propagated_bid_rate=bid.price/bid.energy,
+                original_offer_rate=offer.original_offer_price/offer.energy,
+                propagated_offer_rate=offer.price/offer.energy,
+                trade_rate=original_bid_rate)
+            self.accept_offer(offer_or_id=offer,
+                              buyer=bid.buyer,
+                              energy=selected_energy,
+                              trade_rate=matched_rate,
+                              already_tracked=False,
+                              trade_bid_info=trade_bid_info,
+                              buyer_origin=bid.buyer_origin)
+            self.accept_bid(bid=bid,
+                            energy=selected_energy,
+                            seller=offer.seller,
+                            buyer=bid.buyer,
+                            already_tracked=True,
+                            trade_rate=matched_rate,
+                            trade_offer_info=trade_bid_info,
+                            seller_origin=offer.seller_origin)

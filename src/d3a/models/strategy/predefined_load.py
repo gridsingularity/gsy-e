@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
 
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile
@@ -34,7 +34,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         dictionary that contains the load values for each time point
     """
     parameters = ('daily_load_profile', 'final_buying_rate', 'initial_buying_rate',
-                  'balancing_energy_ratio')
+                  'balancing_energy_ratio', 'use_market_maker_rate')
 
     def __init__(self, daily_load_profile,
                  initial_buying_rate: Union[float, dict, str] =
@@ -43,7 +43,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                  ConstSettings.LoadSettings.FINAL_BUYING_RATE,
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO)):
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
+                 use_market_maker_rate: bool = False):
         """
         Constructor of DefinedLoadStrategy
         :param daily_load_profile: input profile for a day. Can be either a csv file path,
@@ -55,7 +56,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         super().__init__(0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                          final_buying_rate=final_buying_rate,
                          initial_buying_rate=initial_buying_rate,
-                         balancing_energy_ratio=balancing_energy_ratio)
+                         balancing_energy_ratio=balancing_energy_ratio,
+                         use_market_maker_rate=use_market_maker_rate)
         self.daily_load_profile = daily_load_profile
         self.load_profile = {}
 

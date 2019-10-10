@@ -22,7 +22,7 @@ from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.sim_results.area_statistics import _is_house_node
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 class OneSidedAlternativePricingAgent(OneSidedAgent):
@@ -31,7 +31,8 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
     MIN_SLOT_AGE = 2
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=0, engine_type=IAAEngine):
+                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
+                 engine_type=IAAEngine):
         super().__init__(engine_type=engine_type, owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age)
@@ -67,7 +68,8 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
             self.log.exception("Alternative pricing scheme: "
                                "An Error occurred while buying an offer")
 
-    def event_tick(self, *, area):
+    def event_tick(self):
+        area = self.owner
         if area.current_tick_in_slot >= self.MIN_SLOT_AGE and \
                 ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self._buy_energy_alternative_pricing_schemes(area)

@@ -54,7 +54,7 @@ def check_traded_energy_rate(context):
         for trade in market.trades:
             if trade.buyer == load.name:
                 assert (trade.offer.price / trade.offer.energy) < \
-                       load.strategy.final_buying_rate[market.time_slot]
+                       load.strategy.bid_update.final_rate[market.time_slot]
 
 
 @then('the DefinedLoadStrategy follows the Load profile provided as dict')
@@ -102,10 +102,10 @@ def check_min_user_rate_profile_dict(context):
         for trade in market.trades:
             trade_rate = trade.offer.price / trade.offer.energy
             if trade.buyer == load1.name:
-                min_rate = load1.strategy.initial_buying_rate[market.time_slot]
+                min_rate = load1.strategy.bid_update.initial_rate[market.time_slot]
                 assert trade_rate - min_rate < FLOATING_POINT_TOLERANCE
             elif trade.buyer == load2.name:
-                min_rate = load2.strategy.initial_buying_rate[market.time_slot]
+                min_rate = load2.strategy.bid_update.initial_rate[market.time_slot]
                 assert trade_rate - min_rate < FLOATING_POINT_TOLERANCE
             else:
                 assert False, "All trades should be bought by load1 or load2, no other consumer."
@@ -121,6 +121,6 @@ def check_bid_update_frequency(context):
         for trade in market.trades:
             if trade.buyer == load1.name:
                 assert isclose((trade.offer.price / trade.offer.energy),
-                               (load1.strategy.final_buying_rate[market.time_slot]))
+                               (load1.strategy.bid_update.final_rate[market.time_slot]))
             else:
                 assert False, "All trades should be bought by load1, no other consumer."

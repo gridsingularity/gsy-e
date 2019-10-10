@@ -26,8 +26,6 @@ import os
 
 """
 Setup file for displaying WindUserProfileStrategy.
-WindUserProfileStrategy Strategy requires power_profile, risk &
-lower selling rate threshold.
 """
 
 user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
@@ -47,8 +45,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                 ]
             ),
-            Area('Wind Turbine', strategy=WindUserProfileStrategy(power_profile=user_profile_path,
-                                                                  risk=80),
+            Area('Wind Turbine', strategy=WindUserProfileStrategy(power_profile=user_profile_path),
                  appliance=PVAppliance()),
         ],
         config=config

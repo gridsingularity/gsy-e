@@ -29,8 +29,7 @@ import os
 
 """
 Setup file for displaying PVPredefinedStrategy.
-PVUserProfileStrategy Strategy requires power_profile, risk, panel count &
-lower selling rate threshold.
+PVUserProfileStrategy Strategy requires power_profile, panel count
 """
 
 user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
@@ -49,8 +48,7 @@ def get_setup(config):
                                                                            range(7, 20))),
                          appliance=SwitchableAppliance()),
                     Area('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
-                                                                 panel_count=1,
-                                                                 risk=80),
+                                                                 panel_count=1),
                          appliance=PVAppliance()),
                 ]
             ),

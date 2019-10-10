@@ -16,91 +16,107 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Dict  # noqa
-from pendulum import Time # noqa
+from pendulum import Time  # noqa
 import math
 from pendulum import duration
 
 from d3a.d3a_core.util import generate_market_slot_list
-from d3a.events.event_structures import Trigger
 from d3a.models.strategy import BaseStrategy
-from d3a.models.const import ConstSettings
-from d3a.models.strategy.update_frequency import OfferUpdateFrequencyMixin
+from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.device_validator import validate_pv_device
+from d3a_interface.exceptions import D3ADeviceException
+from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.state import PVState
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.exceptions import MarketException
+from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.constants_limits import GlobalConfig
 
 
-class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
-    available_triggers = [
-        Trigger('risk', {'new_risk': int},
-                help="Change the risk parameter. Valid values are between 1 and 100.")
-    ]
+class PVStrategy(BaseStrategy):
 
-    parameters = ('panel_count', 'risk', 'max_panel_power_W', 'initial_selling_rate',
-                  'final_selling_rate')
+    parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate',
+                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
+                  'max_panel_power_W', 'use_market_maker_rate')
 
-    def __init__(
-         self, panel_count: int=1, risk: float=ConstSettings.GeneralSettings.DEFAULT_RISK,
-         final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-         initial_rate_option: float=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
-         initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-         energy_rate_decrease_option: int=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-         energy_rate_decrease_per_update:
-         float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
-         max_panel_power_W: float=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
-        self._validate_constructor_arguments(panel_count, risk, max_panel_power_W,
-                                             initial_selling_rate)
+    def __init__(self, panel_count: int = 1,
+                 initial_selling_rate:
+                 float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+                 final_selling_rate:
+                 float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+                 fit_to_limit: bool = True,
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 energy_rate_decrease_per_update:
+                 float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+                 max_panel_power_W: float = None,
+                 use_market_maker_rate: bool = False):
+        """
+        :param panel_count: Number of solar panels for this PV plant
+        :param initial_selling_rate: Upper Threshold for PV offers
+        :param final_selling_rate: Lower Threshold for PV offers
+        :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
+        :param update_interval: Interval after which PV will update its offer
+        :param energy_rate_decrease_per_update: Slope of PV Offer change per update
+        :param max_panel_power_W:
+        """
+
+        # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
+        if use_market_maker_rate:
+            initial_selling_rate = GlobalConfig.market_maker_rate
+
+        try:
+            validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        except D3ADeviceException as e:
+            raise D3ADeviceException(str(e))
+
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
+
         BaseStrategy.__init__(self)
-        OfferUpdateFrequencyMixin.__init__(self, initial_rate_option,
-                                           initial_selling_rate,
-                                           energy_rate_decrease_option,
-                                           energy_rate_decrease_per_update)
-        self.risk = risk
+        self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
+                                                 fit_to_limit, energy_rate_decrease_per_update,
+                                                 update_interval)
+        for time_slot in generate_market_slot_list():
+            try:
+                validate_pv_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
+                                   final_selling_rate=self.offer_update.final_rate[time_slot])
+            except D3ADeviceException as e:
+                raise D3ADeviceException(str(e))
         self.panel_count = panel_count
-        self.max_panel_power_W = max_panel_power_W
         self.final_selling_rate = final_selling_rate
+        self.max_panel_power_W = max_panel_power_W
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
-    @staticmethod
-    def _validate_constructor_arguments(panel_count=None, risk=None,
-                                        max_panel_output_W=None, initial_selling_rate=None):
-        if not ((risk is None or 0 <= risk <= 100) and
-                (panel_count is None or panel_count >= 1)):
-            raise ValueError("Risk is a percentage value, should be "
-                             "between 0 and 100, panel_count should be positive.")
-        if max_panel_output_W is not None and max_panel_output_W < 0:
-            raise ValueError("Max panel output in Watts should always be positive.")
-        if initial_selling_rate is not None and initial_selling_rate < 0:
-            raise ValueError("Min selling rate should be positive.")
-
     def area_reconfigure_event(self, **kwargs):
         assert all(k in self.parameters for k in kwargs.keys())
-        self._validate_constructor_arguments(kwargs.get('panel_count', None),
-                                             kwargs.get('risk', None),
-                                             kwargs.get('max_panel_power_W', None),
-                                             kwargs.get('initial_selling_rate', None))
+        try:
+            validate_pv_device(**kwargs)
+        except D3ADeviceException as e:
+            raise D3ADeviceException(str(e))
         for name, value in kwargs.items():
             setattr(self, name, value)
+
+        if 'initial_selling_rate' in kwargs and kwargs['initial_selling_rate'] is not None:
+            self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                    kwargs['initial_selling_rate'])
+        if 'final_selling_rate' in kwargs and kwargs['final_selling_rate'] is not None:
+            self.offer_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                  kwargs['final_selling_rate'])
         self.produced_energy_forecast_kWh()
+        self.offer_update.update_offer(self)
 
     def event_activate(self):
-        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            self.assign_offermixin_arguments(3, 2, 0)
-
+        if self.max_panel_power_W is None:
+            self.max_panel_power_W = self.area.config.max_panel_power_W
         # Calculating the produced energy
-        self.update_on_activate()
+        self._set_alternative_pricing_scheme()
+        self.offer_update.update_on_activate()
         self.produced_energy_forecast_kWh()
 
-    def _incorporate_rate_restrictions(self, initial_sell_rate, current_time):
-        energy_rate = max(initial_sell_rate, self.final_selling_rate)
-        rounded_energy_rate = round(energy_rate, 2)
-        assert rounded_energy_rate >= 0.0
-
-        return rounded_energy_rate
-
-    def event_tick(self, *, area):
-        for market in self.area.all_markets:
-            self.decrease_energy_price_over_ticks(market)
+    def event_tick(self):
+        self.offer_update.update_offer(self)
 
     def produced_energy_forecast_kWh(self):
         # This forecast ist based on the real PV system data provided by enphase
@@ -141,34 +157,26 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self.update_market_cycle_offers(self.final_selling_rate)
+        self.offer_update.update_market_cycle_offers(self)
 
         # Iterate over all markets open in the future
         for market in self.area.all_markets:
-            self.set_initial_selling_rate_alternative_pricing_scheme(market)
-            initial_sell_rate = self.calculate_initial_sell_rate(market.time_slot)
-            rounded_energy_rate = self._incorporate_rate_restrictions(initial_sell_rate,
-                                                                      market.time_slot)
             assert self.state.available_energy_kWh[market.time_slot] >= -FLOATING_POINT_TOLERANCE
             if self.state.available_energy_kWh[market.time_slot] > 0:
-                offer_price = rounded_energy_rate * \
+                offer_price = \
+                    self.offer_update.initial_rate[market.time_slot] * \
                     self.state.available_energy_kWh[market.time_slot]
                 offer = market.offer(
                     offer_price,
                     self.state.available_energy_kWh[market.time_slot],
                     self.owner.name,
-                    original_offer_price=offer_price
+                    original_offer_price=offer_price,
+                    seller_origin=self.owner.name
                 )
                 self.offers.post(offer, market.id)
 
-    def trigger_risk(self, new_risk: int = 0):
-        new_risk = int(new_risk)
-        if not (-1 < new_risk < 101):
-            raise ValueError("'new_risk' value has to be in range 0 - 100")
-        self.risk = new_risk
-        self.log.warning("Risk changed to %s", new_risk)
-
     def event_offer_deleted(self, *, market_id, offer):
+        super().event_offer_deleted(market_id=market_id, offer=offer)
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return
@@ -178,10 +186,32 @@ class PVStrategy(BaseStrategy, OfferUpdateFrequencyMixin):
                 self.state.available_energy_kWh[market.time_slot] += offer.energy
 
     def event_offer(self, *, market_id, offer):
+        super().event_offer(market_id=market_id, offer=offer)
         market = self.area.get_future_market_from_id(market_id)
         assert market is not None
 
         # if offer was deleted but not traded, free the energy in state.available_energy_kWh again
-        if offer.id not in [trades.offer.id for trades in market.trades]:
-            if offer.seller == self.owner.name:
-                self.state.available_energy_kWh[market.time_slot] -= offer.energy
+        if offer.seller == self.owner.name:
+            self.state.available_energy_kWh[market.time_slot] -= offer.energy
+
+    def _set_alternative_pricing_scheme(self):
+        if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
+            if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 1:
+                for time_slot in generate_market_slot_list():
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=0,
+                                                               final_rate=0)
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 2:
+                for time_slot in generate_market_slot_list():
+                    rate = \
+                        self.area.config.market_maker_rate[time_slot] * \
+                        ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE / \
+                        100
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
+                                                               final_rate=rate)
+            elif ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME == 3:
+                for time_slot in generate_market_slot_list():
+                    rate = self.area.config.market_maker_rate[time_slot]
+                    self.offer_update.reassign_mixin_arguments(time_slot, initial_rate=rate,
+                                                               final_rate=rate)
+            else:
+                raise MarketException

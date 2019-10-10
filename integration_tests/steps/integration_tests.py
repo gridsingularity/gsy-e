@@ -30,7 +30,7 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 from d3a.d3a_core.simulation import Simulation
 from d3a.d3a_core.util import d3a_path
 from d3a.constants import DATE_TIME_FORMAT, DATE_FORMAT, TIME_ZONE
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
 
@@ -138,7 +138,6 @@ def pv_profile_scenario(context):
                     {
                         "name": "H2 Storage",
                         "type": "Storage",
-                        "initial_capacity_kWh": 5,
                         "battery_capacity_kWh": 12.5,
                     }
                 ]
@@ -176,8 +175,7 @@ def load_profile_scenario(context):
             {
               "name": "H1 PV",
               "type": "PV",
-              "panel_count": 3,
-              "risk": 80
+              "panel_count": 3
             }
           ]
         },
@@ -187,7 +185,6 @@ def load_profile_scenario(context):
             {
               "name": "H2 Storage",
               "type": "Storage",
-              "initial_capacity_kWh": 5,
               "battery_capacity_kWh": 12.5,
             }
           ]
@@ -206,19 +203,19 @@ def load_profile_scenario(context):
 
 @given('d3a uses an one-sided market')
 def one_sided_market(context):
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
 @given('d3a uses an two-sided pay-as-bid market')
 def two_sided_pay_as_bid_market(context):
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
 
 @given('d3a uses an two-sided pay-as-clear market')
 def two_sided_pay_as_clear_market(context):
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 3
 
 
@@ -511,6 +508,12 @@ def final_results(context):
     context.simulation.redis_connection.publish_results = final_res_count
 
 
+@when('the simulation is able to transmit zipped results')
+def transmit_zipped_results(context):
+    context.simulation.redis_connection.is_enabled = lambda: True
+    context.simulation.redis_connection.write_zip_results = lambda _: None
+
+
 @then('intermediate results are transmitted on every slot')
 def interm_res_report(context):
     # Add an extra result for the start of the simulation
@@ -525,6 +528,11 @@ def final_res_report(context):
 @then('{method} is called')
 def method_called(context, method):
     assert context.ctrl_callback_call_count == 1
+
+
+@given('the min offer age is set to {min_offer_age} tick')
+def min_offer_age_nr_ticks(context, min_offer_age):
+    ConstSettings.IAASettings.MIN_OFFER_AGE = int(min_offer_age)
 
 
 @when('we run a multi-day d3a simulation with {scenario} [{start_date}, {total_duration}, '
@@ -590,6 +598,8 @@ def run_sim_market_count(context, scenario):
 
 @when('we run the simulation with setup file {scenario} and parameters '
       '[{total_duration}, {slot_length}, {tick_length}, {iaa_fee}, {market_count}]')
+@then('we run the simulation with setup file {scenario} and parameters '
+      '[{total_duration}, {slot_length}, {tick_length}, {iaa_fee}, {market_count}]')
 def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee,
             market_count):
 
@@ -612,20 +622,23 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
     no_export = True
     export_path = None
     export_subdir = None
-    context.simulation = Simulation(
-        scenario,
-        simulation_config,
-        None,
-        slowdown,
-        seed,
-        paused,
-        pause_after,
-        repl,
-        no_export,
-        export_path,
-        export_subdir,
-    )
-    context.simulation.run()
+    try:
+        context.simulation = Simulation(
+            scenario,
+            simulation_config,
+            None,
+            slowdown,
+            seed,
+            paused,
+            pause_after,
+            repl,
+            no_export,
+            export_path,
+            export_subdir,
+        )
+        context.simulation.run()
+    except Exception as er:
+        context.sim_error = er
 
 
 @then('we test the output of the simulation of '
@@ -638,7 +651,7 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
                 all_past_markets=True)
         assert get_number_of_unmatched_loads(unmatched_loads) == 0
     # (check if number of last slot is the maximal number of slots):
-    no_of_slots = (int(sim_duration) * 60 / int(slot_length))
+    no_of_slots = int(int(sim_duration) * 60 / int(slot_length))
     assert no_of_slots == context.simulation.area.current_slot
     if scenario == "default":
         street1 = list(filter(lambda x: x.name == "Street 1", context.simulation.area.children))[0]
@@ -832,19 +845,8 @@ def test_finite_plant_max_power(context, plant_name):
             if trade.seller == finite.name:
                 trades_sold.append(trade)
         assert sum([trade.offer.energy for trade in trades_sold]) <= \
-            finite.strategy.max_available_power_kW[market.time_slot.hour] / \
+            finite.strategy.max_available_power_kW[market.time_slot] / \
             (duration(hours=1) / finite.config.slot_length)
-
-
-@then('the PV sells energy at the market maker rate for every market slot')
-def test_pv_initial_pv_rate_option(context):
-    grid = context.simulation.area
-    house = list(filter(lambda x: x.name == "House", grid.children))[0]
-
-    for market in house.past_markets:
-        for trade in market.trades:
-            assert isclose(trade.offer.price / trade.offer.energy,
-                           grid.config.market_maker_rate[market.time_slot])
 
 
 @then("the results are the same for each simulation run")

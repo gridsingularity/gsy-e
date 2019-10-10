@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from behave import then
 from math import isclose
+from pendulum import today
+from d3a.constants import TIME_ZONE
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
 from d3a.d3a_core.export import EXPORT_DEVICE_VARIABLES
@@ -203,7 +205,7 @@ def trades_on_all_markets_max_load_rate(context):
     grid = context.simulation.area
     house1 = [child for child in grid.children if child.name == "House 1"][0]
     load1 = [child for child in house1.children if child.name == "H1 General Load"][0]
-    max_rate = load1.strategy.final_buying_rate
+    max_rate = load1.strategy.bid_update.final_rate
 
     for market in grid.past_markets:
         assert len(market.trades) == 1
@@ -222,7 +224,7 @@ def trades_on_all_markets_max_load_rate(context):
 
 @then('the Load of House 1 should only buy energy from IAA between 5:00 and 8:00')
 def house1_load_only_from_iaa(context):
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
     load1 = [child for child in house1.children if child.name == "H1 General Load"][0]
 
@@ -258,3 +260,20 @@ def device_statistics(context):
                     assert len(list(output_dict[house][device]["min_" + stats_name])) == 48
                     assert len(list(output_dict[house][device]["max_" + stats_name])) == 48
     assert counter == 12
+
+
+@then("an AreaException is raised")
+def area_exception_is_raised(context):
+    from d3a.d3a_core.exceptions import AreaException
+    assert type(context.sim_error) == AreaException
+
+
+@then('trades happen when the load seeks energy')
+def trades_happen(context):
+    trade_count = 0
+    for market in context.simulation.area.past_markets:
+        if len(market.trades) != 0:
+            assert today(tz=TIME_ZONE).add(hours=8) <= market.time_slot \
+                   <= today(tz=TIME_ZONE).add(hours=16)
+            trade_count += 1
+    assert trade_count == 9

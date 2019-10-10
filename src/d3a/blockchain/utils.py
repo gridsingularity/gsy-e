@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import wait_until_timeout_blocking
 from logging import getLogger
 from d3a.d3a_core.exceptions import D3AException
@@ -51,7 +51,7 @@ def unlock_account(chain, address):
         return
     else:
         account_pass = os.getenv("BLOCKCHAIN_ACCOUNT_PASSWORD", "testgsy")
-        log.info(f"Account: {address})")
+        log.debug(f"Account: {address})")
         unlock = \
             chain.personal.unlockAccount(address, account_pass)
-        log.info(f"Unlocking: {unlock}")
+        log.debug(f"Unlocking: {unlock}")

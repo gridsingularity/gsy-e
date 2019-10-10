@@ -51,5 +51,5 @@ class BCUsers:
 
     def _mk_user(self, username):
         account_address = self._chain.eth.accounts[len(self._users.keys()) + 1]
-        log.info(f"User Name: {username} | Eth Address: {account_address}")
+        log.debug(f"User Name: {username} | Eth Address: {account_address}")
         return User(username, account_address, None)

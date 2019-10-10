@@ -18,12 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from numpy.random import random
 from d3a.models.strategy import BaseStrategy, _TradeLookerUpper
 from d3a.constants import TIME_FORMAT
+from d3a_interface.constants_limits import ConstSettings
 
 
 class InterAreaAgent(BaseStrategy):
     parameters = ('owner', 'higher_market', 'lower_market', 'min_offer_age')
 
-    def __init__(self, *, engine_type, owner, higher_market, lower_market, min_offer_age=0):
+    def __init__(self, *, engine_type, owner, higher_market, lower_market,
+                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
         """
         Equalize markets
 

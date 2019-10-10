@@ -23,7 +23,7 @@ from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.util import change_global_config
 
@@ -74,8 +74,10 @@ class FakeMarket:
         self.created_offers = []
         self.created_balancing_offers = []
 
-    def offer(self, price, energy, seller, original_offer_price=None):
-        offer = Offer('id', price, energy, seller, original_offer_price)
+    def offer(self, price, energy, seller, original_offer_price=None,
+              seller_origin=None):
+        offer = Offer('id', price, energy, seller, original_offer_price,
+                      seller_origin=seller_origin)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -270,3 +272,11 @@ def testing_event_market_cycle(commercial_test3, area_test3):
 def test_commercial_producer_constructor_rejects_invalid_parameters():
     with pytest.raises(ValueError):
         CommercialStrategy(energy_rate=-1)
+
+
+def test_market_maker_strategy_constructor_modifies_global_market_maker_rate():
+    import d3a_interface.constants_limits
+    from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+    MarketMakerStrategy(energy_rate=22)
+    assert all(v == 22
+               for v in d3a_interface.constants_limits.GlobalConfig.market_maker_rate.values())

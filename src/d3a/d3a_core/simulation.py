@@ -21,7 +21,6 @@ from logging import getLogger
 import time
 from time import sleep
 from pathlib import Path
-from threading import Lock
 import dill
 import click
 import platform
@@ -42,7 +41,7 @@ from d3a import setup as d3a_setup  # noqa
 from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 
@@ -51,9 +50,6 @@ if platform.python_implementation() != "PyPy" and \
     from d3a.blockchain import BlockChainInterface
 
 log = getLogger(__name__)
-
-
-page_lock = Lock()
 
 
 class SimulationResetException(Exception):
@@ -77,6 +73,7 @@ class Simulation:
         self.use_repl = repl
         self.export_on_finish = not no_export
         self.export_path = export_path
+
         self.sim_status = "initialized"
 
         if export_subdir is None:
@@ -102,17 +99,20 @@ class Simulation:
         validate_const_settings_for_simulation()
         self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
                                                         self.area)
+        if self.export_on_finish or self.redis_connection.is_enabled():
+            self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
+                                        self.endpoint_buffer)
 
     def _set_traversal_length(self):
         no_of_levels = self._get_setup_levels(self.area) + 1
         num_ticks_to_propagate = no_of_levels * 2
-        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = int(num_ticks_to_propagate)
+        ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 2
         time_to_propagate_minutes = num_ticks_to_propagate * \
             self.simulation_config.tick_length.seconds / 60.
-        log.error("Setup has {} levels, offers/bids need at least {} minutes "
-                  "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
-                                                    ConstSettings.GeneralSettings.
-                                                    MAX_OFFER_TRAVERSAL_LENGTH,))
+        log.info("Setup has {} levels, offers/bids need at least {} minutes "
+                 "({} ticks) to propagate.".format(no_of_levels, time_to_propagate_minutes,
+                                                   ConstSettings.GeneralSettings.
+                                                   MAX_OFFER_TRAVERSAL_LENGTH,))
 
     def _get_setup_levels(self, area, level_count=0):
         level_count += 1
@@ -130,7 +130,7 @@ class Simulation:
                 import sys
                 sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
                 self.setup_module = import_module("{}".format(self.setup_module_name))
-            log.info("Using setup module '%s'", self.setup_module_name)
+            log.debug("Using setup module '%s'", self.setup_module_name)
         except ImportError as ex:
             raise SimulationException(
                 "Invalid setup module '{}'".format(self.setup_module_name)) from ex
@@ -146,13 +146,13 @@ class Simulation:
             random_seed = random.randint(0, 1000000)
             random.seed(random_seed)
             self.initial_params["seed"] = random_seed
-            log.error("Random seed: {}".format(random_seed))
+            log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
         self.bc = None
         if self.use_bc:
             self.bc = BlockChainInterface()
-        log.info("Starting simulation with config %s", self.simulation_config)
+        log.debug("Starting simulation with config %s", self.simulation_config)
 
         self._set_traversal_length()
 
@@ -172,7 +172,7 @@ class Simulation:
         """
         Reset simulation to initial values and restart the run.
         """
-        log.error("=" * 15 + " Simulation reset requested " + "=" * 15)
+        log.info("=" * 15 + " Simulation reset requested " + "=" * 15)
         self._init(**self.initial_params)
         self.run()
         raise SimulationResetException
@@ -224,16 +224,22 @@ class Simulation:
             self._execute_simulation(slot_resume, tick_resume, console)
 
     def _update_and_send_results(self, is_final=False):
-        with page_lock:
-            self.endpoint_buffer.update_stats(self.area, self.status)
-            if is_final:
-                self.redis_connection.publish_results(
-                    self.endpoint_buffer
-                )
-            else:
-                self.redis_connection.publish_intermediate_results(
-                    self.endpoint_buffer
-                )
+        self.endpoint_buffer.update_stats(self.area, self.status)
+        if not self.redis_connection.is_enabled():
+            return
+        if is_final:
+            self.redis_connection.publish_results(
+                self.endpoint_buffer
+            )
+            # Generate and send zip file results to d3a-web
+            filename = self.export.export_to_zip_file()
+            self.redis_connection.write_zip_results(filename)
+            self.export.delete_exported_files()
+
+        else:
+            self.redis_connection.publish_intermediate_results(
+                self.endpoint_buffer
+            )
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
@@ -247,7 +253,7 @@ class Simulation:
                     duration(seconds=self.paused_time)
             )
 
-            log.error(
+            log.info(
                 "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
                 slot_no + 1,
                 slot_count,
@@ -255,7 +261,7 @@ class Simulation:
                 run_duration, run_duration / (slot_no + 1) * slot_count
             )
             if self.is_stopped:
-                log.error("Received stop command.")
+                log.info("Received stop command.")
                 sleep(5)
                 break
 
@@ -266,7 +272,7 @@ class Simulation:
                     self._handle_input(console)
                     self.paused_time += self._handle_paused(console)
                 tick_start = time.monotonic()
-                log.debug(
+                log.trace(
                     "Tick %d of %d in slot %d (%2.0f%%)",
                     tick_no + 1,
                     config.ticks_per_slot,
@@ -274,8 +280,7 @@ class Simulation:
                     (tick_no + 1) / config.ticks_per_slot * 100,
                 )
 
-                with page_lock:
-                    self.area.tick(is_root_area=True)
+                self.area.tick(is_root_area=True)
 
                 realtime_tick_length = time.monotonic() - tick_start
                 if self.slowdown and realtime_tick_length < tick_lengths_s:
@@ -283,7 +288,7 @@ class Simulation:
                     # requested
                     tick_diff = tick_lengths_s - realtime_tick_length
                     diff_slowdown = tick_diff * self.slowdown / 10000
-                    log.debug("Slowdown: %.4f", diff_slowdown)
+                    log.trace("Slowdown: %.4f", diff_slowdown)
                     if console is not None:
                         self._handle_input(console, diff_slowdown)
 
@@ -291,10 +296,11 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
+            if self.export_on_finish or self.redis_connection.is_enabled():
+                self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
-        self._update_and_send_results(is_final=True)
 
         run_duration = (
                 DateTime.now(tz=TIME_ZONE) - self.run_start -
@@ -303,16 +309,17 @@ class Simulation:
         paused_duration = duration(seconds=self.paused_time)
 
         if not self.is_stopped:
-            log.error(
+            log.info(
                 "Run finished in %s%s / %.2fx real time",
                 run_duration,
                 " ({} paused)".format(paused_duration) if paused_duration else "",
                 config.sim_duration / (run_duration - paused_duration)
             )
+
+        self._update_and_send_results(is_final=True)
         if self.export_on_finish:
-            log.error("Exporting simulation data.")
-            ExportAndPlot(self.area, self.export_path, self.export_subdir,
-                          self.endpoint_buffer)
+            log.info("Exporting simulation data.")
+            self.export.export()
 
         if self.use_repl:
             self._start_repl()
@@ -346,7 +353,7 @@ class Simulation:
                     continue
 
                 if self.finished and cmd in {'p', '+', '-'}:
-                    log.error("Simulation has finished. The commands [p, +, -] are unavailable.")
+                    log.info("Simulation has finished. The commands [p, +, -] are unavailable.")
                     continue
 
                 if cmd == 'r':
@@ -413,10 +420,10 @@ class Simulation:
         )
 
     def _start_repl(self):
-        log.info(
+        log.debug(
             "An interactive REPL has been started. The root Area is available as "
             "`root_area`.")
-        log.info("Ctrl-D to quit.")
+        log.debug("Ctrl-D to quit.")
         embed({'root_area': self.area})
 
     def save_state(self):

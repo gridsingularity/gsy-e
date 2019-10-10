@@ -21,7 +21,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 device_registry_dict = {
@@ -39,7 +39,7 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 Storage', strategy=StorageStrategy(initial_capacity_kWh=6.0,
+                    Area('H1 Storage', strategy=StorageStrategy(initial_soc=12,
                                                                 battery_capacity_kWh=50.0),
                          appliance=SwitchableAppliance()),
                 ]

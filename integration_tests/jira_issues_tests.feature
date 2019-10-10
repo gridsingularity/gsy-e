@@ -26,6 +26,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-706, multi-day simulation for load and pv
      Given we have a scenario named default_3
      And d3a is installed
+     And the min offer age is set to 1 tick
      When we run a multi-day d3a simulation with default_3 [None, 72, 15, 60]
      Then pv produces the same energy on each corresponding time slot regardless of the day
      And all loads consume the same energy on each corresponding time slot regardless of the day
@@ -42,7 +43,6 @@ Feature: Jira Issues Tests
      And d3a is installed
      When we run the simulation with setup file jira.d3asim_778 and parameters [24, 60, 60, 0, 1]
      Then there should be trades on all markets using the max load rate
-
 
   Scenario: D3ASIM-871, unmatched loads are not reported if hours per day are covered
      Given we have a scenario named jira/d3asim_871
@@ -69,3 +69,41 @@ Feature: Jira Issues Tests
     And d3a is installed
     When we run a multi-day d3a simulation with jira.d3asim_962 [2019-01-01, 48, 60, 60]
     Then the device statistics are correct
+
+  @slow
+  Scenario: D3ASIM-1139, no unmatched loads on setup with many loads and only one CEP
+    Given we have a scenario named jira/d3asim_1139
+    And d3a is installed
+    When we run the simulation with setup file jira.d3asim_1139 and parameters [24, 60, 60, 0, 1]
+    Then there should be no unmatched loads
+
+  Scenario: D3ASIM-1475, default_2off finishes successfully for two-sided pay as clear market
+    Given we have a scenario named jira/default_2off_d3asim_1475
+    And d3a is installed
+    Then we run the simulation with setup file jira.default_2off_d3asim_1475 and parameters [24, 60, 60, 0, 1]
+
+  Scenario: D3ASIM-1525, PAC simulation finishes without assert in PAC engine
+    Given we have a scenario named jira/d3asim_1525
+    And d3a is installed
+    Then we run the simulation with setup file jira.d3asim_1525 and parameters [24, 60, 60, 0, 1]
+
+  Scenario: D3ASIM-1535, User should not be able to add area to leaf area
+    Given we have a scenario named jira/d3asim_1535
+    And d3a is installed
+    When we run the simulation with setup file jira.d3asim_1535 and parameters [24, 60, 60, 0, 1]
+    Then an AreaException is raised
+
+  Scenario: D3ASIM-1531: Trades happen in simulation with only one PAB market in the root area
+    Given we have a scenario named jira/d3asim_1531
+    And d3a is installed
+    And d3a uses an two-sided pay-as-bid market
+    When we run the simulation with setup file jira.d3asim_1531 and parameters [24, 60, 60, 0, 1]
+    Then trades happen when the load seeks energy
+
+  Scenario: D3ASIM-1531: Trades happen in simulation with only one PAC market in the root area
+    Given we have a scenario named jira/d3asim_1531
+    And d3a is installed
+    And d3a uses an two-sided pay-as-clear market
+    When we run the simulation with setup file jira.d3asim_1531 and parameters [24, 60, 60, 0, 1]
+    Then trades happen when the load seeks energy
+

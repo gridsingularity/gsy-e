@@ -19,7 +19,7 @@ import select
 import sys
 import termios
 import tty
-from logging import LoggerAdapter, getLogger
+from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 import json
 import time
 
@@ -31,17 +31,16 @@ from datetime import timedelta
 from functools import wraps
 
 from d3a import setup as d3a_setup
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
-from d3a.models.const import GlobalConfig
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
+from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.constants_limits import RangeLimit
 
 import d3a
 import inspect
 import os
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
-
-log = getLogger(__name__)
 
 
 INTERVAL_DH_RE = rex("/^(?:(?P<days>[0-9]{1,4})[d:])?(?:(?P<hours>[0-9]{1,2})[h:])?$/")
@@ -51,11 +50,46 @@ IMPORT_RE = rex("/^import +[\"'](?P<contract>[^\"']+.sol)[\"'];$/")
 
 _CONTRACT_CACHE = {}
 
+TRACE = 5
+
+
+class TraceLogger(getLoggerClass()):
+    def __init__(self, name, level=NOTSET):
+        super().__init__(name, level)
+
+        addLevelName(TRACE, "TRACE")
+
+    def trace(self, msg, *args, **kwargs):
+        """
+        Log 'msg % args' with severity 'TRACE'.
+
+        To pass exception information, use the keyword argument exc_info with
+        a true value, e.g.
+
+        logger.trace("Houston, we have a %s", "thorny problem", exc_info=1)
+        """
+        if self.isEnabledFor(TRACE):
+            self._log(TRACE, msg, args, **kwargs)
+
+
+setLoggerClass(TraceLogger)
+
+log = getLogger(__name__)
+
 
 class TaggedLogWrapper(LoggerAdapter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def process(self, msg, kwargs):
         msg = "[{}] {}".format(self.extra, msg)
         return msg, kwargs
+
+    def trace(self, msg, *args, **kwargs):
+        """
+        Delegate a trace call to the underlying logger.
+        """
+        self.log(TRACE, msg, *args, **kwargs)
 
 
 class DateType(ParamType):
@@ -152,7 +186,7 @@ class ContractJoiner(object):
             return []
 
         self.seen.add(contract_file.name)
-        log.debug('Reading contract file "%s"', contract_file.name)
+        log.trace('Reading contract file "%s"', contract_file.name)
 
         for line in contract_file:
             line = line.strip('\r\n')
@@ -263,9 +297,6 @@ def read_settings_from_file(settings_file):
             "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
                 'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
-            "market_maker_rate": settings["basic_settings"].get(
-                'market_maker_rate', advanced_settings["GeneralSettings"]
-                ["DEFAULT_MARKET_MAKER_RATE"]),
             "iaa_fee": settings["basic_settings"].get(
                 'INTER_AREA_AGENT_FEE_PERCENTAGE',
                 advanced_settings["IAASettings"]["FEE_PERCENTAGE"])
@@ -289,6 +320,9 @@ def update_advanced_settings(advanced_settings):
             elif isinstance(set_val, dict):
                 nested_class = getattr(class_object, set_var)
                 update_nested_settings(nested_class, set_var, settings_dict[class_name])
+            elif isinstance(set_val, list):
+                if isinstance(getattr(class_object, set_var), RangeLimit):
+                    setattr(class_object, set_var, RangeLimit(*set_val))
             else:
                 setattr(class_object, set_var, set_val)
 
@@ -357,7 +391,7 @@ def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
     try:
         return functor(*args, **kwargs)
     except (AssertionError, D3AException) as e:
-        log.info(f"Retrying action {functor.__name__} for the {retry_count+1} time.")
+        log.debug(f"Retrying action {functor.__name__} for the {retry_count+1} time.")
         if retry_count >= max_retries:
             raise e
         return recursive_retry(functor, retry_count+1, max_retries, *args, **kwargs)
@@ -373,7 +407,7 @@ def change_global_config(**kwargs):
 
 
 def validate_const_settings_for_simulation():
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     # If schemes are not compared and an individual scheme is selected
     # And the market type is not single sided market
     # This is a wrong configuration and an exception is raised
@@ -442,3 +476,19 @@ def create_subdict_or_update(indict, key, subdict):
     else:
         indict[key] = subdict
     return indict
+
+
+def str_to_pendulum(input_str: str):
+    try:
+        pendulum_time = from_format(input_str, TIME_FORMAT)
+    except ValueError:
+        try:
+            pendulum_time = from_format(input_str, DATE_TIME_FORMAT)
+        except ValueError:
+            raise Exception(f"Format is not one of ('{TIME_FORMAT}', '{DATE_TIME_FORMAT}')")
+    return pendulum_time
+
+
+def convert_str_to_pauseafter_intervall(start_time, input_str):
+    pause_time = str_to_pendulum(input_str)
+    return pause_time - start_time

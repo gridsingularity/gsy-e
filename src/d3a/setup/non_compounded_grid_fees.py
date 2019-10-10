@@ -34,8 +34,8 @@ def get_setup(config):
                                                                            hrs_per_day=24,
                                                                            hrs_of_day=list(
                                                                                range(0, 24)),
-                                                                           initial_buying_rate=20,
-                                                                           final_buying_rate=20),
+                                                                           initial_buying_rate=30,
+                                                                           final_buying_rate=30),
                              appliance=SwitchableAppliance()),
                     ],
                     transfer_fee_pct=0)], transfer_fee_pct=5),
@@ -43,8 +43,8 @@ def get_setup(config):
                 Area(
                     'House 2',
                     [
-                        Area('H2 PV', strategy=PVStrategy(4, 100, initial_rate_option=3,
-                                                          initial_selling_rate=10),
+                        Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=10,
+                                                          final_selling_rate=10),
                              appliance=PVAppliance()),
 
                     ],

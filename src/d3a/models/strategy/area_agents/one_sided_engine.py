@@ -17,11 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict, Set  # noqa
+from copy import deepcopy
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
 
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
-
+from d3a.models.market.grid_fees.base_model import GridFees
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
@@ -49,19 +50,26 @@ class IAAEngine:
 
     def _forward_offer(self, offer, offer_id):
         if offer.price == 0:
-            self.owner.log.info("Offer is not forwarded because price=0")
+            self.owner.log.debug("Offer is not forwarded because price=0")
             return
 
         forwarded_offer = self.markets.target.offer(
-            offer.price,
+            GridFees.update_forwarded_offer_with_fee(
+                offer.price, offer.original_offer_price, self.markets.target.transfer_fee_ratio
+            ),
             offer.energy,
             self.owner.name,
-            offer.original_offer_price
+            offer.original_offer_price,
+            dispatch_event=False,
+            seller_origin=offer.seller_origin
         )
-        offer_info = OfferInfo(offer, forwarded_offer)
+        offer_info = OfferInfo(deepcopy(offer), deepcopy(forwarded_offer))
         self.forwarded_offers[forwarded_offer.id] = offer_info
         self.forwarded_offers[offer_id] = offer_info
-        self.owner.log.debug(f"Forwarding offer {offer} to {forwarded_offer}")
+        self.owner.log.trace(f"Forwarding offer {offer} to {forwarded_offer}")
+        # TODO: Ugly solution, required in order to decouple offer placement from
+        # new offer event triggering
+        self.markets.target.dispatch_market_offer_event(offer)
         return forwarded_offer
 
     def _delete_forwarded_offer_entries(self, offer):
@@ -72,21 +80,28 @@ class IAAEngine:
         self.forwarded_offers.pop(offer_info.source_offer.id, None)
 
     def tick(self, *, area):
+        self.propagate_offer(area.current_tick)
+
+    def propagate_offer(self, current_tick):
         # Store age of offer
         for offer in self.markets.source.sorted_offers:
             if offer.id not in self.offer_age:
-                self.offer_age[offer.id] = area.current_tick
+                self.offer_age[offer.id] = current_tick
 
         # Use `list()` to avoid in place modification errors
         for offer_id, age in list(self.offer_age.items()):
             if offer_id in self.forwarded_offers:
                 continue
-            if area.current_tick - age < self.min_offer_age:
+            if current_tick - age < self.min_offer_age:
                 continue
             offer = self.markets.source.offers.get(offer_id)
             if not offer:
                 # Offer has gone - remove from age dict
-                del self.offer_age[offer_id]
+                # Because an offer forwarding might trigger a trade event, the offer_age dict might
+                # be modified, thus causing a removal from the offer_age dict. In such a case, even
+                # if the offer is no longer in the offer_age dict, the execution should continue
+                # normally.
+                self.offer_age.pop(offer_id, None)
                 continue
             if not self.owner.usable_offer(offer):
                 # Forbidden offer (i.e. our counterpart's)
@@ -100,7 +115,7 @@ class IAAEngine:
 
             forwarded_offer = self._forward_offer(offer, offer_id)
             if forwarded_offer:
-                self.owner.log.info("Offering %s", forwarded_offer)
+                self.owner.log.debug("Offering %s", forwarded_offer)
 
     def event_trade(self, *, trade):
         offer_info = self.forwarded_offers.get(trade.offer.id)
@@ -134,12 +149,14 @@ class IAAEngine:
                     energy=trade.offer.energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
-                    original_trade_rate=trade.original_trade_rate
+                    trade_bid_info=GridFees.update_forwarded_offer_trade_original_info(
+                        trade.offer_bid_trade_info, offer_info.source_offer
+                    ), buyer_origin=trade.buyer_origin
                 )
 
             except OfferNotFoundException:
                 raise OfferNotFoundException()
-            self.owner.log.info(
+            self.owner.log.debug(
                 f"[{self.markets.source.time_slot_str}] Offer accepted {trade_source}")
 
             if residual_info is not None:
@@ -152,7 +169,7 @@ class IAAEngine:
                         self.offer_age[trade_source.residual.id] = residual_info.age
                         self.ignored_offers.add(trade_source.residual.id)
                 else:
-                    self.owner.log.error(
+                    self.owner.log.warning(
                         "Expected residual offer in source market trade {} - deleting "
                         "corresponding offer in target market".format(trade_source)
                     )
@@ -229,13 +246,17 @@ class IAAEngine:
             if not forwarded:
                 return
 
-            self.owner.log.info("Offer %s changed to residual offer %s",
-                                offer_info.target_offer,
-                                forwarded)
+            self.owner.log.debug("Offer %s changed to residual offer %s",
+                                 offer_info.target_offer,
+                                 forwarded)
 
             # Do not delete the forwarded offer entries for the case of residual offers
             if existing_offer.seller != new_offer.seller:
                 self._delete_forwarded_offer_entries(offer_info.source_offer)
+
+    def event_offer(self, *, market_id, offer):
+        if offer.seller != self.owner.name:
+            self.propagate_offer(self.owner.owner.current_tick)
 
 
 class BalancingEngine(IAAEngine):
@@ -250,5 +271,5 @@ class BalancingEngine(IAAEngine):
         offer_info = OfferInfo(offer, forwarded_balancing_offer)
         self.forwarded_offers[forwarded_balancing_offer.id] = offer_info
         self.forwarded_offers[offer_id] = offer_info
-        self.owner.log.debug(f"Forwarding balancing offer {offer} to {forwarded_balancing_offer}")
+        self.owner.log.trace(f"Forwarding balancing offer {offer} to {forwarded_balancing_offer}")
         return forwarded_balancing_offer

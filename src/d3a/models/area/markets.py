@@ -23,7 +23,7 @@ from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market import Market # noqa
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from collections import OrderedDict
 
 
@@ -67,7 +67,7 @@ class AreaMarkets:
                     area_agent.pop(market, None)
                 else:
                     first = False
-                self.log.debug("Moving {t:%H:%M} {m} to past"
+                self.log.trace("Moving {t:%H:%M} {m} to past"
                                .format(t=timeframe, m=past_markets[timeframe].area.name))
 
     def _delete_past_markets(self, past_markets, timeframe):
@@ -115,7 +115,7 @@ class AreaMarkets:
                 area.dispatcher.create_area_agents(is_spot_market, market)
                 markets[timeframe] = market
                 changed = True
-                self.log.debug("Adding {t:{format}} market".format(
+                self.log.trace("Adding {t:{format}} market".format(
                     t=timeframe,
                     format="%H:%M"
                            if area.config.slot_length.total_seconds() > 60

@@ -17,10 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from pendulum import DateTime
+from pendulum import DateTime, duration
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.util import d3a_path
 from typing import Dict
@@ -35,33 +35,40 @@ class PVPredefinedStrategy(PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-    parameters = ('panel_count', 'risk', 'final_selling_rate', 'energy_rate_decrease_option',
-                  'energy_rate_decrease_per_update', 'initial_selling_rate')
+    parameters = ('panel_count', 'final_selling_rate', 'energy_rate_decrease_per_update',
+                  'initial_selling_rate', 'use_market_maker_rate')
 
     def __init__(
-            self, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK, panel_count: int=1,
-            final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-            cloud_coverage: int=None,
-            initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
-            initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-            energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
-            ENERGY_RATE_DECREASE_PER_UPDATE,
-            max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
+            self, panel_count: int=1,
+            initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            cloud_coverage: int = None,
+            fit_to_limit: bool = True,
+            update_interval=duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+            energy_rate_decrease_per_update:
+            float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+            max_panel_power_W: float = None,
+            use_market_maker_rate: bool = False):
         """
         Constructor of PVPredefinedStrategy
-        :param risk: PV risk parameter
-        :param panel_count: number of solar panels for this PV plant
-        :param final_selling_rate: lower threshold for the PV sale price
+        :param panel_count: Number of solar panels for this PV plant
+        :param initial_selling_rate: Upper Threshold for PV offers
+        :param final_selling_rate: Lower Threshold for PV offers
         :param cloud_coverage: cloud conditions. 0=sunny, 1=partially cloudy, 2=cloudy
+        :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
+        :param update_interval: Interval after which PV will update its offer
+        :param energy_rate_decrease_per_update: Slope of PV Offer change per update
+        :param max_panel_power_W:
         """
-        super().__init__(panel_count=panel_count, risk=risk,
-                         final_selling_rate=final_selling_rate,
-                         initial_rate_option=initial_rate_option,
+        super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
-                         energy_rate_decrease_option=energy_rate_decrease_option,
+                         final_selling_rate=final_selling_rate,
+                         fit_to_limit=fit_to_limit,
+                         update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_panel_power_W
+                         max_panel_power_W=max_panel_power_W,
+                         use_market_maker_rate=use_market_maker_rate
                          )
         self._power_profile_index = cloud_coverage
 
@@ -111,36 +118,36 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ('panel_count', 'risk', 'final_selling_rate', 'energy_rate_decrease_option',
-                  'energy_rate_decrease_per_update', 'power_profile', 'initial_selling_rate')
+    parameters = ('panel_count', 'final_selling_rate', 'energy_rate_decrease_per_update',
+                  'power_profile', 'initial_selling_rate', 'use_market_maker_rate')
 
     def __init__(
-            self, power_profile, risk: int=ConstSettings.GeneralSettings.DEFAULT_RISK,
-            panel_count: int=1,
-            final_selling_rate: float=ConstSettings.PVSettings.FINAL_SELLING_RATE,
-            initial_rate_option: int=ConstSettings.PVSettings.INITIAL_RATE_OPTION,
-            initial_selling_rate: float=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            energy_rate_decrease_option=ConstSettings.PVSettings.RATE_DECREASE_OPTION,
-            energy_rate_decrease_per_update=ConstSettings.GeneralSettings.
-            ENERGY_RATE_DECREASE_PER_UPDATE,
-            max_panel_power_W: float = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W):
+            self, power_profile, panel_count: int = 1,
+            initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            fit_to_limit: bool = True,
+            update_interval=duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+            energy_rate_decrease_per_update:
+            float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+            max_panel_power_W: float = None,
+            use_market_maker_rate: bool = False):
         """
         Constructor of PVUserProfileStrategy
         :param power_profile: input profile for a day. Can be either a csv file path,
         or a dict with hourly data (Dict[int, float])
         or a dict with arbitrary time data (Dict[str, float])
-        :param risk: PV risk parameter
         :param panel_count: number of solar panels for this PV plant
         :param final_selling_rate: lower threshold for the PV sale price
         """
-        super().__init__(risk=risk, panel_count=panel_count,
-                         final_selling_rate=final_selling_rate,
-                         initial_rate_option=initial_rate_option,
+        super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
-                         energy_rate_decrease_option=energy_rate_decrease_option,
+                         final_selling_rate=final_selling_rate,
+                         fit_to_limit=fit_to_limit,
+                         update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         max_panel_power_W=max_panel_power_W
-                         )
+                         max_panel_power_W=max_panel_power_W,
+                         use_market_maker_rate=use_market_maker_rate)
         self._power_profile_W = power_profile
 
     def _read_predefined_profile_for_pv(self) -> Dict[DateTime, float]:

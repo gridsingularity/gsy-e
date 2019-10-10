@@ -18,16 +18,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import unittest
 from unittest.mock import MagicMock, Mock
-from datetime import timedelta
 from pendulum import DateTime, duration, today
+from parameterized import parameterized
 from math import isclose
+import os
 from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, BalancingOffer, Bid, Trade
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.const import ConstSettings
+from d3a.models.strategy.predefined_load import DefinedLoadStrategy
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
+from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
+from d3a.d3a_core.util import d3a_path
 
 
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
@@ -80,7 +84,7 @@ class FakeArea:
         have passed.
         """
         return DateTime.now(tz=TIME_ZONE).start_of('day') + (
-            timedelta(hours=10) + self.config.tick_length * self.current_tick
+            duration(hours=10) + self.config.tick_length * self.current_tick
         )
 
     @property
@@ -104,9 +108,11 @@ class FakeMarket:
         self.bids = {}
 
     def bid(self, price: float, energy: float, buyer: str,
-            seller: str, original_bid_price=None) -> Bid:
+            seller: str, original_bid_price=None,
+            buyer_origin=None) -> Bid:
         bid = Bid(id='bid_id', price=price, energy=energy, buyer=buyer,
-                  seller=seller, original_bid_price=original_bid_price)
+                  seller=seller, original_bid_price=original_bid_price,
+                  buyer_origin=buyer_origin)
         self.bids[bid.id] = bid
         return bid
 
@@ -179,7 +185,7 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
 
     def test_LoadHoursStrategy_input(self):
         power_W = 620
-        with self.assertRaises(ValueError):
+        with self.assertRaises(D3ADeviceException):
             self.Mock_LoadHoursStrategy(power_W, 4, [1, 2])
 
 
@@ -265,7 +271,7 @@ def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     cheapest_offer = market_test1.most_affordable_offers[0]
     load_hours_strategy_test1.energy_requirement_Wh = \
         {market_test1.time_slot: cheapest_offer.energy * 1000 + 1}
-    load_hours_strategy_test1.event_tick(area=area_test1)
+    load_hours_strategy_test1.event_tick()
     assert load_hours_strategy_test1.accept_offer.calls[0][0][1] == repr(cheapest_offer)
 
 
@@ -283,7 +289,7 @@ def test_event_tick(load_hours_strategy_test1, market_test1):
     assert isclose(load_hours_strategy_test1.energy_requirement_Wh[TIME],
                    market_test1.most_affordable_energy * 1000)
 
-    load_hours_strategy_test1.event_tick(area=area_test1)
+    load_hours_strategy_test1.event_tick()
     assert load_hours_strategy_test1.energy_requirement_Wh[TIME] == 0
 
 
@@ -293,7 +299,7 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
     load_hours_strategy_test2.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test2.event_market_cycle()
     requirement = load_hours_strategy_test2.energy_requirement_Wh[TIME] / 1000
-    load_hours_strategy_test2.event_tick(area=area_test2)
+    load_hours_strategy_test2.event_tick()
     assert load_hours_strategy_test2.energy_requirement_Wh[TIME] == 0
     assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
 
@@ -309,7 +315,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
     load_hours_strategy_test5.event_activate()
     # load_hours_strategy_test5.area.past_markets = {TIME: market_test2}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick(area=area_test2)
+    load_hours_strategy_test5.event_tick()
     assert round(((float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
                    1000 / load_hours_strategy_test5.energy_per_slot_Wh) *
                   (load_hours_strategy_test5.area.config.slot_length / duration(hours=1))), 2) == \
@@ -327,7 +333,7 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick(area=area_test2)
+    load_hours_strategy_test5.event_tick()
     # Get the bid that was posted on event_market_cycle
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
 
@@ -352,7 +358,7 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick(area=area_test2)
+    load_hours_strategy_test5.event_tick()
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
     # Increase energy requirement to cover the energy from the bid + threshold
     load_hours_strategy_test5.energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009
@@ -419,3 +425,25 @@ def test_balancing_offers_are_created_if_device_in_registry(
         area_test2.test_balancing_market.created_balancing_offers[1].price
     assert actual_balancing_supply_price == expected_balancing_supply_energy * 40
     DeviceRegistry.REGISTRY = {}
+
+
+@parameterized.expand([
+    [True, 9, ], [False, 33, ]
+])
+def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
+    GlobalConfig.market_maker_rate = 9
+    load = LoadHoursStrategy(200, final_buying_rate=33, use_market_maker_rate=use_mmr)
+    assert all(v == expected_rate for v in load.bid_update.final_rate.values())
+
+
+@parameterized.expand([
+    [True, 9, ], [False, 33, ]
+])
+def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr, expected_rate):
+    GlobalConfig.market_maker_rate = 9
+    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    load = DefinedLoadStrategy(
+        daily_load_profile=user_profile_path,
+        final_buying_rate=33,
+        use_market_maker_rate=use_mmr)
+    assert all(v == expected_rate for v in load.bid_update.final_rate.values())

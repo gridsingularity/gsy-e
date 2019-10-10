@@ -1,17 +1,14 @@
 """
 Copyright 2018 Grid Singularity
 This file is part of D3A.
-
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
@@ -30,47 +27,73 @@ Tip: It's interesting to see the change in results from changing the initial_pv_
 between 1(historical average prices) and 2(market maker price).
 """
 
-# Hourly profiles for the break even points. Index of the dictionary is the hour of day,
-# first element is the break even buy price and second element the break even sell price.
 # This is the profile for the first battery.
-break_even_profile = {
-    0: (26.8, 27.1),
-    1: (26.8, 27.1),
-    2: (26.8, 27.1),
-    3: (26.8, 27.1),
-    4: (26.8, 27.1),
-    5: (26.8, 27.1),
-    6: (26.8, 27.1),
-    7: (26.8, 27.1),
-    8: (24.8, 25.1),
-    9: (24.8, 25.1),
-    10: (24.8, 25.1),
-    11: (24.8, 25.1),
-    12: (22.8, 23.1),
-    13: (22.8, 23.1),
-    14: (22.8, 23.1),
-    15: (22.8, 23.1),
-    16: (24.8, 25.1),
-    17: (24.8, 25.1),
-    18: (24.8, 25.1),
-    19: (24.8, 25.1),
-    20: (26.8, 27.1),
-    21: (26.8, 27.1),
-    22: (26.8, 27.1),
-    23: (26.8, 27.1),
+final_buying_rate_profile = {
+    0: 26.8,
+    1: 26.8,
+    2: 26.8,
+    3: 26.8,
+    4: 26.8,
+    5: 26.8,
+    6: 26.8,
+    7: 26.8,
+    8: 24.8,
+    9: 24.8,
+    10: 24.8,
+    11: 24.8,
+    12: 22.8,
+    13: 22.8,
+    14: 22.8,
+    15: 22.8,
+    16: 24.8,
+    17: 24.8,
+    18: 24.8,
+    19: 24.8,
+    20: 26.8,
+    21: 26.8,
+    22: 26.8,
+    23: 26.8,
+}
+final_selling_rate_profile = {
+    0: 27.1,
+    1: 27.1,
+    2: 27.1,
+    3: 27.1,
+    4: 27.1,
+    5: 27.1,
+    6: 27.1,
+    7: 27.1,
+    8: 25.1,
+    9: 25.1,
+    10: 25.1,
+    11: 25.1,
+    12: 23.1,
+    13: 23.1,
+    14: 23.1,
+    15: 23.1,
+    16: 25.1,
+    17: 25.1,
+    18: 25.1,
+    19: 25.1,
+    20: 27.1,
+    21: 27.1,
+    22: 27.1,
+    23: 27.1,
 }
 
-
-# Hourly break even profile for the second battery, displaying the second way for configuring
-# the break even profile. Only the hours when there is a price change are recorded. In the
-# hours between the keys the break even price remains the same, eg from 00:00 - 9:45 the break
-# even price will be (26.5, 27.5), from 10:00-11:45 it will be (24.5, 25.5) and so forth.
-break_even_profile_2 = {
-    0: (26.5, 27.5),
-    10: (24.5, 25.5),
-    12: (22.5, 23.5),
-    14: (24.5, 25.5),
-    18: (26.5, 27.5),
+final_buying_rate_profile_2 = {
+    0: 26.5,
+    10: 24.5,
+    12: 22.5,
+    14: 24.5,
+    18: 26.5,
+}
+final_selling_rate_profile_2 = {
+    0: 27.5,
+    10: 25.5,
+    12: 23.5,
+    14: 25.5,
+    18: 27.5,
 }
 
 
@@ -87,13 +110,17 @@ def get_setup(config):
                                                                            range(12, 18)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(risk=10, initial_capacity_kWh=0.6,
-                                                                 break_even=break_even_profile,
-                                                                 max_abs_battery_power_kW=5.0),
+                    Area('H1 Storage1',
+                         strategy=StorageStrategy(initial_soc=50,
+                                                  final_buying_rate=final_buying_rate_profile,
+                                                  final_selling_rate=final_selling_rate_profile,
+                                                  max_abs_battery_power_kW=5.0),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(risk=10, initial_capacity_kWh=0.6,
-                                                                 break_even=break_even_profile_2,
-                                                                 max_abs_battery_power_kW=5.0),
+                    Area('H1 Storage2',
+                         strategy=StorageStrategy(initial_soc=50,
+                                                  final_buying_rate=final_buying_rate_profile_2,
+                                                  final_selling_rate=final_selling_rate_profile_2,
+                                                  max_abs_battery_power_kW=5.0),
                          appliance=SwitchableAppliance()),
                 ]
             ),
@@ -106,7 +133,7 @@ def get_setup(config):
                                                                            range(12, 16)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4, 10, initial_rate_option=2),
+                    Area('H2 PV', strategy=PVStrategy(4),
                          appliance=PVAppliance()),
 
                 ]

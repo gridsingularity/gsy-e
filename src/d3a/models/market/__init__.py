@@ -115,6 +115,20 @@ class Market:
             self.accumulated_trade_price
         )
 
+    @staticmethod
+    def sorting(obj, reverse_order=False):
+        if reverse_order:
+            # Sorted bids in descending order
+            return list(reversed(sorted(
+                obj.values(),
+                key=lambda b: b.price / b.energy)))
+
+        else:
+            # Sorted bids in ascending order
+            return list(sorted(
+                obj.values(),
+                key=lambda b: b.price / b.energy))
+
     @property
     def avg_offer_price(self):
         if self._avg_offer_price is None:
@@ -133,7 +147,7 @@ class Market:
 
     @property
     def sorted_offers(self):
-        return sorted(self.offers.values(), key=lambda o: o.price / o.energy)
+        return self.sorting(self.offers)
 
     @property
     def most_affordable_offers(self):
@@ -146,7 +160,7 @@ class Market:
     def _now(self):
         if self.area:
             return self.area.now
-        log.error("No area available. Using real system time!")
+        log.warning("No area available. Using real system time!")
         return DateTime.now(tz=TIME_ZONE)
 
     def set_actual_energy(self, time, reporter, value):

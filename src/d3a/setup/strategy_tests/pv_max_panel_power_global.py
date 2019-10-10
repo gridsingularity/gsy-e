@@ -18,42 +18,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
+from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
-
-"""
-
-"""
 
 
 def get_setup(config):
+    config.update_config_parameters(max_panel_power_W=400)
     area = Area(
         'Grid',
         [
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=15,
+                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=500,
+                                                                       hrs_per_day=12,
                                                                        hrs_of_day=list(
-                                                                           range(5, 20))),
+                                                                           range(7, 20))),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVPredefinedStrategy(panel_count=1, risk=80,
-                                                                initial_rate_option=2),
+                    Area('H1 PV', strategy=PVStrategy(panel_count=1),
                          appliance=PVAppliance()),
-
                 ]
             ),
-            Area(
-                'House 2',
-                [
-                    Area('H2 PV', strategy=PVPredefinedStrategy(panel_count=1, risk=80,
-                                                                initial_rate_option=2),
-                         appliance=PVAppliance()),
-
-                ]
-            ),
-
         ],
         config=config
     )

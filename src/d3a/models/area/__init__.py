@@ -15,14 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import warnings
 from logging import getLogger
 from typing import List  # noqa
 from cached_property import cached_property
 from pendulum import DateTime, duration, today
 from slugify import slugify
 from uuid import uuid4
-
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import AreaException
 from d3a.models.appliance.base import BaseAppliance
@@ -30,14 +28,14 @@ from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.util import TaggedLogWrapper, is_market_in_simulation_duration
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import TIME_FORMAT
 from d3a.models.area.stats import AreaStats
-from d3a.models.area.event_dispatcher import AreaDispatcher
+from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
-from d3a.models.const import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig
 
 log = getLogger(__name__)
 
@@ -76,6 +74,9 @@ class Area:
         self.children = children if children is not None else []
         for child in self.children:
             child.parent = self
+
+        if (len(self.children) > 0) and (strategy is not None):
+            raise AreaException("A leaf area can not have children.")
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
@@ -86,7 +87,7 @@ class Area:
         self._bc = None
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
-        self.dispatcher = AreaDispatcher(self)
+        self.dispatcher = DispatcherFactory(self)()
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
@@ -125,8 +126,8 @@ class Area:
         self._cycle_markets(_trigger_event=False)
 
         if not self.strategy and self.parent is not None:
-            self.log.info("No strategy. Using inter area agent.")
-        self.log.info('Activating area')
+            self.log.debug("No strategy. Using inter area agent.")
+        self.log.debug('Activating area')
         self.active = True
         self.dispatcher.broadcast_activate()
 
@@ -144,7 +145,6 @@ class Area:
         `_trigger_event` is used internally to avoid multiple event chains during
         initial area activation.
         """
-
         self.events.update_events(self.now)
 
         if not self.children:
@@ -154,13 +154,8 @@ class Area:
         if self.budget_keeper and _market_cycle:
             self.budget_keeper.process_market_cycle()
 
-        now = self.now
-        time_in_hour = duration(minutes=now.minute, seconds=now.second)
-        now = now.at(now.hour, minute=0, second=0) + \
-            ((time_in_hour // self.config.slot_length) * self.config.slot_length)
-
-        self.log.info("Cycling markets")
-        self._markets.rotate_markets(now, self.stats, self.dispatcher)
+        self.log.debug("Cycling markets")
+        self._markets.rotate_markets(self.now, self.stats, self.dispatcher)
         if deactivate:
             return
 
@@ -168,11 +163,11 @@ class Area:
         self.__dict__.pop('current_market', None)
 
         # Markets range from one slot to market_count into the future
-        changed = self._markets.create_future_markets(now, True, self)
+        changed = self._markets.create_future_markets(self.now, True, self)
 
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
                 len(DeviceRegistry.REGISTRY.keys()) != 0:
-            changed_balancing_market = self._markets.create_future_markets(now, False, self)
+            changed_balancing_market = self._markets.create_future_markets(self.now, False, self)
         else:
             changed_balancing_market = None
 
@@ -186,10 +181,14 @@ class Area:
             self.dispatcher.broadcast_balancing_market_cycle()
 
     def tick(self, is_root_area=False):
+        if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+                ConstSettings.IAASettings.MARKET_TYPE == 3:
+            for market in self._markets.markets.values():
+                market.match_offers_bids()
         self.events.update_events(self.now)
         if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()
-        self.dispatcher.broadcast_tick(area=self)
+        self.dispatcher.broadcast_tick()
         self.current_tick += 1
 
     def __repr__(self):
@@ -232,12 +231,6 @@ class Area:
                 areas.remove(area)
                 areas.extend(area.children)
         return slug_map
-
-    def get_now(self) -> DateTime:
-        """Compatibility wrapper"""
-        warnings.warn("The '.get_now()' method has been replaced by the '.now' property. "
-                      "Please use that in the future.")
-        return self.now
 
     @property
     def now(self) -> DateTime:
@@ -335,7 +328,7 @@ class Area:
         for target in (self.strategy, self.appliance):
             if isinstance(target, TriggerMixin):
                 for trigger in target.available_triggers:
-                    if trigger.naome == trigger_name:
+                    if trigger.name == trigger_name:
                         return target.fire_trigger(trigger_name, **params)
 
     def update_config(self, **kwargs):

@@ -23,9 +23,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 
 '''
 This setup file is being used to test a house with battery and a general load. StorageStrategy
-reduces its unsold offers based on risk/percentage or energy_rate_decrease_per_update.
-Based on parameter 'energy_rate_decrease_option' it will take into account either 'risk'
-or 'energy_rate_decrease_per_update'
+reduces its unsold offers based on energy_rate_decrease_per_update.
 '''
 
 
@@ -42,14 +40,13 @@ def get_setup(config):
                                                                            range(0, 24)),
                                                                        final_buying_rate=25),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(risk=10,
-                                                                 initial_capacity_kWh=5,
-                                                                 initial_rate_option=2,
-                                                                 energy_rate_decrease_option=1,
-                                                                 energy_rate_decrease_per_update=3,
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=100,
+                                                                 energy_rate_increase_per_update=3,
                                                                  battery_capacity_kWh=5,
                                                                  max_abs_battery_power_kW=5,
-                                                                 break_even=(16.99, 17.01)),
+                                                                 initial_buying_rate=0,
+                                                                 final_buying_rate=16.99,
+                                                                 final_selling_rate=17.01),
                          appliance=SwitchableAppliance()),
                 ]
             ),

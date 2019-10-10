@@ -28,7 +28,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.d3a_core.util import convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import generate_market_slot_list
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 
 
 class FileExportEndpoints:
@@ -95,17 +95,17 @@ class FileExportEndpoints:
                     )
         return outdict
 
-    def _get_stats_from_market_data(self, area, balancing):
+    def _get_stats_from_market_data(self, out_dict, area, balancing):
         data = self.generate_market_export_data(area, balancing)
-        out_dict = dict((key, []) for key in data.labels())
+        if area.slug not in out_dict:
+            out_dict[area.slug] = dict((key, []) for key in data.labels())
         for row in data.rows():
             for ii, label in enumerate(data.labels()):
-                out_dict[label].append(row[ii])
-        return out_dict
+                out_dict[area.slug][label].append(row[ii])
 
     def update_plot_stats(self, area):
-        self.plot_stats[area.slug] = self._get_stats_from_market_data(area, False)
-        self.plot_balancing_stats[area.slug] = self._get_stats_from_market_data(area, True)
+        self._get_stats_from_market_data(self.plot_stats, area, False)
+        self._get_stats_from_market_data(self.plot_balancing_stats, area, True)
 
     def _calculate_devices_sold_bought_energy(self, res_dict, market):
         if market is None:

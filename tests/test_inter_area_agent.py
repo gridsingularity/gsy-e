@@ -25,10 +25,8 @@ from d3a.models.area import DEFAULT_CONFIG
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
-from d3a.models.strategy.area_agents.two_sided_pay_as_clear_agent import TwoSidedPayAsClearAgent
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
-from d3a.models.strategy.area_agents.one_sided_engine import OfferInfo
-from d3a.models.const import ConstSettings
+from d3a_interface.constants_limits import ConstSettings
 from d3a.models.market.market_structures import MarketClearingState
 
 
@@ -87,19 +85,22 @@ class FakeMarket:
         return {bid.id: bid for bid in self._bids}
 
     def accept_offer(self, offer, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, original_trade_rate=None):
+                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
         if energy < offer.energy:
             residual_energy = offer.energy - energy
-            residual = Offer('res', offer.price, residual_energy, offer.seller)
-            traded = Offer(offer.id, offer.price, energy, offer.seller)
-            return Trade('trade_id', time, traded, traded.seller, buyer, residual)
+            residual = Offer('res', offer.price, residual_energy, offer.seller,
+                             seller_origin='res')
+            traded = Offer(offer.id, offer.price, energy, offer.seller, seller_origin='res')
+            return Trade('trade_id', time, traded, traded.seller, buyer, residual,
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
         else:
-            return Trade('trade_id', time, offer, offer.seller, buyer)
+            return Trade('trade_id', time, offer, offer.seller, buyer,
+                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
     def accept_bid(self, bid, energy, seller, buyer=None, *, time=None, trade_rate: float = None,
-                   original_trade_rate=None, already_tracked=False):
+                   trade_offer_info=None, already_tracked=False, seller_origin=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
@@ -111,12 +112,17 @@ class FakeMarket:
         market_bid = [b for b in self._bids if b.id == bid.id][0]
         if energy < market_bid.energy:
             residual_energy = bid.energy - energy
-            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller)
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
-            return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual)
+            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller,
+                           buyer_origin='res')
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller,
+                         buyer_origin='res')
+            return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual,
+                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
         else:
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
-            return Trade('trade_id', time, traded, traded.seller, bid.buyer)
+            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller,
+                         buyer_origin=bid.id)
+            return Trade('trade_id', time, traded, traded.seller, bid.buyer,
+                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
 
     def delete_offer(self, *args):
         pass
@@ -124,18 +130,23 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller, original_offer_price=None):
+    def offer(self, price, energy, seller, original_offer_price=None, dispatch_event=True,
+              seller_origin=None):
         self.offer_count += 1
         price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
         self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller,
-                                     original_offer_price=original_offer_price)
+                                     original_offer_price=original_offer_price,
+                                     seller_origin=seller_origin)
         return self.forwarded_offer
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None, source_market=None):
-        price = price * (1 - self.transfer_fee_ratio) - self.transfer_fee_const * energy
+    def dispatch_market_offer_event(self, offer):
+        pass
+
+    def bid(self, price, energy, buyer, seller, original_bid_price=None, buyer_origin=None):
         self.bid_count += 1
         self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller,
-                                 original_bid_price=original_bid_price)
+                                 original_bid_price=original_bid_price,
+                                 buyer_origin=buyer_origin)
         return self.forwarded_bid
 
 
@@ -147,9 +158,9 @@ def iaa():
     iaa = OneSidedAgent(owner=owner,
                         higher_market=higher_market,
                         lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     return iaa
 
 
@@ -163,9 +174,9 @@ def iaa_grid_fee():
     iaa = OneSidedAgent(owner=owner,
                         higher_market=higher_market,
                         lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     return iaa
 
 
@@ -203,17 +214,17 @@ def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
 @pytest.fixture
 def iaa_bid():
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')])
-    higher_market = FakeMarket([], [Bid('id2', 1, 1, 'child', 'owner'),
-                                    Bid('id3', 0.5, 1, 'child', 'owner')])
+    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other', 1, buyer_origin='id')])
+    higher_market = FakeMarket([], [Bid('id2', 1, 1, 'child', 'owner', 1, buyer_origin='id2'),
+                                    Bid('id3', 0.5, 1, 'child', 'owner', 1, buyer_origin='id3')])
     owner = FakeArea('owner')
 
     iaa = TwoSidedPayAsBidAgent(owner=owner,
                                 higher_market=higher_market,
                                 lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     yield iaa
 
 
@@ -245,16 +256,16 @@ def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
 @pytest.mark.parametrize("iaa_fee", [0.1, 0, 0.5, 0.75, 0.05, 0.02, 0.03])
 def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other')],
+    lower_market = FakeMarket([], [Bid('id', 1, 1, 'this', 'other', 1)],
                               transfer_fee_ratio=iaa_fee)
-    higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner')],
+    higher_market = FakeMarket([], [Bid('id2', 3, 3, 'child', 'owner', 3)],
                                transfer_fee_ratio=iaa_fee)
     iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
                                 higher_market=higher_market,
                                 lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
 
     assert iaa.higher_market.bid_count == 1
     assert iaa.higher_market.forwarded_bid.price == \
@@ -262,18 +273,19 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
 
 
 @pytest.mark.parametrize("iaa_fee_const", [0.5, 1, 5, 10])
+@pytest.mark.skip("need to define if we need a constant fee")
 def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', 15, 1, 'this', 'other')],
+    lower_market = FakeMarket([], [Bid('id', 15, 1, 'this', 'other', 15)],
                               transfer_fee_const=iaa_fee_const)
-    higher_market = FakeMarket([], [Bid('id2', 35, 3, 'child', 'owner')],
+    higher_market = FakeMarket([], [Bid('id2', 35, 3, 'child', 'owner', 35)],
                                transfer_fee_const=iaa_fee_const)
     iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
                                 higher_market=higher_market,
                                 lower_market=lower_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick = 14
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
 
     assert iaa.higher_market.bid_count == 1
     bid = list(iaa.lower_market.bids.values())[-1]
@@ -344,32 +356,30 @@ def test_iaa_event_trade_bid_updates_forwarded_bids_on_partial(iaa_bid, called, 
 
 @pytest.fixture
 def iaa2():
-    lower_market = FakeMarket([Offer('id', 2, 2, 'other')], m_id=123)
+    lower_market = FakeMarket([Offer('id', 2, 2, 'other', 2)], m_id=123)
     higher_market = FakeMarket([], m_id=234)
     owner = FakeArea('owner')
     owner.future_market = lower_market
     iaa = OneSidedAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick += 2
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     return iaa
 
 
 @pytest.fixture
 def iaa_double_sided():
-    from d3a.models.const import ConstSettings
+    from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
-                              bids=[Bid('bid_id', 10, 10, 'B', 'S')], transfer_fee_ratio=0.01)
+    lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other', 2)],
+                              bids=[Bid('bid_id', 10, 10, 'B', 'S', 10)], transfer_fee_ratio=0.01)
     higher_market = FakeMarket([], [], transfer_fee_ratio=0.01)
     owner = FakeArea('owner')
     iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
                                 higher_market=higher_market)
-    iaa.engines[0]._match_offers_bids = lambda: None
-    iaa.engines[1]._match_offers_bids = lambda: None
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     iaa.owner.current_tick += 2
-    iaa.event_tick(area=iaa.owner)
+    iaa.event_tick()
     yield iaa
 
 
@@ -396,7 +406,6 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
 
     expected_price = 10 * (1 - iaa_double_sided.lower_market.transfer_fee_ratio)
-
     assert iaa_double_sided.higher_market.forwarded_bid.price == expected_price
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10.0
 
@@ -453,8 +462,10 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
 def test_iaa_forwards_partial_bid_from_source_market(iaa_double_sided):
     iaa_double_sided._get_market_from_market_id = lambda x: iaa_double_sided.lower_market
     total_bid = iaa_double_sided.lower_market._bids[0]
-    accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer, total_bid.seller)
-    residual_bid = Bid('residual_bid', total_bid.price, 0.1, total_bid.buyer, total_bid.seller)
+    accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer,
+                       total_bid.seller, total_bid.price)
+    residual_bid = Bid('residual_bid', total_bid.price, 0.1, total_bid.buyer,
+                       total_bid.seller, total_bid.price)
     iaa_double_sided.usable_bid = lambda s: True
     iaa_double_sided.event_bid_changed(market_id=iaa_double_sided.lower_market,
                                        existing_bid=accepted_bid,
@@ -470,148 +481,6 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
                              existing_offer=full_offer,
                              new_offer=residual_offer)
     assert iaa2.higher_market.forwarded_offer.energy == 1.4
-
-
-@pytest.fixture
-def iaa_double_sided_2():
-    from d3a.models.const import ConstSettings
-    ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other')],
-                              bids=[Bid('bid_id', 10, 10, 'B', 'S', original_bid_price=10)])
-    higher_market = FakeMarket([], [])
-    owner = FakeArea('owner')
-    iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
-                                higher_market=higher_market)
-    iaa.event_tick(area=iaa.owner)
-    yield iaa
-
-
-def test_iaa_double_sided_performs_pay_as_bid_matching(iaa_double_sided_2):
-    low_high_engine = next(filter(lambda e: e.name == "Low -> High", iaa_double_sided_2.engines))
-
-    iaa_double_sided_2.lower_market._bids = [Bid('bid_id', 9, 10, 'B', 'S')]
-    matched = list(low_high_engine._perform_pay_as_bid_matching())
-    assert len(matched) == 0
-
-    iaa_double_sided_2.lower_market._bids = [Bid('bid_id', 10, 10, 'B', 'S')]
-    matched = list(low_high_engine._perform_pay_as_bid_matching())
-    assert len(matched) == 1
-    bid, offer = matched[0]
-    assert bid == list(iaa_double_sided_2.lower_market.bids.values())[0]
-    assert offer == list(iaa_double_sided_2.lower_market.offers.values())[0]
-
-    iaa_double_sided_2.lower_market._bids = [Bid('bid_id1', 11, 10, 'B', 'S'),
-                                             Bid('bid_id2', 9, 10, 'B', 'S'),
-                                             Bid('bid_id3', 12, 10, 'B', 'S')]
-    matched = list(low_high_engine._perform_pay_as_bid_matching())
-    assert len(matched) == 1
-    bid, offer = matched[0]
-    assert bid.id == 'bid_id3'
-    assert bid.price == 12
-    assert bid.energy == 10
-    assert offer == list(iaa_double_sided_2.lower_market.offers.values())[0]
-
-
-@pytest.fixture
-def iaa_double_sided_pay_as_clear():
-    from d3a.models.const import ConstSettings
-    ConstSettings.IAASettings.MARKET_TYPE = 3
-    lower_market = FakeMarket(sorted_offers=[],
-                              bids=[])
-    higher_market = FakeMarket([], [])
-    owner = FakeArea('owner')
-    iaa = TwoSidedPayAsClearAgent(owner=owner, lower_market=lower_market,
-                                  higher_market=higher_market)
-    iaa.event_tick(area=iaa.owner)
-    yield iaa
-
-
-@pytest.mark.parametrize("offer, bid, MCP", [
-    ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4),
-    ([1, 2, 3, 4, 5, 6, 7], [7, 6, 5, 4, 3, 2, 1], 4),
-    ([8, 9, 10, 11, 12, 13, 14], [8, 9, 10, 11, 12, 13, 14], 11),
-    ([2, 3, 3, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7], 5),
-])
-@pytest.mark.parametrize("algorithm", [1, 2])
-def test_iaa_double_sided_performs_pay_as_clear_matching(iaa_double_sided_pay_as_clear,
-                                                         offer, bid, MCP, algorithm):
-    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
-    low_high_engine = \
-        next(filter(lambda e: e.name == "Low -> High", iaa_double_sided_pay_as_clear.engines))
-    iaa_double_sided_pay_as_clear.lower_market.sorted_offers = \
-        [Offer('id1', offer[0], 1, 'other'),
-         Offer('id2', offer[1], 1, 'other'),
-         Offer('id3', offer[2], 1, 'other'),
-         Offer('id4', offer[3], 1, 'other'),
-         Offer('id5', offer[4], 1, 'other'),
-         Offer('id6', offer[5], 1, 'other'),
-         Offer('id7', offer[6], 1, 'other')]
-
-    iaa_double_sided_pay_as_clear.lower_market._bids = \
-        [Bid('bid_id1', bid[0], 1, 'B', 'S'),
-         Bid('bid_id2', bid[1], 1, 'B', 'S'),
-         Bid('bid_id3', bid[2], 1, 'B', 'S'),
-         Bid('bid_id4', bid[3], 1, 'B', 'S'),
-         Bid('bid_id5', bid[4], 1, 'B', 'S'),
-         Bid('bid_id6', bid[5], 1, 'B', 'S'),
-         Bid('bid_id7', bid[6], 1, 'B', 'S')]
-
-    matched = low_high_engine._perform_pay_as_clear_matching()[0]
-    assert matched == MCP
-
-
-def test_iaa_double_sided_pay_as_clear_works_with_floats(iaa_double_sided_pay_as_clear):
-    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
-    low_high_engine = \
-        next(filter(lambda e: e.name == "Low -> High", iaa_double_sided_pay_as_clear.engines))
-    iaa_double_sided_pay_as_clear.lower_market.sorted_offers = \
-        [Offer('id1', 1.1, 1, 'other'),
-         Offer('id2', 2.2, 1, 'other'),
-         Offer('id3', 3.3, 1, 'other')]
-
-    iaa_double_sided_pay_as_clear.lower_market._bids = \
-        [Bid('bid_id1', 3.3, 1, 'B', 'S'),
-         Bid('bid_id2', 2.2, 1, 'B', 'S'),
-         Bid('bid_id3', 1.1, 1, 'B', 'S')]
-
-    matched = low_high_engine._perform_pay_as_clear_matching()[0]
-    assert matched == 2.2
-
-
-def test_iaa_double_sided_match_offer_bids(iaa_double_sided_2):
-    iaa_double_sided_2.lower_market.calls_offers = []
-    iaa_double_sided_2.lower_market.calls_bids = []
-    low_high_engine = next(filter(lambda e: e.name == "Low -> High",
-                                  iaa_double_sided_2.engines))
-    source_bid = Bid('bid_id3', 12, 10, 'B', 'S', original_bid_price=12)
-    iaa_double_sided_2.lower_market._bids = [Bid('bid_id1', 11, 10, 'B', 'S'),
-                                             Bid('bid_id2', 9, 10, 'B', 'S'),
-                                             source_bid]
-
-    target_bid = Bid('fwd_bid_id3', 12, 10, 'B', 'S', original_bid_price=12)
-    # Populate forwarded_bids and offers to test they get cleaned up afterwards
-    fwd_bidinfo = BidInfo(source_bid=source_bid, target_bid=target_bid)
-    low_high_engine.forwarded_bids['bid_id3'] = fwd_bidinfo
-    low_high_engine.forwarded_bids['fwd_bid_id3'] = fwd_bidinfo
-
-    source_offer = iaa_double_sided_2.lower_market.sorted_offers[0]
-    target_offer = Offer('forwarded_id', 1, 1, 'other')
-    fwd_offerinfo = OfferInfo(source_offer=source_offer, target_offer=target_offer)
-    low_high_engine.forwarded_offers['id'] = fwd_offerinfo
-    low_high_engine.forwarded_offers['forwarded_id'] = fwd_offerinfo
-
-    low_high_engine._match_offers_bids()
-    assert len(iaa_double_sided_2.lower_market.calls_offers) == 1
-    offer = iaa_double_sided_2.lower_market.calls_offers[0]
-    assert offer.id == 'id'
-    assert offer.energy == 2
-    assert offer.price == 2
-
-    assert len(iaa_double_sided_2.lower_market.calls_bids) == 1
-    bid = iaa_double_sided_2.lower_market.calls_bids[0]
-    assert bid.id == 'bid_id3'
-    assert bid.energy == 10
-    assert bid.price == 12
 
 
 @pytest.fixture
