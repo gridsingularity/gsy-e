@@ -622,20 +622,23 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
     no_export = True
     export_path = None
     export_subdir = None
-    context.simulation = Simulation(
-        scenario,
-        simulation_config,
-        None,
-        slowdown,
-        seed,
-        paused,
-        pause_after,
-        repl,
-        no_export,
-        export_path,
-        export_subdir,
-    )
-    context.simulation.run()
+    try:
+        context.simulation = Simulation(
+            scenario,
+            simulation_config,
+            None,
+            slowdown,
+            seed,
+            paused,
+            pause_after,
+            repl,
+            no_export,
+            export_path,
+            export_subdir,
+        )
+        context.simulation.run()
+    except Exception as er:
+        context.sim_error = er
 
 
 @then('we test the output of the simulation of '

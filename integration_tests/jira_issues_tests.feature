@@ -87,6 +87,12 @@ Feature: Jira Issues Tests
     And d3a is installed
     Then we run the simulation with setup file jira.d3asim_1525 and parameters [24, 60, 60, 0, 1]
 
+  Scenario: D3ASIM-1535, User should not be able to add area to leaf area
+    Given we have a scenario named jira/d3asim_1535
+    And d3a is installed
+    When we run the simulation with setup file jira.d3asim_1535 and parameters [24, 60, 60, 0, 1]
+    Then an AreaException is raised
+
   Scenario: D3ASIM-1531: Trades happen in simulation with only one PAB market in the root area
     Given we have a scenario named jira/d3asim_1531
     And d3a is installed
@@ -100,3 +106,4 @@ Feature: Jira Issues Tests
     And d3a uses an two-sided pay-as-clear market
     When we run the simulation with setup file jira.d3asim_1531 and parameters [24, 60, 60, 0, 1]
     Then trades happen when the load seeks energy
+

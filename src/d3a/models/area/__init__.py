@@ -75,6 +75,8 @@ class Area:
         for child in self.children:
             child.parent = self
 
+        if (len(self.children) > 0) and (strategy is not None):
+            raise AreaException("A leaf area can not have children.")
         self.strategy = strategy
         self.appliance = appliance
         self._config = config
