@@ -165,3 +165,9 @@ class MarketClearingState:
     @classmethod
     def _csv_fields(cls):
         return 'time', 'rate [ct./kWh]'
+
+
+BidOfferMatch = namedtuple('BidOfferMatch', ['bid', 'bid_energy', 'offer', 'offer_energy'])
+TradeBidInfo = namedtuple('TradeBidInfo',
+                          ('original_bid_rate', 'propagated_bid_rate',
+                           'original_offer_rate', 'propagated_offer_rate', 'trade_rate'))

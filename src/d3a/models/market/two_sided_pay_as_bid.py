@@ -21,17 +21,12 @@ from logging import getLogger
 
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
-from d3a.models.market.market_structures import Bid, Trade
+from d3a.models.market.market_structures import Bid, Trade, TradeBidInfo
 from d3a.events.event_structures import MarketEvent
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.grid_fees.base_model import GridFees
-from collections import namedtuple
 
 log = getLogger(__name__)
-
-TradeBidInfo = namedtuple('TradeBidInfo',
-                          ('original_bid_rate', 'propagated_bid_rate',
-                           'original_offer_rate', 'propagated_offer_rate', 'trade_rate'))
 
 
 class TwoSidedPayAsBid(OneSidedMarket):

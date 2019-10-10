@@ -20,9 +20,8 @@ from logging import getLogger
 from collections import OrderedDict
 
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.market.market_structures import MarketClearingState
+from d3a.models.market.market_structures import MarketClearingState, BidOfferMatch, TradeBidInfo
 from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import add_or_create_key
 
 log = getLogger(__name__)
@@ -133,126 +132,94 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                      f"||| Clearing Market {self.area.name}")
             self.state.clearing[time] = (clearing_rate, clearing_energy)
 
-        accepted_bids = self._accept_cleared_bids(clearing_rate, clearing_energy)
-        self._accept_cleared_offers(clearing_rate, clearing_energy, accepted_bids)
+        matchings = self._create_bid_offer_matchings(
+            clearing_energy, self.sorted_offers, self.sorted_bids
+        )
 
-    def _accept_cleared_bids(self, clearing_rate, clearing_energy):
-        cumulative_traded_bids = 0
-        accepted_bids = []
-        for bid in self.sorted_bids:
+        for i in range(len(matchings)):
+            match = matchings[i]
+            offer = match.offer
+            bid = match.bid
+
+            assert math.isclose(match.offer_energy, match.bid_energy)
+            selected_energy = match.offer_energy
             original_bid_rate = bid.original_bid_price / bid.energy
-            trade_offer_info = [
-                original_bid_rate, bid.price/bid.energy,
-                clearing_rate, clearing_rate, clearing_rate]
+            trade_bid_info = TradeBidInfo(
+                original_bid_rate=original_bid_rate,
+                propagated_bid_rate=bid.price / bid.energy,
+                original_offer_rate=offer.original_offer_price / offer.energy,
+                propagated_offer_rate=offer.price / offer.energy,
+                trade_rate=original_bid_rate)
+            trade = self.accept_offer(offer_or_id=offer,
+                                      buyer=bid.buyer,
+                                      energy=selected_energy,
+                                      trade_rate=clearing_rate,
+                                      already_tracked=False,
+                                      trade_bid_info=trade_bid_info,
+                                      buyer_origin=bid.buyer_origin)
+            bid_trade = self.accept_bid(bid=bid,
+                                        energy=selected_energy,
+                                        seller=offer.seller,
+                                        buyer=bid.buyer,
+                                        already_tracked=True,
+                                        trade_rate=clearing_rate,
+                                        trade_offer_info=trade_bid_info,
+                                        seller_origin=offer.seller_origin)
 
-            if cumulative_traded_bids >= clearing_energy:
-                break
-            elif (bid.price / bid.energy) >= clearing_rate and \
-                    (clearing_energy - cumulative_traded_bids) >= bid.energy:
-                cumulative_traded_bids += bid.energy
-                trade = self.accept_bid(
-                    bid=bid,
-                    energy=bid.energy,
-                    seller=self.area.name,
-                    already_tracked=True,
-                    trade_rate=clearing_rate,
-                    trade_offer_info=trade_offer_info
+            if trade.residual is not None or bid_trade.residual is not None:
+                matchings = self._replace_offers_bids_with_residual_in_matching_list(
+                    matchings, i+1, trade, bid_trade
                 )
-            elif (bid.price / bid.energy) >= clearing_rate and \
-                    (0 < (clearing_energy - cumulative_traded_bids) < bid.energy):
-                trade = self.accept_bid(
-                    bid=bid,
-                    energy=(clearing_energy - cumulative_traded_bids),
-                    seller=self.area.name,
-                    already_tracked=True,
-                    trade_rate=clearing_rate,
-                    trade_offer_info=trade_offer_info
-                )
-                cumulative_traded_bids += (clearing_energy - cumulative_traded_bids)
-            else:
-                assert False, "An error occurred, this point should never be reached."
-            accepted_bids.append(trade)
-        return accepted_bids
 
-    def _accept_cleared_offers(self, clearing_rate, clearing_energy, accepted_bids):
-        cumulative_traded_offers = 0
-        for offer in self.sorted_offers:
-            if cumulative_traded_offers >= clearing_energy:
-                break
-            elif (math.floor(offer.price / offer.energy)) <= clearing_rate and \
-                    (clearing_energy - cumulative_traded_offers) >= offer.energy:
-                # TODO: Used the clearing_rate as the original_trade_rate for the offers, because
-                # currently an aggregated market is used. If/once a peer-to-peer market is
-                # implemented, we should use the original bid rate for calculating the fees
-                # on the source offers, similar to the two sided pay as bid market.
+    @classmethod
+    def _create_bid_offer_matchings(cls, clearing_energy, offer_list, bid_list):
+        bid_offer_matchings = []
 
-                # energy == None means to use the bid energy instead of the remaining clearing
-                # energy
-                accepted_bids = self._exhaust_offer_for_selected_bids(
-                    offer, accepted_bids, clearing_rate, None
-                )
-                cumulative_traded_offers += offer.energy
-            elif (math.floor(offer.price / offer.energy)) <= clearing_rate and \
-                    (clearing_energy - cumulative_traded_offers) < offer.energy:
-                accepted_bids = self._exhaust_offer_for_selected_bids(
-                    offer, accepted_bids, clearing_rate, clearing_energy - cumulative_traded_offers
-                )
-                cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
+        residual_offer_energy = {}
+        for bid in bid_list:
+            bid_energy = bid.energy
+            while bid_energy > 0.0:
+                offer = offer_list.pop(0)
+                offer_energy = residual_offer_energy.get(offer.id, offer.energy)
+                if offer_energy - bid_energy > 0.000001:
+                    # Bid completely covered
+                    residual_offer_energy[offer.id] = offer_energy - bid_energy
+                    # Place the offer at the front of the offer list to cover following bids
+                    offer_list.insert(0, offer)
+                    # Save the matching to accept later
+                    bid_offer_matchings.append(
+                        BidOfferMatch(bid=bid, bid_energy=bid_energy,
+                                      offer=offer, offer_energy=bid_energy)
+                    )
+                    clearing_energy -= bid_energy
+                    # Set the bid energy to 0 to move forward to the next bid
+                    bid_energy = 0
+                else:
+                    # Save the matching offer to accept later
+                    bid_offer_matchings.append(
+                        BidOfferMatch(bid=bid, bid_energy=offer_energy,
+                                      offer=offer, offer_energy=offer_energy)
+                    )
+                    # Subtract the offer energy from the bid, in order to not be taken into account
+                    # from following matchings
+                    bid_energy -= offer_energy
+                    residual_offer_energy.pop(offer.id, None)
 
-    def _exhaust_offer_for_selected_bids(self, offer, accepted_bids, clearing_rate, energy):
-        while len(accepted_bids) > 0:
-            trade = accepted_bids.pop(0)
-            bid_energy = trade.offer.energy
-            if energy is not None:
-                if bid_energy > energy:
-                    bid_energy = energy
-                energy -= bid_energy
-            else:
-                energy = offer.energy
+                    clearing_energy -= offer_energy
+                if clearing_energy <= 0:
+                    return bid_offer_matchings
 
-            already_tracked = trade.offer.buyer == offer.seller
-            trade_bid_info = [
-                clearing_rate, clearing_rate,
-                offer.original_offer_price/offer.energy, offer.price/offer.energy,
-                clearing_rate]
+        return bid_offer_matchings
 
-            if bid_energy == offer.energy:
-                trade._replace(seller_origin=offer.seller_origin)
-                self.accept_offer(offer_or_id=offer,
-                                  buyer=trade.offer.buyer,
-                                  energy=offer.energy,
-                                  already_tracked=already_tracked,
-                                  trade_rate=clearing_rate,
-                                  trade_bid_info=trade_bid_info,
-                                  buyer_origin=trade.buyer_origin)
-                return accepted_bids
-            elif bid_energy > offer.energy:
-                trade._replace(seller_origin=offer.seller_origin)
-                self.accept_offer(offer_or_id=offer,
-                                  buyer=trade.offer.buyer,
-                                  energy=offer.energy,
-                                  already_tracked=already_tracked,
-                                  trade_rate=clearing_rate,
-                                  trade_bid_info=trade_bid_info,
-                                  buyer_origin=trade.buyer_origin)
-                updated_bid = trade.offer
-                updated_bid._replace(energy=trade.offer.energy - offer.energy)
-                trade._replace(offer=updated_bid)
-                accepted_bids = [trade] + accepted_bids
-                return accepted_bids
-            elif bid_energy < offer.energy:
-                trade._replace(seller_origin=offer.seller_origin)
-                offer_trade = self.accept_offer(
-                    offer_or_id=offer,
-                    buyer=trade.offer.buyer,
-                    energy=bid_energy,
-                    already_tracked=already_tracked,
-                    trade_rate=clearing_rate,
-                    trade_bid_info=trade_bid_info,
-                    buyer_origin=trade.buyer_origin)
-                assert offer_trade.residual is not None
-                offer = offer_trade.residual
-            if energy <= FLOATING_POINT_TOLERANCE:
-                return accepted_bids
-        assert False, "Accepted bids were not enough to satisfy the offer, should never " \
-                      "reach this point."
+    @classmethod
+    def _replace_offers_bids_with_residual_in_matching_list(
+            cls, matchings, start_index, offer_trade, bid_trade
+    ):
+        for j in range(start_index, len(matchings)):
+            match = matchings[j]
+            if match.offer.id == offer_trade.offer.id:
+                match = match._replace(offer=offer_trade.residual)
+            if match.bid.id == bid_trade.offer.id:
+                match = match._replace(bid=bid_trade.residual)
+            matchings[j] = match
+        return matchings
