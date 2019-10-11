@@ -1,6 +1,6 @@
 import unittest
 from parameterized import parameterized
-from d3a.models.market.market_structures import Bid, Offer
+from d3a.models.market.market_structures import Bid, Offer, BidOfferMatch, Trade
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 
 
@@ -196,7 +196,6 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
         self.validate_matching(matchings[4], 5, 'offer_id4', 'bid_id')
 
     def test_matching_list_gets_updated_with_residual_offers(self):
-        from d3a.models.market.market_structures import BidOfferMatch, Trade
         matchings = [
             BidOfferMatch(offer=Offer('offer_id', 1, 1, 'S'), offer_energy=1,
                           bid=Bid('bid_id', 1, 1, 'B', 'S'), bid_energy=1),
@@ -215,3 +214,26 @@ class TestCreateBidOfferMatchings(unittest.TestCase):
         assert len(matchings) == 2
         assert matchings[0].offer.id == 'residual_offer'
         assert matchings[1].bid.id == 'residual_bid_2'
+
+    def test_matching_list_affects_only_matches_after_start_index(self):
+        matchings = [
+            BidOfferMatch(offer=Offer('offer_id', 1, 1, 'S'), offer_energy=1,
+                          bid=Bid('bid_id', 1, 1, 'B', 'S'), bid_energy=1),
+            BidOfferMatch(offer=Offer('offer_id2', 2, 2, 'S'), offer_energy=2,
+                          bid=Bid('bid_id2', 2, 2, 'B', 'S'), bid_energy=2),
+            BidOfferMatch(offer=Offer('offer_id', 1, 1, 'S'), offer_energy=1,
+                          bid=Bid('bid_id', 1, 1, 'B', 'S'), bid_energy=1)
+        ]
+
+        offer_trade = Trade('trade', 1, Offer('offer_id', 1, 1, 'S'), 'S', 'B',
+                            residual=Offer('residual_offer', 0.5, 0.5, 'S'))
+        bid_trade = Trade('bid_trade', 1, Bid('bid_id2', 1, 1, 'S', 'B'), 'S', 'B',
+                          residual=Bid('residual_bid_2', 1, 1, 'S', 'B'))
+
+        matchings = TwoSidedPayAsClear._replace_offers_bids_with_residual_in_matching_list(
+            matchings, 1, offer_trade, bid_trade
+        )
+        assert len(matchings) == 3
+        assert matchings[0].offer.id == 'offer_id'
+        assert matchings[1].bid.id == 'residual_bid_2'
+        assert matchings[2].offer.id == 'residual_offer'

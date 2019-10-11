@@ -23,6 +23,7 @@ from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.market_structures import MarketClearingState, BidOfferMatch, TradeBidInfo
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import add_or_create_key
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
 
@@ -136,12 +137,12 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
             clearing_energy, self.sorted_offers, self.sorted_bids
         )
 
-        for i in range(len(matchings)):
-            match = matchings[i]
+        for index, match in enumerate(matchings):
             offer = match.offer
             bid = match.bid
 
             assert math.isclose(match.offer_energy, match.bid_energy)
+
             selected_energy = match.offer_energy
             original_bid_rate = bid.original_bid_price / bid.energy
             trade_bid_info = TradeBidInfo(
@@ -149,52 +150,51 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                 propagated_bid_rate=bid.price / bid.energy,
                 original_offer_rate=offer.original_offer_price / offer.energy,
                 propagated_offer_rate=offer.price / offer.energy,
-                trade_rate=original_bid_rate)
-            trade = self.accept_offer(offer_or_id=offer,
-                                      buyer=bid.buyer,
-                                      energy=selected_energy,
-                                      trade_rate=clearing_rate,
-                                      already_tracked=False,
-                                      trade_bid_info=trade_bid_info,
-                                      buyer_origin=bid.buyer_origin)
-            bid_trade = self.accept_bid(bid=bid,
-                                        energy=selected_energy,
-                                        seller=offer.seller,
-                                        buyer=bid.buyer,
-                                        already_tracked=True,
-                                        trade_rate=clearing_rate,
-                                        trade_offer_info=trade_bid_info,
-                                        seller_origin=offer.seller_origin)
+                trade_rate=clearing_rate)
+
+            bid_trade, trade = self.accept_bid_offer_pair(
+                bid, offer, clearing_rate, trade_bid_info, selected_energy
+            )
 
             if trade.residual is not None or bid_trade.residual is not None:
                 matchings = self._replace_offers_bids_with_residual_in_matching_list(
-                    matchings, i+1, trade, bid_trade
+                    matchings, index+1, trade, bid_trade
                 )
 
     @classmethod
     def _create_bid_offer_matchings(cls, clearing_energy, offer_list, bid_list):
+        # Return value, holds the bid-offer matches
         bid_offer_matchings = []
-
+        # Keeps track of the residual energy from offers that have been matched once,
+        # in order for their energy to be correctly tracked on following bids
         residual_offer_energy = {}
         for bid in bid_list:
             bid_energy = bid.energy
-            while bid_energy > 0.0:
+            while bid_energy > FLOATING_POINT_TOLERANCE:
+                # Get the first offer from the list
                 offer = offer_list.pop(0)
+                # See if this offer has been matched with another bid beforehand.
+                # If it has, fetch the offer energy from the residual dict
+                # Otherwise, use offer energy as is.
                 offer_energy = residual_offer_energy.get(offer.id, offer.energy)
-                if offer_energy - bid_energy > 0.000001:
-                    # Bid completely covered
+                if offer_energy - bid_energy > FLOATING_POINT_TOLERANCE:
+                    # Bid energy completely covered by offer energy
+                    # Update the residual offer energy to take into account the matched offer
                     residual_offer_energy[offer.id] = offer_energy - bid_energy
                     # Place the offer at the front of the offer list to cover following bids
+                    # since the offer still has some energy left
                     offer_list.insert(0, offer)
-                    # Save the matching to accept later
+                    # Save the matching
                     bid_offer_matchings.append(
                         BidOfferMatch(bid=bid, bid_energy=bid_energy,
                                       offer=offer, offer_energy=bid_energy)
                     )
+                    # Update total clearing energy
                     clearing_energy -= bid_energy
                     # Set the bid energy to 0 to move forward to the next bid
                     bid_energy = 0
                 else:
+                    # Offer is exhausted by the bid. More offers are needed to cover the bid.
                     # Save the matching offer to accept later
                     bid_offer_matchings.append(
                         BidOfferMatch(bid=bid, bid_energy=offer_energy,
@@ -203,10 +203,12 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     # Subtract the offer energy from the bid, in order to not be taken into account
                     # from following matchings
                     bid_energy -= offer_energy
+                    # Remove the offer from the residual offer dictionary
                     residual_offer_energy.pop(offer.id, None)
-
+                    # Update total clearing energy
                     clearing_energy -= offer_energy
-                if clearing_energy <= 0:
+                if clearing_energy <= FLOATING_POINT_TOLERANCE:
+                    # Clearing energy has been satisfied by existing matches. Return the matches
                     return bid_offer_matchings
 
         return bid_offer_matchings
@@ -215,11 +217,15 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
     def _replace_offers_bids_with_residual_in_matching_list(
             cls, matchings, start_index, offer_trade, bid_trade
     ):
-        for j in range(start_index, len(matchings)):
-            match = matchings[j]
+        def _convert_match_to_residual(match):
             if match.offer.id == offer_trade.offer.id:
+                assert offer_trade.residual is not None
                 match = match._replace(offer=offer_trade.residual)
             if match.bid.id == bid_trade.offer.id:
+                assert bid_trade.residual is not None
                 match = match._replace(bid=bid_trade.residual)
-            matchings[j] = match
+            return match
+
+        matchings[start_index:] = [_convert_match_to_residual(match)
+                                   for match in matchings[start_index:]]
         return matchings
