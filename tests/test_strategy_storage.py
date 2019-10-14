@@ -621,8 +621,8 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
     storage_strategy_test11.event_activate()
     buy_market = area_test11.all_markets[0]
     storage_strategy_test11.event_tick()
-    for i in range(2):
-        area_test11.current_tick += 310
+    for i in range(1):
+        area_test11.current_tick += 65
         storage_strategy_test11.event_tick()
     te = storage_strategy_test11.state.energy_to_buy_dict[buy_market.time_slot]
     assert te == float(storage_strategy_test11.accept_offer.calls[0][1]['energy'])

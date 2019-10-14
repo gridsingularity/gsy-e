@@ -57,6 +57,7 @@ def get_setup(config):
                          appliance=SwitchableAppliance()),
                     Area('H1 General Load 2',
                          strategy=LoadHoursStrategy(avg_power_W=200, hrs_of_day=list(range(0, 24)),
+                                                    update_interval=duration(minutes=5),
                                                     initial_buying_rate=user_profile_str,
                                                     final_buying_rate=35),
                          appliance=SwitchableAppliance()),
