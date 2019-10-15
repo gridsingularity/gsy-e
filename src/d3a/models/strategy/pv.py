@@ -70,8 +70,8 @@ class PVStrategy(BaseStrategy):
         except D3ADeviceException as e:
             raise D3ADeviceException(str(e))
 
-        if isinstance(update_interval, int):
-            update_interval = duration(minutes=update_interval)
+        if isinstance(update_interval, (int, float)):
+            update_interval = duration(minutes=int(update_interval))
 
         BaseStrategy.__init__(self)
         self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,

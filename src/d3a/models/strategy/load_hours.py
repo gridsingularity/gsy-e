@@ -58,8 +58,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if use_market_maker_rate:
             final_buying_rate = GlobalConfig.market_maker_rate
 
-        if isinstance(update_interval, int):
-            update_interval = duration(minutes=update_interval)
+        if isinstance(update_interval, (int, float)):
+            update_interval = duration(minutes=int(update_interval))
 
         BidEnabledStrategy.__init__(self)
         self.bid_update = \
