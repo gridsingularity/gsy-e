@@ -72,8 +72,8 @@ class StorageStrategy(BidEnabledStrategy):
         except D3ADeviceException as e:
             raise D3ADeviceException(str(e))
 
-        if isinstance(update_interval, (int, float)):
-            update_interval = duration(minutes=int(update_interval))
+        if isinstance(update_interval, int):
+            update_interval = duration(minutes=update_interval)
 
         BidEnabledStrategy.__init__(self)
 
