@@ -58,9 +58,6 @@ class SimulationConfig:
         self.cloud_coverage = cloud_coverage
 
         self.read_pv_user_profile(pv_user_profile)
-        # if isinstance(market_maker_rate, dict):
-        #     if "global" in market_maker_rate:
-        #         market_maker_rate = market_maker_rate["global"]
         self.read_market_maker_rate(market_maker_rate)
 
         self.iaa_fee = iaa_fee if iaa_fee is not None else ConstSettings.IAASettings.FEE_PERCENTAGE
