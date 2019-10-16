@@ -86,7 +86,6 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
             offer_or_id = offer_or_id.id
         offer = self.offers.pop(offer_or_id, None)
         if offer is None:
-            print(offer_or_id, self.offers)
             assert False
 
         self.calls_energy.append(energy)
