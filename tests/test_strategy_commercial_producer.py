@@ -269,9 +269,10 @@ def testing_event_market_cycle(commercial_test3, area_test3):
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
 
 
-def test_commercial_producer_constructor_rejects_invalid_parameters():
-    with pytest.raises(ValueError):
-        CommercialStrategy(energy_rate=-1)
+# TODO: Re-add test once validator is implemented in d3a-interface
+# def test_commercial_producer_constructor_rejects_invalid_parameters():
+#    with pytest.raises(ValueError):
+#        CommercialStrategy(energy_rate=-1)
 
 
 def test_market_maker_strategy_constructor_modifies_global_market_maker_rate():
