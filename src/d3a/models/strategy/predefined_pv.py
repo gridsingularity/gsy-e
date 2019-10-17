@@ -40,7 +40,7 @@ class PVPredefinedStrategy(PVStrategy):
                   'max_panel_power_W', 'use_market_maker_rate')
 
     def __init__(
-            self, panel_count: int=1,
+            self, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
             cloud_coverage: int = None,
@@ -96,7 +96,7 @@ class PVPredefinedStrategy(PVStrategy):
         parameters and selects the appropriate predefined profile.
         :return: key value pairs of time to energy in kWh
         """
-        if self._power_profile_index is None:
+        if self._power_profile_index is None or self._power_profile_index == 4:
             if self.owner.config.pv_user_profile is not None:
                 return read_arbitrary_profile(InputProfileTypes.POWER,
                                               self.area.config.pv_user_profile)
