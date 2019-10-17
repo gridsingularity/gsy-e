@@ -35,8 +35,9 @@ class PVPredefinedStrategy(PVStrategy):
     """
         Strategy responsible for using one of the predefined PV profiles.
     """
-    parameters = ('panel_count', 'final_selling_rate', 'energy_rate_decrease_per_update',
-                  'initial_selling_rate', 'use_market_maker_rate')
+    parameters = ('panel_count', 'initial_selling_rate', 'final_selling_rate', 'cloud_coverage',
+                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
+                  'max_panel_power_W', 'use_market_maker_rate')
 
     def __init__(
             self, panel_count: int=1,
@@ -56,11 +57,12 @@ class PVPredefinedStrategy(PVStrategy):
         :param initial_selling_rate: Upper Threshold for PV offers
         :param final_selling_rate: Lower Threshold for PV offers
         :param cloud_coverage: cloud conditions. 0=sunny, 1=partially cloudy, 2=cloudy
-        :param fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
+        :param fit_to_limit: Linear curve following initial_selling_rate & final_selling_rate
         :param update_interval: Interval after which PV will update its offer
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
-        :param max_panel_power_W:
+        :param max_panel_power_W: Peak power per panel
         """
+
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
                          final_selling_rate=final_selling_rate,
@@ -118,8 +120,9 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     """
         Strategy responsible for reading a profile in the form of a dict of values.
     """
-    parameters = ('panel_count', 'final_selling_rate', 'energy_rate_decrease_per_update',
-                  'power_profile', 'initial_selling_rate', 'use_market_maker_rate')
+    parameters = ('power_profile', 'panel_count', 'initial_selling_rate', 'final_selling_rate',
+                  'fit_to_limit', 'update_interval', 'energy_rate_decrease_per_update',
+                  'max_panel_power_W', 'use_market_maker_rate')
 
     def __init__(
             self, power_profile, panel_count: int = 1,
