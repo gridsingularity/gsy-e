@@ -26,8 +26,9 @@ class CommercialStrategy(BaseStrategy):
     parameters = ('energy_rate',)
 
     def __init__(self, energy_rate=None):
-        if energy_rate is not None and energy_rate < 0:
-            raise ValueError("Energy rate should be positive.")
+        # TODO: add this check to the device validator in d3a-interface:
+        # if energy_rate is not None and energy_rate < 0:
+        #     raise ValueError("Energy rate should be positive.")
         super().__init__()
         self.energy_rate = energy_rate
         self.energy_per_slot_kWh = int(sys.maxsize)
