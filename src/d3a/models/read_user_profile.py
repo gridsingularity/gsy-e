@@ -175,7 +175,7 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
             }
 
 
-def _fill_gaps_in_profile(input_profile: Dict=None) -> Dict:
+def _fill_gaps_in_profile(input_profile: Dict = None) -> Dict:
     """
     Fills time steps, where no value is provided, with the value value of the
     last available time step.
@@ -231,6 +231,8 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
         elif isinstance(list(input_profile.keys())[0], str):
             # input is dict with string keys that are properly formatted time stamps
             input_profile = _remove_header(input_profile)
+            # Remove filename from profile
+            input_profile.pop("filename", None)
             time_format = _eval_time_format(input_profile)
             profile = {_str_to_datetime(key, time_format): val
                        for key, val in input_profile.items()}
