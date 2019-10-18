@@ -89,7 +89,7 @@ def _remove_header(profile_dict: Dict) -> Dict:
     Checks profile for header entries and removes these
     Header entries have values that are not representations of numbers
     """
-    for k, v in profile_dict.values():
+    for k, v in profile_dict.items():
         if not is_number(v):
             del profile_dict[k]
     return profile_dict
