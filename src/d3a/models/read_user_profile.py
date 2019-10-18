@@ -76,19 +76,22 @@ def default_profile_dict(val=None) -> Dict[DateTime, int]:
     return outdict
 
 
+def is_number(number):
+    try:
+        float(number)
+        return True
+    except ValueError:
+        return False
+
+
 def _remove_header(profile_dict: Dict) -> Dict:
     """
-    If first entry is not cmaptible with time format, remove it
+    Checks profile for header entries and removes these
+    Header entries have values that are not representations of numbers
     """
-
-    time = list(profile_dict.keys())[0]
-    try:
-        from_format(str(time), TIME_FORMAT)
-    except ValueError:
-        try:
-            from_format(str(time), DATE_TIME_FORMAT)
-        except ValueError:
-            profile_dict.pop(time)
+    for k, v in profile_dict.values():
+        if not is_number(v):
+            del profile_dict[k]
     return profile_dict
 
 
@@ -129,7 +132,6 @@ def _readCSV(path: str) -> Dict:
                 profile_data[row[0]] = float(row[1])
             except ValueError:
                 pass
-
     time_format = _eval_time_format(profile_data)
     return dict((_str_to_datetime(time_str, time_format), value)
                 for time_str, value in profile_data.items())
