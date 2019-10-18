@@ -99,8 +99,7 @@ class PVPredefinedStrategy(PVStrategy):
         """
         if self._power_profile_index is None or self._power_profile_index == 4:
             if self.owner.config.pv_user_profile is not None:
-                return read_arbitrary_profile(InputProfileTypes.POWER,
-                                              self.area.config.pv_user_profile)
+                return self.owner.config.pv_user_profile
             else:
                 self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
