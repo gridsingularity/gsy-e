@@ -82,7 +82,8 @@ class PVPredefinedStrategy(PVStrategy):
         self.read_config_event()
 
     def read_config_event(self):
-        self._power_profile_index = self.cloud_coverage
+        self._power_profile_index = self.cloud_coverage \
+            if self.cloud_coverage is not None else self.area.config.cloud_coverage
         data = self._read_predefined_profile_for_pv()
 
         for slot_time in generate_market_slot_list(area=self.area):
