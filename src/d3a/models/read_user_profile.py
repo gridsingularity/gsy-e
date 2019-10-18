@@ -89,10 +89,11 @@ def _remove_header(profile_dict: Dict) -> Dict:
     Checks profile for header entries and removes these
     Header entries have values that are not representations of numbers
     """
+    out_dict = {}
     for k, v in profile_dict.items():
-        if not is_number(v):
-            del profile_dict[k]
-    return profile_dict
+        if is_number(v):
+            out_dict[k] = v
+    return out_dict
 
 
 def _eval_time_format(time_dict: Dict) -> str:
