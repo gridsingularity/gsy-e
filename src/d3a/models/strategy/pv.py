@@ -104,6 +104,7 @@ class PVStrategy(BaseStrategy):
         if 'final_selling_rate' in kwargs and kwargs['final_selling_rate'] is not None:
             self.offer_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                   kwargs['final_selling_rate'])
+
         self.produced_energy_forecast_kWh()
         self.offer_update.update_offer(self)
 
