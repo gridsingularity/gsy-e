@@ -72,6 +72,7 @@ class PVPredefinedStrategy(PVStrategy):
                          max_panel_power_W=max_panel_power_W,
                          use_market_maker_rate=use_market_maker_rate
                          )
+        self.cloud_coverage = cloud_coverage
         self._power_profile_index = cloud_coverage
 
     def produced_energy_forecast_kWh(self):
@@ -81,7 +82,8 @@ class PVPredefinedStrategy(PVStrategy):
         self.read_config_event()
 
     def read_config_event(self):
-        self._power_profile_index = self.area.config.cloud_coverage
+        self._power_profile_index = self.cloud_coverage \
+            if self.cloud_coverage is not None else self.area.config.cloud_coverage
         data = self._read_predefined_profile_for_pv()
 
         for slot_time in generate_market_slot_list(area=self.area):
@@ -98,8 +100,7 @@ class PVPredefinedStrategy(PVStrategy):
         """
         if self._power_profile_index is None or self._power_profile_index == 4:
             if self.owner.config.pv_user_profile is not None:
-                return read_arbitrary_profile(InputProfileTypes.POWER,
-                                              self.area.config.pv_user_profile)
+                return self.owner.config.pv_user_profile
             else:
                 self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
