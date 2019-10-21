@@ -195,8 +195,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         for offer in sorted_offers:
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
-                   offer.price / offer.energy <= bid.price / bid.energy and \
-                   offer.seller != bid.buyer:
+                        (offer.price / offer.energy - bid.price / bid.energy) <= \
+                        FLOATING_POINT_TOLERANCE and offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
                     yield bid, offer
                     break
