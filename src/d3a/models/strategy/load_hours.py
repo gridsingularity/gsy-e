@@ -67,7 +67,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                  final_rate=final_buying_rate,
                                  fit_to_limit=fit_to_limit,
                                  energy_rate_change_per_update=energy_rate_increase_per_update,
-                                 update_interval=update_interval)
+                                 update_interval=update_interval, rate_limit_object=min)
         try:
             validate_load_device(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
                                  hrs_of_day=hrs_of_day)
