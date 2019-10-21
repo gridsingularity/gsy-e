@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
+from pendulum import duration
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import generate_market_slot_list
@@ -33,10 +34,14 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
     """
-    parameters = ('daily_load_profile', 'final_buying_rate', 'initial_buying_rate',
+    parameters = ('daily_load_profile', 'fit_to_limit', 'energy_rate_increase_per_update',
+                  'update_interval', 'initial_buying_rate', 'final_buying_rate',
                   'balancing_energy_ratio', 'use_market_maker_rate')
 
     def __init__(self, daily_load_profile,
+                 fit_to_limit=True, energy_rate_increase_per_update=1,
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                  final_buying_rate: Union[float, dict, str] =
@@ -54,6 +59,9 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         accept
         """
         super().__init__(0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                         fit_to_limit=fit_to_limit,
+                         energy_rate_increase_per_update=energy_rate_increase_per_update,
+                         update_interval=update_interval,
                          final_buying_rate=final_buying_rate,
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
@@ -67,6 +75,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for each slot.
         :return: None
         """
+        self.bid_update.update_on_activate()
         self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self.daily_load_profile)
