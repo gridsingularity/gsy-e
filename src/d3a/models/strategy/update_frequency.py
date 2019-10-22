@@ -27,7 +27,8 @@ from d3a.d3a_core.util import generate_market_slot_list
 class UpdateFrequencyMixin:
     def __init__(self, initial_rate, final_rate, fit_to_limit=True,
                  energy_rate_change_per_update=1, update_interval=duration(
-                    minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)):
+                    minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 rate_limit_object=max):
         self.fit_to_limit = fit_to_limit
         self.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                    initial_rate)
@@ -39,6 +40,7 @@ class UpdateFrequencyMixin:
         self.update_interval = update_interval
         self.update_counter = read_arbitrary_profile(InputProfileTypes.IDENTITY, 0)
         self.number_of_available_updates = 0
+        self.rate_limit_object = rate_limit_object
 
     def reassign_mixin_arguments(self, time_slot, initial_rate=None, final_rate=None,
                                  fit_to_limit=None, energy_rate_change_per_update=None,
@@ -86,7 +88,7 @@ class UpdateFrequencyMixin:
         calculated_rate = \
             self.initial_rate[time_slot] - \
             self.energy_rate_change_per_update[time_slot] * self.update_counter[time_slot]
-        updated_rate = max(calculated_rate, self.final_rate[time_slot])
+        updated_rate = self.rate_limit_object(calculated_rate, self.final_rate[time_slot])
         return updated_rate
 
     def get_price_update_point(self, strategy, time_slot):

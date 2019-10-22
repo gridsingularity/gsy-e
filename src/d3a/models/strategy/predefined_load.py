@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Union
+from pendulum import duration
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import generate_market_slot_list
@@ -33,10 +34,14 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
     """
-    parameters = ('daily_load_profile', 'final_buying_rate', 'initial_buying_rate',
+    parameters = ('daily_load_profile', 'fit_to_limit', 'energy_rate_increase_per_update',
+                  'update_interval', 'initial_buying_rate', 'final_buying_rate',
                   'balancing_energy_ratio', 'use_market_maker_rate')
 
     def __init__(self, daily_load_profile,
+                 fit_to_limit=True, energy_rate_increase_per_update=1,
+                 update_interval=duration(
+                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                  final_buying_rate: Union[float, dict, str] =
@@ -50,10 +55,21 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         :param daily_load_profile: input profile for a day. Can be either a csv file path,
         or a dict with hourly data (Dict[int, float])
         or a dict with arbitrary time data (Dict[str, float])
-        :param final_buying_rate: max energy rate of the offers that the load can
-        accept
+        :param fit_to_limit: if set to True, it will make a linear curve
+        following following initial_buying_rate & final_buying_rate
+        :param energy_rate_increase_per_update: Slope of Load bids change per update
+        :param update_interval: Interval after which Load will update its offer
+        :param initial_buying_rate: Starting point of load's preferred buying rate
+        :param final_buying_rate: Ending point of load's preferred buying rate
+        :param balancing_energy_ratio: Portion of energy to be traded in balancing market
+        :param use_market_maker_rate: If set to True, Load would track its final buying rate
+        as per utility's trading rate
         """
+
         super().__init__(0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                         fit_to_limit=fit_to_limit,
+                         energy_rate_increase_per_update=energy_rate_increase_per_update,
+                         update_interval=update_interval,
                          final_buying_rate=final_buying_rate,
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
@@ -67,6 +83,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for each slot.
         :return: None
         """
+        self.bid_update.update_on_activate()
         self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self.daily_load_profile)

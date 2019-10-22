@@ -53,6 +53,20 @@ class LoadHoursStrategy(BidEnabledStrategy):
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
                  use_market_maker_rate: bool = False):
+        """
+        Constructor of LoadHoursStrategy
+        :param avg_power_W: Power rating of load device
+        :param hrs_per_day: Daily energy usage
+        :param hrs_of_day: hours of day energy is needed
+        :param fit_to_limit: if set to True, it will make a linear curve
+        following following initial_buying_rate & final_buying_rate
+        :param energy_rate_increase_per_update: Slope of Load bids change per update
+        :param update_interval: Interval after which Load will update its offer
+        :param initial_buying_rate: Starting point of load's preferred buying rate
+        :param final_buying_rate: Ending point of load's preferred buying rate
+        :param use_market_maker_rate: If set to True, Load would track its final buying rate
+        as per utility's trading rate
+        """
 
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if use_market_maker_rate:
@@ -67,7 +81,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                  final_rate=final_buying_rate,
                                  fit_to_limit=fit_to_limit,
                                  energy_rate_change_per_update=energy_rate_increase_per_update,
-                                 update_interval=update_interval)
+                                 update_interval=update_interval, rate_limit_object=min)
         try:
             validate_load_device(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
                                  hrs_of_day=hrs_of_day)
