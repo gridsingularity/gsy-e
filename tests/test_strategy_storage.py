@@ -275,7 +275,7 @@ def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3)
 
 @pytest.fixture()
 def storage_strategy_test_buy_energy(area_test3, called):
-    s = StorageStrategy(max_abs_battery_power_kW=20.01)
+    s = StorageStrategy(max_abs_battery_power_kW=20.01, initial_buying_rate=24)
     s.owner = area_test3
     s.area = area_test3
     s.accept_offer = called
