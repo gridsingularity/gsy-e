@@ -96,7 +96,9 @@ class StorageStrategy(BidEnabledStrategy):
                 final_rate=final_buying_rate,
                 fit_to_limit=fit_to_limit,
                 energy_rate_change_per_update=-1 * energy_rate_increase_per_update,
-                update_interval=update_interval)
+                update_interval=update_interval,
+                rate_limit_object=min
+            )
         for time_slot in generate_market_slot_list():
             try:
                 validate_storage_device(
