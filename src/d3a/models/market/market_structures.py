@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict # noqa
+import json
 
 
 class Offer:
@@ -38,6 +39,9 @@ class Offer:
                "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
             .format(s=self, rate=self.price / self.energy)
 
+    def to_JSON_string(self):
+        return json.dumps(self.__dict__)
+
     def __hash__(self):
         return hash(self.id)
 
@@ -55,6 +59,14 @@ class Offer:
     def _to_csv(self):
         rate = round(self.price / self.energy, 4)
         return self.id, rate, self.energy, self.price, self.seller
+
+
+def offer_from_JSON_string(offer_string):
+    offer_dict = json.loads(offer_string)
+    real_id = offer_dict.pop('real_id')
+    offer = Offer(**offer_dict)
+    offer.real_id = real_id
+    return offer
 
 
 class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
@@ -114,6 +126,20 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
     def _to_csv(self):
         rate = round(self.offer.price / self.offer.energy, 4)
         return self[:2] + (rate, self.offer.energy) + self[3:5]
+
+    def to_JSON_string(self):
+        trade_dict = self._asdict()
+        trade_dict['offer'] = trade_dict['offer'].to_JSON_string()
+        trade_dict['residual'] = trade_dict['residual'].to_JSON_string() \
+            if trade_dict['residual'] is not None else None
+        trade_dict['time'] = trade_dict['time'].isoformat()
+        return json.dumps(trade_dict)
+
+
+def trade_from_JSON_string(trade_string):
+    trade_dict = json.loads(trade_string)
+    trade_dict['offer'] = offer_from_JSON_string(trade_dict['offer'])
+    return Trade(**trade_dict)
 
 
 class BalancingOffer(Offer):

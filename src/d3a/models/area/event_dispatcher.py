@@ -33,6 +33,7 @@ from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.d3a_core.redis_communication import REDIS_URL
+from d3a.models.market.market_structures import offer_from_JSON_string, trade_from_JSON_string
 
 log = getLogger(__name__)
 
@@ -213,20 +214,28 @@ class AreaDispatcher:
 
 
 class RedisAreaDispatcher(AreaDispatcher):
-    def __init__(self, area, redis_comm):
+    def __init__(self, area, redis_comm, redis_market_comm):
         super().__init__(area)
         self.redis = redis_comm
+        self.redis_market = redis_market_comm
         self.subscribe_to_response()
         self.subscribe_to_area_event()
         self.str_area_events = [event.name.lower() for event in AreaEvent]
+        self.str_market_events = [event.name.lower() for event in MarketEvent]
 
     def subscribe_to_response(self):
         channel = f"{self.area.slug}/area_event_response"
         self.redis.sub_to_response(channel, self.response_callback)
 
+        channel = f"{self.area.slug}/market_event_response"
+        self.redis_market.sub_to_response(channel, self.market_response_callback)
+
     def subscribe_to_area_event(self):
         channel = f"{self.area.slug}/area_event"
         self.redis.sub_to_area_event(channel, self.event_listener_redis)
+
+        channel = f"{self.area.slug}/market_event"
+        self.redis_market.sub_to_area_event(channel, self.market_event_listener_redis)
 
     def response_callback(self, payload):
         data = json.loads(payload["data"])
@@ -237,16 +246,52 @@ class RedisAreaDispatcher(AreaDispatcher):
             else:
                 raise Exception("RedisAreaDispatcher: Should never reach this point")
 
-    def publish_event(self, area_slug, event_type: Union[MarketEvent, AreaEvent], **kwargs):
+    def market_response_callback(self, payload):
+        data = json.loads(payload["data"])
+        print(f"RECEIVE RESPONSE MARKET EVENT {self.area.name}")
+        if "response" in data:
+            event_type = data["response"]
+            if event_type in self.str_market_events:
+                self.redis_market.resume_market()
+            else:
+                raise Exception("RedisAreaDispatcher: Should never reach this point")
+
+    def publish_event(self, area_slug, event_type: AreaEvent, **kwargs):
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
         dispatch_chanel = f"{area_slug}/area_event"
         self.redis.publish(dispatch_chanel, json.dumps(send_data))
+
+    def publish_market_event(self, area_slug, event_type: MarketEvent, **kwargs):
+        dispatch_chanel = f"{area_slug}/market_event"
+
+        print(f"PUBLISHING MARKET EVENT {self.area.name}")
+        for key in ["offer", "trade", "new_offer", "existing_offer"]:
+            if key in kwargs:
+                kwargs[key] = kwargs[key].to_JSON_string()
+        send_data = {"event_type": event_type.value, "kwargs": kwargs}
+
+        self.redis_market.publish(dispatch_chanel, json.dumps(send_data))
 
     def _broadcast_event_redis(self, event_type: Union[MarketEvent, AreaEvent], **kwargs):
         if isinstance(event_type, AreaEvent):
             for child in sorted(self.area.children, key=lambda _: random()):
                 self.publish_event(child.slug, event_type, **kwargs)
                 self.redis.wait()
+        elif isinstance(event_type, MarketEvent):
+            for child in sorted(self.area.children, key=lambda _: random()):
+                self.publish_market_event(child.slug, event_type, **kwargs)
+                self.redis_market.wait_market()
+
+            for time_slot, agents in self._inter_area_agents.items():
+                if time_slot not in self.area._markets.markets:
+                    # exclude past IAAs
+                    continue
+
+                if not self.area.events.is_connected:
+                    break
+                for area_name in sorted(agents, key=lambda _: random()):
+                    agents[area_name].event_listener(event_type, **kwargs)
+
         else:
             self._broadcast_notification(event_type=event_type, **kwargs)
 
@@ -261,6 +306,22 @@ class RedisAreaDispatcher(AreaDispatcher):
 
         self.redis.publish(response_channel, response_data)
 
+    def market_event_listener_redis(self, payload):
+        print(f"RECEIVING MARKET EVENT {self.area.name}")
+        data = json.loads(payload["data"])
+        kwargs = data["kwargs"]
+        for key in ["offer", "existing_offer", "new_offer"]:
+            if key in kwargs:
+                kwargs[key] = offer_from_JSON_string(kwargs[key])
+        if "trade" in kwargs:
+            kwargs["trade"] = trade_from_JSON_string(kwargs["trade"])
+        event_type = MarketEvent(data["event_type"])
+        self.event_listener(event_type=event_type, **kwargs)
+        print(f"SEND RESPONSE MARKET EVENT {self.area.name}")
+        response_channel = f"{self.area.parent.slug}/market_event_response"
+        response_data = json.dumps({"response": event_type.name.lower()})
+        self.redis_market.publish(response_channel, response_data)
+
     def broadcast_activate(self, **kwargs):
         self._broadcast_event_redis(AreaEvent.ACTIVATE, **kwargs)
 
@@ -273,6 +334,10 @@ class RedisAreaDispatcher(AreaDispatcher):
     def broadcast_balancing_market_cycle(self, **kwargs):
         return self._broadcast_event_redis(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
 
+    @property
+    def broadcast_callback(self):
+        return self._broadcast_event_redis
+
 
 class RedisAreaCommunicator:
     def __init__(self):
@@ -280,6 +345,7 @@ class RedisAreaCommunicator:
         self.pubsub = self.redis_db.pubsub()
         self.pubsub_response = self.redis_db.pubsub()
         self.area_event = Event()
+        self.market_event = Event()
 
     def publish(self, channel, data):
         self.redis_db.publish(channel, data)
@@ -287,6 +353,13 @@ class RedisAreaCommunicator:
     def wait(self):
         self.area_event.wait()
         self.area_event.clear()
+
+    def wait_market(self):
+        self.market_event.wait()
+        self.market_event.clear()
+
+    def resume_market(self):
+        self.market_event.set()
 
     def resume(self):
         self.area_event.set()
@@ -304,7 +377,8 @@ class DispatcherFactory:
     def __init__(self, area):
         self.event_dispatching_via_redis = \
             ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
-        self.dispatcher = RedisAreaDispatcher(area, RedisAreaCommunicator()) \
+        self.dispatcher = RedisAreaDispatcher(area, RedisAreaCommunicator(),
+                                              RedisAreaCommunicator()) \
             if self.event_dispatching_via_redis else AreaDispatcher(area)
 
     def __call__(self):
