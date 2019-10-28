@@ -16,10 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+import json
 from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
 from copy import deepcopy
+from threading import Event
+from redis import StrictRedis
 
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
@@ -30,8 +33,53 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a_interface.constants_limits import ConstSettings
+from d3a.d3a_core.redis_communication import REDIS_URL
 
 log = getLogger(__name__)
+
+
+class RedisMarketCommunicator:
+    def __init__(self):
+        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.pubsub = self.redis_db.pubsub()
+        self.area_event = Event()
+
+    def publish(self, channel, data):
+        self.redis_db.publish(channel, data)
+
+    def sub_to_market_event(self, channel, callback):
+        self.pubsub.subscribe(**{channel: callback})
+        self.pubsub.run_in_thread(daemon=True)
+
+
+class MarketRedisApi:
+    def __init__(self, market):
+        self.redis = RedisMarketCommunicator()
+        self.market = market
+        self.redis = RedisMarketCommunicator()
+        self.event_channel_callback_mapping = {
+            f"{market.id}/OFFER": self._offer,
+            f"{market.id}/DELETE_OFFER": self._delete_offer,
+            f"{market.id}/ACCEPT_OFFER": self._accept_offer,
+        }
+        for channel, callback in self.event_channel_callback_mapping.items():
+            self.redis.sub_to_market_event(channel, callback)
+
+    @staticmethod
+    def _parse_payload(payload):
+        return json.loads(payload["data"])
+
+    def _accept_offer(self, payload):
+        self.market.accept_offer(**self._parse_payload(payload))
+        self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE", {"status": "ready"})
+
+    def _offer(self, payload):
+        self.market.offer(**self._parse_payload(payload))
+        self.redis.publish(f"{self.market.id}/OFFER/RESPONSE", {"status": "ready"})
+
+    def _delete_offer(self, payload):
+        self.market.delete_offer(**self._parse_payload(payload))
+        self.redis.publish(f"{self.market.id}/DELETE_OFFER/RESPONSE", {"status": "ready"})
 
 
 class OneSidedMarket(Market):
@@ -40,6 +88,8 @@ class OneSidedMarket(Market):
         self.area = area
         super().__init__(time_slot, area, notification_listener, readonly)
         self.bc_interface = MarketBlockchainInterface(area)
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            self.redis_api = MarketRedisApi(self)
 
     def __repr__(self):  # pragma: no cover
         return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
