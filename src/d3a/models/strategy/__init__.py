@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import json
 from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
 
@@ -28,6 +29,7 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.events import EventMixin
 from d3a.d3a_core.util import append_or_create_key
+from d3a.models.market import RedisMarketCommunicator
 
 log = getLogger(__name__)
 
@@ -161,6 +163,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         super(BaseStrategy, self).__init__()
         self.offers = Offers(self)
         self.enabled = True
+        self.redis = RedisMarketCommunicator()
 
     parameters = None
 
@@ -209,11 +212,28 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             buyer = self.owner.name
         if not isinstance(offer, Offer):
             offer = market.offers[offer]
-        trade = market.accept_offer(offer, buyer, energy=energy, trade_rate=trade_rate,
-                                    already_tracked=already_tracked,
-                                    trade_bid_info=trade_bid_info, buyer_origin=buyer_origin)
+        trade = self._accept_offer(market, offer, buyer, energy, trade_rate, already_tracked,
+                                   trade_bid_info, buyer_origin)
+
         self.offers.bought_offer(trade.offer, market.id)
         return trade
+
+    def _accept_offer(self, market, offer, buyer, energy, trade_rate, already_tracked,
+                      trade_bid_info, buyer_origin):
+
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            data = {"offer_or_id": offer.to_JSON_string,
+                    "buyer": buyer,
+                    "energy": energy,
+                    "trade_rate": trade_rate,
+                    "already_tracked": already_tracked,
+                    "trade_bid_info": trade_bid_info._to_JSON_string,
+                    "buyer_origin": buyer_origin}
+            self.redis.publish(f"{market.id}/ACCEPT_OFFER", json.dumps(data))
+        else:
+            return market.accept_offer(offer_or_id=offer, buyer=buyer, energy=energy,
+                                       trade_rate=trade_rate, already_tracked=already_tracked,
+                                       trade_bid_info=trade_bid_info, buyer_origin=buyer_origin)
 
     def post(self, **data):
         self.event_data_received(data)
@@ -232,7 +252,14 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         for market in self.area.markets.values():
             for offer in list(market.offers.values()):
                 if offer.seller == self.owner.name:
-                    market.delete_offer(offer)
+                    self._delete_offer(market, offer)
+
+    def _delete_offer(self, market, offer):
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            data = {"offer_or_id": offer.to_JSON_string}
+            self.redis.publish(f"{market.id}/DELETE_OFFER", json.dumps(data))
+        else:
+            market.delete_offer(offer)
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):

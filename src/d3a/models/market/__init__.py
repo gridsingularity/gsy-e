@@ -15,20 +15,37 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from numpy.random import random
+
 import uuid
+import sys
 from logging import getLogger
 from typing import Dict, List  # noqa
-import sys
-
+from numpy.random import random
 from pendulum import DateTime
+from threading import Event
+from redis import StrictRedis
 
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
+from d3a.d3a_core.redis_communication import REDIS_URL
 
 log = getLogger(__name__)
+
+
+class RedisMarketCommunicator:
+    def __init__(self):
+        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.pubsub = self.redis_db.pubsub()
+        self.area_event = Event()
+
+    def publish(self, channel, data):
+        self.redis_db.publish(channel, data)
+
+    def sub_to_market_event(self, channel, callback):
+        self.pubsub.subscribe(**{channel: callback})
+        self.pubsub.run_in_thread(daemon=True)
 
 
 class Market:
