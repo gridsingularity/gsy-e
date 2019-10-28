@@ -106,6 +106,19 @@ def bid_from_JSON_string(bid_string):
     return Bid(**bid_dict)
 
 
+class TradeBidInfo(namedtuple('TradeBidInfo',
+                              ('original_bid_rate', 'propagated_bid_rate',
+                               'original_offer_rate', 'propagated_offer_rate',
+                               'trade_rate'))):
+    def to_JSON_string(self):
+        return json.dumps(self._asdict())
+
+
+def trade_bid_info_from_JSON_string(info_string):
+    info_dict = json.loads(info_string)
+    return Bid(**info_dict)
+
+
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
                                  'buyer', 'residual', 'already_tracked',
                                  'offer_bid_trade_info', 'seller_origin', 'buyer_origin'))):
