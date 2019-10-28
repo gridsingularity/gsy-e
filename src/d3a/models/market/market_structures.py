@@ -116,7 +116,7 @@ class TradeBidInfo(namedtuple('TradeBidInfo',
 
 def trade_bid_info_from_JSON_string(info_string):
     info_dict = json.loads(info_string)
-    return Bid(**info_dict)
+    return TradeBidInfo(**info_dict)
 
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
