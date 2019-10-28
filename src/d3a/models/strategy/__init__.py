@@ -30,6 +30,7 @@ from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, Market
 from d3a.events import EventMixin
 from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market import RedisMarketCommunicator
+from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 
 log = getLogger(__name__)
 
@@ -164,6 +165,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offers = Offers(self)
         self.enabled = True
         self.redis = RedisMarketCommunicator()
+        self.trade_buffer = None
 
     parameters = None
 
@@ -227,13 +229,26 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     "energy": energy,
                     "trade_rate": trade_rate,
                     "already_tracked": already_tracked,
-                    "trade_bid_info": trade_bid_info._to_JSON_string,
+                    "trade_bid_info": trade_bid_info.to_JSON_string,
                     "buyer_origin": buyer_origin}
+            self.redis.sub_to_market_event(f"{market.id}/ACCEPT_OFFER/RESPONSE",
+                                           self._accept_offer_response)
             self.redis.publish(f"{market.id}/ACCEPT_OFFER", json.dumps(data))
+            self.redis.wait()
+            return self.trade_buffer
         else:
             return market.accept_offer(offer_or_id=offer, buyer=buyer, energy=energy,
                                        trade_rate=trade_rate, already_tracked=already_tracked,
                                        trade_bid_info=trade_bid_info, buyer_origin=buyer_origin)
+
+    def _accept_offer_response(self, payload):
+        data = json.loads(payload)
+        if data["status"] == "ready":
+            trade = trade_from_JSON_string(data["trade"])
+            self.trade_buffer = trade
+            self.redis.resume()
+        else:
+            raise Exception(f"Error:: Type: {data['exception']}, message: {data['error_message']}")
 
     def post(self, **data):
         self.event_data_received(data)
@@ -257,9 +272,21 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def _delete_offer(self, market, offer):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             data = {"offer_or_id": offer.to_JSON_string}
+            self.redis.sub_to_market_event(f"{market.id}/DELETE_OFFER/RESPONSE",
+                                           self._delete_offer_response)
             self.redis.publish(f"{market.id}/DELETE_OFFER", json.dumps(data))
+            self.redis.wait()
         else:
             market.delete_offer(offer)
+
+    def _delete_offer_response(self, payload):
+        data = json.loads(payload)
+        if data["status"] == "ready":
+            offer = offer_from_JSON_string(data["trade"])
+            self.offer_buffer = offer
+            self.redis.resume()
+        else:
+            raise Exception(f"Error:: Type: {data['exception']}, message: {data['error_message']}")
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):

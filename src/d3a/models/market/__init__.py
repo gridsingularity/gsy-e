@@ -40,6 +40,13 @@ class RedisMarketCommunicator:
         self.pubsub = self.redis_db.pubsub()
         self.area_event = Event()
 
+    def wait(self):
+        self.area_event.wait()
+        self.area_event.clear()
+
+    def resume(self):
+        self.area_event.set()
+
     def publish(self, channel, data):
         self.redis_db.publish(channel, data)
 
