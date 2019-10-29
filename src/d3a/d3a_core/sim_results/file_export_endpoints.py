@@ -106,9 +106,7 @@ class FileExportEndpoints:
             for ii, label in enumerate(data.labels()):
                 out_dict[area.slug][label].append(row[ii])
 
-    def update_plot_stats(self, area):
-        self._get_stats_from_market_data(self.plot_stats, area, False)
-        self._get_stats_from_market_data(self.plot_balancing_stats, area, True)
+    def _populate_plots_stats_for_supply_demand_curve(self, area):
         if ConstSettings.IAASettings.MARKET_TYPE == 3:
             if len(area.past_markets) == 0:
                 return
@@ -124,6 +122,11 @@ class FileExportEndpoints:
             self.cumulative_offers[area.slug][market.time_slot] = market.state.cumulative_offers
             self.cumulative_bids[area.slug][market.time_slot] = market.state.cumulative_bids
             self.clearing[area.slug][market.time_slot] = market.state.clearing
+
+    def update_plot_stats(self, area):
+        self._get_stats_from_market_data(self.plot_stats, area, False)
+        self._get_stats_from_market_data(self.plot_balancing_stats, area, True)
+        self._populate_plots_stats_for_supply_demand_curve(area)
 
     def _calculate_devices_sold_bought_energy(self, res_dict, market):
         if market is None:

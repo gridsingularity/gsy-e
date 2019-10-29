@@ -556,7 +556,7 @@ class ExportAndPlot:
                                           name=time_slot.format(DATE_TIME_FORMAT +
                                                                 ' Clearing-Energy'))
                     data.append(data_obj)
-                    xmax = max(xmax, clearing_point[1]) * 6
+                    xmax = max(xmax, clearing_point[1]) * 3
 
             plot_dir = os.path.join(self.plot_dir, subdir, 'mcp')
             mkdir_from_str(plot_dir)
