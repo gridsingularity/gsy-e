@@ -100,22 +100,28 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         if ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM == 1:
             cumulative_bids = self._accumulated_energy_per_rate(self.sorted_bids)
             cumulative_offers = self._accumulated_energy_per_rate(self.sorted_offers)
+            self.state.cumulative_bids[self.area.now] = cumulative_bids
+            self.state.cumulative_offers[self.area.now] = cumulative_offers
             ascending_rate_bids = OrderedDict(reversed(list(cumulative_bids.items())))
             return self._clearing_point_from_supply_demand_curve(
                 ascending_rate_bids, cumulative_offers)
         elif ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM == 2:
             cumulative_bids = self._discrete_point_curve(self.sorted_bids, math.floor)
             cumulative_offers = self._discrete_point_curve(self.sorted_offers, math.ceil)
-            max_rate = max(
-                math.floor(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
-                math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)
-            )
-
-            self.state.cumulative_offers[self.area.now] = \
-                self._smooth_discrete_point_curve(cumulative_offers, max_rate)
-            self.state.cumulative_bids[self.area.now] = \
-                self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
+            max_rate = self._populate_market_cumulative_offer_and_bid(cumulative_bids,
+                                                                      cumulative_offers)
             return self._get_clearing_point(max_rate)
+
+    def _populate_market_cumulative_offer_and_bid(self, cumulative_bids, cumulative_offers):
+        max_rate = max(
+            math.ceil(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
+            math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)
+        )
+        self.state.cumulative_offers[self.area.now] = \
+            self._smooth_discrete_point_curve(cumulative_offers, max_rate)
+        self.state.cumulative_bids[self.area.now] = \
+            self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
+        return max_rate
 
     def match_offers_bids(self):
         if not (self.area.current_tick + 1) % int(self.mcp_update_point) == 0:

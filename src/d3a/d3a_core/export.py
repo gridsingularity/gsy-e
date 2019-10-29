@@ -523,19 +523,22 @@ class ExportAndPlot:
                 self.plot_supply_demand_curve(child, new_subdir)
 
     def _plot_supply_demand_curve(self, subdir: str, area: Area):
-
-        for past_market in area.past_markets:
+        if area.slug not in self.export_data.clearing:
+            return
+        for market_slot, clearing in self.export_data.clearing[area.slug].items():
             data = list()
             xmax = 0
-            for time_slot, supply_curve in past_market.state.cumulative_offers.items():
+            for time_slot, supply_curve in \
+                    self.export_data.cumulative_offers[area.slug][market_slot].items():
                 data.append(self.render_supply_demand_curve(supply_curve, time_slot, True))
-            for time_slot, demand_curve in past_market.state.cumulative_bids.items():
+            for time_slot, demand_curve in \
+                    self.export_data.cumulative_bids[area.slug][market_slot].items():
                 data.append(self.render_supply_demand_curve(demand_curve, time_slot, False))
 
             if len(data) == 0:
                 continue
 
-            for time_slot, clearing_point in past_market.state.clearing.items():
+            for time_slot, clearing_point in clearing.items():
                 # clearing_point[0] --> Clearing-Rate
                 # clearing_point[1] --> Clearing-Energy
                 if len(clearing_point) != 0:
@@ -558,7 +561,7 @@ class ExportAndPlot:
             plot_dir = os.path.join(self.plot_dir, subdir, 'mcp')
             mkdir_from_str(plot_dir)
             output_file = os.path.join(plot_dir,
-                                       f'supply_demand_{past_market.time_slot_str}.html')
+                                       f'supply_demand_{market_slot}.html')
             PlotlyGraph.plot_line_graph('supply_demand_curve', 'Energy (kWh)',
                                         'Rate (ct./kWh)', data, output_file, xmax)
 
