@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from behave import then, given
 from math import isclose
 from pendulum import today
+import os
+from d3a.d3a_core.util import d3a_path
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     get_number_of_unmatched_loads
@@ -281,6 +283,4 @@ def trades_happen(context):
 
 @given('the file {setup_json} is used for the area setup')
 def json_setup_file(context, setup_json):
-    import os
-    from d3a.d3a_core.util import d3a_path
     os.environ["D3A_SETUP_PATH"] = os.path.join(d3a_path, 'setup', setup_json)
