@@ -19,17 +19,13 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.read_user_profile import read_and_convert_identity_profile_to_float
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.device_validator import validate_market_maker
-from d3a_interface.exceptions import D3ADeviceException
 
 
 class MarketMakerStrategy(CommercialStrategy):
     parameters = ('energy_rate', 'grid_connected')
 
     def __init__(self, energy_rate=None, grid_connected=True):
-        try:
-            validate_market_maker(grid_connected=grid_connected)
-        except D3ADeviceException as e:
-            raise D3ADeviceException(str(e))
+        validate_market_maker(grid_connected=grid_connected)
         energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE \
             if energy_rate is None else read_and_convert_identity_profile_to_float(energy_rate)
         GlobalConfig.market_maker_rate = energy_rate

@@ -21,17 +21,13 @@ from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.device_validator import validate_commercial_producer
-from d3a_interface.exceptions import D3ADeviceException
 
 
 class CommercialStrategy(BaseStrategy):
     parameters = ('energy_rate',)
 
     def __init__(self, energy_rate=None):
-        try:
-            validate_commercial_producer(energy_rate=energy_rate)
-        except D3ADeviceException as e:
-            raise D3ADeviceException(str(e))
+        validate_commercial_producer(energy_rate=energy_rate)
         super().__init__()
         self.energy_rate = energy_rate
         self.energy_per_slot_kWh = int(sys.maxsize)
