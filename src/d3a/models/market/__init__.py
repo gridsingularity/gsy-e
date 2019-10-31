@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
 import sys
+import json
 from logging import getLogger
 from typing import Dict, List  # noqa
 from numpy.random import random
@@ -48,11 +49,14 @@ class RedisMarketCommunicator:
         self.area_event.set()
 
     def publish(self, channel, data):
-        self.redis_db.publish(channel, data)
+        self.redis_db.publish(channel, json.dumps(data))
 
     def sub_to_market_event(self, channel, callback):
         self.pubsub.subscribe(**{channel: callback})
         self.pubsub.run_in_thread(daemon=True)
+
+    def unsub_from_market_event(self, channel):
+        self.pubsub.unsubscribe(channel)
 
 
 class Market:

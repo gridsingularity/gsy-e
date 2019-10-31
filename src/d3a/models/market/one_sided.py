@@ -52,20 +52,29 @@ class MarketRedisApi:
     @staticmethod
     def _parse_payload(payload):
         data_dict = json.loads(payload["data"])
-        if "trade_bid_info" in data_dict:
+        if isinstance(data_dict, str):
+            data_dict = json.loads(data_dict)
+        if "trade_bid_info" in data_dict and data_dict["trade_bid_info"] is not None:
             data_dict["trade_bid_info"] = \
                 trade_bid_info_from_JSON_string(data_dict["trade_bid_info"])
-        if "offer_or_id" in data_dict:
+        if "offer_or_id" in data_dict and data_dict["offer_or_id"] is not None:
             if isinstance(data_dict["offer_or_id"], str):
                 data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
+        if "offer" in data_dict and data_dict["offer"] is not None:
+            if isinstance(data_dict["offer_or_id"], str):
+                data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
+
         return data_dict
 
     def _accept_offer(self, payload):
         try:
             trade = self.market.accept_offer(**self._parse_payload(payload))
+            aa = trade.to_JSON_string()
             self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
-                               {"status": "ready", "trade": trade.to_JSON_string})
+                               {"status": "ready", "trade": aa})
         except Exception as e:
+            # import traceback
+            # print(traceback.format_exc())
             self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
                                {"status": "error",  "exception": str(type(e)),
                                 "error_message": str(e)})
@@ -74,9 +83,9 @@ class MarketRedisApi:
         try:
             offer = self.market.offer(**self._parse_payload(payload))
             self.redis.publish(f"{self.market.id}/OFFER/RESPONSE",
-                               {"status": "ready", "offer": offer.to_JSON_string})
+                               {"status": "ready", "offer": offer.to_JSON_string()})
         except Exception as e:
-            self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
+            self.redis.publish(f"{self.market.id}/OFFER/RESPONSE",
                                {"status": "error",  "exception": str(type(e)),
                                 "error_message": str(e)})
 
@@ -85,7 +94,7 @@ class MarketRedisApi:
             self.market.delete_offer(**self._parse_payload(payload))
             self.redis.publish(f"{self.market.id}/DELETE_OFFER/RESPONSE", {"status": "ready"})
         except Exception as e:
-            self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
+            self.redis.publish(f"{self.market.id}/DELETE_OFFER/RESPONSE",
                                {"status": "error", "exception": str(type(e)),
                                 "error_message": str(e)})
 
@@ -191,6 +200,7 @@ class OneSidedMarket(Market):
         if energy is None:
             energy = offer.energy
 
+        # TODO: can this line be removed due to duplication with line 231 ???
         original_offer = offer
         residual_offer = None
 

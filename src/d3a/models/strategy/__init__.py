@@ -224,31 +224,41 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                       trade_bid_info, buyer_origin):
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            data = {"offer_or_id": offer.to_JSON_string,
+            data = {"offer_or_id": offer.to_JSON_string(),
                     "buyer": buyer,
                     "energy": energy,
                     "trade_rate": trade_rate,
                     "already_tracked": already_tracked,
-                    "trade_bid_info": trade_bid_info.to_JSON_string,
+                    "trade_bid_info": trade_bid_info.to_JSON_string()
+                    if trade_bid_info is not None else None,
                     "buyer_origin": buyer_origin}
-            self.redis.sub_to_market_event(f"{market.id}/ACCEPT_OFFER/RESPONSE",
-                                           self._accept_offer_response)
-            self.redis.publish(f"{market.id}/ACCEPT_OFFER", json.dumps(data))
+
+            response_channel = f"{market.id}/ACCEPT_OFFER/RESPONSE"
+            self.redis.sub_to_market_event(response_channel, self._accept_offer_response)
+            market_chanel = f"{market.id}/ACCEPT_OFFER"
+            self.redis.publish(market_chanel, json.dumps(data))
             self.redis.wait()
-            return self.trade_buffer
+            # self.redis.unsub_from_market_event(market_chanel)
+            trade = self.trade_buffer
+            self.trade_buffer = None
+            return trade
         else:
             return market.accept_offer(offer_or_id=offer, buyer=buyer, energy=energy,
                                        trade_rate=trade_rate, already_tracked=already_tracked,
                                        trade_bid_info=trade_bid_info, buyer_origin=buyer_origin)
 
     def _accept_offer_response(self, payload):
-        data = json.loads(payload)
+        data = json.loads(payload["data"])
+        if isinstance(data, str):
+            data = json.loads(data)
         if data["status"] == "ready":
             trade = trade_from_JSON_string(data["trade"])
+            print("66666", type(trade))
             self.trade_buffer = trade
             self.redis.resume()
         else:
-            raise Exception(f"Error:: Type: {data['exception']}, message: {data['error_message']}")
+            raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
+                            f"{data['exception']}:  {data['error_message']}")
 
     def post(self, **data):
         self.event_data_received(data)
@@ -271,7 +281,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def _delete_offer(self, market, offer):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            data = {"offer_or_id": offer.to_JSON_string}
+            data = {"offer_or_id": offer.to_JSON_string()}
             self.redis.sub_to_market_event(f"{market.id}/DELETE_OFFER/RESPONSE",
                                            self._delete_offer_response)
             self.redis.publish(f"{market.id}/DELETE_OFFER", json.dumps(data))
@@ -280,13 +290,16 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             market.delete_offer(offer)
 
     def _delete_offer_response(self, payload):
-        data = json.loads(payload)
+        data = json.loads(payload["data"])
+        if isinstance(data, str):
+            data = json.loads(data)
         if data["status"] == "ready":
             offer = offer_from_JSON_string(data["trade"])
             self.offer_buffer = offer
             self.redis.resume()
         else:
-            raise Exception(f"Error:: Type: {data['exception']}, message: {data['error_message']}")
+            raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
+                            f"{data['exception']}:  {data['error_message']}")
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):
