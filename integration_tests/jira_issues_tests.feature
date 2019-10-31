@@ -112,5 +112,5 @@ Feature: Jira Issues Tests
     And d3a is installed
     And d3a uses an two-sided pay-as-bid market
     And the file jira/d3asim_1637.json is used for the area setup
-    When we run the simulation with setup file json_file and parameters [24, 15, 15, 0, 1]
+    When we run the simulation with setup file json_file and parameters [24, 30, 30, 0, 1]
     Then there should be no unmatched loads
