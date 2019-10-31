@@ -59,7 +59,6 @@ def get_setup(config):
 
                 ],
                 transfer_fee_pct=0, transfer_fee_const=0,
-
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,

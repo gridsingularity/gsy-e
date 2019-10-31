@@ -164,7 +164,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         super(BaseStrategy, self).__init__()
         self.offers = Offers(self)
         self.enabled = True
-        self.redis = RedisMarketCommunicator()
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            self.redis = RedisMarketCommunicator()
         self.trade_buffer = None
 
     parameters = None
@@ -235,10 +236,13 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
             response_channel = f"{market.id}/ACCEPT_OFFER/RESPONSE"
             self.redis.sub_to_market_event(response_channel, self._accept_offer_response)
+
             market_chanel = f"{market.id}/ACCEPT_OFFER"
-            self.redis.publish(market_chanel, json.dumps(data))
+            self.redis.publish(market_chanel, data)
             self.redis.wait()
+
             # self.redis.unsub_from_market_event(market_chanel)
+
             trade = self.trade_buffer
             self.trade_buffer = None
             return trade
@@ -253,7 +257,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             data = json.loads(data)
         if data["status"] == "ready":
             trade = trade_from_JSON_string(data["trade"])
-            print("66666", type(trade))
             self.trade_buffer = trade
             self.redis.resume()
         else:
@@ -282,10 +285,12 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def _delete_offer(self, market, offer):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             data = {"offer_or_id": offer.to_JSON_string()}
-            self.redis.sub_to_market_event(f"{market.id}/DELETE_OFFER/RESPONSE",
-                                           self._delete_offer_response)
-            self.redis.publish(f"{market.id}/DELETE_OFFER", json.dumps(data))
+            response_channel = f"{market.id}/DELETE_OFFER/RESPONSE"
+            self.redis.sub_to_market_event(response_channel, self._delete_offer_response)
+            market_chanel = f"{market.id}/DELETE_OFFER"
+            self.redis.publish(market_chanel, data)
             self.redis.wait()
+            self.redis.unsub_from_market_event(market_chanel)
         else:
             market.delete_offer(offer)
 

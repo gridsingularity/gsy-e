@@ -73,8 +73,6 @@ class MarketRedisApi:
             self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
                                {"status": "ready", "trade": aa})
         except Exception as e:
-            # import traceback
-            # print(traceback.format_exc())
             self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
                                {"status": "error",  "exception": str(type(e)),
                                 "error_message": str(e)})
