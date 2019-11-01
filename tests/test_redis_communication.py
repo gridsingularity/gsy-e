@@ -69,18 +69,18 @@ class TestRedisEventDispatching(unittest.TestCase):
         pass
 
     def test_subscribe(self):
-        mock_redis.sub_to_area_event.assert_any_call(f"storage/area_event",
-                                                     self.device2.dispatcher.event_listener_redis)
-        mock_redis.sub_to_area_event.assert_any_call(f"load/area_event",
-                                                     self.device1.dispatcher.event_listener_redis)
-        mock_redis.sub_to_area_event.assert_any_call(f"area/area_event",
-                                                     self.area.dispatcher.event_listener_redis)
-        mock_redis.sub_to_response.assert_any_call(f"storage/area_event_response",
-                                                   self.device2.dispatcher.response_callback)
-        mock_redis.sub_to_response.assert_any_call(f"load/area_event_response",
-                                                   self.device1.dispatcher.response_callback)
-        mock_redis.sub_to_response.assert_any_call(f"area/area_event_response",
-                                                   self.area.dispatcher.response_callback)
+        mock_redis.sub_to_area_event.assert_any_call(
+            f"storage/area_event", self.device2.dispatcher.area_event_listener_redis)
+        mock_redis.sub_to_area_event.assert_any_call(
+            f"load/area_event", self.device1.dispatcher.area_event_listener_redis)
+        mock_redis.sub_to_area_event.assert_any_call(
+            f"area/area_event", self.area.dispatcher.area_event_listener_redis)
+        mock_redis.sub_to_response.assert_any_call(
+            f"storage/area_event_response", self.device2.dispatcher.response_callback)
+        mock_redis.sub_to_response.assert_any_call(
+            f"load/area_event_response", self.device1.dispatcher.response_callback)
+        mock_redis.sub_to_response.assert_any_call(
+            f"area/area_event_response", self.area.dispatcher.response_callback)
 
     def tests_broadcast(self):
         for area_event in [AreaEvent.TICK, AreaEvent.MARKET_CYCLE, AreaEvent.ACTIVATE,
@@ -97,7 +97,7 @@ class TestRedisEventDispatching(unittest.TestCase):
         for area_event in [AreaEvent.TICK, AreaEvent.MARKET_CYCLE, AreaEvent.ACTIVATE,
                            AreaEvent.BALANCING_MARKET_CYCLE]:
             payload = {"data": json.dumps({"event_type": area_event.value, "kwargs": {}})}
-            self.device1.dispatcher.event_listener_redis(payload)
+            self.device1.dispatcher.area_event_listener_redis(payload)
             response_channel = f"{self.area.slug}/area_event_response"
             response_data = json.dumps({"response": area_event.name.lower()})
             mock_redis.publish.assert_any_call(response_channel, response_data)
