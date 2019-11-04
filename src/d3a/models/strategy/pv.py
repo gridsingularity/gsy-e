@@ -42,7 +42,7 @@ class PVStrategy(BaseStrategy):
                  initial_selling_rate:
                  float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  final_selling_rate:
-                 float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+                 float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
                  fit_to_limit: bool = True,
                  update_interval=duration(
                      minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
