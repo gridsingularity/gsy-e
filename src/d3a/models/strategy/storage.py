@@ -49,10 +49,14 @@ class StorageStrategy(BidEnabledStrategy):
                  battery_capacity_kWh: float = StorageSettings.CAPACITY,
                  max_abs_battery_power_kW: float = StorageSettings.MAX_ABS_POWER,
                  cap_price_strategy: bool = False,
-                 initial_selling_rate: Union[float, dict] = StorageSettings.INITIAL_SELLING_RATE,
-                 final_selling_rate: Union[float, dict] = StorageSettings.FINAL_SELLING_RATE,
-                 initial_buying_rate: Union[float, dict] = StorageSettings.INITIAL_BUYING_RATE,
-                 final_buying_rate: Union[float, dict] = StorageSettings.FINAL_BUYING_RATE,
+                 initial_selling_rate: Union[float, dict] =
+                 StorageSettings.SELLING_RATE_RANGE.initial,
+                 final_selling_rate: Union[float, dict] =
+                 StorageSettings.SELLING_RATE_RANGE.final,
+                 initial_buying_rate: Union[float, dict] =
+                 StorageSettings.BUYING_RATE_RANGE.initial,
+                 final_buying_rate: Union[float, dict] =
+                 StorageSettings.BUYING_RATE_RANGE.final,
                  fit_to_limit=True, energy_rate_increase_per_update=1,
                  energy_rate_decrease_per_update=1,
                  update_interval=duration(

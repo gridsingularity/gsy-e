@@ -6,7 +6,7 @@
     "market_count": 1,
     "cloud_coverage": 0,
     "iaa_fee": 0,
-    "start_date": "2019-10-31"
+    "start_date": "2019-11-04"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -22,11 +22,7 @@
       "RUN_REAL_TIME": false,
       "KEEP_PAST_MARKETS": false,
       "EVENT_DISPATCHING_VIA_REDIS": false,
-      "RATE_DECREASE_PER_UPDATE_RANGE": [
-        0,
-        1000
-      ],
-      "RATE_CHANGE_PER_UPDATE": [
+      "RATE_CHANGE_PER_UPDATE_RANGE": [
         0,
         1000
       ],
@@ -63,10 +59,6 @@
         10,
         100
       ],
-      "BREAK_EVEN_RANGE": [
-        0,
-        10000
-      ],
       "CAPACITY": 1.2,
       "CAPACITY_RANGE": [
         0.0001,
@@ -77,8 +69,10 @@
         0.0001,
         2000000
       ],
-      "INITIAL_BUYING_RATE": 0,
-      "FINAL_BUYING_RATE": 24.9,
+      "BUYING_RATE_RANGE": [
+        0,
+        24.9
+      ],
       "INITIAL_BUYING_RANGE": [
         0,
         10000
@@ -87,8 +81,10 @@
         0,
         10000
       ],
-      "INITIAL_SELLING_RATE": 30,
-      "FINAL_SELLING_RATE": 25,
+      "SELLING_RATE_RANGE": [
+        30,
+        25
+      ],
       "INITIAL_SELLING_RANGE": [
         0,
         10000
