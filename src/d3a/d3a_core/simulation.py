@@ -36,12 +36,13 @@ from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
+from d3a.models.powerflow import PowerFlow
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_communication import RedisSimulationCommunication
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 
@@ -149,6 +150,9 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        if GlobalConfig.POWER_FLOW:
+            self.power_flow = PowerFlow(self.area)
+            self.power_flow.run_power_flow()
         self.bc = None
         if self.use_bc:
             self.bc = BlockChainInterface()
@@ -319,7 +323,10 @@ class Simulation:
         self._update_and_send_results(is_final=True)
         if self.export_on_finish:
             log.info("Exporting simulation data.")
-            self.export.export()
+            if GlobalConfig.POWER_FLOW:
+                self.export.export(power_flow=self.power_flow)
+            else:
+                self.export.export()
 
         if self.use_repl:
             self._start_repl()

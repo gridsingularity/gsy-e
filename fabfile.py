@@ -151,6 +151,12 @@ def sync():
         local('pip install git+https://github.com/Jonasmpi/py-solc.git')
         # Install d3a-interface
         local('pip install git+https://github.com/gridsingularity/d3a-interface.git')
+        # Install pandapower
+        local('pip install pandapower')
+        # Install matplotlib
+        local('pip install matplotlib')
+        local('pip install numba')
+
     _post_check()
 
 
