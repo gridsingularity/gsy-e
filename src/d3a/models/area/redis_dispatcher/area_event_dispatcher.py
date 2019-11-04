@@ -1,14 +1,13 @@
 import json
 from random import random
 from d3a.events import AreaEvent
-from d3a.models.area.redis_dispatcher.redis_communicator import RedisAreaCommunicator
 
 
 class RedisAreaEventDispatcher:
-    def __init__(self, area, root_dispatcher):
+    def __init__(self, area, root_dispatcher, redis):
         self.area = area
         self.root_dispatcher = root_dispatcher
-        self.redis = RedisAreaCommunicator()
+        self.redis = redis
         self.str_area_events = [event.name.lower() for event in AreaEvent]
         self.subscribe_to_event_responses()
         self.subscribe_to_events()

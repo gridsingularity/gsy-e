@@ -31,6 +31,8 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import RedisMarketEventDispatcher
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
+from d3a.models.area.redis_dispatcher.redis_communicator import RedisAreaCommunicator
+
 
 log = getLogger(__name__)
 
@@ -211,10 +213,10 @@ class AreaDispatcher:
 
 
 class RedisAreaDispatcher(AreaDispatcher):
-    def __init__(self, area):
+    def __init__(self, area, redis_area, redis_market):
         super().__init__(area)
-        self.area_event_dispatcher = RedisAreaEventDispatcher(area, self)
-        self.market_event_dispatcher = RedisMarketEventDispatcher(area, self)
+        self.area_event_dispatcher = RedisAreaEventDispatcher(area, self, redis_area)
+        self.market_event_dispatcher = RedisMarketEventDispatcher(area, self, redis_market)
 
     def broadcast_activate(self, **kwargs):
         self._broadcast_events(AreaEvent.ACTIVATE, **kwargs)
@@ -245,8 +247,10 @@ class DispatcherFactory:
     def __init__(self, area):
         self.event_dispatching_via_redis = \
             ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
-        self.dispatcher = RedisAreaDispatcher(area) \
-            if self.event_dispatching_via_redis else AreaDispatcher(area)
+        self.dispatcher = \
+            RedisAreaDispatcher(area, RedisAreaCommunicator(), RedisAreaCommunicator()) \
+            if self.event_dispatching_via_redis \
+            else AreaDispatcher(area)
 
     def __call__(self):
         return self.dispatcher

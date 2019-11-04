@@ -1,15 +1,14 @@
 import json
 from random import random
-from d3a.models.area.redis_dispatcher.redis_communicator import RedisAreaCommunicator
 from d3a.events import MarketEvent
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 
 
 class RedisMarketEventDispatcher:
-    def __init__(self, area, root_dispatcher):
+    def __init__(self, area, root_dispatcher, redis):
         self.area = area
         self.root_dispatcher = root_dispatcher
-        self.redis = RedisAreaCommunicator()
+        self.redis = redis
         self.subscribe_to_event_responses()
         self.subscribe_to_events()
         self.str_market_events = [event.name.lower() for event in MarketEvent]
