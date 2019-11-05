@@ -18,12 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pendulum import duration
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.device_validator import validate_finite_diesel_generator
 
 
 class FinitePowerPlant(CommercialStrategy):
     parameters = ('energy_rate', 'max_available_power_kW', )
 
     def __init__(self, energy_rate=None, max_available_power_kW=None):
+        validate_finite_diesel_generator(max_available_power_kW=max_available_power_kW)
         super().__init__(energy_rate=energy_rate)
         self.max_available_power_kW = max_available_power_kW
 
