@@ -20,15 +20,14 @@ import sys
 from d3a.models.strategy import BaseStrategy
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from d3a_interface.device_validator import validate_commercial_producer
 
 
 class CommercialStrategy(BaseStrategy):
     parameters = ('energy_rate',)
 
     def __init__(self, energy_rate=None):
-        # TODO: add this check to the device validator in d3a-interface:
-        # if energy_rate is not None and energy_rate < 0:
-        #     raise ValueError("Energy rate should be positive.")
+        validate_commercial_producer(energy_rate=energy_rate)
         super().__init__()
         self.energy_rate = energy_rate
         self.energy_per_slot_kWh = int(sys.maxsize)

@@ -20,7 +20,7 @@ from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.constants_limits import ConstSettings, RangeLimit
+from d3a_interface.constants_limits import ConstSettings
 
 
 '''
@@ -40,8 +40,10 @@ def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.PVSettings.FINAL_SELLING_RATE = 0
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 30
-    ConstSettings.StorageSettings.BUYING_RANGE = RangeLimit(0, 29.9)
-    ConstSettings.StorageSettings.SELLING_RANGE = RangeLimit(30, 30)
+    ConstSettings.StorageSettings.INITIAL_BUYING_RATE = 0
+    ConstSettings.StorageSettings.FINAL_BUYING_RATE = 29.9
+    ConstSettings.StorageSettings.INITIAL_SELLING_RATE = 30
+    ConstSettings.StorageSettings.FINAL_SELLING_RATE = 30
 
     area = Area(
         'Grid',
