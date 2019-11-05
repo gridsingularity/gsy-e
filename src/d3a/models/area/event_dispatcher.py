@@ -232,9 +232,9 @@ class RedisAreaDispatcher(AreaDispatcher):
 
     def _broadcast_events(self, event_type, **kwargs):
         if isinstance(event_type, AreaEvent):
-            self.area_event_dispatcher.broadcast_area_event_redis(event_type, **kwargs)
+            self.area_event_dispatcher.broadcast_event_redis(event_type, **kwargs)
         elif isinstance(event_type, MarketEvent):
-            self.market_event_dispatcher.broadcast_market_event_redis(event_type, **kwargs)
+            self.market_event_dispatcher.broadcast_event_redis(event_type, **kwargs)
         else:
             self._broadcast_notification(event_type, **kwargs)
 

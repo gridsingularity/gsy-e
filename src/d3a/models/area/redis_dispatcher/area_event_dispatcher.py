@@ -1,24 +1,19 @@
 import json
 from random import random
 from d3a.events import AreaEvent
+from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 
 
-class RedisAreaEventDispatcher:
+class RedisAreaEventDispatcher(RedisEventDispatcherBase):
     def __init__(self, area, root_dispatcher, redis):
-        self.area = area
-        self.root_dispatcher = root_dispatcher
-        self.redis = redis
+        super().__init__(area, root_dispatcher, redis)
         self.str_area_events = [event.name.lower() for event in AreaEvent]
-        self.subscribe_to_event_responses()
-        self.subscribe_to_events()
 
-    def subscribe_to_event_responses(self):
-        channel = f"{self.area.slug}/area_event_response"
-        self.redis.sub_to_response(channel, self.response_callback)
+    def event_channel_name(self):
+        return f"{self.area.slug}/area_event"
 
-    def subscribe_to_events(self):
-        channel = f"{self.area.slug}/area_event"
-        self.redis.sub_to_area_event(channel, self.area_event_listener_redis)
+    def event_response_channel_name(self):
+        return f"{self.area.slug}/area_event_response"
 
     def response_callback(self, payload):
         data = json.loads(payload["data"])
@@ -34,7 +29,7 @@ class RedisAreaEventDispatcher:
         dispatch_chanel = f"{area_slug}/area_event"
         self.redis.publish(dispatch_chanel, json.dumps(send_data))
 
-    def broadcast_area_event_redis(self, event_type: AreaEvent, **kwargs):
+    def broadcast_event_redis(self, event_type: AreaEvent, **kwargs):
         for child in sorted(self.area.children, key=lambda _: random()):
             self.publish_area_event(child.slug, event_type, **kwargs)
             self.redis.wait()
@@ -48,7 +43,7 @@ class RedisAreaEventDispatcher:
             for area_name in sorted(agents, key=lambda _: random()):
                 agents[area_name].event_listener(event_type, **kwargs)
 
-    def area_event_listener_redis(self, payload):
+    def event_listener_redis(self, payload):
         data = json.loads(payload["data"])
         kwargs = data["kwargs"]
         event_type = AreaEvent(data["event_type"])

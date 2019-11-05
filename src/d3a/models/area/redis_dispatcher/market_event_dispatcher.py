@@ -1,35 +1,29 @@
 import json
 from random import random
 from d3a.events import MarketEvent
+from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 
 
-class RedisMarketEventDispatcher:
+class RedisMarketEventDispatcher(RedisEventDispatcherBase):
     def __init__(self, area, root_dispatcher, redis):
-        self.area = area
-        self.root_dispatcher = root_dispatcher
-        self.redis = redis
-        self.subscribe_to_event_responses()
-        self.subscribe_to_events()
+        super().__init__(area, root_dispatcher, redis)
         self.str_market_events = [event.name.lower() for event in MarketEvent]
         self.active_trade = True
         self.deferred_events = []
 
-    def subscribe_to_event_responses(self):
-        channel = f"{self.area.slug}/market_event_response"
-        self.redis.sub_to_response(channel, self.response_callback)
+    def event_channel_name(self):
+        return f"{self.area.slug}/market_event"
 
-    def subscribe_to_events(self):
-        channel = f"{self.area.slug}/market_event"
-        self.redis.sub_to_area_event(channel, self.event_listener_redis)
+    def event_response_channel_name(self):
+        return f"{self.area.slug}/market_event_response"
 
     def event_listener_redis(self, payload):
         event_type, kwargs = self.parse_market_event_from_event_payload(payload)
 
         # If this is a trade-related event, it needs to be executed immediately, all other
         # events need to be stored for deferred execution
-        if self.active_trade and event_type in [MarketEvent.OFFER, MarketEvent.OFFER_DELETED,
-                                                MarketEvent.BID_DELETED]:
+        if self.active_trade and event_type not in self._trade_related_events:
             self.store_deferred_events_during_active_trade(payload)
         # If there is no active trade but we still have deferred events, we need to handle these.
         elif not self.active_trade and len(self.deferred_events) > 0:
@@ -61,15 +55,20 @@ class RedisMarketEventDispatcher:
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
         self.redis.publish(dispatch_chanel, json.dumps(send_data))
 
-    def broadcast_market_event_redis(self, event_type: MarketEvent, **kwargs):
+    @property
+    def _trade_related_events(self):
+        return [MarketEvent.OFFER_CHANGED, MarketEvent.TRADE,
+                MarketEvent.BID_TRADED, MarketEvent.BID_CHANGED]
+
+    def broadcast_event_redis(self, event_type: MarketEvent, **kwargs):
         # Decides whether this event is starting an active trade. This will defer
         # all events other than trade-related events.
-        if event_type == MarketEvent.OFFER_CHANGED:
+        if event_type in self._trade_related_events:
             self.active_trade = True
 
         for child in sorted(self.area.children, key=lambda _: random()):
             self.publish_event(child.slug, event_type, **kwargs)
-            if self.active_trade and event_type in [MarketEvent.OFFER_CHANGED, MarketEvent.TRADE]:
+            if self.active_trade:
                 self.redis.wait()
 
         for time_slot, agents in self.root_dispatcher._inter_area_agents.items():
@@ -83,8 +82,9 @@ class RedisMarketEventDispatcher:
                 agents[area_name].event_listener(event_type, **kwargs)
 
         # Decides whether the execution of this event has completed the trade
-        if event_type == MarketEvent.TRADE and self.active_trade is True:
+        if event_type in [MarketEvent.TRADE, MarketEvent.BID_TRADED] and self.active_trade is True:
             self.active_trade = False
+            self.run_deferred_events()
 
     def publish_response(self, event_type):
         response_channel = f"{self.area.parent.slug}/market_event_response"
@@ -112,8 +112,6 @@ class RedisMarketEventDispatcher:
             # iterable while in for loop
             while len(self.deferred_events) > 0:
                 stored_event = self.deferred_events.pop(0)
-                if type(stored_event) == str:
-                    assert False
                 event_type, kwargs = self.parse_market_event_from_event_payload(stored_event)
                 self.root_dispatcher.event_listener(event_type=event_type, **kwargs)
                 self.publish_response(event_type)
