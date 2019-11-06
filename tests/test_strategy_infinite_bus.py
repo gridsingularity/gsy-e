@@ -307,5 +307,5 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test4):
     bus_test4.event_market_cycle()
     assert len(bus_test4._bids) == 1
     assert bus_test4._bids[area_test4.test_market.id][-1].energy == sys.maxsize
-    assert bus_test4._bids[area_test4.test_market.id][-1].price == 30 * sys.maxsize
+    assert bus_test4._bids[area_test4.test_market.id][-1].price == 25 * sys.maxsize
     ConstSettings.IAASettings.MARKET_TYPE = 1
