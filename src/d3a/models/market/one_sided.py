@@ -16,15 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
-import json
 from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
 from copy import deepcopy
 
 from d3a.events.event_structures import MarketEvent
-from d3a.models.market.market_structures import Offer, Trade, trade_bid_info_from_JSON_string, \
-    offer_from_JSON_string
+from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
@@ -32,79 +30,17 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a_interface.constants_limits import ConstSettings
-from d3a.models.market import RedisMarketCommunicator
 
 log = getLogger(__name__)
-
-
-class MarketRedisApi:
-    def __init__(self, market):
-        self.market = market
-        self.redis = RedisMarketCommunicator()
-        self.event_channel_callback_mapping = {
-            f"{market.id}/OFFER": self._offer,
-            f"{market.id}/DELETE_OFFER": self._delete_offer,
-            f"{market.id}/ACCEPT_OFFER": self._accept_offer,
-        }
-        for channel, callback in self.event_channel_callback_mapping.items():
-            self.redis.sub_to_market_event(channel, callback)
-
-    @staticmethod
-    def _parse_payload(payload):
-        data_dict = json.loads(payload["data"])
-        if isinstance(data_dict, str):
-            data_dict = json.loads(data_dict)
-        if "trade_bid_info" in data_dict and data_dict["trade_bid_info"] is not None:
-            data_dict["trade_bid_info"] = \
-                trade_bid_info_from_JSON_string(data_dict["trade_bid_info"])
-        if "offer_or_id" in data_dict and data_dict["offer_or_id"] is not None:
-            if isinstance(data_dict["offer_or_id"], str):
-                data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
-        if "offer" in data_dict and data_dict["offer"] is not None:
-            if isinstance(data_dict["offer_or_id"], str):
-                data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
-
-        return data_dict
-
-    def _accept_offer(self, payload):
-        try:
-            trade = self.market.accept_offer(**self._parse_payload(payload))
-            aa = trade.to_JSON_string()
-            self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
-                               {"status": "ready", "trade": aa})
-        except Exception as e:
-            self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
-                               {"status": "error",  "exception": str(type(e)),
-                                "error_message": str(e)})
-
-    def _offer(self, payload):
-        try:
-            offer = self.market.offer(**self._parse_payload(payload))
-            self.redis.publish(f"{self.market.id}/OFFER/RESPONSE",
-                               {"status": "ready", "offer": offer.to_JSON_string()})
-        except Exception as e:
-            self.redis.publish(f"{self.market.id}/OFFER/RESPONSE",
-                               {"status": "error",  "exception": str(type(e)),
-                                "error_message": str(e)})
-
-    def _delete_offer(self, payload):
-        try:
-            self.market.delete_offer(**self._parse_payload(payload))
-            self.redis.publish(f"{self.market.id}/DELETE_OFFER/RESPONSE", {"status": "ready"})
-        except Exception as e:
-            self.redis.publish(f"{self.market.id}/DELETE_OFFER/RESPONSE",
-                               {"status": "error", "exception": str(type(e)),
-                                "error_message": str(e)})
 
 
 class OneSidedMarket(Market):
 
     def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+        # TODO: remove this reference
         self.area = area
         super().__init__(time_slot, area, notification_listener, readonly)
         self.bc_interface = MarketBlockchainInterface(area)
-        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            self.redis_api = MarketRedisApi(self)
 
     def __repr__(self):  # pragma: no cover
         return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\

@@ -23,11 +23,13 @@ from numpy.random import random
 
 
 class OneSidedAgent(InterAreaAgent):
-    def __init__(self, *, owner, higher_market, lower_market,
+    def __init__(self, *, owner, higher_market_or_id, lower_market_or_id, time_slot,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
                  engine_type=IAAEngine):
-        super().__init__(engine_type=engine_type, owner=owner, higher_market=higher_market,
-                         lower_market=lower_market, min_offer_age=min_offer_age)
+        super().__init__(engine_type=engine_type, owner=owner,
+                         higher_market_or_id=higher_market_or_id,
+                         lower_market_or_id=lower_market_or_id,
+                         time_slot=time_slot, min_offer_age=min_offer_age)
         self.name = make_iaa_name(owner)
 
     def usable_offer(self, offer):
@@ -35,6 +37,9 @@ class OneSidedAgent(InterAreaAgent):
         return all(offer.id not in engine.forwarded_offers.keys() for engine in self.engines)
 
     def _get_market_from_market_id(self, market_id):
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            # In the distributed case, this method only returns the market_id
+            return market_id
         if self.lower_market.id == market_id:
             return self.lower_market
         elif self.higher_market.id == market_id:

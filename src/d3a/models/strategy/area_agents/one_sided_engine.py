@@ -19,21 +19,25 @@ from collections import namedtuple
 from typing import Dict, Set  # noqa
 from copy import deepcopy
 from d3a.constants import FLOATING_POINT_TOLERANCE
-
+from d3a_interface.constants_limits import ConstSettings
 
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
 from d3a.models.market.grid_fees.base_model import GridFees
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
+MarketIds = namedtuple('MarketIds', ('source', 'target'))
 ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 
 class IAAEngine:
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
+    def __init__(self, name: str, market_1_or_id, market_2_or_id, min_offer_age: int,
                  owner: "InterAreaAgent"):
         self.name = name
-        self.markets = Markets(market_1, market_2)
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            self.markets = MarketIds(market_1_or_id, market_2_or_id)
+        else:
+            self.markets = Markets(market_1_or_id, market_2_or_id)
         self.min_offer_age = min_offer_age
         self.owner = owner
 
@@ -48,21 +52,31 @@ class IAAEngine:
             s=self
         )
 
+    def _offer_in_market(self, offer):
+
+        kwargs = {
+            "price": GridFees.update_forwarded_offer_with_fee(
+                        offer.price, offer.original_offer_price,
+                        self.markets.target.transfer_fee_ratio),
+            "energy": offer.energy,
+            "seller": self.owner.name,
+            "original_offer_price": offer.original_offer_price,
+            "dispatch_event": False,
+            "seller_origin": offer.seller_origin
+        }
+
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            return self.owner.offer(market_id=self.markets.target, offer_args=kwargs)
+        else:
+            return self.markets.target.offer(**kwargs)
+
     def _forward_offer(self, offer, offer_id):
         if offer.price == 0:
             self.owner.log.debug("Offer is not forwarded because price=0")
             return
 
-        forwarded_offer = self.markets.target.offer(
-            GridFees.update_forwarded_offer_with_fee(
-                offer.price, offer.original_offer_price, self.markets.target.transfer_fee_ratio
-            ),
-            offer.energy,
-            self.owner.name,
-            offer.original_offer_price,
-            dispatch_event=False,
-            seller_origin=offer.seller_origin
-        )
+        forwarded_offer = self._offer_in_market(offer)
+
         offer_info = OfferInfo(deepcopy(offer), deepcopy(forwarded_offer))
         self.forwarded_offers[forwarded_offer.id] = offer_info
         self.forwarded_offers[offer_id] = offer_info
@@ -173,7 +187,7 @@ class IAAEngine:
                         "Expected residual offer in source market trade {} - deleting "
                         "corresponding offer in target market".format(trade_source)
                     )
-                    self.markets.target.delete_offer(residual_info.forwarded)
+                    self.owner.delete_offer(self.markets.target, residual_info.forwarded)
 
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
@@ -181,7 +195,7 @@ class IAAEngine:
         elif trade.offer.id == offer_info.source_offer.id:
             # Offer was bought in source market by another party
             try:
-                self.markets.target.delete_offer(offer_info.target_offer)
+                self.owner.delete_offer(self.markets.target, offer_info.target_offer)
             except OfferNotFoundException:
                 pass
             except MarketException as ex:
@@ -209,7 +223,7 @@ class IAAEngine:
             # Offer in source market of an offer we're already offering in the target market
             # was deleted - also delete in target market
             try:
-                self.markets.target.delete_offer(offer_info.target_offer)
+                self.owner.delete_offer(self.markets.target, offer_info.target_offer)
                 self._delete_forwarded_offer_entries(offer_info.source_offer)
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent offer")
@@ -217,11 +231,11 @@ class IAAEngine:
         # but by deleting the offered_offers entries
 
     def event_offer_changed(self, *, market_id, existing_offer, new_offer):
-        market = self.owner._get_market_from_market_id(market_id)
-        if market is None:
+        market_or_id = self.owner._get_market_from_market_id(market_id)
+        if market_or_id is None:
             return
 
-        if market == self.markets.target and existing_offer.seller == self.owner.name:
+        if market_or_id == self.markets.target and existing_offer.seller == self.owner.name:
             # one of our forwarded offers was split, so save the residual offer
             # for handling the upcoming trade event
             assert existing_offer.id not in self.trade_residual, \
@@ -229,7 +243,7 @@ class IAAEngine:
 
             self.trade_residual[existing_offer.id] = new_offer
 
-        elif market == self.markets.source and existing_offer.id in self.forwarded_offers:
+        elif market_or_id == self.markets.source and existing_offer.id in self.forwarded_offers:
             # an offer in the source market was split - delete the corresponding offer
             # in the target market and forward the new residual offer
 

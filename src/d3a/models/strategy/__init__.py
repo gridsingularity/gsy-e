@@ -21,7 +21,6 @@ from typing import List, Dict, Any, Union  # noqa
 
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.market import Market
 from d3a.models.market.market_structures import Offer
 from d3a_interface.constants_limits import ConstSettings
 
@@ -167,8 +166,19 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis = RedisMarketCommunicator()
         self.trade_buffer = None
+        self.offer_buffer = None
+        # self.offer_list_buffer = None
 
     parameters = None
+
+    def _send_events_to_market(self, event_type, market_id, data, callback):
+        # TODO: This could be moved to the RedisMarketCommunicator
+        response_channel = f"{market_id}/{event_type}/RESPONSE"
+        market_channel = f"{market_id}/{event_type}"
+        self.redis.sub_to_market_event(response_channel, callback)
+        self.redis.publish(market_channel, data)
+        self.redis.wait()
+        # self.redis.unsub_from_market_event(market_channel)
 
     def area_reconfigure_event(self, *args, **kwargs):
         pass
@@ -208,23 +218,83 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             return True
 
-    def accept_offer(self, market: Market, offer, *, buyer=None, energy=None,
+    # def sorted_offers_market(self, market_or_id):
+    #     if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+    #         data = {"list": "sorted_offers"}
+    #         self._send_events_to_market("OFFER_LISTS", market_or_id, data,
+    #                                     self._offer_list_response)
+    #         offer_list = self.offer_list_buffer
+    #         assert offer_list is not None
+    #         self.offer_list_buffer = None
+    #         return offer_list
+    #     else:
+    #         return market_or_id.sorted_offers
+    #
+    # def offers_market(self, market_or_id):
+    #     if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+    #         data = {"list": "offers"}
+    #         self._send_events_to_market("OFFER_LISTS", market_or_id, data,
+    #                                     self._offer_list_response)
+    #         offer_list = self.offer_list_buffer
+    #         assert offer_list is not None
+    #         self.offer_list_buffer = None
+    #         return offer_list
+    #     else:
+    #         return market_or_id.offers
+    #
+    # # @staticmethod
+    # def _parse_offer_list(offer_list):
+    #     return [offer_from_JSON_string(offer) for offer in json.loads(offer_list)]
+    #
+    # def _offer_list_response(self, payload):
+    #     data = json.loads(payload["data"])
+    #     # TODO: is this additional parsing needed?
+    #     if isinstance(data, str):
+    #         data = json.loads(data)
+    #     if data["status"] == "ready":
+    #         self.offer_list_buffer = self._parse_offer_list(data["offer_list"])
+    #         self.redis.resume()
+
+    def offer(self, market_id, offer_args):
+        self._send_events_to_market("OFFER", market_id, offer_args, self._offer_response)
+        offer = self.offer_buffer
+        assert offer is not None
+        self.offer_buffer = None
+        return offer
+
+    def _offer_response(self, payload):
+        data = json.loads(payload["data"])
+        # TODO: is this additional parsing needed?
+        if isinstance(data, str):
+            data = json.loads(data)
+        if data["status"] == "ready":
+            self.offer_buffer = offer_from_JSON_string(data["trade"])
+            self.redis.resume()
+        else:
+            raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
+                            f"{data['exception']}:  {data['error_message']}")
+
+    def accept_offer(self, market_or_id, offer, *, buyer=None, energy=None,
                      already_tracked=False, trade_rate: float = None,
                      trade_bid_info: float = None, buyer_origin=None):
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            if not isinstance(market_or_id, str):
+                market_or_id = market_or_id.id
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
-            offer = market.offers[offer]
-        trade = self._accept_offer(market, offer, buyer, energy, trade_rate, already_tracked,
+            offer = self.offers_market(market_or_id)[offer]
+        trade = self._accept_offer(market_or_id, offer, buyer, energy, trade_rate, already_tracked,
                                    trade_bid_info, buyer_origin)
 
-        self.offers.bought_offer(trade.offer, market.id)
+        self.offers.bought_offer(trade.offer, market_or_id)
         return trade
 
-    def _accept_offer(self, market, offer, buyer, energy, trade_rate, already_tracked,
+    def _accept_offer(self, market_or_id, offer, buyer, energy, trade_rate, already_tracked,
                       trade_bid_info, buyer_origin):
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            assert isinstance(market_or_id, str)
             data = {"offer_or_id": offer.to_JSON_string(),
                     "buyer": buyer,
                     "energy": energy,
@@ -234,30 +304,26 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     if trade_bid_info is not None else None,
                     "buyer_origin": buyer_origin}
 
-            response_channel = f"{market.id}/ACCEPT_OFFER/RESPONSE"
-            self.redis.sub_to_market_event(response_channel, self._accept_offer_response)
-
-            market_chanel = f"{market.id}/ACCEPT_OFFER"
-            self.redis.publish(market_chanel, data)
-            self.redis.wait()
-
-            # self.redis.unsub_from_market_event(market_chanel)
-
+            self._send_events_to_market("ACCEPT_OFFER", market_or_id, data,
+                                        self._accept_offer_response)
             trade = self.trade_buffer
             self.trade_buffer = None
+            assert trade is not None
             return trade
         else:
-            return market.accept_offer(offer_or_id=offer, buyer=buyer, energy=energy,
-                                       trade_rate=trade_rate, already_tracked=already_tracked,
-                                       trade_bid_info=trade_bid_info, buyer_origin=buyer_origin)
+            return market_or_id.accept_offer(offer_or_id=offer, buyer=buyer, energy=energy,
+                                             trade_rate=trade_rate,
+                                             already_tracked=already_tracked,
+                                             trade_bid_info=trade_bid_info,
+                                             buyer_origin=buyer_origin)
 
     def _accept_offer_response(self, payload):
         data = json.loads(payload["data"])
+        # TODO: is this additional parsing needed?
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            trade = trade_from_JSON_string(data["trade"])
-            self.trade_buffer = trade
+            self.trade_buffer = trade_from_JSON_string(data["trade"])
             self.redis.resume()
         else:
             raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
@@ -280,27 +346,24 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         for market in self.area.markets.values():
             for offer in list(market.offers.values()):
                 if offer.seller == self.owner.name:
-                    self._delete_offer(market, offer)
+                    self.delete_offer(market, offer)
 
-    def _delete_offer(self, market, offer):
+    def delete_offer(self, market_or_id, offer):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             data = {"offer_or_id": offer.to_JSON_string()}
-            response_channel = f"{market.id}/DELETE_OFFER/RESPONSE"
-            self.redis.sub_to_market_event(response_channel, self._delete_offer_response)
-            market_chanel = f"{market.id}/DELETE_OFFER"
-            self.redis.publish(market_chanel, data)
-            self.redis.wait()
-            self.redis.unsub_from_market_event(market_chanel)
+            self._send_events_to_market("DELETE_OFFER", market_or_id, data,
+                                        self._delete_offer_response)
         else:
-            market.delete_offer(offer)
+            market_or_id.delete_offer(offer)
 
     def _delete_offer_response(self, payload):
         data = json.loads(payload["data"])
+        # TODO: is this additional parsing needed?
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            offer = offer_from_JSON_string(data["trade"])
-            self.offer_buffer = offer
+            # offer = offer_from_JSON_string(data["trade"])
+            # self.offer_buffer = offer
             self.redis.resume()
         else:
             raise Exception(f"Error when receiving response on channel {payload['channel']}:: "

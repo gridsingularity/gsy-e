@@ -22,37 +22,33 @@ from d3a_interface.constants_limits import ConstSettings
 
 
 class InterAreaAgent(BaseStrategy):
-    parameters = ('owner', 'higher_market', 'lower_market', 'min_offer_age')
+    parameters = ('owner', 'higher_market_or_id', 'lower_market_or_id', 'min_offer_age',
+                  'time_slot')
 
-    def __init__(self, *, engine_type, owner, higher_market, lower_market,
+    def __init__(self, *, engine_type, owner, higher_market_or_id, lower_market_or_id, time_slot,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
         """
-        Equalize markets
-
-        :param higher_market:
-        :type higher_market: Market
-        :param lower_market:
-        :type lower_market: Market
         :param min_offer_age: Minimum age of offer before transferring
         """
         super().__init__()
         self.owner = owner
         self._validate_constructor_arguments(min_offer_age)
         self.engines = [
-            engine_type('High -> Low', higher_market, lower_market, min_offer_age,
+            engine_type('High -> Low', higher_market_or_id, lower_market_or_id, min_offer_age,
                         self),
-            engine_type('Low -> High', lower_market, higher_market, min_offer_age,
+            engine_type('Low -> High', lower_market_or_id, higher_market_or_id, min_offer_age,
                         self),
         ]
 
-        self.time_slot = higher_market.time_slot.format(TIME_FORMAT)
+        self.time_slot = time_slot.format(TIME_FORMAT)
 
         # serialization parameters
-        self.higher_market = higher_market
-        self.lower_market = lower_market
+        self.higher_market = higher_market_or_id
+        self.lower_market = lower_market_or_id
         self.min_offer_age = min_offer_age
 
-    def _validate_constructor_arguments(self, min_offer_age):
+    @staticmethod
+    def _validate_constructor_arguments(min_offer_age):
         assert 0 <= min_offer_age <= 360
 
     def area_reconfigure_event(self, min_offer_age):
