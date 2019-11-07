@@ -18,22 +18,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.appliance.pv import PVAppliance
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.storage import StorageStrategy
-from d3a_interface.constants_limits import ConstSettings, RangeLimit
+from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
 
     ConstSettings.IAASettings.MARKET_TYPE = 3
-    ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
+    ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
+    ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 1
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.StorageSettings.BUYING_RANGE = RangeLimit(24.99, 25)
-    ConstSettings.StorageSettings.SELLING_RANGE = RangeLimit(30, 25.01)
+    ConstSettings.StorageSettings.INITIAL_BUYING_RATE = 24.99
+    ConstSettings.StorageSettings.FINAL_BUYING_RATE = 25
+    ConstSettings.StorageSettings.INITIAL_SELLING_RATE = 30
+    ConstSettings.StorageSettings.FINAL_SELLING_RATE = 25.01
 
     area = Area(
         'Grid',
@@ -41,22 +41,32 @@ def get_setup(config):
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=24,
-                                                                       hrs_of_day=list(
-                                                                           range(24)),
-                                                                       final_buying_rate=35),
+                    Area('H1 General Load1', strategy=LoadHoursStrategy(
+                        avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        initial_buying_rate=28.8, fit_to_limit=False,
+                        energy_rate_increase_per_update=0),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(
-                        initial_soc=50),
+                    Area('H1 General Load2', strategy=LoadHoursStrategy(
+                        avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        initial_buying_rate=18.8, fit_to_limit=False,
+                        energy_rate_increase_per_update=0),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(
-                        initial_soc=50),
+                    Area('H1 General Load3', strategy=LoadHoursStrategy(
+                        avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        initial_buying_rate=8.8, fit_to_limit=False,
+                        energy_rate_increase_per_update=0),
                          appliance=SwitchableAppliance()),
-                    Area('H1 PV', strategy=PVStrategy(4),
-                         appliance=PVAppliance()),
-                    Area('H1 CEP',
-                         strategy=CommercialStrategy(energy_rate=30),
+                    Area('H1 CEP1',
+                         strategy=FinitePowerPlant(energy_rate=5.1, max_available_power_kW=0.1),
+                         appliance=SimpleAppliance()),
+                    Area('H1 CEP2',
+                         strategy=FinitePowerPlant(energy_rate=15.5, max_available_power_kW=0.1),
+                         appliance=SimpleAppliance()),
+                    Area('H1 CEP3',
+                         strategy=FinitePowerPlant(energy_rate=25.001, max_available_power_kW=0.1),
+                         appliance=SimpleAppliance()),
+                    Area('H1 CEP4',
+                         strategy=FinitePowerPlant(energy_rate=28.001, max_available_power_kW=0.1),
                          appliance=SimpleAppliance()),
                 ]
             ),

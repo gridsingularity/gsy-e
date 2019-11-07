@@ -6,7 +6,7 @@
     "market_count": 1,
     "cloud_coverage": 0,
     "iaa_fee": 0,
-    "start_date": "2019-09-30"
+    "start_date": "2019-11-04"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -22,52 +22,40 @@
       "RUN_REAL_TIME": false,
       "KEEP_PAST_MARKETS": false,
       "EVENT_DISPATCHING_VIA_REDIS": false,
-      "RATE_DECREASE_PER_UPDATE_RANGE": [
+      "RATE_CHANGE_PER_UPDATE_LIMIT": [
         0,
         1000
       ],
-      "RATE_CHANGE_PER_UPDATE": [
-        0,
-        1000
-      ],
-      "INITIAL_RATE_OPTIONS": [
-        1,
-        2,
-        3
-      ],
-      "NUM_CLONES_RANGE": [
+      "NUM_CLONES_LIMIT": [
         0,
         100
       ],
       "MIN_NUM_TICKS": 10,
+      "MIN_SLOT_LENGTH_M": 2,
       "MAX_SLOT_LENGTH_M": 60,
       "MIN_TICK_LENGTH_S": 1
     },
     "CommercialProducerSettings": {
-      "ENERGY_RATE_RANGE": [
+      "ENERGY_RATE_LIMIT": [
         0,
         10000
       ],
-      "MAX_POWER_KW_RANGE": [
+      "MAX_POWER_KW_LIMIT": [
         0,
         10000000
       ]
     },
     "StorageSettings": {
-      "MIN_SOC_RANGE": [
+      "MIN_SOC_LIMIT": [
         10,
         99
       ],
-      "INITIAL_CHARGE_RANGE": [
+      "INITIAL_CHARGE_LIMIT": [
         10,
         100
       ],
-      "BREAK_EVEN_RANGE": [
-        0,
-        10000
-      ],
       "CAPACITY": 1.2,
-      "CAPACITY_RANGE": [
+      "CAPACITY_LIMIT": [
         0.0001,
         2000000
       ],
@@ -76,27 +64,27 @@
         0.0001,
         2000000
       ],
-      "BUYING_RANGE": [
+      "BUYING_RATE_RANGE": [
         0,
         24.9
       ],
-      "INITIAL_BUYING_RANGE": [
+      "INITIAL_BUYING_RATE_LIMIT": [
         0,
         10000
       ],
-      "FINAL_BUYING_RANGE": [
+      "FINAL_BUYING_RATE_LIMIT": [
         0,
         10000
       ],
-      "SELLING_RANGE": [
+      "SELLING_RATE_RANGE": [
         30,
         25
       ],
-      "INITIAL_SELLING_RANGE": [
+      "INITIAL_SELLING_RATE_LIMIT": [
         0,
         10000
       ],
-      "FINAL_SELLING_RANGE": [
+      "FINAL_SELLING_RATE_LIMIT": [
         0,
         10000
       ],
@@ -104,47 +92,53 @@
       "SELL_ON_MOST_EXPENSIVE_MARKET": false
     },
     "LoadSettings": {
-      "AVG_POWER_RANGE": [
+      "AVG_POWER_LIMIT": [
         0,
         9223372036854775807
       ],
-      "HOURS_RANGE": [
+      "HOURS_LIMIT": [
         0,
         24
       ],
-      "INITIAL_BUYING_RATE": 0,
-      "INITIAL_BUYING_RATE_RANGE": [
+      "BUYING_RATE_RANGE": [
+        0,
+        35
+      ],
+      "INITIAL_BUYING_RATE_LIMIT": [
         0,
         10000
       ],
-      "FINAL_BUYING_RATE": 35,
-      "FINAL_BUYING_RATE_RANGE": [
+      "FINAL_BUYING_RATE_LIMIT": [
         0,
         10000
       ]
     },
     "PVSettings": {
-      "PANEL_COUNT_RANGE": [
+      "DEFAULT_PANEL_COUNT": 1,
+      "PANEL_COUNT_LIMIT": [
         1,
         10000
       ],
-      "MIN_SELL_RATE_RANGE": [
+      "FINAL_SELLING_RATE_LIMIT": [
         0,
         10000
       ],
-      "INITIAL_RATE_RANGE": [
+      "INITIAL_SELLING_RATE_LIMIT": [
         0,
         10000
       ],
-      "MAX_PANEL_OUTPUT_W_RANGE": [
+      "MAX_PANEL_OUTPUT_W_LIMIT": [
         0,
         9223372036854775807
       ],
-      "FINAL_SELLING_RATE": 0,
+      "SELLING_RATE_RANGE": [
+        30,
+        0
+      ],
       "DEFAULT_POWER_PROFILE": 0,
-      "CLOUD_COVERAGE_RANGE": [
+      "CLOUD_COVERAGE_LIMIT": [
         0,
-        3
+        4
       ],
       "MAX_PANEL_OUTPUT_W": 160
     },
@@ -154,17 +148,17 @@
     },
     "IAASettings": {
       "FEE_PERCENTAGE": 0,
-      "FEE_PERCENTAGE_RANGE": [
+      "FEE_PERCENTAGE_LIMIT": [
         0,
         100
       ],
       "FEE_CONSTANT": 0,
-      "FEE_CONSTANT_RANGE": [
+      "FEE_CONSTANT_LIMIT": [
         0,
         9223372036854775807
       ],
       "MARKET_TYPE": 1,
-      "MARKET_TYPE_RANGE": [
+      "MARKET_TYPE_LIMIT": [
         1,
         3
       ],

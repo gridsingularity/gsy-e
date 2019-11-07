@@ -27,7 +27,6 @@ from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 from d3a.models.strategy import BidEnabledStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_storage_device
-from d3a_interface.exceptions import D3ADeviceException
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -50,10 +49,14 @@ class StorageStrategy(BidEnabledStrategy):
                  battery_capacity_kWh: float = StorageSettings.CAPACITY,
                  max_abs_battery_power_kW: float = StorageSettings.MAX_ABS_POWER,
                  cap_price_strategy: bool = False,
-                 initial_selling_rate: Union[float, dict] = StorageSettings.SELLING_RANGE[0],
-                 final_selling_rate: Union[float, dict] = StorageSettings.SELLING_RANGE[1],
-                 initial_buying_rate: Union[float, dict] = StorageSettings.BUYING_RANGE[0],
-                 final_buying_rate: Union[float, dict] = StorageSettings.BUYING_RANGE[1],
+                 initial_selling_rate: Union[float, dict] =
+                 StorageSettings.SELLING_RATE_RANGE.initial,
+                 final_selling_rate: Union[float, dict] =
+                 StorageSettings.SELLING_RATE_RANGE.final,
+                 initial_buying_rate: Union[float, dict] =
+                 StorageSettings.BUYING_RATE_RANGE.initial,
+                 final_buying_rate: Union[float, dict] =
+                 StorageSettings.BUYING_RATE_RANGE.final,
                  fit_to_limit=True, energy_rate_increase_per_update=1,
                  energy_rate_decrease_per_update=1,
                  update_interval=duration(
@@ -65,12 +68,9 @@ class StorageStrategy(BidEnabledStrategy):
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
 
-        try:
-            validate_storage_device(initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
-                                    battery_capacity_kWh=battery_capacity_kWh,
-                                    max_abs_battery_power_kW=max_abs_battery_power_kW)
-        except D3ADeviceException as e:
-            raise D3ADeviceException(str(e))
+        validate_storage_device(initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
+                                battery_capacity_kWh=battery_capacity_kWh,
+                                max_abs_battery_power_kW=max_abs_battery_power_kW)
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
@@ -84,12 +84,9 @@ class StorageStrategy(BidEnabledStrategy):
                                  energy_rate_change_per_update=energy_rate_decrease_per_update,
                                  update_interval=update_interval)
         for time_slot in generate_market_slot_list():
-            try:
-                validate_storage_device(
-                    initial_selling_rate=self.offer_update.initial_rate[time_slot],
-                    final_selling_rate=self.offer_update.final_rate[time_slot])
-            except D3ADeviceException as e:
-                raise D3ADeviceException(str(e))
+            validate_storage_device(
+                initial_selling_rate=self.offer_update.initial_rate[time_slot],
+                final_selling_rate=self.offer_update.final_rate[time_slot])
         self.bid_update = \
             UpdateFrequencyMixin(
                 initial_rate=initial_buying_rate,
@@ -100,12 +97,9 @@ class StorageStrategy(BidEnabledStrategy):
                 rate_limit_object=min
             )
         for time_slot in generate_market_slot_list():
-            try:
-                validate_storage_device(
-                    initial_buying_rate=self.bid_update.initial_rate[time_slot],
-                    final_buying_rate=self.bid_update.final_rate[time_slot])
-            except D3ADeviceException as e:
-                raise D3ADeviceException(str(e))
+            validate_storage_device(
+                initial_buying_rate=self.bid_update.initial_rate[time_slot],
+                final_buying_rate=self.bid_update.final_rate[time_slot])
         self.state = \
             StorageState(initial_soc=initial_soc,
                          initial_energy_origin=initial_energy_origin,
@@ -145,14 +139,11 @@ class StorageStrategy(BidEnabledStrategy):
                                fit_to_limit=None, update_interval=None,
                                energy_rate_change_per_update=None):
 
-        try:
-            validate_storage_device(initial_selling_rate=initial_selling_rate,
-                                    final_selling_rate=final_selling_rate,
-                                    initial_buying_rate=initial_buying_rate,
-                                    final_buying_rate=final_buying_rate,
-                                    energy_rate_change_per_update=energy_rate_change_per_update)
-        except D3ADeviceException as e:
-            raise D3ADeviceException(str(e))
+        validate_storage_device(initial_selling_rate=initial_selling_rate,
+                                final_selling_rate=final_selling_rate,
+                                initial_buying_rate=initial_buying_rate,
+                                final_buying_rate=final_buying_rate,
+                                energy_rate_change_per_update=energy_rate_change_per_update)
         if cap_price_strategy is not None:
             self.cap_price_strategy = cap_price_strategy
         self._update_rate_parameters(initial_selling_rate, final_selling_rate,
