@@ -38,10 +38,10 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                "{s.markets.source.time_slot:%H:%M}>".format(s=self)
 
     def _forward_bid(self, bid):
-        if bid.buyer == self.markets.target.area.name and \
-           bid.seller == self.markets.source.area.name:
+        if bid.buyer == self.markets.target.name and \
+           bid.seller == self.markets.source.name:
             return
-        if self.owner.name == self.markets.target.area.name:
+        if self.owner.name == self.markets.target.name:
             return
 
         forwarded_bid = self.markets.target.bid(
@@ -49,7 +49,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 bid.price, bid.original_bid_price, self.markets.source.transfer_fee_ratio),
             bid.energy,
             self.owner.name,
-            self.markets.target.area.name,
+            self.markets.target.name,
             original_bid_price=bid.original_bid_price,
             buyer_origin=bid.buyer_origin
         )

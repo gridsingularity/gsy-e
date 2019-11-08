@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from d3a.events.event_structures import MarketEvent
 from d3a.d3a_core.exceptions import InvalidTrade
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 import platform
 
 
@@ -37,15 +37,15 @@ BC_EVENT_MAP = {
 
 
 class MarketBlockchainInterface:
-    def __init__(self, area):
+    def __init__(self, bc):
         self.offers_deleted = {}  # type: Dict[str, Offer]
         self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
         self._trades_by_id = {}  # type: Dict[str, Trade]
 
-        if area and area.bc:
-            self.bc_interface = area.bc
-            self.bc_contract = create_market_contract(area.bc,
-                                                      area.config.sim_duration.in_seconds(),
+        if bc:
+            self.bc_interface = bc
+            self.bc_contract = create_market_contract(bc,
+                                                      GlobalConfig.sim_duration.in_seconds(),
                                                       [self.bc_listener])
         else:
             self.bc_interface = None
