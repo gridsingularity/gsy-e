@@ -69,7 +69,7 @@ class AreaMarkets:
                 else:
                     first = False
                 self.log.trace("Moving {t:%H:%M} {m} to past"
-                               .format(t=timeframe, m="past_markets[timeframe].area.name"))
+                               .format(t=timeframe, m=past_markets[timeframe].name))
 
     def _delete_past_markets(self, past_markets, timeframe):
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:

@@ -164,8 +164,8 @@ class Market:
         return [o for o in self.sorted_offers if
                 abs(o.price / o.energy - rate) < FLOATING_POINT_TOLERANCE]
 
-    def update_clock(self):
-        self.current_tick += 1
+    def update_clock(self, current_tick):
+        self.current_tick = current_tick
 
     @property
     def now(self) -> DateTime:
