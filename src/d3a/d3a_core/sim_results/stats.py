@@ -135,7 +135,7 @@ class MarketEnergyBills:
             self.market_fees[area.name] = 0.0
         for market in self._get_past_markets_from_area(area, past_market_types):
             # Converting cents to Euros
-            self.market_fees[market.area.name] += market.market_fee / 100.0
+            self.market_fees[market.name] += market.market_fee / 100.0
         for child in area.children:
             self._accumulate_market_fees(child, past_market_types)
 

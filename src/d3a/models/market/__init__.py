@@ -20,20 +20,26 @@ import uuid
 from logging import getLogger
 from typing import Dict, List  # noqa
 import sys
-
 from pendulum import DateTime
+from collections import namedtuple
 
-from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
+from d3a.constants import DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
+from d3a_interface.constants_limits import GlobalConfig
 
 log = getLogger(__name__)
 
+TransferFees = namedtuple("TransferFees", ('transfer_fee_pct', 'transfer_fee_const'))
+
 
 class Market:
-    def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
-        self.area = area
+
+    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+                 transfer_fees: TransferFees = None, name=None):
+        self.name = name
+        self.bc = bc
         self.id = str(uuid.uuid4())
         self.time_slot = time_slot
         self.time_slot_str = time_slot.format(DATE_TIME_FORMAT) \
@@ -47,8 +53,10 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
-        self.transfer_fee_ratio = area.transfer_fee_pct / 100
-        self.transfer_fee_const = area.transfer_fee_const
+        self.transfer_fee_ratio = transfer_fees.transfer_fee_pct / 100 \
+            if transfer_fees is not None else 0
+        self.transfer_fee_const = transfer_fees.transfer_fee_const \
+            if transfer_fees is not None else 0
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
         self.traded_energy = {}
@@ -63,7 +71,7 @@ class Market:
         self.accumulated_trade_energy = 0
         if notification_listener:
             self.notification_listeners.append(notification_listener)
-
+        self.current_tick = 0
         self.device_registry = DeviceRegistry.REGISTRY
 
     def add_listener(self, listener):
@@ -156,12 +164,12 @@ class Market:
         return [o for o in self.sorted_offers if
                 abs(o.price / o.energy - rate) < FLOATING_POINT_TOLERANCE]
 
+    def update_clock(self):
+        self.current_tick += 1
+
     @property
-    def _now(self):
-        if self.area:
-            return self.area.now
-        log.warning("No area available. Using real system time!")
-        return DateTime.now(tz=TIME_ZONE)
+    def now(self) -> DateTime:
+        return self.time_slot.add(seconds=GlobalConfig.tick_length.seconds * self.current_tick)
 
     def set_actual_energy(self, time, reporter, value):
         if reporter in self.accumulated_actual_energy_agg:
