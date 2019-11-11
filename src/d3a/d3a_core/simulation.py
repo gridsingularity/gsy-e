@@ -36,7 +36,7 @@ from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
-from d3a.models.powerflow import PowerFlow
+from d3a.models.powerflow.pandapower import PandaPowerFlow
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation
@@ -151,7 +151,7 @@ class Simulation:
 
         self.area = self.setup_module.get_setup(self.simulation_config)
         if GlobalConfig.POWER_FLOW:
-            self.power_flow = PowerFlow(self.area)
+            self.power_flow = PandaPowerFlow(self.area)
             self.power_flow.run_power_flow()
         self.bc = None
         if self.use_bc:
