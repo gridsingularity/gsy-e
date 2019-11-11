@@ -127,7 +127,7 @@ class ExportAndPlot:
         if export_plots:
             self.plot_dir = os.path.join(self.directory, 'plot')
             if power_flow is not None:
-                power_flow.export_powerflow_results(self.plot_dir)
+                power_flow.export_power_flow_results(self.plot_dir)
 
             if not os.path.exists(self.plot_dir):
                 os.makedirs(self.plot_dir)

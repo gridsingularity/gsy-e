@@ -492,3 +492,19 @@ def str_to_pendulum(input_str: str):
 def convert_str_to_pauseafter_intervall(start_time, input_str):
     pause_time = str_to_pendulum(input_str)
     return pause_time - start_time
+
+
+def convert_unit_to_mega(unit):
+    return unit * 1e-6
+
+
+def convert_unit_to_kilo(unit):
+    return unit * 1e-3
+
+
+def convert_kilo_to_mega(unit_k):
+    return unit_k * 1e-3
+
+
+def convert_percent_to_ratio(factor):
+    return factor / 100
