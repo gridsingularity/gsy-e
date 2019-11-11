@@ -75,6 +75,9 @@ class AreaMarkets:
             delete_markets = [pm for pm in past_markets if
                               pm not in self.markets.values()]
             for pm in delete_markets:
+                if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+                    print(f"DELETING PAST REDIS {past_markets[pm]}")
+                    past_markets[pm].redis_publisher.stop()
                 past_markets[pm].offers = {}
                 past_markets[pm].trades = {}
                 past_markets[pm].offer_history = {}

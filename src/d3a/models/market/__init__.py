@@ -27,6 +27,9 @@ from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
+from d3a.models.area.redis_dispatcher.market_notify_event_subscriber import \
+    MarketNotifyEventPublisher
+from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
 
@@ -61,7 +64,10 @@ class Market:
         self.max_offer_price = 0
         self.accumulated_trade_price = 0
         self.accumulated_trade_energy = 0
-        if notification_listener:
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            from d3a.models.area.redis_dispatcher.redis_communicator import RedisAreaCommunicator
+            self.redis_publisher = MarketNotifyEventPublisher(self.id, RedisAreaCommunicator())
+        elif notification_listener:
             self.notification_listeners.append(notification_listener)
 
         self.device_registry = DeviceRegistry.REGISTRY
@@ -70,9 +76,12 @@ class Market:
         self.notification_listeners.append(listener)
 
     def _notify_listeners(self, event, **kwargs):
-        # Deliver notifications in random order to ensure fairness
-        for listener in sorted(self.notification_listeners, key=lambda l: random()):
-            listener(event, market_id=self.id, **kwargs)
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+            self.redis_publisher.publish_event(event, **kwargs)
+        else:
+            # Deliver notifications in random order to ensure fairness
+            for listener in sorted(self.notification_listeners, key=lambda l: random()):
+                listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(self, trade, offer, buyer, already_tracked=False):
         # FIXME: The following updates need to be done in response to the BC event

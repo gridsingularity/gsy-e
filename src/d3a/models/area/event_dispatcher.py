@@ -31,6 +31,8 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import RedisMarketEventDispatcher
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
+from d3a.models.area.redis_dispatcher.market_notify_event_subscriber \
+    import MarketNotifyEventSubscriber
 from d3a.models.area.redis_dispatcher.redis_communicator import RedisAreaCommunicator
 
 
@@ -213,10 +215,12 @@ class AreaDispatcher:
 
 
 class RedisAreaDispatcher(AreaDispatcher):
-    def __init__(self, area, redis_area, redis_market):
+    def __init__(self, area, redis_area, redis_market, redis_market_notify):
         super().__init__(area)
         self.area_event_dispatcher = RedisAreaEventDispatcher(area, self, redis_area)
         self.market_event_dispatcher = RedisMarketEventDispatcher(area, self, redis_market)
+        self.market_notify_event_dispatcher = MarketNotifyEventSubscriber(
+            area, self, redis_market_notify)
 
     def broadcast_activate(self, **kwargs):
         self._broadcast_events(AreaEvent.ACTIVATE, **kwargs)
@@ -225,6 +229,7 @@ class RedisAreaDispatcher(AreaDispatcher):
         return self._broadcast_events(AreaEvent.TICK, **kwargs)
 
     def broadcast_market_cycle(self, **kwargs):
+        self.market_notify_event_dispatcher.cycle_market_channels()
         return self._broadcast_events(AreaEvent.MARKET_CYCLE, **kwargs)
 
     def broadcast_balancing_market_cycle(self, **kwargs):
@@ -248,7 +253,8 @@ class DispatcherFactory:
         self.event_dispatching_via_redis = \
             ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
         self.dispatcher = \
-            RedisAreaDispatcher(area, RedisAreaCommunicator(), RedisAreaCommunicator()) \
+            RedisAreaDispatcher(area, RedisAreaCommunicator(), RedisAreaCommunicator(),
+                                RedisAreaCommunicator()) \
             if self.event_dispatching_via_redis \
             else AreaDispatcher(area)
 

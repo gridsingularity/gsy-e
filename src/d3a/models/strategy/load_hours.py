@@ -182,14 +182,14 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 if max_energy < FLOATING_POINT_TOLERANCE:
                     return
                 if acceptable_offer.energy > max_energy:
+                    self.energy_requirement_Wh[market.time_slot] = 0
                     self.accept_offer(market, acceptable_offer, energy=max_energy,
                                       buyer_origin=self.owner.name)
-                    self.energy_requirement_Wh[market.time_slot] = 0
                     self.hrs_per_day[current_day] -= self._operating_hours(max_energy)
                 else:
-                    self.accept_offer(market, acceptable_offer, buyer_origin=self.owner.name)
                     self.energy_requirement_Wh[market.time_slot] -= \
                         acceptable_offer.energy * 1000.0
+                    self.accept_offer(market, acceptable_offer, buyer_origin=self.owner.name)
                     self.hrs_per_day[current_day] -= self._operating_hours(acceptable_offer.energy)
 
         except MarketException:
