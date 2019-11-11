@@ -190,6 +190,8 @@ class Area:
             self._cycle_markets()
         self.dispatcher.broadcast_tick()
         self.current_tick += 1
+        for market in self._markets.markets.values():
+            market.update_clock(self.current_tick)
 
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
