@@ -67,6 +67,7 @@ class StorageStrategy(BidEnabledStrategy):
 
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
+        self.initial_soc = initial_soc
 
         validate_storage_device(initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
                                 battery_capacity_kWh=battery_capacity_kWh,
