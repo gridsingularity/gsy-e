@@ -506,5 +506,5 @@ def convert_kilo_to_mega(unit_k):
     return unit_k * 1e-3
 
 
-def convert_percent_to_ratio(factor):
-    return factor / 100
+def convert_percent_to_ratio(unit_percent):
+    return unit_percent / 100
