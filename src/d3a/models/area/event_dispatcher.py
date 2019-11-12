@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from numpy.random import random
-from typing import Union
+from typing import Union, Dict  # noqa
 from logging import getLogger
+from pendulum import DateTime  # noqa
 
 from d3a.events.event_structures import MarketEvent, AreaEvent
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
@@ -43,8 +44,8 @@ EVENT_DISPATCHING_VIA_REDIS = ConstSettings.GeneralSettings.EVENT_DISPATCHING_VI
 
 class AreaDispatcher:
     def __init__(self, area):
-        self._inter_area_agents = {}  # type: Dict[DateTime, Dict[String, OneSidedAgent]]
-        self._balancing_agents = {}  # type: Dict[DateTime, Dict[String, BalancingAgent]]
+        self._inter_area_agents = {}  # type: Dict[DateTime, Dict[str, OneSidedAgent]]
+        self._balancing_agents = {}  # type: Dict[DateTime, Dict[str, BalancingAgent]]
         self.area = area
 
     @property
@@ -215,12 +216,11 @@ class AreaDispatcher:
 
 
 class RedisAreaDispatcher(AreaDispatcher):
-    def __init__(self, area, redis_area, redis_market, redis_market_notify):
+    def __init__(self, area, redis_area, redis_market):
         super().__init__(area)
         self.area_event_dispatcher = RedisAreaEventDispatcher(area, self, redis_area)
         self.market_event_dispatcher = RedisMarketEventDispatcher(area, self, redis_market)
-        self.market_notify_event_dispatcher = MarketNotifyEventSubscriber(
-            area, self, redis_market_notify)
+        self.market_notify_event_dispatcher = MarketNotifyEventSubscriber(area, self)
 
     def broadcast_activate(self, **kwargs):
         self._broadcast_events(AreaEvent.ACTIVATE, **kwargs)
@@ -253,8 +253,7 @@ class DispatcherFactory:
         self.event_dispatching_via_redis = \
             ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
         self.dispatcher = \
-            RedisAreaDispatcher(area, RedisAreaCommunicator(), RedisAreaCommunicator(),
-                                RedisAreaCommunicator()) \
+            RedisAreaDispatcher(area, RedisAreaCommunicator(), RedisAreaCommunicator()) \
             if self.event_dispatching_via_redis \
             else AreaDispatcher(area)
 

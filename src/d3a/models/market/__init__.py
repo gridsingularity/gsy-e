@@ -26,6 +26,7 @@ from pendulum import DateTime
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.models.market.market_structures import Offer, Trade, Bid  # noqa
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 from d3a.models.area.redis_dispatcher.market_notify_event_subscriber import \
     MarketNotifyEventPublisher
@@ -65,8 +66,7 @@ class Market:
         self.accumulated_trade_price = 0
         self.accumulated_trade_energy = 0
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            from d3a.models.area.redis_dispatcher.redis_communicator import RedisAreaCommunicator
-            self.redis_publisher = MarketNotifyEventPublisher(self.id, RedisAreaCommunicator())
+            self.redis_publisher = MarketNotifyEventPublisher(self.id)
         elif notification_listener:
             self.notification_listeners.append(notification_listener)
 

@@ -1,5 +1,6 @@
 import json
 from random import random
+from copy import deepcopy
 from d3a.events import MarketEvent
 from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
@@ -28,7 +29,6 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
 
     def event_listener_redis(self, payload):
         event_type, kwargs = self.parse_market_event_from_event_payload(payload)
-        # print(f"AREA {self.area.name} RECEIVED EVENT {event_type}")
 
         # If this is a trade-related event, it needs to be executed immediately, all other
         # events need to be stored for deferred execution
@@ -59,8 +59,6 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
             if event_type not in self.str_market_events:
                 raise Exception("RedisAreaDispatcher: Should never reach this point")
             else:
-                # if self.active_trade:
-                # self.redis.resume()
                 self.events_to_wait[MarketEvent(event_type_id)].set()
 
     def publish_event(self, area_slug, event_type: MarketEvent, **kwargs):
@@ -111,7 +109,6 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
         return event_type, kwargs
 
     def store_deferred_events_during_active_trade(self, json_event):
-        from copy import deepcopy
         self.deferred_events.append(deepcopy(json_event))
 
     def run_deferred_events(self):
