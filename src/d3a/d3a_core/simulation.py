@@ -68,7 +68,7 @@ class Simulation:
             paused=paused,
             pause_after=pause_after
         )
-
+        self.eta = duration(seconds=0)
         self.simulation_config = simulation_config
         self.use_repl = repl
         self.export_on_finish = not no_export
@@ -224,7 +224,7 @@ class Simulation:
             self._execute_simulation(slot_resume, tick_resume, console)
 
     def _update_and_send_results(self, is_final=False):
-        self.endpoint_buffer.update_stats(self.area, self.status)
+        self.endpoint_buffer.update_stats(self.area, self.status, self.eta)
         if not self.redis_connection.is_enabled():
             return
         if is_final:
@@ -253,12 +253,13 @@ class Simulation:
                     duration(seconds=self.paused_time)
             )
 
+            self.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
             log.info(
                 "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
                 slot_no + 1,
                 slot_count,
                 (slot_no + 1) / slot_count * 100,
-                run_duration, run_duration / (slot_no + 1) * slot_count
+                run_duration, self.eta
             )
             if self.is_stopped:
                 log.info("Received stop command.")
@@ -390,7 +391,7 @@ class Simulation:
         if self.paused:
             start = time.monotonic()
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
-            self.endpoint_buffer.update_stats(self.area, self.status)
+            self.endpoint_buffer.update_stats(self.area, self.status, self.eta)
             self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
             while self.paused:
                 self._handle_input(console, 0.1)
