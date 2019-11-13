@@ -14,10 +14,10 @@ bus_h2 = pp.create_bus(net, vn_kv=0.4, name="Bus House 2")
 
 # create bus elements
 pp.create_ext_grid(net, bus=bus1, vm_pu=1.0, name="Grid Connection")
-pp.create_load(net, bus=bus_h1, p_kw=0.1, q_kvar=0.005, name="H1 Load")
-pp.create_sgen(net, bus=bus_h1, p_kw=-0.1, name="H1 PV")
-pp.create_load(net, bus=bus_h2, p_kw=0.1, name="H2 Load")
-pp.create_storage(net, bus=bus_h2, p_kw=-0.1, max_e_kwh=3, name="H2 Storage")
+pp.create_load(net, bus=bus_h1, p_mw=0.1e-3, q_mvar=0.005e-3, name="H1 Load")
+pp.create_sgen(net, bus=bus_h1, p_mw=-0.1e-3, name="H1 PV")
+pp.create_load(net, bus=bus_h2, p_mw=0.1e-3, name="H2 Load")
+pp.create_storage(net, bus=bus_h2, p_mw=-0.1e-3, max_e_mwh=3e-3, name="H2 Storage")
 
 # create branch elements
 trafo = pp.create_transformer(net, hv_bus=bus1, lv_bus=bus_trafo,

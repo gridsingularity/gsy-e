@@ -36,11 +36,10 @@ log = getLogger(__name__)
 
 class OneSidedMarket(Market):
 
-    def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
-        # TODO: remove this reference
-        self.area = area
-        super().__init__(time_slot, area, notification_listener, readonly)
-        self.bc_interface = MarketBlockchainInterface(area)
+    def __init__(self, time_slot=None, bc=None, notification_listener=None,
+                 readonly=False, transfer_fees=None, name=None):
+        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
+        self.bc_interface = MarketBlockchainInterface(bc)
 
     def __repr__(self):  # pragma: no cover
         return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
@@ -145,7 +144,7 @@ class OneSidedMarket(Market):
 
         try:
             if time is None:
-                time = self._now
+                time = self.now
 
             energy_portion = energy / offer.energy
             if energy == 0:
@@ -153,9 +152,7 @@ class OneSidedMarket(Market):
             # partial energy is requested
             elif energy < offer.energy:
                 original_offer = offer
-                accepted_offer_id = offer.id \
-                    if self.area is None or self.area.bc is None \
-                    else offer.real_id
+                accepted_offer_id = offer.id if self.bc is None else offer.real_id
 
                 assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 

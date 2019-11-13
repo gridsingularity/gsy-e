@@ -21,7 +21,7 @@ from collections import OrderedDict
 
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.market_structures import MarketClearingState
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import add_or_create_key
 
@@ -30,13 +30,13 @@ log = getLogger(__name__)
 
 class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
-    def __init__(self, time_slot=None, area=None,
-                 notification_listener=None, readonly=False):
-        super().__init__(time_slot, area, notification_listener, readonly)
+    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+                 transfer_fees=None, name=None):
+        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
         self.state = MarketClearingState()
         self.sorted_bids = []
         self.mcp_update_point = \
-            self.area.config.ticks_per_slot / \
+            GlobalConfig.ticks_per_slot / \
             ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT
 
     def __repr__(self):  # pragma: no cover
@@ -72,9 +72,9 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
     def _get_clearing_point(self, max_rate):
         for i in range(1, max_rate + 1):
-            if self.state.cumulative_offers[self.area.now][i] >= \
-                    self.state.cumulative_bids[self.area.now][i]:
-                return i, self.state.cumulative_bids[self.area.now][i]
+            if self.state.cumulative_offers[self.now][i] >= \
+                    self.state.cumulative_bids[self.now][i]:
+                return i, self.state.cumulative_bids[self.now][i]
 
     def _accumulated_energy_per_rate(self, offer_bid):
         energy_sum = 0
@@ -100,27 +100,33 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         if ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM == 1:
             cumulative_bids = self._accumulated_energy_per_rate(self.sorted_bids)
             cumulative_offers = self._accumulated_energy_per_rate(self.sorted_offers)
+            self.state.cumulative_bids[self.now] = cumulative_bids
+            self.state.cumulative_offers[self.now] = cumulative_offers
             ascending_rate_bids = OrderedDict(reversed(list(cumulative_bids.items())))
             return self._clearing_point_from_supply_demand_curve(
                 ascending_rate_bids, cumulative_offers)
         elif ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM == 2:
             cumulative_bids = self._discrete_point_curve(self.sorted_bids, math.floor)
             cumulative_offers = self._discrete_point_curve(self.sorted_offers, math.ceil)
-            max_rate = max(
-                math.floor(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
-                math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)
-            )
-
-            self.state.cumulative_offers[self.area.now] = \
-                self._smooth_discrete_point_curve(cumulative_offers, max_rate)
-            self.state.cumulative_bids[self.area.now] = \
-                self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
+            max_rate = self._populate_market_cumulative_offer_and_bid(cumulative_bids,
+                                                                      cumulative_offers)
             return self._get_clearing_point(max_rate)
 
+    def _populate_market_cumulative_offer_and_bid(self, cumulative_bids, cumulative_offers):
+        max_rate = max(
+            math.ceil(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
+            math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)
+        )
+        self.state.cumulative_offers[self.now] = \
+            self._smooth_discrete_point_curve(cumulative_offers, max_rate)
+        self.state.cumulative_bids[self.now] = \
+            self._smooth_discrete_point_curve(cumulative_bids, max_rate, False)
+        return max_rate
+
     def match_offers_bids(self):
-        if not (self.area.current_tick + 1) % int(self.mcp_update_point) == 0:
+        if not (self.current_tick + 1) % int(self.mcp_update_point) == 0:
             return
-        time = self.area.now
+
         clearing = self._perform_pay_as_clear_matching()
 
         if clearing is None:
@@ -130,8 +136,8 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         if clearing_energy > 0:
             log.info(f"Market Clearing Rate: {clearing_rate} "
                      f"||| Clearing Energy: {clearing_energy} "
-                     f"||| Clearing Market {self.area.name}")
-            self.state.clearing[time] = (clearing_rate, clearing_energy)
+                     f"||| Clearing Market {self.name}")
+            self.state.clearing[self.now] = (clearing_rate, clearing_energy)
 
         accepted_bids = self._accept_cleared_bids(clearing_rate, clearing_energy)
         self._accept_cleared_offers(clearing_rate, clearing_energy, accepted_bids)
@@ -153,7 +159,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                 trade = self.accept_bid(
                     bid=bid,
                     energy=bid.energy,
-                    seller=self.area.name,
+                    seller=self.name,
                     already_tracked=True,
                     trade_rate=clearing_rate,
                     trade_offer_info=trade_offer_info
@@ -163,7 +169,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                 trade = self.accept_bid(
                     bid=bid,
                     energy=(clearing_energy - cumulative_traded_bids),
-                    seller=self.area.name,
+                    seller=self.name,
                     already_tracked=True,
                     trade_rate=clearing_rate,
                     trade_offer_info=trade_offer_info
