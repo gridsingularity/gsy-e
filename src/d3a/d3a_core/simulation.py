@@ -380,7 +380,7 @@ class Simulation:
                     self.stop()
                 elif cmd == '+':
                     v = 5
-                    if self.slowdown <= 95:
+                    if self.slowdown <= 9995:
                         self.slowdown += v
                         log.critical("Simulation slowdown changed to %d", self.slowdown)
                 elif cmd == '-':

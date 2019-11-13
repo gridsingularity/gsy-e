@@ -36,8 +36,10 @@ from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
+from d3a.models.area.redis_external_connection import RedisExternalConnection
 
 log = getLogger(__name__)
+
 
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
@@ -62,7 +64,8 @@ class Area:
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=[],
                  transfer_fee_pct: float = None,
-                 transfer_fee_const: float = None):
+                 transfer_fee_const: float = None,
+                 external_connection_available=False):
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -90,6 +93,8 @@ class Area:
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
+        self.redis_ext_conn = RedisExternalConnection(self) \
+            if external_connection_available is True else None
 
     def set_events(self, event_list):
         self.events = Events(event_list, self)
@@ -150,6 +155,9 @@ class Area:
         """
         self.events.update_events(self.now)
 
+        if self.redis_ext_conn:
+            self.redis_ext_conn.register_new_areas()
+
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
             return
@@ -193,8 +201,9 @@ class Area:
             self._cycle_markets()
         self.dispatcher.broadcast_tick()
         self.current_tick += 1
-        for market in self._markets.markets.values():
-            market.update_clock(self.current_tick)
+        if self._markets:
+            for market in self._markets.markets.values():
+                market.update_clock(self.current_tick)
 
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
