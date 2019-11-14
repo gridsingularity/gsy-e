@@ -53,3 +53,17 @@ def check_buy_behaviour_ib(context):
         ExportUnmatchedLoads(context.simulation.area).get_current_market_results(
             all_past_markets=True)
     assert get_number_of_unmatched_loads(unmatched) == 0
+
+
+@then('the infinite bus traded energy respecting its buy/sell rate')
+def check_infinite_bus_traded_energy_rate(context):
+    grid = context.simulation.area
+    bus = list(filter(lambda x: x.name == "Infinite Bus", grid.children))[0]
+    for market in grid.past_markets:
+        for trade in market.trades:
+            if trade.seller_origin == "Infinite Bus":
+                assert isclose(trade.offer.price/trade.offer.energy,
+                               bus.strategy.energy_rate[market.time_slot])
+            if trade.buyer_origin == "Infinite Bus":
+                assert isclose(trade.offer.price/trade.offer.energy,
+                               bus.strategy.energy_buy_rate[market.time_slot])

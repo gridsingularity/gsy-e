@@ -18,70 +18,62 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.storage import StorageStrategy
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import GlobalConfig
 
 
 def get_setup(config):
-
-    ConstSettings.IAASettings.MARKET_TYPE = 3
-    # ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS = False
-    ConstSettings.GeneralSettings.MARKET_CLEARING_FREQUENCY_PER_SLOT = 3
-    ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
-    ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.StorageSettings.INITIAL_BUYING_RATE = 24.99
-    ConstSettings.StorageSettings.FINAL_BUYING_RATE = 25
-    ConstSettings.StorageSettings.INITIAL_SELLING_RATE = 30
-    ConstSettings.StorageSettings.FINAL_SELLING_RATE = 25.01
-
+    GlobalConfig.POWER_FLOW = True
     area = Area(
         'Grid',
         [
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
-                                                                       initial_buying_rate=35,
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                     Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
-                ]
+                ],
+                transfer_fee_pct=0, transfer_fee_const=0,
             ),
             Area(
                 'House 2',
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=4,
-                                                                       hrs_of_day=list(range(12,
-                                                                                             16)),
+                                                                       hrs_of_day=list(
+                                                                           range(12, 16)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(4),
+                    Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+                                                      final_selling_rate=5, max_panel_power_W=100),
                          appliance=PVAppliance()),
-                    Area('H2 CEP',
-                         strategy=CommercialStrategy(energy_rate=10),
-                         appliance=SimpleAppliance()
-                         ),
 
-                ]
+                ],
+                transfer_fee_pct=0, transfer_fee_const=0,
+
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
-                                                                   hrs_of_day=list(range(0,
-                                                                                         24)),
+                                                                   hrs_of_day=list(range(0, 24)),
                                                                    final_buying_rate=35),
                  appliance=SwitchableAppliance()),
+            Area('DSO',
+                 strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=30),
+                 appliance=SimpleAppliance()
+                 ),
         ],
-        config=config
+        config=config,
     )
     return area

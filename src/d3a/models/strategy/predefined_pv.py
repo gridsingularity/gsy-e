@@ -42,7 +42,7 @@ class PVPredefinedStrategy(PVStrategy):
     def __init__(
             self, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             cloud_coverage: int = None,
             fit_to_limit: bool = True,
             update_interval=duration(
@@ -128,7 +128,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     def __init__(
             self, power_profile, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),

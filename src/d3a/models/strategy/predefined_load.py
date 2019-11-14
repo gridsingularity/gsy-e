@@ -43,9 +43,9 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                  update_interval=duration(
                      minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  initial_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
                  final_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.FINAL_BUYING_RATE,
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
