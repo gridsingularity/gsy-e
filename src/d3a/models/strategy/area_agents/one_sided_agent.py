@@ -23,13 +23,13 @@ from numpy.random import random
 
 
 class OneSidedAgent(InterAreaAgent):
-    def __init__(self, *, owner, higher_market_or_id, lower_market_or_id, time_slot,
+    def __init__(self, *, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
                  engine_type=IAAEngine):
         super().__init__(engine_type=engine_type, owner=owner,
-                         higher_market_or_id=higher_market_or_id,
-                         lower_market_or_id=lower_market_or_id,
-                         time_slot=time_slot, min_offer_age=min_offer_age)
+                         higher_market=higher_market,
+                         lower_market=lower_market,
+                         min_offer_age=min_offer_age)
         self.name = make_iaa_name(owner)
 
     def usable_offer(self, offer):

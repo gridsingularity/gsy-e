@@ -26,18 +26,14 @@ from d3a.models.market.grid_fees.base_model import GridFees
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
-MarketIds = namedtuple('MarketIds', ('source', 'target'))
 ResidualInfo = namedtuple('ResidualInfo', ('forwarded', 'age'))
 
 
 class IAAEngine:
-    def __init__(self, name: str, market_1_or_id, market_2_or_id, min_offer_age: int,
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
                  owner: "InterAreaAgent"):
         self.name = name
-        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            self.markets = MarketIds(market_1_or_id, market_2_or_id)
-        else:
-            self.markets = Markets(market_1_or_id, market_2_or_id)
+        self.markets = Markets(market_1, market_2)
         self.min_offer_age = min_offer_age
         self.owner = owner
 
@@ -231,11 +227,11 @@ class IAAEngine:
         # but by deleting the offered_offers entries
 
     def event_offer_changed(self, *, market_id, existing_offer, new_offer):
-        market_or_id = self.owner._get_market_from_market_id(market_id)
-        if market_or_id is None:
+        market = self.owner._get_market_from_market_id(market_id)
+        if market is None:
             return
 
-        if market_or_id == self.markets.target and existing_offer.seller == self.owner.name:
+        if market == self.markets.target and existing_offer.seller == self.owner.name:
             # one of our forwarded offers was split, so save the residual offer
             # for handling the upcoming trade event
             assert existing_offer.id not in self.trade_residual, \
@@ -243,7 +239,7 @@ class IAAEngine:
 
             self.trade_residual[existing_offer.id] = new_offer
 
-        elif market_or_id == self.markets.source and existing_offer.id in self.forwarded_offers:
+        elif market == self.markets.source and existing_offer.id in self.forwarded_offers:
             # an offer in the source market was split - delete the corresponding offer
             # in the target market and forward the new residual offer
 

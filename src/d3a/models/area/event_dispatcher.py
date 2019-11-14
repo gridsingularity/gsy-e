@@ -150,20 +150,11 @@ class AreaDispatcher:
             if market.time_slot in self.interarea_agents or \
                     market.time_slot not in self.area.parent._markets.markets:
                 return
-            # Only connect an InterAreaAgent if we have a parent, a corresponding
-            # timeframe market exists in the parent and we have no strategy
-            if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-                higher_market = self.area.parent._markets.markets[market.time_slot].id
-                lower_market = market.id
-            else:
-                higher_market = self.area.parent._markets.markets[market.time_slot]
-                lower_market = market
 
             iaa = agent_class(
                 owner=self.area,
-                higher_market_or_id=higher_market,
-                lower_market_or_id=lower_market,
-                time_slot=market.time_slot,
+                higher_market=self.area.parent._markets.markets[market.time_slot],
+                lower_market=market,
                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
             )
 

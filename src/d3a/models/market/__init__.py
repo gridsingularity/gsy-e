@@ -71,10 +71,6 @@ class MarketRedisApi:
     def __init__(self, market):
         self.market = market
         self.redis = RedisMarketCommunicator()
-        # self.offer_list_mapping = {
-        #     "sorted_offers": self.market.sorted_offers,
-        #     "offers": self.market.offers
-        # }
         self.event_channel_callback_mapping = {
             f"{market.id}/OFFER": self._offer,
             f"{market.id}/DELETE_OFFER": self._delete_offer,
@@ -99,31 +95,6 @@ class MarketRedisApi:
                 data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
 
         return data_dict
-
-    # @staticmethod
-    # def _serialize_offer_list(offer_list):
-    #     return json.dumps([offer.to_JSON_string() for offer in offer_list])
-    #
-    # @staticmethod
-    # def _serialize_offer_dict(offer_dict):
-    #     return json.dumps({k: v.to_JSON_string() for k, v in offer_dict.itmes()})
-
-    # def _offer_lists(self, payload):
-    #     try:
-    #         data = self._parse_payload(payload)
-    #         if data["list"] == "sorted_offers":
-    #             print("sorted_offers")
-    #             return_data = self._serialize_offer_list(self.offer_list_mapping[data["list"]])
-    #         elif data["list"] == "offers":
-    #             print("offers")
-    #             return_data = self._serialize_offer_dict(self.offer_list_mapping[data["list"]])
-    #         print(return_data, self.offer_list_mapping[data["list"]])
-    #         self.redis.publish(f"{self.market.id}/OFFER_LISTS/RESPONSE",
-    #                            {"status": "ready", "offer_list": return_data})
-    #     except Exception as e:
-    #         self.redis.publish(f"{self.market.id}/OFFER_LISTS/RESPONSE",
-    #                            {"status": "error",  "exception": str(type(e)),
-    #                             "error_message": str(e)})
 
     def _accept_offer(self, payload):
         try:
