@@ -160,6 +160,9 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
 def trade_from_JSON_string(trade_string):
     trade_dict = json.loads(trade_string)
     trade_dict['offer'] = offer_from_JSON_string(trade_dict['offer'])
+    if "residual" in trade_dict and trade_dict["residual"] is not None:
+        trade_dict['residual'] = offer_from_JSON_string(trade_dict['residual'])
+
     return Trade(**trade_dict)
 
 

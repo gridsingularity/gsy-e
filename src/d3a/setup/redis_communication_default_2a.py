@@ -21,9 +21,11 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
+from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
+    ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = True
     area = Area(
         'Grid',
         [
@@ -31,14 +33,14 @@ def get_setup(config):
                 'House 1',
                 [
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=6,
+                                                                       hrs_per_day=18,
                                                                        hrs_of_day=list(
-                                                                           range(12, 18)),
+                                                                           range(0, 18)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=100),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=100),
                          appliance=SwitchableAppliance()),
                 ],
                 transfer_fee_pct=0, transfer_fee_const=0,
@@ -47,9 +49,9 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=4,
+                                                                       hrs_per_day=24,
                                                                        hrs_of_day=list(
-                                                                           range(12, 16)),
+                                                                           range(0, 24)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('H2 PV', strategy=PVStrategy(4, 80),
@@ -57,7 +59,6 @@ def get_setup(config):
 
                 ],
                 transfer_fee_pct=0, transfer_fee_const=0,
-
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
