@@ -167,7 +167,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.redis = RedisMarketCommunicator()
         self.trade_buffer = None
         self.offer_buffer = None
-        # self.offer_list_buffer = None
 
     parameters = None
 
@@ -178,7 +177,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.redis.sub_to_market_event(response_channel, callback)
         self.redis.publish(market_channel, data)
         self.redis.wait()
-        # self.redis.unsub_from_market_event(market_channel)
 
     def area_reconfigure_event(self, *args, **kwargs):
         pass
@@ -218,43 +216,6 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             return True
 
-    # def sorted_offers_market(self, market_or_id):
-    #     if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-    #         data = {"list": "sorted_offers"}
-    #         self._send_events_to_market("OFFER_LISTS", market_or_id, data,
-    #                                     self._offer_list_response)
-    #         offer_list = self.offer_list_buffer
-    #         assert offer_list is not None
-    #         self.offer_list_buffer = None
-    #         return offer_list
-    #     else:
-    #         return market_or_id.sorted_offers
-    #
-    # def offers_market(self, market_or_id):
-    #     if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-    #         data = {"list": "offers"}
-    #         self._send_events_to_market("OFFER_LISTS", market_or_id, data,
-    #                                     self._offer_list_response)
-    #         offer_list = self.offer_list_buffer
-    #         assert offer_list is not None
-    #         self.offer_list_buffer = None
-    #         return offer_list
-    #     else:
-    #         return market_or_id.offers
-    #
-    # # @staticmethod
-    # def _parse_offer_list(offer_list):
-    #     return [offer_from_JSON_string(offer) for offer in json.loads(offer_list)]
-    #
-    # def _offer_list_response(self, payload):
-    #     data = json.loads(payload["data"])
-    #     # TODO: is this additional parsing needed?
-    #     if isinstance(data, str):
-    #         data = json.loads(data)
-    #     if data["status"] == "ready":
-    #         self.offer_list_buffer = self._parse_offer_list(data["offer_list"])
-    #         self.redis.resume()
-
     def offer(self, market_id, offer_args):
         self._send_events_to_market("OFFER", market_id, offer_args, self._offer_response)
         offer = self.offer_buffer
@@ -277,13 +238,10 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def accept_offer(self, market_or_id, offer, *, buyer=None, energy=None,
                      already_tracked=False, trade_rate: float = None,
                      trade_bid_info: float = None, buyer_origin=None):
-        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            if not isinstance(market_or_id, str):
-                market_or_id = market_or_id.id
         if buyer is None:
             buyer = self.owner.name
         if not isinstance(offer, Offer):
-            offer = self.offers_market(market_or_id)[offer]
+            offer = market_or_id.offers[offer]
         trade = self._accept_offer(market_or_id, offer, buyer, energy, trade_rate, already_tracked,
                                    trade_bid_info, buyer_origin)
 
