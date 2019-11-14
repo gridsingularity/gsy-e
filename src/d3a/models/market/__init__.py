@@ -114,11 +114,15 @@ class MarketRedisApi:
     def _accept_offer_response_channel(self):
         return f"{self._accept_offer_channel}/RESPONSE"
 
-    @staticmethod
-    def _parse_payload(payload):
+    @classmethod
+    def _parse_payload(cls, payload):
         data_dict = json.loads(payload["data"])
         if isinstance(data_dict, str):
             data_dict = json.loads(data_dict)
+        return cls.sanitize_parameters(data_dict)
+
+    @classmethod
+    def sanitize_parameters(cls, data_dict):
         if "trade_bid_info" in data_dict and data_dict["trade_bid_info"] is not None:
             data_dict["trade_bid_info"] = \
                 trade_bid_info_from_JSON_string(data_dict["trade_bid_info"])
@@ -132,8 +136,11 @@ class MarketRedisApi:
         return data_dict
 
     def _accept_offer(self, payload):
+        return self._accept_offer_impl(self._parse_payload(payload))
+
+    def _accept_offer_impl(self, arguments):
         try:
-            trade = self.market.accept_offer(**self._parse_payload(payload))
+            trade = self.market.accept_offer(**arguments)
             self.publish(self._accept_offer_response_channel,
                          {"status": "ready", "trade": trade.to_JSON_string()})
         except Exception as e:
@@ -142,8 +149,11 @@ class MarketRedisApi:
                           "error_message": str(e)})
 
     def _offer(self, payload):
+        return self._offer_impl(self._parse_payload(payload))
+
+    def _offer_impl(self, arguments):
         try:
-            offer = self.market.offer(**self._parse_payload(payload))
+            offer = self.market.offer(**arguments)
             self.publish(self._offer_response_channel,
                          {"status": "ready", "offer": offer.to_JSON_string()})
         except Exception as e:
@@ -152,8 +162,11 @@ class MarketRedisApi:
                           "error_message": str(e)})
 
     def _delete_offer(self, payload):
+        return self._delete_offer_impl(self._parse_payload(payload))
+
+    def _delete_offer_impl(self, arguments):
         try:
-            self.market.delete_offer(**self._parse_payload(payload))
+            self.market.delete_offer(**arguments)
             self.publish(self._delete_offer_response_channel,
                          {"status": "ready"})
         except Exception as e:

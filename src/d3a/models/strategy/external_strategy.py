@@ -49,6 +49,14 @@ class RedisExternalConnection(MarketRedisApi):
         return f"{self.area.parent.slug}/{self.area.slug}/offers"
 
     @property
+    def _bid_channel(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/bid"
+
+    @property
+    def _delete_bid_channel(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/delete_bid"
+
+    @property
     def _offer_response_channel(self):
         return f"{self._offer_channel}/response"
 
@@ -73,12 +81,9 @@ class RedisExternalConnection(MarketRedisApi):
         })
         self.pubsub.run_in_thread(daemon=True)
 
-    @staticmethod
-    def _parse_payload(payload):
-        data_dict = json.loads(payload["data"])
-        if isinstance(data_dict, (str, bytes)):
-            data_dict = json.loads(data_dict)
-        return data_dict
+    @classmethod
+    def sanitize_parameters(cls, data_dict):
+        return
 
     @staticmethod
     def _serialize_offer_list(offer_list):
@@ -98,11 +103,48 @@ class RedisExternalConnection(MarketRedisApi):
                          {"status": "error",  "exception": str(type(e)),
                           "error_message": str(e)})
 
+    def _accept_offer(self, payload):
+        try:
+            arguments = self._parse_payload(payload)
+            assert set(arguments.keys()) == {'offer', 'energy'}
+            arguments['offer_or_id'] = arguments['offer']
+            arguments['buyer'] = self.area.name
+        except Exception:
+            self.publish(
+                self._offer_response_channel,
+                {"error": "Incorrect accept_offer request. Available parameters: (offer, energy)."}
+            )
+        else:
+            return self._accept_offer_impl(arguments)
+
+    def _offer(self, payload):
+        try:
+            arguments = self._parse_payload(payload)
+            assert set(arguments.keys()) == {'price', 'energy'}
+            arguments['buyer'] = self.area.name
+        except Exception:
+            self.publish(
+                self._offer_response_channel,
+                {"error": "Incorrect offer request. Available parameters: (price, energy)."}
+            )
+        else:
+            return self._offer_impl(arguments)
+
+    def _delete_offer(self, payload):
+        try:
+            arguments = self._parse_payload(payload)
+            assert set(arguments.keys()) == {'offer'}
+            arguments['offer_or_id'] = arguments['offer']
+        except Exception:
+            self.publish(
+                self._offer_response_channel,
+                {"error": "Incorrect offer request. Available parameters: (offer)."}
+            )
+        else:
+            return self._delete_offer_impl(arguments)
+
 
 class ExternalStrategy(BaseStrategy):
     def __init__(self, area):
         super().__init__()
         self.redis = RedisExternalConnection(area)
-
-    def event_market_cycle(self):
-        pass
