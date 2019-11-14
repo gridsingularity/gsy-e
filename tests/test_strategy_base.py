@@ -187,7 +187,6 @@ def base():
 
 def test_accept_offer(base, offer_to_accept):
     market = FakeMarket(raises=False)
-    print(offer_to_accept)
     base.accept_offer(market, offer_to_accept)
     assert offer_to_accept in base.offers.bought.keys()
     assert market.id == base.offers.bought[offer_to_accept].id

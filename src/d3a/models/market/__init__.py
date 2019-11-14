@@ -26,6 +26,8 @@ from collections import namedtuple
 from threading import Event
 from redis import StrictRedis
 from pendulum import DateTime
+from functools import wraps
+from threading import RLock
 
 from d3a.constants import DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -160,6 +162,22 @@ class MarketRedisApi:
                           "error_message": str(e)})
 
 
+RLOCK_MEMBER_NAME = "rlock"
+
+
+def lock_market_action(function):
+    @wraps(function)
+    def wrapper(self, *args, **kwargs):
+        # The market class needs to have an rlock member, that holds the recursive lock
+        lock_object = getattr(self, RLOCK_MEMBER_NAME)
+        lock_object.acquire()
+        try:
+            return function(self, *args, **kwargs)
+        finally:
+            lock_object.release()
+    return wrapper
+
+
 class Market:
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
@@ -201,6 +219,7 @@ class Market:
         self.device_registry = DeviceRegistry.REGISTRY
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis_api = MarketRedisApi(self)
+        setattr(self, RLOCK_MEMBER_NAME, RLock())
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)

@@ -19,6 +19,7 @@ import uuid
 from typing import Union  # noqa
 from logging import getLogger
 
+from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
 from d3a.models.market.market_structures import Bid, Trade, TradeBidInfo
@@ -66,6 +67,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
         return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price)
 
+    @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, seller: str,
             bid_id: str = None, original_bid_price=None, buyer_origin=None) -> Bid:
         if energy <= 0:
@@ -79,6 +81,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
         return bid
 
+    @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, Bid]):
         if isinstance(bid_or_id, Bid):
             bid_or_id = bid_or_id.id
@@ -95,6 +98,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         self.market_fee += fees
         return energy * trade_rate + fees
 
+    @lock_market_action
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
                    trade_rate: float = None, trade_offer_info=None, seller_origin=None):

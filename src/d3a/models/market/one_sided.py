@@ -23,7 +23,7 @@ from copy import deepcopy
 
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
-from d3a.models.market import Market
+from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -60,6 +60,7 @@ class OneSidedMarket(Market):
             + self.transfer_fee_ratio * original_offer_price \
             + self.transfer_fee_const * energy
 
+    @lock_market_action
     def offer(self, price: float, energy: float, seller: str,
               original_offer_price=None, dispatch_event=True, seller_origin=None) -> Offer:
         if self.readonly:
@@ -86,6 +87,7 @@ class OneSidedMarket(Market):
     def dispatch_market_offer_event(self, offer):
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
 
+    @lock_market_action
     def delete_offer(self, offer_or_id: Union[str, Offer]):
         if self.readonly:
             raise MarketReadOnlyException()
@@ -117,6 +119,7 @@ class OneSidedMarket(Market):
             if offer.original_offer_price is not None \
             else offer.price
 
+    @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
