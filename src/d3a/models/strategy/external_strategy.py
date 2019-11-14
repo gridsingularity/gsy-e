@@ -30,7 +30,7 @@ class RedisExternalConnection(MarketRedisApi):
 
     @property
     def market(self):
-        return self.area.next_market
+        return self.area.parent.next_market
 
     @property
     def _offer_channel(self):

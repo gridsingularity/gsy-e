@@ -18,8 +18,8 @@ class RedisExternalConnection:
         for new_area in self.areas_to_register:
             area_object = self.area.__class__(name=new_area)
             area_object.parent = self.area
-            area_object.strategy = ExternalStrategy(area_object)
             self.area.children.append(area_object)
+            area_object.strategy = ExternalStrategy(area_object)
             area_object.activate()
 
             self.publish(f"{self.area.slug}/register_participant/response",

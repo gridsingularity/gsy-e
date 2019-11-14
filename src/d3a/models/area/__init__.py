@@ -102,10 +102,6 @@ class Area:
         self.events = Events(event_list, self)
 
     def activate(self, bc=None):
-        # TODO: Validate whether this is right:
-        self._markets = self.parent._markets if len(self.children) == 0 else AreaMarkets(self.log)
-        self.stats = AreaStats(self._markets)
-
         if bc:
             self._bc = bc
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
