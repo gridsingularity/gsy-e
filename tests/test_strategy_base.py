@@ -82,11 +82,14 @@ class FakeMarket:
         self.bids = {}
         self.id = id
 
-    def accept_offer(self, offer, id, *, energy=None, time=None, already_tracked=False,
+    def accept_offer(self, offer_or_id, *, buyer="", energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+        offer = offer_or_id
         if self.raises:
             raise MarketException
         else:
+            if energy is None:
+                energy = offer.energy
             offer.energy = energy
             return Trade('trade', 0, offer, offer.seller, 'FakeOwner',
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
@@ -184,9 +187,10 @@ def base():
 
 def test_accept_offer(base, offer_to_accept):
     market = FakeMarket(raises=False)
+    print(offer_to_accept)
     base.accept_offer(market, offer_to_accept)
     assert offer_to_accept in base.offers.bought.keys()
-    assert market.id == base.offers.bought[offer_to_accept]
+    assert market.id == base.offers.bought[offer_to_accept].id
 
 
 def test_accept_partial_offer(base, offer_to_accept):

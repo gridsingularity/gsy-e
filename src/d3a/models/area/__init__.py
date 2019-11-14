@@ -88,7 +88,8 @@ class Area:
         if budget_keeper:
             self.budget_keeper.area = self
         self._bc = None
-        self._markets = None
+        self._markets = AreaMarkets(self.log)
+        self.stats = AreaStats(self._markets)
         self.dispatcher = DispatcherFactory(self)()
         self.transfer_fee_pct = transfer_fee_pct
         self.transfer_fee_const = transfer_fee_const
@@ -100,10 +101,6 @@ class Area:
         self.events = Events(event_list, self)
 
     def activate(self, bc=None):
-        # TODO: Validate whether this is right:
-        self._markets = self.parent._markets if len(self.children) == 0 else AreaMarkets(self.log)
-        self.stats = AreaStats(self._markets)
-
         if bc:
             self._bc = bc
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
