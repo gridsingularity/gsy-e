@@ -37,9 +37,6 @@ class OneSidedAgent(InterAreaAgent):
         return all(offer.id not in engine.forwarded_offers.keys() for engine in self.engines)
 
     def _get_market_from_market_id(self, market_id):
-        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            # In the distributed case, this method only returns the market_id
-            return market_id
         if self.lower_market.id == market_id:
             return self.lower_market
         elif self.higher_market.id == market_id:

@@ -18,34 +18,58 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from d3a.models.strategy import BaseStrategy
 
-from redis import StrictRedis
 import json
-from d3a.d3a_core.redis_communication import REDIS_URL
-from d3a.models.market.market_structures import trade_bid_info_from_JSON_string
+from d3a.models.market import MarketRedisApi
 
 
-class RedisExternalConnection:
+class RedisExternalConnection(MarketRedisApi):
     def __init__(self, area):
         self.area = area
-        self.redis_db = StrictRedis.from_url(REDIS_URL)
-        self.pubsub = self.redis_db.pubsub()
+        super().__init__(None)
         self.areas_to_register = []
-        self.sub_to_external_requests()
 
-    def publish(self, channel, data):
-        self.redis_db.publish(channel, json.dumps(data))
+    @property
+    def market(self):
+        return self.area.next_market
+
+    @property
+    def _offer_channel(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/offer"
+
+    @property
+    def _delete_offer_channel(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/delete_offer"
+
+    @property
+    def _accept_offer_channel(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/accept_offer"
+
+    @property
+    def _list_offers_channel(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/offers"
+
+    @property
+    def _offer_response_channel(self):
+        return f"{self._offer_channel}/response"
+
+    @property
+    def _delete_offer_response_channel(self):
+        return f"{self._delete_offer_channel}/response"
+
+    @property
+    def _accept_offer_response_channel(self):
+        return f"{self._accept_offer_channel}/response"
+
+    @property
+    def _list_offers_response_channel(self):
+        return f"{self._list_offers_channel}/response"
 
     def sub_to_external_requests(self):
-        offer_channel = f"{self.area.parent.slug}/{self.area.slug}/offer"
-        delete_offer_channel = f"{self.area.parent.slug}/{self.area.slug}/delete_offer"
-        accept_offer_channel = f"{self.area.parent.slug}/{self.area.slug}/accept_offer"
-        list_offers_channel = f"{self.area.parent.slug}/{self.area.slug}/offers"
-
         self.pubsub.subscribe(**{
-            offer_channel: self._offer,
-            delete_offer_channel: self._delete_offer,
-            accept_offer_channel: self._accept_offer,
-            list_offers_channel: self._offer_lists
+            self._offer_channel: self._offer,
+            self._delete_offer_channel: self._delete_offer,
+            self._accept_offer_channel: self._accept_offer,
+            self._list_offers_channel: self._offer_lists
         })
         self.pubsub.run_in_thread(daemon=True)
 
@@ -54,16 +78,6 @@ class RedisExternalConnection:
         data_dict = json.loads(payload["data"])
         if isinstance(data_dict, (str, bytes)):
             data_dict = json.loads(data_dict)
-        if "trade_bid_info" in data_dict and data_dict["trade_bid_info"] is not None:
-            data_dict["trade_bid_info"] = \
-                trade_bid_info_from_JSON_string(data_dict["trade_bid_info"])
-        # if "offer_or_id" in data_dict and data_dict["offer_or_id"] is not None:
-        #     if isinstance(data_dict["offer_or_id"], str):
-        #         data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
-        # if "offer" in data_dict and data_dict["offer"] is not None:
-        #     if isinstance(data_dict["offer_or_id"], str):
-        #         data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
-
         return data_dict
 
     @staticmethod
@@ -76,43 +90,12 @@ class RedisExternalConnection:
 
     def _offer_lists(self, payload):
         try:
-            return_data = self._serialize_offer_dict(self.area.next_market.offers)
-            print(return_data)
-            self.publish(f"{self.area.parent.slug}/{self.area.slug}/offers/response",
+            return_data = self._serialize_offer_dict(self.market.offers)
+            self.publish(self._list_offers_response_channel,
                          {"status": "ready", "offer_list": return_data})
         except Exception as e:
-            self.publish(f"{self.area.parent.slug}/{self.area.slug}/offers/response",
+            self.publish(self._list_offers_response_channel,
                          {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e)})
-
-    def _accept_offer(self, payload):
-        try:
-            trade = self.area.next_market.accept_offer(**self._parse_payload(payload))
-            self.publish(f"{self.area.parent.slug}/{self.area.slug}/accept_offer/response",
-                         {"status": "ready", "trade": trade.to_JSON_string()})
-        except Exception as e:
-            self.publish(f"{self.area.parent.slug}/{self.area.slug}/accept_offer/response",
-                         {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e)})
-
-    def _offer(self, payload):
-        try:
-            offer = self.area.next_market.offer(**self._parse_payload(payload))
-            self.publish(f"{self.area.parent.slug}/{self.area.slug}/offer/response",
-                         {"status": "ready", "offer": offer.to_JSON_string()})
-        except Exception as e:
-            self.publish(f"{self.area.parent.slug}/{self.area.slug}/offer/response",
-                         {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e)})
-
-    def _delete_offer(self, payload):
-        try:
-            self.area.next_market.delete_offer(**self._parse_payload(payload))
-            self.publish(f"{self.area.parent.slug}/{self.area.slug}/delete_offer/response",
-                         {"status": "ready"})
-        except Exception as e:
-            self.publish(f"{self.area.parent.slug}/{self.area.slug}/delete_offer/response",
-                         {"status": "error", "exception": str(type(e)),
                           "error_message": str(e)})
 
 

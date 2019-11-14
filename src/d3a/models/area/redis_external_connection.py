@@ -15,7 +15,6 @@ class RedisExternalConnection:
     def register_new_areas(self):
         if not self.areas_to_register:
             return
-
         for new_area in self.areas_to_register:
             area_object = self.area.__class__(name=new_area)
             area_object.parent = self.area

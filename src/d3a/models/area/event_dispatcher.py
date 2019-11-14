@@ -174,7 +174,6 @@ class AreaDispatcher:
             if market.time_slot in self.balancing_agents or \
                     market.time_slot not in self.area.parent._markets.balancing_markets:
                 return
-            # TODO: don't forget the balancing market!!!
             ba = agent_class(
                 owner=self.area,
                 higher_market=self.area.parent._markets.balancing_markets[market.time_slot],

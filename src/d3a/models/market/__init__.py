@@ -42,7 +42,6 @@ log = getLogger(__name__)
 TransferFees = namedtuple("TransferFees", ('transfer_fee_pct', 'transfer_fee_const'))
 
 
-# TODO: this will live somewhere else after Spyros' PR
 class RedisMarketCommunicator:
     def __init__(self):
         self.redis_db = StrictRedis.from_url(REDIS_URL)
@@ -69,15 +68,49 @@ class RedisMarketCommunicator:
 
 class MarketRedisApi:
     def __init__(self, market):
-        self.market = market
-        self.redis = RedisMarketCommunicator()
-        self.event_channel_callback_mapping = {
-            f"{market.id}/OFFER": self._offer,
-            f"{market.id}/DELETE_OFFER": self._delete_offer,
-            f"{market.id}/ACCEPT_OFFER": self._accept_offer
-        }
-        for channel, callback in self.event_channel_callback_mapping.items():
-            self.redis.sub_to_market_event(channel, callback)
+        self.market_object = market
+        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.pubsub = self.redis_db.pubsub()
+        self.sub_to_external_requests()
+
+    def sub_to_external_requests(self):
+        self.pubsub.subscribe(**{
+            self._offer_channel: self._offer,
+            self._delete_offer_channel: self._delete_offer,
+            self._accept_offer_channel: self._accept_offer,
+        })
+        self.pubsub.run_in_thread(daemon=True)
+
+    def publish(self, channel, data):
+        self.redis_db.publish(channel, json.dumps(data))
+
+    @property
+    def market(self):
+        return self.market_object
+
+    @property
+    def _offer_channel(self):
+        return f"{self.market.id}/OFFER"
+
+    @property
+    def _delete_offer_channel(self):
+        return f"{self.market.id}/DELETE_OFFER"
+
+    @property
+    def _accept_offer_channel(self):
+        return f"{self.market.id}/ACCEPT_OFFER"
+
+    @property
+    def _offer_response_channel(self):
+        return f"{self._offer_channel}/RESPONSE"
+
+    @property
+    def _delete_offer_response_channel(self):
+        return f"{self._delete_offer_channel}/RESPONSE"
+
+    @property
+    def _accept_offer_response_channel(self):
+        return f"{self._accept_offer_channel}/RESPONSE"
 
     @staticmethod
     def _parse_payload(payload):
@@ -99,31 +132,32 @@ class MarketRedisApi:
     def _accept_offer(self, payload):
         try:
             trade = self.market.accept_offer(**self._parse_payload(payload))
-            self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
-                               {"status": "ready", "trade": trade.to_JSON_string()})
+            self.publish(self._accept_offer_response_channel,
+                         {"status": "ready", "trade": trade.to_JSON_string()})
         except Exception as e:
-            self.redis.publish(f"{self.market.id}/ACCEPT_OFFER/RESPONSE",
-                               {"status": "error",  "exception": str(type(e)),
-                                "error_message": str(e)})
+            self.publish(self._accept_offer_response_channel,
+                         {"status": "error",  "exception": str(type(e)),
+                          "error_message": str(e)})
 
     def _offer(self, payload):
         try:
             offer = self.market.offer(**self._parse_payload(payload))
-            self.redis.publish(f"{self.market.id}/OFFER/RESPONSE",
-                               {"status": "ready", "offer": offer.to_JSON_string()})
+            self.publish(self._offer_response_channel,
+                         {"status": "ready", "offer": offer.to_JSON_string()})
         except Exception as e:
-            self.redis.publish(f"{self.market.id}/OFFER/RESPONSE",
-                               {"status": "error",  "exception": str(type(e)),
-                                "error_message": str(e)})
+            self.publish(self._offer_response_channel,
+                         {"status": "error",  "exception": str(type(e)),
+                          "error_message": str(e)})
 
     def _delete_offer(self, payload):
         try:
             self.market.delete_offer(**self._parse_payload(payload))
-            self.redis.publish(f"{self.market.id}/DELETE_OFFER/RESPONSE", {"status": "ready"})
+            self.publish(self._delete_offer_response_channel,
+                         {"status": "ready"})
         except Exception as e:
-            self.redis.publish(f"{self.market.id}/DELETE_OFFER/RESPONSE",
-                               {"status": "error", "exception": str(type(e)),
-                                "error_message": str(e)})
+            self.publish(self._delete_offer_response_channel,
+                         {"status": "error", "exception": str(type(e)),
+                          "error_message": str(e)})
 
 
 class Market:
