@@ -192,39 +192,42 @@ class TwoSidedPayAsBid(OneSidedMarket):
         sorted_offers = self.sorting(self.offers, True)
 
         already_selected_bids = set()
+        offer_bid_pairs = []
         for offer in sorted_offers:
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
                         (offer.price / offer.energy - bid.price / bid.energy) <= \
                         FLOATING_POINT_TOLERANCE and offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
-                    yield bid, offer
+                    offer_bid_pairs.append(tuple((bid, offer)))
                     break
+        return offer_bid_pairs
 
     def match_offers_bids(self):
-        for bid, offer in self._perform_pay_as_bid_matching():
-            selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-            original_bid_rate = bid.original_bid_price / bid.energy
-            matched_rate = bid.price / bid.energy
+        while len(self._perform_pay_as_bid_matching()) > 0:
+            for bid, offer in self._perform_pay_as_bid_matching():
+                selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+                original_bid_rate = bid.original_bid_price / bid.energy
+                matched_rate = bid.price / bid.energy
 
-            trade_bid_info = TradeBidInfo(
-                original_bid_rate=original_bid_rate,
-                propagated_bid_rate=bid.price/bid.energy,
-                original_offer_rate=offer.original_offer_price/offer.energy,
-                propagated_offer_rate=offer.price/offer.energy,
-                trade_rate=original_bid_rate)
-            self.accept_offer(offer_or_id=offer,
-                              buyer=bid.buyer,
-                              energy=selected_energy,
-                              trade_rate=matched_rate,
-                              already_tracked=False,
-                              trade_bid_info=trade_bid_info,
-                              buyer_origin=bid.buyer_origin)
-            self.accept_bid(bid=bid,
-                            energy=selected_energy,
-                            seller=offer.seller,
-                            buyer=bid.buyer,
-                            already_tracked=True,
-                            trade_rate=matched_rate,
-                            trade_offer_info=trade_bid_info,
-                            seller_origin=offer.seller_origin)
+                trade_bid_info = TradeBidInfo(
+                    original_bid_rate=original_bid_rate,
+                    propagated_bid_rate=bid.price/bid.energy,
+                    original_offer_rate=offer.original_offer_price/offer.energy,
+                    propagated_offer_rate=offer.price/offer.energy,
+                    trade_rate=original_bid_rate)
+                self.accept_offer(offer_or_id=offer,
+                                  buyer=bid.buyer,
+                                  energy=selected_energy,
+                                  trade_rate=matched_rate,
+                                  already_tracked=False,
+                                  trade_bid_info=trade_bid_info,
+                                  buyer_origin=bid.buyer_origin)
+                self.accept_bid(bid=bid,
+                                energy=selected_energy,
+                                seller=offer.seller,
+                                buyer=bid.buyer,
+                                already_tracked=True,
+                                trade_rate=matched_rate,
+                                trade_offer_info=trade_bid_info,
+                                seller_origin=offer.seller_origin)
