@@ -87,8 +87,9 @@ class FakeMarket:
     def bids(self):
         return {bid.id: bid for bid in self._bids}
 
-    def accept_offer(self, offer, buyer, *, energy=None, time=None, already_tracked=False,
+    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+        offer = offer_or_id
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
         if energy < offer.energy:
