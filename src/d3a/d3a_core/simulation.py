@@ -53,6 +53,11 @@ if platform.python_implementation() != "PyPy" and \
 log = getLogger(__name__)
 
 
+SLOWDOWN_FACTOR = 100
+SLOWDOWN_STEP = 5
+RANDOM_SEED_MAX_VALUE = 1000000
+
+
 class SimulationResetException(Exception):
     pass
 
@@ -144,7 +149,7 @@ class Simulation:
         if seed is not None:
             random.seed(int(seed))
         else:
-            random_seed = random.randint(0, 1000000)
+            random_seed = random.randint(0, RANDOM_SEED_MAX_VALUE)
             random.seed(random_seed)
             self.initial_params["seed"] = random_seed
             log.info("Random seed: {}".format(random_seed))
@@ -292,7 +297,7 @@ class Simulation:
                     # Simulation runs faster than real time but a slowdown was
                     # requested
                     tick_diff = tick_lengths_s - realtime_tick_length
-                    diff_slowdown = tick_diff * self.slowdown / 10000
+                    diff_slowdown = tick_diff * self.slowdown / SLOWDOWN_FACTOR
                     log.trace("Slowdown: %.4f", diff_slowdown)
                     if console is not None:
                         self._handle_input(console, diff_slowdown)
@@ -380,13 +385,12 @@ class Simulation:
                 elif cmd == 'S':
                     self.stop()
                 elif cmd == '+':
-                    v = 5
-                    if self.slowdown <= 95:
-                        self.slowdown += v
+                    if self.slowdown <= SLOWDOWN_FACTOR - SLOWDOWN_STEP:
+                        self.slowdown += SLOWDOWN_STEP
                         log.critical("Simulation slowdown changed to %d", self.slowdown)
                 elif cmd == '-':
-                    if self.slowdown >= 5:
-                        self.slowdown -= 5
+                    if self.slowdown >= SLOWDOWN_STEP:
+                        self.slowdown -= SLOWDOWN_STEP
                         log.critical("Simulation slowdown changed to %d", self.slowdown)
             if sleep == 0 or time.monotonic() - start >= sleep:
                 break
