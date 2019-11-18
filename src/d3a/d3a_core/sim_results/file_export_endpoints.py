@@ -20,8 +20,8 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.d3a_core.sim_results.area_statistics import _is_house_node, \
-    _is_load_node, _is_prosumer_node
+from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node, \
+    _is_producer_node
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
@@ -370,50 +370,78 @@ class KPI:
                     if trade.buyer is child.name:
                         self._total_energy += trade.offer.energy
 
-    def _export_house_pv_self_consumption(self, area):
-        house_pv_device = list()
-        house_load_device = list()
-        trade_by_pv = 0
-        total_energy_bought = 0
-        traded_from_pv = 0
-        if not _is_house_node(area):
-            return
+    def _accumulate_devices(self, area):
         for child in area.children:
-            if isinstance(child.strategy, PVStrategy):
-                house_pv_device.append(child.name)
-            elif _is_load_node(child) or _is_prosumer_node(child):
-                house_load_device.append(child.name)
+            if _is_producer_node(child):
+                self.producer_list.append(child.name)
+            elif _is_load_node(child):
+                self.consumer_list.append(child.name)
+                self.total_energy_demanded += \
+                    child.strategy.avg_power_W * child.strategy._initial_hrs_per_day
+            elif _is_prosumer_node(child):
+                self.ess_list.append(child.name)
 
-        for markets in area.past_markets:
-            for trade in markets.trades:
-                # Total Electricity traded by house device
-                if trade.buyer in house_load_device:
-                    total_energy_bought += trade.offer.energy
-                # Electricity produced by PV
-                if trade.offer.seller in house_pv_device:
-                    trade_by_pv += trade.offer.energy
-                # PV electricity self_consumption
-                if trade.offer.seller in house_pv_device and trade.buyer in house_load_device:
-                    traded_from_pv += trade.offer.energy
+            if child.children:
+                self._accumulate_devices(child)
 
-        if trade_by_pv != 0:
-            self_consumption_within_house = traded_from_pv / trade_by_pv
-        else:
-            self_consumption_within_house = 0
-        if total_energy_bought != 0:
-            self_sufficiency = traded_from_pv / total_energy_bought
-        else:
-            self_sufficiency = 0
+    def _accumulate_self_consumption(self, trade):
+        if trade.seller_origin in self.producer_list and trade.buyer_origin in self.consumer_list:
+            self.total_self_consumption += trade.offer.energy * 1000
 
-        return {"self_consumption_within_house": self_consumption_within_house,
-                "self_sufficiency": self_sufficiency}
+    def _accumulate_self_consumption_buffer(self, trade):
+        if trade.seller_origin in self.producer_list and trade.buyer_origin in self.ess_list:
+            self.self_consumption_buffer += trade.offer.energy * 1000
+
+    def _dissipate_self_consumption_buffer(self, trade):
+        if trade.seller_origin in self.ess_list and \
+                (trade.buyer_origin not in self.consumer_list or
+                 trade.buyer_origin not in self.ess_list) and \
+                self.self_consumption_buffer > 0:
+            if (self.self_consumption_buffer - trade.offer.energy * 1000) > 0:
+                self.self_consumption_buffer -= trade.offer.energy * 1000
+            else:
+                self.self_consumption_buffer = 0
+
+    def _accumulate_energy_trace(self, area):
+        for market in area.past_markets:
+            for trade in market.trades:
+                self._accumulate_self_consumption(trade)
+                self._accumulate_self_consumption_buffer(trade)
+                self._dissipate_self_consumption_buffer(trade)
+
+    def _area_self_sufficiency(self, area):
+        self.producer_list = list()
+        self.consumer_list = list()
+        self.ess_list = list()
+        self.total_energy_demanded = 0
+        self.total_self_consumption = 0
+        self.self_consumption_buffer = 0
+
+        self._accumulate_devices(area)
+
+        self._accumulate_energy_trace(area)
+
+        # in case when the area doesn't have any load demand
+        if self.total_energy_demanded <= 0:
+            return {"self_sufficiency": None}
+
+        """
+        In case when the ess' SOC at start of simulation was more than the end of simulation
+        due to which it will end-up discharging more than its initial state.
+        """
+        if (self.total_self_consumption - self.self_consumption_buffer) < 0:
+            return {"self_sufficiency": 1.0}
+
+        self_sufficiency = \
+            (self.total_self_consumption - self.self_consumption_buffer) / \
+            self.total_energy_demanded
+
+        return {"self_sufficiency": self_sufficiency}
 
     def update_kpis_from_area(self, area):
-        self._accumulated_trade_energy(area)
         self.performance_index[area.name] = \
-            self._export_house_pv_self_consumption(area)
-        if self._total_energy is not 0:
-            cep_share = self._cep_energy / self._total_energy
-        else:
-            cep_share = 0
-        self.performance_index["global-non-renewable-energy-share"] = cep_share
+            self._area_self_sufficiency(area)
+
+        for child in area.children:
+            if len(child.children) > 0:
+                self.update_kpis_from_area(child)
