@@ -4,6 +4,9 @@ ADD . /app
 
 WORKDIR /app
 
+RUN pip install --upgrade pip
+RUN pip install --upgrade setuptools
+
 RUN apt-get update && apt-get install build-essential libatlas3-base libatlas-base-dev -y
 RUN pypy3 -m pip install numpy==1.16.4
 RUN pypy3 -m pip install scipy
