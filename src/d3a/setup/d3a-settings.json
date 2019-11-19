@@ -6,7 +6,7 @@
     "market_count": 1,
     "cloud_coverage": 0,
     "iaa_fee": 0,
-    "start_date": "2019-11-04"
+    "start_date": "2019-11-19"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -25,6 +25,10 @@
       "RATE_CHANGE_PER_UPDATE_LIMIT": [
         0,
         1000
+      ],
+      "ENERGY_PROFILE_LIMIT": [
+        0,
+        9223372036854775807
       ],
       "NUM_CLONES_LIMIT": [
         0,

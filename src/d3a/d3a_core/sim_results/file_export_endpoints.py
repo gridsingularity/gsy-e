@@ -347,6 +347,7 @@ class KPI:
         self._cep_device = list()
         self._cep_energy = 0
         self._total_energy = 0
+        self.self_sufficiency = dict()
 
     def __repr__(self):
         return f"KPI: {self.performance_index}"
@@ -376,8 +377,9 @@ class KPI:
                 self.producer_list.append(child.name)
             elif _is_load_node(child):
                 self.consumer_list.append(child.name)
-                self.total_energy_demanded += \
-                    child.strategy.avg_power_W * child.strategy._initial_hrs_per_day
+                self.consumer_area_list.append(child.parent)
+                for time, energy in child.strategy.state.desired_energy_Wh.items():
+                    self.total_energy_demanded += energy
             elif _is_prosumer_node(child):
                 self.ess_list.append(child.name)
 
@@ -402,16 +404,18 @@ class KPI:
             else:
                 self.self_consumption_buffer = 0
 
-    def _accumulate_energy_trace(self, area):
-        for market in area.past_markets:
-            for trade in market.trades:
-                self._accumulate_self_consumption(trade)
-                self._accumulate_self_consumption_buffer(trade)
-                self._dissipate_self_consumption_buffer(trade)
+    def _accumulate_energy_trace(self):
+        for c_area in self.consumer_area_list:
+            for market in c_area.past_markets:
+                for trade in market.trades:
+                    self._accumulate_self_consumption(trade)
+                    self._accumulate_self_consumption_buffer(trade)
+                    self._dissipate_self_consumption_buffer(trade)
 
     def _area_self_sufficiency(self, area):
         self.producer_list = list()
         self.consumer_list = list()
+        self.consumer_area_list = list()
         self.ess_list = list()
         self.total_energy_demanded = 0
         self.total_self_consumption = 0
@@ -419,10 +423,11 @@ class KPI:
 
         self._accumulate_devices(area)
 
-        self._accumulate_energy_trace(area)
+        self._accumulate_energy_trace()
 
         # in case when the area doesn't have any load demand
         if self.total_energy_demanded <= 0:
+            self.self_sufficiency[area.name] = None
             return {"self_sufficiency": None}
 
         """
@@ -430,12 +435,13 @@ class KPI:
         due to which it will end-up discharging more than its initial state.
         """
         if (self.total_self_consumption - self.self_consumption_buffer) < 0:
+            self.self_sufficiency[area.name] = 1.0
             return {"self_sufficiency": 1.0}
 
         self_sufficiency = \
             (self.total_self_consumption - self.self_consumption_buffer) / \
             self.total_energy_demanded
-
+        self.self_sufficiency[area.name] = self_sufficiency
         return {"self_sufficiency": self_sufficiency}
 
     def update_kpis_from_area(self, area):

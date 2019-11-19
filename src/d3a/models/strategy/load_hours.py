@@ -244,7 +244,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
                 self.energy_requirement_Wh[market.time_slot] = 0.0
                 self.state.desired_energy_Wh[market.time_slot] = 0.0
-
+                for trade in market.trades:
+                    if trade.buyer_origin == self.owner.name:
+                        self.state.desired_energy_Wh[market.time_slot] += trade.offer.energy * 1000
             if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 if self.energy_requirement_Wh[market.time_slot] > 0:
