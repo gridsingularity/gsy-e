@@ -13,9 +13,8 @@ chardet==3.0.4            # via requests
 click-default-group==1.2.1
 click==7.0
 colorlog==4.0.2
-cycler==0.10.0            # via matplotlib
 cytoolz==0.9.0.1          # via eth-keyfile, eth-utils, web3
-decorator==4.4.0          # via networkx, plotly, traitlets
+decorator==4.4.0          # via plotly, traitlets
 dill==0.2.9
 eth-abi==1.3.0            # via web3
 eth-account==0.3.0        # via web3
@@ -30,25 +29,18 @@ idna==2.8                 # via requests
 ipython-genutils==0.2.0   # via nbformat, traitlets
 jsonschema==3.0.2         # via nbformat
 jupyter-core==4.5.0       # via nbformat
-kiwisolver==1.1.0         # via matplotlib
 lru-dict==1.1.6           # via web3
-matplotlib==3.1.1
 nbformat==4.4.0           # via plotly
-networkx==2.4             # via pandapower
 numpy==1.16.4
-packaging==19.2           # via pandapower
-pandapower==2.1.0
-pandas==0.25.3            # via pandapower
 parsimonious==0.8.1       # via eth-abi
 pendulum==2.0.4
 pip-tools==4.0.0
 plotly==3.10.0
 pycryptodome==3.8.2       # via eth-hash, eth-keyfile
-pyparsing==2.4.5          # via matplotlib, packaging
 pyrsistent==0.15.4        # via jsonschema
-python-dateutil==2.8.0    # via matplotlib, pandas, pendulum
+python-dateutil==2.8.0    # via pendulum
 python-rex==0.4
-pytz==2019.1              # via pandas, plotly
+pytz==2019.1              # via plotly
 pytzdata==2019.1          # via pendulum
 redis==3.2.1
 regex==2019.6.8           # via awesome-slugify
@@ -56,8 +48,7 @@ requests==2.22.0          # via plotly, web3
 retrying==1.3.3           # via plotly
 rlp==1.1.0                # via eth-rlp
 rq==1.0
-scipy==1.3.2              # via pandapower
-six==1.12.0               # via attrdict, cycler, jsonschema, packaging, parsimonious, pip-tools, plotly, pyrsistent, python-dateutil, python-rex, retrying, traitlets
+six==1.12.0               # via attrdict, jsonschema, parsimonious, pip-tools, plotly, pyrsistent, python-dateutil, python-rex, retrying, traitlets
 sortedcontainers==2.1.0
 toolz==0.9.0              # via cytoolz
 traitlets==4.3.2          # via jupyter-core, nbformat
@@ -67,4 +58,4 @@ web3==4.9.2
 websockets==6.0           # via web3
 
 # The following packages are considered to be unsafe in a requirements file:
-# setuptools==41.6.0        # via jsonschema, kiwisolver
+# setuptools==41.6.0        # via jsonschema

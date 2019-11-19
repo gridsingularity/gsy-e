@@ -1,6 +1,8 @@
 # In order to install PandaPower run 'pip install matplotlib pandapower'
-import pandapower as pp
-from pandapower.plotting import to_html
+import platform
+if platform.python_implementation() != "PyPy":
+    import pandapower as pp
+    from pandapower.plotting import to_html
 
 
 # create empty net

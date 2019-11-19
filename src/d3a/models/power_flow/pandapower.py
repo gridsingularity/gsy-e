@@ -16,11 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
-import pandapower as pp
-from pandapower.plotting import to_html
+import platform
+
 from d3a.models.power_flow import PowerFlowBase
 from d3a.d3a_core.util import convert_unit_to_mega, convert_kilo_to_mega, convert_percent_to_ratio
 from d3a.d3a_core.export import mkdir_from_str
+if platform.python_implementation() != "PyPy":
+    import pandapower as pp
+    from pandapower.plotting import to_html
 
 
 class PandaPowerFlow(PowerFlowBase):
