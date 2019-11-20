@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 import sys
 import json
+import logging
 from logging import getLogger
 from typing import Dict, List  # noqa
 from numpy.random import random
@@ -64,7 +65,6 @@ class RedisMarketCommunicator:
 
     def sub_to_market_event(self, channel, callback):
         self.pubsub.subscribe(**{channel: callback})
-        self.pubsub.run_in_thread(daemon=True)
 
     def unsub_from_market_event(self, channel):
         self.pubsub.unsubscribe(channel)
@@ -76,6 +76,10 @@ class MarketRedisApi:
         self.redis_db = StrictRedis.from_url(REDIS_URL)
         self.pubsub = self.redis_db.pubsub()
         self.sub_to_external_requests()
+        from concurrent.futures import ThreadPoolExecutor
+        self.executor = ThreadPoolExecutor(max_workers=10)
+        self.futures = []
+        self.thread = None
 
     def sub_to_external_requests(self):
         self.pubsub.subscribe(**{
@@ -83,7 +87,27 @@ class MarketRedisApi:
             self._delete_offer_channel: self._delete_offer,
             self._accept_offer_channel: self._accept_offer,
         })
-        self.pubsub.run_in_thread(daemon=True)
+        self.thread = self.pubsub.run_in_thread(daemon=True)
+
+    def _stop_futures(self):
+        for future in self.futures:
+            try:
+                future.result(timeout=5)
+            except TimeoutError:
+                logging.error(f"future {future} timed out")
+        self.futures = []
+        # Stopping executor
+        self.executor.shutdown(wait=True)
+
+    def stop(self):
+        self._stop_futures()
+        try:
+            self.thread.stop()
+            self.thread.join()
+            self.pubsub.close()
+            self.thread = None
+        except Exception as e:
+            logging.debug(f"Error when stopping all threads: {e}")
 
     def publish(self, channel, data):
         self.redis_db.publish(channel, json.dumps(data))
@@ -138,43 +162,63 @@ class MarketRedisApi:
         return data_dict
 
     def _accept_offer(self, payload):
-        return self._accept_offer_impl(self._parse_payload(payload))
+        def thread_cb():
+            return self._accept_offer_impl(self._parse_payload(payload))
+        self.futures.append(self.executor.submit(thread_cb))
 
     def _accept_offer_impl(self, arguments):
+        transaction_uuid = arguments.pop("transaction_uuid", None)
         try:
             trade = self.market.accept_offer(**arguments)
             self.publish(self._accept_offer_response_channel,
-                         {"status": "ready", "trade": trade.to_JSON_string()})
+                         {"status": "ready", "trade": trade.to_JSON_string(),
+                          "transaction_uuid": transaction_uuid})
         except Exception as e:
+            logging.error(f"Error when handling accept_offer on market {self.market_object.name}: "
+                          f"Exception: {str(e)}, Accept Offer Arguments: {arguments}")
             self.publish(self._accept_offer_response_channel,
                          {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e)})
+                          "error_message": str(e), "transaction_uuid": transaction_uuid})
 
     def _offer(self, payload):
-        return self._offer_impl(self._parse_payload(payload))
+        def thread_cb():
+            return self._offer_impl(self._parse_payload(payload))
+
+        self.futures.append(self.executor.submit(thread_cb))
 
     def _offer_impl(self, arguments):
+        transaction_uuid = arguments.pop("transaction_uuid", None)
         try:
             offer = self.market.offer(**arguments)
             self.publish(self._offer_response_channel,
-                         {"status": "ready", "offer": offer.to_JSON_string()})
+                         {"status": "ready", "offer": offer.to_JSON_string(),
+                          "transaction_uuid": transaction_uuid})
         except Exception as e:
+            logging.error(f"Error when handling offer on market {self.market_object.name}: "
+                          f"Exception: {str(e)}, Offer Arguments: {arguments}")
             self.publish(self._offer_response_channel,
                          {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e)})
+                          "error_message": str(e), "transaction_uuid": transaction_uuid})
 
     def _delete_offer(self, payload):
-        return self._delete_offer_impl(self._parse_payload(payload))
+
+        def thread_cb():
+            return self._delete_offer_impl(self._parse_payload(payload))
+        self.futures.append(self.executor.submit(thread_cb))
 
     def _delete_offer_impl(self, arguments):
+        transaction_uuid = arguments.pop("transaction_uuid", None)
         try:
             self.market.delete_offer(**arguments)
+
             self.publish(self._delete_offer_response_channel,
-                         {"status": "ready"})
+                         {"status": "ready", "transaction_uuid": transaction_uuid})
         except Exception as e:
+            logging.debug(f"Error when handling delete_offer on market {self.market_object.name}: "
+                          f"Exception: {str(e)}, Delete Offer Arguments: {arguments}")
             self.publish(self._delete_offer_response_channel,
-                         {"status": "error", "exception": str(type(e)),
-                          "error_message": str(e)})
+                         {"status": "ready", "exception": str(type(e)),
+                          "error_message": str(e), "transaction_uuid": transaction_uuid})
 
 
 RLOCK_MEMBER_NAME = "rlock"
@@ -185,11 +229,11 @@ def lock_market_action(function):
     def wrapper(self, *args, **kwargs):
         # The market class needs to have an rlock member, that holds the recursive lock
         lock_object = getattr(self, RLOCK_MEMBER_NAME)
-        lock_object.acquire()
-        try:
+        if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             return function(self, *args, **kwargs)
-        finally:
-            lock_object.release()
+        else:
+            with lock_object:
+                return function(self, *args, **kwargs)
     return wrapper
 
 

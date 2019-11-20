@@ -3,7 +3,10 @@ import logging
 from d3a.models.market.market_structures import offer_from_JSON_string, trade_from_JSON_string
 from d3a.events import MarketEvent
 from d3a.models.area.redis_dispatcher.redis_communicator import ResettableCommunicator
-from time import sleep
+from threading import Lock
+from concurrent.futures import ThreadPoolExecutor
+from redis import StrictRedis
+from d3a.d3a_core.redis_communication import REDIS_URL
 
 
 class MarketNotifyEventPublisher:
@@ -12,9 +15,13 @@ class MarketNotifyEventPublisher:
     """
     def __init__(self, market_id):
         self.market_id = market_id
-        self.redis = ResettableCommunicator()
+        self.redis = StrictRedis.from_url(REDIS_URL)
+        self.pubsub = self.redis.pubsub()
         self.active_event = False
-        self.subscribe_to_event_responses()
+        self.event_response_uuids = []
+        self.executor = ThreadPoolExecutor(max_workers=10)
+        self.futures = []
+        self.lock = Lock()
 
     def stop(self):
         try:
@@ -29,18 +36,32 @@ class MarketNotifyEventPublisher:
         return f"market/{self.market_id}/notify_event/response"
 
     def response_callback(self, payload):
-        self.redis.resume()
+        data = json.loads(payload["data"])
 
-    def subscribe_to_event_responses(self):
-        self.redis.sub_to_response(self.event_response_channel_name(), self.response_callback)
+        if "response" in data:
+            self.event_response_uuids.append(data["transaction_uuid"])
 
     def publish_event(self, event_type: MarketEvent, **kwargs):
         for key in ["offer", "trade", "new_offer", "existing_offer"]:
             if key in kwargs:
                 kwargs[key] = kwargs[key].to_JSON_string()
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
+        self.pubsub.subscribe(**{self.event_response_channel_name(): self.response_callback})
+        from uuid import uuid4
+        send_data["transaction_uuid"] = str(uuid4())
         self.redis.publish(self.event_channel_name(), json.dumps(send_data))
-        self.redis.wait()
+        retries = 0
+        # TODO: Refactor the retries mechanism
+        while send_data["transaction_uuid"] not in self.event_response_uuids and retries < 50:
+            retries += 1
+            with self.lock:
+                self.pubsub.get_message(timeout=0.01)
+
+        if send_data["transaction_uuid"] not in self.event_response_uuids:
+            logging.error(f"Transaction ID not found after lots of retries: "
+                          f"{send_data} {self.market_id}")
+        else:
+            self.event_response_uuids.remove(send_data["transaction_uuid"])
 
 
 class MarketNotifyEventSubscriber:
@@ -52,32 +73,32 @@ class MarketNotifyEventSubscriber:
         self.area = area
         self.root_dispatcher = root_dispatcher
         self.redis = ResettableCommunicator()
-        self.subscribe_to_events()
         self.futures = []
-        self.executors = []
         self.active_trade = False
 
-    def publish_notify_event_response(self, market_id, event_type):
+        self.executor = ThreadPoolExecutor(max_workers=10)
+
+    def publish_notify_event_response(self, market_id, event_type, transaction_uuid):
         response_channel = f"market/{market_id}/notify_event/response"
-        response_data = json.dumps({"response": event_type.name.lower()})
+        response_data = json.dumps({"response": event_type.name.lower(),
+                                    "event_type_id": event_type.value,
+                                    "transaction_uuid": transaction_uuid})
         self.redis.publish(response_channel, response_data)
 
     def _cleanup_all_running_threads(self):
         for future in self.futures:
-            while not future.done():
-                # Wait for future to finish
-                sleep(0.1)
-        for executor in self.executors:
-            executor.shutdown(wait=False)
+            try:
+                future.result(timeout=5)
+            except Exception as e:
+                logging.error(f"future {future} timed out during cleanup. Exception: {str(e)}")
         self.futures = []
-        self.executors = []
 
     def cycle_market_channels(self):
         self._cleanup_all_running_threads()
         try:
             self.redis.stop_all_threads()
         except Exception as e:
-            logging.debug(f"Error when stopping all threads when recycling markets: {e}")
+            logging.debug(f"Error when stopping all threads when recycling markets: {str(e)}")
         self.redis = ResettableCommunicator()
         self.subscribe_to_events()
 
@@ -88,25 +109,16 @@ class MarketNotifyEventSubscriber:
 
             def generate_notify_callback(payload):
                 event_type, kwargs = self.parse_market_event_from_event_payload(payload)
+                data = json.loads(payload["data"])
                 kwargs["market_id"] = market.id
 
-                from concurrent.futures import ThreadPoolExecutor
-                executor = ThreadPoolExecutor(max_workers=1)
-
                 def executor_func():
-                    while self.active_trade is True and event_type == MarketEvent.OFFER:
-                        # Wait if there is an active trade and a new offer arrives.
-                        # This helps to avoid having 2 concurrent trades in one area.
-                        sleep(0.5)
-                    self.active_trade = event_type in [MarketEvent.OFFER_CHANGED,
-                                                       MarketEvent.TRADE]
+                    transaction_uuid = data.pop("transaction_uuid", None)
+                    assert transaction_uuid is not None
                     self.root_dispatcher.broadcast_callback(event_type, **kwargs)
-                    self.publish_notify_event_response(market.id, event_type)
-                    if self.active_trade is not MarketEvent.OFFER_DELETED:
-                        self.active_trade = False
+                    self.publish_notify_event_response(market.id, event_type, transaction_uuid)
 
-                self.futures.append(executor.submit(executor_func))
-                self.executors.append(executor)
+                self.futures.append(self.executor.submit(executor_func))
 
             channels_callbacks_dict[channel_name] = generate_notify_callback
         self.redis.sub_to_multiple_channels(channels_callbacks_dict)

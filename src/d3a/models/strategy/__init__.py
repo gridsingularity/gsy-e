@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 from logging import getLogger
 from typing import List, Dict, Any, Union  # noqa
+from uuid import uuid4
 
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
@@ -167,15 +168,26 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.redis = RedisMarketCommunicator()
             self.trade_buffer = None
             self.offer_buffer = None
+            self.event_response_uuids = []
+            from threading import Lock
+            self.lock = Lock()
 
     parameters = None
 
-    def _send_events_to_market(self, event_type, market_id, data, callback):
-        response_channel = f"{market_id}/{event_type}/RESPONSE"
-        market_channel = f"{market_id}/{event_type}"
+    def _send_events_to_market(self, event_type_str, market_id, data, callback, event_type):
+        if not isinstance(market_id, str):
+            market_id = market_id.id
+        response_channel = f"{market_id}/{event_type_str}/RESPONSE"
+        market_channel = f"{market_id}/{event_type_str}"
         self.redis.sub_to_market_event(response_channel, callback)
+
+        data["transaction_uuid"] = str(uuid4())
         self.redis.publish(market_channel, data)
-        self.redis.wait()
+        while data["transaction_uuid"] not in self.event_response_uuids:
+            with self.lock:
+                self.redis.pubsub.get_message(timeout=0.01)
+
+        self.event_response_uuids.remove(data["transaction_uuid"])
 
     def area_reconfigure_event(self, *args, **kwargs):
         pass
@@ -216,7 +228,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             return True
 
     def offer(self, market_id, offer_args):
-        self._send_events_to_market("OFFER", market_id, offer_args, self._offer_response)
+        self._send_events_to_market("OFFER", market_id, offer_args,
+                                    self._offer_response, event_type=MarketEvent.OFFER)
         offer = self.offer_buffer
         assert offer is not None
         self.offer_buffer = None
@@ -228,8 +241,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            self.offer_buffer = offer_from_JSON_string(data["trade"])
-            self.redis.resume()
+            self.offer_buffer = offer_from_JSON_string(data["offer"])
+            self.event_response_uuids.append(data["transaction_uuid"])
         else:
             raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
                             f"{data['exception']}:  {data['error_message']}")
@@ -251,7 +264,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                       trade_bid_info, buyer_origin):
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            assert isinstance(market_or_id, str)
+            if not isinstance(market_or_id, str):
+                market_or_id = market_or_id.id
             data = {"offer_or_id": offer.to_JSON_string(),
                     "buyer": buyer,
                     "energy": energy,
@@ -262,7 +276,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     "buyer_origin": buyer_origin}
 
             self._send_events_to_market("ACCEPT_OFFER", market_or_id, data,
-                                        self._accept_offer_response)
+                                        self._accept_offer_response, event_type=MarketEvent.TRADE)
             trade = self.trade_buffer
             self.trade_buffer = None
             assert trade is not None
@@ -281,10 +295,10 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             data = json.loads(data)
         if data["status"] == "ready":
             self.trade_buffer = trade_from_JSON_string(data["trade"])
-            self.redis.resume()
+            self.event_response_uuids.append(data["transaction_uuid"])
         else:
             raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
-                            f"{data['exception']}:  {data['error_message']}")
+                            f"{data['exception']}:  {data['error_message']} {data}")
 
     def post(self, **data):
         self.event_data_received(data)
@@ -309,7 +323,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             data = {"offer_or_id": offer.to_JSON_string()}
             self._send_events_to_market("DELETE_OFFER", market_or_id, data,
-                                        self._delete_offer_response)
+                                        self._delete_offer_response,
+                                        event_type=MarketEvent.OFFER_DELETED)
         else:
             market_or_id.delete_offer(offer)
 
@@ -319,9 +334,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if isinstance(data, str):
             data = json.loads(data)
         if data["status"] == "ready":
-            # offer = offer_from_JSON_string(data["trade"])
-            # self.offer_buffer = offer
-            self.redis.resume()
+            self.event_response_uuids.append(data["transaction_uuid"])
+
         else:
             raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
                             f"{data['exception']}:  {data['error_message']}")
@@ -339,6 +353,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def event_market_cycle(self):
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             self.offers.delete_past_markets_offers()
+        self.event_responses = []
 
 
 class BidEnabledStrategy(BaseStrategy):

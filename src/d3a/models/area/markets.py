@@ -78,6 +78,7 @@ class AreaMarkets:
             for pm in delete_markets:
                 if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                     past_markets[pm].redis_publisher.stop()
+                    past_markets[pm].redis_api.stop()
                 past_markets[pm].offers = {}
                 past_markets[pm].trades = {}
                 past_markets[pm].offer_history = {}

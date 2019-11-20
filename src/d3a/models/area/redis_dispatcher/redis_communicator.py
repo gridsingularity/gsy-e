@@ -73,6 +73,7 @@ class ResettableCommunicator(RedisAreaCommunicator):
     def sub_to_response(self, channel, callback):
         thread = super().sub_to_response(channel, callback)
         self.threads.append(thread)
+        return thread
 
     def unsubscribe_from_all(self):
         self.pubsub.unsubscribe()

@@ -1,4 +1,5 @@
 import json
+import logging
 from random import random
 from copy import deepcopy
 from d3a.events import MarketEvent
@@ -14,12 +15,25 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
         self.str_market_events = [event.name.lower() for event in MarketEvent]
         self.active_trade = False
         self.deferred_events = []
-        self.events_to_wait = {
-            MarketEvent.OFFER: Event(),
-            MarketEvent.OFFER_CHANGED: Event(),
-            MarketEvent.TRADE: Event(),
-            MarketEvent.OFFER_DELETED: Event()
+        self.market_event = Event()
+        self.futures = []
+        from concurrent.futures import ThreadPoolExecutor
+        self.executor = ThreadPoolExecutor(max_workers=10)
+        self.thread_events = {
+            MarketEvent.TRADE.value: Event(),
+            MarketEvent.OFFER.value: Event(),
+            MarketEvent.OFFER_DELETED.value: Event(),
+            MarketEvent.OFFER_CHANGED.value: Event(),
         }
+
+    def cleanup_running_threads(self):
+        from concurrent.futures import TimeoutError
+        for future in self.futures:
+            try:
+                future.result(timeout=5)
+            except TimeoutError:
+                logging.error(f"market event future {future} timed out during cleanup.")
+        self.futures = []
 
     def event_channel_name(self):
         return f"{self.area.slug}/market_event"
@@ -30,25 +44,11 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
     def event_listener_redis(self, payload):
         event_type, kwargs = self.parse_market_event_from_event_payload(payload)
 
-        # If this is a trade-related event, it needs to be executed immediately, all other
-        # events need to be stored for deferred execution
-        if self.active_trade and event_type not in self._trade_related_events:
-            self.store_deferred_events_during_active_trade(payload)
-        # If there is no active trade but we still have deferred events, we need to handle these.
-        elif not self.active_trade and len(self.deferred_events) > 0:
-            self.store_deferred_events_during_active_trade(payload)
-            self.run_deferred_events()
-        # No deferred event, handle directly the event
-        else:
-            # Consume already deferred events before handling the new one
-            from concurrent.futures import ThreadPoolExecutor
-            executor = ThreadPoolExecutor(max_workers=1)
+        def executor_func():
+            self.root_dispatcher.event_listener(event_type=event_type, **kwargs)
+            self.publish_response(event_type)
 
-            def executor_func():
-                self.root_dispatcher.event_listener(event_type=event_type, **kwargs)
-                self.publish_response(event_type)
-
-            executor.submit(executor_func)
+        self.futures.append(self.executor.submit(executor_func))
 
     def response_callback(self, payload):
         data = json.loads(payload["data"])
@@ -59,7 +59,7 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
             if event_type not in self.str_market_events:
                 raise Exception("RedisAreaDispatcher: Should never reach this point")
             else:
-                self.events_to_wait[MarketEvent(event_type_id)].set()
+                self.thread_events[event_type_id].set()
 
     def publish_event(self, area_slug, event_type: MarketEvent, **kwargs):
         dispatch_chanel = f"{area_slug}/market_event"
@@ -77,9 +77,12 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
 
     def broadcast_event_redis(self, event_type: MarketEvent, **kwargs):
         for child in sorted(self.area.children, key=lambda _: random()):
-            self.publish_event(child.slug, event_type, **kwargs)
-            self.events_to_wait[event_type].wait()
-            self.events_to_wait[event_type].clear()
+            if len(child.children) > 0:
+                self.publish_event(child.slug, event_type, **kwargs)
+                self.thread_events[event_type.value].wait()
+                self.thread_events[event_type.value].clear()
+            else:
+                child.dispatcher.event_listener(event_type, **kwargs)
 
         for time_slot, agents in self.root_dispatcher._inter_area_agents.items():
             if time_slot not in self.area._markets.markets:
