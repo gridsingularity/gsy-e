@@ -1,7 +1,6 @@
 import json
 import logging
 from random import random
-from copy import deepcopy
 from d3a.events import MarketEvent
 from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
@@ -13,8 +12,6 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
     def __init__(self, area, root_dispatcher, redis):
         super().__init__(area, root_dispatcher, redis)
         self.str_market_events = [event.name.lower() for event in MarketEvent]
-        self.active_trade = False
-        self.deferred_events = []
         self.market_event = Event()
         self.futures = []
         from concurrent.futures import ThreadPoolExecutor
@@ -70,11 +67,6 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
         self.redis.publish(dispatch_chanel, json.dumps(send_data))
 
-    @property
-    def _trade_related_events(self):
-        return [MarketEvent.OFFER_CHANGED, MarketEvent.TRADE,
-                MarketEvent.BID_TRADED, MarketEvent.BID_CHANGED]
-
     def broadcast_event_redis(self, event_type: MarketEvent, **kwargs):
         for child in sorted(self.area.children, key=lambda _: random()):
             if len(child.children) > 0:
@@ -110,16 +102,3 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
             kwargs["trade"] = trade_from_JSON_string(kwargs["trade"])
         event_type = MarketEvent(data["event_type"])
         return event_type, kwargs
-
-    def store_deferred_events_during_active_trade(self, json_event):
-        self.deferred_events.append(deepcopy(json_event))
-
-    def run_deferred_events(self):
-        if not self.active_trade:
-            # Using a while loop in order to avoid for loop crashes when mutating the
-            # iterable while in for loop
-            while len(self.deferred_events) > 0:
-                stored_event = self.deferred_events.pop(0)
-                event_type, kwargs = self.parse_market_event_from_event_payload(stored_event)
-                self.root_dispatcher.event_listener(event_type=event_type, **kwargs)
-                self.publish_response(event_type)

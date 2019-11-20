@@ -29,8 +29,9 @@ from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.events import EventMixin
 from d3a.d3a_core.util import append_or_create_key
-from d3a.models.market import RedisMarketCommunicator
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
+from redis import StrictRedis
+from d3a.d3a_core.redis_communication import REDIS_URL
 
 log = getLogger(__name__)
 
@@ -165,7 +166,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offers = Offers(self)
         self.enabled = True
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            self.redis = RedisMarketCommunicator()
+            self.redis = StrictRedis.from_url(REDIS_URL)
+            self.pubsub = self.redis.pubsub()
             self.trade_buffer = None
             self.offer_buffer = None
             self.event_response_uuids = []
@@ -179,13 +181,13 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             market_id = market_id.id
         response_channel = f"{market_id}/{event_type_str}/RESPONSE"
         market_channel = f"{market_id}/{event_type_str}"
-        self.redis.sub_to_market_event(response_channel, callback)
+        self.pubsub.subscribe(**{response_channel: callback})
 
         data["transaction_uuid"] = str(uuid4())
-        self.redis.publish(market_channel, data)
+        self.redis.publish(market_channel, json.dumps(data))
         while data["transaction_uuid"] not in self.event_response_uuids:
             with self.lock:
-                self.redis.pubsub.get_message(timeout=0.01)
+                self.pubsub.get_message(timeout=0.01)
 
         self.event_response_uuids.remove(data["transaction_uuid"])
 

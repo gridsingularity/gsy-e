@@ -29,18 +29,18 @@ from redis import StrictRedis
 from pendulum import DateTime
 from functools import wraps
 from threading import RLock
+from threading import Lock
+from concurrent.futures import ThreadPoolExecutor
 
-from d3a.constants import DATE_TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Offer, Trade, Bid  # noqa
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
-from d3a.models.area.redis_dispatcher.market_notify_event_subscriber import \
-    MarketNotifyEventPublisher
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.redis_communication import REDIS_URL
 from d3a.models.market.market_structures import trade_bid_info_from_JSON_string, \
     offer_from_JSON_string
+from d3a.events import MarketEvent
 
 log = getLogger(__name__)
 
@@ -68,6 +68,60 @@ class RedisMarketCommunicator:
 
     def unsub_from_market_event(self, channel):
         self.pubsub.unsubscribe(channel)
+
+
+class MarketNotifyEventPublisher:
+    """
+    Used from the Markets class, sends notify events from the Markets to the Areas
+    """
+    def __init__(self, market_id):
+        self.market_id = market_id
+        self.redis = StrictRedis.from_url(REDIS_URL)
+        self.pubsub = self.redis.pubsub()
+        self.event_response_uuids = []
+        self.executor = ThreadPoolExecutor(max_workers=10)
+        self.futures = []
+        self.lock = Lock()
+
+    def stop(self):
+        try:
+            self.redis.stop_all_threads()
+        except Exception as e:
+            logging.debug(f"Error when stopping all threads: {e}")
+
+    def event_channel_name(self):
+        return f"market/{self.market_id}/notify_event"
+
+    def event_response_channel_name(self):
+        return f"market/{self.market_id}/notify_event/response"
+
+    def response_callback(self, payload):
+        data = json.loads(payload["data"])
+
+        if "response" in data:
+            self.event_response_uuids.append(data["transaction_uuid"])
+
+    def publish_event(self, event_type: MarketEvent, **kwargs):
+        for key in ["offer", "trade", "new_offer", "existing_offer"]:
+            if key in kwargs:
+                kwargs[key] = kwargs[key].to_JSON_string()
+        send_data = {"event_type": event_type.value, "kwargs": kwargs}
+        self.pubsub.subscribe(**{self.event_response_channel_name(): self.response_callback})
+        from uuid import uuid4
+        send_data["transaction_uuid"] = str(uuid4())
+        self.redis.publish(self.event_channel_name(), json.dumps(send_data))
+        retries = 0
+        # TODO: Refactor the retries mechanism
+        while send_data["transaction_uuid"] not in self.event_response_uuids and retries < 50:
+            retries += 1
+            with self.lock:
+                self.pubsub.get_message(timeout=0.01)
+
+        if send_data["transaction_uuid"] not in self.event_response_uuids:
+            logging.error(f"Transaction ID not found after lots of retries: "
+                          f"{send_data} {self.market_id}")
+        else:
+            self.event_response_uuids.remove(send_data["transaction_uuid"])
 
 
 class MarketRedisApi:
