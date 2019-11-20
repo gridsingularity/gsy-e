@@ -16,5 +16,3 @@ redis
 rq
 web3
 sortedcontainers
-pandapower
-matplotlib
