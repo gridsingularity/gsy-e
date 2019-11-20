@@ -23,8 +23,6 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node, \
     _is_producer_node
 from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.d3a_core.util import convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import generate_market_slot_list
@@ -344,32 +342,10 @@ class ExportLeafData(ExportData):
 class KPI:
     def __init__(self):
         self.performance_index = dict()
-        self._cep_device = list()
-        self._cep_energy = 0
-        self._total_energy = 0
         self.self_sufficiency = dict()
 
     def __repr__(self):
         return f"KPI: {self.performance_index}"
-
-    def _accumulated_trade_energy(self, area):
-        for child in area.children:
-            if isinstance(child.strategy, (CommercialStrategy, FinitePowerPlant)):
-                self._cep_device.append(child.name)
-                self._accumulate_energy(area, child, True)
-            elif _is_load_node(child) or _is_prosumer_node(child):
-                self._accumulate_energy(area, child, False)
-
-    def _accumulate_energy(self, area, child, is_cep: bool):
-        for markets in area.past_markets:
-            for trade in markets.trades:
-                if is_cep:
-                    if trade.offer.seller not in self._cep_device:
-                        continue
-                    self._cep_energy += trade.offer.energy
-                else:
-                    if trade.buyer is child.name:
-                        self._total_energy += trade.offer.energy
 
     def _accumulate_devices(self, area):
         for child in area.children:
@@ -378,8 +354,7 @@ class KPI:
             elif _is_load_node(child):
                 self.consumer_list.append(child.name)
                 self.consumer_area_list.append(child.parent)
-                for time, energy in child.strategy.state.desired_energy_Wh.items():
-                    self.total_energy_demanded += energy
+                self.total_energy_demanded_wh += child.strategy.state.total_energy_demanded_wh
             elif _is_prosumer_node(child):
                 self.ess_list.append(child.name)
 
@@ -388,21 +363,27 @@ class KPI:
 
     def _accumulate_self_consumption(self, trade):
         if trade.seller_origin in self.producer_list and trade.buyer_origin in self.consumer_list:
-            self.total_self_consumption += trade.offer.energy * 1000
+            self.total_self_consumption_wh += trade.offer.energy * 1000
 
     def _accumulate_self_consumption_buffer(self, trade):
         if trade.seller_origin in self.producer_list and trade.buyer_origin in self.ess_list:
-            self.self_consumption_buffer += trade.offer.energy * 1000
+            self.self_consumption_buffer_wh += trade.offer.energy * 1000
 
     def _dissipate_self_consumption_buffer(self, trade):
-        if trade.seller_origin in self.ess_list and \
-                (trade.buyer_origin not in self.consumer_list or
-                 trade.buyer_origin not in self.ess_list) and \
-                self.self_consumption_buffer > 0:
-            if (self.self_consumption_buffer - trade.offer.energy * 1000) > 0:
-                self.self_consumption_buffer -= trade.offer.energy * 1000
-            else:
-                self.self_consumption_buffer = 0
+        if trade.seller_origin in self.ess_list:
+            if trade.buyer_origin in self.consumer_list and self.self_consumption_buffer_wh > 0:
+                if (self.self_consumption_buffer_wh - trade.offer.energy * 1000) > 0:
+                    self.self_consumption_buffer_wh -= trade.offer.energy * 1000
+                    self.total_self_consumption_wh += trade.offer.energy * 1000
+                else:
+                    self.total_self_consumption_wh += self.self_consumption_buffer_wh
+                    self.self_consumption_buffer_wh = 0
+            elif (trade.buyer_origin not in self.consumer_list or
+                  trade.buyer_origin not in self.ess_list) and self.self_consumption_buffer_wh > 0:
+                if (self.self_consumption_buffer_wh - trade.offer.energy * 1000) > 0:
+                    self.self_consumption_buffer_wh -= trade.offer.energy * 1000
+                else:
+                    self.self_consumption_buffer_wh = 0
 
     def _accumulate_energy_trace(self):
         for c_area in self.consumer_area_list:
@@ -417,30 +398,20 @@ class KPI:
         self.consumer_list = list()
         self.consumer_area_list = list()
         self.ess_list = list()
-        self.total_energy_demanded = 0
-        self.total_self_consumption = 0
-        self.self_consumption_buffer = 0
+        self.total_energy_demanded_wh = 0
+        self.total_self_consumption_wh = 0
+        self.self_consumption_buffer_wh = 0
 
         self._accumulate_devices(area)
 
         self._accumulate_energy_trace()
 
         # in case when the area doesn't have any load demand
-        if self.total_energy_demanded <= 0:
+        if self.total_energy_demanded_wh <= 0:
             self.self_sufficiency[area.name] = None
             return {"self_sufficiency": None}
 
-        """
-        In case when the ess' SOC at start of simulation was more than the end of simulation
-        due to which it will end-up discharging more than its initial state.
-        """
-        if (self.total_self_consumption - self.self_consumption_buffer) < 0:
-            self.self_sufficiency[area.name] = 1.0
-            return {"self_sufficiency": 1.0}
-
-        self_sufficiency = \
-            (self.total_self_consumption - self.self_consumption_buffer) / \
-            self.total_energy_demanded
+        self_sufficiency = self.total_self_consumption_wh / self.total_energy_demanded_wh
         self.self_sufficiency[area.name] = self_sufficiency
         return {"self_sufficiency": self_sufficiency}
 
