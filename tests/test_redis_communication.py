@@ -73,22 +73,22 @@ class TestRedisEventDispatching(unittest.TestCase):
 
     def test_subscribe(self):
         mock_redis.sub_to_area_event.assert_any_call(
-            f"storage/area_event",
+            f"{self.device2.uuid}/area_event",
             self.device2.dispatcher.area_event_dispatcher.event_listener_redis)
         mock_redis.sub_to_area_event.assert_any_call(
-            f"load/area_event",
+            f"{self.device1.uuid}/area_event",
             self.device1.dispatcher.area_event_dispatcher.event_listener_redis)
         mock_redis.sub_to_area_event.assert_any_call(
-            f"area/area_event",
+            f"{self.area.uuid}/area_event",
             self.area.dispatcher.area_event_dispatcher.event_listener_redis)
         mock_redis.sub_to_response.assert_any_call(
-            f"storage/area_event_response",
+            f"{self.device2.uuid}/area_event_response",
             self.device2.dispatcher.area_event_dispatcher.response_callback)
         mock_redis.sub_to_response.assert_any_call(
-            f"load/area_event_response",
+            f"{self.device1.uuid}/area_event_response",
             self.device1.dispatcher.area_event_dispatcher.response_callback)
         mock_redis.sub_to_response.assert_any_call(
-            f"area/area_event_response",
+            f"{self.area.uuid}/area_event_response",
             self.area.dispatcher.area_event_dispatcher.response_callback)
 
     def tests_broadcast(self):
@@ -96,7 +96,7 @@ class TestRedisEventDispatching(unittest.TestCase):
                            AreaEvent.BALANCING_MARKET_CYCLE]:
             self.area.dispatcher.broadcast_callback(area_event)
             for child in self.area.children:
-                dispatch_chanel = f"{child.slug}/area_event"
+                dispatch_chanel = f"{child.uuid}/area_event"
                 send_data = json.dumps({"event_type": area_event.value, "kwargs": {}})
                 mock_redis.publish.assert_any_call(dispatch_chanel, send_data)
                 mock_redis.wait.assert_called()
@@ -107,7 +107,7 @@ class TestRedisEventDispatching(unittest.TestCase):
                            AreaEvent.BALANCING_MARKET_CYCLE]:
             payload = {"data": json.dumps({"event_type": area_event.value, "kwargs": {}})}
             self.device1.dispatcher.area_event_dispatcher.event_listener_redis(payload)
-            response_channel = f"{self.area.slug}/area_event_response"
+            response_channel = f"{self.area.uuid}/area_event_response"
             response_data = json.dumps({"response": area_event.name.lower()})
             mock_redis.publish.assert_any_call(response_channel, response_data)
 
@@ -150,22 +150,22 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
 
     def test_subscribe(self):
         mock_redis_market.sub_to_area_event.assert_any_call(
-            f"storage/market_event",
+            f"{self.device2.uuid}/market_event",
             self.device2.dispatcher.market_event_dispatcher.event_listener_redis)
         mock_redis_market.sub_to_area_event.assert_any_call(
-            f"load/market_event",
+            f"{self.device1.uuid}/market_event",
             self.device1.dispatcher.market_event_dispatcher.event_listener_redis)
         mock_redis_market.sub_to_area_event.assert_any_call(
-            f"area/market_event",
+            f"{self.area.uuid}/market_event",
             self.area.dispatcher.market_event_dispatcher.event_listener_redis)
         mock_redis_market.sub_to_response.assert_any_call(
-            f"storage/market_event_response",
+            f"{self.device2.uuid}/market_event_response",
             self.device2.dispatcher.market_event_dispatcher.response_callback)
         mock_redis_market.sub_to_response.assert_any_call(
-            f"load/market_event_response",
+            f"{self.device1.uuid}/market_event_response",
             self.device1.dispatcher.market_event_dispatcher.response_callback)
         mock_redis_market.sub_to_response.assert_any_call(
-            f"area/market_event_response",
+            f"{self.area.uuid}/market_event_response",
             self.area.dispatcher.market_event_dispatcher.response_callback)
 
     def test_response_callback(self):
