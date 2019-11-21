@@ -57,13 +57,13 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
                 self.thread_events[event_type_id].set()
 
     def publish_event(self, area_uuid, event_type: MarketEvent, **kwargs):
-        dispatch_chanel = f"{area_uuid}/market_event"
+        dispatch_channel = f"{area_uuid}/market_event"
 
         for key in ["offer", "trade", "new_offer", "existing_offer"]:
             if key in kwargs:
                 kwargs[key] = kwargs[key].to_JSON_string()
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
-        self.redis.publish(dispatch_chanel, json.dumps(send_data))
+        self.redis.publish(dispatch_channel, json.dumps(send_data))
 
     def broadcast_event_redis(self, event_type: MarketEvent, **kwargs):
         for child in sorted(self.area.children, key=lambda _: random()):

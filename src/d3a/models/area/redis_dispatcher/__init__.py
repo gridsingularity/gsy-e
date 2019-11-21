@@ -37,7 +37,7 @@ class RedisEventDispatcherBase(ABC):
         Subscribes to the channel that receives events from the parent area.
         :return: None
         """
-        self.redis.sub_to_area_event(self.event_channel_name(), self.event_listener_redis)
+        self.redis.sub_to_channel(self.event_channel_name(), self.event_listener_redis)
 
     def subscribe_to_event_responses(self):
         """

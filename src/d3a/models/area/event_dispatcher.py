@@ -34,7 +34,7 @@ from d3a.models.area.redis_dispatcher.market_event_dispatcher import RedisMarket
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from d3a.models.area.redis_dispatcher.market_notify_event_subscriber \
     import MarketNotifyEventSubscriber
-from d3a.d3a_core.redis_area_market_communicator import RedisAreaCommunicator
+from d3a.d3a_core.redis.redis_area_market_communicator import RedisCommunicator
 
 
 log = getLogger(__name__)
@@ -252,7 +252,7 @@ class DispatcherFactory:
         self.event_dispatching_via_redis = \
             ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
         self.dispatcher = \
-            RedisAreaDispatcher(area, RedisAreaCommunicator(), RedisAreaCommunicator()) \
+            RedisAreaDispatcher(area, RedisCommunicator(), RedisCommunicator()) \
             if self.event_dispatching_via_redis \
             else AreaDispatcher(area)
 

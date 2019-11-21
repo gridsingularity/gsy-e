@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import unittest
 import json
+from parameterized import parameterized
 from logging import getLogger
 from unittest.mock import MagicMock
 from threading import Event
@@ -28,14 +29,14 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
-from d3a.d3a_core.redis_area_market_communicator import RedisAreaCommunicator
-from d3a.events.event_structures import AreaEvent
+from d3a.d3a_core.redis.redis_area_market_communicator import RedisCommunicator
+from d3a.events.event_structures import AreaEvent, MarketEvent
 
 log = getLogger(__name__)
 
 
-mock_redis = MagicMock(spec=RedisAreaCommunicator)
-mock_redis_market = MagicMock(spec=RedisAreaCommunicator)
+mock_redis = MagicMock(spec=RedisCommunicator)
+mock_redis_market = MagicMock(spec=RedisCommunicator)
 mock_redis.area_event = MagicMock(spec=Event)
 
 
@@ -72,13 +73,13 @@ class TestRedisEventDispatching(unittest.TestCase):
         ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = False
 
     def test_subscribe(self):
-        mock_redis.sub_to_area_event.assert_any_call(
+        mock_redis.sub_to_channel.assert_any_call(
             f"{self.device2.uuid}/area_event",
             self.device2.dispatcher.area_event_dispatcher.event_listener_redis)
-        mock_redis.sub_to_area_event.assert_any_call(
+        mock_redis.sub_to_channel.assert_any_call(
             f"{self.device1.uuid}/area_event",
             self.device1.dispatcher.area_event_dispatcher.event_listener_redis)
-        mock_redis.sub_to_area_event.assert_any_call(
+        mock_redis.sub_to_channel.assert_any_call(
             f"{self.area.uuid}/area_event",
             self.area.dispatcher.area_event_dispatcher.event_listener_redis)
         mock_redis.sub_to_response.assert_any_call(
@@ -91,32 +92,37 @@ class TestRedisEventDispatching(unittest.TestCase):
             f"{self.area.uuid}/area_event_response",
             self.area.dispatcher.area_event_dispatcher.response_callback)
 
-    def tests_broadcast(self):
-        for area_event in [AreaEvent.TICK, AreaEvent.MARKET_CYCLE, AreaEvent.ACTIVATE,
-                           AreaEvent.BALANCING_MARKET_CYCLE]:
-            self.area.dispatcher.broadcast_callback(area_event)
-            for child in self.area.children:
-                dispatch_chanel = f"{child.uuid}/area_event"
-                send_data = json.dumps({"event_type": area_event.value, "kwargs": {}})
-                mock_redis.publish.assert_any_call(dispatch_chanel, send_data)
-                mock_redis.wait.assert_called()
+    @parameterized.expand([(AreaEvent.TICK, ),
+                           (AreaEvent.MARKET_CYCLE, ),
+                           (AreaEvent.ACTIVATE, ),
+                           (AreaEvent.BALANCING_MARKET_CYCLE, )])
+    def tests_broadcast(self, area_event):
+        self.area.dispatcher.broadcast_callback(area_event)
+        for child in self.area.children:
+            dispatch_chanel = f"{child.uuid}/area_event"
+            send_data = json.dumps({"event_type": area_event.value, "kwargs": {}})
+            mock_redis.publish.assert_any_call(dispatch_chanel, send_data)
+            mock_redis.wait.assert_called()
 
-    def test_receive(self):
-
-        for area_event in [AreaEvent.TICK, AreaEvent.MARKET_CYCLE, AreaEvent.ACTIVATE,
-                           AreaEvent.BALANCING_MARKET_CYCLE]:
+    @parameterized.expand([(AreaEvent.TICK, ),
+                           (AreaEvent.MARKET_CYCLE, ),
+                           (AreaEvent.ACTIVATE, ),
+                           (AreaEvent.BALANCING_MARKET_CYCLE, )])
+    def test_receive(self, area_event):
             payload = {"data": json.dumps({"event_type": area_event.value, "kwargs": {}})}
             self.device1.dispatcher.area_event_dispatcher.event_listener_redis(payload)
             response_channel = f"{self.area.uuid}/area_event_response"
             response_data = json.dumps({"response": area_event.name.lower()})
             mock_redis.publish.assert_any_call(response_channel, response_data)
 
-    def test_response_callback(self):
-        for area_event in [AreaEvent.TICK, AreaEvent.MARKET_CYCLE, AreaEvent.ACTIVATE,
-                           AreaEvent.BALANCING_MARKET_CYCLE]:
-            payload = {"data": json.dumps({"response": area_event.name.lower()})}
-            self.area.dispatcher.area_event_dispatcher.response_callback(payload)
-            mock_redis.resume.assert_called()
+    @parameterized.expand([(AreaEvent.TICK, ),
+                           (AreaEvent.MARKET_CYCLE, ),
+                           (AreaEvent.ACTIVATE, ),
+                           (AreaEvent.BALANCING_MARKET_CYCLE, )])
+    def test_response_callback(self, area_event):
+        payload = {"data": json.dumps({"response": area_event.name.lower()})}
+        self.area.dispatcher.area_event_dispatcher.response_callback(payload)
+        mock_redis.resume.assert_called()
 
 
 class TestRedisMarketEventDispatcher(unittest.TestCase):
@@ -133,29 +139,41 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
                             appliance=self.appliance)
         self.area = Area(name="Area", config=self.config,
                          children=[self.device1, self.device2])
-        self.area.dispatcher.market_event_dispatcher.redis = MagicMock(spec=RedisAreaCommunicator)
+        self.area.dispatcher.market_event_dispatcher.redis = MagicMock(spec=RedisCommunicator)
+        self.area.dispatcher.market_event_dispatcher.thread_events = {
+            MarketEvent.TRADE.value: MagicMock(spec=Event),
+            MarketEvent.OFFER.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_CHANGED.value: MagicMock(spec=Event),
+        }
         self.device1.dispatcher.market_event_dispatcher.redis = MagicMock(
-            spec=RedisAreaCommunicator)
+            spec=RedisCommunicator)
+        self.device1.dispatcher.market_event_dispatcher.thread_events = {
+            MarketEvent.TRADE.value: MagicMock(spec=Event),
+            MarketEvent.OFFER.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_CHANGED.value: MagicMock(spec=Event),
+        }
         self.device2.dispatcher.market_event_dispatcher.redis = MagicMock(
-            spec=RedisAreaCommunicator)
-        self.area.dispatcher.market_event_dispatcher.active_trade = False
-        self.device1.dispatcher.market_event_dispatcher.active_trade = False
-        self.device2.dispatcher.market_event_dispatcher.active_trade = False
-        self.area.dispatcher.market_event_dispatcher.deferred_events = []
-        self.device1.dispatcher.market_event_dispatcher.deferred_events = []
-        self.device2.dispatcher.market_event_dispatcher.deferred_events = []
+            spec=RedisCommunicator)
+        self.device2.dispatcher.market_event_dispatcher.thread_events = {
+            MarketEvent.TRADE.value: MagicMock(spec=Event),
+            MarketEvent.OFFER.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
+            MarketEvent.OFFER_CHANGED.value: MagicMock(spec=Event),
+        }
 
     def tearDown(self):
         ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS = False
 
     def test_subscribe(self):
-        mock_redis_market.sub_to_area_event.assert_any_call(
+        mock_redis_market.sub_to_channel.assert_any_call(
             f"{self.device2.uuid}/market_event",
             self.device2.dispatcher.market_event_dispatcher.event_listener_redis)
-        mock_redis_market.sub_to_area_event.assert_any_call(
+        mock_redis_market.sub_to_channel.assert_any_call(
             f"{self.device1.uuid}/market_event",
             self.device1.dispatcher.market_event_dispatcher.event_listener_redis)
-        mock_redis_market.sub_to_area_event.assert_any_call(
+        mock_redis_market.sub_to_channel.assert_any_call(
             f"{self.area.uuid}/market_event",
             self.area.dispatcher.market_event_dispatcher.event_listener_redis)
         mock_redis_market.sub_to_response.assert_any_call(
@@ -168,9 +186,44 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             f"{self.area.uuid}/market_event_response",
             self.area.dispatcher.market_event_dispatcher.response_callback)
 
-    def test_response_callback(self):
-        for area_event in [AreaEvent.TICK, AreaEvent.MARKET_CYCLE, AreaEvent.ACTIVATE,
-                           AreaEvent.BALANCING_MARKET_CYCLE]:
-            payload = {"data": json.dumps({"response": area_event.name.lower()})}
-            self.area.dispatcher.area_event_dispatcher.response_callback(payload)
-            mock_redis.resume.assert_called()
+    @parameterized.expand([(MarketEvent.OFFER, ),
+                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_DELETED, )])
+    def test_publish_response(self, market_event):
+        response_channel = f"{self.area.uuid}/market_event_response"
+        response_payload = json.dumps({"response": market_event.name.lower(),
+                                       "event_type": market_event.value})
+        for dispatcher in [self.device1.dispatcher.market_event_dispatcher,
+                           self.device2.dispatcher.market_event_dispatcher]:
+            dispatcher.publish_response(market_event)
+            dispatcher.redis.publish.assert_any_call(response_channel, response_payload)
+
+    @parameterized.expand([(MarketEvent.OFFER, ),
+                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_DELETED, )])
+    def tests_broadcast(self, market_event):
+        self.area.dispatcher.broadcast_callback(market_event)
+        for child in self.area.children:
+            dispatch_channel = f"{child.uuid}/market_event"
+            send_data = json.dumps({"event_type": market_event.value, "kwargs": {}})
+            self.area.dispatcher.market_event_dispatcher.redis.publish.assert_any_call(
+                dispatch_channel, send_data)
+            assert self.area.dispatcher.market_event_dispatcher.thread_events[market_event.value].\
+                wait.call_count == len(self.area.children)
+            assert self.area.dispatcher.market_event_dispatcher.thread_events[market_event.value].\
+                clear.call_count == len(self.area.children)
+
+    @parameterized.expand([(MarketEvent.OFFER, ),
+                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_DELETED, )])
+    def test_response_callback_from_children_unblocks_thread_event(self, market_event):
+        response_payload = {"data": json.dumps(
+            {"response": market_event.name.lower(), "event_type": market_event.value}
+        )}
+        for dispatcher in [self.device1.dispatcher.market_event_dispatcher,
+                           self.device2.dispatcher.market_event_dispatcher]:
+            dispatcher.response_callback(response_payload)
+            dispatcher.thread_events[market_event.value].set.assert_called_once()

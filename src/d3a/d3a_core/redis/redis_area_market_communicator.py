@@ -2,7 +2,7 @@ from redis import StrictRedis
 from threading import Event, Lock
 import logging
 from time import time
-from d3a.d3a_core.redis_communication import REDIS_URL
+from d3a.d3a_core.redis.redis_communication import REDIS_URL
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 
 log = logging.getLogger(__name__)
@@ -10,22 +10,22 @@ REDIS_THREAD_JOIN_TIMEOUT = 2
 REDIS_POLL_TIMEOUT = 0.01
 
 
-class RedisAreaCommunicator:
+class RedisCommunicator:
     def __init__(self):
         self.redis_db = StrictRedis.from_url(REDIS_URL)
         self.pubsub = self.redis_db.pubsub()
         self.pubsub_response = self.redis_db.pubsub()
-        self.area_event = Event()
+        self.event = Event()
 
     def publish(self, channel, data):
         self.redis_db.publish(channel, data)
 
     def wait(self):
-        self.area_event.wait()
-        self.area_event.clear()
+        self.event.wait()
+        self.event.clear()
 
     def resume(self):
-        self.area_event.set()
+        self.event.set()
 
     def sub_to_response(self, channel, callback):
         self.pubsub_response.subscribe(**{channel: callback})
@@ -33,14 +33,14 @@ class RedisAreaCommunicator:
         log.trace(f"Started thread for responses: {thread}")
         return thread
 
-    def sub_to_area_event(self, channel, callback):
+    def sub_to_channel(self, channel, callback):
         self.pubsub.subscribe(**{channel: callback})
         thread = self.pubsub.run_in_thread(daemon=True)
         log.trace(f"Started thread for events: {thread}")
         return thread
 
 
-class ResettableCommunicator(RedisAreaCommunicator):
+class ResettableCommunicator(RedisCommunicator):
     def __init__(self):
         super().__init__()
         self.thread = None
@@ -71,12 +71,12 @@ class ResettableCommunicator(RedisAreaCommunicator):
         self.thread = thread
 
 
-class BlockingCommunicator(RedisAreaCommunicator):
+class BlockingCommunicator(RedisCommunicator):
     def __init__(self):
         super().__init__()
         self.lock = Lock()
 
-    def sub_to_area_event(self, channel, callback):
+    def sub_to_channel(self, channel, callback):
         self.pubsub.subscribe(**{channel: callback})
 
     def poll_until_response_received(self, response_received_callback):

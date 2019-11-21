@@ -30,7 +30,7 @@ from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, Market
 from d3a.events import EventMixin
 from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
-from d3a.d3a_core.redis_area_market_communicator import BlockingCommunicator
+from d3a.d3a_core.redis.redis_area_market_communicator import BlockingCommunicator
 
 log = getLogger(__name__)
 
@@ -179,8 +179,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         market_channel = f"{market_id}/{event_type_str}"
 
         data["transaction_uuid"] = str(uuid4())
-
-        self.redis.sub_to_area_event(response_channel, callback)
+        self.redis.sub_to_channel(response_channel, callback)
         self.redis.publish(market_channel, json.dumps(data))
 
         def event_response_was_received_callback():

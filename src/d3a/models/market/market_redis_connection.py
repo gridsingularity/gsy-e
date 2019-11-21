@@ -3,7 +3,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
-from d3a.d3a_core.redis_area_market_communicator import ResettableCommunicator, \
+from d3a.d3a_core.redis.redis_area_market_communicator import ResettableCommunicator, \
     BlockingCommunicator
 from d3a.events import MarketEvent
 from d3a.models.market.market_structures import offer_from_JSON_string, \
@@ -40,7 +40,7 @@ class MarketRedisEventPublisher:
         send_data = {"event_type": event_type.value, "kwargs": kwargs,
                      "transaction_uuid": str(uuid4())}
 
-        self.redis.sub_to_area_event(self.event_response_channel_name(), self.response_callback)
+        self.redis.sub_to_channel(self.event_response_channel_name(), self.response_callback)
         self.redis.publish(self.event_channel_name(), json.dumps(send_data))
 
         def event_response_was_received_callback():
