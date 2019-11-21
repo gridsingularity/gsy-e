@@ -24,7 +24,7 @@ Feature: Two sided pay_as_clear market tests
   Scenario: Test offers, bids and market-clearing-rate are exported
      Given we have a scenario named two_sided_pay_as_clear/default_2a
      And d3a is installed
-     When we run the d3a simulation on console with two_sided_pay_as_clear.default_2a for 24 hrs
+     When we run the d3a simulation on console with two_sided_pay_as_clear.default_2a for 2 hrs
      Then there are files with offers, bids & market_clearing_rate for every area
 
    Scenario: Supply Demand Curve

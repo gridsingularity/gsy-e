@@ -339,13 +339,15 @@ class ExportLeafData(ExportData):
         return []
 
 
-class KPI:
+class SelfSufficiency:
     def __init__(self):
-        self.performance_index = dict()
-        self.self_sufficiency = dict()
-
-    def __repr__(self):
-        return f"KPI: {self.performance_index}"
+        self.producer_list = list()
+        self.consumer_list = list()
+        self.consumer_area_list = list()
+        self.ess_list = list()
+        self.total_energy_demanded_wh = 0
+        self.total_self_consumption_wh = 0
+        self.self_consumption_buffer_wh = 0
 
     def _accumulate_devices(self, area):
         for child in area.children:
@@ -371,6 +373,8 @@ class KPI:
 
     def _dissipate_self_consumption_buffer(self, trade):
         if trade.seller_origin in self.ess_list:
+            # self_consumption_buffer needs to be exhausted to total_self_consumption
+            # if sold to internal consumer
             if trade.buyer_origin in self.consumer_list and self.self_consumption_buffer_wh > 0:
                 if (self.self_consumption_buffer_wh - trade.offer.energy * 1000) > 0:
                     self.self_consumption_buffer_wh -= trade.offer.energy * 1000
@@ -378,8 +382,9 @@ class KPI:
                 else:
                     self.total_self_consumption_wh += self.self_consumption_buffer_wh
                     self.self_consumption_buffer_wh = 0
-            elif (trade.buyer_origin not in self.consumer_list or
-                  trade.buyer_origin not in self.ess_list) and self.self_consumption_buffer_wh > 0:
+            # self_consumption_buffer needs to be exhausted if sold to any external agent
+            elif trade.buyer_origin not in [*self.ess_list, *self.consumer_list] and \
+                    self.self_consumption_buffer_wh > 0:
                 if (self.self_consumption_buffer_wh - trade.offer.energy * 1000) > 0:
                     self.self_consumption_buffer_wh -= trade.offer.energy * 1000
                 else:
@@ -393,11 +398,11 @@ class KPI:
                     self._accumulate_self_consumption_buffer(trade)
                     self._dissipate_self_consumption_buffer(trade)
 
-    def _area_self_sufficiency(self, area):
-        self.producer_list = list()
-        self.consumer_list = list()
-        self.consumer_area_list = list()
-        self.ess_list = list()
+    def area_self_sufficiency(self, area):
+        self.producer_list = []
+        self.consumer_list = []
+        self.consumer_area_list = []
+        self.ess_list = []
         self.total_energy_demanded_wh = 0
         self.total_self_consumption_wh = 0
         self.self_consumption_buffer_wh = 0
@@ -408,16 +413,23 @@ class KPI:
 
         # in case when the area doesn't have any load demand
         if self.total_energy_demanded_wh <= 0:
-            self.self_sufficiency[area.name] = None
             return {"self_sufficiency": None}
 
         self_sufficiency = self.total_self_consumption_wh / self.total_energy_demanded_wh
-        self.self_sufficiency[area.name] = self_sufficiency
         return {"self_sufficiency": self_sufficiency}
+
+
+class KPI:
+    def __init__(self):
+        self.performance_index = dict()
+        self.self_sufficiency = SelfSufficiency()
+
+    def __repr__(self):
+        return f"KPI: {self.performance_index}"
 
     def update_kpis_from_area(self, area):
         self.performance_index[area.name] = \
-            self._area_self_sufficiency(area)
+            self.self_sufficiency.area_self_sufficiency(area)
 
         for child in area.children:
             if len(child.children) > 0:
