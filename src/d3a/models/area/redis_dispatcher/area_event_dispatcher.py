@@ -10,10 +10,10 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
         self.str_area_events = [event.name.lower() for event in AreaEvent]
 
     def event_channel_name(self):
-        return f"{self.area.slug}/area_event"
+        return f"{self.area.uuid}/area_event"
 
     def event_response_channel_name(self):
-        return f"{self.area.slug}/area_event_response"
+        return f"{self.area.uuid}/area_event_response"
 
     def response_callback(self, payload):
         data = json.loads(payload["data"])
@@ -24,14 +24,14 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
             else:
                 raise Exception("RedisAreaDispatcher: Should never reach this point")
 
-    def publish_area_event(self, area_slug, event_type: AreaEvent, **kwargs):
+    def publish_area_event(self, area_uuid, event_type: AreaEvent, **kwargs):
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
-        dispatch_chanel = f"{area_slug}/area_event"
+        dispatch_chanel = f"{area_uuid}/area_event"
         self.redis.publish(dispatch_chanel, json.dumps(send_data))
 
     def broadcast_event_redis(self, event_type: AreaEvent, **kwargs):
         for child in sorted(self.area.children, key=lambda _: random()):
-            self.publish_area_event(child.slug, event_type, **kwargs)
+            self.publish_area_event(child.uuid, event_type, **kwargs)
             self.redis.wait()
             self.root_dispatcher.market_event_dispatcher.wait_for_futures()
             self.root_dispatcher.market_notify_event_dispatcher.wait_for_futures()
@@ -51,7 +51,7 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
         data = json.loads(payload["data"])
         kwargs = data["kwargs"]
         event_type = AreaEvent(data["event_type"])
-        response_channel = f"{self.area.parent.slug}/area_event_response"
+        response_channel = f"{self.area.parent.uuid}/area_event_response"
         response_data = json.dumps({"response": event_type.name.lower()})
 
         self.root_dispatcher.event_listener(event_type=event_type, **kwargs)

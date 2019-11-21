@@ -2,7 +2,7 @@ import json
 import logging
 from random import random
 from threading import Event
-from concurrent.futures import TimeoutError
+from concurrent.futures import TimeoutError, ThreadPoolExecutor
 from d3a.events import MarketEvent
 from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 from d3a.models.market.market_structures import parse_event_and_parameters_from_json_string
@@ -14,7 +14,6 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
         self.str_market_events = [event.name.lower() for event in MarketEvent]
         self.market_event = Event()
         self.futures = []
-        from concurrent.futures import ThreadPoolExecutor
         self.executor = ThreadPoolExecutor(max_workers=10)
         self.thread_events = {
             MarketEvent.TRADE.value: Event(),
@@ -32,10 +31,10 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
         self.futures = []
 
     def event_channel_name(self):
-        return f"{self.area.slug}/market_event"
+        return f"{self.area.uuid}/market_event"
 
     def event_response_channel_name(self):
-        return f"{self.area.slug}/market_event_response"
+        return f"{self.area.uuid}/market_event_response"
 
     def event_listener_redis(self, payload):
         event_type, kwargs = self.parse_market_event_from_event_payload(payload)
@@ -57,8 +56,8 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
             else:
                 self.thread_events[event_type_id].set()
 
-    def publish_event(self, area_slug, event_type: MarketEvent, **kwargs):
-        dispatch_chanel = f"{area_slug}/market_event"
+    def publish_event(self, area_uuid, event_type: MarketEvent, **kwargs):
+        dispatch_chanel = f"{area_uuid}/market_event"
 
         for key in ["offer", "trade", "new_offer", "existing_offer"]:
             if key in kwargs:
@@ -68,7 +67,7 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
 
     def broadcast_event_redis(self, event_type: MarketEvent, **kwargs):
         for child in sorted(self.area.children, key=lambda _: random()):
-            self.publish_event(child.slug, event_type, **kwargs)
+            self.publish_event(child.uuid, event_type, **kwargs)
             self.thread_events[event_type.value].wait()
             self.thread_events[event_type.value].clear()
 
@@ -83,7 +82,7 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
                 agents[area_name].event_listener(event_type, **kwargs)
 
     def publish_response(self, event_type):
-        response_channel = f"{self.area.parent.slug}/market_event_response"
+        response_channel = f"{self.area.parent.uuid}/market_event_response"
         response_data = json.dumps({"response": event_type.name.lower(),
                                     "event_type": event_type.value})
         self.redis.publish(response_channel, response_data)

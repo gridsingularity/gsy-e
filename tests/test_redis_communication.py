@@ -28,7 +28,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
-from d3a.models.area.redis_dispatcher.redis_communicator import RedisAreaCommunicator
+from d3a.d3a_core.redis_area_market_communicator import RedisAreaCommunicator
 from d3a.events.event_structures import AreaEvent
 
 log = getLogger(__name__)
