@@ -44,10 +44,9 @@ class FakeArea:
 
 class FakeMarket:
     def __init__(self, trades, name="Area", fees=0.0):
+        self.name = name
         self.trades = trades
         self.time_slot = 15
-        self.market_fee = 0
-        self.area = FakeArea(name)
         self.market_fee = fees
 
 

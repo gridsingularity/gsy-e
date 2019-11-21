@@ -26,6 +26,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import round_floats_for_ui
 from statistics import mean
+from pendulum import duration
 
 _NO_VALUE = {
     'min': None,
@@ -39,6 +40,7 @@ class SimulationEndpointBuffer:
         self.job_id = job_id
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
+        self.eta = duration(seconds=0)
         self.unmatched_loads = {}
         self.unmatched_loads_redis = {}
         self.export_unmatched_loads = ExportUnmatchedLoads(area)
@@ -72,6 +74,7 @@ class SimulationEndpointBuffer:
             "bills": self.market_bills.bills_redis_results,
             "tree_summary": self.tree_summary_redis,
             "status": self.status,
+            "eta_seconds": self.eta.seconds,
             "device_statistics": self.device_statistics.flat_results_time_str,
             "energy_trade_profile": self.energy_trade_profile_redis
         }
@@ -130,8 +133,9 @@ class SimulationEndpointBuffer:
             export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
                                           balancing_market_type)
 
-    def update_stats(self, area, simulation_status):
+    def update_stats(self, area, simulation_status, eta):
         self.status = simulation_status
+        self.eta = eta
         self._update_unmatched_loads(area)
         # Should always precede tree-summary update
         self.price_energy_day.update(area)

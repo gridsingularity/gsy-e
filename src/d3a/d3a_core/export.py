@@ -122,10 +122,13 @@ class ExportAndPlot:
             os.remove(zip_file_with_ext)
         shutil.rmtree(str(self.directory))
 
-    def export(self, export_plots=True):
+    def export(self, export_plots=True, power_flow=None):
         """Wrapping function, executes all export and plotting functions"""
         if export_plots:
             self.plot_dir = os.path.join(self.directory, 'plot')
+            if power_flow is not None:
+                power_flow.export_power_flow_results(self.plot_dir)
+
             if not os.path.exists(self.plot_dir):
                 os.makedirs(self.plot_dir)
 

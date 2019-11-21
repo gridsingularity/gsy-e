@@ -23,7 +23,7 @@ from copy import deepcopy
 
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
-from d3a.models.market import Market
+from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -36,10 +36,10 @@ log = getLogger(__name__)
 
 class OneSidedMarket(Market):
 
-    def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
-        self.area = area
-        super().__init__(time_slot, area, notification_listener, readonly)
-        self.bc_interface = MarketBlockchainInterface(area)
+    def __init__(self, time_slot=None, bc=None, notification_listener=None,
+                 readonly=False, transfer_fees=None, name=None):
+        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
+        self.bc_interface = MarketBlockchainInterface(bc)
 
     def __repr__(self):  # pragma: no cover
         return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
@@ -60,6 +60,7 @@ class OneSidedMarket(Market):
             + self.transfer_fee_ratio * original_offer_price \
             + self.transfer_fee_const * energy
 
+    @lock_market_action
     def offer(self, price: float, energy: float, seller: str,
               original_offer_price=None, dispatch_event=True, seller_origin=None) -> Offer:
         if self.readonly:
@@ -86,6 +87,7 @@ class OneSidedMarket(Market):
     def dispatch_market_offer_event(self, offer):
         self._notify_listeners(MarketEvent.OFFER, offer=offer)
 
+    @lock_market_action
     def delete_offer(self, offer_or_id: Union[str, Offer]):
         if self.readonly:
             raise MarketReadOnlyException()
@@ -117,6 +119,7 @@ class OneSidedMarket(Market):
             if offer.original_offer_price is not None \
             else offer.price
 
+    @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
@@ -133,6 +136,7 @@ class OneSidedMarket(Market):
         if energy is None:
             energy = offer.energy
 
+        # TODO: can this line be removed due to duplication with line 231 ???
         original_offer = offer
         residual_offer = None
 
@@ -143,7 +147,7 @@ class OneSidedMarket(Market):
 
         try:
             if time is None:
-                time = self._now
+                time = self.now
 
             energy_portion = energy / offer.energy
             if energy == 0:
@@ -151,9 +155,7 @@ class OneSidedMarket(Market):
             # partial energy is requested
             elif energy < offer.energy:
                 original_offer = offer
-                accepted_offer_id = offer.id \
-                    if self.area is None or self.area.bc is None \
-                    else offer.real_id
+                accepted_offer_id = offer.id if self.bc is None else offer.real_id
 
                 assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 

@@ -34,7 +34,8 @@ log = getLogger(__name__)
 
 
 class BalancingMarket(OneSidedMarket):
-    def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
+    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+                 transfer_fees=None, name=None):
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
         self.accumulated_supply_balancing_trade_price = 0
@@ -42,7 +43,7 @@ class BalancingMarket(OneSidedMarket):
         self.accumulated_demand_balancing_trade_price = 0
         self.accumulated_demand_balancing_trade_energy = 0
 
-        super().__init__(time_slot, area, notification_listener, readonly)
+        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
 
     def offer(self, price: float, energy: float, seller: str, iaa_fee: bool = False,
               original_offer_price=None, seller_origin=None):
@@ -104,7 +105,7 @@ class BalancingMarket(OneSidedMarket):
                                      key=lambda o: o.price / o.energy)
         try:
             if time is None:
-                time = self._now
+                time = self.now
 
             energy_portion = energy / offer.energy
             if energy == 0:
@@ -112,9 +113,7 @@ class BalancingMarket(OneSidedMarket):
             # partial energy is requested
             elif abs(energy) < abs(offer.energy):
                 original_offer = offer
-                accepted_offer_id = offer.id \
-                    if self.area is None or self.area.bc is None \
-                    else offer.real_id
+                accepted_offer_id = offer.id if self.bc is None else offer.real_id
 
                 assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 

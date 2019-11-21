@@ -19,6 +19,7 @@ import uuid
 from typing import Union  # noqa
 from logging import getLogger
 
+from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
 from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
 from d3a.models.market.market_structures import Bid, Trade, TradeBidInfo
@@ -31,8 +32,9 @@ log = getLogger(__name__)
 
 class TwoSidedPayAsBid(OneSidedMarket):
 
-    def __init__(self, time_slot=None, area=None, notification_listener=None, readonly=False):
-        super().__init__(time_slot, area, notification_listener, readonly)
+    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+                 transfer_fees=None, name=None):
+        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) " \
@@ -65,6 +67,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
         return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price)
 
+    @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, seller: str,
             bid_id: str = None, original_bid_price=None, buyer_origin=None) -> Bid:
         if energy <= 0:
@@ -78,6 +81,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
         return bid
 
+    @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, Bid]):
         if isinstance(bid_or_id, Bid):
             bid_or_id = bid_or_id.id
@@ -94,6 +98,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         self.market_fee += fees
         return energy * trade_rate + fees
 
+    @lock_market_action
     def accept_bid(self, bid: Bid, energy: float = None,
                    seller: str = None, buyer: str = None, already_tracked: bool = False,
                    trade_rate: float = None, trade_offer_info=None, seller_origin=None):
@@ -155,7 +160,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             final_price = energy * final_trade_rate
             bid = bid._replace(price=final_price)
 
-        trade = Trade(str(uuid.uuid4()), self._now, bid, seller,
+        trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual, already_tracked=already_tracked,
                       offer_bid_trade_info=GridFees.propagate_original_offer_info_on_bid_trade(
                           trade_offer_info, self.transfer_fee_ratio),
@@ -187,39 +192,42 @@ class TwoSidedPayAsBid(OneSidedMarket):
         sorted_offers = self.sorting(self.offers, True)
 
         already_selected_bids = set()
+        offer_bid_pairs = []
         for offer in sorted_offers:
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
                         (offer.price / offer.energy - bid.price / bid.energy) <= \
                         FLOATING_POINT_TOLERANCE and offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
-                    yield bid, offer
+                    offer_bid_pairs.append(tuple((bid, offer)))
                     break
+        return offer_bid_pairs
 
     def match_offers_bids(self):
-        for bid, offer in self._perform_pay_as_bid_matching():
-            selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-            original_bid_rate = bid.original_bid_price / bid.energy
-            matched_rate = bid.price / bid.energy
+        while len(self._perform_pay_as_bid_matching()) > 0:
+            for bid, offer in self._perform_pay_as_bid_matching():
+                selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+                original_bid_rate = bid.original_bid_price / bid.energy
+                matched_rate = bid.price / bid.energy
 
-            trade_bid_info = TradeBidInfo(
-                original_bid_rate=original_bid_rate,
-                propagated_bid_rate=bid.price/bid.energy,
-                original_offer_rate=offer.original_offer_price/offer.energy,
-                propagated_offer_rate=offer.price/offer.energy,
-                trade_rate=original_bid_rate)
-            self.accept_offer(offer_or_id=offer,
-                              buyer=bid.buyer,
-                              energy=selected_energy,
-                              trade_rate=matched_rate,
-                              already_tracked=False,
-                              trade_bid_info=trade_bid_info,
-                              buyer_origin=bid.buyer_origin)
-            self.accept_bid(bid=bid,
-                            energy=selected_energy,
-                            seller=offer.seller,
-                            buyer=bid.buyer,
-                            already_tracked=True,
-                            trade_rate=matched_rate,
-                            trade_offer_info=trade_bid_info,
-                            seller_origin=offer.seller_origin)
+                trade_bid_info = TradeBidInfo(
+                    original_bid_rate=original_bid_rate,
+                    propagated_bid_rate=bid.price/bid.energy,
+                    original_offer_rate=offer.original_offer_price/offer.energy,
+                    propagated_offer_rate=offer.price/offer.energy,
+                    trade_rate=original_bid_rate)
+                self.accept_offer(offer_or_id=offer,
+                                  buyer=bid.buyer,
+                                  energy=selected_energy,
+                                  trade_rate=matched_rate,
+                                  already_tracked=False,
+                                  trade_bid_info=trade_bid_info,
+                                  buyer_origin=bid.buyer_origin)
+                self.accept_bid(bid=bid,
+                                energy=selected_energy,
+                                seller=offer.seller,
+                                buyer=bid.buyer,
+                                already_tracked=True,
+                                trade_rate=matched_rate,
+                                trade_offer_info=trade_bid_info,
+                                seller_origin=offer.seller_origin)
