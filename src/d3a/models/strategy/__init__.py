@@ -24,14 +24,13 @@ from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
 from d3a.models.market.market_structures import Offer
 from d3a_interface.constants_limits import ConstSettings
-
+from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.events import EventMixin
 from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
-from redis import StrictRedis
-from d3a.d3a_core.redis_communication import REDIS_URL
+from d3a.models.area.redis_dispatcher.redis_communicator import BlockingCommunicator
 
 log = getLogger(__name__)
 
@@ -166,30 +165,34 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         self.offers = Offers(self)
         self.enabled = True
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            self.redis = StrictRedis.from_url(REDIS_URL)
-            self.pubsub = self.redis.pubsub()
+            self.redis = BlockingCommunicator()
             self.trade_buffer = None
             self.offer_buffer = None
             self.event_response_uuids = []
-            from threading import Lock
-            self.lock = Lock()
 
     parameters = None
 
-    def _send_events_to_market(self, event_type_str, market_id, data, callback, event_type):
+    def _send_events_to_market(self, event_type_str, market_id, data, callback):
         if not isinstance(market_id, str):
             market_id = market_id.id
         response_channel = f"{market_id}/{event_type_str}/RESPONSE"
         market_channel = f"{market_id}/{event_type_str}"
-        self.pubsub.subscribe(**{response_channel: callback})
 
         data["transaction_uuid"] = str(uuid4())
-        self.redis.publish(market_channel, json.dumps(data))
-        while data["transaction_uuid"] not in self.event_response_uuids:
-            with self.lock:
-                self.pubsub.get_message(timeout=0.01)
 
-        self.event_response_uuids.remove(data["transaction_uuid"])
+        self.redis.sub_to_area_event(response_channel, callback)
+        self.redis.publish(market_channel, json.dumps(data))
+
+        def event_response_was_received_callback():
+            return data["transaction_uuid"] in self.event_response_uuids
+
+        self.redis.poll_until_response_received(event_response_was_received_callback)
+
+        if data["transaction_uuid"] not in self.event_response_uuids:
+            self.log.error(f"Transaction ID not found after {REDIS_PUBLISH_RESPONSE_TIMEOUT} "
+                           f"seconds: {data} {self.owner.name}")
+        else:
+            self.event_response_uuids.remove(data["transaction_uuid"])
 
     def area_reconfigure_event(self, *args, **kwargs):
         pass
@@ -231,7 +234,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
 
     def offer(self, market_id, offer_args):
         self._send_events_to_market("OFFER", market_id, offer_args,
-                                    self._offer_response, event_type=MarketEvent.OFFER)
+                                    self._offer_response)
         offer = self.offer_buffer
         assert offer is not None
         self.offer_buffer = None
@@ -278,7 +281,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     "buyer_origin": buyer_origin}
 
             self._send_events_to_market("ACCEPT_OFFER", market_or_id, data,
-                                        self._accept_offer_response, event_type=MarketEvent.TRADE)
+                                        self._accept_offer_response)
             trade = self.trade_buffer
             self.trade_buffer = None
             assert trade is not None
@@ -325,8 +328,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             data = {"offer_or_id": offer.to_JSON_string()}
             self._send_events_to_market("DELETE_OFFER", market_or_id, data,
-                                        self._delete_offer_response,
-                                        event_type=MarketEvent.OFFER_DELETED)
+                                        self._delete_offer_response)
         else:
             market_or_id.delete_offer(offer)
 

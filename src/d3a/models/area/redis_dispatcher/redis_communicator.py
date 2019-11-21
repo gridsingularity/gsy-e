@@ -1,10 +1,13 @@
 from redis import StrictRedis
-from threading import Event
+from threading import Event, Lock
 import logging
+from time import time
 from d3a.d3a_core.redis_communication import REDIS_URL
-
+from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 
 log = logging.getLogger(__name__)
+REDIS_THREAD_JOIN_TIMEOUT = 2
+REDIS_POLL_TIMEOUT = 0.01
 
 
 class RedisAreaCommunicator:
@@ -40,45 +43,45 @@ class RedisAreaCommunicator:
 class ResettableCommunicator(RedisAreaCommunicator):
     def __init__(self):
         super().__init__()
-        self.threads = []
+        self.thread = None
 
-    def stop_all_threads(self):
-        self.resume()
-        for thread in self.threads:
-            try:
-                thread.stop()
-            except Exception as e:
-                logging.debug(f"Thread stop failed for thread {thread}: {e}")
-
-        for thread in self.threads:
-            try:
-                thread.join(timeout=0.5)
-            except Exception as e:
-                logging.debug(f"Thread join failed for thread {thread}: {e}")
-
+    def terminate_connection(self):
         try:
+            self.thread.stop()
+            self.thread.join(timeout=REDIS_THREAD_JOIN_TIMEOUT)
             self.pubsub.close()
-            self.pubsub_response.close()
+            self.thread = None
         except Exception as e:
-            logging.debug(f"Error when closing pubsub connection: {e}")
-
-        self.threads = []
+            logging.debug(f"Error when stopping all threads: {e}")
 
     def sub_to_multiple_channels(self, channel_callback_dict):
+        assert self.thread is None, \
+            f"There has to be only one thread per ResettableCommunicator object, " \
+            f" thread {self.thread} already exists."
         self.pubsub.subscribe(**channel_callback_dict)
         thread = self.pubsub.run_in_thread(daemon=True)
         log.trace(f"Started thread for multiple channels: {thread}")
-        self.threads.append(thread)
+        self.thread = thread
 
     def sub_to_response(self, channel, callback):
+        assert self.thread is None, \
+            f"There has to be only one thread per ResettableCommunicator object, " \
+            f" thread {self.thread} already exists."
         thread = super().sub_to_response(channel, callback)
-        self.threads.append(thread)
-        return thread
+        self.thread = thread
 
-    def unsubscribe_from_all(self):
-        self.pubsub.unsubscribe()
-        self.pubsub_response.unsubscribe()
 
-    def reset_connection(self):
-        self.pubsub.reset()
-        self.pubsub_response.reset()
+class BlockingCommunicator(RedisAreaCommunicator):
+    def __init__(self):
+        super().__init__()
+        self.lock = Lock()
+
+    def sub_to_area_event(self, channel, callback):
+        self.pubsub.subscribe(**{channel: callback})
+
+    def poll_until_response_received(self, response_received_callback):
+        start_time = time()
+        while not response_received_callback() and \
+                (time() - start_time < REDIS_PUBLISH_RESPONSE_TIMEOUT):
+            with self.lock:
+                self.pubsub.get_message(timeout=REDIS_POLL_TIMEOUT)

@@ -1,11 +1,11 @@
 import json
 import logging
 from random import random
+from threading import Event
+from concurrent.futures import TimeoutError
 from d3a.events import MarketEvent
 from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
-from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
-
-from threading import Event
+from d3a.models.market.market_structures import parse_event_and_parameters_from_json_string
 
 
 class RedisMarketEventDispatcher(RedisEventDispatcherBase):
@@ -23,8 +23,7 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
             MarketEvent.OFFER_CHANGED.value: Event(),
         }
 
-    def cleanup_running_threads(self):
-        from concurrent.futures import TimeoutError
+    def wait_for_futures(self):
         for future in self.futures:
             try:
                 future.result(timeout=5)
@@ -69,12 +68,9 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
 
     def broadcast_event_redis(self, event_type: MarketEvent, **kwargs):
         for child in sorted(self.area.children, key=lambda _: random()):
-            if len(child.children) > 0:
-                self.publish_event(child.slug, event_type, **kwargs)
-                self.thread_events[event_type.value].wait()
-                self.thread_events[event_type.value].clear()
-            else:
-                child.dispatcher.event_listener(event_type, **kwargs)
+            self.publish_event(child.slug, event_type, **kwargs)
+            self.thread_events[event_type.value].wait()
+            self.thread_events[event_type.value].clear()
 
         for time_slot, agents in self.root_dispatcher._inter_area_agents.items():
             if time_slot not in self.area._markets.markets:
@@ -93,12 +89,4 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
         self.redis.publish(response_channel, response_data)
 
     def parse_market_event_from_event_payload(self, payload):
-        data = json.loads(payload["data"])
-        kwargs = data["kwargs"]
-        for key in ["offer", "existing_offer", "new_offer"]:
-            if key in kwargs:
-                kwargs[key] = offer_from_JSON_string(kwargs[key])
-        if "trade" in kwargs:
-            kwargs["trade"] = trade_from_JSON_string(kwargs["trade"])
-        event_type = MarketEvent(data["event_type"])
-        return event_type, kwargs
+        return parse_event_and_parameters_from_json_string(payload)

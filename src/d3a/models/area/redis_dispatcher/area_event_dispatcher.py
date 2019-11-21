@@ -33,8 +33,8 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
         for child in sorted(self.area.children, key=lambda _: random()):
             self.publish_area_event(child.slug, event_type, **kwargs)
             self.redis.wait()
-            self.root_dispatcher.market_event_dispatcher.cleanup_running_threads()
-            self.root_dispatcher.market_notify_event_dispatcher._cleanup_all_running_threads()
+            self.root_dispatcher.market_event_dispatcher.wait_for_futures()
+            self.root_dispatcher.market_notify_event_dispatcher.wait_for_futures()
 
         for time_slot, agents in self.root_dispatcher._inter_area_agents.items():
             if time_slot not in self.area._markets.markets:
@@ -45,8 +45,7 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
                 break
             for area_name in sorted(agents, key=lambda _: random()):
                 agents[area_name].event_listener(event_type, **kwargs)
-                # self.root_dispatcher.market_event_dispatcher.cleanup_running_threads()
-                self.root_dispatcher.market_notify_event_dispatcher._cleanup_all_running_threads()
+                self.root_dispatcher.market_notify_event_dispatcher.wait_for_futures()
 
     def event_listener_redis(self, payload):
         data = json.loads(payload["data"])

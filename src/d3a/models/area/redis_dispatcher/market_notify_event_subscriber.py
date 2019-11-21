@@ -1,8 +1,7 @@
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from d3a.models.market.market_structures import offer_from_JSON_string, trade_from_JSON_string
-from d3a.events import MarketEvent
+from d3a.models.market.market_structures import parse_event_and_parameters_from_json_string
 from d3a.models.area.redis_dispatcher.redis_communicator import ResettableCommunicator
 
 
@@ -25,7 +24,7 @@ class MarketNotifyEventSubscriber:
                                     "transaction_uuid": transaction_uuid})
         self.redis.publish(response_channel, response_data)
 
-    def _cleanup_all_running_threads(self):
+    def wait_for_futures(self):
         for future in self.futures:
             try:
                 future.result(timeout=5)
@@ -34,11 +33,8 @@ class MarketNotifyEventSubscriber:
         self.futures = []
 
     def cycle_market_channels(self):
-        self._cleanup_all_running_threads()
-        try:
-            self.redis.stop_all_threads()
-        except Exception as e:
-            logging.debug(f"Error when stopping all threads when recycling markets: {str(e)}")
+        self.wait_for_futures()
+        self.redis.terminate_connection()
         self.redis = ResettableCommunicator()
         self.subscribe_to_events()
 
@@ -64,12 +60,4 @@ class MarketNotifyEventSubscriber:
         self.redis.sub_to_multiple_channels(channels_callbacks_dict)
 
     def parse_market_event_from_event_payload(self, payload):
-        data = json.loads(payload["data"])
-        kwargs = data["kwargs"]
-        for key in ["offer", "existing_offer", "new_offer"]:
-            if key in kwargs:
-                kwargs[key] = offer_from_JSON_string(kwargs[key])
-        if "trade" in kwargs:
-            kwargs["trade"] = trade_from_JSON_string(kwargs["trade"])
-        event_type = MarketEvent(data["event_type"])
-        return event_type, kwargs
+        return parse_event_and_parameters_from_json_string(payload)
