@@ -34,7 +34,7 @@ from d3a.models.area.redis_dispatcher.market_event_dispatcher import RedisMarket
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from d3a.models.area.redis_dispatcher.market_notify_event_subscriber \
     import MarketNotifyEventSubscriber
-from d3a.models.area.redis_dispatcher.redis_communicator import RedisAreaCommunicator
+from d3a.d3a_core.redis_area_market_communicator import RedisAreaCommunicator
 
 
 log = getLogger(__name__)

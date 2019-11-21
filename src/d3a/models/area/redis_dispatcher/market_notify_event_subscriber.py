@@ -2,7 +2,7 @@ import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from d3a.models.market.market_structures import parse_event_and_parameters_from_json_string
-from d3a.models.area.redis_dispatcher.redis_communicator import ResettableCommunicator
+from d3a.d3a_core.redis_area_market_communicator import ResettableCommunicator
 
 
 class MarketNotifyEventSubscriber:
