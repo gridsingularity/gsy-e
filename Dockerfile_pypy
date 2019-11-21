@@ -4,6 +4,13 @@ ADD . /app
 
 WORKDIR /app
 
+RUN pip install --upgrade pip
+RUN pip install --upgrade setuptools
+
+RUN apt-get update && apt-get install build-essential libatlas3-base libatlas-base-dev -y
+RUN pypy3 -m pip install numpy==1.16.4
+RUN pypy3 -m pip install scipy
+
 # TODO: Workaround for pysolc due to https://github.com/ethereum/py-solc/issues/64
 RUN pip install -r/app/requirements/dev.txt && \
     pip install -e . && \
