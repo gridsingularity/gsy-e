@@ -44,8 +44,7 @@ class PVStrategy(BaseStrategy):
                  final_selling_rate:
                  float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
                  fit_to_limit: bool = True,
-                 update_interval=duration(
-                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 update_interval=None,
                  energy_rate_decrease_per_update:
                  float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
                  max_panel_power_W: float = None,
@@ -59,6 +58,9 @@ class PVStrategy(BaseStrategy):
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if use_market_maker_rate:
