@@ -21,6 +21,7 @@ from parameterized import parameterized
 from logging import getLogger
 from unittest.mock import MagicMock
 from threading import Event
+from pendulum import now
 
 import d3a.models.area
 from d3a.models.area import Area
@@ -31,6 +32,8 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
 from d3a.d3a_core.redis.redis_area_market_communicator import RedisCommunicator
 from d3a.events.event_structures import AreaEvent, MarketEvent
+from d3a.models.market.market_structures import Offer, Trade, offer_from_JSON_string, \
+    trade_from_JSON_string
 
 log = getLogger(__name__)
 
@@ -140,7 +143,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
         self.area = Area(name="Area", config=self.config,
                          children=[self.device1, self.device2])
         self.area.dispatcher.market_event_dispatcher.redis = MagicMock(spec=RedisCommunicator)
-        self.area.dispatcher.market_event_dispatcher.thread_events = {
+        self.area.dispatcher.market_event_dispatcher.child_response_events = {
             MarketEvent.TRADE.value: MagicMock(spec=Event),
             MarketEvent.OFFER.value: MagicMock(spec=Event),
             MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
@@ -148,7 +151,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
         }
         self.device1.dispatcher.market_event_dispatcher.redis = MagicMock(
             spec=RedisCommunicator)
-        self.device1.dispatcher.market_event_dispatcher.thread_events = {
+        self.device1.dispatcher.market_event_dispatcher.child_response_events = {
             MarketEvent.TRADE.value: MagicMock(spec=Event),
             MarketEvent.OFFER.value: MagicMock(spec=Event),
             MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
@@ -156,7 +159,7 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
         }
         self.device2.dispatcher.market_event_dispatcher.redis = MagicMock(
             spec=RedisCommunicator)
-        self.device2.dispatcher.market_event_dispatcher.thread_events = {
+        self.device2.dispatcher.market_event_dispatcher.child_response_events = {
             MarketEvent.TRADE.value: MagicMock(spec=Event),
             MarketEvent.OFFER.value: MagicMock(spec=Event),
             MarketEvent.OFFER_DELETED.value: MagicMock(spec=Event),
@@ -208,11 +211,12 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
         for child in self.area.children:
             dispatch_channel = f"{child.uuid}/market_event"
             send_data = json.dumps({"event_type": market_event.value, "kwargs": {}})
-            self.area.dispatcher.market_event_dispatcher.redis.publish.assert_any_call(
+            market_dispatcher = self.area.dispatcher.market_event_dispatcher
+            market_dispatcher.redis.publish.assert_any_call(
                 dispatch_channel, send_data)
-            assert self.area.dispatcher.market_event_dispatcher.thread_events[market_event.value].\
+            assert market_dispatcher.child_response_events[market_event.value].\
                 wait.call_count == len(self.area.children)
-            assert self.area.dispatcher.market_event_dispatcher.thread_events[market_event.value].\
+            assert market_dispatcher.child_response_events[market_event.value].\
                 clear.call_count == len(self.area.children)
 
     @parameterized.expand([(MarketEvent.OFFER, ),
@@ -226,4 +230,54 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
         for dispatcher in [self.device1.dispatcher.market_event_dispatcher,
                            self.device2.dispatcher.market_event_dispatcher]:
             dispatcher.response_callback(response_payload)
-            dispatcher.thread_events[market_event.value].set.assert_called_once()
+            dispatcher.child_response_events[market_event.value].set.assert_called_once()
+
+    def test_response_callback_from_children_raises_exception_for_wrong_event(self):
+        response_payload = {"data": json.dumps(
+            {"response": "wrong_event_type", "event_type": 1234124123}
+        )}
+        for dispatcher in [self.device1.dispatcher.market_event_dispatcher,
+                           self.device2.dispatcher.market_event_dispatcher]:
+            with self.assertRaises(Exception):
+                dispatcher.response_callback(response_payload)
+            for evt in dispatcher.child_response_events.values():
+                evt.set.assert_not_called()
+
+    @parameterized.expand([(MarketEvent.OFFER, ),
+                           (MarketEvent.TRADE, ),
+                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_DELETED, )])
+    def test_event_listener_calls_the_event_listener_of_the_root_dispatcher(self, market_event):
+        payload = {"data": json.dumps({"event_type": market_event.value, "kwargs": {}})}
+        for dispatcher in [self.device1.dispatcher.market_event_dispatcher,
+                           self.device2.dispatcher.market_event_dispatcher]:
+            dispatcher.root_dispatcher.event_listener = MagicMock()
+            dispatcher.event_listener_redis(payload)
+            dispatcher.root_dispatcher.event_listener.assert_called_once_with(
+                event_type=market_event)
+            dispatcher.wait_for_futures()
+            dispatcher.redis.publish.assert_called_once()
+
+    def test_publish_event_converts_python_objects_to_json(self):
+        offer = Offer("1", 2, 3, "A")
+        trade = Trade("2", now(), Offer("accepted", 7, 8, "Z"), "B", "C")
+        new_offer = Offer("3", 4, 5, "D")
+        existing_offer = Offer("4", 5, 6, "E")
+        kwargs = {"offer": offer,
+                  "trade": trade,
+                  "new_offer": new_offer,
+                  "existing_offer": existing_offer}
+        for dispatcher in [self.area.dispatcher.market_event_dispatcher,
+                           self.device1.dispatcher.market_event_dispatcher,
+                           self.device2.dispatcher.market_event_dispatcher]:
+            dispatcher.publish_event(dispatcher.area.uuid, MarketEvent.OFFER, **kwargs)
+            assert dispatcher.redis.publish.call_count == 1
+            payload = json.loads(dispatcher.redis.publish.call_args_list[0][0][1])
+            assert isinstance(payload["kwargs"]["offer"], str)
+            assert offer_from_JSON_string(payload["kwargs"]["offer"]) == offer
+            assert isinstance(payload["kwargs"]["trade"], str)
+            assert trade_from_JSON_string(payload["kwargs"]["trade"]) == trade
+            assert isinstance(payload["kwargs"]["new_offer"], str)
+            assert offer_from_JSON_string(payload["kwargs"]["new_offer"]) == new_offer
+            assert isinstance(payload["kwargs"]["existing_offer"], str)
+            assert offer_from_JSON_string(payload["kwargs"]["existing_offer"]) == existing_offer

@@ -15,7 +15,7 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
         self.market_event = Event()
         self.futures = []
         self.executor = ThreadPoolExecutor(max_workers=10)
-        self.thread_events = {
+        self.child_response_events = {
             MarketEvent.TRADE.value: Event(),
             MarketEvent.OFFER.value: Event(),
             MarketEvent.OFFER_DELETED.value: Event(),
@@ -54,11 +54,10 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
             if event_type not in self.str_market_events:
                 raise Exception("RedisAreaDispatcher: Should never reach this point")
             else:
-                self.thread_events[event_type_id].set()
+                self.child_response_events[event_type_id].set()
 
     def publish_event(self, area_uuid, event_type: MarketEvent, **kwargs):
         dispatch_channel = f"{area_uuid}/market_event"
-
         for key in ["offer", "trade", "new_offer", "existing_offer"]:
             if key in kwargs:
                 kwargs[key] = kwargs[key].to_JSON_string()
@@ -68,8 +67,8 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
     def broadcast_event_redis(self, event_type: MarketEvent, **kwargs):
         for child in sorted(self.area.children, key=lambda _: random()):
             self.publish_event(child.uuid, event_type, **kwargs)
-            self.thread_events[event_type.value].wait()
-            self.thread_events[event_type.value].clear()
+            self.child_response_events[event_type.value].wait()
+            self.child_response_events[event_type.value].clear()
 
         for time_slot, agents in self.root_dispatcher._inter_area_agents.items():
             if time_slot not in self.area._markets.markets:
