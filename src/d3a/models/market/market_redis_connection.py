@@ -42,7 +42,9 @@ class MarketRedisEventPublisher:
 
         self.redis.sub_to_channel(self.event_response_channel_name(), self.response_callback)
         self.redis.publish(self.event_channel_name(), json.dumps(send_data))
+        self._wait_for_event_response(send_data)
 
+    def _wait_for_event_response(self, send_data):
         def event_response_was_received_callback():
             return send_data["transaction_uuid"] in self.event_response_uuids
 
@@ -131,8 +133,8 @@ class MarketRedisEventSubscriber:
             if isinstance(data_dict["offer_or_id"], str):
                 data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
         if "offer" in data_dict and data_dict["offer"] is not None:
-            if isinstance(data_dict["offer_or_id"], str):
-                data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])
+            if isinstance(data_dict["offer"], str):
+                data_dict["offer"] = offer_from_JSON_string(data_dict["offer"])
 
         return data_dict
 
