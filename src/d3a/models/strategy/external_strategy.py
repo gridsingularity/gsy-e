@@ -28,6 +28,9 @@ class RedisExternalConnection(MarketRedisApi):
         super().__init__(None)
         self.areas_to_register = []
 
+    def shutdown(self):
+        self.pubsub.unsubscribe()
+
     @property
     def market(self):
         return self.area.parent.next_market
@@ -83,7 +86,7 @@ class RedisExternalConnection(MarketRedisApi):
 
     @classmethod
     def sanitize_parameters(cls, data_dict):
-        return
+        return data_dict
 
     @staticmethod
     def _serialize_offer_list(offer_list):
@@ -106,8 +109,8 @@ class RedisExternalConnection(MarketRedisApi):
     def _accept_offer(self, payload):
         try:
             arguments = self._parse_payload(payload)
-            assert set(arguments.keys()) == {'offer', 'energy'}
-            arguments['offer_or_id'] = arguments['offer']
+            assert set(arguments.keys()) in [{'offer'}, {'offer', 'energy'}]
+            arguments['offer_or_id'] = arguments.pop('offer')
             arguments['buyer'] = self.area.name
         except Exception:
             self.publish(
@@ -121,8 +124,8 @@ class RedisExternalConnection(MarketRedisApi):
         try:
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'price', 'energy'}
-            arguments['buyer'] = self.area.name
-        except Exception:
+            arguments['seller'] = self.area.name
+        except Exception as e:
             self.publish(
                 self._offer_response_channel,
                 {"error": "Incorrect offer request. Available parameters: (price, energy)."}
@@ -134,7 +137,7 @@ class RedisExternalConnection(MarketRedisApi):
         try:
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'offer'}
-            arguments['offer_or_id'] = arguments['offer']
+            arguments['offer_or_id'] = arguments.pop('offer')
         except Exception:
             self.publish(
                 self._offer_response_channel,
@@ -148,3 +151,6 @@ class ExternalStrategy(BaseStrategy):
     def __init__(self, area):
         super().__init__()
         self.redis = RedisExternalConnection(area)
+
+    def shutdown(self):
+        self.redis.shutdown()

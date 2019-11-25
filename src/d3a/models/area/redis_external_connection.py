@@ -33,6 +33,8 @@ class RedisExternalConnection:
             else:
                 self.publish(f"{self.area.slug}/unregister_participant/response",
                              json.dumps({"response": "success"}))
+                area_object.strategy.shutdown()
+
         self.areas_to_unregister = []
 
     def register_new_areas(self):
