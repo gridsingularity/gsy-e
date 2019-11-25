@@ -78,6 +78,9 @@ class TestExternalConnectionRedis(unittest.TestCase):
         assert set(ch.name for ch in self.area.children) == set(area_list)
         # Keep track how many times the publish method was called when setting up the areas
         call_count = self.external_connection.redis_db.publish.call_count
+        # Monkeypatch shutdown method of ExternalStrategy class
+        for ch in self.area.children:
+            ch.strategy.shutdown = MagicMock()
 
         self.external_connection.areas_to_unregister = ["prenzlauer berg"]
         self.external_connection.unregister_pending_areas()
