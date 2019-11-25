@@ -154,7 +154,7 @@ class Area:
         self.events.update_events(self.now)
 
         if self.redis_ext_conn:
-            self.redis_ext_conn.register_new_areas()
+            self.redis_ext_conn.market_cycle_event()
 
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
