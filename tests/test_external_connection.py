@@ -5,12 +5,13 @@ from slugify import slugify
 import d3a.models.area.redis_external_connection
 from d3a.models.area import Area
 from d3a.models.area.redis_external_connection import RedisExternalConnection
-from d3a.models.strategy.external_strategy import ExternalStrategy
 
 
 class TestExternalConnectionRedis(unittest.TestCase):
 
     def setUp(self):
+        self.ext_strategy_mock = MagicMock
+        d3a.models.area.redis_external_connection.ExternalStrategy = self.ext_strategy_mock
         d3a.models.area.redis_external_connection.StrictRedis = MagicMock()
         redis_db_object = MagicMock()
         redis_db_object.pubsub = MagicMock
@@ -51,7 +52,7 @@ class TestExternalConnectionRedis(unittest.TestCase):
         assert len(self.area.children) == 3
         assert not self.external_connection.areas_to_register
         assert set(ch.name for ch in self.area.children) == set(area_list)
-        assert all(isinstance(ch.strategy, ExternalStrategy) for ch in self.area.children)
+        assert all(isinstance(ch.strategy, self.ext_strategy_mock) for ch in self.area.children)
         assert all(ch.parent == self.area for ch in self.area.children)
         assert all(ch.active for ch in self.area.children)
         assert self.external_connection.redis_db.publish.call_count == 3
