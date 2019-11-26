@@ -227,5 +227,10 @@ def parse_event_and_parameters_from_json_string(payload):
             kwargs[key] = offer_from_JSON_string(kwargs[key])
     if "trade" in kwargs:
         kwargs["trade"] = trade_from_JSON_string(kwargs["trade"])
+    for key in ["bid", "existing_bid", "new_bid"]:
+        if key in kwargs:
+            kwargs[key] = bid_from_JSON_string(kwargs[key])
+    if "bid_trade" in kwargs:
+        kwargs["bid_trade"] = trade_from_JSON_string(kwargs["bid_trade"])
     event_type = MarketEvent(data["event_type"])
     return event_type, kwargs

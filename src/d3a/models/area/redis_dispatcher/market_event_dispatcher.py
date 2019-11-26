@@ -20,6 +20,9 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
             MarketEvent.OFFER.value: Event(),
             MarketEvent.OFFER_DELETED.value: Event(),
             MarketEvent.OFFER_CHANGED.value: Event(),
+            MarketEvent.BID_TRADED.value: Event(),
+            MarketEvent.BID_CHANGED.value: Event(),
+            MarketEvent.BID_DELETED.value: Event(),
         }
 
     def wait_for_futures(self):
@@ -58,7 +61,8 @@ class RedisMarketEventDispatcher(RedisEventDispatcherBase):
 
     def publish_event(self, area_uuid, event_type: MarketEvent, **kwargs):
         dispatch_channel = f"{area_uuid}/market_event"
-        for key in ["offer", "trade", "new_offer", "existing_offer"]:
+        for key in ["offer", "trade", "new_offer", "existing_offer",
+                    "bid", "new_bid", "existing_bid", "bid_trade"]:
             if key in kwargs:
                 kwargs[key] = kwargs[key].to_JSON_string()
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
