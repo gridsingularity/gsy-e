@@ -275,8 +275,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     "energy": energy,
                     "trade_rate": trade_rate,
                     "already_tracked": already_tracked,
-                    "trade_bid_info": trade_bid_info.to_JSON_string()
-                    if trade_bid_info is not None else None,
+                    "trade_bid_info": trade_bid_info if trade_bid_info is not None else None,
                     "buyer_origin": buyer_origin}
 
             self._send_events_to_market("ACCEPT_OFFER", market_or_id, data,

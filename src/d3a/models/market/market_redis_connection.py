@@ -6,8 +6,7 @@ from uuid import uuid4
 from d3a.d3a_core.redis.redis_area_market_communicator import ResettableCommunicator, \
     BlockingCommunicator
 from d3a.events import MarketEvent
-from d3a.models.market.market_structures import offer_from_JSON_string, \
-    trade_bid_info_from_JSON_string
+from d3a.models.market.market_structures import offer_from_JSON_string
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 
 
@@ -127,9 +126,6 @@ class MarketRedisEventSubscriber:
 
     @classmethod
     def sanitize_parameters(cls, data_dict):
-        if "trade_bid_info" in data_dict and data_dict["trade_bid_info"] is not None:
-            data_dict["trade_bid_info"] = \
-                trade_bid_info_from_JSON_string(data_dict["trade_bid_info"])
         if "offer_or_id" in data_dict and data_dict["offer_or_id"] is not None:
             if isinstance(data_dict["offer_or_id"], str):
                 data_dict["offer_or_id"] = offer_from_JSON_string(data_dict["offer_or_id"])

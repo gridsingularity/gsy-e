@@ -32,7 +32,7 @@ from d3a.models.market.market_structures import Offer, Trade, Bid  # noqa
 from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber, \
-    MarketRedisEventPublisher
+    MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
 
 log = getLogger(__name__)
 
@@ -97,7 +97,9 @@ class Market:
         self.current_tick = 0
         self.device_registry = DeviceRegistry.REGISTRY
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
-            self.redis_api = MarketRedisEventSubscriber(self)
+            self.redis_api = MarketRedisEventSubscriber(self) \
+                if ConstSettings.IAASettings.MARKET_TYPE == 1 \
+                else TwoSidedMarketRedisEventSubscriber(self)
         setattr(self, RLOCK_MEMBER_NAME, RLock())
 
     def add_listener(self, listener):
