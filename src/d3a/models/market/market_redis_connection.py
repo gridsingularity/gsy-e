@@ -6,7 +6,7 @@ from uuid import uuid4
 from d3a.d3a_core.redis.redis_area_market_communicator import ResettableCommunicator, \
     BlockingCommunicator
 from d3a.events import MarketEvent
-from d3a.models.market.market_structures import offer_from_JSON_string
+from d3a.models.market.market_structures import offer_from_JSON_string, bid_from_JSON_string
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 
 
@@ -207,6 +207,7 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
             self._bid_channel: self._bid,
             self._delete_bid_channel: self._delete_bid,
             self._accept_bid_channel: self._accept_bid,
+            self._clear_market_channel: self._clear_market,
         })
 
     @property
@@ -222,6 +223,10 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
         return f"{self.market.id}/ACCEPT_BID"
 
     @property
+    def _clear_market_channel(self):
+        return f"{self.market.id}/CLEAR"
+
+    @property
     def _bid_response_channel(self):
         return f"{self._bid_channel}/RESPONSE"
 
@@ -232,6 +237,22 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
     @property
     def _accept_bid_response_channel(self):
         return f"{self._accept_bid_channel}/RESPONSE"
+
+    @property
+    def _clear_market_response_channel(self):
+        return f"{self._clear_market_channel}/RESPONSE"
+
+    @classmethod
+    def sanitize_parameters(cls, data_dict):
+        data_dict = super().sanitize_parameters(data_dict)
+        if "bid_or_id" in data_dict and data_dict["bid_or_id"] is not None:
+            if isinstance(data_dict["bid_or_id"], str):
+                data_dict["bid_or_id"] = bid_from_JSON_string(data_dict["bid_or_id"])
+        if "bid" in data_dict and data_dict["bid"] is not None:
+            if isinstance(data_dict["bid"], str):
+                data_dict["bid"] = bid_from_JSON_string(data_dict["bid"])
+
+        return data_dict
 
     def _accept_bid(self, payload):
         def thread_cb():
@@ -273,7 +294,6 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
                           "error_message": str(e), "transaction_uuid": transaction_uuid})
 
     def _delete_bid(self, payload):
-
         def thread_cb():
             return self._delete_bid_impl(self._parse_payload(payload))
         self.futures.append(self.executor.submit(thread_cb))
@@ -289,5 +309,24 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
             logging.debug(f"Error when handling bid delete on market {self.market_object.name}: "
                           f"Exception: {str(e)}, Delete Bid Arguments: {arguments}")
             self.publish(self._delete_bid_response_channel,
+                         {"status": "ready", "exception": str(type(e)),
+                          "error_message": str(e), "transaction_uuid": transaction_uuid})
+
+    def _clear_market(self, payload):
+        def thread_cb():
+            return self._clear_market_impl(self._parse_payload(payload))
+        self.futures.append(self.executor.submit(thread_cb))
+
+    def _clear_market_impl(self, arguments):
+        transaction_uuid = arguments.pop("transaction_uuid", None)
+        try:
+            self.market.match_offers_bids()
+            self.publish(self._clear_market_response_channel,
+                         {"status": "ready", "transaction_uuid": transaction_uuid})
+        except Exception as e:
+            logging.error(
+                f"Error when handling market clearing event on market {self.market.name}: "
+                f"Exception {str(e)}")
+            self.publish(self._clear_market_response_channel,
                          {"status": "ready", "exception": str(type(e)),
                           "error_message": str(e), "transaction_uuid": transaction_uuid})
