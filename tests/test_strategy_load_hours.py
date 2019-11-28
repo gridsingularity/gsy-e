@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import unittest
 from unittest.mock import MagicMock, Mock
-from pendulum import DateTime, duration, today
+from pendulum import DateTime, duration, today, now
 from parameterized import parameterized
 from math import isclose
 import os
@@ -32,7 +32,7 @@ from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
-
+from d3a.models.area import Area
 
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
@@ -433,6 +433,11 @@ def test_balancing_offers_are_created_if_device_in_registry(
 def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 9
     load = LoadHoursStrategy(200, final_buying_rate=33, use_market_maker_rate=use_mmr)
+
+    load.area = MagicMock(spec=Area)
+    load.area.now = now()
+    load.area.config = GlobalConfig
+    load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
 
 
@@ -446,4 +451,8 @@ def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr,
         daily_load_profile=user_profile_path,
         final_buying_rate=33,
         use_market_maker_rate=use_mmr)
+    load.area = MagicMock(spec=Area)
+    load.area.now = now()
+    load.area.config = GlobalConfig
+    load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())

@@ -107,9 +107,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     @property
     def active_markets(self):
-        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
-        if self.use_market_maker_rate:
-            self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate)
         return [market for market in self.area.all_markets
                 if self._is_market_active(market)]
 
@@ -146,6 +143,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
 
     def event_activate(self):
+        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
+        if self.use_market_maker_rate:
+            self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate)
         self.state.total_energy_demanded_wh = \
             self._initial_hrs_per_day * self.avg_power_W * self.area.config.sim_duration.days
         self.bid_update.update_on_activate()

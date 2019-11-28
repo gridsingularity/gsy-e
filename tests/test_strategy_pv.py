@@ -18,9 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import pendulum
 import uuid
-from pendulum import DateTime
+from pendulum import DateTime, now
 from parameterized import parameterized
 import os
+from unittest.mock import MagicMock
 
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
@@ -31,6 +32,8 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.util import d3a_path
+from d3a.models.area import Area
+
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -436,7 +439,12 @@ def test_initial_selling_rate(pv_strategy_test10, area_test10):
 ])
 def test_use_mmr_parameter_is_respected(strategy_type, use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 12
-    pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr)
+    pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
+                       max_panel_power_W=200)
+    pv.area = MagicMock(spec=Area)
+    pv.area.now = now()
+    pv.area.config = GlobalConfig
+    pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
 
 
@@ -448,6 +456,10 @@ def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 13
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
     pv = PVUserProfileStrategy(
-        power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr
-    )
+        power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr,
+        max_panel_power_W=200)
+    pv.area = MagicMock(spec=Area)
+    pv.area.now = now()
+    pv.area.config = GlobalConfig
+    pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())

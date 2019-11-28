@@ -82,9 +82,10 @@ class PVStrategy(BaseStrategy):
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, validate=True, **kwargs):
         assert all(k in self.parameters for k in kwargs.keys())
-        validate_pv_device(**kwargs)
+        if validate:
+            validate_pv_device(**kwargs)
         for name, value in kwargs.items():
             setattr(self, name, value)
 
@@ -101,7 +102,8 @@ class PVStrategy(BaseStrategy):
     def event_activate(self):
         # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
-            self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate)
+            self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate,
+                                        validate=False)
         if self.max_panel_power_W is None:
             self.max_panel_power_W = self.area.config.max_panel_power_W
         # Calculating the produced energy
