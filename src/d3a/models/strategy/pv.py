@@ -62,9 +62,7 @@ class PVStrategy(BaseStrategy):
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
-        if use_market_maker_rate:
-            initial_selling_rate = GlobalConfig.market_maker_rate
+        self.use_market_maker_rate = use_market_maker_rate
 
         validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
 
@@ -101,6 +99,9 @@ class PVStrategy(BaseStrategy):
         self.offer_update.update_offer(self)
 
     def event_activate(self):
+        # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
+        if self.use_market_maker_rate:
+            self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate)
         if self.max_panel_power_W is None:
             self.max_panel_power_W = self.area.config.max_panel_power_W
         # Calculating the produced energy

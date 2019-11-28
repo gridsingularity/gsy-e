@@ -70,9 +70,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
-        if use_market_maker_rate:
-            final_buying_rate = GlobalConfig.market_maker_rate
+        self.use_market_maker_rate = use_market_maker_rate
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
@@ -109,6 +107,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     @property
     def active_markets(self):
+        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
+        if self.use_market_maker_rate:
+            self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate)
         return [market for market in self.area.all_markets
                 if self._is_market_active(market)]
 
