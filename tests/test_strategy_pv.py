@@ -18,10 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import pendulum
 import uuid
-from pendulum import DateTime, now
+from pendulum import DateTime
 from parameterized import parameterized
 import os
-from unittest.mock import MagicMock
 
 from d3a.constants import TIME_ZONE
 from d3a.models.area import DEFAULT_CONFIG
@@ -32,7 +31,6 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.util import d3a_path
-from d3a.models.area import Area
 
 
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
@@ -40,11 +38,11 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
 class FakeArea:
-    def __init__(self, count):
+    def __init__(self):
+        self.config = DEFAULT_CONFIG
         self.current_tick = 2
         self.appliance = None
         self.name = 'FakeArea'
-        self.count = count
         self.test_market = FakeMarket(0)
 
     def get_future_market_from_id(self, id):
@@ -53,10 +51,6 @@ class FakeArea:
     @property
     def current_market(self):
         return self.test_market
-
-    @property
-    def config(self):
-        return DEFAULT_CONFIG
 
     @property
     def now(self) -> DateTime:
@@ -122,7 +116,7 @@ class FakeTrade:
 
 @pytest.fixture()
 def area_test1():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -144,7 +138,7 @@ def testing_activation(pv_test1):
 
 @pytest.fixture()
 def area_test2():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -189,7 +183,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
 
 @pytest.fixture()
 def area_test3():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -378,7 +372,7 @@ def pv_test8(area_test3):
 
 @pytest.fixture()
 def area_test9():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -407,7 +401,7 @@ def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
 
 @pytest.fixture()
 def area_test10():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture
@@ -441,9 +435,7 @@ def test_use_mmr_parameter_is_respected(strategy_type, use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 12
     pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
                        max_panel_power_W=200)
-    pv.area = MagicMock(spec=Area)
-    pv.area.now = now()
-    pv.area.config = GlobalConfig
+    pv.area = FakeArea()
     pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
 
@@ -458,8 +450,6 @@ def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
     pv = PVUserProfileStrategy(
         power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr,
         max_panel_power_W=200)
-    pv.area = MagicMock(spec=Area)
-    pv.area.now = now()
-    pv.area.config = GlobalConfig
+    pv.area = FakeArea()
     pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())

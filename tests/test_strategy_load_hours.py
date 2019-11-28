@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 import unittest
 from unittest.mock import MagicMock, Mock
-from pendulum import DateTime, duration, today, now
+from pendulum import DateTime, duration, today
 from parameterized import parameterized
 from math import isclose
 import os
@@ -32,7 +32,6 @@ from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
-from d3a.models.area import Area
 
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
@@ -46,10 +45,10 @@ def teardown_function():
 
 
 class FakeArea:
-    def __init__(self, count):
+    def __init__(self):
+        self.config = DEFAULT_CONFIG
         self.appliance = None
         self.name = 'FakeArea'
-        self.count = count
 
         self._next_market = FakeMarket(0)
         self._bids = {}
@@ -65,10 +64,6 @@ class FakeArea:
     @property
     def all_markets(self):
         return list(self.markets.values())
-
-    @property
-    def config(self):
-        return DEFAULT_CONFIG
 
     @property
     def current_tick(self):
@@ -169,7 +164,7 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
         pass
 
     def area_test(self):
-        area = FakeArea(0)
+        area = FakeArea()
         area.current_market = FakeMarket(0)
         area.markets = {TIME: FakeMarket(0)}
         return area
@@ -191,14 +186,14 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
 
 @pytest.fixture()
 def area_test1(market_test1):
-    area = FakeArea(0)
+    area = FakeArea()
     area.current_market = market_test1
     return area
 
 
 @pytest.fixture
 def area_test2(market_test2):
-    area = FakeArea(0)
+    area = FakeArea()
     area.current_market = market_test2
     area.markets = {TIME: market_test2}
     return area
@@ -434,9 +429,7 @@ def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 9
     load = LoadHoursStrategy(200, final_buying_rate=33, use_market_maker_rate=use_mmr)
 
-    load.area = MagicMock(spec=Area)
-    load.area.now = now()
-    load.area.config = GlobalConfig
+    load.area = FakeArea()
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
 
@@ -451,8 +444,6 @@ def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr,
         daily_load_profile=user_profile_path,
         final_buying_rate=33,
         use_market_maker_rate=use_mmr)
-    load.area = MagicMock(spec=Area)
-    load.area.now = now()
-    load.area.config = GlobalConfig
+    load.area = FakeArea()
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
