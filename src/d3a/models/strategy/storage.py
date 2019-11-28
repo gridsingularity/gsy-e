@@ -59,11 +59,14 @@ class StorageStrategy(BidEnabledStrategy):
                  StorageSettings.BUYING_RATE_RANGE.final,
                  fit_to_limit=True, energy_rate_increase_per_update=1,
                  energy_rate_decrease_per_update=1,
-                 update_interval=duration(
-                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 update_interval=None,
                  initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL,
                  balancing_energy_ratio: tuple = (BalancingSettings.OFFER_DEMAND_RATIO,
                                                   BalancingSettings.OFFER_SUPPLY_RATIO)):
+
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
