@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import math
 from logging import getLogger
 from collections import OrderedDict
+from sortedcontainers import SortedDict
 
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.market_structures import MarketClearingState
@@ -91,6 +92,42 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     # Prone to change or be modularised once we add McAfee algorithm
                     return b_rate, b_energy
 
+    def _find_nearest(self, value, target):
+        for j in range(len(target)):
+            if target[j] > value:
+                return j
+        return None
+
+    def _curve_interpolation(self, source, reference, ahead=0):
+        source_rate = list(source.keys())
+        source_energy = list(source.values())
+        reference_energy = list(reference.values())
+        for i in range(len(reference_energy)):
+            if reference_energy[i] not in source_energy:
+                index = self._find_nearest(reference_energy[i], source_energy)
+                if index is not None:
+                    source_energy.insert(index, reference_energy[i])
+                    source_rate.insert(index, source_rate[index])
+        source = {}
+        for k in range(len(source_rate)):
+            source[source_energy[k]] = source_rate[k]
+        return source
+
+    def _get_sudo_clearing(self, s_cumulative_offers, s_cumulative_bids):
+        intermediate = None
+        for i, (k, v) in enumerate(s_cumulative_offers.items()):
+            last_c_bid = s_cumulative_bids.get(k, None)
+            if last_c_bid is None:
+                break
+            if v < s_cumulative_bids[k]:
+                intermediate = (s_cumulative_bids[k], k)
+            elif math.isclose(v, s_cumulative_bids[k], rel_tol=1e-03):
+                intermediate = (v, k)
+            else:
+                return intermediate
+            # if k < s_cumulative_bids
+        return intermediate
+
     def _perform_pay_as_clear_matching(self):
         self.sorted_bids = self.sorting(self.bids, True)
 
@@ -100,11 +137,13 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         if ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM == 1:
             cumulative_bids = self._accumulated_energy_per_rate(self.sorted_bids)
             cumulative_offers = self._accumulated_energy_per_rate(self.sorted_offers)
+            s_cumulative_offers = \
+                SortedDict(self._curve_interpolation(cumulative_offers, cumulative_bids))
+            s_cumulative_bids = \
+                SortedDict(self._curve_interpolation(cumulative_bids, cumulative_offers))
             self.state.cumulative_bids[self.now] = cumulative_bids
             self.state.cumulative_offers[self.now] = cumulative_offers
-            ascending_rate_bids = OrderedDict(reversed(list(cumulative_bids.items())))
-            return self._clearing_point_from_supply_demand_curve(
-                ascending_rate_bids, cumulative_offers)
+            return self._get_sudo_clearing(s_cumulative_offers, s_cumulative_bids)
         elif ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM == 2:
             cumulative_bids = self._discrete_point_curve(self.sorted_bids, math.floor)
             cumulative_offers = self._discrete_point_curve(self.sorted_offers, math.ceil)
@@ -153,7 +192,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
             if cumulative_traded_bids >= clearing_energy:
                 break
-            elif (bid.price / bid.energy) >= clearing_rate and \
+            elif (bid.price / bid.energy) + FLOATING_POINT_TOLERANCE >= clearing_rate and \
                     (clearing_energy - cumulative_traded_bids) >= bid.energy:
                 cumulative_traded_bids += bid.energy
                 trade = self.accept_bid(
@@ -164,7 +203,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     trade_rate=clearing_rate,
                     trade_offer_info=trade_offer_info
                 )
-            elif (bid.price / bid.energy) >= clearing_rate and \
+            elif (bid.price / bid.energy) + FLOATING_POINT_TOLERANCE >= clearing_rate and \
                     (0 < (clearing_energy - cumulative_traded_bids) < bid.energy):
                 trade = self.accept_bid(
                     bid=bid,
@@ -206,6 +245,9 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                 cumulative_traded_offers += (clearing_energy - cumulative_traded_offers)
 
     def _exhaust_offer_for_selected_bids(self, offer, accepted_bids, clearing_rate, energy):
+        c_b = 0
+        for bid in accepted_bids:
+            c_b += bid.offer.energy
         while len(accepted_bids) > 0:
             trade = accepted_bids.pop(0)
             bid_energy = trade.offer.energy
