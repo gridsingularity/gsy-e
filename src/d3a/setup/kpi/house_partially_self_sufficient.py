@@ -15,14 +15,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.appliance.pv import PVAppliance
+from d3a.models.strategy.pv import PVStrategy
+from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     area = Area(
         'Grid',
         [
@@ -32,21 +36,22 @@ def get_setup(config):
                     Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
-                                                                           range(0, 24)),
+                                                                           range(24)),
                                                                        final_buying_rate=35),
-                         appliance=SwitchableAppliance())
+                         appliance=SwitchableAppliance()),
+                    Area('H1 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+                                                      final_selling_rate=5),
+                         appliance=PVAppliance()),
+
                 ],
-            ),
-            Area(
-                'House 2',
-                [
-                    Area('Commercial Energy Producer',
-                         strategy=CommercialStrategy(energy_rate=30),
-                         appliance=SimpleAppliance()
-                         ),
-                ],
+                transfer_fee_pct=0, transfer_fee_const=0,
 
             ),
+            Area('Commercial Energy Producer',
+                 strategy=CommercialStrategy(energy_rate=30),
+                 appliance=SimpleAppliance()
+                 ),
+
         ],
         config=config
     )

@@ -40,8 +40,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
 
     def __init__(self, daily_load_profile,
                  fit_to_limit=True, energy_rate_increase_per_update=1,
-                 update_interval=duration(
-                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
                  final_buying_rate: Union[float, dict, str] =
@@ -65,6 +64,9 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
         super().__init__(0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
                          fit_to_limit=fit_to_limit,
@@ -99,10 +101,9 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                             for day in range(self.area.config.sim_duration.days + 1)}
         for slot_time in generate_market_slot_list(area=self.area):
             if self._allowed_operating_hours(slot_time.hour):
-                self.energy_requirement_Wh[slot_time] = \
-                    self.load_profile[slot_time] * 1000
-                self.state.desired_energy_Wh[slot_time] = \
-                    self.load_profile[slot_time] * 1000
+                self.energy_requirement_Wh[slot_time] = self.load_profile[slot_time] * 1000
+                self.state.desired_energy_Wh[slot_time] = self.load_profile[slot_time] * 1000
+                self.state.total_energy_demanded_wh += self.load_profile[slot_time] * 1000
 
     def _operating_hours(self, energy):
         """

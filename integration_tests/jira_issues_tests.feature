@@ -61,7 +61,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-891, bids are reported correctly in csv export files
      Given we have a scenario named two_sided_pay_as_clear.default_2a
      And d3a is installed
-     When we run the d3a simulation on console with two_sided_pay_as_clear.default_2a
+     When we run the d3a simulation on console with two_sided_pay_as_clear.default_2a for 2 hrs
      Then there are nonempty files with offers (without balancing offers) and bids for every area
 
   Scenario: D3ASIM-962, Device Statistics are calculated and returned correctly

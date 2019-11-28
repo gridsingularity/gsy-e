@@ -15,18 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
+import json
+import glob
+import ast
+from behave import then
 
-# *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = "1.0.0a0"
 
-TIME_FORMAT = "HH:mm"
-DATE_FORMAT = "YYYY-MM-DD"
-DATE_TIME_FORMAT = f"{DATE_FORMAT}T{TIME_FORMAT}"
-DATE_TIME_UI_FORMAT = "MMMM DD YYYY, HH:mm [h]"
-TIME_ZONE = "UTC"
-
-DEFAULT_PRECISION = 8
-FLOATING_POINT_TOLERANCE = 0.000001
-
-REDIS_PUBLISH_RESPONSE_TIMEOUT = 1
-MAX_WORKER_THREADS = 10
+@then('the export functionality of kpi of {expected_kpis} are correctly reported')
+def test_export_of_kpi_result(context, expected_kpis):
+    sim_data_csv = glob.glob(os.path.join(context.export_path, "*",
+                                          "aggregated_results", "KPI.json"))
+    with open(sim_data_csv[0], "r") as sf:
+        kpi_data = json.load(sf)
+    expected_kpis = ast.literal_eval(expected_kpis)
+    for area, value in expected_kpis.items():
+        assert kpi_data[area]['self_sufficiency'] == float(value)

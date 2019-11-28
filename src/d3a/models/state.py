@@ -50,6 +50,7 @@ class LoadState:
     def __init__(self):
         self.desired_energy_Wh = \
             {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+        self.total_energy_demanded_wh = 0
 
 
 class ESSEnergyOrigin(Enum):

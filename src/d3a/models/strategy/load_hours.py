@@ -42,8 +42,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=1,
-                 update_interval=duration(
-                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
                  final_buying_rate: Union[float, dict, str] =
@@ -66,6 +65,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
+
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if use_market_maker_rate:
@@ -142,6 +145,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
 
     def event_activate(self):
+        self.state.total_energy_demanded_wh = \
+            self._initial_hrs_per_day * self.avg_power_W * self.area.config.sim_duration.days
         self.bid_update.update_on_activate()
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.sim_duration.days + 1)}
@@ -244,7 +249,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             if self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
                 self.energy_requirement_Wh[market.time_slot] = 0.0
                 self.state.desired_energy_Wh[market.time_slot] = 0.0
-
             if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 if self.energy_requirement_Wh[market.time_slot] > 0:

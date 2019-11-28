@@ -7,7 +7,7 @@ from d3a.d3a_core.redis.redis_area_market_communicator import ResettableCommunic
     BlockingCommunicator
 from d3a.events import MarketEvent
 from d3a.models.market.market_structures import offer_from_JSON_string, bid_from_JSON_string
-from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
 
 
 class MarketRedisEventPublisher:
@@ -59,10 +59,10 @@ class MarketRedisEventPublisher:
 
 class MarketRedisEventSubscriber:
     def __init__(self, market):
-        self.market_object = market
+        self.market = market
         self.redis_db = ResettableCommunicator()
         self.sub_to_external_requests()
-        self.executor = ThreadPoolExecutor(max_workers=10)
+        self.executor = ThreadPoolExecutor(max_workers=MAX_WORKER_THREADS)
         self.futures = []
 
     def sub_to_external_requests(self):
@@ -88,10 +88,6 @@ class MarketRedisEventSubscriber:
 
     def publish(self, channel, data):
         self.redis_db.publish(channel, json.dumps(data))
-
-    @property
-    def market(self):
-        return self.market_object
 
     @property
     def _offer_channel(self):
@@ -120,8 +116,6 @@ class MarketRedisEventSubscriber:
     @classmethod
     def _parse_payload(cls, payload):
         data_dict = json.loads(payload["data"])
-        if isinstance(data_dict, str):
-            data_dict = json.loads(data_dict)
         return cls.sanitize_parameters(data_dict)
 
     @classmethod
@@ -148,7 +142,7 @@ class MarketRedisEventSubscriber:
                          {"status": "ready", "trade": trade.to_JSON_string(),
                           "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.error(f"Error when handling accept_offer on market {self.market_object.name}: "
+            logging.error(f"Error when handling accept_offer on market {self.market.name}: "
                           f"Exception: {str(e)}, Accept Offer Arguments: {arguments}")
             self.publish(self._accept_offer_response_channel,
                          {"status": "error",  "exception": str(type(e)),
@@ -168,7 +162,7 @@ class MarketRedisEventSubscriber:
                          {"status": "ready", "offer": offer.to_JSON_string(),
                           "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.error(f"Error when handling offer on market {self.market_object.name}: "
+            logging.error(f"Error when handling offer on market {self.market.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
             self.publish(self._offer_response_channel,
                          {"status": "error",  "exception": str(type(e)),
@@ -188,7 +182,7 @@ class MarketRedisEventSubscriber:
             self.publish(self._delete_offer_response_channel,
                          {"status": "ready", "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.debug(f"Error when handling delete_offer on market {self.market_object.name}: "
+            logging.debug(f"Error when handling delete_offer on market {self.market.name}: "
                           f"Exception: {str(e)}, Delete Offer Arguments: {arguments}")
             self.publish(self._delete_offer_response_channel,
                          {"status": "ready", "exception": str(type(e)),

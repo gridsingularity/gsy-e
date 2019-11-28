@@ -36,7 +36,7 @@ from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
-from d3a.models.area.redis_external_connection import RedisExternalConnection
+from d3a.models.area.redis_external_connection import RedisAreaExternalConnection
 
 log = getLogger(__name__)
 
@@ -95,7 +95,7 @@ class Area:
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
-        self.redis_ext_conn = RedisExternalConnection(self) \
+        self.redis_ext_conn = RedisAreaExternalConnection(self) \
             if external_connection_available is True else None
 
     def set_events(self, event_list):

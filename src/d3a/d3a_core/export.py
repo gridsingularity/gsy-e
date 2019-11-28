@@ -88,14 +88,16 @@ class ExportAndPlot:
             _log.error("Could not open directory for csv exports: %s" % str(ex))
             return
 
-    def export_json_data(self, directory: dir):
+    def export_json_data(self, directory: dir, area: Area):
         json_dir = os.path.join(directory, "aggregated_results")
         mkdir_from_str(json_dir)
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
         kpi_file = os.path.join(json_dir, "KPI.json")
+        self.kpi.update_kpis_from_area(area)
         with open(kpi_file, 'w') as outfile:
+
             json.dump(self.kpi.performance_index, outfile, indent=2)
         trade_file = os.path.join(json_dir, "trade-detail.json")
         with open(trade_file, 'w') as outfile:
@@ -144,7 +146,7 @@ class ExportAndPlot:
                     ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
                 self.plot_supply_demand_curve(self.area, self.plot_dir)
             self.move_root_plot_folder()
-        self.export_json_data(self.directory)
+        self.export_json_data(self.directory, self.area)
 
     def data_to_csv(self, area, is_first):
         self._export_area_with_children(area, self.directory, is_first)
