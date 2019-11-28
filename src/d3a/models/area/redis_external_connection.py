@@ -38,7 +38,6 @@ class RedisExternalConnection:
         self.areas_to_unregister = []
 
     def register_new_areas(self):
-        self.unregister_pending_areas()
         if not self.areas_to_register:
             return
         for new_area in self.areas_to_register:

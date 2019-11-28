@@ -23,6 +23,12 @@ class TestExternalConnectionRedis(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def add_external_connections_to_area(self):
+        area_list = ["kreuzberg", "friedrichschain", "prenzlauer berg"]
+        self.external_connection.areas_to_register = area_list
+        self.external_connection.register_new_areas()
+        return area_list
+
     def test_external_connection_subscribes_to_register_unregister(self):
         self.external_connection.pubsub.subscribe.assert_called_once_with(
             **{
@@ -46,9 +52,7 @@ class TestExternalConnectionRedis(unittest.TestCase):
         assert self.external_connection.areas_to_unregister == ["berlin"]
 
     def test_register_new_areas_creates_new_child_areas_from_buffer(self):
-        area_list = ["kreuzberg", "friedrichschain", "prenzlauer berg"]
-        self.external_connection.areas_to_register = area_list
-        self.external_connection.register_new_areas()
+        area_list = self.add_external_connections_to_area()
         assert len(self.area.children) == 3
         assert not self.external_connection.areas_to_register
         assert set(ch.name for ch in self.area.children) == set(area_list)
@@ -72,9 +76,7 @@ class TestExternalConnectionRedis(unittest.TestCase):
                 ]})
 
     def test_unregister_areas_deletes_children_from_area(self):
-        area_list = ["kreuzberg", "friedrichschain", "prenzlauer berg"]
-        self.external_connection.areas_to_register = area_list
-        self.external_connection.register_new_areas()
+        area_list = self.add_external_connections_to_area()
         assert set(ch.name for ch in self.area.children) == set(area_list)
         # Keep track how many times the publish method was called when setting up the areas
         call_count = self.external_connection.redis_db.publish.call_count
@@ -97,9 +99,7 @@ class TestExternalConnectionRedis(unittest.TestCase):
             "base-area/unregister_participant/response", json.dumps({"response": "success"}))
 
     def test_unregister_area_that_does_not_exist_returns_an_error(self):
-        area_list = ["kreuzberg", "friedrichschain", "prenzlauer berg"]
-        self.external_connection.areas_to_register = area_list
-        self.external_connection.register_new_areas()
+        area_list = self.add_external_connections_to_area()
         assert set(ch.name for ch in self.area.children) == set(area_list)
 
         self.external_connection.areas_to_unregister = ["schoneberg"]
