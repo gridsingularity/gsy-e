@@ -42,8 +42,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=1,
-                 update_interval=duration(
-                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
                  final_buying_rate: Union[float, dict, str] =
@@ -66,6 +65,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
+
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if use_market_maker_rate:
