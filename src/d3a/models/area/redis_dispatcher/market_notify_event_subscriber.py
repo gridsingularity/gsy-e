@@ -1,6 +1,7 @@
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from d3a.constants import MAX_WORKER_THREADS
 from d3a.models.market.market_structures import parse_event_and_parameters_from_json_string
 from d3a.d3a_core.redis.redis_area_market_communicator import ResettableCommunicator
 
@@ -15,7 +16,7 @@ class MarketNotifyEventSubscriber:
         self.root_dispatcher = root_dispatcher
         self.redis = ResettableCommunicator()
         self.futures = []
-        self.executor = ThreadPoolExecutor(max_workers=10)
+        self.executor = ThreadPoolExecutor(max_workers=MAX_WORKER_THREADS)
 
     def publish_notify_event_response(self, market_id, event_type, transaction_uuid):
         response_channel = f"market/{market_id}/notify_event/response"

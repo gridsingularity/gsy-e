@@ -22,7 +22,7 @@ import json
 from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
 
 
-class RedisExternalConnection(MarketRedisEventSubscriber):
+class RedisMarketExternalConnection(MarketRedisEventSubscriber):
     def __init__(self, area):
         self.area = area
         super().__init__(None)
@@ -147,4 +147,4 @@ class RedisExternalConnection(MarketRedisEventSubscriber):
 class ExternalStrategy(BaseStrategy):
     def __init__(self, area):
         super().__init__()
-        self.redis = RedisExternalConnection(area)
+        self.redis = RedisMarketExternalConnection(area)
