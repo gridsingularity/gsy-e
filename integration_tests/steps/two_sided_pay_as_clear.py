@@ -99,3 +99,11 @@ def test_offer_bid_market_clearing_rate_files(context):
                  os.path.join(base_path, 'grid', 'house-2-market-clearing-rate.csv')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
+
+
+@then('the unmatched loads are tested')
+def test_export_supply_demand_curve(context):
+    sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot",
+                                          "unmatched_loads_grid.html"))
+    if len(sim_data_csv) != 0:
+        raise FileExistsError("Not found in {path}".format(path=context.export_path))

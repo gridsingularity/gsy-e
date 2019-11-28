@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import math
 from logging import getLogger
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.market_structures import MarketClearingState
@@ -26,6 +26,8 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import add_or_create_key
 
 log = getLogger(__name__)
+
+Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
 
 class TwoSidedPayAsClear(TwoSidedPayAsBid):
@@ -74,7 +76,10 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         for i in range(1, max_rate + 1):
             if self.state.cumulative_offers[self.now][i] >= \
                     self.state.cumulative_bids[self.now][i]:
-                return i, self.state.cumulative_bids[self.now][i]
+                if self.state.cumulative_bids[self.now][i] == 0:
+                    return i-1, self.state.cumulative_offers[self.now][i-1]
+                else:
+                    return i, self.state.cumulative_bids[self.now][i]
 
     def _accumulated_energy_per_rate(self, offer_bid):
         energy_sum = 0
@@ -85,11 +90,23 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         return accumulated
 
     def _clearing_point_from_supply_demand_curve(self, bids, offers):
+        clearing = []
         for b_rate, b_energy in bids.items():
             for o_rate, o_energy in offers.items():
-                if o_rate <= b_rate and o_energy >= b_energy:
-                    # Prone to change or be modularised once we add McAfee algorithm
-                    return b_rate, b_energy
+                if o_rate <= (b_rate + FLOATING_POINT_TOLERANCE):
+                    if o_energy >= b_energy:
+                        clearing.append(Clearing(b_rate, b_energy))
+        # if cumulative_supply is greater than cumulative_demand
+        if len(clearing) > 0:
+            return clearing[0].rate, clearing[0].energy
+        else:
+            for b_rate, b_energy in bids.items():
+                for o_rate, o_energy in offers.items():
+                    if o_rate <= (b_rate + FLOATING_POINT_TOLERANCE):
+                        if o_energy < b_energy:
+                            clearing.append(Clearing(b_rate, o_energy))
+            if len(clearing) > 0:
+                return clearing[-1].rate, clearing[-1].energy
 
     def _perform_pay_as_clear_matching(self):
         self.sorted_bids = self.sorting(self.bids, True)
@@ -153,7 +170,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
             if cumulative_traded_bids >= clearing_energy:
                 break
-            elif (bid.price / bid.energy) >= clearing_rate and \
+            elif (bid.price / bid.energy) + FLOATING_POINT_TOLERANCE >= clearing_rate and \
                     (clearing_energy - cumulative_traded_bids) >= bid.energy:
                 cumulative_traded_bids += bid.energy
                 trade = self.accept_bid(
@@ -164,7 +181,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
                     trade_rate=clearing_rate,
                     trade_offer_info=trade_offer_info
                 )
-            elif (bid.price / bid.energy) >= clearing_rate and \
+            elif (bid.price / bid.energy) + FLOATING_POINT_TOLERANCE >= clearing_rate and \
                     (0 < (clearing_energy - cumulative_traded_bids) < bid.energy):
                 trade = self.accept_bid(
                     bid=bid,
