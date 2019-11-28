@@ -192,7 +192,11 @@ class Area:
     def tick(self, is_root_area=False):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                 ConstSettings.IAASettings.MARKET_TYPE == 3:
-            self.dispatcher.publish_market_clearing()
+            if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+                self.dispatcher.publish_market_clearing()
+            else:
+                for market in self.all_markets:
+                    market.match_offers_bids()
         self.events.update_events(self.now)
         if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()

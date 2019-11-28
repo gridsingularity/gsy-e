@@ -4,6 +4,7 @@ from random import random
 from threading import Event
 from concurrent.futures import TimeoutError, ThreadPoolExecutor
 from d3a.events import MarketEvent
+from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.constants import MAX_WORKER_THREADS
 from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 from d3a.models.market.market_structures import parse_event_and_parameters_from_json_string
@@ -56,7 +57,8 @@ class AreaRedisMarketEventDispatcher(RedisEventDispatcherBase):
             event_type = data["response"]
             event_type_id = data["event_type"]
             if event_type not in self.str_market_events:
-                raise Exception("RedisMarketEventDispatcher: Should never reach this point")
+                raise D3ARedisException(
+                    "AreaRedisMarketEventDispatcher: Should never reach this point")
             else:
                 self.child_response_events[event_type_id].set()
 
