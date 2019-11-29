@@ -73,9 +73,7 @@ class PVStrategy(BaseStrategy):
         self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
                                                  fit_to_limit, energy_rate_decrease_per_update,
                                                  update_interval)
-        for time_slot in generate_market_slot_list():
-            validate_pv_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
-                               final_selling_rate=self.offer_update.final_rate[time_slot])
+
         self.panel_count = panel_count
         self.final_selling_rate = final_selling_rate
         self.max_panel_power_W = max_panel_power_W
@@ -104,6 +102,10 @@ class PVStrategy(BaseStrategy):
         if self.use_market_maker_rate:
             self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate,
                                         validate=False)
+        for time_slot in generate_market_slot_list():
+            validate_pv_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
+                               final_selling_rate=self.offer_update.final_rate[time_slot])
+
         if self.max_panel_power_W is None:
             self.max_panel_power_W = self.area.config.max_panel_power_W
         # Calculating the produced energy

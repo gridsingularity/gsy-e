@@ -85,13 +85,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         validate_load_device(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
                              hrs_of_day=hrs_of_day)
 
-        for time_slot in generate_market_slot_list():
-            rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
-            validate_load_device(
-                initial_buying_rate=self.bid_update.initial_rate[time_slot],
-                final_buying_rate=self.bid_update.final_rate[time_slot],
-                energy_rate_increase_per_update=rate_change)
-
         self.state = LoadState()
         self.avg_power_W = avg_power_W
 
@@ -146,6 +139,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
             self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate)
+        for time_slot in generate_market_slot_list():
+            rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
+            validate_load_device(
+                initial_buying_rate=self.bid_update.initial_rate[time_slot],
+                final_buying_rate=self.bid_update.final_rate[time_slot],
+                energy_rate_increase_per_update=rate_change)
         self.state.total_energy_demanded_wh = \
             self._initial_hrs_per_day * self.avg_power_W * self.area.config.sim_duration.days
         self.bid_update.update_on_activate()
