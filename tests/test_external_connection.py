@@ -4,7 +4,7 @@ import json
 from slugify import slugify
 import d3a.models.area.redis_external_connection
 from d3a.models.area import Area
-from d3a.models.area.redis_external_connection import RedisExternalConnection
+from d3a.models.area.redis_external_connection import RedisAreaExternalConnection
 
 
 class TestExternalConnectionRedis(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestExternalConnectionRedis(unittest.TestCase):
         d3a.models.area.redis_external_connection.StrictRedis.from_url = \
             MagicMock(return_value=redis_db_object)
         self.area = Area(name="base_area")
-        self.external_connection = RedisExternalConnection(self.area)
+        self.external_connection = RedisAreaExternalConnection(self.area)
 
     def tearDown(self):
         pass
