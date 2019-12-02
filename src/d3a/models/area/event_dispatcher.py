@@ -31,7 +31,7 @@ from d3a.models.appliance.inter_area import InterAreaAppliance
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import create_subdict_or_update
 from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMarketEventDispatcher
-from d3a.models.area.redis_dispatcher.area_event_dispatcher import AreaRedisAreaEventDispatcher
+from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from d3a.models.area.redis_dispatcher.market_notify_event_subscriber \
     import MarketNotifyEventSubscriber
 from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
@@ -218,7 +218,7 @@ class AreaDispatcher:
 class RedisAreaDispatcher(AreaDispatcher):
     def __init__(self, area, redis_area, redis_market):
         super().__init__(area)
-        self.area_event_dispatcher = AreaRedisAreaEventDispatcher(area, self, redis_area)
+        self.area_event_dispatcher = RedisAreaEventDispatcher(area, self, redis_area)
         self.market_event_dispatcher = AreaRedisMarketEventDispatcher(area, self, redis_market)
         self.market_notify_event_dispatcher = MarketNotifyEventSubscriber(area, self)
         self.area_to_market_event_dispatcher = AreaToMarketEventPublisher(area)
