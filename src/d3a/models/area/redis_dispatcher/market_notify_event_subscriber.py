@@ -3,7 +3,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from d3a.constants import MAX_WORKER_THREADS
 from d3a.models.market.market_structures import parse_event_and_parameters_from_json_string
-from d3a.d3a_core.redis.redis_area_market_communicator import ResettableCommunicator
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 
 
 class MarketNotifyEventSubscriber:

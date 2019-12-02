@@ -1,6 +1,6 @@
 from redis import StrictRedis
 import json
-from d3a.d3a_core.redis.redis_communication import REDIS_URL
+from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
 from d3a.models.strategy.external_strategy import ExternalStrategy
 
 
