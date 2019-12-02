@@ -19,10 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.strategy import BaseStrategy
 
 import json
-from d3a.models.market import MarketRedisApi
+from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
 
 
-class RedisExternalConnection(MarketRedisApi):
+class RedisMarketExternalConnection(MarketRedisEventSubscriber):
     def __init__(self, area):
         self.area = area
         super().__init__(None)
@@ -147,4 +147,4 @@ class RedisExternalConnection(MarketRedisApi):
 class ExternalStrategy(BaseStrategy):
     def __init__(self, area):
         super().__init__()
-        self.redis = RedisExternalConnection(area)
+        self.redis = RedisMarketExternalConnection(area)

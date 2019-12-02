@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 from typing import Dict # noqa
 import json
+import pendulum
+from d3a.events import MarketEvent
 
 
 class Offer:
@@ -160,9 +162,9 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
 def trade_from_JSON_string(trade_string):
     trade_dict = json.loads(trade_string)
     trade_dict['offer'] = offer_from_JSON_string(trade_dict['offer'])
-    if "residual" in trade_dict and trade_dict["residual"] is not None:
+    if 'residual' in trade_dict and trade_dict['residual'] is not None:
         trade_dict['residual'] = offer_from_JSON_string(trade_dict['residual'])
-
+    trade_dict['time'] = pendulum.parse(trade_dict['time'])
     return Trade(**trade_dict)
 
 
@@ -215,3 +217,15 @@ class MarketClearingState:
     @classmethod
     def _csv_fields(cls):
         return 'time', 'rate [ct./kWh]'
+
+
+def parse_event_and_parameters_from_json_string(payload):
+    data = json.loads(payload["data"])
+    kwargs = data["kwargs"]
+    for key in ["offer", "existing_offer", "new_offer"]:
+        if key in kwargs:
+            kwargs[key] = offer_from_JSON_string(kwargs[key])
+    if "trade" in kwargs:
+        kwargs["trade"] = trade_from_JSON_string(kwargs["trade"])
+    event_type = MarketEvent(data["event_type"])
+    return event_type, kwargs
