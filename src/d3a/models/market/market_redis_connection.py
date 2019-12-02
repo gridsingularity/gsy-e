@@ -3,7 +3,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
-from d3a.d3a_core.redis.redis_area_market_communicator import ResettableCommunicator, \
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator, \
     BlockingCommunicator
 from d3a.events import MarketEvent
 from d3a.models.market.market_structures import offer_from_JSON_string, bid_from_JSON_string

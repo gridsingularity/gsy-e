@@ -30,7 +30,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
-from d3a.d3a_core.redis.redis_area_market_communicator import RedisCommunicator
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 from d3a.events.event_structures import AreaEvent, MarketEvent
 from d3a.models.market.market_structures import Offer, Trade, offer_from_JSON_string, \
     trade_from_JSON_string

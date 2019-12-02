@@ -2,7 +2,7 @@ from redis import StrictRedis
 from threading import Event, Lock
 import logging
 from time import time
-from d3a.d3a_core.redis.redis_communication import REDIS_URL
+from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 
 log = logging.getLogger(__name__)

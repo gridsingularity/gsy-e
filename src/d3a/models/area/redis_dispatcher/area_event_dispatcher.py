@@ -5,7 +5,7 @@ from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 
 
-class AreaRedisAreaEventDispatcher(RedisEventDispatcherBase):
+class RedisAreaEventDispatcher(RedisEventDispatcherBase):
     def __init__(self, area, root_dispatcher, redis):
         super().__init__(area, root_dispatcher, redis)
         self.str_area_events = [event.name.lower() for event in AreaEvent]
