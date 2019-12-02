@@ -151,6 +151,6 @@ class ExternalStrategy(BaseStrategy):
     def __init__(self, area):
         super().__init__()
         self.redis = RedisMarketExternalConnection(area)
-  
+
     def shutdown(self):
         self.redis.shutdown()
