@@ -49,7 +49,8 @@ DEFAULT_CONFIG = SimulationConfig(
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
     iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE,
     iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
-    start_date=today(tz=TIME_ZONE)
+    start_date=today(tz=TIME_ZONE),
+    max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
 )
 
 
