@@ -19,6 +19,8 @@ from collections import namedtuple
 from typing import Dict # noqa
 import json
 
+Clearing = namedtuple('Clearing', ('rate', 'energy'))
+
 
 class Offer:
     def __init__(self, id, price, energy, seller, original_offer_price=None, seller_origin=None):

@@ -33,8 +33,3 @@ Feature: Two sided pay_as_clear market tests
      When we run the d3a simulation on console with two_sided_pay_as_clear.test_clearing_energy for 24 hrs
      Then the export functionality of supply/demand curve is tested
 
-  Scenario: No unmatched load
-     Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
-     And d3a is installed
-     When we run the d3a simulation on console with two_sided_pay_as_clear.jira_d3asim_1690 for 16 hrs
-     Then the unmatched loads are tested

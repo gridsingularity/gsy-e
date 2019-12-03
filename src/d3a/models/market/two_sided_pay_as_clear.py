@@ -17,17 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import math
 from logging import getLogger
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
-from d3a.models.market.market_structures import MarketClearingState
+from d3a.models.market.market_structures import MarketClearingState, Clearing
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import add_or_create_key
 
 log = getLogger(__name__)
-
-Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
 
 class TwoSidedPayAsClear(TwoSidedPayAsBid):
