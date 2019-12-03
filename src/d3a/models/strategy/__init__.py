@@ -30,7 +30,7 @@ from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, Market
 from d3a.events import EventMixin
 from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
-from d3a.d3a_core.redis.redis_area_market_communicator import BlockingCommunicator
+from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
 
 log = getLogger(__name__)
 
