@@ -93,16 +93,13 @@ class OneSidedMarket(Market):
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, Offer):
             offer_or_id = offer_or_id.id
-
         offer = self.offers.pop(offer_or_id, None)
-
         self.bc_interface.cancel_offer(offer)
 
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
         log.debug(f"[OFFER][DEL][{self.time_slot_str}] {offer}")
-
         # TODO: Once we add event-driven blockchain, this should be asynchronous
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
