@@ -28,6 +28,7 @@ from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.events.event_structures import Trigger, TriggerMixin, AreaEvent, MarketEvent
 from d3a.events import EventMixin
+from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
@@ -248,8 +249,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.offer_buffer = offer_from_JSON_string(data["offer"])
             self.event_response_uuids.append(data["transaction_uuid"])
         else:
-            raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
-                            f"{data['exception']}:  {data['error_message']}")
+            raise D3ARedisException(
+                f"Error when receiving response on channel {payload['channel']}:: "
+                f"{data['exception']}:  {data['error_message']}")
 
     def accept_offer(self, market_or_id, offer, *, buyer=None, energy=None,
                      already_tracked=False, trade_rate: float = None,
@@ -275,8 +277,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                     "energy": energy,
                     "trade_rate": trade_rate,
                     "already_tracked": already_tracked,
-                    "trade_bid_info": trade_bid_info.to_JSON_string()
-                    if trade_bid_info is not None else None,
+                    "trade_bid_info": trade_bid_info if trade_bid_info is not None else None,
                     "buyer_origin": buyer_origin}
 
             self._send_events_to_market("ACCEPT_OFFER", market_or_id, data,
@@ -301,8 +302,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.trade_buffer = trade_from_JSON_string(data["trade"])
             self.event_response_uuids.append(data["transaction_uuid"])
         else:
-            raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
-                            f"{data['exception']}:  {data['error_message']} {data}")
+            raise D3ARedisException(
+                f"Error when receiving response on channel {payload['channel']}:: "
+                f"{data['exception']}:  {data['error_message']} {data}")
 
     def post(self, **data):
         self.event_data_received(data)
@@ -340,8 +342,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.event_response_uuids.append(data["transaction_uuid"])
 
         else:
-            raise Exception(f"Error when receiving response on channel {payload['channel']}:: "
-                            f"{data['exception']}:  {data['error_message']}")
+            raise D3ARedisException(
+                f"Error when receiving response on channel {payload['channel']}:: "
+                f"{data['exception']}:  {data['error_message']}")
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):

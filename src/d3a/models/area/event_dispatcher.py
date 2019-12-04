@@ -34,6 +34,7 @@ from d3a.models.area.redis_dispatcher.market_event_dispatcher import AreaRedisMa
 from d3a.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from d3a.models.area.redis_dispatcher.market_notify_event_subscriber \
     import MarketNotifyEventSubscriber
+from d3a.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import RedisCommunicator
 
 
@@ -220,6 +221,10 @@ class RedisAreaDispatcher(AreaDispatcher):
         self.area_event_dispatcher = RedisAreaEventDispatcher(area, self, redis_area)
         self.market_event_dispatcher = AreaRedisMarketEventDispatcher(area, self, redis_market)
         self.market_notify_event_dispatcher = MarketNotifyEventSubscriber(area, self)
+        self.area_to_market_event_dispatcher = AreaToMarketEventPublisher(area)
+
+    def publish_market_clearing(self):
+        self.area_to_market_event_dispatcher.publish_markets_clearing()
 
     def broadcast_activate(self, **kwargs):
         self._broadcast_events(AreaEvent.ACTIVATE, **kwargs)

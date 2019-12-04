@@ -1,6 +1,7 @@
 import json
 from random import random
 from d3a.events import AreaEvent
+from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.models.area.redis_dispatcher import RedisEventDispatcherBase
 
 
@@ -22,7 +23,7 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
             if event_type in self.str_area_events:
                 self.redis.resume()
             else:
-                raise Exception("RedisAreaDispatcher: Should never reach this point")
+                raise D3ARedisException("RedisAreaDispatcher: Should never reach this point")
 
     def publish_area_event(self, area_uuid, event_type: AreaEvent, **kwargs):
         send_data = {"event_type": event_type.value, "kwargs": kwargs}
