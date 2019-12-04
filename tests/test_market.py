@@ -679,15 +679,21 @@ def pac_market():
     return TwoSidedPayAsClear(time_slot=DateTime.now())
 
 
-@pytest.mark.parametrize("offer, bid, MCP", [
-    ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4),
-    ([1, 2, 3, 4, 5, 6, 7], [7, 6, 5, 4, 3, 2, 1], 4),
-    ([8, 9, 10, 11, 12, 13, 14], [8, 9, 10, 11, 12, 13, 14], 11),
-    ([2, 3, 3, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7], 5),
+@pytest.mark.parametrize("offer, bid, mcp_rate, mcp_energy", [
+    ([1, 2, 3, 4, 5, 6, 7], [1, 2, 3, 4, 5, 6, 7], 4, 4),
+    ([1, 2, 3, 4, 5, 6, 7], [7, 6, 5, 4, 3, 2, 1], 4, 4),
+    ([8, 9, 10, 11, 12, 13, 14], [8, 9, 10, 11, 12, 13, 14], 11, 4),
+    ([2, 3, 3, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7], 5, 3),
+    ([10, 10, 10, 10, 10, 10, 10], [1, 2, 3, 4, 10, 10, 10], 10, 3),
+    ([1, 2, 5, 5, 5, 6, 7], [5, 5, 5, 5, 5, 5, 5], 5, 5),
+    # TODO: Future enhancement story to decide multiple offers
+    #  acceptance/rejection having energy_rate equals to clearing_rate
+    # ([2, 3, 6, 7, 7, 7, 7], [7, 5, 5, 2, 2, 2, 2], 5, 2),
+    # ([2, 2, 4, 4, 4, 4, 6], [6, 6, 6, 6, 2, 2, 2], 4, 4),
 ])
-@pytest.mark.parametrize("algorithm", [1, 2])
-def test_double_sided_market_performs_pay_as_clear_matching(pac_market,
-                                                            offer, bid, MCP, algorithm):
+@pytest.mark.parametrize("algorithm", [1])
+def test_double_sided_market_performs_pay_as_clear_matching(pac_market, offer, bid, mcp_rate,
+                                                            mcp_energy, algorithm):
     ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
     pac_market.offers = {"offer1": Offer('id1', offer[0], 1, 'other'),
                          "offer2": Offer('id2', offer[1], 1, 'other'),
@@ -705,8 +711,9 @@ def test_double_sided_market_performs_pay_as_clear_matching(pac_market,
                        "bid6": Bid('bid_id6', bid[5], 1, 'B', 'S'),
                        "bid7": Bid('bid_id7', bid[6], 1, 'B', 'S')}
 
-    matched = pac_market._perform_pay_as_clear_matching()[0]
-    assert matched == MCP
+    matched_rate, matched_energy = pac_market._perform_pay_as_clear_matching()
+    assert matched_rate == mcp_rate
+    assert matched_energy == mcp_energy
 
 
 def test_double_sided_pay_as_clear_market_works_with_floats(pac_market):

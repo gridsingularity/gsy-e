@@ -21,6 +21,8 @@ import json
 import pendulum
 from d3a.events import MarketEvent
 
+Clearing = namedtuple('Clearing', ('rate', 'energy'))
+
 
 class Offer:
     def __init__(self, id, price, energy, seller, original_offer_price=None, seller_origin=None):
