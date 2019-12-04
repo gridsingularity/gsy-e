@@ -428,7 +428,6 @@ def test_balancing_offers_are_created_if_device_in_registry(
 def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 9
     load = LoadHoursStrategy(200, final_buying_rate=33, use_market_maker_rate=use_mmr)
-
     load.area = FakeArea()
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
@@ -447,3 +446,9 @@ def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr,
     load.area = FakeArea()
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
+
+
+def test_load_constructor_rejects_incorrect_rate_parameters():
+    load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=10, final_buying_rate=5)
+    with pytest.raises(D3ADeviceException):
+        load.event_activate()
