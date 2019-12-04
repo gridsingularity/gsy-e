@@ -59,11 +59,15 @@ class MarketRedisEventPublisher:
 
 class MarketRedisEventSubscriber:
     def __init__(self, market):
-        self.market = market
+        self.market_object = market
         self.redis_db = ResettableCommunicator()
         self.sub_to_external_requests()
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKER_THREADS)
         self.futures = []
+
+    @property
+    def market(self):
+        return self.market_object
 
     def sub_to_external_requests(self):
         self.redis_db.sub_to_multiple_channels({
