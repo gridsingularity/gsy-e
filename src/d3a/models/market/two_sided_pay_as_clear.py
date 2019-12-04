@@ -71,13 +71,13 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         return obj
 
     def _get_clearing_point(self, max_rate):
-        for i in range(1, max_rate + 1):
-            if self.state.cumulative_offers[self.now][i] >= \
-                    self.state.cumulative_bids[self.now][i]:
-                if self.state.cumulative_bids[self.now][i] == 0:
-                    return i-1, self.state.cumulative_offers[self.now][i-1]
+        for rate in range(1, max_rate + 1):
+            if self.state.cumulative_offers[self.now][rate] >= \
+                    self.state.cumulative_bids[self.now][rate]:
+                if self.state.cumulative_bids[self.now][rate] == 0:
+                    return rate-1, self.state.cumulative_offers[self.now][rate-1]
                 else:
-                    return i, self.state.cumulative_bids[self.now][i]
+                    return rate, self.state.cumulative_bids[self.now][rate]
 
     def _accumulated_energy_per_rate(self, offer_bid):
         energy_sum = 0
