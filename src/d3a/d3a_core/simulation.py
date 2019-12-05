@@ -290,6 +290,12 @@ class Simulation:
                     (tick_no + 1) / config.ticks_per_slot * 100,
                 )
 
+                if ConstSettings.GeneralSettings.DISPATCH_EVENTS_BOTTOM_TO_TOP:
+                    # trigger market_cycle:
+                    if self.area.current_tick % self.area.config.ticks_per_slot == 0:
+                        self.area._cycle_markets()
+                    self.area.dispatcher.broadcast_tick()
+
                 self.area.tick(is_root_area=True)
 
                 realtime_tick_length = time.monotonic() - tick_start

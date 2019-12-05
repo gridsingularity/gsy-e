@@ -173,10 +173,11 @@ class TestAreaClass(unittest.TestCase):
         assert len(self.area.balancing_markets) == 5
         self.area.current_tick = 900
         self.area.tick(is_root_area=True)
-        assert len(self.area.past_markets) == 1
-        assert len(self.area.past_balancing_markets) == 1
-        assert len(self.area.all_markets) == 5
-        assert len(self.area.balancing_markets) == 5
+        if not ConstSettings.GeneralSettings.DISPATCH_EVENTS_BOTTOM_TO_TOP:
+            assert len(self.area.past_markets) == 1
+            assert len(self.area.past_balancing_markets) == 1
+            assert len(self.area.all_markets) == 5
+            assert len(self.area.balancing_markets) == 5
 
 
 class TestEventDispatcher(unittest.TestCase):

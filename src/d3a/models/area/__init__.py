@@ -199,9 +199,10 @@ class Area:
                 for market in self.all_markets:
                     market.match_offers_bids()
         self.events.update_events(self.now)
-        if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
-            self._cycle_markets()
-        self.dispatcher.broadcast_tick()
+        if not ConstSettings.GeneralSettings.DISPATCH_EVENTS_BOTTOM_TO_TOP:
+            if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
+                self._cycle_markets()
+            self.dispatcher.broadcast_tick()
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
