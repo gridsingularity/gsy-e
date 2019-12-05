@@ -339,15 +339,20 @@ class ExportLeafData(ExportData):
         return []
 
 
-class SelfSufficiency:
+class KPI:
     def __init__(self):
+        self.performance_index = dict()
         self.producer_list = list()
         self.consumer_list = list()
         self.consumer_area_list = list()
         self.ess_list = list()
         self.total_energy_demanded_wh = 0
+        self.total_energy_produced_wh = 0
         self.total_self_consumption_wh = 0
         self.self_consumption_buffer_wh = 0
+
+    def __repr__(self):
+        return f"KPI: {self.performance_index}"
 
     def _accumulate_devices(self, area):
         for child in area.children:
@@ -362,6 +367,10 @@ class SelfSufficiency:
 
             if child.children:
                 self._accumulate_devices(child)
+
+    def _accumulate_self_production(self, trade):
+        if trade.seller_origin in self.producer_list:
+            self.total_energy_produced_wh += trade.offer.energy * 1000
 
     def _accumulate_self_consumption(self, trade):
         if trade.seller_origin in self.producer_list and trade.buyer_origin in self.consumer_list:
@@ -395,15 +404,17 @@ class SelfSufficiency:
             for market in c_area.past_markets:
                 for trade in market.trades:
                     self._accumulate_self_consumption(trade)
+                    self._accumulate_self_production(trade)
                     self._accumulate_self_consumption_buffer(trade)
                     self._dissipate_self_consumption_buffer(trade)
 
-    def area_self_sufficiency(self, area):
+    def area_performance_index(self, area):
         self.producer_list = []
         self.consumer_list = []
         self.consumer_area_list = []
         self.ess_list = []
         self.total_energy_demanded_wh = 0
+        self.total_energy_produced_wh = 0
         self.total_self_consumption_wh = 0
         self.self_consumption_buffer_wh = 0
 
@@ -413,23 +424,20 @@ class SelfSufficiency:
 
         # in case when the area doesn't have any load demand
         if self.total_energy_demanded_wh <= 0:
-            return {"self_sufficiency": None}
+            self_sufficiency = None
+        else:
+            self_sufficiency = self.total_self_consumption_wh / self.total_energy_demanded_wh
 
-        self_sufficiency = self.total_self_consumption_wh / self.total_energy_demanded_wh
-        return {"self_sufficiency": self_sufficiency}
-
-
-class KPI:
-    def __init__(self):
-        self.performance_index = dict()
-        self.self_sufficiency = SelfSufficiency()
-
-    def __repr__(self):
-        return f"KPI: {self.performance_index}"
+        # in case when the area doesn't have any producing devices
+        if self.total_energy_produced_wh <= 0:
+            self_consumption = None
+        else:
+            self_consumption = self.total_self_consumption_wh / self.total_energy_produced_wh
+        return {"self_sufficiency": self_sufficiency, "self_consumption": self_consumption}
 
     def update_kpis_from_area(self, area):
         self.performance_index[area.name] = \
-            self.self_sufficiency.area_self_sufficiency(area)
+            self.area_performance_index(area)
 
         for child in area.children:
             if len(child.children) > 0:

@@ -20,14 +20,22 @@ import json
 import glob
 import ast
 from behave import then
+from math import isclose
 
 
-@then('the export functionality of kpi of {expected_kpis} are correctly reported')
-def test_export_of_kpi_result(context, expected_kpis):
+@then('{kpi} of {expected_kpis} are correctly reported')
+def test_export_of_kpi_result(context, kpi, expected_kpis):
     sim_data_csv = glob.glob(os.path.join(context.export_path, "*",
                                           "aggregated_results", "KPI.json"))
     with open(sim_data_csv[0], "r") as sf:
         kpi_data = json.load(sf)
     expected_kpis = ast.literal_eval(expected_kpis)
     for area, value in expected_kpis.items():
-        assert kpi_data[area]['self_sufficiency'] == float(value)
+        if kpi == "self_sufficiency":
+            assert kpi_data[area]['self_sufficiency'] == float(value)
+        elif kpi == "self_consumption":
+            if value is None:
+                assert kpi_data[area]['self_consumption'] is None
+            else:
+                assert(isclose(kpi_data[area]['self_consumption'],
+                               float(value), rel_tol=1e-04))
