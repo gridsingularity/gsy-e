@@ -94,6 +94,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
             InputProfileTypes.POWER,
             self.daily_load_profile)
         self._update_energy_requirement()
+        self._validate_rates()
 
     def _update_energy_requirement(self):
         """
