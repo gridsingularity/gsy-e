@@ -137,8 +137,10 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _validate_rates(self):
         for time_slot in generate_market_slot_list():
+            rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
             validate_load_device(
                 initial_buying_rate=self.bid_update.initial_rate[time_slot],
+                energy_rate_increase_per_update=rate_change,
                 final_buying_rate=self.bid_update.final_rate[time_slot])
 
     def event_activate(self):

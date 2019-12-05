@@ -89,12 +89,12 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         if self.use_market_maker_rate:
             self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate)
+        self._validate_rates()
         self.bid_update.update_on_activate()
         self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self.daily_load_profile)
         self._update_energy_requirement()
-        self._validate_rates()
 
     def _update_energy_requirement(self):
         """
