@@ -1,0 +1,1325 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Documentation for the D3A by Grid Singularity">
+      
+      
+      
+        <meta name="author" content="Grid Singularity">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../img/d3a-logo.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.0.2">
+    
+    
+      
+        <title>Energy Storage System (ESS) Strategy - D3A</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.982221ab.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.224b79ff.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="">
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.01ccdecf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:300,400,400i,700|Ubuntu+Mono">
+        <style>body,input{font-family:"PT Sans","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#addendum-ess-capacity-based-method" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href=".." title="D3A" class="md-header-nav__button md-logo">
+          
+            <img src="../img/d3a-logo.png" width="32" height="32">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              D3A
+            </span>
+            <span class="md-header-nav__topic">
+              Energy Storage System (ESS) Strategy
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/gridsingularity/d3a/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    D3A on github
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href=".." title="D3A" class="md-nav__button md-logo">
+      
+        <img src="../img/d3a-logo.png" width="48" height="48">
+      
+    </a>
+    D3A
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/gridsingularity/d3a/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    D3A on github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1" checked>
+    
+    <label class="md-nav__link" for="nav-1">
+      D3A Documentation
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-1">
+        D3A Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../d3a-documentation/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-2" type="checkbox" id="nav-1-2">
+    
+    <label class="md-nav__link" for="nav-1-2">
+      User Interface (d3a.io)
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-1-2">
+        User Interface (d3a.io)
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../user-interface-d3a/" title="UI Overview" class="md-nav__link">
+      UI Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../projects-home-page/" title="Projects (Home Page)" class="md-nav__link">
+      Projects (Home Page)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-2-3" type="checkbox" id="nav-1-2-3">
+    
+    <label class="md-nav__link" for="nav-1-2-3">
+      Simulation Configuration
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-1-2-3">
+        Simulation Configuration
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-configuration/" title="Simulation Configuration Overview" class="md-nav__link">
+      Simulation Configuration Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../general-settings/" title="General Settings" class="md-nav__link">
+      General Settings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-2-3-3" type="checkbox" id="nav-1-2-3-3">
+    
+    <label class="md-nav__link" for="nav-1-2-3-3">
+      Grid Setup
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-1-2-3-3">
+        Grid Setup
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-setup/" title="Initial Grid Setup" class="md-nav__link">
+      Initial Grid Setup
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../pv/" title="PV" class="md-nav__link">
+      PV
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../storage/" title="Storage" class="md-nav__link">
+      Storage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../load/" title="Load" class="md-nav__link">
+      Load
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-maker/" title="Market Maker" class="md-nav__link">
+      Market Maker
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../power-plant/" title="Power Plant" class="md-nav__link">
+      Power Plant
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../areas/" title="Areas" class="md-nav__link">
+      Areas
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../libraries/" title="Libraries" class="md-nav__link">
+      Libraries
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../upload-file-formats/" title="Upload File Formats" class="md-nav__link">
+      Upload File Formats
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../results/" title="Results" class="md-nav__link">
+      Results
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-3" type="checkbox" id="nav-1-3" checked>
+    
+    <label class="md-nav__link" for="nav-1-3">
+      Backend Codebase
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-1-3">
+        Backend Codebase
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../backend-codebase/" title="Backend Codebase Overview" class="md-nav__link">
+      Backend Codebase Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-3-2" type="checkbox" id="nav-1-3-2" checked>
+    
+    <label class="md-nav__link" for="nav-1-3-2">
+      Strategies
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-1-3-2">
+        Strategies
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../load-strategy/" title="Load Strategy" class="md-nav__link">
+      Load Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Energy Storage System (ESS) Strategy
+      </label>
+    
+    <a href="./" title="Energy Storage System (ESS) Strategy" class="md-nav__link md-nav__link--active">
+      Energy Storage System (ESS) Strategy
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#addendum-ess-capacity-based-method" title="Addendum: ESS Capacity Based Method" class="md-nav__link">
+    Addendum: ESS Capacity Based Method
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#general-behaviour" title="General Behaviour" class="md-nav__link">
+    General Behaviour
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#buying-energy" title="Buying Energy" class="md-nav__link">
+    Buying Energy
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-sided-market" title="One Sided Market" class="md-nav__link">
+    One Sided Market
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-sided-market" title="Two Sided Market" class="md-nav__link">
+    Two Sided Market
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#selling-energy" title="Selling Energy" class="md-nav__link">
+    Selling Energy
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../pv-strategy/" title="PV Strategy" class="md-nav__link">
+      PV Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../infinite-power-plant-strategy/" title="Infinite Power Plant Strategy" class="md-nav__link">
+      Infinite Power Plant Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../custom-load-strategy/" title="Custom Load Strategy" class="md-nav__link">
+      Custom Load Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../finite-power-plant-strategy/" title="Finite Power Plant Strategy" class="md-nav__link">
+      Finite Power Plant Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../custom-pv-strategy/" title="Custom PV Strategy" class="md-nav__link">
+      Custom PV Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../infinite-bus-strategy/" title="Infinite Bus Strategy" class="md-nav__link">
+      Infinite Bus Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../how-implement-custom-device-strategies/" title="How to Implement Custom Device Strategies" class="md-nav__link">
+      How to Implement Custom Device Strategies
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-maker-strategy/" title="Market Maker Strategy" class="md-nav__link">
+      Market Maker Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../how-strategies-adjust-prices/" title="How Strategies Adjust the Prices of Offers and Bids" class="md-nav__link">
+      How Strategies Adjust the Prices of Offers and Bids
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-3-3" type="checkbox" id="nav-1-3-3">
+    
+    <label class="md-nav__link" for="nav-1-3-3">
+      Markets
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-1-3-3">
+        Markets
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../markets/" title="Markets Overview" class="md-nav__link">
+      Markets Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../balancing-market/" title="Balancing Market" class="md-nav__link">
+      Balancing Market
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../inter-area-agent/" title="Inter-Area Agent" class="md-nav__link">
+      Inter-Area Agent
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../two-sided-pay-as-clear/" title="Two Sided Pay-As-Clear" class="md-nav__link">
+      Two Sided Pay-As-Clear
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../one-sided-pay-as-offer/" title="One Sided Pay-As-Offer" class="md-nav__link">
+      One Sided Pay-As-Offer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../two-sided-pay-as-bid/" title="Two Sided Pay-As-Bid" class="md-nav__link">
+      Two Sided Pay-As-Bid
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-3-4" type="checkbox" id="nav-1-3-4">
+    
+    <label class="md-nav__link" for="nav-1-3-4">
+      D3A Blockchain Support
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-1-3-4">
+        D3A Blockchain Support
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../d3a-blockchain-support/" title="D3A Blockchain Overview" class="md-nav__link">
+      D3A Blockchain Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../clearingtoken-smart-contract/" title="ClearingToken Smart Contract" class="md-nav__link">
+      ClearingToken Smart Contract
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-smart-contract/" title="Market Smart Contract" class="md-nav__link">
+      Market Smart Contract
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../run-d3a-on-tobalaba/" title="Steps to Run D3A on Tobalaba" class="md-nav__link">
+      Steps to Run D3A on Tobalaba
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+      Simulation Results
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../alternative-pricing-schemes/" title="Alternative Pricing Schemes" class="md-nav__link">
+      Alternative Pricing Schemes
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../configure-transfer-fee/" title="How to Configure Grid Transfer Fee" class="md-nav__link">
+      How to Configure Grid Transfer Fee
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-events/" title="Simulation Events" class="md-nav__link">
+      Simulation Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../create-setup-file/" title="How to Create a setup-file" class="md-nav__link">
+      How to Create a setup-file
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../change-global-sim-settings/" title="How to Change Global Simulation Settings" class="md-nav__link">
+      How to Change Global Simulation Settings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../launch-sim-via-cli/" title="How to launch Simulation via Command Line Interface (CLI)" class="md-nav__link">
+      How to launch Simulation via Command Line Interface (CLI)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions/" title="Installation Instructions" class="md-nav__link">
+      Installation Instructions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-nav__link">
+      Key Performance Indicators (KPIs)
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#addendum-ess-capacity-based-method" title="Addendum: ESS Capacity Based Method" class="md-nav__link">
+    Addendum: ESS Capacity Based Method
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#general-behaviour" title="General Behaviour" class="md-nav__link">
+    General Behaviour
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#buying-energy" title="Buying Energy" class="md-nav__link">
+    Buying Energy
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-sided-market" title="One Sided Market" class="md-nav__link">
+    One Sided Market
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-sided-market" title="Two Sided Market" class="md-nav__link">
+    Two Sided Market
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#selling-energy" title="Selling Energy" class="md-nav__link">
+    Selling Energy
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/gridsingularity/d3a/edit/master/docs/ess-strategy.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                  <h1>Energy Storage System (ESS) Strategy</h1>
+                
+                <p>The ESS can buy or sell energy. </p>
+<p>For all cases the initial parameters of the battery can be defined:</p>
+<ul>
+<li><code>initial_soc</code>: Initial battery SOC (State of Charge) in %.</li>
+<li><code>min_allowed_soc:</code> It is the minimum SOC level in % below which the storage bank is never drawn</li>
+<li><code>battery_capacity_kWh</code>: size of the battery (default value: 1.2 kWh)</li>
+<li><code>max_abs_battery_power_kW</code>: maximum power rating for battery charge/discharge, (default value: 5 kW)</li>
+</ul>
+<p>Rate settings:</p>
+<ul>
+<li><code>update_interval</code>: time after which the rate should be updated (type: pendulum duration object)</li>
+<li><code>initial_selling_rate</code>: The maximum starting point of offer rate (ct/kWh)</li>
+<li><code>final_selling_rate</code>: The minimum ending point of offer rate (ct/kWh)</li>
+<li><code>initial_buying_rate</code>: The minimum starting point of bid rate (ct/kWh)</li>
+<li><code>final_buying_rate</code>: The maximum ending point of bid rate (ct/kWh)</li>
+<li><code>energy_rate_decrease_per_update</code>: configured as the cents/kWh decrease per update (default value: 1 cent/kWh per update).</li>
+<li><code>fit_to_limit:</code> derive bidding behaviour from a linear fitted curve of a buying rate between <code>initial_buying_rate</code> and <code>final_buying_rate</code> (boolean value) within the bidding interval. If activated, <code>energy_rate_increase_per_update = (final_buying_rate - initial_buying_rate) / (market_interval_length / update_interval)</code>.</li>
+<li><code>cap_price_strategy</code>: the ESS can trade energy based on a capacity dependent sell price (Default: <code>False</code>, set to <code>True</code> to activate). See Addendum on this page for more information.</li>
+</ul>
+<p>In order to enable ESS to participate in balancing market, a prerequisite is to add the ESS device in "<a href="https://gridsingularity.atlassian.net/wiki/spaces/D3A/pages/23887933/Markets+-+balancing+market">Device Registry</a>" and set the following parameters:</p>
+<ul>
+<li><code>balancing_energy_ratio</code>: the first value dictates the ratio of energy to be charged from balancing market. The second value dictates the ratio of energy to be discharge to balancing market (default value: tuple(0.1, 0.1))</li>
+</ul>
+<p>Corresponding code: <code>src/3a/models/strategy/storage.py</code></p>
+<p>How to add a Storage device to the setup-file:</p>
+<div class="codehilite"><pre><span></span>Area(&#39;Storage&#39;, strategy=StorageStrategy(initial_soc=50,
+                                         energy_rate_decrease_per_update=3,
+                                         battery_capacity_kWh=1.2,
+                                         max_abs_battery_power_kW=5,
+                                         final_buying_rate=16.99,
+                                         final_selling_rate= 17.01)),
+               appliance=SwitchableAppliance()),
+</pre></div>
+
+
+<hr />
+<h4 id="addendum-ess-capacity-based-method">Addendum: ESS Capacity Based Method<a class="headerlink" href="#addendum-ess-capacity-based-method" title="Permanent link">&para;</a></h4>
+<p>This method was created to sell energy at lower prices during high SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stores less).</p>
+<p>If the cap_price_strategy is true, the offer price for the ESS is calculated according to:</p>
+<p><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)</code></p>
+<p>As an example, considering an <code>initial_selling_rate</code> of 30 cents/kWh and a <code>final_selling_rate</code> price of 20 cents/kWh, an ESS with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.</p>
+<h2 id="general-behaviour">General Behaviour<a class="headerlink" href="#general-behaviour" title="Permanent link">&para;</a></h2>
+<p>In general all offers and bids follow the physical constraint of the set <code>max_abs_battery_power_kW</code> Value. The accumulated energy per market slot can not exceed this power value. Here selling and buying cancel each other out meaning that if 2kWh are both sold and bought in the same market slot, the relative power is still 0.</p>
+<p>For the buying rate increase and selling rate decrease behaviour, please see: <a href="../how-strategies-adjust-prices/">How the Strategies Adjust the Prices of Offers and Bids</a>. </p>
+<h3 id="buying-energy">Buying Energy<a class="headerlink" href="#buying-energy" title="Permanent link">&para;</a></h3>
+<h4 id="one-sided-market">One Sided Market<a class="headerlink" href="#one-sided-market" title="Permanent link">&para;</a></h4>
+<p>On every tick, the storage scans the connected market for affordable offers* if there is storage space to be filled (if the current SOC is lower than 100%). Once an offer is found, it is either fully or partially accepted, depending on the demand. The storage always seeks for 100% SOC when buying energy.</p>
+<p>* = affordable offers are offers that have a price lower or equal the current acceptable energy rate. The acceptable energy rate changes in the frame of one market slot depending on the <code>initial_buying_rate</code>, <code>final_buying_rate</code>, <code>energy_rate_decrease_per_update</code> and <code>update_interval setting</code>.</p>
+<h4 id="two-sided-market">Two Sided Market<a class="headerlink" href="#two-sided-market" title="Permanent link">&para;</a></h4>
+<p>On every tick, the storage either places a bid for the energy portion it needs to reach 100% SOC or updates the price of an existing bid in the market where the bid price is depending on the <code>initial_buying_rate</code>, <code>final_buying_rate</code>, <code>energy_rate_decrease_per_update</code> and <code>update_interval setting</code>.</p>
+<h3 id="selling-energy">Selling Energy<a class="headerlink" href="#selling-energy" title="Permanent link">&para;</a></h3>
+<p>At the beginning of each slot market, the storage places an offer on the market offering all the energy it has stored (not including the energy that is needed to keep the storage at least at <code>min_allowed_soc</code>). This offer gets updated on every tick following the rate decrease settings. 
+This applies to both one and two sided market types. 
+Consequently, it is possible for the storage to have both an offer and a bid placed in the same market. </p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../load-strategy/" title="Load Strategy" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Load Strategy
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../pv-strategy/" title="PV Strategy" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                PV Strategy
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-logo">
+        <img src="../img/d3a-logo.png" height="50"/>
+      </div>
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/gridsingularity" class="md-footer-social__link fa fa-lg fa-github"></a>
+    
+      <a href="https://twitter.com/gridsingularity" class="md-footer-social__link fa fa-lg fa-twitter"></a>
+    
+      <a href="https://www.linkedin.com/company/grid-singularity" class="md-footer-social__link fa fa-lg fa-linkedin"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application.05d1c8d6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      
+        <script src="https://research.web3.foundation/en/latest/mathjax-config.js"></script>
+      
+        <script src="../search/main.js"></script>
+      
+    
+  </body>
+</html>

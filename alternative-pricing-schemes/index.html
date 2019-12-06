@@ -1,0 +1,1226 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Documentation for the D3A by Grid Singularity">
+      
+      
+      
+        <meta name="author" content="Grid Singularity">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../img/d3a-logo.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.0.2">
+    
+    
+      
+        <title>Alternative Pricing Schemes - D3A</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.982221ab.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.224b79ff.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="">
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.01ccdecf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:300,400,400i,700|Ubuntu+Mono">
+        <style>body,input{font-family:"PT Sans","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#alternative-pricing-schemes" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href=".." title="D3A" class="md-header-nav__button md-logo">
+          
+            <img src="../img/d3a-logo.png" width="32" height="32">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              D3A
+            </span>
+            <span class="md-header-nav__topic">
+              Alternative Pricing Schemes
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/gridsingularity/d3a/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    D3A on github
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href=".." title="D3A" class="md-nav__button md-logo">
+      
+        <img src="../img/d3a-logo.png" width="48" height="48">
+      
+    </a>
+    D3A
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/gridsingularity/d3a/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    D3A on github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1" checked>
+    
+    <label class="md-nav__link" for="nav-1">
+      D3A Documentation
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-1">
+        D3A Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../d3a-documentation/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-2" type="checkbox" id="nav-1-2">
+    
+    <label class="md-nav__link" for="nav-1-2">
+      User Interface (d3a.io)
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-1-2">
+        User Interface (d3a.io)
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../user-interface-d3a/" title="UI Overview" class="md-nav__link">
+      UI Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../projects-home-page/" title="Projects (Home Page)" class="md-nav__link">
+      Projects (Home Page)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-2-3" type="checkbox" id="nav-1-2-3">
+    
+    <label class="md-nav__link" for="nav-1-2-3">
+      Simulation Configuration
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-1-2-3">
+        Simulation Configuration
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-configuration/" title="Simulation Configuration Overview" class="md-nav__link">
+      Simulation Configuration Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../general-settings/" title="General Settings" class="md-nav__link">
+      General Settings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-2-3-3" type="checkbox" id="nav-1-2-3-3">
+    
+    <label class="md-nav__link" for="nav-1-2-3-3">
+      Grid Setup
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-1-2-3-3">
+        Grid Setup
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-setup/" title="Initial Grid Setup" class="md-nav__link">
+      Initial Grid Setup
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../pv/" title="PV" class="md-nav__link">
+      PV
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../storage/" title="Storage" class="md-nav__link">
+      Storage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../load/" title="Load" class="md-nav__link">
+      Load
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-maker/" title="Market Maker" class="md-nav__link">
+      Market Maker
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../power-plant/" title="Power Plant" class="md-nav__link">
+      Power Plant
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../areas/" title="Areas" class="md-nav__link">
+      Areas
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../libraries/" title="Libraries" class="md-nav__link">
+      Libraries
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../upload-file-formats/" title="Upload File Formats" class="md-nav__link">
+      Upload File Formats
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../results/" title="Results" class="md-nav__link">
+      Results
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-3" type="checkbox" id="nav-1-3" checked>
+    
+    <label class="md-nav__link" for="nav-1-3">
+      Backend Codebase
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-1-3">
+        Backend Codebase
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../backend-codebase/" title="Backend Codebase Overview" class="md-nav__link">
+      Backend Codebase Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-3-2" type="checkbox" id="nav-1-3-2">
+    
+    <label class="md-nav__link" for="nav-1-3-2">
+      Strategies
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-1-3-2">
+        Strategies
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../load-strategy/" title="Load Strategy" class="md-nav__link">
+      Load Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ess-strategy/" title="Energy Storage System (ESS) Strategy" class="md-nav__link">
+      Energy Storage System (ESS) Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../pv-strategy/" title="PV Strategy" class="md-nav__link">
+      PV Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../infinite-power-plant-strategy/" title="Infinite Power Plant Strategy" class="md-nav__link">
+      Infinite Power Plant Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../custom-load-strategy/" title="Custom Load Strategy" class="md-nav__link">
+      Custom Load Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../finite-power-plant-strategy/" title="Finite Power Plant Strategy" class="md-nav__link">
+      Finite Power Plant Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../custom-pv-strategy/" title="Custom PV Strategy" class="md-nav__link">
+      Custom PV Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../infinite-bus-strategy/" title="Infinite Bus Strategy" class="md-nav__link">
+      Infinite Bus Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../how-implement-custom-device-strategies/" title="How to Implement Custom Device Strategies" class="md-nav__link">
+      How to Implement Custom Device Strategies
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-maker-strategy/" title="Market Maker Strategy" class="md-nav__link">
+      Market Maker Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../how-strategies-adjust-prices/" title="How Strategies Adjust the Prices of Offers and Bids" class="md-nav__link">
+      How Strategies Adjust the Prices of Offers and Bids
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-3-3" type="checkbox" id="nav-1-3-3">
+    
+    <label class="md-nav__link" for="nav-1-3-3">
+      Markets
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-1-3-3">
+        Markets
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../markets/" title="Markets Overview" class="md-nav__link">
+      Markets Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../balancing-market/" title="Balancing Market" class="md-nav__link">
+      Balancing Market
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../inter-area-agent/" title="Inter-Area Agent" class="md-nav__link">
+      Inter-Area Agent
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../two-sided-pay-as-clear/" title="Two Sided Pay-As-Clear" class="md-nav__link">
+      Two Sided Pay-As-Clear
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../one-sided-pay-as-offer/" title="One Sided Pay-As-Offer" class="md-nav__link">
+      One Sided Pay-As-Offer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../two-sided-pay-as-bid/" title="Two Sided Pay-As-Bid" class="md-nav__link">
+      Two Sided Pay-As-Bid
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-1-3-4" type="checkbox" id="nav-1-3-4">
+    
+    <label class="md-nav__link" for="nav-1-3-4">
+      D3A Blockchain Support
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-1-3-4">
+        D3A Blockchain Support
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../d3a-blockchain-support/" title="D3A Blockchain Overview" class="md-nav__link">
+      D3A Blockchain Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../clearingtoken-smart-contract/" title="ClearingToken Smart Contract" class="md-nav__link">
+      ClearingToken Smart Contract
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-smart-contract/" title="Market Smart Contract" class="md-nav__link">
+      Market Smart Contract
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../run-d3a-on-tobalaba/" title="Steps to Run D3A on Tobalaba" class="md-nav__link">
+      Steps to Run D3A on Tobalaba
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+      Simulation Results
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Alternative Pricing Schemes
+      </label>
+    
+    <a href="./" title="Alternative Pricing Schemes" class="md-nav__link md-nav__link--active">
+      Alternative Pricing Schemes
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-pricing-schemes" title="Alternative Pricing Schemes" class="md-nav__link">
+    Alternative Pricing Schemes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-pricing-mechanisms" title="Alternative Pricing Mechanisms" class="md-nav__link">
+    Alternative Pricing Mechanisms
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../configure-transfer-fee/" title="How to Configure Grid Transfer Fee" class="md-nav__link">
+      How to Configure Grid Transfer Fee
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-events/" title="Simulation Events" class="md-nav__link">
+      Simulation Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../create-setup-file/" title="How to Create a setup-file" class="md-nav__link">
+      How to Create a setup-file
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../change-global-sim-settings/" title="How to Change Global Simulation Settings" class="md-nav__link">
+      How to Change Global Simulation Settings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../launch-sim-via-cli/" title="How to launch Simulation via Command Line Interface (CLI)" class="md-nav__link">
+      How to launch Simulation via Command Line Interface (CLI)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions/" title="Installation Instructions" class="md-nav__link">
+      Installation Instructions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-nav__link">
+      Key Performance Indicators (KPIs)
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-pricing-schemes" title="Alternative Pricing Schemes" class="md-nav__link">
+    Alternative Pricing Schemes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-pricing-mechanisms" title="Alternative Pricing Mechanisms" class="md-nav__link">
+    Alternative Pricing Mechanisms
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/gridsingularity/d3a/edit/master/docs/alternative-pricing-schemes.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                  <h1>Alternative Pricing Schemes</h1>
+                
+                <h2 id="alternative-pricing-schemes">Alternative Pricing Schemes<a class="headerlink" href="#alternative-pricing-schemes" title="Permanent link">&para;</a></h2>
+<p><strong>How to configure Alternative Pricing</strong></p>
+<p>To enable comparison of 4 different pricing schemes:</p>
+<ul>
+<li>(0) D3A pricing (trading according the D3A hierarchical market model)</li>
+<li>(1) no-scheme pricing (<code>GridAgent</code> buys at 0 ct/kWh and sells for <code>market_maker_rate</code>)</li>
+<li>(2) feed-in-tariff pricing (<code>GridAgent</code> buys at <code>feed_in_tariff_percentage * market_maker_rate</code> and sells for <code>market_maker_rate</code>)</li>
+<li>(3) net metering pricing (<code>GridAgent</code> buys at <code>market_maker_rate</code> and sells for <code>market_maker_rate</code>)</li>
+</ul>
+<p>set the command line flag <code>--compare-alt-pricing</code>.
+This will run separate <code>d3a-simulation</code>s with all 4 alternative pricing schemes in parallel for the selected setup file. 
+The results of each simulation are stored in separate subfolders in the <code>export-path</code>.</p>
+<p>If you want to run a simulation only for one specific pricing scheme, set it via a <code>ConstSetting</code> in the setup file in which you are configuring your grid, e.g. by adding the following line:</p>
+<div class="codehilite"><pre><span></span>ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1
+</pre></div>
+
+
+<p>(You should not set this parameter and use the <code>--compare-alt-pricing</code> cli parameter combined)</p>
+<p>The feed-in-tariff (FIT) is a percentage that is set in the <code>ConstSetting</code>s as well, the default is 50%. Set this parameter yourself via a <code>ConstSetting</code> in the setup file in which you are configuring your grid, by adding the following line (e.g. FIT = 60% of <code>market_maker_rate</code>):</p>
+<div class="codehilite"><pre><span></span>ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE = 60
+</pre></div>
+
+
+<p>For more information we refer to Alternative Pricing Mechanisms.</p>
+<h2 id="alternative-pricing-mechanisms">Alternative Pricing Mechanisms<a class="headerlink" href="#alternative-pricing-mechanisms" title="Permanent link">&para;</a></h2>
+<p>In the D3A, the D3A pricing mechanism (determined through the D3A market structure) can be compared to other pricing mechanisms that are currently being used by utilities and grid providers. By setting one of the three pricing schemes below, the user can calculate the energy bills from a simulation according to that scheme. This is done by adjusting the feed-in-tariff (FIT). Many energy markets have a FIT that fits one of the three scenarios that can each be configured and run in the D3A. </p>
+<p>The cost to buy electricity from the utility is known in the D3A as the market maker rate (MMR). This is because in grid connected scenarios, a community or local grid is connected to the utility grid which is modeled as an infinite power plant and sells power at the utility rate. This rate is called the market maker rate because it sets the price basis for the other buyers and sellers in the market.</p>
+<p>There are three alternative pricing schemes:</p>
+<ol>
+<li><strong>No Pricing scheme</strong>: In this scheme, the households or grid customers have a 0% FIT and cannot sell any surplus energy they produce to the grid for additional income. They buy energy from the grid at the utility rate (MMR).</li>
+<li><strong>Feed In Tariff (FIT)</strong>: In this scheme, the households or grid customers have 50% FIT (50% is the default value; it is configurable) at which they can sell surplus energy to the grid for 50% of the MMR. They buy energy from the grid at the utility rate (MMR). </li>
+<li><strong>Net Metering (NM)</strong>: In this scheme, the households or grid customers have a 100% FIT, which is also known as net metering. This means that they can sell surplus energy to the utility at the same rate that they must pay to buy. In many implementations this means that the customer simply rolls back their meter when supplying the grid with energy and pays the net energy they have consumed each paying period times the utility rate (MMR). (In the case of 100% FIT, the customer could actually make a net income if they produce more than they consume under a flat MMR.)</li>
+</ol>
+<p>How the D3A engine simulates these alternative pricing schemes:</p>
+<p>All areas at the lowest level (with their own meter) are disconnected. Areas that contain children/devices are considered "households" or "grid customers". These households are allowed to trade internally; this way, household PV's are still able to supply to that respective household load, just as you would expect. The surplus PV energy is "sold" to the IAA of the household; the IAA does not connect to the higher level market as would be the case in D3A trading, but connects directly to a "<code>GridAgent</code>". This <code>GridAgent</code> reimburses the household IAA according to the FIT. Any energy bought, for instance when a household PV (if any) does not supply enough energy, is provided by the <code>GridAgent</code> at the MMR.</p>
+<p>See picture; in case of <code>--compare-alt-price</code> is flagged; the D3A grid is isolated according to the red dotted lines; and IAA are connected to the DSO/Utility grid.</p>
+<p><img alt="img" src="../img/alternative-pricing-schemes-1.png" /></p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../simulation-results/" title="Simulation Results" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Simulation Results
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../configure-transfer-fee/" title="How to Configure Grid Transfer Fee" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                How to Configure Grid Transfer Fee
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-logo">
+        <img src="../img/d3a-logo.png" height="50"/>
+      </div>
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/gridsingularity" class="md-footer-social__link fa fa-lg fa-github"></a>
+    
+      <a href="https://twitter.com/gridsingularity" class="md-footer-social__link fa fa-lg fa-twitter"></a>
+    
+      <a href="https://www.linkedin.com/company/grid-singularity" class="md-footer-social__link fa fa-lg fa-linkedin"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application.05d1c8d6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      
+        <script src="https://research.web3.foundation/en/latest/mathjax-config.js"></script>
+      
+        <script src="../search/main.js"></script>
+      
+    
+  </body>
+</html>
