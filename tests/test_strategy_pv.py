@@ -32,16 +32,17 @@ from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_FORMAT
 from d3a.d3a_core.util import d3a_path
 
+
 ENERGY_FORECAST = {}  # type: Dict[Time, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 
 class FakeArea:
-    def __init__(self, count):
+    def __init__(self):
+        self.config = DEFAULT_CONFIG
         self.current_tick = 2
         self.appliance = None
         self.name = 'FakeArea'
-        self.count = count
         self.test_market = FakeMarket(0)
 
     def get_future_market_from_id(self, id):
@@ -50,10 +51,6 @@ class FakeArea:
     @property
     def current_market(self):
         return self.test_market
-
-    @property
-    def config(self):
-        return DEFAULT_CONFIG
 
     @property
     def now(self) -> DateTime:
@@ -119,7 +116,7 @@ class FakeTrade:
 
 @pytest.fixture()
 def area_test1():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -141,7 +138,7 @@ def testing_activation(pv_test1):
 
 @pytest.fixture()
 def area_test2():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -186,7 +183,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
 
 @pytest.fixture()
 def area_test3():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -223,7 +220,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
         area_test3.current_tick += 10
         pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[-1]
-    assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.FINAL_SELLING_RATE
+    assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.SELLING_RATE_RANGE.final
 
 
 """TEST 4"""
@@ -343,7 +340,8 @@ def test_pv_constructor_rejects_incorrect_parameters():
     with pytest.raises(D3ADeviceException):
         PVStrategy(max_panel_power_W=-100)
     with pytest.raises(D3ADeviceException):
-        PVStrategy(initial_selling_rate=5, final_selling_rate=15)
+        pv = PVStrategy(initial_selling_rate=5, final_selling_rate=15)
+        pv.event_activate()
 
 
 """TEST7"""
@@ -375,7 +373,7 @@ def pv_test8(area_test3):
 
 @pytest.fixture()
 def area_test9():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture()
@@ -404,7 +402,7 @@ def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
 
 @pytest.fixture()
 def area_test10():
-    return FakeArea(0)
+    return FakeArea()
 
 
 @pytest.fixture
@@ -436,7 +434,10 @@ def test_initial_selling_rate(pv_strategy_test10, area_test10):
 ])
 def test_use_mmr_parameter_is_respected(strategy_type, use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 12
-    pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr)
+    pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
+                       max_panel_power_W=200)
+    pv.area = FakeArea()
+    pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
 
 
@@ -448,6 +449,8 @@ def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
     GlobalConfig.market_maker_rate = 13
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
     pv = PVUserProfileStrategy(
-        power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr
-    )
+        power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr,
+        max_panel_power_W=200)
+    pv.area = FakeArea()
+    pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())

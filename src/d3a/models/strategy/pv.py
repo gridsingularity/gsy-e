@@ -24,7 +24,6 @@ from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.device_validator import validate_pv_device
-from d3a_interface.exceptions import D3ADeviceException
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.state import PVState
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -43,10 +42,9 @@ class PVStrategy(BaseStrategy):
                  initial_selling_rate:
                  float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  final_selling_rate:
-                 float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+                 float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
                  fit_to_limit: bool = True,
-                 update_interval=duration(
-                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 update_interval=None,
                  energy_rate_decrease_per_update:
                  float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
                  max_panel_power_W: float = None,
@@ -60,15 +58,13 @@ class PVStrategy(BaseStrategy):
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W:
         """
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
-        if use_market_maker_rate:
-            initial_selling_rate = GlobalConfig.market_maker_rate
+        self.use_market_maker_rate = use_market_maker_rate
 
-        try:
-            validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
-        except D3ADeviceException as e:
-            raise D3ADeviceException(str(e))
+        validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
@@ -77,24 +73,17 @@ class PVStrategy(BaseStrategy):
         self.offer_update = UpdateFrequencyMixin(initial_selling_rate, final_selling_rate,
                                                  fit_to_limit, energy_rate_decrease_per_update,
                                                  update_interval)
-        for time_slot in generate_market_slot_list():
-            try:
-                validate_pv_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
-                                   final_selling_rate=self.offer_update.final_rate[time_slot])
-            except D3ADeviceException as e:
-                raise D3ADeviceException(str(e))
+
         self.panel_count = panel_count
         self.final_selling_rate = final_selling_rate
         self.max_panel_power_W = max_panel_power_W
         self.energy_production_forecast_kWh = {}  # type: Dict[Time, float]
         self.state = PVState()
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, validate=True, **kwargs):
         assert all(k in self.parameters for k in kwargs.keys())
-        try:
+        if validate:
             validate_pv_device(**kwargs)
-        except D3ADeviceException as e:
-            raise D3ADeviceException(str(e))
         for name, value in kwargs.items():
             setattr(self, name, value)
 
@@ -104,10 +93,22 @@ class PVStrategy(BaseStrategy):
         if 'final_selling_rate' in kwargs and kwargs['final_selling_rate'] is not None:
             self.offer_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                   kwargs['final_selling_rate'])
+
+        self._validate_rates()
         self.produced_energy_forecast_kWh()
         self.offer_update.update_offer(self)
 
+    def _validate_rates(self):
+        for time_slot in generate_market_slot_list():
+            validate_pv_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
+                               final_selling_rate=self.offer_update.final_rate[time_slot])
+
     def event_activate(self):
+        # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
+        if self.use_market_maker_rate:
+            self.area_reconfigure_event(initial_selling_rate=GlobalConfig.market_maker_rate,
+                                        validate=False)
+        self._validate_rates()
         if self.max_panel_power_W is None:
             self.max_panel_power_W = self.area.config.max_panel_power_W
         # Calculating the produced energy

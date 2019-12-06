@@ -61,7 +61,7 @@ Feature: Jira Issues Tests
   Scenario: D3ASIM-891, bids are reported correctly in csv export files
      Given we have a scenario named two_sided_pay_as_clear.default_2a
      And d3a is installed
-     When we run the d3a simulation on console with two_sided_pay_as_clear.default_2a
+     When we run the d3a simulation on console with two_sided_pay_as_clear.default_2a for 2 hrs
      Then there are nonempty files with offers (without balancing offers) and bids for every area
 
   Scenario: D3ASIM-962, Device Statistics are calculated and returned correctly
@@ -107,3 +107,16 @@ Feature: Jira Issues Tests
     When we run the simulation with setup file jira.d3asim_1531 and parameters [24, 60, 60, 0, 1]
     Then trades happen when the load seeks energy
 
+  Scenario: D3ASIM-1637: Pay as bid repeats clearing until all available offers and bids are exhausted
+    Given we have a scenario named json_file
+    And d3a is installed
+    And d3a uses an two-sided pay-as-bid market
+    And the file jira/d3asim_1637.json is used for the area setup
+    When we run the simulation with setup file json_file and parameters [24, 30, 30, 0, 1]
+    Then there should be no unmatched loads
+
+  Scenario: D3ASIM-1690: No unmatched load
+     Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
+     And d3a is installed
+     When we run the d3a simulation with two_sided_pay_as_clear.jira_d3asim_1690 [24, 60, 60]
+     Then there should be no unmatched loads

@@ -21,7 +21,7 @@ import os
 
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import update_advanced_settings, constsettings_to_dict
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 
 """
 before_step(context, step), after_step(context, step)
@@ -54,6 +54,7 @@ def after_scenario(context, scenario):
     update_advanced_settings(context.default_const_settings)
     context.resource_manager.close()
     DeviceRegistry.REGISTRY = {}
+    GlobalConfig.market_maker_rate = 30
 
 
 def before_all(context):

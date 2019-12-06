@@ -254,12 +254,13 @@ def running_the_simulation(context):
     context.simulation.run()
 
 
-@when('we run the d3a simulation on console with {scenario}')
-def run_sim_console(context, scenario):
+@when('we run the d3a simulation on console with {scenario} for {hours} hrs')
+def run_sim_console(context, scenario, hours):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -d 2h -t 60s -s 60m --setup={scenario} --export-path={export_path}"
-              .format(export_path=context.export_path, scenario=scenario))
+    os.system("d3a -l FATAL run -d {hours}h -t 60s -s 60m --setup={scenario} "
+              "--export-path={export_path}"
+              .format(export_path=context.export_path, scenario=scenario, hours=hours))
 
 
 @when('we run the d3a simulation with compare-alt-pricing flag with {scenario}')
@@ -371,6 +372,13 @@ def test_export_data_csv(context, scenario):
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}: {file} ".format(path=context.export_path,
                                                                     file=data_fn))
+
+
+@then('the export functionality of supply/demand curve is tested')
+def test_export_supply_demand_curve(context):
+    sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot", "mcp"))
+    if len(sim_data_csv) != 1:
+        raise FileExistsError("Not found in {path}".format(path=context.export_path))
 
 
 @then('we test the export of with compare-alt-pricing flag')

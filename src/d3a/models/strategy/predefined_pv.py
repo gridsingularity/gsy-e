@@ -40,13 +40,12 @@ class PVPredefinedStrategy(PVStrategy):
                   'max_panel_power_W', 'use_market_maker_rate')
 
     def __init__(
-            self, panel_count: int=1,
+            self, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             cloud_coverage: int = None,
             fit_to_limit: bool = True,
-            update_interval=duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+            update_interval=None,
             energy_rate_decrease_per_update:
             float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
             max_panel_power_W: float = None,
@@ -63,6 +62,10 @@ class PVPredefinedStrategy(PVStrategy):
         :param max_panel_power_W: Peak power per panel
         """
 
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
                          final_selling_rate=final_selling_rate,
@@ -72,6 +75,7 @@ class PVPredefinedStrategy(PVStrategy):
                          max_panel_power_W=max_panel_power_W,
                          use_market_maker_rate=use_market_maker_rate
                          )
+        self.cloud_coverage = cloud_coverage
         self._power_profile_index = cloud_coverage
 
     def produced_energy_forecast_kWh(self):
@@ -81,7 +85,8 @@ class PVPredefinedStrategy(PVStrategy):
         self.read_config_event()
 
     def read_config_event(self):
-        self._power_profile_index = self.area.config.cloud_coverage
+        self._power_profile_index = self.cloud_coverage \
+            if self.cloud_coverage is not None else self.area.config.cloud_coverage
         data = self._read_predefined_profile_for_pv()
 
         for slot_time in generate_market_slot_list(area=self.area):
@@ -96,10 +101,9 @@ class PVPredefinedStrategy(PVStrategy):
         parameters and selects the appropriate predefined profile.
         :return: key value pairs of time to energy in kWh
         """
-        if self._power_profile_index is None:
+        if self._power_profile_index is None or self._power_profile_index == 4:
             if self.owner.config.pv_user_profile is not None:
-                return read_arbitrary_profile(InputProfileTypes.POWER,
-                                              self.area.config.pv_user_profile)
+                return self.owner.config.pv_user_profile
             else:
                 self._power_profile_index = self.owner.config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
@@ -127,7 +131,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
     def __init__(
             self, power_profile, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float = ConstSettings.PVSettings.FINAL_SELLING_RATE,
+            final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),

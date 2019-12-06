@@ -17,6 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict # noqa
+import json
+import pendulum
+from d3a.events import MarketEvent
+
+Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
 
 class Offer:
@@ -38,6 +43,11 @@ class Offer:
                "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
             .format(s=self, rate=self.price / self.energy)
 
+    def to_JSON_string(self):
+        offer_dict = self.__dict__
+        offer_dict["type"] = "Offer"
+        return json.dumps(self.__dict__)
+
     def __hash__(self):
         return hash(self.id)
 
@@ -55,6 +65,16 @@ class Offer:
     def _to_csv(self):
         rate = round(self.price / self.energy, 4)
         return self.id, rate, self.energy, self.price, self.seller
+
+
+def offer_from_JSON_string(offer_string):
+    offer_dict = json.loads(offer_string)
+    object_type = offer_dict.pop("type")
+    assert object_type == "Offer"
+    real_id = offer_dict.pop('real_id')
+    offer = Offer(**offer_dict)
+    offer.real_id = real_id
+    return offer
 
 
 class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
@@ -85,6 +105,43 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
         rate = round(self.price / self.energy, 4)
         return self.id, rate, self.energy, self.price, self.buyer
 
+    def to_JSON_string(self):
+        bid_dict = self._asdict()
+        bid_dict["type"] = "Bid"
+        return json.dumps(bid_dict)
+
+
+def bid_from_JSON_string(bid_string):
+    bid_dict = json.loads(bid_string)
+    object_type = bid_dict.pop("type")
+    assert object_type == "Bid"
+    return Bid(**bid_dict)
+
+
+def offer_or_bid_from_JSON_string(offer_or_bid):
+    offer_bid_dict = json.loads(offer_or_bid)
+    object_type = offer_bid_dict.pop("type")
+    if object_type == "Offer":
+        real_id = offer_bid_dict.pop('real_id')
+        offer = Offer(**offer_bid_dict)
+        offer.real_id = real_id
+        return offer
+    elif object_type == "Bid":
+        return Bid(**offer_bid_dict)
+
+
+class TradeBidInfo(namedtuple('TradeBidInfo',
+                              ('original_bid_rate', 'propagated_bid_rate',
+                               'original_offer_rate', 'propagated_offer_rate',
+                               'trade_rate'))):
+    def to_JSON_string(self):
+        return json.dumps(self._asdict())
+
+
+def trade_bid_info_from_JSON_string(info_string):
+    info_dict = json.loads(info_string)
+    return TradeBidInfo(**info_dict)
+
 
 class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
                                  'buyer', 'residual', 'already_tracked',
@@ -114,6 +171,25 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
     def _to_csv(self):
         rate = round(self.offer.price / self.offer.energy, 4)
         return self[:2] + (rate, self.offer.energy) + self[3:5]
+
+    def to_JSON_string(self):
+        trade_dict = self._asdict()
+        trade_dict['offer'] = trade_dict['offer'].to_JSON_string()
+        trade_dict['residual'] = trade_dict['residual'].to_JSON_string() \
+            if trade_dict['residual'] is not None else None
+        trade_dict['time'] = trade_dict['time'].isoformat()
+        return json.dumps(trade_dict)
+
+
+def trade_from_JSON_string(trade_string):
+    trade_dict = json.loads(trade_string)
+    trade_dict['offer'] = offer_or_bid_from_JSON_string(trade_dict['offer'])
+    if 'residual' in trade_dict and trade_dict['residual'] is not None:
+        trade_dict['residual'] = offer_or_bid_from_JSON_string(trade_dict['residual'])
+    trade_dict['time'] = pendulum.parse(trade_dict['time'])
+    # if 'offer_bid_trade_info' in trade_dict:
+    #     trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])
+    return Trade(**trade_dict)
 
 
 class BalancingOffer(Offer):
@@ -168,6 +244,20 @@ class MarketClearingState:
 
 
 BidOfferMatch = namedtuple('BidOfferMatch', ['bid', 'bid_energy', 'offer', 'offer_energy'])
-TradeBidInfo = namedtuple('TradeBidInfo',
-                          ('original_bid_rate', 'propagated_bid_rate',
-                           'original_offer_rate', 'propagated_offer_rate', 'trade_rate'))
+
+
+def parse_event_and_parameters_from_json_string(payload):
+    data = json.loads(payload["data"])
+    kwargs = data["kwargs"]
+    for key in ["offer", "existing_offer", "new_offer"]:
+        if key in kwargs:
+            kwargs[key] = offer_from_JSON_string(kwargs[key])
+    if "trade" in kwargs:
+        kwargs["trade"] = trade_from_JSON_string(kwargs["trade"])
+    for key in ["bid", "existing_bid", "new_bid"]:
+        if key in kwargs:
+            kwargs[key] = bid_from_JSON_string(kwargs[key])
+    if "bid_trade" in kwargs:
+        kwargs["bid_trade"] = trade_from_JSON_string(kwargs["bid_trade"])
+    event_type = MarketEvent(data["event_type"])
+    return event_type, kwargs

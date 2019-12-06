@@ -88,20 +88,20 @@ class MarketEnergyBills:
                 return []
             return [getattr(area, past_market_types)[-1]]
 
+    def _default_area_dict(self, area):
+        return dict(bought=0.0, sold=0.0,
+                    spent=0.0, earned=0.0,
+                    total_energy=0.0, total_cost=0.0,
+                    type=area.display_type)
+
     def _get_child_data(self, area):
         if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            return {child.name: dict(bought=0.0, sold=0.0,
-                                     spent=0.0, earned=0.0,
-                                     total_energy=0.0, total_cost=0.0,
-                                     type=child.display_type)
+            return {child.name: self._default_area_dict(child)
                     for child in area.children}
         else:
             if area.name not in self.bills_results:
                 self.bills_results[area.name] =  \
-                    {child.name: dict(bought=0.0, sold=0.0,
-                                      spent=0.0, earned=0.0,
-                                      total_energy=0.0, total_cost=0.0,
-                                      type=child.display_type)
+                    {child.name: self._default_area_dict(child)
                         for child in area.children}
             return self.bills_results[area.name]
 
@@ -135,7 +135,7 @@ class MarketEnergyBills:
             self.market_fees[area.name] = 0.0
         for market in self._get_past_markets_from_area(area, past_market_types):
             # Converting cents to Euros
-            self.market_fees[market.area.name] += market.market_fee / 100.0
+            self.market_fees[market.name] += market.market_fee / 100.0
         for child in area.children:
             self._accumulate_market_fees(child, past_market_types)
 
@@ -168,9 +168,10 @@ class MarketEnergyBills:
     def _accumulate_by_children(self, area, flattened, results):
         if not area.children:
             # This is a device
-            results[area.name] = flattened[area.name]
+            results[area.name] = flattened.get(area.name, self._default_area_dict(area))
         else:
-            results[area.name] = {c.name: flattened[c.name] for c in area.children}
+            results[area.name] = {c.name: flattened[c.name] for c in area.children
+                                  if c.name in flattened}
 
             results.update(**self._generate_external_and_total_bills(area, results, flattened))
 

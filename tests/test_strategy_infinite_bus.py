@@ -90,8 +90,9 @@ class FakeMarket:
         offer.id = 'id'
         return offer
 
-    def accept_offer(self, offer, buyer, *, energy=None, time=None, already_tracked=False,
+    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
+        offer = offer_or_id
         trade = Trade('trade_id', time, offer, offer.seller, buyer,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
         self.traded_offers.append(trade)
@@ -307,5 +308,5 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test4):
     bus_test4.event_market_cycle()
     assert len(bus_test4._bids) == 1
     assert bus_test4._bids[area_test4.test_market.id][-1].energy == sys.maxsize
-    assert bus_test4._bids[area_test4.test_market.id][-1].price == 30 * sys.maxsize
+    assert bus_test4._bids[area_test4.test_market.id][-1].price == 25 * sys.maxsize
     ConstSettings.IAASettings.MARKET_TYPE = 1

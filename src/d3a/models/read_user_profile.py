@@ -76,20 +76,24 @@ def default_profile_dict(val=None) -> Dict[DateTime, int]:
     return outdict
 
 
+def is_number(number):
+    try:
+        float(number)
+        return True
+    except ValueError:
+        return False
+
+
 def _remove_header(profile_dict: Dict) -> Dict:
     """
-    If first entry is not cmaptible with time format, remove it
+    Checks profile for header entries and removes these
+    Header entries have values that are not representations of numbers
     """
-
-    time = list(profile_dict.keys())[0]
-    try:
-        from_format(str(time), TIME_FORMAT)
-    except ValueError:
-        try:
-            from_format(str(time), DATE_TIME_FORMAT)
-        except ValueError:
-            profile_dict.pop(time)
-    return profile_dict
+    out_dict = {}
+    for k, v in profile_dict.items():
+        if is_number(v):
+            out_dict[k] = v
+    return out_dict
 
 
 def _eval_time_format(time_dict: Dict) -> str:
@@ -129,7 +133,6 @@ def _readCSV(path: str) -> Dict:
                 profile_data[row[0]] = float(row[1])
             except ValueError:
                 pass
-
     time_format = _eval_time_format(profile_data)
     return dict((_str_to_datetime(time_str, time_format), value)
                 for time_str, value in profile_data.items())
@@ -175,7 +178,7 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
             }
 
 
-def _fill_gaps_in_profile(input_profile: Dict=None) -> Dict:
+def _fill_gaps_in_profile(input_profile: Dict = None) -> Dict:
     """
     Fills time steps, where no value is provided, with the value value of the
     last available time step.
@@ -231,6 +234,8 @@ def _read_from_different_sources_todict(input_profile) -> Dict[DateTime, float]:
         elif isinstance(list(input_profile.keys())[0], str):
             # input is dict with string keys that are properly formatted time stamps
             input_profile = _remove_header(input_profile)
+            # Remove filename from profile
+            input_profile.pop("filename", None)
             time_format = _eval_time_format(input_profile)
             profile = {_str_to_datetime(key, time_format): val
                        for key, val in input_profile.items()}

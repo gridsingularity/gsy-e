@@ -36,12 +36,13 @@ from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
+from d3a.models.power_flow.pandapower import PandaPowerFlow
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
 from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from d3a.d3a_core.redis_communication import RedisSimulationCommunication
-from d3a_interface.constants_limits import ConstSettings
+from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 
@@ -50,6 +51,11 @@ if platform.python_implementation() != "PyPy" and \
     from d3a.blockchain import BlockChainInterface
 
 log = getLogger(__name__)
+
+
+SLOWDOWN_FACTOR = 100
+SLOWDOWN_STEP = 5
+RANDOM_SEED_MAX_VALUE = 1000000
 
 
 class SimulationResetException(Exception):
@@ -68,7 +74,7 @@ class Simulation:
             paused=paused,
             pause_after=pause_after
         )
-
+        self.eta = duration(seconds=0)
         self.simulation_config = simulation_config
         self.use_repl = repl
         self.export_on_finish = not no_export
@@ -143,12 +149,15 @@ class Simulation:
         if seed is not None:
             random.seed(int(seed))
         else:
-            random_seed = random.randint(0, 1000000)
+            random_seed = random.randint(0, RANDOM_SEED_MAX_VALUE)
             random.seed(random_seed)
             self.initial_params["seed"] = random_seed
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        if GlobalConfig.POWER_FLOW:
+            self.power_flow = PandaPowerFlow(self.area)
+            self.power_flow.run_power_flow()
         self.bc = None
         if self.use_bc:
             self.bc = BlockChainInterface()
@@ -224,7 +233,7 @@ class Simulation:
             self._execute_simulation(slot_resume, tick_resume, console)
 
     def _update_and_send_results(self, is_final=False):
-        self.endpoint_buffer.update_stats(self.area, self.status)
+        self.endpoint_buffer.update_stats(self.area, self.status, self.eta)
         if not self.redis_connection.is_enabled():
             return
         if is_final:
@@ -253,12 +262,13 @@ class Simulation:
                     duration(seconds=self.paused_time)
             )
 
+            self.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
             log.info(
                 "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
                 slot_no + 1,
                 slot_count,
                 (slot_no + 1) / slot_count * 100,
-                run_duration, run_duration / (slot_no + 1) * slot_count
+                run_duration, self.eta
             )
             if self.is_stopped:
                 log.info("Received stop command.")
@@ -287,7 +297,7 @@ class Simulation:
                     # Simulation runs faster than real time but a slowdown was
                     # requested
                     tick_diff = tick_lengths_s - realtime_tick_length
-                    diff_slowdown = tick_diff * self.slowdown / 10000
+                    diff_slowdown = tick_diff * self.slowdown / SLOWDOWN_FACTOR
                     log.trace("Slowdown: %.4f", diff_slowdown)
                     if console is not None:
                         self._handle_input(console, diff_slowdown)
@@ -319,7 +329,10 @@ class Simulation:
         self._update_and_send_results(is_final=True)
         if self.export_on_finish:
             log.info("Exporting simulation data.")
-            self.export.export()
+            if GlobalConfig.POWER_FLOW:
+                self.export.export(power_flow=self.power_flow)
+            else:
+                self.export.export()
 
         if self.use_repl:
             self._start_repl()
@@ -372,13 +385,12 @@ class Simulation:
                 elif cmd == 'S':
                     self.stop()
                 elif cmd == '+':
-                    v = 5
-                    if self.slowdown <= 95:
-                        self.slowdown += v
+                    if self.slowdown <= SLOWDOWN_FACTOR - SLOWDOWN_STEP:
+                        self.slowdown += SLOWDOWN_STEP
                         log.critical("Simulation slowdown changed to %d", self.slowdown)
                 elif cmd == '-':
-                    if self.slowdown >= 5:
-                        self.slowdown -= 5
+                    if self.slowdown >= SLOWDOWN_STEP:
+                        self.slowdown -= SLOWDOWN_STEP
                         log.critical("Simulation slowdown changed to %d", self.slowdown)
             if sleep == 0 or time.monotonic() - start >= sleep:
                 break
@@ -390,7 +402,7 @@ class Simulation:
         if self.paused:
             start = time.monotonic()
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
-            self.endpoint_buffer.update_stats(self.area, self.status)
+            self.endpoint_buffer.update_stats(self.area, self.status, self.eta)
             self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
             while self.paused:
                 self._handle_input(console, 0.1)

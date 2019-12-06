@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pendulum import DateTime # noqa
 from typing import Dict  # noqa
 
+from d3a.models.market import TransferFees
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.two_sided_pay_as_clear import TwoSidedPayAsClear
 from d3a.models.market.one_sided import OneSidedMarket
@@ -68,13 +69,15 @@ class AreaMarkets:
                 else:
                     first = False
                 self.log.trace("Moving {t:%H:%M} {m} to past"
-                               .format(t=timeframe, m=past_markets[timeframe].area.name))
+                               .format(t=timeframe, m=past_markets[timeframe].name))
 
     def _delete_past_markets(self, past_markets, timeframe):
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             delete_markets = [pm for pm in past_markets if
                               pm not in self.markets.values()]
             for pm in delete_markets:
+                if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+                    past_markets[pm].redis_api.stop()
                 past_markets[pm].offers = {}
                 past_markets[pm].trades = {}
                 past_markets[pm].offer_history = {}
@@ -108,8 +111,12 @@ class AreaMarkets:
             if timeframe not in markets:
                 # Create markets for missing slots
                 market = market_class(
-                    timeframe, area,
-                    notification_listener=area.dispatcher.broadcast_callback
+                    time_slot=timeframe,
+                    bc=area.bc,
+                    notification_listener=area.dispatcher.broadcast_callback,
+                    transfer_fees=TransferFees(transfer_fee_pct=area.transfer_fee_pct,
+                                               transfer_fee_const=area.transfer_fee_const),
+                    name=area.name
                 )
 
                 area.dispatcher.create_area_agents(is_spot_market, market)
