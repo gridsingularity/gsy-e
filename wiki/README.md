@@ -1,9 +1,9 @@
 <!-- [![Documentation Status](https://readthedocs.org/projects/polkadot-wiki/badge/?version=latest)](https://polkadot-wiki.readthedocs.io/en/latest/?badge=latest)
 [![CircleCI](https://circleci.com/gh/w3f/polkadot-wiki.svg?style=svg)](https://circleci.com/gh/w3f/polkadot-wiki) -->
 
-# Kusama User Manual
+# D3A User Wiki
 
-This repository contains the source files for the [Kusama User Guide](https://guide.kusama.network).
+This repository contains the source files for the [D3A](d3a.io).
 
 ## Running locally
 
@@ -12,7 +12,7 @@ Note that you will need the `pip` package manager, which is generally installed 
 Clone the repository to your local file system.
 
 ```bash
-git clone https://github.com/kusamanetwork/userguide.git
+git clone https://github.com/gridsingularity/d3a.git
 ```
 
 Install `mkdocs` by using the `pip` package manager.
@@ -31,7 +31,7 @@ Run `mkdocs serve` from the repository root to spawn a hot reloading development
 
 ## Publishing
 
-The wiki is hosted on [Read the Docs](https://readthedocs.org) and is built on each published commit to the master branch on the GitHub repository.
+The wiki is hosted on github and is built on each published commit to the master branch on the GitHub repository.
 
 ## Styling
 
