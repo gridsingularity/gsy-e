@@ -1127,7 +1127,7 @@ The results of each simulation are stored in separate subfolders in the <code>ex
 <p>How the D3A engine simulates these alternative pricing schemes:</p>
 <p>All areas at the lowest level (with their own meter) are disconnected. Areas that contain children/devices are considered "households" or "grid customers". These households are allowed to trade internally; this way, household PV's are still able to supply to that respective household load, just as you would expect. The surplus PV energy is "sold" to the IAA of the household; the IAA does not connect to the higher level market as would be the case in D3A trading, but connects directly to a "<code>GridAgent</code>". This <code>GridAgent</code> reimburses the household IAA according to the FIT. Any energy bought, for instance when a household PV (if any) does not supply enough energy, is provided by the <code>GridAgent</code> at the MMR.</p>
 <p>See picture; in case of <code>--compare-alt-price</code> is flagged; the D3A grid is isolated according to the red dotted lines; and IAA are connected to the DSO/Utility grid.</p>
-<p><img alt="img" src="img\alternative-pricing-schemes-1.png" /></p>
+<p><img alt="img" src="../img/alternative-pricing-schemes-1.png" /></p>
                 
                   
                 
