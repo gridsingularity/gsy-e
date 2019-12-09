@@ -1095,7 +1095,7 @@
 <ul>
 <li><code>cloud_coverage</code>: (0: sunny; 1: partially cloudy; 2: cloudy). Using this parameter, the simulation allows the user to choose between three solar curves that are stored in the simulation for convenience. No default value for this parameter.</li>
 </ul>
-<p><img alt="img" src="../img/pv-strategy-1.png" /></p>
+<p><img alt="img" src="img\pv-strategy-1.png" /></p>
 <p>Corresponding code: <code>src/d3a/models/strategy/pv.py</code> or for the predefined PV:<code>src/d3a/models/strategy/predefined_pv.py</code></p>
 <p>How to add a PV device to the setup-file:</p>
 <div class="codehilite"><pre><span></span>Area(&#39;H2 PV&#39;, strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
@@ -1108,7 +1108,7 @@
 <p>In order to understand how the strategy is actually decreasing its <code>offered_rate</code> in the case of not getting traded, see the following diagram. </p>
 <h4 id="relation-of-different-parameters-for-energy-pricing">Relation of different parameters for energy pricing<a class="headerlink" href="#relation-of-different-parameters-for-energy-pricing" title="Permanent link">&para;</a></h4>
 <p>Lets assume the user has configured its <em>PVStrategy</em> with these parameters <code>(initial_selling_rate=30, final_selling_rate=0, fit_to_limit=True, update_interval=5mins)</code> and <code>slot_length=15min</code> At the start of market, PV would place its initial offer at the rate of <code>initial_selling_rate</code>. If <code>fit_to_limit</code> is set to <code>True</code>, it will reduce its <code>offer_rate</code> linearly such that its <code>final_offer</code> before the end of <code>market_slot</code> should be equal to <code>final_selling_rate</code>. Number of available updates in such a case is <code>(slot_length / update_interval) -1) → (15/5 -1)=2</code>. Therefore, it is possible for a user to update its offer two times inside the same <code>market_slot</code>. The first update would happen at 5mins. The calculated <code>energy_rate_decrease_per_update → (30 - 0) / 2 → 15</code>. So, the PV will reduce it <code>selling_rate</code> at 5th min from 30 to 15 cts/kWh and at 10th min from 15 to 0 cts/kWh.</p>
-<p><img alt="img" src="../img/pv-strategy-2.png" /></p>
+<p><img alt="img" src="img\pv-strategy-2.png" /></p>
                 
                   
                 
