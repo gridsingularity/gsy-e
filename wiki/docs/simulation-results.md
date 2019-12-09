@@ -1,0 +1,5 @@
+After a successful simulation run, in order to draw some conclusions over the simulation, D3A has the ability to export the simulation results. This functionality is enabled by default.
+If you want to disable the export of simulation results, use the `--no-export` flag for the simulation run.
+Another useful parameter is: `--export-path`. It changes the output path of the simulation results. The default path is `$HOME/d3a-simulation/`.
+
+The simulation results include analytical information about the trades, offers, bids and balancing offers that took place in the course of the simulation. Also information about energy characteristics of each device and area agent are included (eg. battery SOC, energy traded/requested/deficit for the agents). In addition to text files, some graphs that display aggregated area information during the course of the simulation are also exposed. These can be found under 'plot' directory. 
