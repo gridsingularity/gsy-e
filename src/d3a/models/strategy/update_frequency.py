@@ -67,7 +67,12 @@ class UpdateFrequencyMixin:
                     (self.initial_rate[slot] - self.final_rate[slot]) / \
                     self.number_of_available_updates
             else:
-                energy_rate_change_per_update[slot] = self.energy_rate_change_per_update[slot]
+                if self.rate_limit_object is min:
+                    energy_rate_change_per_update[slot] = \
+                        -1 * self.energy_rate_change_per_update[slot]
+                elif self.rate_limit_object is max:
+                    energy_rate_change_per_update[slot] = \
+                        self.energy_rate_change_per_update[slot]
         self.energy_rate_change_per_update = energy_rate_change_per_update
 
     @property

@@ -452,3 +452,26 @@ def test_load_constructor_rejects_incorrect_rate_parameters():
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=10, final_buying_rate=5)
     with pytest.raises(D3ADeviceException):
         load.event_activate()
+
+
+@parameterized.expand([
+    [True, 40, ], [False, 40, ]
+])
+def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, initial_buying_rate):
+    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    load = DefinedLoadStrategy(
+        daily_load_profile=user_profile_path,
+        initial_buying_rate=initial_buying_rate,
+        use_market_maker_rate=use_mmr)
+    load.area = FakeArea()
+    with pytest.raises(D3ADeviceException):
+        load.event_activate()
+
+
+def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false():
+    load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=0, final_buying_rate=30,
+                             fit_to_limit=False, energy_rate_increase_per_update=10,
+                             update_interval=5)
+    load.area = FakeArea()
+    load.event_activate()
+    assert all([rate == -10 for rate in load.bid_update.energy_rate_change_per_update.values()])
