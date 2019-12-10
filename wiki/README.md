@@ -31,7 +31,15 @@ Run `mkdocs serve` from the repository root to spawn a hot reloading development
 
 ## Publishing
 
-The wiki is hosted on github and is built on each published commit to the master branch on the GitHub repository.
+The wiki is hosted on github and is built based on the active `master` branch on the GitHub repository. 
+
+To publish any changes to the wiki, navigate to your local instance of the `wiki` folder in the d3a git repository, and make sure it is up to date with your requested changes. Then run:
+
+```bash
+mkdocs gh-deploy
+```
+
+This will update the site's contents by updating the `gh-pages` branch to align with the active `master` branch. Changes take approximately 1 minute to become active.
 
 ## Styling
 
