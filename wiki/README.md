@@ -1,6 +1,3 @@
-<!-- [![Documentation Status](https://readthedocs.org/projects/polkadot-wiki/badge/?version=latest)](https://polkadot-wiki.readthedocs.io/en/latest/?badge=latest)
-[![CircleCI](https://circleci.com/gh/w3f/polkadot-wiki.svg?style=svg)](https://circleci.com/gh/w3f/polkadot-wiki) -->
-
 # D3A User Wiki
 
 This repository contains the source files for the [D3A](d3a.io).
@@ -31,7 +28,15 @@ Run `mkdocs serve` from the repository root to spawn a hot reloading development
 
 ## Publishing
 
-The wiki is hosted on github and is built on each published commit to the master branch on the GitHub repository.
+The wiki is hosted on github and is built based on the active `master` branch on the GitHub repository. 
+
+To publish any changes to the wiki, navigate to your local instance of the `wiki` folder in the d3a git repository, and make sure it is up to date with your requested changes. Then run:
+
+```bash
+mkdocs gh-deploy
+```
+
+This will update the site's contents by updating the `gh-pages` branch to align with the active `master` branch. Changes take approximately 1 minute to become active.
 
 ## Styling
 
