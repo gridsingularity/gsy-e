@@ -17,19 +17,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from d3a.models.strategy import BaseStrategy
-
+from d3a_interface.constants_limits import ConstSettings
 import json
-from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
+from d3a.models.market.market_redis_connection import TwoSidedMarketRedisEventSubscriber
 
 
-class RedisMarketExternalConnection(MarketRedisEventSubscriber):
+class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
     def __init__(self, area):
         self.area = area
         super().__init__(None)
         self.areas_to_register = []
 
     def shutdown(self):
-        self.pubsub.unsubscribe()
+        self.redis_db.terminate_connection()
 
     @property
     def market(self):
@@ -75,14 +75,29 @@ class RedisMarketExternalConnection(MarketRedisEventSubscriber):
     def _list_offers_response_channel(self):
         return f"{self._list_offers_channel}/response"
 
+    @property
+    def _bid_response_channel(self):
+        return f"{self._bid_channel}/response"
+
+    @property
+    def _delete_bid_response_channel(self):
+        return f"{self._delete_bid_channel}/response"
+
     def sub_to_external_requests(self):
-        self.pubsub.subscribe(**{
-            self._offer_channel: self._offer,
-            self._delete_offer_channel: self._delete_offer,
-            self._accept_offer_channel: self._accept_offer,
-            self._list_offers_channel: self._offer_lists
-        })
-        self.pubsub.run_in_thread(daemon=True)
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            self.redis_db.sub_to_multiple_channels({
+                self._offer_channel: self._offer,
+                self._delete_offer_channel: self._delete_offer,
+                self._accept_offer_channel: self._accept_offer,
+                self._list_offers_channel: self._offer_lists,
+            })
+        else:
+            self.redis_db.sub_to_multiple_channels({
+                self._offer_channel: self._offer,
+                self._delete_offer_channel: self._delete_offer,
+                self._bid_channel: self._bid,
+                self._delete_bid_channel: self._delete_bid
+            })
 
     @classmethod
     def sanitize_parameters(cls, data_dict):
@@ -141,10 +156,37 @@ class RedisMarketExternalConnection(MarketRedisEventSubscriber):
         except Exception:
             self.publish(
                 self._offer_response_channel,
-                {"error": "Incorrect offer request. Available parameters: (offer)."}
+                {"error": "Incorrect delete offer request. Available parameters: (offer)."}
             )
         else:
             return self._delete_offer_impl(arguments)
+
+    def _bid(self, payload):
+        try:
+            arguments = self._parse_payload(payload)
+            assert set(arguments.keys()) == {'price', 'energy'}
+            arguments['buyer'] = self.area.name
+            arguments['seller'] = self.area.parent.name
+        except Exception:
+            self.publish(
+                self._bid_response_channel,
+                {"error": "Incorrect offer request. Available parameters: (price, energy)."}
+            )
+        else:
+            return self._bid_impl(arguments)
+
+    def _delete_bid(self, payload):
+        try:
+            arguments = self._parse_payload(payload)
+            assert set(arguments.keys()) == {'bid'}
+            arguments['bid_or_id'] = arguments.pop('bid')
+        except Exception:
+            self.publish(
+                self._delete_bid_response_channel,
+                {"error": "Incorrect offer request. Available parameters: (bid)."}
+            )
+        else:
+            return self._delete_bid_impl(arguments)
 
 
 class ExternalStrategy(BaseStrategy):

@@ -265,7 +265,7 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
                          {"status": "ready", "trade": trade.to_JSON_string(),
                           "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.error(f"Error when handling accept_bid on market {self.market_object.name}: "
+            logging.error(f"Error when handling accept_bid on market {self.market.name}: "
                           f"Exception: {str(e)}, Accept Bid Arguments: {arguments}")
             self.publish(self._accept_bid_response_channel,
                          {"status": "error",  "exception": str(type(e)),
@@ -285,7 +285,7 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
                          {"status": "ready", "bid": bid.to_JSON_string(),
                           "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.error(f"Error when handling bid create on market {self.market_object.name}: "
+            logging.error(f"Error when handling bid create on market {self.market.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
             self.publish(self._bid_response_channel,
                          {"status": "error",  "exception": str(type(e)),
@@ -304,7 +304,7 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
             self.publish(self._delete_bid_response_channel,
                          {"status": "ready", "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.debug(f"Error when handling bid delete on market {self.market_object.name}: "
+            logging.debug(f"Error when handling bid delete on market {self.market.name}: "
                           f"Exception: {str(e)}, Delete Bid Arguments: {arguments}")
             self.publish(self._delete_bid_response_channel,
                          {"status": "ready", "exception": str(type(e)),
