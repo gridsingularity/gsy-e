@@ -86,7 +86,7 @@ extra_javascript:
 # Repository that houses the source code for this site. This
 # is needed to render the nice GH link on the top right.
 repo_name: 'D3A on github'
-repo_url: 'https://github.com/gridsingularity/d3a'
+repo_url: 'https://github.com/gridsingularity/d3a/wiki'
 
 # Social links
 extra:
