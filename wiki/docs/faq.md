@@ -1,4 +1,4 @@
-This list of frequently asked questions is updated gradually, by adding the questions that come up on our [gitter community chat](https://gitter.im/D3A-community/welcome)
+This list of frequently asked questions (faq) is updated gradually, by adding the questions that come up on our [gitter community chat](https://gitter.im/D3A-community/welcome)
 
 # D3A Functionality 
 
