@@ -452,6 +452,12 @@ def test_load_constructor_rejects_incorrect_rate_parameters():
     load = LoadHoursStrategy(avg_power_W=100, initial_buying_rate=10, final_buying_rate=5)
     with pytest.raises(D3ADeviceException):
         load.event_activate()
+    with pytest.raises(D3ADeviceException):
+        LoadHoursStrategy(avg_power_W=100, fit_to_limit=True,
+                          energy_rate_increase_per_update=1)
+    with pytest.raises(D3ADeviceException):
+        LoadHoursStrategy(avg_power_W=100, fit_to_limit=False,
+                          energy_rate_increase_per_update=-1)
 
 
 @parameterized.expand([
@@ -466,6 +472,12 @@ def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, ini
     load.area = FakeArea()
     with pytest.raises(D3ADeviceException):
         load.event_activate()
+    with pytest.raises(D3ADeviceException):
+        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=True,
+                            energy_rate_increase_per_update=1)
+    with pytest.raises(D3ADeviceException):
+        DefinedLoadStrategy(daily_load_profile=user_profile_path, fit_to_limit=False,
+                            energy_rate_increase_per_update=-1)
 
 
 def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false():

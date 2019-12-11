@@ -45,8 +45,7 @@ class PVStrategy(BaseStrategy):
                  float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
                  fit_to_limit: bool = True,
                  update_interval=None,
-                 energy_rate_decrease_per_update:
-                 float=ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+                 energy_rate_decrease_per_update=None,
                  max_panel_power_W: float = None,
                  use_market_maker_rate: bool = False):
         """
@@ -64,7 +63,9 @@ class PVStrategy(BaseStrategy):
 
         self.use_market_maker_rate = use_market_maker_rate
 
-        validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W)
+        validate_pv_device(panel_count=panel_count, max_panel_power_W=max_panel_power_W,
+                           fit_to_limit=fit_to_limit,
+                           energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)

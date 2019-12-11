@@ -40,7 +40,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                   'balancing_energy_ratio', 'use_market_maker_rate')
 
     def __init__(self, daily_load_profile,
-                 fit_to_limit=True, energy_rate_increase_per_update=1,
+                 fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,

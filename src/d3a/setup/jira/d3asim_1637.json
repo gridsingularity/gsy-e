@@ -25,16 +25,15 @@
               "initial_buying_rate": 0.0,
               "use_market_maker_rate": true,
               "daily_load_profile_uuid": null,
-              "energy_rate_increase_per_update": null,
               "display_type": "Load"
             },
             {
               "name": "PV",
-              "type": "PredefinedPV",
+              "type": "PV",
               "uuid": "99ee0367-bb3c-4dcd-a27f-e438f0e9dcf0",
               "libraryUUID": null,
               "panel_count": 3,
-              "fit_to_limit": false,
+              "fit_to_limit": true,
               "cloud_coverage": null,
               "update_interval": 1,
               "number_of_clones": 1,
@@ -43,7 +42,6 @@
               "power_profile_uuid": null,
               "initial_selling_rate": 30.0,
               "use_market_maker_rate": true,
-              "energy_rate_decrease_per_update": 5.0,
               "display_type": "PV"
             }
           ],
@@ -69,16 +67,15 @@
               "initial_buying_rate": 0.0,
               "use_market_maker_rate": true,
               "daily_load_profile_uuid": null,
-              "energy_rate_increase_per_update": null,
               "display_type": "Load"
             },
             {
               "name": "PV 2",
-              "type": "PredefinedPV",
+              "type": "PV",
               "uuid": "221d704f-f2ae-4b75-9cb8-3553f8e3969b",
               "libraryUUID": null,
               "panel_count": 3,
-              "fit_to_limit": false,
+              "fit_to_limit": true,
               "cloud_coverage": null,
               "update_interval": 1,
               "number_of_clones": 1,
@@ -87,7 +84,6 @@
               "power_profile_uuid": null,
               "initial_selling_rate": 30.0,
               "use_market_maker_rate": true,
-              "energy_rate_decrease_per_update": 5.0,
               "display_type": "PV"
             }
           ],
@@ -113,16 +109,15 @@
               "initial_buying_rate": 0.0,
               "use_market_maker_rate": true,
               "daily_load_profile_uuid": null,
-              "energy_rate_increase_per_update": null,
               "display_type": "Load"
             },
             {
               "name": "PV 3",
-              "type": "PredefinedPV",
+              "type": "PV",
               "uuid": "f04cf867-eeac-48a0-89d2-23695340e268",
               "libraryUUID": null,
               "panel_count": 3,
-              "fit_to_limit": false,
+              "fit_to_limit": true,
               "cloud_coverage": null,
               "update_interval": 1,
               "number_of_clones": 1,
@@ -131,7 +126,6 @@
               "power_profile_uuid": null,
               "initial_selling_rate": 30.0,
               "use_market_maker_rate": true,
-              "energy_rate_decrease_per_update": 5.0,
               "display_type": "PV"
             }
           ],
@@ -157,16 +151,15 @@
               "initial_buying_rate": 0.0,
               "use_market_maker_rate": true,
               "daily_load_profile_uuid": null,
-              "energy_rate_increase_per_update": null,
               "display_type": "Load"
             },
             {
               "name": "PV 4",
-              "type": "PredefinedPV",
+              "type": "PV",
               "uuid": "3f7e8bc1-a7fc-4d7d-b074-4ac2304b6e39",
               "libraryUUID": null,
               "panel_count": 3,
-              "fit_to_limit": false,
+              "fit_to_limit": true,
               "cloud_coverage": null,
               "update_interval": 1,
               "number_of_clones": 1,
@@ -175,7 +168,6 @@
               "power_profile_uuid": null,
               "initial_selling_rate": 30.0,
               "use_market_maker_rate": true,
-              "energy_rate_decrease_per_update": 5.0,
               "display_type": "PV"
             }
           ],
@@ -201,16 +193,15 @@
               "initial_buying_rate": 0.0,
               "use_market_maker_rate": true,
               "daily_load_profile_uuid": null,
-              "energy_rate_increase_per_update": null,
               "display_type": "Load"
             },
             {
               "name": "PV 5",
-              "type": "PredefinedPV",
+              "type": "PV",
               "uuid": "8d1a045d-aa5f-41d1-aeb0-c35c4d8c824e",
               "libraryUUID": null,
               "panel_count": 4,
-              "fit_to_limit": false,
+              "fit_to_limit": true,
               "cloud_coverage": null,
               "update_interval": 1,
               "number_of_clones": 1,
@@ -219,7 +210,6 @@
               "power_profile_uuid": null,
               "initial_selling_rate": 30.0,
               "use_market_maker_rate": true,
-              "energy_rate_decrease_per_update": 5.0,
               "display_type": "PV"
             }
           ],
@@ -232,7 +222,7 @@
           "uuid": "7612c537-9a40-45dc-b150-854963682e6b",
           "initial_soc": 10.0,
           "libraryUUID": null,
-          "fit_to_limit": false,
+          "fit_to_limit": true,
           "min_allowed_soc": 10.0,
           "update_interval": 1,
           "number_of_clones": 1,
@@ -243,8 +233,6 @@
           "battery_capacity_kWh": 10.0,
           "initial_selling_rate": 30.0,
           "max_abs_battery_power_kW": 5.0,
-          "energy_rate_decrease_per_update": 1.0,
-          "energy_rate_increase_per_update": 1.0,
           "display_type": "Storage"
         }
       ],
@@ -278,7 +266,6 @@
       "initial_buying_rate": 0.0,
       "use_market_maker_rate": true,
       "daily_load_profile_uuid": null,
-      "energy_rate_increase_per_update": null,
       "display_type": "Load"
     }
   ],

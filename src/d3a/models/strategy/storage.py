@@ -57,8 +57,8 @@ class StorageStrategy(BidEnabledStrategy):
                  StorageSettings.BUYING_RATE_RANGE.initial,
                  final_buying_rate: Union[float, dict] =
                  StorageSettings.BUYING_RATE_RANGE.final,
-                 fit_to_limit=True, energy_rate_increase_per_update=1,
-                 energy_rate_decrease_per_update=1,
+                 fit_to_limit=True, energy_rate_increase_per_update=None,
+                 energy_rate_decrease_per_update=None,
                  update_interval=None,
                  initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL,
                  balancing_energy_ratio: tuple = (BalancingSettings.OFFER_DEMAND_RATIO,
@@ -74,7 +74,10 @@ class StorageStrategy(BidEnabledStrategy):
 
         validate_storage_device(initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
                                 battery_capacity_kWh=battery_capacity_kWh,
-                                max_abs_battery_power_kW=max_abs_battery_power_kW)
+                                max_abs_battery_power_kW=max_abs_battery_power_kW,
+                                fit_to_limit=fit_to_limit,
+                                energy_rate_increase_per_update=energy_rate_increase_per_update,
+                                energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)

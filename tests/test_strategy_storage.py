@@ -577,6 +577,14 @@ def test_storage_constructor_rejects_incorrect_parameters():
         StorageStrategy(initial_buying_rate=10, final_buying_rate=1)
     with pytest.raises(D3ADeviceException):
         StorageStrategy(initial_selling_rate=-1)
+    with pytest.raises(D3ADeviceException):
+        StorageStrategy(fit_to_limit=True, energy_rate_decrease_per_update=1)
+    with pytest.raises(D3ADeviceException):
+        StorageStrategy(fit_to_limit=False, energy_rate_decrease_per_update=-1)
+    with pytest.raises(D3ADeviceException):
+        StorageStrategy(fit_to_limit=True, energy_rate_increase_per_update=1)
+    with pytest.raises(D3ADeviceException):
+        StorageStrategy(fit_to_limit=False, energy_rate_increase_per_update=-1)
 
 
 def test_free_storage_calculation_takes_into_account_storage_capacity(storage_strategy_test1):
