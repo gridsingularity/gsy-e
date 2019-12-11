@@ -575,10 +575,8 @@ def test_storage_constructor_rejects_incorrect_parameters():
         StorageStrategy(final_buying_rate=-1)
     with pytest.raises(D3ADeviceException):
         StorageStrategy(initial_buying_rate=10, final_buying_rate=1)
-
-
-with pytest.raises(D3ADeviceException):
-    StorageStrategy(initial_selling_rate=-1)
+    with pytest.raises(D3ADeviceException):
+        StorageStrategy(initial_selling_rate=-1)
 
 
 def test_free_storage_calculation_takes_into_account_storage_capacity(storage_strategy_test1):
@@ -838,3 +836,14 @@ def test_energy_origin(storage_strategy_test15, market_test15):
     assert storage_strategy_test15.state.get_used_storage_share == [EnergyOrigin(
         ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1),
         EnergyOrigin(ESSEnergyOrigin.EXTERNAL, 1)]
+
+
+def test_storage_strategy_increases_rate_when_fit_to_limit_is_false():
+    storage = StorageStrategy(
+        fit_to_limit=False,
+        initial_selling_rate=30, final_selling_rate=25, energy_rate_decrease_per_update=1,
+        initial_buying_rate=10, final_buying_rate=20, energy_rate_increase_per_update=1)
+    storage.area = FakeArea(1)
+    storage.event_activate()
+    assert all([rate == -1 for rate in storage.bid_update.energy_rate_change_per_update.values()])
+    assert all([rate == 1 for rate in storage.offer_update.energy_rate_change_per_update.values()])
