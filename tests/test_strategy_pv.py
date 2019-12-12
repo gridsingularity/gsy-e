@@ -342,6 +342,10 @@ def test_pv_constructor_rejects_incorrect_parameters():
     with pytest.raises(D3ADeviceException):
         pv = PVStrategy(initial_selling_rate=5, final_selling_rate=15)
         pv.event_activate()
+    with pytest.raises(D3ADeviceException):
+        PVStrategy(fit_to_limit=True, energy_rate_decrease_per_update=1)
+    with pytest.raises(D3ADeviceException):
+        PVStrategy(fit_to_limit=False, energy_rate_decrease_per_update=-1)
 
 
 """TEST7"""

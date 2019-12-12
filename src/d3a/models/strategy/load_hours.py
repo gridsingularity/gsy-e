@@ -41,7 +41,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                   'final_buying_rate', 'balancing_energy_ratio', 'use_market_maker_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
-                 fit_to_limit=True, energy_rate_increase_per_update=1,
+                 fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
@@ -83,7 +83,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                  energy_rate_change_per_update=energy_rate_increase_per_update,
                                  update_interval=update_interval, rate_limit_object=min)
         validate_load_device(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
-                             hrs_of_day=hrs_of_day)
+                             hrs_of_day=hrs_of_day, fit_to_limit=fit_to_limit,
+                             energy_rate_increase_per_update=energy_rate_increase_per_update)
 
         self.state = LoadState()
         self.avg_power_W = avg_power_W
@@ -97,6 +98,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
+        self.fit_to_limit = fit_to_limit
 
     @property
     def active_markets(self):
@@ -137,11 +139,14 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _validate_rates(self):
         for time_slot in generate_market_slot_list():
-            rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
+            if self.fit_to_limit is False:
+                rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
+            else:
+                rate_change = None
             validate_load_device(
                 initial_buying_rate=self.bid_update.initial_rate[time_slot],
-                final_buying_rate=self.bid_update.final_rate[time_slot],
-                energy_rate_increase_per_update=rate_change)
+                energy_rate_increase_per_update=rate_change,
+                final_buying_rate=self.bid_update.final_rate[time_slot])
 
     def event_activate(self):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
