@@ -42,6 +42,7 @@ class StorageStrategy(BidEnabledStrategy):
     parameters = ('initial_soc', 'min_allowed_soc', 'battery_capacity_kWh',
                   'max_abs_battery_power_kW', 'cap_price_strategy', 'initial_selling_rate',
                   'final_selling_rate', 'initial_buying_rate', 'final_buying_rate', 'fit_to_limit',
+                  'energy_rate_increase_per_update', 'energy_rate_decrease_per_update',
                   'update_interval', 'initial_energy_origin', 'balancing_energy_ratio')
 
     def __init__(self, initial_soc: float = StorageSettings.MIN_ALLOWED_SOC,
