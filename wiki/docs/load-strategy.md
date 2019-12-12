@@ -21,7 +21,7 @@ Corresponding code: src/`3a/models/strategy/load_hours.py`
 How to add load device to setup-file:
 
 ```python
-Area('Load', strategy=LoadHoursStrategy(avg_power_W=200,
+Area('Load', strategy=LoadHoursStrategy(avg_power_W=250,
                                         hrs_per_day=6,
                                         hrs_of_day=list(range(12, 18)),
                                         initial_buying_rate=0,
