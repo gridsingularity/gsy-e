@@ -12,9 +12,8 @@ Related settings:
 
 The following plot shows the energy rate in the frame of on spot market slot (`slot_length = 15mins`) for different combinations of the above mentioned parameters. If `fit_to_limit` is set to `True`, `energy_rate_decrease_per_update` is ignored and a rate decrease per time is calculated that starts at `initial_selling_rate` and ends at `final_selling_rate` while updating the rate every `update_interval` minutes.
 
-![img](img\how-strategies-adjust-prices-1.png)
+![img](img/how-strategies-adjust-prices-1.png)
 
- 
 
 ## Bids
 
@@ -28,4 +27,4 @@ Related settings:
 
 The following plot shows the energy rate in the frame of on spot market slot (`slot_length = 15mins`) for different combinations of the above mentioned parameters. If `fit_to_limit` is set to `True`, `energy_rate_increase_per_update` is ignored and a rate increase per time is calculated that starts at `initial_buying_rate` and ends at `final_buying_rate` while updating the rate every `update_interval` minutes.
 
-![img](img\how-strategies-adjust-prices-2.png)
+![img](img/how-strategies-adjust-prices-2.png)

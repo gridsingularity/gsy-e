@@ -5,7 +5,7 @@ This is achieved by creating two separate IAA Engines for each direction.
 
 **Sample grid setup and the role of the IAA in the hierarchy if nodes, leafs and markets (this scheme only applies for one time slot)**:
 
-![img](img\inter-area-agent-1.png)
+![img](img/inter-area-agent-1.png)
 
 The Inter-Area Agent is responsible for modeling the inter-area operations for an area. The main functionalities of an inter-area agent can be summarized to these points:
 

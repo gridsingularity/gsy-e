@@ -14,4 +14,4 @@ For further general information about this strategy, follow the backend [Market 
 
 The configuration interface is shown below: 
 
-![img](img\market-maker-1.png)
+![img](img/market-maker-1.png)

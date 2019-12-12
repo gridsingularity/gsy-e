@@ -25,6 +25,6 @@ Then, self-sufficiency of the house is `self_sufficiency(house1) = house1_self_c
 
 From the reference point of **GRID** where all others areas are its children, self_sufficiency would always be one unless there is an unmatched load from any of the load devices.
 
-![img](img\kpis-1.png)
+![img](img/kpis-1.png)
 
  

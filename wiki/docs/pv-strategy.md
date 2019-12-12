@@ -19,7 +19,7 @@ The PV profile can be configured as a saved profile here (via choosing the *PVPr
 
 - `cloud_coverage`: (0: sunny; 1: partially cloudy; 2: cloudy). Using this parameter, the simulation allows the user to choose between three solar curves that are stored in the simulation for convenience. No default value for this parameter.
 
-![img](img\pv-strategy-1.png)
+![img](img/pv-strategy-1.png)
 
 Corresponding code: `src/d3a/models/strategy/pv.py` or for the predefined PV:`src/d3a/models/strategy/predefined_pv.py`
 
@@ -38,4 +38,4 @@ In order to understand how the strategy is actually decreasing its `offered_rate
 
 Lets assume the user has configured its *PVStrategy* with these parameters `(initial_selling_rate=30, final_selling_rate=0, fit_to_limit=True, update_interval=5mins)` and `slot_length=15min` At the start of market, PV would place its initial offer at the rate of `initial_selling_rate`. If `fit_to_limit` is set to `True`, it will reduce its `offer_rate` linearly such that its `final_offer` before the end of `market_slot` should be equal to `final_selling_rate`. Number of available updates in such a case is `(slot_length / update_interval) -1) → (15/5 -1)=2`. Therefore, it is possible for a user to update its offer two times inside the same `market_slot`. The first update would happen at 5mins. The calculated `energy_rate_decrease_per_update → (30 - 0) / 2 → 15`. So, the PV will reduce it `selling_rate` at 5th min from 30 to 15 cts/kWh and at 10th min from 15 to 0 cts/kWh.
 
-![img](img\pv-strategy-2.png)
+![img](img/pv-strategy-2.png)

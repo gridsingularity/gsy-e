@@ -34,6 +34,6 @@ For further general information about this strategy, follow the backend [Energy 
 
 The configuration interface is shown below:
 
-![img](img\storage-1.png)
+![img](img/storage-1.png)
 
-![img](img\storage-2.png)
+![img](img/storage-2.png)

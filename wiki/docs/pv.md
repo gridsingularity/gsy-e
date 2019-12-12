@@ -19,4 +19,4 @@ For further general information about this strategy, follow the backend [PV Stra
 
 The configuration interface is shown below:
 
-![img](img\pv-1.png)
+![img](img/pv-1.png)

@@ -47,4 +47,4 @@ All areas at the lowest level (with their own meter) are disconnected. Areas tha
 
 See picture; in case of `--compare-alt-price` is flagged; the D3A grid is isolated according to the red dotted lines; and IAA are connected to the DSO/Utility grid.
 
-![img](img\alternative-pricing-schemes-1.png)
+![img](img/alternative-pricing-schemes-1.png)
