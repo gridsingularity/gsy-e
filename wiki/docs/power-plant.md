@@ -10,5 +10,5 @@ For further general information about this strategy, follow the backend [Finite 
 
 The configuration interface is shown below:
 
-![img](img\power-plant-1.png) 
+![img](img/power-plant-1.png) 
 

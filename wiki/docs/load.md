@@ -19,4 +19,4 @@ For further general information about this strategy follow the backend [Load Str
 
 The configuration interface is shown below:
 
-![img](img\load-1.png)
+![img](img/load-1.png)

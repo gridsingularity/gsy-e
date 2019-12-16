@@ -1,6 +1,6 @@
 **Navigating your configuration grid**
 
-![img](img\results-1.png)
+![img](img/results-1.png)
 
 The D3A allows energy devices to trade inside energy markets. During trading, the user can view what is happening at the energy device level and at the market level. 
 
@@ -20,7 +20,7 @@ When selecting a market, the results page will show you various relevant plots a
 
 **Energy Availability**
 
-![img](img\results-2.png)
+![img](img/results-2.png)
 
 This plot shows whether or not each energy device inside the selected market had access to the energy it needed. On the x-axis, the time is given. If the participating agent was able to get the energy it wants, at a certain time, the block at that time will appear green. If not, it will appear purple.
 
@@ -28,7 +28,7 @@ The granularity of the plot is 1 hour, so if there has been a trade interval (po
 
 **Cumulative trading**
 
-![img](img\results-3.png)
+![img](img/results-3.png)
 
 This plot shows the total trade volumes that have been traded between market participants in the selected market over the simulation's duration. Market participants are the agents (representing a device or an area) immediately inside the selected market.
 
@@ -38,7 +38,7 @@ The external trades represent energy produced in this market, but sold to an out
 
 **Energy bills**
 
-![img](img\results-4.png)
+![img](img/results-4.png)
 
 The energy bills provide information on the cumulative trade volumes of all market participants and the costs associated with these trades. For each agent, including the external trades, the energy bought and sold during the simulation is listed, along with a total net consumption.
 
@@ -50,7 +50,7 @@ In this example, we have the *Community* market selected. In the *Community* mar
 
 **Energy profile**
 
-![img](img\results-5.png)
+![img](img/results-5.png)
 
 The energy profile shows both the demand-side as supply-side of the trades made inside the selected market for every market interval of the simulation. The negative side of the y-axis represents the energy sold, and the positive y-axis shows the energy bought. The different colors represent the different agents. 
 
@@ -60,7 +60,7 @@ As all buyers and sellers of each trade are accounted for in a select market, th
 
 **Energy prices**
 
-![img](img\results-6.png)
+![img](img/results-6.png)
 
 In this plot, energy pricing is shown. In case of multiple clearing moments within a market interval (depending on market design and grid configuration), there could be different prices for different trades in the market interval. In this case, an average of the trade price is shown.  
 
@@ -72,4 +72,4 @@ If there was no trade happening during a certain market interval, the price is s
 
 The user have the possibility to download the results of their simulation:
 
-![img](img\results-7.png)
+![img](img/results-7.png)

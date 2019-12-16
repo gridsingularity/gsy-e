@@ -8,7 +8,7 @@ The main goal of an electricity market is always to balance the grid in terms of
 2. Spot market: typically 15 minutes, agents within the grid are trading through a one-sided pay-as-offer, double-sided pay-as-bid or double-sided pay-as-clear auction.
 3. Grid balancing market: imbalances that occur between agreements in the spot market due to changes in consumption and production are absorbed by balance responsible parties that are reimbursed for their service.
 
-![img](img\markets-1.png)
+![img](img/markets-1.png)
 
  
 
