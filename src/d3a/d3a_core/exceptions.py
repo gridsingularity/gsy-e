@@ -63,3 +63,7 @@ class InvalidBalancingTradeException(MarketException):
 
 class DeviceNotInRegistryError(MarketException):
     pass
+
+
+class D3ARedisException(D3AException):
+    pass

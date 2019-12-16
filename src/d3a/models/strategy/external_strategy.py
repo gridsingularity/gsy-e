@@ -19,14 +19,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.models.strategy import BaseStrategy
 
 import json
-from d3a.models.market import MarketRedisApi
+from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
 
 
-class RedisExternalConnection(MarketRedisApi):
+class RedisMarketExternalConnection(MarketRedisEventSubscriber):
     def __init__(self, area):
         self.area = area
         super().__init__(None)
         self.areas_to_register = []
+
+    def shutdown(self):
+        self.pubsub.unsubscribe()
 
     @property
     def market(self):
@@ -83,7 +86,7 @@ class RedisExternalConnection(MarketRedisApi):
 
     @classmethod
     def sanitize_parameters(cls, data_dict):
-        return
+        return data_dict
 
     @staticmethod
     def _serialize_offer_list(offer_list):
@@ -106,8 +109,8 @@ class RedisExternalConnection(MarketRedisApi):
     def _accept_offer(self, payload):
         try:
             arguments = self._parse_payload(payload)
-            assert set(arguments.keys()) == {'offer', 'energy'}
-            arguments['offer_or_id'] = arguments['offer']
+            assert set(arguments.keys()) in [{'offer'}, {'offer', 'energy'}]
+            arguments['offer_or_id'] = arguments.pop('offer')
             arguments['buyer'] = self.area.name
         except Exception:
             self.publish(
@@ -121,8 +124,8 @@ class RedisExternalConnection(MarketRedisApi):
         try:
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'price', 'energy'}
-            arguments['buyer'] = self.area.name
-        except Exception:
+            arguments['seller'] = self.area.name
+        except Exception as e:
             self.publish(
                 self._offer_response_channel,
                 {"error": "Incorrect offer request. Available parameters: (price, energy)."}
@@ -134,7 +137,7 @@ class RedisExternalConnection(MarketRedisApi):
         try:
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'offer'}
-            arguments['offer_or_id'] = arguments['offer']
+            arguments['offer_or_id'] = arguments.pop('offer')
         except Exception:
             self.publish(
                 self._offer_response_channel,
@@ -147,4 +150,7 @@ class RedisExternalConnection(MarketRedisApi):
 class ExternalStrategy(BaseStrategy):
     def __init__(self, area):
         super().__init__()
-        self.redis = RedisExternalConnection(area)
+        self.redis = RedisMarketExternalConnection(area)
+
+    def shutdown(self):
+        self.redis.shutdown()

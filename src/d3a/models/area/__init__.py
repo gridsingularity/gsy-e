@@ -36,7 +36,7 @@ from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
-from d3a.models.area.redis_external_connection import RedisExternalConnection
+from d3a.models.area.redis_external_connection import RedisAreaExternalConnection
 
 log = getLogger(__name__)
 
@@ -49,7 +49,8 @@ DEFAULT_CONFIG = SimulationConfig(
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
     iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE,
     iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
-    start_date=today(tz=TIME_ZONE)
+    start_date=today(tz=TIME_ZONE),
+    max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
 )
 
 
@@ -95,7 +96,7 @@ class Area:
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
-        self.redis_ext_conn = RedisExternalConnection(self) \
+        self.redis_ext_conn = RedisAreaExternalConnection(self) \
             if external_connection_available is True else None
 
     def set_events(self, event_list):
@@ -154,7 +155,7 @@ class Area:
         self.events.update_events(self.now)
 
         if self.redis_ext_conn:
-            self.redis_ext_conn.register_new_areas()
+            self.redis_ext_conn.market_cycle_event()
 
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
@@ -192,8 +193,11 @@ class Area:
     def tick(self, is_root_area=False):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                 ConstSettings.IAASettings.MARKET_TYPE == 3:
-            for market in self._markets.markets.values():
-                market.match_offers_bids()
+            if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
+                self.dispatcher.publish_market_clearing()
+            else:
+                for market in self.all_markets:
+                    market.match_offers_bids()
         self.events.update_events(self.now)
         if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
             self._cycle_markets()

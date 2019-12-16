@@ -1,0 +1,12 @@
+*~
+#*
+#*#
+.#*
+
+# In case we build the site locally
+site
+
+# Node modules
+node_modules
+
+report

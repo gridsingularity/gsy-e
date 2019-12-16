@@ -23,6 +23,7 @@ from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
+from d3a_interface.constants_limits import GlobalConfig
 
 """
 Create a load that uses a profile as input for its power values
@@ -39,7 +40,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                   'balancing_energy_ratio', 'use_market_maker_rate')
 
     def __init__(self, daily_load_profile,
-                 fit_to_limit=True, energy_rate_increase_per_update=1,
+                 fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
@@ -85,6 +86,10 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for each slot.
         :return: None
         """
+        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
+        if self.use_market_maker_rate:
+            self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate)
+        self._validate_rates()
         self.bid_update.update_on_activate()
         self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
