@@ -111,3 +111,4 @@ markdown_extensions:
     - toc:
         permalink: true
     - mdtooltips
+    - attr_list

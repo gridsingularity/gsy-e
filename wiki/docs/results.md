@@ -1,6 +1,6 @@
 **Navigating your configuration grid**
 
-![img](img/results-1.png)
+![img](img/results-1.png){:style="height:300px;width:200px"}
 
 The D3A allows energy devices to trade inside energy markets. During trading, the user can view what is happening at the energy device level and at the market level. 
 
