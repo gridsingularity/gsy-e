@@ -67,7 +67,9 @@ class IAAEngine:
             return self.markets.target.offer(**kwargs)
 
     def _forward_offer(self, offer, offer_id):
-        if offer.price == 0:
+        # TODO: This is an ugly solution. After the december release this check needs to
+        #  implemented after grid fee being incorporated while forwarding in target market
+        if offer.price < 0.0:
             self.owner.log.debug("Offer is not forwarded because price=0")
             return
 
