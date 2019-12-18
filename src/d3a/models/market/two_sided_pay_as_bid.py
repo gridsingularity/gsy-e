@@ -222,17 +222,19 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return bid_trade, trade
 
     def match_offers_bids(self):
-        while len(self._perform_pay_as_bid_matching()) > 0:
-            for bid, offer in self._perform_pay_as_bid_matching():
-                selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-                original_bid_rate = bid.original_bid_price / bid.energy
-                matched_rate = bid.price / bid.energy
+        # TODO: Please reintegrate when merging this PR
+        #  https://github.com/gridsingularity/d3a/pull/584
+        # while len(self._perform_pay_as_bid_matching()) > 0:
+        for bid, offer in self._perform_pay_as_bid_matching():
+            selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+            original_bid_rate = bid.original_bid_price / bid.energy
+            matched_rate = bid.price / bid.energy
 
-                trade_bid_info = TradeBidInfo(
-                    original_bid_rate=original_bid_rate,
-                    propagated_bid_rate=bid.price/bid.energy,
-                    original_offer_rate=offer.original_offer_price/offer.energy,
-                    propagated_offer_rate=offer.price/offer.energy,
-                    trade_rate=original_bid_rate)
-                self.accept_bid_offer_pair(bid, offer, matched_rate,
-                                           trade_bid_info, selected_energy)
+            trade_bid_info = TradeBidInfo(
+                original_bid_rate=original_bid_rate,
+                propagated_bid_rate=bid.price/bid.energy,
+                original_offer_rate=offer.original_offer_price/offer.energy,
+                propagated_offer_rate=offer.price/offer.energy,
+                trade_rate=original_bid_rate)
+            self.accept_bid_offer_pair(bid, offer, matched_rate,
+                                       trade_bid_info, selected_energy)
