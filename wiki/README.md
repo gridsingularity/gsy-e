@@ -54,6 +54,16 @@ As a contributor, you will need to run `npm i` in the local copy of your reposit
 
 If you add a page please ensure that you give it the correct placement in the navigation by manually inputting it in the `mkdocs.yml` under the `nav` field. It is done in this way in order to have more control in how pages are displayed on the UI and give better organization to topics.
 
-### Spellchecking
+### Images
 
-We set [`husky`](https://github.com/typicode/husky) hooks up to catch spelling errors. If you are being prevented from committing, just run `npm run spellcheck:interactive` to use the interactive debugger and fix your spelling.
+Images must be saved in the `docs/img` folder of the wiki. Image calls in the markdown files can be done as so, where `image-name.png` is the name of the file:
+
+```bash
+![img](img/image-name.png)
+```
+
+To change the size of an image, use the following size modifier:
+
+```bash
+![img](img/image-name.png){:style="height:300px;width:200px"}
+```

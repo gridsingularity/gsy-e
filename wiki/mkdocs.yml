@@ -1,6 +1,7 @@
 site_name: 'D3A'
 site_description: 'Documentation for the D3A by Grid Singularity'
 site_author: 'Grid Singularity'
+site_url: 'https://gridsingularity.github.io/d3a/d3a-documentation/'
 
 nav:
 - D3A Documentation:
@@ -111,3 +112,4 @@ markdown_extensions:
     - toc:
         permalink: true
     - mdtooltips
+    - attr_list
