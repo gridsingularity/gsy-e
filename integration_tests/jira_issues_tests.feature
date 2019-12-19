@@ -107,6 +107,7 @@ Feature: Jira Issues Tests
     When we run the simulation with setup file jira.d3asim_1531 and parameters [24, 60, 60, 0, 1]
     Then trades happen when the load seeks energy
 
+  @disabled
   Scenario: D3ASIM-1637: Pay as bid repeats clearing until all available offers and bids are exhausted
     Given we have a scenario named json_file
     And d3a is installed
@@ -114,3 +115,9 @@ Feature: Jira Issues Tests
     And the file jira/d3asim_1637.json is used for the area setup
     When we run the simulation with setup file json_file and parameters [24, 30, 30, 0, 1]
     Then there should be no unmatched loads
+
+  Scenario: D3ASIM-1690: No unmatched load
+     Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
+     And d3a is installed
+     When we run the d3a simulation with two_sided_pay_as_clear.jira_d3asim_1690 [24, 60, 60]
+     Then there should be no unmatched loads

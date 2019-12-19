@@ -1,0 +1,1 @@
+Areas contain sub-areas and devices. Areas are interconnected by inter-area agents in a hierarchical network. Each area has a market on which inter-area agents (representing other markets) and devices can post bids and offers. For further information about the markets, see the backend manual: [Markets](markets.md).

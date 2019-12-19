@@ -45,10 +45,8 @@ class PVPredefinedStrategy(PVStrategy):
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             cloud_coverage: int = None,
             fit_to_limit: bool = True,
-            update_interval=duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
-            energy_rate_decrease_per_update:
-            float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+            update_interval=None,
+            energy_rate_decrease_per_update=None,
             max_panel_power_W: float = None,
             use_market_maker_rate: bool = False):
         """
@@ -62,6 +60,10 @@ class PVPredefinedStrategy(PVStrategy):
         :param energy_rate_decrease_per_update: Slope of PV Offer change per update
         :param max_panel_power_W: Peak power per panel
         """
+
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
@@ -132,8 +134,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             fit_to_limit: bool = True,
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
-            energy_rate_decrease_per_update:
-            float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+            energy_rate_decrease_per_update=None,
             max_panel_power_W: float = None,
             use_market_maker_rate: bool = False):
         """

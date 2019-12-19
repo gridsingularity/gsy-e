@@ -41,9 +41,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                   'final_buying_rate', 'balancing_energy_ratio', 'use_market_maker_rate')
 
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
-                 fit_to_limit=True, energy_rate_increase_per_update=1,
-                 update_interval=duration(
-                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+                 fit_to_limit=True, energy_rate_increase_per_update=None,
+                 update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
                  final_buying_rate: Union[float, dict, str] =
@@ -67,9 +66,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         as per utility's trading rate
         """
 
-        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
-        if use_market_maker_rate:
-            final_buying_rate = GlobalConfig.market_maker_rate
+        if update_interval is None:
+            update_interval = \
+                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+
+        self.use_market_maker_rate = use_market_maker_rate
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
@@ -82,14 +83,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                  energy_rate_change_per_update=energy_rate_increase_per_update,
                                  update_interval=update_interval, rate_limit_object=min)
         validate_load_device(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
-                             hrs_of_day=hrs_of_day)
-
-        for time_slot in generate_market_slot_list():
-            rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
-            validate_load_device(
-                initial_buying_rate=self.bid_update.initial_rate[time_slot],
-                final_buying_rate=self.bid_update.final_rate[time_slot],
-                energy_rate_increase_per_update=rate_change)
+                             hrs_of_day=hrs_of_day, fit_to_limit=fit_to_limit,
+                             energy_rate_increase_per_update=energy_rate_increase_per_update)
 
         self.state = LoadState()
         self.avg_power_W = avg_power_W
@@ -103,6 +98,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
+        self.fit_to_limit = fit_to_limit
 
     @property
     def active_markets(self):
@@ -141,7 +137,22 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.energy_requirement_Wh[slot_time] = self.energy_per_slot_Wh
                 self.state.desired_energy_Wh[slot_time] = self.energy_per_slot_Wh
 
+    def _validate_rates(self):
+        for time_slot in generate_market_slot_list():
+            if self.fit_to_limit is False:
+                rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
+            else:
+                rate_change = None
+            validate_load_device(
+                initial_buying_rate=self.bid_update.initial_rate[time_slot],
+                energy_rate_increase_per_update=rate_change,
+                final_buying_rate=self.bid_update.final_rate[time_slot])
+
     def event_activate(self):
+        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
+        if self.use_market_maker_rate:
+            self.area_reconfigure_event(final_buying_rate=GlobalConfig.market_maker_rate)
+        self._validate_rates()
         self.state.total_energy_demanded_wh = \
             self._initial_hrs_per_day * self.avg_power_W * self.area.config.sim_duration.days
         self.bid_update.update_on_activate()
@@ -165,6 +176,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if final_buying_rate is not None:
             self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                 final_buying_rate)
+        self._validate_rates()
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers
@@ -184,14 +196,14 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 if max_energy < FLOATING_POINT_TOLERANCE:
                     return
                 if acceptable_offer.energy > max_energy:
+                    self.energy_requirement_Wh[market.time_slot] = 0
                     self.accept_offer(market, acceptable_offer, energy=max_energy,
                                       buyer_origin=self.owner.name)
-                    self.energy_requirement_Wh[market.time_slot] = 0
                     self.hrs_per_day[current_day] -= self._operating_hours(max_energy)
                 else:
-                    self.accept_offer(market, acceptable_offer, buyer_origin=self.owner.name)
                     self.energy_requirement_Wh[market.time_slot] -= \
                         acceptable_offer.energy * 1000.0
+                    self.accept_offer(market, acceptable_offer, buyer_origin=self.owner.name)
                     self.hrs_per_day[current_day] -= self._operating_hours(acceptable_offer.energy)
 
         except MarketException:
