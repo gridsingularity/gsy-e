@@ -170,7 +170,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         except Exception:
             self.publish(
                 self._bid_response_channel,
-                {"error": "Incorrect offer request. Available parameters: (price, energy)."}
+                {"error": "Incorrect bid request. Available parameters: (price, energy)."}
             )
         else:
             return self._bid_impl(arguments)
@@ -183,7 +183,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         except Exception:
             self.publish(
                 self._delete_bid_response_channel,
-                {"error": "Incorrect offer request. Available parameters: (bid)."}
+                {"error": "Incorrect delete bid request. Available parameters: (bid)."}
             )
         else:
             return self._delete_bid_impl(arguments)
