@@ -28,12 +28,16 @@
 	color: black;
 }
 
-.md-footer-logo {
-	margin-left: -1.5%;
+div.md-footer-logo.img {
+	border: 0;
 }
 
 div.md-footer-nav {
 	background-color: #EEEEEE;
+}
+
+div.md-footer-meta {
+	background-color: #0c3647;
 }
 
 .md-search__input::placeholder {
@@ -54,27 +58,27 @@ div.md-footer-nav {
 }
 
 .md-icon {
-	color: #e6007a;
+	color: #0c3647;
 }
 
 .md-icon.md-search__icon {
-    color: #e6007a;
+    color: #0c3647;
 }
 
 .md-icon.md-icon--menu.md-header-nav__button {
-    color: #e6007a;
+    color: #0c3647;
 }
 
 .md-search__icon {
-	color: #e6007a;
+	color: #0c3647;
 }
 
 .md-nav__link:hover {
-    color: #e6007a;
+    color: #0c3647;
 }
 
 a:hover {
-	color: #e6007a;
+	color: #0c3647;
 }
 
 .grandpa-img {
