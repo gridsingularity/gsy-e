@@ -275,6 +275,8 @@ class Simulation:
                 sleep(5)
                 break
 
+            self.area._cycle_markets()
+
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 # reset tick_resume after possible resume
                 tick_resume = 0
@@ -290,13 +292,7 @@ class Simulation:
                     (tick_no + 1) / config.ticks_per_slot * 100,
                 )
 
-                if ConstSettings.GeneralSettings.DISPATCH_EVENTS_BOTTOM_TO_TOP:
-                    # trigger market_cycle:
-                    if self.area.current_tick % self.area.config.ticks_per_slot == 0:
-                        self.area._cycle_markets()
-                    self.area.dispatcher.broadcast_tick()
-
-                self.area.tick(is_root_area=True)
+                self.area.tick_and_dispatch()
 
                 realtime_tick_length = time.monotonic() - tick_start
                 if self.slowdown and realtime_tick_length < tick_lengths_s:

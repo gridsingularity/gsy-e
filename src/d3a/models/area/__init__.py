@@ -37,6 +37,7 @@ from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
 from d3a.models.area.redis_external_connection import RedisAreaExternalConnection
+import d3a.constants
 
 log = getLogger(__name__)
 
@@ -190,7 +191,7 @@ class Area:
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
 
-    def tick(self, is_root_area=False):
+    def tick(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                 ConstSettings.IAASettings.MARKET_TYPE == 3:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
@@ -198,15 +199,20 @@ class Area:
             else:
                 for market in self.all_markets:
                     market.match_offers_bids()
+
         self.events.update_events(self.now)
-        if not ConstSettings.GeneralSettings.DISPATCH_EVENTS_BOTTOM_TO_TOP:
-            if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
-                self._cycle_markets()
-            self.dispatcher.broadcast_tick()
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
                 market.update_clock(self.current_tick)
+
+    def tick_and_dispatch(self):
+        if d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP:
+            self.dispatcher.broadcast_tick()
+            self.tick()
+        else:
+            self.tick()
+            self.dispatcher.broadcast_tick()
 
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
