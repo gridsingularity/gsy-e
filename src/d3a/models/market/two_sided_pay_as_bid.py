@@ -73,6 +73,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         if energy <= 0:
             raise InvalidBid()
 
+        if original_bid_price is None:
+            original_bid_price = price
         self._update_new_bid_price_with_fee(price, original_bid_price)
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, original_bid_price, buyer_origin)
