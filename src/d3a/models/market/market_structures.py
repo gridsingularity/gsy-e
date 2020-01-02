@@ -243,6 +243,9 @@ class MarketClearingState:
         return 'time', 'rate [ct./kWh]'
 
 
+BidOfferMatch = namedtuple('BidOfferMatch', ['bid', 'bid_energy', 'offer', 'offer_energy'])
+
+
 def parse_event_and_parameters_from_json_string(payload):
     data = json.loads(payload["data"])
     kwargs = data["kwargs"]

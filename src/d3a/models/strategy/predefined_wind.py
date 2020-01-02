@@ -34,8 +34,7 @@ class WindUserProfileStrategy(PVUserProfileStrategy):
                  fit_to_limit: bool = True,
                  update_interval=duration(
                      minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
-                 energy_rate_decrease_per_update:
-                 float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+                 energy_rate_decrease_per_update=None,
                  max_wind_turbine_power_W: float =
                  ConstSettings.WindSettings.MAX_WIND_TURBINE_OUTPUT_W
                  ):

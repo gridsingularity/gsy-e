@@ -46,6 +46,7 @@ def get_setup(config):
                                  appliance=SwitchableAppliance()),
                             Area('H1 PV', strategy=PVStrategy(
                                 panel_count=1, initial_selling_rate=13,
+                                fit_to_limit=False,
                                 energy_rate_decrease_per_update=1,
                                 update_interval=5),
                                  appliance=PVAppliance()),
@@ -61,6 +62,7 @@ def get_setup(config):
                                  appliance=SwitchableAppliance()),
                             Area('H2 PV', strategy=PVStrategy(
                                 panel_count=1, initial_selling_rate=24,
+                                fit_to_limit=False,
                                 energy_rate_decrease_per_update=1,
                                 update_interval=5),
                                  appliance=PVAppliance()),

@@ -46,8 +46,7 @@ class PVPredefinedStrategy(PVStrategy):
             cloud_coverage: int = None,
             fit_to_limit: bool = True,
             update_interval=None,
-            energy_rate_decrease_per_update:
-            float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+            energy_rate_decrease_per_update=None,
             max_panel_power_W: float = None,
             use_market_maker_rate: bool = False):
         """
@@ -135,8 +134,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             fit_to_limit: bool = True,
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
-            energy_rate_decrease_per_update:
-            float = ConstSettings.GeneralSettings.ENERGY_RATE_DECREASE_PER_UPDATE,
+            energy_rate_decrease_per_update=None,
             max_panel_power_W: float = None,
             use_market_maker_rate: bool = False):
         """
