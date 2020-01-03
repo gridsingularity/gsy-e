@@ -172,7 +172,7 @@ class TestAreaClass(unittest.TestCase):
 
         assert len(self.area.balancing_markets) == 5
         self.area.current_tick = 900
-        self.area.tick(is_root_area=True)
+        self.area._cycle_markets()
         assert len(self.area.past_markets) == 1
         assert len(self.area.past_balancing_markets) == 1
         assert len(self.area.all_markets) == 5
