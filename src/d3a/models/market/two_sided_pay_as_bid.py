@@ -206,13 +206,15 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return offer_bid_pairs
 
     def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
+        already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
                                   energy=selected_energy,
                                   trade_rate=clearing_rate,
-                                  already_tracked=False,
+                                  already_tracked=already_tracked,
                                   trade_bid_info=trade_bid_info,
                                   buyer_origin=bid.buyer_origin)
+
         bid_trade = self.accept_bid(bid=bid,
                                     energy=selected_energy,
                                     seller=offer.seller,
