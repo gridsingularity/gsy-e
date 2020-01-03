@@ -116,11 +116,11 @@ class OneSidedMarket(Market):
             if offer.original_offer_price is not None \
             else offer.price
 
-    def split_offer(self, original_offer, energy, final_price, orig_offer_price):
+    def split_offer(self, original_offer, energy, orig_offer_price):
         accepted_offer_id = original_offer.id if self.bc is None else original_offer.real_id
         accepted_offer = Offer(
             accepted_offer_id,
-            final_price,
+            original_offer.price,
             energy,
             original_offer.seller,
             seller_origin=original_offer.seller_origin
@@ -150,6 +150,22 @@ class OneSidedMarket(Market):
             new_offer=residual_offer
         )
         return accepted_offer, residual_offer
+
+    def determine_offer_price(self, energy_portion, energy, already_tracked, trade_rate,
+                              trade_bid_info, orig_offer_price):
+
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            final_price = self._update_offer_fee_and_calculate_final_price(
+                energy, trade_rate, energy_portion, orig_offer_price
+            ) if already_tracked is False else energy * trade_rate
+        else:
+            revenue, fees, trade_rate_incl_fees = \
+                GridFees.calculate_trade_price_and_fees(
+                    trade_bid_info, self.transfer_fee_ratio
+                )
+            self.market_fee += fees
+            final_price = energy * trade_rate_incl_fees
+        return final_price
 
     @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
@@ -186,38 +202,20 @@ class OneSidedMarket(Market):
             elif energy < offer.energy:
                 assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 
-                energy_portion = energy / offer.energy
-                if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                    final_price = self._update_offer_fee_and_calculate_final_price(
-                        energy, trade_rate, energy_portion, orig_offer_price
-                    ) if already_tracked is False else energy * trade_rate
-                else:
-                    revenue, fees, trade_rate_incl_fees = \
-                        GridFees.calculate_trade_price_and_fees(
-                            trade_bid_info, self.transfer_fee_ratio
-                        )
-                    self.market_fee += fees
-                    final_price = energy * trade_rate_incl_fees
-
-                accepted_offer, residual_offer = \
-                    self.split_offer(offer, energy, final_price, orig_offer_price)
+                accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
                 offer = accepted_offer
+                offer.price = self.determine_offer_price(energy / offer.energy, energy,
+                                                         already_tracked,
+                                                         trade_rate, trade_bid_info,
+                                                         orig_offer_price)
 
             elif energy > offer.energy:
                 raise InvalidTrade("Energy can't be greater than offered energy")
             else:
-                # Requested energy is equal to offer's energy - just proceed normally
-                if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                    offer.price = self._update_offer_fee_and_calculate_final_price(
-                        energy, trade_rate, 1, orig_offer_price
-                    ) if already_tracked is False else energy * trade_rate
-                else:
-                    revenue, fees, trade_price = GridFees.calculate_trade_price_and_fees(
-                        trade_bid_info, self.transfer_fee_ratio
-                    )
-                    self.market_fee += fees
-                    offer.price = energy * trade_price
+                offer.price = self.determine_offer_price(1, energy, already_tracked,
+                                                         trade_rate, trade_bid_info,
+                                                         orig_offer_price)
 
         except Exception:
             # Exception happened - restore offer
