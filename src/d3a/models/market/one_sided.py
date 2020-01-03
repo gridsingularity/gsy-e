@@ -116,6 +116,41 @@ class OneSidedMarket(Market):
             if offer.original_offer_price is not None \
             else offer.price
 
+    def split_offer(self, original_offer, energy, final_price, orig_offer_price):
+        accepted_offer_id = original_offer.id if self.bc is None else original_offer.real_id
+        accepted_offer = Offer(
+            accepted_offer_id,
+            final_price,
+            energy,
+            original_offer.seller,
+            seller_origin=original_offer.seller_origin
+        )
+
+        residual_price = (1 - energy / original_offer.energy) * original_offer.price
+        residual_energy = original_offer.energy - energy
+        original_residual_price = \
+            ((original_offer.energy - energy) / original_offer.energy) * orig_offer_price
+
+        residual_offer = Offer(
+            str(uuid.uuid4()),
+            residual_price,
+            residual_energy,
+            original_offer.seller,
+            original_offer_price=original_residual_price,
+            seller_origin=original_offer.seller_origin
+        )
+        self.offers[residual_offer.id] = residual_offer
+        log.debug(f"[OFFER][CHANGED][{self.time_slot_str}] "
+                  f"{original_offer} -> {residual_offer}")
+
+        self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
+        self._notify_listeners(
+            MarketEvent.OFFER_CHANGED,
+            existing_offer=original_offer,
+            new_offer=residual_offer
+        )
+        return accepted_offer, residual_offer
+
     @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
                      time: DateTime = None,
@@ -133,7 +168,6 @@ class OneSidedMarket(Market):
         if energy is None:
             energy = offer.energy
 
-        # TODO: can this line be removed due to duplication with line 231 ???
         original_offer = offer
         residual_offer = None
 
@@ -146,16 +180,13 @@ class OneSidedMarket(Market):
             if time is None:
                 time = self.now
 
-            energy_portion = energy / offer.energy
             if energy == 0:
                 raise InvalidTrade("Energy can not be zero.")
             # partial energy is requested
             elif energy < offer.energy:
-                original_offer = offer
-                accepted_offer_id = offer.id if self.bc is None else offer.real_id
-
                 assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 
+                energy_portion = energy / offer.energy
                 if ConstSettings.IAASettings.MARKET_TYPE == 1:
                     final_price = self._update_offer_fee_and_calculate_final_price(
                         energy, trade_rate, energy_portion, orig_offer_price
@@ -168,38 +199,11 @@ class OneSidedMarket(Market):
                     self.market_fee += fees
                     final_price = energy * trade_rate_incl_fees
 
-                accepted_offer = Offer(
-                    accepted_offer_id,
-                    final_price,
-                    energy,
-                    offer.seller,
-                    seller_origin=offer.seller_origin
-                )
+                accepted_offer, residual_offer = \
+                    self.split_offer(offer, energy, final_price, orig_offer_price)
 
-                residual_price = (1 - energy_portion) * offer.price
-                residual_energy = offer.energy - energy
-                original_residual_price = \
-                    ((offer.energy - energy) / offer.energy) * orig_offer_price
-
-                residual_offer = Offer(
-                    str(uuid.uuid4()),
-                    residual_price,
-                    residual_energy,
-                    offer.seller,
-                    original_offer_price=original_residual_price,
-                    seller_origin=offer.seller_origin
-                )
-                self.offers[residual_offer.id] = residual_offer
-                log.debug(f"[OFFER][CHANGED][{self.time_slot_str}] "
-                          f"{original_offer} -> {residual_offer}")
                 offer = accepted_offer
 
-                self.bc_interface.change_offer(offer, original_offer, residual_offer)
-                self._notify_listeners(
-                    MarketEvent.OFFER_CHANGED,
-                    existing_offer=original_offer,
-                    new_offer=residual_offer
-                )
             elif energy > offer.energy:
                 raise InvalidTrade("Energy can't be greater than offered energy")
             else:
