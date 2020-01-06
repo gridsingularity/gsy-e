@@ -16,8 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node, \
-    _is_producer_node
+from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node
+from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 
 
 class KPI:
@@ -37,13 +39,14 @@ class KPI:
 
     def _accumulate_devices(self, area):
         for child in area.children:
-            if _is_producer_node(child):
+            if type(child.strategy) in [PVStrategy, PVUserProfileStrategy,
+                                        PVPredefinedStrategy, CommercialStrategy]:
                 self.producer_list.append(child.name)
             elif _is_load_node(child):
                 self.consumer_list.append(child.name)
                 self.consumer_area_list.append(child.parent)
                 self.total_energy_demanded_wh += child.strategy.state.total_energy_demanded_wh
-            elif _is_prosumer_node(child) or isinstance(area.strategy, InfiniteBusStrategy):
+            elif _is_prosumer_node(child) or isinstance(child.strategy, InfiniteBusStrategy):
                 self.ess_list.append(child.name)
 
             if child.children:
@@ -102,6 +105,9 @@ class KPI:
         self._accumulate_devices(area)
 
         self._accumulate_energy_trace()
+
+        if self.self_consumption_buffer_wh > 0:
+            return {"self_sufficiency": 1.0, "self_consumption": 1.0}
 
         # in case when the area doesn't have any load demand
         if self.total_energy_demanded_wh <= 0:
