@@ -73,6 +73,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         if energy <= 0:
             raise InvalidBid()
 
+        if original_bid_price is None:
+            original_bid_price = price
         self._update_new_bid_price_with_fee(price, original_bid_price)
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, original_bid_price, buyer_origin)
@@ -204,13 +206,15 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return offer_bid_pairs
 
     def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
+        already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
                                   energy=selected_energy,
                                   trade_rate=clearing_rate,
-                                  already_tracked=False,
+                                  already_tracked=already_tracked,
                                   trade_bid_info=trade_bid_info,
                                   buyer_origin=bid.buyer_origin)
+
         bid_trade = self.accept_bid(bid=bid,
                                     energy=selected_energy,
                                     seller=offer.seller,
