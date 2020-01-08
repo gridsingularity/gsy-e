@@ -106,11 +106,8 @@ Feature: Run integration tests
   Examples: Minimum Offer Age
      | min_offer_age |
      |       0       |
-     |       1       |
-     |       2       |
-     |       3       |
-     |       4       |
      |       5       |
+     |       9       |
 
   Scenario Outline: Grid fees are calculated based on the original bid rate
      Given we have a scenario named non_compounded_grid_fees
@@ -126,11 +123,8 @@ Feature: Run integration tests
   Examples: Minimum Offer Age
      | min_offer_age |
      |       0       |
-     |       1       |
-     |       2       |
-     |       3       |
-     |       4       |
      |       5       |
+     |       9       |
 
   Scenario Outline: Grid fees are calculated based on the clearing rate for pay as clear while dispatching top to bottom
      Given we have a scenario named non_compounded_grid_fees
@@ -147,11 +141,8 @@ Feature: Run integration tests
   Examples: Minimum Offer Age
      | min_offer_age |
      |       0       |
-     |       1       |
-     |       2       |
-     |       3       |
-     |       4       |
      |       5       |
+     |       9       |
 
   Scenario Outline: Grid fees are calculated based on the clearing rate for pay as clear while dispatching bottom to top
      Given we have a scenario named non_compounded_grid_fees
@@ -168,11 +159,8 @@ Feature: Run integration tests
   Examples: Minimum Offer Age
      | min_offer_age |
      |       0       |
-     |       1       |
-     |       2       |
-     |       3       |
-     |       4       |
      |       5       |
+     |       9       |
 
   Scenario Outline: Unmatched loads are the same with and without keeping the past markets
      Given we have a scenario named <scenario>
