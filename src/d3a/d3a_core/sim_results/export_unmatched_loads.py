@@ -192,8 +192,8 @@ class ExportUnmatchedLoads:
         """
         outdict = {}
         for node_name, subdict in indict.items():
-
             if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
+                outdict[node_name] = {}
                 for hour_time in self.hour_list:
                     if hour_time <= self.latest_time_slot:
                         outdict[node_name][hour_time.format(DATE_HOUR_FORMAT)] = \
