@@ -24,6 +24,7 @@ from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
     MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
+from d3a.constants import REDIS_PUBLISH_FULL_RESULTS
 from d3a.d3a_core.util import round_floats_for_ui
 from statistics import mean
 from pendulum import duration
@@ -61,23 +62,38 @@ class SimulationEndpointBuffer:
         self.device_statistics = DeviceStatistics()
         self.energy_trade_profile = {}
         self.energy_trade_profile_redis = {}
+        self.last_energy_trade_profile = {}
         self.file_export_endpoints = FileExportEndpoints()
 
+        self.last_unmatched_loads = {}
+
     def generate_result_report(self):
-        return {
+        redis_results = {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
-            "unmatched_loads": self.unmatched_loads_redis,
             "cumulative_loads": self.cumulative_loads,
-            "price_energy_day": self.price_energy_day.redis_output,
             "cumulative_grid_trades": self.cumulative_grid_trades_redis,
             "bills": self.market_bills.bills_redis_results,
             "tree_summary": self.tree_summary_redis,
             "status": self.status,
             "eta_seconds": self.eta.seconds,
-            "device_statistics": self.device_statistics.flat_results_time_str,
-            "energy_trade_profile": self.energy_trade_profile_redis
         }
+
+        if REDIS_PUBLISH_FULL_RESULTS:
+            redis_results.update({
+                "unmatched_loads": self.unmatched_loads_redis,
+                "price_energy_day": self.price_energy_day.redis_output,
+                "device_statistics": self.device_statistics.flat_stats_time_str,
+                "energy_trade_profile": self.energy_trade_profile_redis,
+            })
+        else:
+            redis_results.update({
+                "last_unmatched_loads": self.last_unmatched_loads,
+                "last_energy_trade_profile": self.last_energy_trade_profile,
+                "last_price_energy_day": self.price_energy_day.latest_output,
+                "last_device_statistics": self.device_statistics.current_stats_time_str
+            })
+        return redis_results
 
     def generate_json_report(self):
         return {
@@ -91,7 +107,9 @@ class SimulationEndpointBuffer:
             "tree_summary": self.tree_summary,
             "status": self.status,
             "device_statistics": self.device_statistics.device_stats_time_str,
-            "energy_trade_profile": self.energy_trade_profile
+            "energy_trade_profile": self.energy_trade_profile,
+            "last_unmatched_loads": self.last_unmatched_loads,
+            "last_energy_trade_profile": self.last_energy_trade_profile
         }
 
     def _update_unmatched_loads(self, area):
@@ -110,6 +128,7 @@ class SimulationEndpointBuffer:
                 self.unmatched_loads, self.unmatched_loads_redis = \
                     self.market_unmatched_loads.update_and_get_unmatched_loads(
                         current_results, current_results_uuid)
+                self.last_unmatched_loads = self.market_unmatched_loads._partial_unmatched_loads
 
     def _update_cumulative_grid_trades(self, area):
         market_type = \
@@ -160,6 +179,10 @@ class SimulationEndpointBuffer:
         self.energy_trade_profile_redis = self._round_energy_trade_profile(
             self.file_export_endpoints.traded_energy_profile_redis)
 
+        self.last_energy_trade_profile = self._round_energy_trade_profile(
+            self.file_export_endpoints.traded_energy_current)
+        self.generate_result_report()
+
     def _update_tree_summary(self, area):
         price_energy_list = self.price_energy_day.csv_output
 
@@ -186,6 +209,8 @@ class SimulationEndpointBuffer:
     def _round_energy_trade_profile(cls, profile):
         for k in profile.keys():
             for sold_bought in ['sold_energy', 'bought_energy']:
+                if sold_bought not in profile[k]:
+                    continue
                 for dev in profile[k][sold_bought].keys():
                     for target in profile[k][sold_bought][dev].keys():
                         for timestamp in profile[k][sold_bought][dev][target].keys():
