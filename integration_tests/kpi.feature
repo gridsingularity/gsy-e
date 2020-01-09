@@ -26,11 +26,11 @@ Feature: KPI integration tests
      And d3a is installed
      When we run the d3a simulation on console with kpi.house_self_sufficient_with_ess for 24 hrs
      Then self_sufficiency of {'Grid': 1.0, 'House 1': 1.0} are correctly reported
-     And self_consumption of {'Grid': 1.0, 'House 1': 1.0} are correctly reported
+     And self_consumption of {'Grid': 0.7407, 'House 1': 0.7407} are correctly reported
 
   Scenario: Root Area fully self_sufficiency with InfinitBus
      Given we have a scenario named kpi.root_area_self_sufficient_with_infinitebus
      And d3a is installed
      When we run the d3a simulation on console with kpi.root_area_self_sufficient_with_infinitebus for 24 hrs
      Then self_sufficiency of {'Grid': 1.0} are correctly reported
-     And self_consumption of {'Grid': 1.0} are correctly reported
+     And self_consumption of {'Grid': 0.10524} are correctly reported
