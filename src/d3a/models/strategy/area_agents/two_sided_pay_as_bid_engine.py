@@ -100,6 +100,17 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             trade_rate = (bid_trade.offer.price/bid_trade.offer.energy)
+
+            if bid_trade.offer_bid_trade_info is not None:
+                # Adapt trade_offer_info received by the trade to include source market grid fees,
+                # which was skipped when accepting the bid during the trade operation.
+                updated_trade_offer_info = GridFees.propagate_original_offer_info_on_bid_trade(
+                    [None, None, *bid_trade.offer_bid_trade_info],
+                    self.markets.source.transfer_fee_ratio
+                )
+            else:
+                updated_trade_offer_info = bid_trade.offer_bid_trade_info
+
             source_trade = self.markets.source.accept_bid(
                 market_bid,
                 energy=bid_trade.offer.energy,
@@ -107,7 +118,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 already_tracked=False,
                 trade_rate=trade_rate,
                 trade_offer_info=GridFees.update_forwarded_bid_trade_original_info(
-                    bid_trade.offer_bid_trade_info, market_bid
+                    updated_trade_offer_info, market_bid
                 ), seller_origin=bid_trade.seller_origin
             )
 
