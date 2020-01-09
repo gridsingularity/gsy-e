@@ -65,7 +65,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         )
 
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
-        return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price)
+        return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price,
+                                                     self.transfer_fee_ratio)
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, seller: str,
@@ -75,7 +76,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         if original_bid_price is None:
             original_bid_price = price
-        self._update_new_bid_price_with_fee(price, original_bid_price)
+
+        price = self._update_new_bid_price_with_fee(price, original_bid_price)
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, original_bid_price, buyer_origin)
         self.bids[bid.id] = bid
@@ -162,10 +164,14 @@ class TwoSidedPayAsBid(OneSidedMarket):
             final_price = energy * final_trade_rate
             bid = bid._replace(price=final_price)
 
+        # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
+        # the behavior of the forwarded bids which use the source market fee.
+        updated_bid_trade_info = GridFees.propagate_original_offer_info_on_bid_trade(
+                          trade_offer_info, 0.0)
+
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual, already_tracked=already_tracked,
-                      offer_bid_trade_info=GridFees.propagate_original_offer_info_on_bid_trade(
-                          trade_offer_info, self.transfer_fee_ratio),
+                      offer_bid_trade_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin
                       )
 

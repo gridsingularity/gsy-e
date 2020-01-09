@@ -236,6 +236,11 @@ def past_markets_in_memory(context):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
 
 
+@given('the minimum offer age is {min_offer_age}')
+def set_min_offer_age(context, min_offer_age):
+    ConstSettings.IAASettings.MIN_OFFER_AGE = int(min_offer_age)
+
+
 @when('the simulation is running')
 def running_the_simulation(context):
 
