@@ -126,7 +126,7 @@ class UpdateFrequencyMixin:
                     original_offer_price=updated_price,
                     seller_origin=offer.seller_origin
                 )
-                strategy.offers.replace(offer, new_offer, iterated_market)
+                strategy.offers.replace(offer, new_offer, iterated_market.id)
             except MarketException:
                 continue
 

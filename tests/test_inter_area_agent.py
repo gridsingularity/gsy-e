@@ -492,9 +492,9 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
     full_offer = iaa2.lower_market.sorted_offers[0]
     iaa2.usable_offer = lambda s: True
     residual_offer = Offer('residual', 2, 1.4, 'other')
-    iaa2.event_offer_changed(market_id=iaa2.lower_market.id,
-                             existing_offer=full_offer,
-                             new_offer=residual_offer)
+    iaa2.event_offer_split(market_id=iaa2.lower_market.id,
+                           split_offer=full_offer,
+                           residual_offer=residual_offer)
     assert iaa2.higher_market.forwarded_offer.energy == 1.4
 
 
@@ -502,9 +502,9 @@ def test_iaa_forwards_partial_offer_from_source_market(iaa2):
 def iaa3(iaa2):
     fwd_offer = iaa2.higher_market.forwarded_offer
     fwd_residual = Offer('res_fwd', fwd_offer.price, 1, fwd_offer.seller)
-    iaa2.event_offer_changed(market_id=iaa2.higher_market.id,
-                             existing_offer=fwd_offer,
-                             new_offer=fwd_residual)
+    iaa2.event_offer_split(market_id=iaa2.higher_market.id,
+                           split_offer=fwd_offer,
+                           residual_offer=fwd_residual)
     iaa2.event_trade(trade=Trade('trade_id',
                                  pendulum.now(tz=TIME_ZONE),
                                  Offer(fwd_offer.id, fwd_offer.price, 1, fwd_offer.seller),

@@ -63,7 +63,7 @@ class Offers:
         self.bought = {}  # type: Dict[Offer, Str]
         self.posted = {}  # type: Dict[Offer, Str]
         self.sold = {}  # type: Dict[Str, List[str]]
-        self.changed = {}  # type: Dict[str, Offer]
+        self.split = {}  # type: Dict[str, (Offer)]
 
     @property
     def area(self):
@@ -81,7 +81,7 @@ class Offers:
     def delete_past_markets_offers(self):
         self.posted = self._delete_past_offers(self.posted)
         self.bought = self._delete_past_offers(self.bought)
-        self.changed = {}
+        self.split = {}
 
     @property
     def open(self):
@@ -99,14 +99,6 @@ class Offers:
     def sold_offer(self, offer_id, market_id):
         self.sold = append_or_create_key(self.sold, market_id, offer_id)
 
-    def _update_offer(self, offer):
-        old_offer_list = [o for o in self.posted.keys() if o.id == offer.id]
-        assert len(old_offer_list) <= 1, "Expected to find a unique offer to update"
-        if len(old_offer_list) == 0:
-            return
-        old_offer = old_offer_list[0]
-        self.posted[offer] = self.posted.pop(old_offer)
-
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
 
@@ -120,7 +112,9 @@ class Offers:
         return sold_offers
 
     def post(self, offer, market_id):
-        self.posted[offer] = market_id
+        # if the offer was split before, don't post it
+        if offer.id not in self.split:
+            self.posted[offer] = market_id
 
     def remove(self, offer):
         try:
@@ -134,25 +128,26 @@ class Offers:
         except KeyError:
             self.strategy.log.warning("Could not find offer to remove")
 
-    def replace(self, old_offer, new_offer, market):
+    def replace(self, old_offer, new_offer, market_id):
         if self.remove(old_offer):
-            self.post(new_offer, market.id)
+            self.post(new_offer, market_id)
 
     def on_trade(self, market_id, trade):
         try:
             if trade.offer.seller == self.strategy.owner.name:
-                if trade.offer.id in self.changed:
-                    self._update_offer(trade.offer)
-                    self.post(self.changed.pop(trade.offer.id), market_id)
+                if trade.offer.id in self.split and trade.offer in self.posted:
+                    # remove from posted as it is traded already
+                    self.remove(self.split[trade.offer.id])
                 self.sold_offer(trade.offer.id, market_id)
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")
 
-    def on_offer_changed(self, existing_offer, new_offer):
-        if existing_offer.seller == self.strategy.owner.name:
-            assert existing_offer.id not in self.changed, \
-                   "Offer should only change once before each trade."
-            self.changed[existing_offer.id] = new_offer
+    def on_offer_split(self, original_offer, accepted_offer, residual_offer, market_id):
+        if original_offer.seller == self.strategy.owner.name:
+            self.split[original_offer.id] = accepted_offer
+            self.post(residual_offer, market_id)
+            if original_offer in self.posted:
+                self.replace(original_offer, accepted_offer, market_id)
 
 
 class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
@@ -353,8 +348,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def event_trade(self, *, market_id, trade):
         self.offers.on_trade(market_id, trade)
 
-    def event_offer_changed(self, *, market_id, existing_offer, new_offer):
-        self.offers.on_offer_changed(existing_offer, new_offer)
+    def event_offer_split(self, *, market_id, original_offer, accepted_offer, residual_offer):
+        self.offers.on_offer_split(original_offer, accepted_offer, residual_offer, market_id)
 
     def event_market_cycle(self):
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:

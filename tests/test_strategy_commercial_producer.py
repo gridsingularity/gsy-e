@@ -205,9 +205,9 @@ def test_on_offer_changed(area_test2, commercial_test2):
     commercial_test2.event_activate()
     existing_offer = Offer(id='id', price=20, energy=1, seller='FakeArea')
     new_offer = Offer(id='new_id', price=15, energy=0.75, seller='FakeArea')
-    commercial_test2.event_offer_changed(market_id=area_test2.test_market.id,
-                                         existing_offer=existing_offer,
-                                         new_offer=new_offer)
+    commercial_test2.event_offer_split(market_id=area_test2.test_market.id,
+                                       split_offer=existing_offer,
+                                       residual_offer=new_offer)
     assert existing_offer.id in commercial_test2.offers.changed
     assert commercial_test2.offers.changed[existing_offer.id] == new_offer
 
@@ -218,9 +218,9 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
 
     commercial_test2.offers.post(existing_offer, area_test2.test_market)
     commercial_test2.offers.post(new_offer, area_test2.test_market)
-    commercial_test2.event_offer_changed(market_id=area_test2.test_market.id,
-                                         existing_offer=existing_offer,
-                                         new_offer=new_offer)
+    commercial_test2.event_offer_split(market_id=area_test2.test_market.id,
+                                       split_offer=existing_offer,
+                                       residual_offer=new_offer)
     assert existing_offer.id in commercial_test2.offers.changed
     assert commercial_test2.offers.changed[existing_offer.id] == new_offer
     commercial_test2.event_trade(market_id=area_test2.test_market.id,

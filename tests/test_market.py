@@ -599,10 +599,10 @@ def test_market_listeners_offer(market, offer, add_listener, event, called):
 
 @pytest.mark.parametrize("market, offer, accept_offer, add_listener, event", [
     (OneSidedMarket(time_slot=DateTime.now()), "offer", "accept_offer",
-     "add_listener", MarketEvent.OFFER_CHANGED),
+     "add_listener", MarketEvent.OFFER_SPLIT),
     (BalancingMarket(time_slot=DateTime.now()),
      "balancing_offer", "accept_offer",
-     "add_listener", MarketEvent.BALANCING_OFFER_CHANGED)
+     "add_listener", MarketEvent.BALANCING_OFFER_SPLIT)
 ])
 def test_market_listeners_offer_changed(market, offer, accept_offer, add_listener, event, called):
     getattr(market, add_listener)(called)

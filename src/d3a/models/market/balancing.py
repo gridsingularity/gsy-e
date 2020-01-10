@@ -143,7 +143,7 @@ class BalancingMarket(OneSidedMarket):
                     seller_origin=offer.seller_origin
                 )
                 self.offers[residual_offer.id] = residual_offer
-                log.debug(f"[BALANCING_OFFER][CHANGED][{self.time_slot_str}] "
+                log.debug(f"[BALANCING_OFFER][SPLIT][{self.time_slot_str}] "
                           f"{original_offer} -> {residual_offer}")
                 offer = accepted_offer
 
@@ -151,7 +151,7 @@ class BalancingMarket(OneSidedMarket):
                 self._sorted_offers = sorted(self.offers.values(),
                                              key=lambda o: o.price / o.energy)
                 self._notify_listeners(
-                    MarketEvent.BALANCING_OFFER_CHANGED,
+                    MarketEvent.BALANCING_OFFER_SPLIT,
                     existing_offer=original_offer,
                     new_offer=residual_offer
                 )

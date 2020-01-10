@@ -32,7 +32,7 @@ BC_EVENT_MAP = {
     b"NewOffer": MarketEvent.OFFER,
     b"CancelOffer": MarketEvent.OFFER_DELETED,
     b"NewTrade": MarketEvent.TRADE,
-    b"OfferChanged": MarketEvent.OFFER_CHANGED
+    b"OfferChanged": MarketEvent.OFFER_SPLIT
 }
 
 
@@ -94,7 +94,7 @@ class MarketBlockchainInterface:
         #     kwargs['offer'] = interface.offers[event['offerId']]
         # elif event_type is MarketEvent.OFFER_DELETED:
         #     kwargs['offer'] = interface.offers_deleted.pop(event['offerId'])
-        # elif event_type is MarketEvent.OFFER_CHANGED:
+        # elif event_type is MarketEvent.OFFER_SPLIT:
         #     existing_offer, new_offer = interface.offers_changed.pop(event['oldOfferId'])
         #     kwargs['existing_offer'] = existing_offer
         #     kwargs['new_offer'] = new_offer

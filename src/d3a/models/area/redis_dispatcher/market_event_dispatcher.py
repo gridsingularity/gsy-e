@@ -21,7 +21,7 @@ class AreaRedisMarketEventDispatcher(RedisEventDispatcherBase):
             MarketEvent.TRADE.value: Event(),
             MarketEvent.OFFER.value: Event(),
             MarketEvent.OFFER_DELETED.value: Event(),
-            MarketEvent.OFFER_CHANGED.value: Event(),
+            MarketEvent.OFFER_SPLIT.value: Event(),
             MarketEvent.BID_TRADED.value: Event(),
             MarketEvent.BID_CHANGED.value: Event(),
             MarketEvent.BID_DELETED.value: Event(),
