@@ -33,4 +33,4 @@ Feature: KPI integration tests
      And d3a is installed
      When we run the d3a simulation on console with kpi.root_area_self_sufficient_with_infinitebus for 24 hrs
      Then self_sufficiency of {'Grid': 1.0} are correctly reported
-     And self_consumption of {'Grid': 0.10524} are correctly reported
+     And self_consumption of {'Grid': 1.0} are correctly reported

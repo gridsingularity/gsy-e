@@ -86,7 +86,11 @@ class KPI:
                     self.self_consumption_buffer_wh = 0
 
     def _accumulate_infinite_consumption(self, trade):
-        if trade.seller_origin in self.buffer_list and trade.buyer in self.consumer_list:
+        if trade.seller_origin in self.buffer_list and trade.buyer_origin in self.consumer_list:
+            self.total_self_consumption_wh += trade.offer.energy * 1000
+
+    def _dissipate_infinite_consumption(self, trade):
+        if trade.buyer_origin in self.buffer_list and trade.seller_origin in self.producer_list:
             self.total_self_consumption_wh += trade.offer.energy * 1000
 
     def _accumulate_energy_trace(self):
@@ -98,6 +102,7 @@ class KPI:
                     self._accumulate_self_consumption_buffer(trade)
                     self._dissipate_self_consumption_buffer(trade)
                     self._accumulate_infinite_consumption(trade)
+                    self._dissipate_infinite_consumption(trade)
 
     def area_performance_indices(self, area):
         self.producer_list = []
