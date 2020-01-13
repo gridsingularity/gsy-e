@@ -17,10 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import duration
 from itertools import product
-from copy import deepcopy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
+from d3a.d3a_core.sim_results.endpoint_buffer import merge_unmatched_load_results_to_global
 
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
 
@@ -243,103 +243,6 @@ class MarketUnmatchedLoads:
             self.write_none_to_unmatched_loads(child, unmatched_loads, unmatched_loads_redis)
         return unmatched_loads, unmatched_loads_redis
 
-    @classmethod
-    def _merge_base_area_unmatched_loads(cls, accumulated_results, current_results, area):
-        """
-        Recurses over all children (target areas) of base area and calculates the unmatched
-        loads for each
-        :param accumulated_results: stores the merged unmatched load results, changes by reference
-        :param current_results: results for the current market, that are used to update the
-        accumulated results
-        :param area: area of the accumulated unmatched loads
-        :return: None
-        """
-        for target, target_value in current_results[area].items():
-            if target not in accumulated_results[area]:
-                accumulated_results[area][target] = deepcopy(target_value)
-            else:
-                if target == 'type':
-                    continue
-                elif target == 'unmatched_loads':
-                    cls._copy_accumulated_unmatched_loads(
-                        accumulated_results, current_results, area
-                    )
-                else:
-                    cls._merge_target_area_unmatched_loads(
-                        accumulated_results, current_results, area, target
-                    )
-
-    @classmethod
-    def _merge_target_area_unmatched_loads(cls, accumulated_results, current_results,
-                                           area, target):
-        """
-        Merges the unmatched loads and unmatched times for a base area and a target area.
-        :param accumulated_results: stores the merged unmatched load results, changes by reference
-        :param current_results: results for the current market, that are used to update the
-        accumulated results
-        :param area: area of the accumulated unmatched loads
-        :param target: target area of the accumulated unmatched loads
-        :return: None
-        """
-        target_ul = accumulated_results[area][target]['unmatched_loads']
-        current_ul = current_results[area][target]['unmatched_loads']
-        for timestamp, ts_value in current_ul.items():
-            if timestamp not in target_ul:
-                target_ul[timestamp] = deepcopy(ts_value)
-            else:
-                if 'unmatched_times' not in current_ul[timestamp]:
-                    continue
-                if 'unmatched_times' not in target_ul[timestamp]:
-                    target_ul[timestamp]['unmatched_times'] = {}
-                for device, time_list in current_ul[timestamp]['unmatched_times'].items():
-                    if device not in target_ul[timestamp]['unmatched_times']:
-                        target_ul[timestamp]['unmatched_times'][device] = deepcopy(time_list)
-                    else:
-                        for ts in time_list:
-                            if ts not in target_ul[timestamp]['unmatched_times'][device]:
-                                target_ul[timestamp]['unmatched_times'][device].append(ts)
-
-                unm_count = 0
-                for _, hours in target_ul[timestamp]['unmatched_times'].items():
-                    unm_count += len(hours)
-
-                    target_ul[timestamp]['unmatched_count'] = unm_count
-
-    @classmethod
-    def _copy_accumulated_unmatched_loads(cls, accumulated_results, current_results, area):
-        """
-        Copies the accumulated results from the market results to the incremental results
-        :param accumulated_results: stores the merged unmatched load results, changes by reference
-        :param current_results: results for the current market, that are used to update the
-        accumulated results
-        :param area: area of the accumulated unmatched loads
-        :return: None
-        """
-        for timestamp, ts_value in current_results[area]['unmatched_loads'].items():
-            if timestamp not in accumulated_results[area]['unmatched_loads']:
-                accumulated_results[area]['unmatched_loads'][timestamp] = deepcopy(ts_value)
-
-    def _iterate_on_base_areas(self, accumulated_results, current_results):
-        """
-        Method which starts the merging of the current market unmatched loads with the
-        existing unmatched loads (_unmatched_loads_incremental)
-        :param accumulated_results: return value, stores the merged unmatched load results
-        :param current_results: results for the current market, that are used to update the
-        accumulated results
-        :return: accumulated_results
-        """
-        if not self._unmatched_loads_incremental:
-            return deepcopy(current_results)
-        else:
-            for base_area, target_results in current_results.items():
-                if base_area not in accumulated_results:
-                    accumulated_results[base_area] = deepcopy(target_results)
-                else:
-                    self._merge_base_area_unmatched_loads(
-                        accumulated_results, current_results, base_area
-                    )
-        return accumulated_results
-
     def update_and_get_unmatched_loads(self, current_results, current_results_uuid):
         """
         Calculates and returns unmatched loads for the last market
@@ -348,10 +251,15 @@ class MarketUnmatchedLoads:
         :return: Tuple with unmatched loads using area names and uuids
         """
         self._partial_unmatched_loads = current_results_uuid
-        self._unmatched_loads_incremental = self._iterate_on_base_areas(
-            self._unmatched_loads_incremental, current_results
-        )
-        self._unmatched_loads_incremental_uuid = self._iterate_on_base_areas(
-            self._unmatched_loads_incremental_uuid, current_results_uuid
-        )
+        if not self._unmatched_loads_incremental:
+            self._unmatched_loads_incremental = current_results
+            self._unmatched_loads_incremental_uuid = current_results_uuid
+        else:
+            self._unmatched_loads_incremental = merge_unmatched_load_results_to_global(
+                self._unmatched_loads_incremental, current_results
+            )
+            self._unmatched_loads_incremental_uuid = merge_unmatched_load_results_to_global(
+                self._unmatched_loads_incremental_uuid, current_results_uuid
+            )
+
         return self._unmatched_loads_incremental, self._unmatched_loads_incremental_uuid

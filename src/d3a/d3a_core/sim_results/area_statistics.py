@@ -27,7 +27,7 @@ from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
     round_floats_for_ui, add_or_create_key, subtract_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
-
+from d3a.d3a_core.sim_results.endpoint_buffer import merge_price_energy_day_results_to_global
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
 
@@ -546,25 +546,24 @@ class MarketPriceEnergyDay:
         price_lists[area][market.time_slot_str].extend(trade_rates)
 
     def update(self, area):
-        self._price_energy_day = self.gather_trade_rates(
-            area, self._price_energy_day,
-            use_last_past_market=not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS
-        )
         latest_output_area_names = self.gather_trade_rates(
             area, {},
             use_last_past_market=not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS
         )
 
-        # Calculate aggregated results for all markets
-        self._convert_output_format(self._price_energy_day, self.csv_output, self.redis_output)
+        area_name_output = {}
+        self._convert_output_format(latest_output_area_names, area_name_output, self.latest_output)
 
-        # Calculate results for one market
-        self._convert_output_format(latest_output_area_names, {}, self.latest_output)
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            self.csv_output = area_name_output
+            self.redis_output = self.latest_output
+        else:
+            merge_price_energy_day_results_to_global(area_name_output, self.csv_output)
+            merge_price_energy_day_results_to_global(self.latest_output, self.redis_output)
 
         return self.csv_output, self.redis_output
 
     def _convert_output_format(self, price_energy, csv_output, redis_output):
-
         for node, trade_rates in price_energy.items():
             if node.name not in csv_output:
                 csv_output[node.name] = {

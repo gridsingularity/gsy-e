@@ -27,6 +27,7 @@ from d3a.d3a_core.util import convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a_interface.constants_limits import ConstSettings
+from d3a.d3a_core.sim_results.endpoint_buffer import merge_energy_trade_profile_to_global
 
 
 class FileExportEndpoints:
@@ -94,8 +95,14 @@ class FileExportEndpoints:
                 self.time_slots = generate_market_slot_list(area)
 
         self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
-        self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(
-            self.traded_energy, area.uuid)
+        from d3a.constants import REDIS_PUBLISH_FULL_RESULTS
+        if REDIS_PUBLISH_FULL_RESULTS:
+            self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(
+                self.traded_energy, area.uuid)
+        else:
+            merge_energy_trade_profile_to_global(
+                self.traded_energy_current, self.traded_energy_profile_redis)
+
         self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
 
     @classmethod
