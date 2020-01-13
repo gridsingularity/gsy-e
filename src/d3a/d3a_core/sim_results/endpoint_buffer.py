@@ -108,8 +108,6 @@ class SimulationEndpointBuffer:
             "status": self.status,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.energy_trade_profile,
-            "last_unmatched_loads": self.last_unmatched_loads,
-            "last_energy_trade_profile": self.last_energy_trade_profile
         }
 
     def _update_unmatched_loads(self, area):

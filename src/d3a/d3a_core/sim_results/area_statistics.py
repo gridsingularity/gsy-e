@@ -561,8 +561,6 @@ class MarketPriceEnergyDay:
         # Calculate results for one market
         self._convert_output_format(latest_output_area_names, {}, self.latest_output)
 
-        return self.csv_output, self.redis_output
-
     def _convert_output_format(self, price_energy, csv_output, redis_output):
 
         for node, trade_rates in price_energy.items():
