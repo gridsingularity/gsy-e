@@ -561,8 +561,6 @@ class MarketPriceEnergyDay:
             merge_price_energy_day_results_to_global(area_name_output, self.csv_output)
             merge_price_energy_day_results_to_global(self.latest_output, self.redis_output)
 
-        return self.csv_output, self.redis_output
-
     def _convert_output_format(self, price_energy, csv_output, redis_output):
         for node, trade_rates in price_energy.items():
             if node.name not in csv_output:
