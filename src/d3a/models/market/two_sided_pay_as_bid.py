@@ -65,7 +65,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         )
 
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
-        return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price)
+        return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price,
+                                                     self.transfer_fee_ratio)
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, seller: str,
@@ -73,7 +74,10 @@ class TwoSidedPayAsBid(OneSidedMarket):
         if energy <= 0:
             raise InvalidBid()
 
-        self._update_new_bid_price_with_fee(price, original_bid_price)
+        if original_bid_price is None:
+            original_bid_price = price
+
+        price = self._update_new_bid_price_with_fee(price, original_bid_price)
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   price, energy, buyer, seller, original_bid_price, buyer_origin)
         self.bids[bid.id] = bid
@@ -160,10 +164,14 @@ class TwoSidedPayAsBid(OneSidedMarket):
             final_price = energy * final_trade_rate
             bid = bid._replace(price=final_price)
 
+        # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
+        # the behavior of the forwarded bids which use the source market fee.
+        updated_bid_trade_info = GridFees.propagate_original_offer_info_on_bid_trade(
+                          trade_offer_info, 0.0)
+
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual, already_tracked=already_tracked,
-                      offer_bid_trade_info=GridFees.propagate_original_offer_info_on_bid_trade(
-                          trade_offer_info, self.transfer_fee_ratio),
+                      offer_bid_trade_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin
                       )
 
@@ -204,13 +212,15 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return offer_bid_pairs
 
     def accept_bid_offer_pair(self, bid, offer, clearing_rate, trade_bid_info, selected_energy):
+        already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
                                   energy=selected_energy,
                                   trade_rate=clearing_rate,
-                                  already_tracked=False,
+                                  already_tracked=already_tracked,
                                   trade_bid_info=trade_bid_info,
                                   buyer_origin=bid.buyer_origin)
+
         bid_trade = self.accept_bid(bid=bid,
                                     energy=selected_energy,
                                     seller=offer.seller,
@@ -222,17 +232,19 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return bid_trade, trade
 
     def match_offers_bids(self):
-        while len(self._perform_pay_as_bid_matching()) > 0:
-            for bid, offer in self._perform_pay_as_bid_matching():
-                selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
-                original_bid_rate = bid.original_bid_price / bid.energy
-                matched_rate = bid.price / bid.energy
+        # TODO: Please reintegrate when merging this PR
+        #  https://github.com/gridsingularity/d3a/pull/584
+        # while len(self._perform_pay_as_bid_matching()) > 0:
+        for bid, offer in self._perform_pay_as_bid_matching():
+            selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
+            original_bid_rate = bid.original_bid_price / bid.energy
+            matched_rate = bid.price / bid.energy
 
-                trade_bid_info = TradeBidInfo(
-                    original_bid_rate=original_bid_rate,
-                    propagated_bid_rate=bid.price/bid.energy,
-                    original_offer_rate=offer.original_offer_price/offer.energy,
-                    propagated_offer_rate=offer.price/offer.energy,
-                    trade_rate=original_bid_rate)
-                self.accept_bid_offer_pair(bid, offer, matched_rate,
-                                           trade_bid_info, selected_energy)
+            trade_bid_info = TradeBidInfo(
+                original_bid_rate=original_bid_rate,
+                propagated_bid_rate=bid.price/bid.energy,
+                original_offer_rate=offer.original_offer_price/offer.energy,
+                propagated_offer_rate=offer.price/offer.energy,
+                trade_rate=original_bid_rate)
+            self.accept_bid_offer_pair(bid, offer, matched_rate,
+                                       trade_bid_info, selected_energy)
