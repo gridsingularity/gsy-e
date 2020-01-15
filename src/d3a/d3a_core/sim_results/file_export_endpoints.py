@@ -34,6 +34,7 @@ class FileExportEndpoints:
         self.traded_energy = {}
         self.traded_energy_profile = {}
         self.traded_energy_profile_redis = {}
+        self.traded_energy_current = {}
         self.balancing_traded_energy = {}
         self.plot_stats = {}
         self.plot_balancing_stats = {}
@@ -46,6 +47,8 @@ class FileExportEndpoints:
 
     def __call__(self, area):
         self.time_slots = generate_market_slot_list(area)
+        # Resetting traded energy before repopulating it
+        self.traded_energy_current = {}
         self._populate_area_children_data(area)
 
     def _populate_area_children_data(self, area):
@@ -80,15 +83,29 @@ class FileExportEndpoints:
                 self._calculate_devices_sold_bought_energy(self.balancing_traded_energy[area.name],
                                                            area.current_balancing_market)
 
+            if area.uuid not in self.traded_energy_current:
+                self.traded_energy_current[area.uuid] = {"sold_energy": {}, "bought_energy": {}}
+            if area.current_market is not None:
+                self.time_slots = [area.current_market.time_slot]
+                self._calculate_devices_sold_bought_energy(self.traded_energy_current[area.uuid],
+                                                           area.current_market)
+                self.traded_energy_current[area.uuid] = self._serialize_traded_energy_lists(
+                    self.traded_energy_current, area.uuid)
+                self.time_slots = generate_market_slot_list(area)
+
         self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
-        self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(area)
+        self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(
+            self.traded_energy, area.uuid)
         self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
 
-    def _serialize_traded_energy_lists(self, area):
+    @classmethod
+    def _serialize_traded_energy_lists(cls, traded_energy, area_uuid):
         outdict = {}
+        if area_uuid not in traded_energy:
+            return outdict
         for direction in ["sold_energy", "bought_energy"]:
             outdict[direction] = {}
-            for seller, buyer_dict in self.traded_energy[area.uuid][direction].items():
+            for seller, buyer_dict in traded_energy[area_uuid][direction].items():
                 outdict[direction][seller] = {}
                 for buyer, profile_dict in buyer_dict.items():
                     outdict[direction][seller][buyer] = convert_datetime_to_str_keys(

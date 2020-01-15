@@ -35,6 +35,10 @@ ZIP_RESULTS_CHANNEL = "d3a-zip-results"
 ZIP_RESULTS_KEY = "d3a-zip-results-key/"
 
 
+def utf8len(s):
+    return len(s.encode('utf-8')) / 1000.0
+
+
 class RedisSimulationCommunication:
     def __init__(self, simulation, simulation_id):
         if simulation_id is None:
@@ -105,9 +109,11 @@ class RedisSimulationCommunication:
     def publish_results(self, endpoint_buffer):
         if not self.is_enabled():
             return
-        results = endpoint_buffer.generate_result_report()
+        results = json.dumps(endpoint_buffer.generate_result_report())
         results_validator(results)
-        self.redis_db.publish(self.result_channel, json.dumps(results))
+
+        log.debug(f"Publishing {utf8len(results)} KB of data via Redis.")
+        self.redis_db.publish(self.result_channel, results)
         self._handle_redis_job_metadata()
 
     def write_zip_results(self, zip_results):
