@@ -36,7 +36,7 @@ class KPIState:
         self.self_consumption_buffer_wh = 0
 
     # TODO: D3ASIM-1866 Requirements needed for external strategy classification for KPI
-    def accumulate_devices(self, area):
+    def _accumulate_devices(self, area):
         for child in area.children:
             if type(child.strategy) in \
                     [PVStrategy, PVUserProfileStrategy, PVPredefinedStrategy,
@@ -51,7 +51,7 @@ class KPIState:
             elif isinstance(child.strategy, InfiniteBusStrategy):
                 self.buffer_list.append(child.name)
             if child.children:
-                self.accumulate_devices(child)
+                self._accumulate_devices(child)
 
     def _accumulate_self_production(self, trade):
         if trade.seller_origin in self.producer_list:
@@ -92,7 +92,7 @@ class KPIState:
         if trade.buyer_origin in self.buffer_list and trade.seller_origin in self.producer_list:
             self.total_self_consumption_wh += trade.offer.energy * 1000
 
-    def accumulate_energy_trace(self):
+    def _accumulate_energy_trace(self):
         for c_area in self.consumer_area_list:
             for market in c_area.past_markets:
                 for trade in market.trades:
@@ -102,6 +102,10 @@ class KPIState:
                     self._dissipate_self_consumption_buffer(trade)
                     self._accumulate_infinite_consumption(trade)
                     self._dissipate_infinite_consumption(trade)
+
+    def update_area_kpi(self, area):
+        self._accumulate_devices(area)
+        self._accumulate_energy_trace()
 
 
 class KPI:
@@ -115,9 +119,7 @@ class KPI:
     def area_performance_indices(self, area):
         self.state = KPIState()
 
-        self.state.accumulate_devices(area)
-
-        self.state.accumulate_energy_trace()
+        self.state.update_area_kpi(area)
 
         # in case when the area doesn't have any load demand
         if self.state.total_energy_demanded_wh <= 0:
