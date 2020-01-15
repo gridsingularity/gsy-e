@@ -19,7 +19,7 @@ from pendulum import duration
 from itertools import product
 from copy import deepcopy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
 
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
@@ -192,11 +192,16 @@ class ExportUnmatchedLoads:
         """
         outdict = {}
         for node_name, subdict in indict.items():
-            outdict[node_name] = {}
-            for hour_time in self.hour_list:
-                if hour_time <= self.latest_time_slot:
-                    outdict[node_name][hour_time.format(DATE_HOUR_FORMAT)] = \
-                        self._get_hover_info(subdict, hour_time)
+            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
+                outdict[node_name] = {}
+                for hour_time in self.hour_list:
+                    if hour_time <= self.latest_time_slot:
+                        outdict[node_name][hour_time.format(DATE_HOUR_FORMAT)] = \
+                            self._get_hover_info(subdict, hour_time)
+            else:
+                outdict[node_name] = {}
+                outdict[node_name][self.latest_time_slot.format(DATE_HOUR_FORMAT)] = \
+                    self._get_hover_info(subdict, self.latest_time_slot)
         return outdict
 
     def append_device_type(self, indict):
@@ -229,6 +234,7 @@ class MarketUnmatchedLoads:
     def __init__(self):
         self._unmatched_loads_incremental = {}
         self._unmatched_loads_incremental_uuid = {}
+        self._partial_unmatched_loads = {}
 
     def write_none_to_unmatched_loads(self, area, unmatched_loads, unmatched_loads_redis):
         unmatched_loads[area.name] = None
@@ -341,6 +347,7 @@ class MarketUnmatchedLoads:
         :param current_results_uuid: Output from ExportUnmatchedLoads.get_current_market_results()
         :return: Tuple with unmatched loads using area names and uuids
         """
+        self._partial_unmatched_loads = current_results_uuid
         self._unmatched_loads_incremental = self._iterate_on_base_areas(
             self._unmatched_loads_incremental, current_results
         )
