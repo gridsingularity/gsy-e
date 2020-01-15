@@ -27,6 +27,7 @@ from d3a.models.market.market_structures import BalancingOffer, BalancingTrade
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidBalancingTradeException, \
     DeviceNotInRegistryError
+from d3a.d3a_core.util import short_offer_log_str
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
@@ -114,13 +115,10 @@ class BalancingMarket(OneSidedMarket):
                                               adapt_price_with_fees=False,
                                               from_agent=True)
 
-        def short_offer_str(offer):
-            return f"({{{offer.id!s:.6s}}}: {offer.energy} kWh)"
-
         log.debug(f"[BALANCING_OFFER][SPLIT][{self.time_slot_str}, {self.name}] "
-                  f"({short_offer_str(original_offer)} into "
-                  f"{short_offer_str(accepted_offer)} and "
-                  f"{short_offer_str(residual_offer)}")
+                  f"({short_offer_log_str(original_offer)} into "
+                  f"{short_offer_log_str(accepted_offer)} and "
+                  f"{short_offer_log_str(residual_offer)}")
 
         self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
 

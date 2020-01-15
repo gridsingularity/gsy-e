@@ -25,6 +25,7 @@ from d3a.models.market.market_structures import Offer, Trade
 from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
+from d3a.d3a_core.util import short_offer_log_str
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.models.market.grid_fees.base_model import GridFees
@@ -145,13 +146,10 @@ class OneSidedMarket(Market):
                                     seller_origin=original_offer.seller_origin,
                                     adapt_price_with_fees=False)
 
-        def short_offer_str(offer):
-            return f"({{{offer.id!s:.6s}}}: {offer.energy} kWh)"
-
         log.debug(f"[OFFER][SPLIT][{self.time_slot_str}, {self.name}] "
-                  f"({short_offer_str(original_offer)} into "
-                  f"{short_offer_str(accepted_offer)} and "
-                  f"{short_offer_str(residual_offer)}")
+                  f"({short_offer_log_str(original_offer)} into "
+                  f"{short_offer_log_str(accepted_offer)} and "
+                  f"{short_offer_log_str(residual_offer)}")
 
         self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
 
