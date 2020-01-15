@@ -155,12 +155,11 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
                                          buyer_origin)
 
     def __str__(self):
-        mark_partial = "(partial)" if self.residual is not None else ""
         return (
             "{{{s.id!s:.6s}}} [origin: {s.seller_origin} -> {s.buyer_origin}] "
-            "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh {p} @ {s.offer.price} {rate} "
+            "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh @ {s.offer.price} {rate} "
             "{s.offer.id}".
-            format(s=self, p=mark_partial, rate=round(self.offer.price / self.offer.energy, 8))
+            format(s=self, rate=round(self.offer.price / self.offer.energy, 8))
         )
 
     @classmethod
@@ -215,11 +214,10 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
                                                   seller_origin, buyer_origin)
 
     def __str__(self):
-        mark_partial = "(partial)" if self.residual is not None else ""
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate} {s.offer.id}".
-            format(s=self, p=mark_partial, rate=self.offer.price / self.offer.energy)
+            "{s.offer.energy} kWh @ {s.offer.price} {rate} {s.offer.id}".
+            format(s=self, rate=self.offer.price / self.offer.energy)
         )
 
     @classmethod
