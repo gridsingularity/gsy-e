@@ -341,7 +341,7 @@ def storage_strategy_test5(area_test5, called):
     s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market.id)
     s.offers.post(area_test5.past_market.offers['id3'], area_test5.past_market.id)
     s.offers.post(area_test5.past_market.offers['id2'], area_test5.past_market.id)
-    s.offers.sold_offer('id2', area_test5.past_market)
+    s.offers.sold_offer(area_test5.past_market.offers['id2'], area_test5.past_market)
     assert s.state.used_storage == 5
     return s
 
@@ -382,8 +382,8 @@ def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.area.get_future_market_from_id = \
         lambda _id: market_test6 if _id == market_test6.id else None
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
-    assert market_test6.trade.offer in \
-        storage_strategy_test6.offers.sold_in_market(market_test6.id)
+    assert market_test6.trade.offer.id in \
+        storage_strategy_test6.offers.sold[market_test6.id]
     assert market_test6.trade.offer not in storage_strategy_test6.offers.open
 
 

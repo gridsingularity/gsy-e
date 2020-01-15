@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import string
 from math import isclose
-
+from copy import deepcopy
 import pytest
 from pendulum import DateTime
 
@@ -598,23 +598,26 @@ def test_market_listeners_offer(market, offer, add_listener, event, called):
 
 
 @pytest.mark.parametrize("market, offer, accept_offer, add_listener, event", [
-    (OneSidedMarket(time_slot=DateTime.now()), "offer", "accept_offer",
-     "add_listener", MarketEvent.OFFER_SPLIT),
-    (BalancingMarket(time_slot=DateTime.now()),
-     "balancing_offer", "accept_offer",
-     "add_listener", MarketEvent.BALANCING_OFFER_SPLIT)
+    (OneSidedMarket(time_slot=DateTime.now()), "offer", "accept_offer", "add_listener",
+     MarketEvent.OFFER_SPLIT),
+    (BalancingMarket(time_slot=DateTime.now()), "balancing_offer", "accept_offer", "add_listener",
+     MarketEvent.BALANCING_OFFER_SPLIT)
 ])
-def test_market_listeners_offer_changed(market, offer, accept_offer, add_listener, event, called):
+def test_market_listeners_offer_split(market, offer, accept_offer, add_listener, event, called):
     getattr(market, add_listener)(called)
-    e_offer = getattr(market, offer)(10, 20, 'A')
-    getattr(market, accept_offer)(e_offer, 'B', energy=3)
+    e_offer = getattr(market, offer)(10., 20, 'A')
+    getattr(market, accept_offer)(e_offer, 'B', energy=3.)
     assert len(called.calls) == 3
     assert called.calls[1][0] == (repr(event), )
     call_kwargs = called.calls[1][1]
     call_kwargs.pop('market_id', None)
+    a_offer = deepcopy(e_offer)
+    a_offer.price = e_offer.price / 20 * 3
+    a_offer.energy = e_offer.energy / 20 * 3
     assert call_kwargs == {
-        'existing_offer': repr(e_offer),
-        'new_offer': repr(list(market.offers.values())[0])
+        'original_offer': repr(e_offer),
+        'accepted_offer': repr(a_offer),
+        'residual_offer': repr(list(market.offers.values())[0])
     }
 
 

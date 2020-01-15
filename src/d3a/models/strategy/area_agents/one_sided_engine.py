@@ -66,11 +66,11 @@ class IAAEngine:
         else:
             return self.markets.target.offer(**kwargs)
 
-    def _forward_offer(self, offer, offer_id):
+    def _forward_offer(self, offer):
         # TODO: This is an ugly solution. After the december release this check needs to
         #  implemented after grid fee being incorporated while forwarding in target market
         if offer.price < 0.0:
-            self.owner.log.debug("Offer is not forwarded because price<0")
+            self.owner.log.debug("Offer is not forwarded because price < 0")
             return
         forwarded_offer = self._offer_in_market(offer)
 
@@ -122,7 +122,7 @@ class IAAEngine:
             if self.owner.name == offer.seller:
                 continue
 
-            forwarded_offer = self._forward_offer(offer, offer_id)
+            forwarded_offer = self._forward_offer(offer)
             if forwarded_offer:
                 self.owner.log.debug(f"Offering on {self.markets.source.name} "
                                      f"{self.owner.name}, {self.name} {forwarded_offer}")
@@ -246,15 +246,13 @@ class IAAEngine:
 
 class BalancingEngine(IAAEngine):
 
-    def _forward_offer(self, offer, offer_id):
+    def _forward_offer(self, offer):
         forwarded_balancing_offer = self.markets.target.balancing_offer(
             offer.price,
             offer.energy,
             self.owner.name,
             from_agent=True
         )
-        offer_info = OfferInfo(offer, forwarded_balancing_offer)
-        self.forwarded_offers[forwarded_balancing_offer.id] = offer_info
-        self.forwarded_offers[offer_id] = offer_info
+        self._add_to_forward_offers(offer, forwarded_balancing_offer)
         self.owner.log.trace(f"Forwarding balancing offer {offer} to {forwarded_balancing_offer}")
         return forwarded_balancing_offer

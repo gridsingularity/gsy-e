@@ -96,25 +96,17 @@ class Offers:
     def bought_offer(self, offer, market_id):
         self.bought[offer] = market_id
 
-    def sold_offer(self, offer_id, market_id):
-        self.sold = append_or_create_key(self.sold, market_id, offer_id)
+    def sold_offer(self, offer, market_id):
+        self.sold = append_or_create_key(self.sold, market_id, offer.id)
 
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
 
     def sold_in_market(self, market_id):
-        sold_offers = []
-        for offer in self.posted_in_market(market_id):
-            if market_id not in self.sold:
-                self.sold[market_id] = []
-            if offer.id in self.sold[market_id]:
-                sold_offers.append(offer)
-        return sold_offers
+        return self.sold[market_id] if market_id in self.sold else {}
 
     def post(self, offer, market_id):
-        # if the offer was split before, don't post it
-        if offer.id not in self.split:
-            self.posted[offer] = market_id
+        self.posted[offer] = market_id
 
     def remove(self, offer):
         try:
@@ -138,7 +130,9 @@ class Offers:
                 if trade.offer.id in self.split and trade.offer in self.posted:
                     # remove from posted as it is traded already
                     self.remove(self.split[trade.offer.id])
-                self.sold_offer(trade.offer.id, market_id)
+                if trade.offer.id in self.split:
+                    self.split.pop(trade.offer.id)
+                self.sold_offer(trade.offer, market_id)
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")
 
