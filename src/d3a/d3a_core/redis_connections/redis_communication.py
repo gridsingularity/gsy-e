@@ -109,8 +109,9 @@ class RedisSimulationCommunication:
     def publish_results(self, endpoint_buffer):
         if not self.is_enabled():
             return
-        results = json.dumps(endpoint_buffer.generate_result_report())
-        results_validator(results)
+        result_report = endpoint_buffer.generate_result_report()
+        results_validator(result_report)
+        results = json.dumps(result_report)
 
         log.debug(f"Publishing {utf8len(results)} KB of data via Redis.")
         self.redis_db.publish(self.result_channel, results)

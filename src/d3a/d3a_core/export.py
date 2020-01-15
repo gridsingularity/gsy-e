@@ -29,7 +29,7 @@ from sortedcontainers import SortedDict
 from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
-from d3a.d3a_core.sim_results.file_export_endpoints import KPI
+from d3a.d3a_core.sim_results.kpi import KPI
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
@@ -98,7 +98,7 @@ class ExportAndPlot:
         self.kpi.update_kpis_from_area(area)
         with open(kpi_file, 'w') as outfile:
 
-            json.dump(self.kpi.performance_index, outfile, indent=2)
+            json.dump(self.kpi.performance_indices, outfile, indent=2)
         trade_file = os.path.join(json_dir, "trade-detail.json")
         with open(trade_file, 'w') as outfile:
             json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)

@@ -20,8 +20,6 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node, \
-    _is_producer_node
 from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.utils import convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -378,100 +376,3 @@ class ExportLeafData(ExportData):
                     self.area.strategy.energy_production_forecast_kWh[slot]
                     ]
         return []
-
-
-class SelfSufficiency:
-    def __init__(self):
-        self.producer_list = list()
-        self.consumer_list = list()
-        self.consumer_area_list = list()
-        self.ess_list = list()
-        self.total_energy_demanded_wh = 0
-        self.total_self_consumption_wh = 0
-        self.self_consumption_buffer_wh = 0
-
-    def _accumulate_devices(self, area):
-        for child in area.children:
-            if _is_producer_node(child):
-                self.producer_list.append(child.name)
-            elif _is_load_node(child):
-                self.consumer_list.append(child.name)
-                self.consumer_area_list.append(child.parent)
-                self.total_energy_demanded_wh += child.strategy.state.total_energy_demanded_wh
-            elif _is_prosumer_node(child):
-                self.ess_list.append(child.name)
-
-            if child.children:
-                self._accumulate_devices(child)
-
-    def _accumulate_self_consumption(self, trade):
-        if trade.seller_origin in self.producer_list and trade.buyer_origin in self.consumer_list:
-            self.total_self_consumption_wh += trade.offer.energy * 1000
-
-    def _accumulate_self_consumption_buffer(self, trade):
-        if trade.seller_origin in self.producer_list and trade.buyer_origin in self.ess_list:
-            self.self_consumption_buffer_wh += trade.offer.energy * 1000
-
-    def _dissipate_self_consumption_buffer(self, trade):
-        if trade.seller_origin in self.ess_list:
-            # self_consumption_buffer needs to be exhausted to total_self_consumption
-            # if sold to internal consumer
-            if trade.buyer_origin in self.consumer_list and self.self_consumption_buffer_wh > 0:
-                if (self.self_consumption_buffer_wh - trade.offer.energy * 1000) > 0:
-                    self.self_consumption_buffer_wh -= trade.offer.energy * 1000
-                    self.total_self_consumption_wh += trade.offer.energy * 1000
-                else:
-                    self.total_self_consumption_wh += self.self_consumption_buffer_wh
-                    self.self_consumption_buffer_wh = 0
-            # self_consumption_buffer needs to be exhausted if sold to any external agent
-            elif trade.buyer_origin not in [*self.ess_list, *self.consumer_list] and \
-                    self.self_consumption_buffer_wh > 0:
-                if (self.self_consumption_buffer_wh - trade.offer.energy * 1000) > 0:
-                    self.self_consumption_buffer_wh -= trade.offer.energy * 1000
-                else:
-                    self.self_consumption_buffer_wh = 0
-
-    def _accumulate_energy_trace(self):
-        for c_area in self.consumer_area_list:
-            for market in c_area.past_markets:
-                for trade in market.trades:
-                    self._accumulate_self_consumption(trade)
-                    self._accumulate_self_consumption_buffer(trade)
-                    self._dissipate_self_consumption_buffer(trade)
-
-    def area_self_sufficiency(self, area):
-        self.producer_list = []
-        self.consumer_list = []
-        self.consumer_area_list = []
-        self.ess_list = []
-        self.total_energy_demanded_wh = 0
-        self.total_self_consumption_wh = 0
-        self.self_consumption_buffer_wh = 0
-
-        self._accumulate_devices(area)
-
-        self._accumulate_energy_trace()
-
-        # in case when the area doesn't have any load demand
-        if self.total_energy_demanded_wh <= 0:
-            return {"self_sufficiency": None}
-
-        self_sufficiency = self.total_self_consumption_wh / self.total_energy_demanded_wh
-        return {"self_sufficiency": self_sufficiency}
-
-
-class KPI:
-    def __init__(self):
-        self.performance_index = dict()
-        self.self_sufficiency = SelfSufficiency()
-
-    def __repr__(self):
-        return f"KPI: {self.performance_index}"
-
-    def update_kpis_from_area(self, area):
-        self.performance_index[area.name] = \
-            self.self_sufficiency.area_self_sufficiency(area)
-
-        for child in area.children:
-            if len(child.children) > 0:
-                self.update_kpis_from_area(child)
