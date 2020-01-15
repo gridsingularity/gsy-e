@@ -219,9 +219,26 @@ def two_sided_pay_as_clear_market(context):
     ConstSettings.IAASettings.MARKET_TYPE = 3
 
 
+@given('d3a dispatches events from top to bottom')
+def dispatch_top_bottom(context):
+    import d3a.constants
+    d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
+
+
+@given('d3a dispatches events from bottom to top')
+def dispatch_bootom_top(context):
+    import d3a.constants
+    d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = True
+
+
 @given('the past markets are kept in memory')
 def past_markets_in_memory(context):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+
+
+@given('the minimum offer age is {min_offer_age}')
+def set_min_offer_age(context, min_offer_age):
+    ConstSettings.IAASettings.MIN_OFFER_AGE = int(min_offer_age)
 
 
 @when('the simulation is running')
@@ -897,6 +914,15 @@ def assert_trade_rates(context, market_name, trade_rate):
     for market in markets:
         for t in market.trades:
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
+
+
+@then('trades on {market_name} clear with {house_1_rate} or {house_2_rate} cents/kWh')
+def assert_trade_rates_bottom_to_top(context, market_name, house_1_rate, house_2_rate):
+    markets = _filter_markets_by_market_name(context, market_name)
+    for market in markets:
+        for t in market.trades:
+            assert isclose(t.offer.price / t.offer.energy, float(house_1_rate)) or \
+                   isclose(t.offer.price / t.offer.energy, float(house_2_rate))
 
 
 @then('trades on the {market_name} market clear using a rate of either {trade_rate1} or '

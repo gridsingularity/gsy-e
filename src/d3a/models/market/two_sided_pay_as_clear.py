@@ -22,6 +22,7 @@ from collections import OrderedDict
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
 from d3a.models.market.market_structures import MarketClearingState, BidOfferMatch, \
     TradeBidInfo, Clearing
+from d3a.models.market.grid_fees.base_model import GridFees
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.util import add_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
@@ -167,12 +168,20 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
             selected_energy = match.offer_energy
             original_bid_rate = bid.original_bid_price / bid.energy
+            propagated_bid_rate = bid.price / bid.energy
+            offer_original_rate = offer.original_offer_price / offer.energy
+            offer_propagated_rate = offer.price / offer.energy
+
+            trade_rate_original = GridFees.calculate_original_trade_rate_from_clearing_rate(
+                original_bid_rate, propagated_bid_rate, clearing_rate
+            )
+
             trade_bid_info = TradeBidInfo(
                 original_bid_rate=original_bid_rate,
-                propagated_bid_rate=bid.price / bid.energy,
-                original_offer_rate=offer.original_offer_price / offer.energy,
-                propagated_offer_rate=offer.price / offer.energy,
-                trade_rate=clearing_rate)
+                propagated_bid_rate=propagated_bid_rate,
+                original_offer_rate=offer_original_rate,
+                propagated_offer_rate=offer_propagated_rate,
+                trade_rate=trade_rate_original)
 
             bid_trade, trade = self.accept_bid_offer_pair(
                 bid, offer, clearing_rate, trade_bid_info, selected_energy

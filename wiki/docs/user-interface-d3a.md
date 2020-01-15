@@ -4,7 +4,7 @@ For questions, comments, and feedback, please engage with us through the D3A com
 
 We are always welcoming feedback regarding how to improve the D3A.
 
-We are starting a tutorial video series. Check out our first video here and let us know what other videos you'd like to see!
+We are starting a tutorial video series. Check out our first video here and let us know what other videos you'd like to see! We also publish videos about the new features implemented in our latest [releases](ui-releases.md).
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/ktqYAySU_5k" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </iframe>

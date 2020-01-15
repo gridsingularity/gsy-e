@@ -1,4 +1,4 @@
-On this page the user can set up the architecture of the grid by adding Areas and Devices. **Warning: each simulation is limited to 50 agents.** Each area or device is considered as 1 agent.
+On this page the user can set up the architecture of the grid by adding Areas and Devices. You can define up to 250 nodes. Each area or device is considered as 1 node.
 
 ![img](img/grid-setup-1.png)
 
@@ -24,7 +24,7 @@ The user can also insert [Libraries](libraries.md), which are customized devices
 
 Once ready, the user can run the simulation by clicking on the button shown below and will be redirected to the [Results](results.md).
 
-![img](img/grid-setup-4.png)
+![img](img/grid-setup-6.png){:style="height:50px;width:50px"}
 
 The user can duplicate the number of Areas or Devices by clicking on the +/- buttons shown below (device or area settings view).
 
