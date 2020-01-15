@@ -252,10 +252,10 @@ class MarketUnmatchedLoads:
         :return: Tuple with unmatched loads using area names and uuids
         """
         self.unmatched_loads = merge_unmatched_load_results_to_global(
-            self.unmatched_loads, current_results
+            current_results, self.unmatched_loads
         )
         self.unmatched_loads_uuid = merge_unmatched_load_results_to_global(
-            self.unmatched_loads_uuid, current_results_uuid
+            current_results_uuid, self.unmatched_loads_uuid
         )
 
     def update_unmatched_loads(self, area):

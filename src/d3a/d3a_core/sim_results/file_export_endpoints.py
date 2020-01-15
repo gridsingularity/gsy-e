@@ -101,10 +101,9 @@ class FileExportEndpoints:
             self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
 
             # TODO: Adapt to not store the full results on D3A.
-            merge_energy_trade_profile_to_global(
+            self.traded_energy_profile_redis = merge_energy_trade_profile_to_global(
                 self.traded_energy_current, self.traded_energy_profile_redis,
                 generate_market_slot_list(area))
-
             self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
 
     @classmethod

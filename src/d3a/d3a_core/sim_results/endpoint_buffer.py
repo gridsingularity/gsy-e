@@ -23,7 +23,6 @@ from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
-from d3a.constants import REDIS_PUBLISH_FULL_RESULTS
 
 from statistics import mean
 from pendulum import duration
@@ -72,7 +71,7 @@ class SimulationEndpointBuffer:
             "eta_seconds": self.eta.seconds,
         }
 
-        if REDIS_PUBLISH_FULL_RESULTS:
+        if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
             redis_results.update({
                 "unmatched_loads": self.market_unmatched_loads.unmatched_loads_uuid,
                 "price_energy_day": self.price_energy_day.redis_output,
@@ -86,6 +85,7 @@ class SimulationEndpointBuffer:
                 "last_price_energy_day": self.price_energy_day.latest_output,
                 "last_device_statistics": self.device_statistics.current_stats_time_str
             })
+
         return redis_results
 
     def generate_json_report(self):
