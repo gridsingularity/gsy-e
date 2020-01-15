@@ -1,5 +1,5 @@
 site_name: 'D3A Wiki'
-site_description: 'Documentation for the D3A by Grid Singularity'
+site_description: 'Wiki for the D3A by Grid Singularity'
 site_author: 'Grid Singularity'
 site_url: 'https://gridsingularity.github.io/d3a/d3a-documentation/'
 
@@ -7,7 +7,8 @@ nav:
 - 'Overview': 'd3a-documentation.md' 
 - 'User Interface (d3a.io)': 
     - 'UI Overview': 'user-interface-d3a.md' 
-    - 'Projects (Home Page)': 'projects-home-page.md' 
+    - 'Releases': 'ui-releases.md'
+    - 'Projects (Home Page)': 'projects-home-page.md'
     - 'Simulation Configuration': 
         - 'Simulation Configuration Overview': 'simulation-configuration.md' 
         - 'General Settings': 'general-settings.md' 
@@ -37,12 +38,12 @@ nav:
         - 'Market Maker Strategy': 'market-maker-strategy.md' 
         - 'How Strategies Adjust the Prices of Offers and Bids': 'how-strategies-adjust-prices.md' 
     - 'Markets': 
-        - 'Markets Overview': 'markets.md' 
-        - 'Balancing Market': 'balancing-market.md' 
-        - 'Inter-Area Agent': 'inter-area-agent.md' 
-        - 'Two Sided Pay-As-Clear': 'two-sided-pay-as-clear.md' 
+        - 'Markets Overview': 'markets.md'
         - 'One Sided Pay-As-Offer': 'one-sided-pay-as-offer.md' 
-        - 'Two Sided Pay-As-Bid': 'two-sided-pay-as-bid.md' 
+        - 'Two Sided Pay-As-Bid': 'two-sided-pay-as-bid.md'
+        - 'Two Sided Pay-As-Clear': 'two-sided-pay-as-clear.md'
+        - 'Balancing Market': 'balancing-market.md'
+        - 'Inter-Area Agent': 'inter-area-agent.md'
     - 'D3A Blockchain Support': 
         - 'D3A Blockchain Overview': 'd3a-blockchain-support.md' 
         - 'ClearingToken Smart Contract': 'clearingtoken-smart-contract.md' 
