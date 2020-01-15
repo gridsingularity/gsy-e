@@ -6,9 +6,9 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.area import Area
-from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a_interface.utils import convert_datetime_to_str_keys
 from d3a import limit_float_precision
-from d3a.d3a_core.sim_results.endpoint_buffer import merge_device_statistics_results_to_global
+from d3a_interface.sim_results.aggregate_results import merge_device_statistics_results_to_global
 
 FILL_VALUE = None
 

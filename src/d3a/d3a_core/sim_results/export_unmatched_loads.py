@@ -20,7 +20,7 @@ from itertools import product
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a.constants import DATE_TIME_FORMAT, FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.sim_results.endpoint_buffer import merge_unmatched_load_results_to_global
+from d3a_interface.sim_results.aggregate_results import merge_unmatched_load_results_to_global
 
 DATE_HOUR_FORMAT = "YYYY-MM-DDTHH"
 
@@ -231,35 +231,44 @@ class MarketUnmatchedLoads:
     to the ExportUnmatchedLoads class, since it depends on the latter for calculating
     the unmatched loads for a market slot.
     """
-    def __init__(self):
-        self._unmatched_loads_incremental = {}
-        self._unmatched_loads_incremental_uuid = {}
-        self._partial_unmatched_loads = {}
+    def __init__(self, area):
+        self.unmatched_loads = {}
+        self.unmatched_loads_uuid = {}
+        self.last_unmatched_loads = {}
+        self.export_unmatched_loads = ExportUnmatchedLoads(area)
 
-    def write_none_to_unmatched_loads(self, area, unmatched_loads, unmatched_loads_redis):
-        unmatched_loads[area.name] = None
-        unmatched_loads_redis[area.uuid] = None
+    def write_none_to_unmatched_loads(self, area):
+        self.unmatched_loads[area.name] = None
+        self.unmatched_loads_uuid[area.uuid] = None
+        self.last_unmatched_loads[area.uuid] = None
         for child in area.children:
-            self.write_none_to_unmatched_loads(child, unmatched_loads, unmatched_loads_redis)
-        return unmatched_loads, unmatched_loads_redis
+            self.write_none_to_unmatched_loads(child)
 
-    def update_and_get_unmatched_loads(self, current_results, current_results_uuid):
+    def merge_unmatched_loads(self, current_results, current_results_uuid):
         """
-        Calculates and returns unmatched loads for the last market
+        Merges unmatched loads for the last market to the global unmatched loads
         :param current_results: Output from ExportUnmatchedLoads.get_current_market_results()
         :param current_results_uuid: Output from ExportUnmatchedLoads.get_current_market_results()
         :return: Tuple with unmatched loads using area names and uuids
         """
-        self._partial_unmatched_loads = current_results_uuid
-        if not self._unmatched_loads_incremental:
-            self._unmatched_loads_incremental = current_results
-            self._unmatched_loads_incremental_uuid = current_results_uuid
-        else:
-            self._unmatched_loads_incremental = merge_unmatched_load_results_to_global(
-                self._unmatched_loads_incremental, current_results
-            )
-            self._unmatched_loads_incremental_uuid = merge_unmatched_load_results_to_global(
-                self._unmatched_loads_incremental_uuid, current_results_uuid
-            )
+        self.unmatched_loads = merge_unmatched_load_results_to_global(
+            self.unmatched_loads, current_results
+        )
+        self.unmatched_loads_uuid = merge_unmatched_load_results_to_global(
+            self.unmatched_loads_uuid, current_results_uuid
+        )
 
-        return self._unmatched_loads_incremental, self._unmatched_loads_incremental_uuid
+    def update_unmatched_loads(self, area):
+        if self.export_unmatched_loads.load_count == 0:
+            self.write_none_to_unmatched_loads(area)
+        else:
+            current_results, current_results_uuid = \
+                self.export_unmatched_loads.get_current_market_results(
+                    all_past_markets=ConstSettings.GeneralSettings.KEEP_PAST_MARKETS)
+
+            self.last_unmatched_loads = current_results_uuid
+            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+                self.unmatched_loads = current_results
+                self.unmatched_loads_uuid = current_results_uuid
+            else:
+                self.merge_unmatched_loads(current_results, current_results_uuid)

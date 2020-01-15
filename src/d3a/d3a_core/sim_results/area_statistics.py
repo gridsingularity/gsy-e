@@ -27,7 +27,7 @@ from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
     round_floats_for_ui, add_or_create_key, subtract_or_create_key
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.sim_results.endpoint_buffer import merge_price_energy_day_results_to_global
+from d3a_interface.sim_results.aggregate_results import merge_price_energy_day_results_to_global
 
 loads_avg_prices = namedtuple('loads_avg_prices', ['load', 'price'])
 
@@ -59,13 +59,19 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
 def export_cumulative_loads(area):
     # TODO: Figure out whether this export is needed or can be removed
     load_price_lists = gather_area_loads_and_trade_prices(area, {})
-    return [
+    cumulative_loads = [
         {
             "time": hour,
             "load": round(sum(load_price.load), 3) if len(load_price.load) > 0 else 0,
             "price": round(mean(load_price.price), 2) if len(load_price.price) > 0 else 0
         } for hour, load_price in load_price_lists.items()
     ]
+
+    return {
+        "price-currency": "Euros",
+        "load-unit": "kWh",
+        "cumulative-load-price": cumulative_loads
+    }
 
 
 def _is_house_node(area):

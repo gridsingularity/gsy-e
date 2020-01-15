@@ -23,11 +23,11 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node, \
     _is_producer_node
 from d3a.models.strategy.pv import PVStrategy
-from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a_interface.utils import convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list, round_floats_for_ui
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.sim_results.endpoint_buffer import merge_energy_trade_profile_to_global
+from d3a_interface.sim_results.aggregate_results import merge_energy_trade_profile_to_global
 
 
 class FileExportEndpoints:
@@ -51,6 +51,9 @@ class FileExportEndpoints:
         # Resetting traded energy before repopulating it
         self.traded_energy_current = {}
         self._populate_area_children_data(area)
+        self.traded_energy_profile_redis = self._round_energy_trade_profile(
+            self.traded_energy_profile_redis)
+        self.traded_energy_current = self._round_energy_trade_profile(self.traded_energy_current)
 
     def _populate_area_children_data(self, area):
         if area.children:
@@ -72,6 +75,9 @@ class FileExportEndpoints:
             self.balancing_traded_energy[area.name] = \
                 self._calculate_devices_sold_bought_energy_past_markets(
                     area, area.past_balancing_markets)
+            self.traded_energy_profile_redis[area.uuid] = \
+                self._serialize_traded_energy_lists(self.traded_energy, area.uuid)
+            self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
         else:
             if area.uuid not in self.traded_energy:
                 self.traded_energy[area.uuid] = {"sold_energy": {}, "bought_energy": {}}
@@ -94,16 +100,14 @@ class FileExportEndpoints:
                     self.traded_energy_current, area.uuid)
                 self.time_slots = generate_market_slot_list(area)
 
-        self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
-        from d3a.constants import REDIS_PUBLISH_FULL_RESULTS
-        if REDIS_PUBLISH_FULL_RESULTS:
-            self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(
-                self.traded_energy, area.uuid)
-        else:
-            merge_energy_trade_profile_to_global(
-                self.traded_energy_current, self.traded_energy_profile_redis)
+            self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
 
-        self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
+            # TODO: Adapt to not store the full results on D3A.
+            merge_energy_trade_profile_to_global(
+                self.traded_energy_current, self.traded_energy_profile_redis,
+                generate_market_slot_list(area))
+
+            self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
 
     @classmethod
     def _serialize_traded_energy_lists(cls, traded_energy, area_uuid):
@@ -257,6 +261,19 @@ class FileExportEndpoints:
                     for ii, ri in enumerate(labels):
                         self.buyer_trades[buyer_slug][ri].append(values[ii])
                         self.seller_trades[seller_slug][ri].append(values[ii])
+
+    @classmethod
+    def _round_energy_trade_profile(cls, profile):
+        for k in profile.keys():
+            for sold_bought in ['sold_energy', 'bought_energy']:
+                if sold_bought not in profile[k]:
+                    continue
+                for dev in profile[k][sold_bought].keys():
+                    for target in profile[k][sold_bought][dev].keys():
+                        for timestamp in profile[k][sold_bought][dev][target].keys():
+                            profile[k][sold_bought][dev][target][timestamp] = round_floats_for_ui(
+                                profile[k][sold_bought][dev][target][timestamp])
+        return profile
 
 
 class ExportData:
