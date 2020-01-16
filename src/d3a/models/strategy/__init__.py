@@ -63,7 +63,7 @@ class Offers:
         self.bought = {}  # type: Dict[Offer, Str]
         self.posted = {}  # type: Dict[Offer, Str]
         self.sold = {}  # type: Dict[Str, List[str]]
-        self.split = {}  # type: Dict[str, (Offer)]
+        self.split = {}  # type: Dict[str, Offer]
 
     @property
     def area(self):

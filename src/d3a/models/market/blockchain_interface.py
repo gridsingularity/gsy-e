@@ -32,7 +32,7 @@ BC_EVENT_MAP = {
     b"NewOffer": MarketEvent.OFFER,
     b"CancelOffer": MarketEvent.OFFER_DELETED,
     b"NewTrade": MarketEvent.TRADE,
-    b"OfferChanged": MarketEvent.OFFER_SPLIT
+    b"OfferSplit": MarketEvent.OFFER_SPLIT
 }
 
 

@@ -241,7 +241,7 @@ class OneSidedMarket(Market):
                 offer, buyer, original_offer, residual_offer
             )
 
-        # Delete the accepted_offer from self.offers:
+        # Delete the accepted offer from self.offers:
         self.offers.pop(offer.id, None)
 
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,

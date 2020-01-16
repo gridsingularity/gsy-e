@@ -191,7 +191,7 @@ class BalancingMarket(OneSidedMarket):
             self.offers[offer.id] = offer
             raise
 
-        # Delete the accepted_offer from self.offers:
+        # Delete the accepted offer from self.offers:
         self.offers.pop(offer.id, None)
 
         trade_id, residual_offer = \
