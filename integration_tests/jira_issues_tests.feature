@@ -117,7 +117,13 @@ Feature: Jira Issues Tests
     Then there should be no unmatched loads
 
   Scenario: D3ASIM-1690: No unmatched load
-     Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
-     And d3a is installed
-     When we run the d3a simulation with two_sided_pay_as_clear.jira_d3asim_1690 [24, 60, 60]
-     Then there should be no unmatched loads
+    Given we have a scenario named two_sided_pay_as_clear/jira_d3asim_1690
+    And d3a is installed
+    When we run the d3a simulation with two_sided_pay_as_clear.jira_d3asim_1690 [24, 60, 60]
+    Then there should be no unmatched loads
+
+  Scenario: D3ASIM-1862: DSO doesnt pay the grid fee of the Grid
+    Given we have a scenario named jira/d3asim_1862
+    And d3a is installed
+    When we run the d3a simulation with jira.d3asim_1862 [3, 15, 15]
+    Then the DSO should only pay 30 cents
