@@ -26,6 +26,8 @@ class DeviceStatistics:
         self.flat_results_dict = {}
         self.device_stats_time_str = {}
         self.flat_stats_time_str = {}
+        self.current_stats_dict = {}
+        self.current_stats_time_str = {}
 
     @staticmethod
     def _calc_min_max_from_sim_dict(subdict: Dict, key: str):
@@ -56,7 +58,8 @@ class DeviceStatistics:
         _create_or_append_dict(subdict, f"max_{key}",
                                max_trade_stats)
 
-    def _device_price_stats(self, area: Area, subdict: Dict):
+    @classmethod
+    def _device_price_stats(cls, area: Area, subdict: Dict):
         key_name = "trade_price_eur"
         market = list(area.parent.past_markets)[-1]
         trade_price_list = []
@@ -69,9 +72,10 @@ class DeviceStatistics:
         else:
             _create_or_append_dict(subdict, key_name, {market.time_slot: FILL_VALUE})
 
-        self._calc_min_max_from_sim_dict(subdict, key_name)
+        cls._calc_min_max_from_sim_dict(subdict, key_name)
 
-    def _device_energy_stats(self, area: Area, subdict: Dict):
+    @classmethod
+    def _device_energy_stats(cls, area: Area, subdict: Dict):
         key_name = "trade_energy_kWh"
         market = list(area.parent.past_markets)[-1]
         traded_energy = 0
@@ -84,9 +88,10 @@ class DeviceStatistics:
         _create_or_append_dict(subdict, key_name,
                                {market.time_slot: traded_energy})
 
-        self._calc_min_max_from_sim_dict(subdict, key_name)
+        cls._calc_min_max_from_sim_dict(subdict, key_name)
 
-    def _pv_production_stats(self, area: Area, subdict: Dict):
+    @classmethod
+    def _pv_production_stats(cls, area: Area, subdict: Dict):
         key_name = "pv_production_kWh"
         market = list(area.parent.past_markets)[-1]
 
@@ -94,18 +99,20 @@ class DeviceStatistics:
                                {market.time_slot:
                                 area.strategy.energy_production_forecast_kWh[market.time_slot]})
 
-        self._calc_min_max_from_sim_dict(subdict, key_name)
+        cls._calc_min_max_from_sim_dict(subdict, key_name)
 
-    def _soc_stats(self, area: Area, subdict: Dict):
+    @classmethod
+    def _soc_stats(cls, area: Area, subdict: Dict):
         key_name = "soc_history_%"
         market = list(area.parent.past_markets)[-1]
         _create_or_append_dict(subdict, key_name,
                                {market.time_slot:
                                 area.strategy.state.charge_history[market.time_slot]})
 
-        self._calc_min_max_from_sim_dict(subdict, key_name)
+        cls._calc_min_max_from_sim_dict(subdict, key_name)
 
-    def _load_profile_stats(self, area: Area, subdict: Dict):
+    @classmethod
+    def _load_profile_stats(cls, area: Area, subdict: Dict):
         key_name = "load_profile_kWh"
         market = list(area.parent.past_markets)[-1]
         if market.time_slot in area.strategy.state.desired_energy_Wh:
@@ -114,42 +121,48 @@ class DeviceStatistics:
         else:
             _create_or_append_dict(subdict, key_name, {market.time_slot: 0})
 
-        self._calc_min_max_from_sim_dict(subdict, key_name)
+        cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     def update(self, area):
-        self.gather_device_statistics(area, self.device_stats_dict)
-        self.flat_results_time_str = convert_datetime_to_str_keys(self.flat_results_dict, {})
+        self.gather_device_statistics(area, self.device_stats_dict, self.flat_results_dict)
+        self.flat_stats_time_str = convert_datetime_to_str_keys(self.flat_results_dict, {})
         self.device_stats_time_str = convert_datetime_to_str_keys(self.device_stats_dict, {})
 
-    def gather_device_statistics(self, area: Area, subdict: Dict):
+        # Calculate last market stats
+        self.gather_device_statistics(area, {}, self.current_stats_dict)
+        self.current_stats_time_str = convert_datetime_to_str_keys(self.current_stats_dict, {})
+
+    @classmethod
+    def gather_device_statistics(cls, area: Area, subdict: Dict, flat_result_dict: Dict):
         for child in area.children:
             if child.name not in subdict.keys():
                 subdict.update({child.name: {}})
             if child.children == []:
-                self._gather_device_statistics(child, subdict[child.name])
+                cls._gather_device_statistics(child, subdict[child.name], flat_result_dict)
             else:
-                self.gather_device_statistics(child, subdict[child.name])
+                cls.gather_device_statistics(child, subdict[child.name], flat_result_dict)
 
-    def _gather_device_statistics(self, area: Area, subdict: Dict):
+    @classmethod
+    def _gather_device_statistics(cls, area: Area, subdict: Dict, flat_result_dict: Dict):
         if not hasattr(area.parent, "past_markets") or len(area.parent.past_markets) == 0:
             return None
 
         if area.strategy is not None:
-            self._device_price_stats(area, subdict)
-            self._device_energy_stats(area, subdict)
+            cls._device_price_stats(area, subdict)
+            cls._device_energy_stats(area, subdict)
 
         if isinstance(area.strategy, PVStrategy):
-            self._pv_production_stats(area, subdict)
+            cls._pv_production_stats(area, subdict)
 
         elif isinstance(area.strategy, StorageStrategy):
-            self._soc_stats(area, subdict)
+            cls._soc_stats(area, subdict)
 
         elif isinstance(area.strategy, LoadHoursStrategy):
-            self._load_profile_stats(area, subdict)
+            cls._load_profile_stats(area, subdict)
 
         elif isinstance(area.strategy, FinitePowerPlant):
             market = list(area.parent.past_markets)[-1]
             _create_or_append_dict(subdict, "production_kWh",
                                    {market.time_slot: area.strategy.energy_per_slot_kWh})
 
-        self.flat_results_dict[area.uuid] = deepcopy(subdict)
+        flat_result_dict[area.uuid] = deepcopy(subdict)
