@@ -339,17 +339,19 @@ def run_d3a_with_settings_file(context):
 
 @when('the reported unmatched loads are saved')
 def save_reported_unmatched_loads(context):
-    context.unmatched_loads = deepcopy(context.simulation.endpoint_buffer.unmatched_loads)
+    unmatched_loads_object = context.simulation.endpoint_buffer.market_unmatched_loads
+    context.unmatched_loads = deepcopy(unmatched_loads_object.unmatched_loads)
     context.unmatched_loads_redis = \
-        deepcopy(context.simulation.endpoint_buffer.unmatched_loads_redis)
+        deepcopy(unmatched_loads_object.unmatched_loads_uuid)
 
 
 @when('the reported energy trade profile are saved')
 def save_reported_energy_trade_profile(context):
+    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
     context.energy_trade_profile = deepcopy(
-        context.simulation.endpoint_buffer.energy_trade_profile)
+        file_export_endpoints.traded_energy_profile)
     context.energy_trade_profile_redis = \
-        deepcopy(context.simulation.endpoint_buffer.energy_trade_profile_redis)
+        deepcopy(file_export_endpoints.traded_energy_profile_redis)
 
 
 @when('the reported price energy day results are saved')
@@ -731,10 +733,11 @@ def generate_area_uuid_map(sim_area, results):
 @then('the traded energy profile is correctly generated')
 def traded_energy_profile_correctly_generated(context):
     area_uuid_map = generate_area_uuid_map(context.simulation.area, {})
-    assert len(context.simulation.endpoint_buffer.energy_trade_profile.keys()) == \
-        len(context.simulation.endpoint_buffer.energy_trade_profile_redis.keys())
-    for k, v in context.simulation.endpoint_buffer.energy_trade_profile.items():
-        assert context.simulation.endpoint_buffer.energy_trade_profile_redis[area_uuid_map[k]] == v
+    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
+    assert len(file_export_endpoints.traded_energy_profile.keys()) == \
+        len(file_export_endpoints.traded_energy_profile_redis.keys())
+    for k, v in file_export_endpoints.traded_energy_profile.items():
+        assert file_export_endpoints.traded_energy_profile_redis[area_uuid_map[k]] == v
 
 
 @then('the predefined load follows the load profile')
@@ -937,8 +940,9 @@ def assert_multiple_trade_rates_any(context, market_name, trade_rate1, trade_rat
 
 @then('the unmatched loads are identical no matter if the past markets are kept')
 def identical_unmatched_loads(context):
-    unmatched_loads = context.simulation.endpoint_buffer.unmatched_loads
-    unmatched_loads_redis = context.simulation.endpoint_buffer.unmatched_loads_redis
+    unmatched_loads = context.simulation.endpoint_buffer.market_unmatched_loads.unmatched_loads
+    unmatched_loads_redis = \
+        context.simulation.endpoint_buffer.market_unmatched_loads.unmatched_loads_uuid
 
     assert len(DeepDiff(unmatched_loads, context.unmatched_loads)) == 0
 
@@ -963,8 +967,9 @@ def identical_cumulative_grid_trades(context):
 
 @then('the energy trade profiles are identical no matter if the past markets are kept')
 def identical_energy_trade_profiles(context):
-    energy_trade_profile = context.simulation.endpoint_buffer.energy_trade_profile
-    energy_trade_profile_redis = context.simulation.endpoint_buffer.energy_trade_profile_redis
+    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
+    energy_trade_profile = file_export_endpoints.traded_energy_profile
+    energy_trade_profile_redis = file_export_endpoints.traded_energy_profile_redis
 
     assert len(DeepDiff(energy_trade_profile, context.energy_trade_profile)) == 0
 
