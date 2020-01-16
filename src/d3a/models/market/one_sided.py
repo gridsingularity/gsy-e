@@ -159,14 +159,16 @@ class OneSidedMarket(Market):
                 if ConstSettings.IAASettings.MARKET_TYPE == 1:
                     final_price = self._update_offer_fee_and_calculate_final_price(
                         energy, trade_rate, energy_portion, orig_offer_price
-                    ) if already_tracked is False else energy * trade_rate
+                    )
                 else:
                     revenue, fees, trade_rate_incl_fees = \
                         GridFees.calculate_trade_price_and_fees(
                             trade_bid_info, self.transfer_fee_ratio
                         )
                     self.market_fee += fees
-                    final_price = energy * trade_rate_incl_fees
+                    final_price = energy * (trade_rate_incl_fees - fees) \
+                        if original_offer.seller_origin == offer.seller else \
+                        energy * trade_rate_incl_fees
 
                 accepted_offer = Offer(
                     accepted_offer_id,
@@ -207,14 +209,15 @@ class OneSidedMarket(Market):
                 if ConstSettings.IAASettings.MARKET_TYPE == 1:
                     offer.price = self._update_offer_fee_and_calculate_final_price(
                         energy, trade_rate, 1, orig_offer_price
-                    ) if already_tracked is False else energy * trade_rate
+                    )
                 else:
                     revenue, fees, trade_price = GridFees.calculate_trade_price_and_fees(
                         trade_bid_info, self.transfer_fee_ratio
                     )
                     self.market_fee += fees
-                    offer.price = energy * trade_price
-
+                    offer.price = energy * (trade_price - fees) \
+                        if original_offer.seller_origin == offer.seller else \
+                        energy * trade_price
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer

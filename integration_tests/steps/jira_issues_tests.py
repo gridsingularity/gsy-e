@@ -284,3 +284,22 @@ def trades_happen(context):
 @given('the file {setup_json} is used for the area setup')
 def json_setup_file(context, setup_json):
     os.environ["D3A_SETUP_PATH"] = os.path.join(d3a_path, 'setup', setup_json)
+
+
+@then('the DSO should only pay 30 cents')
+def dso_pays_certain_price(context):
+    # The DSO pays 30 cts/kWh
+    grid_trades = 0
+    for market in context.simulation.area.past_markets:
+        for trade in market.trades:
+            grid_trades += 1
+            assert trade.offer.price == 30
+    assert grid_trades == 4
+    # The H1 General Load pays 45 cts/kWh
+    house_trades = 0
+    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
+    for market in house1.past_markets:
+        for trade in market.trades:
+            house_trades += 1
+            assert trade.offer.price == 45
+    assert house_trades == 4
