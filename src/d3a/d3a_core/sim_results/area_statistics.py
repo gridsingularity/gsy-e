@@ -510,6 +510,7 @@ class MarketPriceEnergyDay:
         self._price_energy_day = {}
         self.csv_output = {}
         self.redis_output = {}
+        self.latest_output = {}
 
     @classmethod
     def gather_trade_rates(cls, area, price_lists, use_last_past_market=False):
@@ -549,14 +550,27 @@ class MarketPriceEnergyDay:
             area, self._price_energy_day,
             use_last_past_market=not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS
         )
-        for node, trade_rates in self._price_energy_day.items():
-            if node.name not in self.csv_output:
-                self.csv_output[node.name] = {
+        latest_output_area_names = self.gather_trade_rates(
+            area, {},
+            use_last_past_market=not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS
+        )
+
+        # Calculate aggregated results for all markets
+        self._convert_output_format(self._price_energy_day, self.csv_output, self.redis_output)
+
+        # Calculate results for one market
+        self._convert_output_format(latest_output_area_names, {}, self.latest_output)
+
+    def _convert_output_format(self, price_energy, csv_output, redis_output):
+
+        for node, trade_rates in price_energy.items():
+            if node.name not in csv_output:
+                csv_output[node.name] = {
                     "price-currency": "Euros",
                     "load-unit": "kWh",
                     "price-energy-day": []
                 }
-            self.csv_output[node.name]["price-energy-day"] = [
+            csv_output[node.name]["price-energy-day"] = [
                 {
                     "time": timeslot,
                     "av_price": round(mean(trades) if len(trades) > 0 else 0, 2),
@@ -564,6 +578,4 @@ class MarketPriceEnergyDay:
                     "max_price": round(max(trades) if len(trades) > 0 else 0, 2),
                 } for timeslot, trades in trade_rates.items()
             ]
-            self.redis_output[node.uuid] = deepcopy(self.csv_output[node.name])
-
-        return self.csv_output, self.redis_output
+            redis_output[node.uuid] = deepcopy(csv_output[node.name])
