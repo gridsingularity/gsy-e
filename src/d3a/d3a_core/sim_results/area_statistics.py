@@ -516,7 +516,6 @@ class MarketPriceEnergyDay:
         self._price_energy_day = {}
         self.csv_output = {}
         self.redis_output = {}
-        self.latest_output = {}
 
     @classmethod
     def gather_trade_rates(cls, area, price_lists, use_last_past_market=False):
@@ -552,22 +551,24 @@ class MarketPriceEnergyDay:
         price_lists[area][market.time_slot_str].extend(trade_rates)
 
     def update(self, area):
-        latest_output_area_names = self.gather_trade_rates(
+        current_price_lists = self.gather_trade_rates(
             area, {},
             use_last_past_market=not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS
         )
 
-        area_name_output = {}
-        self._convert_output_format(latest_output_area_names, area_name_output, self.latest_output)
+        price_energy_csv_output = {}
+        price_energy_redis_output = {}
+        self._convert_output_format(
+            current_price_lists, price_energy_csv_output, price_energy_redis_output)
 
         if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            self.csv_output = area_name_output
-            self.redis_output = self.latest_output
+            self.csv_output = price_energy_csv_output
+            self.redis_output = price_energy_redis_output
         else:
-            self.csv_output = \
-                merge_price_energy_day_results_to_global(area_name_output, self.csv_output)
-            self.redis_output = \
-                merge_price_energy_day_results_to_global(self.latest_output, self.redis_output)
+            self.csv_output = merge_price_energy_day_results_to_global(
+                price_energy_csv_output, self.csv_output)
+            self.redis_output = merge_price_energy_day_results_to_global(
+                price_energy_redis_output, self.redis_output)
 
     def _convert_output_format(self, price_energy, csv_output, redis_output):
         for node, trade_rates in price_energy.items():

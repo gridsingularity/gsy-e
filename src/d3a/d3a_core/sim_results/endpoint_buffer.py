@@ -82,7 +82,7 @@ class SimulationEndpointBuffer:
             redis_results.update({
                 "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
                 "last_energy_trade_profile": self.file_export_endpoints.traded_energy_current,
-                "last_price_energy_day": self.price_energy_day.latest_output,
+                "last_price_energy_day": self.price_energy_day.redis_output,
                 "last_device_statistics": self.device_statistics.current_stats_time_str
             })
 
@@ -140,10 +140,17 @@ class SimulationEndpointBuffer:
         self.file_export_endpoints(area)
         self.market_unmatched_loads.update_unmatched_loads(area)
         self.device_statistics.update(area)
-        # Should always precede tree-summary update
+
+        self._update_price_energy_day_tree_summary(area)
+
+        self.generate_result_report()
+
+    def _update_price_energy_day_tree_summary(self, area):
+        # Update of the price_energy_day endpoint should always precede tree-summary.
+        # The reason is that the price_energy_day data are used when calculating the
+        # tree-summary data.
         self.price_energy_day.update(area)
         self._update_tree_summary(area)
-        self.generate_result_report()
 
     def _update_tree_summary(self, area):
         price_energy_list = self.price_energy_day.csv_output
