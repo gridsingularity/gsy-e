@@ -37,7 +37,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
 from d3a.models.leaves import Leaf # NOQA
 from d3a.models.leaves import *  # NOQA
-from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a_interface.utils import convert_datetime_to_str_keys
 
 
 class AreaEncoder(json.JSONEncoder):
