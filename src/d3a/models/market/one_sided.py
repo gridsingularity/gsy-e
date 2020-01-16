@@ -124,12 +124,15 @@ class OneSidedMarket(Market):
 
         self.offers.pop(original_offer.id, None)
         # same offer id is used for the new accepted_offer
+        original_accepted_price = energy / original_offer.energy * orig_offer_price
         accepted_offer = self.offer(offer_id=original_offer.id,
                                     price=original_offer.price * (energy / original_offer.energy),
                                     energy=energy,
                                     seller=original_offer.seller,
+                                    original_offer_price=original_accepted_price,
                                     dispatch_event=False,
-                                    seller_origin=original_offer.seller_origin)
+                                    seller_origin=original_offer.seller_origin,
+                                    adapt_price_with_fees=False)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
@@ -144,7 +147,7 @@ class OneSidedMarket(Market):
                                     original_offer_price=original_residual_price,
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
-                                    adapt_price_with_fees=False)
+                                    adapt_price_with_fees=False,)
 
         log.debug(f"[OFFER][SPLIT][{self.time_slot_str}, {self.name}] "
                   f"({short_offer_log_str(original_offer)} into "
@@ -161,21 +164,21 @@ class OneSidedMarket(Market):
 
         return accepted_offer, residual_offer
 
-    def determine_offer_price(self, energy_portion, energy, already_tracked, trade_rate,
-                              trade_bid_info, orig_offer_price):
-
+    def determine_offer_price(self, energy_portion, energy, trade_rate,
+                              trade_bid_info, orig_offer_price, original_offer, offer):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            final_price = self._update_offer_fee_and_calculate_final_price(
+            return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
-            ) if already_tracked is False else energy * trade_rate
+            )
         else:
             revenue, fees, trade_rate_incl_fees = \
                 GridFees.calculate_trade_price_and_fees(
                     trade_bid_info, self.transfer_fee_ratio
                 )
             self.market_fee += fees
-            final_price = energy * trade_rate_incl_fees
-        return final_price
+            return energy * (trade_rate_incl_fees - fees) \
+                if original_offer.seller_origin == offer.seller else \
+                energy * trade_rate_incl_fees
 
     @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
@@ -215,9 +218,9 @@ class OneSidedMarket(Market):
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
                 trade_price = self.determine_offer_price(energy / offer.energy, energy,
-                                                         already_tracked,
                                                          trade_rate, trade_bid_info,
-                                                         orig_offer_price)
+                                                         orig_offer_price, original_offer, offer)
+
                 offer = accepted_offer
                 offer.price = trade_price
 
@@ -225,10 +228,9 @@ class OneSidedMarket(Market):
                 raise InvalidTrade("Energy can't be greater than offered energy")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
-                offer.price = self.determine_offer_price(1, energy, already_tracked,
+                offer.price = self.determine_offer_price(1, energy,
                                                          trade_rate, trade_bid_info,
-                                                         orig_offer_price)
-
+                                                         orig_offer_price, original_offer, offer)
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer

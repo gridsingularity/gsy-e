@@ -207,9 +207,13 @@ class IAAEngine:
         if market == self.markets.target and accepted_offer.id in self.forwarded_offers:
             # offer was split in target market, also split in source market
 
-            local_original_offer = self.forwarded_offers[original_offer.id].source_offer
+            local_offer = self.forwarded_offers[original_offer.id].source_offer
+            original_offer_price = local_offer.original_offer_price \
+                if local_offer.original_offer_price is not None else local_offer.price
+
             local_split_offer, local_residual_offer = \
-                self.markets.source.split_offer(local_original_offer, accepted_offer.energy)
+                self.markets.source.split_offer(local_offer, accepted_offer.energy,
+                                                original_offer_price)
 
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(local_residual_offer, residual_offer)
@@ -221,9 +225,14 @@ class IAAEngine:
                     self.owner.name == accepted_offer.seller:
                 return
 
-            local_original_offer = self.forwarded_offers[original_offer.id].source_offer
+            local_offer = self.forwarded_offers[original_offer.id].source_offer
+
+            original_offer_price = local_offer.original_offer_price \
+                if local_offer.original_offer_price is not None else local_offer.price
+
             local_split_offer, local_residual_offer = \
-                self.markets.target.split_offer(local_original_offer, accepted_offer.energy)
+                self.markets.target.split_offer(local_offer, accepted_offer.energy,
+                                                original_offer_price)
 
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(residual_offer, local_residual_offer)
@@ -235,7 +244,7 @@ class IAAEngine:
         if original_offer.id in self.offer_age:
             self.offer_age[residual_offer.id] = self.offer_age.pop(original_offer.id)
 
-        self.owner.log.debug(f"Offer {local_original_offer} was split into"
+        self.owner.log.debug(f"Offer {local_offer} was split into"
                              f"{local_split_offer} and {local_residual_offer}")
 
     def _add_to_forward_offers(self, source_offer, target_offer):
