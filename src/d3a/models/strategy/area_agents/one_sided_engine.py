@@ -20,7 +20,7 @@ from typing import Dict, Set  # noqa
 from copy import deepcopy
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
-
+from d3a.d3a_core.util import short_offer_log_str
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
 from d3a.models.market.grid_fees.base_model import GridFees
 
@@ -244,8 +244,9 @@ class IAAEngine:
         if original_offer.id in self.offer_age:
             self.offer_age[residual_offer.id] = self.offer_age.pop(original_offer.id)
 
-        self.owner.log.debug(f"Offer {local_offer} was split into"
-                             f"{local_split_offer} and {local_residual_offer}")
+        self.owner.log.debug(f"Offer {short_offer_log_str(local_offer)} was split into "
+                             f"{short_offer_log_str(local_split_offer)} and "
+                             f"{short_offer_log_str(local_residual_offer)}")
 
     def _add_to_forward_offers(self, source_offer, target_offer):
         offer_info = OfferInfo(deepcopy(source_offer), deepcopy(target_offer))

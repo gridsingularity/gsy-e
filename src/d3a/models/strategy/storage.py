@@ -262,11 +262,12 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                if self.bid_update.get_price_update_point(self, market.time_slot):
-                    self.buy_energy(market)
+                self.bid_update.increment_update_counter(self, market.time_slot)
+                self.buy_energy(market)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
-
+                self.bid_update.increment_update_counter(self, market.time_slot)
+                self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
                 if self.are_bids_posted(market.id):
                     self.bid_update.update_posted_bids_over_ticks(market, self)
                 else:
@@ -381,28 +382,29 @@ class StorageStrategy(BidEnabledStrategy):
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
+            # Check if storage has free capacity and if the price is cheap enough
+            if self.state.free_storage(market.time_slot) <= 0.0 \
+                    or (offer.price / offer.energy) > max_affordable_offer_rate:
+                continue
 
             alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
             if offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME \
                     and alt_pricing_settings.PRICING_SCHEME != 0:
                 # don't buy from IAA if alternative pricing scheme is activated
                 continue
-            # Check if storage has free capacity and if the price is cheap enough
-            if self.state.free_storage(market.time_slot) > 0.0 \
-                    and (offer.price / offer.energy) <= max_affordable_offer_rate:
-                try:
-                    max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
-                    if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
-                        self.accept_offer(market, offer, energy=max_energy,
-                                          buyer_origin=self.owner.name)
-                        self.state.pledged_buy_kWh[market.time_slot] += max_energy
-                        return True
 
-                except MarketException:
-                    # Offer already gone etc., try next one.
-                    return False
-            else:
-                return False
+            try:
+                self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+                max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
+                if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
+                    self.accept_offer(market, offer, energy=max_energy,
+                                      buyer_origin=self.owner.name)
+                    self.state.pledged_buy_kWh[market.time_slot] += max_energy
+                    continue
+
+            except MarketException:
+                # Offer already gone etc., try next one.
+                continue
 
     def sell_energy(self):
         markets_to_sell = self.select_market_to_sell()
@@ -414,9 +416,9 @@ class StorageStrategy(BidEnabledStrategy):
             if not self.state.has_battery_reached_max_power(energy, market.time_slot):
                 if energy > 0.0:
                     offer = market.offer(
-                        energy * selling_rate,
-                        energy,
-                        self.owner.name,
+                        price=energy * selling_rate,
+                        energy=energy,
+                        seller=self.owner.name,
                         original_offer_price=energy * selling_rate,
                         seller_origin=self.owner.name
                     )

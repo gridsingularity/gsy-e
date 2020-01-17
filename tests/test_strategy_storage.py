@@ -630,8 +630,10 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
     for i in range(2):
         area_test11.current_tick += 310
         storage_strategy_test11.event_tick()
+    # storage should not be able to buy energy after this tick because
+    # self.state._battery_energy_per_slot is exceeded
     te = storage_strategy_test11.state.energy_to_buy_dict[buy_market.time_slot]
-    assert te == float(storage_strategy_test11.accept_offer.calls[0][1]['energy'])
+    assert te == 0.
     assert len(storage_strategy_test11.accept_offer.calls) >= 1
 
 

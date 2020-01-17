@@ -106,7 +106,9 @@ class Offers:
         return self.sold[market_id] if market_id in self.sold else {}
 
     def post(self, offer, market_id):
-        self.posted[offer] = market_id
+        # If offer was split already, don't post one with the same uuid again
+        if offer.id not in self.split:
+            self.posted[offer] = market_id
 
     def remove(self, offer):
         try:
@@ -130,8 +132,6 @@ class Offers:
                 if trade.offer.id in self.split and trade.offer in self.posted:
                     # remove from posted as it is traded already
                     self.remove(self.split[trade.offer.id])
-                if trade.offer.id in self.split:
-                    self.split.pop(trade.offer.id)
                 self.sold_offer(trade.offer, market_id)
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")

@@ -233,10 +233,10 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
                                              buyer='buyer')
                                  )
 
-    assert len(commercial_test2.offers.posted) == 2
-    assert accepted_offer in commercial_test2.offers.posted
-    assert commercial_test2.offers.posted[accepted_offer] == area_test2.test_market.id
-    assert len(commercial_test2.offers.split) == 0
+    assert residual_offer in commercial_test2.offers.posted
+    assert commercial_test2.offers.posted[residual_offer] == area_test2.test_market.id
+    assert len(commercial_test2.offers.posted) == 1
+    assert len(commercial_test2.offers.split) == 1
     assert len(commercial_test2.offers.sold) == 1
     assert original_offer.id in commercial_test2.offers.sold_in_market(area_test2.test_market.id)
 

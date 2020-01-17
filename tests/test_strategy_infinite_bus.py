@@ -239,10 +239,10 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
                                       buyer='buyer')
                           )
 
-    assert len(bus_test2.offers.posted) == 2
-    assert accepted_offer in bus_test2.offers.posted
-    assert bus_test2.offers.posted[accepted_offer] == area_test2.test_market.id
-    assert len(bus_test2.offers.split) == 0
+    assert residual_offer in bus_test2.offers.posted
+    assert bus_test2.offers.posted[residual_offer] == area_test2.test_market.id
+    assert len(bus_test2.offers.posted) == 1
+    assert len(bus_test2.offers.split) == 1
     assert len(bus_test2.offers.sold) == 1
     assert original_offer.id in bus_test2.offers.sold_in_market(area_test2.test_market.id)
 

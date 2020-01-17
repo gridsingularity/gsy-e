@@ -81,7 +81,7 @@ class OneSidedMarket(Market):
 
         self.offers[offer.id] = deepcopy(offer)
         self.offer_history.append(offer)
-        log.debug(f"[OFFER][NEW][{self.time_slot_str}] {offer}")
+        log.debug(f"[OFFER][NEW][{self.name}][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
         if dispatch_event is True:
             self.dispatch_market_offer_event(offer)
@@ -102,7 +102,7 @@ class OneSidedMarket(Market):
         self._update_min_max_avg_offer_prices()
         if not offer:
             raise OfferNotFoundException()
-        log.debug(f"[OFFER][DEL][{self.time_slot_str}] {offer}")
+        log.debug(f"[OFFER][DEL][{self.name}][{self.time_slot_str}] {offer}")
         # TODO: Once we add event-driven blockchain, this should be asynchronous
         if dispatch_event:
             self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
