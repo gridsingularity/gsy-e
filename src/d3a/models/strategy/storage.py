@@ -261,12 +261,11 @@ class StorageStrategy(BidEnabledStrategy):
     def event_tick(self):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
         for market in self.area.all_markets:
+            self.bid_update.increment_update_counter(self, market.time_slot)
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self.bid_update.increment_update_counter(self, market.time_slot)
                 self.buy_energy(market)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
-                self.bid_update.increment_update_counter(self, market.time_slot)
                 self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
                 if self.are_bids_posted(market.id):
                     self.bid_update.update_posted_bids_over_ticks(market, self)
@@ -382,9 +381,11 @@ class StorageStrategy(BidEnabledStrategy):
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
-            # Check if storage has free capacity and if the price is cheap enough
-            if self.state.free_storage(market.time_slot) <= 0.0 \
-                    or (offer.price / offer.energy) > max_affordable_offer_rate:
+            # Check if storage has free capacity
+            if self.state.free_storage(market.time_slot) <= 0.0:
+                return
+            # Check if the price is cheap enough
+            if (offer.price / offer.energy) > max_affordable_offer_rate:
                 continue
 
             alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
