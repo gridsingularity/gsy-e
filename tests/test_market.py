@@ -439,7 +439,7 @@ def test_market_accept_bid_does_not_emit_bid_deleted_on_partial_bid(
     trade = market.accept_bid(bid, energy=1, trade_offer_info=[1, 1, 1, 1, 1])
     assert all([ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]])
     assert len(called.calls) == 2
-    assert called.calls[0][0] == (repr(MarketEvent.BID_CHANGED),)
+    assert called.calls[0][0] == (repr(MarketEvent.BID_SPLIT),)
     assert called.calls[1][0] == (repr(MarketEvent.BID_TRADED),)
     assert called.calls[1][1] == {
         'market_id': repr(market.id),

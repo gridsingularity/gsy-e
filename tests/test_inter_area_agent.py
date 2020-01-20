@@ -375,9 +375,9 @@ def test_iaa_event_trade_bid_updates_forwarded_bids_on_partial(iaa_bid, called, 
                                         (accepted_bid.price/accepted_bid.energy),
                                   energy=accepted_bid.energy-0.2)
         partial_bid = Bid('1234', 12, 0.2, 'owner', 'someone_else')
-        low_to_high_engine.event_bid_changed(market_id=low_to_high_engine.markets.target,
-                                             existing_bid=accepted_bid,
-                                             new_bid=partial_bid)
+        low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target,
+                                           existing_bid=accepted_bid,
+                                           new_bid=partial_bid)
     else:
         accepted_bid = low_to_high_engine.markets.target._bids[0]
         partial_bid = False
@@ -495,9 +495,9 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
     residual_bid_price = (total_bid.price/total_bid.energy) * 0.1
     accepted_bid = Bid(total_bid.id, accepted_bid_price, 1, total_bid.buyer, total_bid.seller)
     residual_bid = Bid('residual_bid', residual_bid_price, 0.1, total_bid.buyer, total_bid.seller)
-    iaa_double_sided.event_bid_changed(market_id=iaa_double_sided.higher_market,
-                                       existing_bid=total_bid,
-                                       new_bid=residual_bid)
+    iaa_double_sided.event_bid_split(market_id=iaa_double_sided.higher_market,
+                                     existing_bid=total_bid,
+                                     new_bid=residual_bid)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
                         pendulum.now(tz=TIME_ZONE),
@@ -517,9 +517,9 @@ def test_iaa_forwards_partial_bid_from_source_market(iaa_double_sided):
     residual_bid = Bid('residual_bid', total_bid.price, 0.1, total_bid.buyer,
                        total_bid.seller, total_bid.price)
     iaa_double_sided.usable_bid = lambda s: True
-    iaa_double_sided.event_bid_changed(market_id=iaa_double_sided.lower_market,
-                                       existing_bid=accepted_bid,
-                                       new_bid=residual_bid)
+    iaa_double_sided.event_bid_split(market_id=iaa_double_sided.lower_market,
+                                     existing_bid=accepted_bid,
+                                     new_bid=residual_bid)
     assert iaa_double_sided.higher_market.forwarded_bid.energy == 0.1
 
 

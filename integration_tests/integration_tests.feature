@@ -80,7 +80,7 @@ Feature: Run integration tests
      When we run simulation on console with default settings file
      Then we test the export functionality of default_2a
 
-  Scenario: Simulation returns same results for different market counts
+  Scenario: Simulation returns same results for different future market counts
     Given we have a scenario named default_2a
     And d3a is installed
     When we run the simulation with setup file default_2a with two different market_counts

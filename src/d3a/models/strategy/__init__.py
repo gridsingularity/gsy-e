@@ -430,12 +430,13 @@ class BidEnabledStrategy(BaseStrategy):
             return
         self.remove_bid_from_pending(bid.id, market_id)
 
-    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+    def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
         assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
-        if new_bid.buyer != self.owner.name:
+        if accepted_bid.buyer != self.owner.name:
             return
-        self.add_bid_to_posted(market_id, bid=new_bid)
+        self.add_bid_to_posted(market_id, bid=accepted_bid)
+        self.add_bid_to_posted(market_id, bid=residual_bid)
 
     def event_bid_traded(self, *, market_id, bid_trade):
         assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \

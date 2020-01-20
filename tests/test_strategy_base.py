@@ -254,7 +254,7 @@ def test_bid_events_fail_for_one_sided_market(base):
     with pytest.raises(AssertionError):
         base.event_bid_deleted(market_id=123, bid=test_bid)
     with pytest.raises(AssertionError):
-        base.event_bid_changed(market_id=123, existing_bid=test_bid, new_bid=test_bid)
+        base.event_bid_split(market_id=123, existing_bid=test_bid, new_bid=test_bid)
 
 
 def test_bid_deleted_removes_bid_from_posted(base):
@@ -273,7 +273,7 @@ def test_bid_changed_adds_bid_to_posted(base):
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = []
-    base.event_bid_changed(market_id=21, existing_bid=test_bid, new_bid=test_bid)
+    base.event_bid_split(market_id=21, existing_bid=test_bid, new_bid=test_bid)
     assert base.get_posted_bids(market) == [test_bid]
 
 
