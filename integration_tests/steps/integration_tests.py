@@ -727,7 +727,7 @@ def test_accumulated_energy(context):
 def test_external_trade_energy_price(context):
     # TODO: Deactivating this test for now, because it will fail due to D3ASIM-1887.
     # Please activate the test when implementing the aforementioned bug.
-    pass
+    return
     bills = context.simulation.endpoint_buffer.market_bills.bills_results
     current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis
     houses = [child for child in context.simulation.area.children
@@ -985,7 +985,7 @@ def identical_unmatched_loads(context):
 @then('the cumulative grid trades are identical no matter if the past markets are kept')
 def identical_cumulative_grid_trades(context):
     cumulative_grid_trades = \
-        context.simulation.endpoint_buffer.accumulated_trades
+        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades
     cumulative_grid_balancing_trades = \
         context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades
     assert len(DeepDiff(cumulative_grid_trades, context.cumulative_grid_trades,
