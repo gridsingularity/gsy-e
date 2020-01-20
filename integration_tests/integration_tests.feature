@@ -42,6 +42,7 @@ Feature: Run integration tests
     When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
     Then the traded energy report the correct accumulated traded energy
     And the energy bills report the correct accumulated traded energy price
+    And the energy bills report the correct external traded energy and price
     And the traded energy profile is correctly generated
 
   Examples: Settings

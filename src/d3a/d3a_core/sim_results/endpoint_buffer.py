@@ -43,16 +43,10 @@ class SimulationEndpointBuffer:
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
         self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
-        self.cumulative_grid_trades = {}
-        self.accumulated_trades = {}
-        self.accumulated_trades_redis = {}
-        self.accumulated_balancing_trades = {}
-        self.cumulative_grid_trades_redis = {}
-        self.cumulative_grid_balancing_trades = {}
-        self.tree_summary = {}
-        self.tree_summary_redis = {}
+        self.tree_summary = TreeSummary()
         self.market_bills = MarketEnergyBills()
         self.balancing_bills = MarketEnergyBills(is_spot_market=False)
+        self.cumulative_grid_trades = CumulativeGridTrades()
         self.trade_details = {}
         self.device_statistics = DeviceStatistics()
         self.file_export_endpoints = FileExportEndpoints()
@@ -64,9 +58,9 @@ class SimulationEndpointBuffer:
             "job_id": self.job_id,
             "random_seed": self.random_seed,
             "cumulative_loads": self.cumulative_loads,
-            "cumulative_grid_trades": self.cumulative_grid_trades_redis,
+            "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_redis_results,
-            "tree_summary": self.tree_summary_redis,
+            "tree_summary": self.tree_summary.current_results_redis,
             "status": self.status,
             "eta_seconds": self.eta.seconds,
         }
@@ -95,42 +89,20 @@ class SimulationEndpointBuffer:
             "unmatched_loads": self.market_unmatched_loads.unmatched_loads,
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day.csv_output,
-            "cumulative_grid_trades": self.cumulative_grid_trades,
+            "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_results,
-            "tree_summary": self.tree_summary,
+            "tree_summary": self.tree_summary.current_results,
             "status": self.status,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
         }
-
-    def _update_cumulative_grid_trades(self, area):
-        market_type = \
-            "past_markets" if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS else "current_market"
-        balancing_market_type = "past_balancing_markets" \
-            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS \
-            else "current_balancing_market"
-
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            self.accumulated_trades = {}
-            self.accumulated_trades_redis = {}
-            self.accumulated_balancing_trades = {}
-
-        self.accumulated_trades_redis, self.cumulative_grid_trades_redis = \
-            export_cumulative_grid_trades_redis(area, self.accumulated_trades_redis,
-                                                market_type)
-        self.accumulated_trades, self.cumulative_grid_trades = \
-            export_cumulative_grid_trades(area, self.accumulated_trades,
-                                          market_type, all_devices=True)
-        self.accumulated_balancing_trades, self.cumulative_grid_balancing_trades = \
-            export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
-                                          balancing_market_type)
 
     def update_stats(self, area, simulation_status, eta):
         self.status = simulation_status
         self.eta = eta
         self.cumulative_loads = export_cumulative_loads(area)
 
-        self._update_cumulative_grid_trades(area)
+        self.cumulative_grid_trades.update(area)
 
         self.market_bills.update(area)
         self.balancing_bills.update(area)
@@ -150,10 +122,16 @@ class SimulationEndpointBuffer:
         # The reason is that the price_energy_day data are used when calculating the
         # tree-summary data.
         self.price_energy_day.update(area)
-        self._update_tree_summary(area)
+        self.tree_summary.update(area, self.price_energy_day.csv_output)
 
-    def _update_tree_summary(self, area):
-        price_energy_list = self.price_energy_day.csv_output
+
+class TreeSummary:
+    def __init__(self):
+        self.current_results = {}
+        self.current_results_redis = {}
+
+    def update(self, area, price_energy_day_csv_output):
+        price_energy_list = price_energy_day_csv_output
 
         def calculate_prices(key, functor):
             if area.name not in price_energy_list:
@@ -165,12 +143,44 @@ class SimulationEndpointBuffer:
             ]
             return round(functor(energy_prices), 2) if len(energy_prices) > 0 else 0.0
 
-        self.tree_summary[area.slug] = {
+        self.current_results[area.slug] = {
             "min_trade_price": calculate_prices("min_price", min),
             "max_trade_price": calculate_prices("max_price", max),
             "avg_trade_price": calculate_prices("av_price", mean),
         }
-        self.tree_summary_redis[area.uuid] = self.tree_summary[area.slug]
+        self.current_results_redis[area.uuid] = self.current_results[area.slug]
         for child in area.children:
             if child.children:
-                self._update_tree_summary(child)
+                self.update(child, price_energy_day_csv_output)
+
+
+class CumulativeGridTrades:
+    def __init__(self):
+        self.current_trades = {}
+        self.current_trades_redis = {}
+        self.current_balancing_trades = {}
+        self.accumulated_trades = {}
+        self.accumulated_trades_redis = {}
+        self.accumulated_balancing_trades = {}
+
+    def update(self, area):
+        market_type = \
+            "past_markets" if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS else "current_market"
+        balancing_market_type = "past_balancing_markets" \
+            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS \
+            else "current_balancing_market"
+
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            self.accumulated_trades = {}
+            self.accumulated_trades_redis = {}
+            self.accumulated_balancing_trades = {}
+
+        self.accumulated_trades_redis, self.current_trades_redis = \
+            export_cumulative_grid_trades_redis(area, self.accumulated_trades_redis,
+                                                market_type)
+        self.accumulated_trades, self.current_trades = \
+            export_cumulative_grid_trades(area, self.accumulated_trades,
+                                          market_type, all_devices=True)
+        self.accumulated_balancing_trades, self.current_balancing_trades = \
+            export_cumulative_grid_trades(area, self.accumulated_balancing_trades,
+                                          balancing_market_type)
