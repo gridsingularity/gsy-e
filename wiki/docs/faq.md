@@ -39,7 +39,7 @@ For a step-by-step explanation on how to setup your simulation, please watch our
 
 ### Are there any limitations concerning the size of the simulation ?
 
-For smoother simulations and smaller queue, we have set some boundaries. First, the simulations are limited in their duration. You can currently set the duration from 1 to 7 days. Furthermore, the number of agents allowed per simulation is limited. Each device and area is considered as an agent and you can define up to 50 of these.
+For smoother simulations and smaller queue, we have set some boundaries. First, the simulations are limited in their duration. You can currently set the duration from 1 to 7 days. Furthermore, the number of agents allowed per simulation is limited. Each device and area is considered as an agent and you can define up to 250 of these.
 
  
 
@@ -127,7 +127,7 @@ Grid Singularity, an energy technology startup, and the Rocky Mountain Institute
 
 We have partnered with innovative energy companies to facilitate further D3A development in the framework of the [Odyssey 2020](https://www.odyssey.org/odyssey-hackathon-2020/) Energy Singularity Track led by Grid Singularity. We will also work on some specific market simulation studies with partners to demonstrate the value of local energy markets. Following Odyssey Hackathon in April, we plan to deploy the D3A engine on real smart-meters to allow trades in a neighbourhood by the end of 2020 as part of a pilot project.
 
-![img](img\faq-1.png)
+![img](img/faq-1.png)
 
  
 

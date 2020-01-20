@@ -68,8 +68,14 @@ In addition, the minimum and maximum price on that time of the day for all days 
 
 If there was no trade happening during a certain market interval, the price is set to zero at that time. 
 
-**Download results**
+**Compare results**
 
-The user have the possibility to download the results of their simulation:
+The user have the possibility to compare the results to another simulation (in order to compare results, the simulation should already have been run) :
 
-![img](img/results-7.png)
+![img](img/results-7.png){:style="height:35px;width:100px"}
+
+**Settings**
+
+The user have the possibility to **duplicate** the setup, **download** the results of their simulation or **delete** the configuration:
+
+![img](img/results-8.png){:style="height:50px;width:50px"}

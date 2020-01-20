@@ -18,7 +18,7 @@ The current implementation of the D3A focuses on the spot & balancing market. In
 The duration of the markets can be configured. 
 Currently, three spot market types are implemented:
 
-1. Single sided pay-as-offer
+1. One sided pay-as-offer
 2. Two sided pay-as-bid
 3. Two sided pay-as-clear
 

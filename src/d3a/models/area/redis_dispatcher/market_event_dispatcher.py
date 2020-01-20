@@ -17,15 +17,7 @@ class AreaRedisMarketEventDispatcher(RedisEventDispatcherBase):
         self.market_event = Event()
         self.futures = []
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKER_THREADS)
-        self.child_response_events = {
-            MarketEvent.TRADE.value: Event(),
-            MarketEvent.OFFER.value: Event(),
-            MarketEvent.OFFER_DELETED.value: Event(),
-            MarketEvent.OFFER_CHANGED.value: Event(),
-            MarketEvent.BID_TRADED.value: Event(),
-            MarketEvent.BID_CHANGED.value: Event(),
-            MarketEvent.BID_DELETED.value: Event(),
-        }
+        self.child_response_events = {t.value: Event() for t in MarketEvent}
 
     def wait_for_futures(self):
         for future in self.futures:

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
-
+from copy import deepcopy
 import pendulum
 
 from d3a.constants import TIME_FORMAT
@@ -56,12 +56,12 @@ class FakeArea:
 
 
 class FakeMarket:
-    def __init__(self, sorted_offers, bids=[], m_id=123, transfer_fees=transfer_fees, name=None):
+    def __init__(self, offers, bids=[], m_id=123, transfer_fees=transfer_fees, name=None):
         self.name = name
         self.id = m_id
-        self.sorted_offers = sorted_offers
+        self.offers = {o.id: o for o in offers}
         self._bids = bids
-        self.offer_count = 0
+        self.offer_call_count = 0
         self.bid_count = 0
         self.forwarded_offer_id = 'fwd'
         self.forwarded_bid_id = 'fwd_bid_id'
@@ -76,12 +76,12 @@ class FakeMarket:
         self.transfer_fee_ratio = transfer_fees.transfer_fee_pct
         self.transfer_fee_const = transfer_fees.transfer_fee_const
 
+    @property
+    def sorted_offers(self):
+        return list(sorted(self.offers.values(), key=lambda b: b.price / b.energy))
+
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot
-
-    @property
-    def offers(self):
-        return {offer.id: offer for offer in self.sorted_offers}
 
     @property
     def bids(self):
@@ -134,14 +134,28 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def offer(self, price, energy, seller, original_offer_price=None, dispatch_event=True,
-              seller_origin=None):
-        self.offer_count += 1
-        price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
-        self.forwarded_offer = Offer(self.forwarded_offer_id, price, energy, seller,
-                                     original_offer_price=original_offer_price,
-                                     seller_origin=seller_origin)
-        return self.forwarded_offer
+    def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
+        return offer_price \
+            + self.transfer_fee_ratio * original_offer_price \
+            + self.transfer_fee_const * energy
+
+    def offer(self, price: float, energy: float, seller: str, offer_id=None,
+              original_offer_price=None, dispatch_event=True, seller_origin=None,
+              adapt_price_with_fees=True) -> Offer:
+        self.offer_call_count += 1
+
+        if original_offer_price is None:
+            original_offer_price = price
+        if offer_id is None:
+            offer_id = "uuid"
+        if adapt_price_with_fees:
+            price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
+        offer = Offer(offer_id, price, energy, seller, original_offer_price,
+                      seller_origin=seller_origin)
+        self.offers[offer.id] = deepcopy(offer)
+        self.forwarded_offer = deepcopy(offer)
+
+        return offer
 
     def dispatch_market_offer_event(self, offer):
         pass
@@ -152,6 +166,33 @@ class FakeMarket:
                                  original_bid_price=original_bid_price,
                                  buyer_origin=buyer_origin)
         return self.forwarded_bid
+
+    def split_offer(self, original_offer, energy, orig_offer_price=None):
+        self.offers.pop(original_offer.id, None)
+        # same offer id is used for the new accepted_offer
+        accepted_offer = self.offer(offer_id=original_offer.id,
+                                    price=original_offer.price * (energy / original_offer.energy),
+                                    energy=energy,
+                                    seller=original_offer.seller,
+                                    dispatch_event=False,
+                                    seller_origin=original_offer.seller_origin)
+
+        residual_price = (1 - energy / original_offer.energy) * original_offer.price
+        residual_energy = original_offer.energy - energy
+        if orig_offer_price is None:
+            orig_offer_price = original_offer.price
+        original_residual_price = \
+            ((original_offer.energy - energy) / original_offer.energy) * orig_offer_price
+
+        residual_offer = self.offer(price=residual_price,
+                                    energy=residual_energy,
+                                    seller=original_offer.seller,
+                                    original_offer_price=original_residual_price,
+                                    dispatch_event=False,
+                                    seller_origin=original_offer.seller_origin,
+                                    adapt_price_with_fees=False)
+
+        return accepted_offer, residual_offer
 
 
 @pytest.fixture
@@ -187,20 +228,14 @@ def iaa_grid_fee():
 
 
 def test_iaa_forwards_offers(iaa):
-    assert iaa.lower_market.offer_count == 2
-    assert iaa.higher_market.offer_count == 1
-
-
-def test_iaa_forwarded_offers_complied_to_transfer_fee_percentage(iaa):
-    iaa_per_fee = ((iaa.higher_market.forwarded_offer.price -
-                    iaa.lower_market.sorted_offers[-1].price) /
-                   iaa.lower_market.sorted_offers[-1].price)
-    assert round(iaa_per_fee, 2) == round(iaa.lower_market.transfer_fee_ratio, 2)
+    assert iaa.lower_market.offer_call_count == 2
+    assert iaa.higher_market.offer_call_count == 1
 
 
 def test_iaa_forwarded_offers_complied_to_transfer_fee(iaa_grid_fee):
-    earned_iaa_fee = iaa_grid_fee.higher_market.forwarded_offer.price - \
-                  iaa_grid_fee.lower_market.sorted_offers[-1].price
+    source_offer = [o for o in iaa_grid_fee.lower_market.sorted_offers if o.id == "id"][0]
+    target_offer = [o for o in iaa_grid_fee.higher_market.sorted_offers if o.id == "uuid"][0]
+    earned_iaa_fee = target_offer.price - source_offer.price
     expected_iaa_fee = iaa_grid_fee.higher_market.transfer_fee_ratio + \
         iaa_grid_fee.higher_market.transfer_fee_const
     assert earned_iaa_fee == expected_iaa_fee
@@ -383,7 +418,7 @@ def iaa2():
 def iaa_double_sided():
     from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket(sorted_offers=[Offer('id', 2, 2, 'other', 2)],
+    lower_market = FakeMarket(offers=[Offer('id', 2, 2, 'other', 2)],
                               bids=[Bid('bid_id', 10, 10, 'B', 'S', 10)],
                               transfer_fees=TransferFees(transfer_fee_pct=0.01,
                                                          transfer_fee_const=0))
@@ -488,36 +523,41 @@ def test_iaa_forwards_partial_bid_from_source_market(iaa_double_sided):
     assert iaa_double_sided.higher_market.forwarded_bid.energy == 0.1
 
 
-def test_iaa_forwards_partial_offer_from_source_market(iaa2):
-    full_offer = iaa2.lower_market.sorted_offers[0]
-    iaa2.usable_offer = lambda s: True
-    residual_offer = Offer('residual', 2, 1.4, 'other')
-    iaa2.event_offer_changed(market_id=iaa2.lower_market.id,
-                             existing_offer=full_offer,
-                             new_offer=residual_offer)
-    assert iaa2.higher_market.forwarded_offer.energy == 1.4
+def test_iaa_event_offer_split_and_trade_correctly_populate_forwarded_offer_entries(iaa2):
+    residual_offer_id = 'res_id'
+    original_offer_id = 'id'
+    original = iaa2.higher_market.forwarded_offer
+    assert original.energy == 2
+    accepted = Offer(original.id, 1, 1, original.seller)
+    residual = Offer(residual_offer_id, 1, 1, original.seller)
 
+    iaa2.event_offer_split(market_id=iaa2.higher_market.id,
+                           original_offer=original,
+                           accepted_offer=accepted,
+                           residual_offer=residual)
+    engine = next((e for e in iaa2.engines if residual_offer_id in e.forwarded_offers), None)
+    assert engine is not None, "Residual of forwarded offers not found in forwarded_offers"
 
-@pytest.fixture
-def iaa3(iaa2):
-    fwd_offer = iaa2.higher_market.forwarded_offer
-    fwd_residual = Offer('res_fwd', fwd_offer.price, 1, fwd_offer.seller)
-    iaa2.event_offer_changed(market_id=iaa2.higher_market.id,
-                             existing_offer=fwd_offer,
-                             new_offer=fwd_residual)
+    # after the split event:
+    # all three offer ids are part of the forwarded_offer member
+    assert set(engine.forwarded_offers.keys()) == {residual_offer_id, original_offer_id,
+                                                   'uuid'}
+    # and the accepted offer was added
+    assert engine.forwarded_offers[original_offer_id].target_offer.energy == accepted.energy
+    # and the residual offer was added
+    assert engine.forwarded_offers[residual_offer_id].target_offer.energy == accepted.energy
+
     iaa2.event_trade(trade=Trade('trade_id',
                                  pendulum.now(tz=TIME_ZONE),
-                                 Offer(fwd_offer.id, fwd_offer.price, 1, fwd_offer.seller),
+                                 accepted,
                                  'owner',
                                  'someone_else',
-                                 fwd_residual),
-                     market_id=iaa2.higher_market.id)
-    return iaa2
+                                 residual),
+                     market_id=iaa2.lower_market.id)
 
-
-def test_iaa_event_trade_forwards_residual_offer(iaa3):
-    engine = next((e for e in iaa3.engines if 'res_fwd' in e.forwarded_offers), None)
-    assert engine is not None, "Residual of forwarded offers not found in forwarded_offers"
-    assert engine.offer_age['res'] == 10
-    offer_info = engine.forwarded_offers['res_fwd']
-    assert offer_info.source_offer.id == 'res'
+    # after the trade event:
+    # the forwarded_offers only contain the residual offer
+    assert set(engine.forwarded_offers.keys()) == {residual_offer_id}
+    offer_info = engine.forwarded_offers[residual_offer_id]
+    assert offer_info.source_offer.id == "uuid"
+    assert offer_info.target_offer.id == residual_offer_id

@@ -31,14 +31,14 @@ class OfferEvent(Enum):
 
 class MarketEvent(Enum):
     OFFER = 1
-    OFFER_CHANGED = 4
+    OFFER_SPLIT = 4
     OFFER_DELETED = 2
     TRADE = 3
     BID_TRADED = 5
     BID_DELETED = 6
     BID_CHANGED = 7
     BALANCING_OFFER = 8
-    BALANCING_OFFER_CHANGED = 9
+    BALANCING_OFFER_SPLIT = 9
     BALANCING_OFFER_DELETED = 10
     BALANCING_TRADE = 11
 

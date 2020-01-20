@@ -24,7 +24,7 @@ import json
 import time
 
 from click.types import ParamType
-from pendulum import duration, from_format, DateTime
+from pendulum import duration, from_format
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
@@ -33,9 +33,10 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import RangeLimit
+from d3a_interface.utils import generate_market_slot_list_from_config
 
 import d3a
 import inspect
@@ -336,11 +337,9 @@ def generate_market_slot_list(area=None):
     Returns a list of all slot times
     """
     config = GlobalConfig if area is None else area.config
-    return [
-        config.start_date + (config.slot_length * i) for i in range(
-            (config.sim_duration + (config.market_count * config.slot_length)) //
-            config.slot_length - 1)
-        if (config.slot_length * i) <= config.sim_duration]
+    return generate_market_slot_list_from_config(
+        config.sim_duration, config.start_date, config.market_count, config.slot_length
+    )
 
 
 def constsettings_to_dict():
@@ -423,25 +422,6 @@ def validate_const_settings_for_simulation():
         ConstSettings.IAASettings.MARKET_TYPE = 1
 
 
-def convert_datetime_to_str_keys(indict, outdict, ui_format=False):
-    """
-    Converts all Datetime keys in a dict into strings in DATE_TIME_FORMAT
-    """
-
-    for key, value in indict.items():
-        if isinstance(key, DateTime):
-            if not ui_format:
-                outdict[key.format(DATE_TIME_FORMAT)] = indict[key]
-            else:
-                outdict[key.format(DATE_TIME_UI_FORMAT)] = indict[key]
-        else:
-            if isinstance(indict[key], dict):
-                outdict[key] = {}
-                convert_datetime_to_str_keys(indict[key], outdict[key])
-
-    return outdict
-
-
 def round_floats_for_ui(number):
     return round(number, 3)
 
@@ -508,3 +488,7 @@ def convert_kilo_to_mega(unit_k):
 
 def convert_percent_to_ratio(unit_percent):
     return unit_percent / 100
+
+
+def short_offer_log_str(offer):
+    return f"({{{offer.id!s:.6s}}}: {offer.energy} kWh)"

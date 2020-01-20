@@ -21,10 +21,9 @@ from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trad
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
-from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads, \
-    MarketUnmatchedLoads
+from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
-from d3a.d3a_core.util import round_floats_for_ui
+
 from statistics import mean
 from pendulum import duration
 
@@ -41,10 +40,7 @@ class SimulationEndpointBuffer:
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.eta = duration(seconds=0)
-        self.unmatched_loads = {}
-        self.unmatched_loads_redis = {}
-        self.export_unmatched_loads = ExportUnmatchedLoads(area)
-        self.market_unmatched_loads = MarketUnmatchedLoads()
+        self.market_unmatched_loads = MarketUnmatchedLoads(area)
         self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
         self.cumulative_grid_trades = {}
@@ -59,31 +55,44 @@ class SimulationEndpointBuffer:
         self.balancing_bills = MarketEnergyBills(is_spot_market=False)
         self.trade_details = {}
         self.device_statistics = DeviceStatistics()
-        self.energy_trade_profile = {}
-        self.energy_trade_profile_redis = {}
         self.file_export_endpoints = FileExportEndpoints()
 
+        self.last_unmatched_loads = {}
+
     def generate_result_report(self):
-        return {
+        redis_results = {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
-            "unmatched_loads": self.unmatched_loads_redis,
             "cumulative_loads": self.cumulative_loads,
-            "price_energy_day": self.price_energy_day.redis_output,
             "cumulative_grid_trades": self.cumulative_grid_trades_redis,
             "bills": self.market_bills.bills_redis_results,
             "tree_summary": self.tree_summary_redis,
             "status": self.status,
             "eta_seconds": self.eta.seconds,
-            "device_statistics": self.device_statistics.flat_results_time_str,
-            "energy_trade_profile": self.energy_trade_profile_redis
         }
+
+        if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
+            redis_results.update({
+                "unmatched_loads": self.market_unmatched_loads.unmatched_loads_uuid,
+                "price_energy_day": self.price_energy_day.redis_output,
+                "device_statistics": self.device_statistics.flat_stats_time_str,
+                "energy_trade_profile": self.file_export_endpoints.traded_energy_profile_redis,
+            })
+        else:
+            redis_results.update({
+                "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
+                "last_energy_trade_profile": self.file_export_endpoints.traded_energy_current,
+                "last_price_energy_day": self.price_energy_day.redis_output,
+                "last_device_statistics": self.device_statistics.current_stats_time_str
+            })
+
+        return redis_results
 
     def generate_json_report(self):
         return {
             "job_id": self.job_id,
             "random_seed": self.random_seed,
-            "unmatched_loads": self.unmatched_loads,
+            "unmatched_loads": self.market_unmatched_loads.unmatched_loads,
             "cumulative_loads": self.cumulative_loads,
             "price_energy_day": self.price_energy_day.csv_output,
             "cumulative_grid_trades": self.cumulative_grid_trades,
@@ -91,25 +100,8 @@ class SimulationEndpointBuffer:
             "tree_summary": self.tree_summary,
             "status": self.status,
             "device_statistics": self.device_statistics.device_stats_time_str,
-            "energy_trade_profile": self.energy_trade_profile
+            "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
         }
-
-    def _update_unmatched_loads(self, area):
-        if self.export_unmatched_loads.load_count == 0:
-            self.unmatched_loads, self.unmatched_loads_redis =\
-                self.market_unmatched_loads.write_none_to_unmatched_loads(area, {}, {})
-        else:
-            current_results, current_results_uuid = \
-                self.export_unmatched_loads.get_current_market_results(
-                    all_past_markets=ConstSettings.GeneralSettings.KEEP_PAST_MARKETS)
-
-            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-                self.unmatched_loads = current_results
-                self.unmatched_loads_redis = current_results_uuid
-            else:
-                self.unmatched_loads, self.unmatched_loads_redis = \
-                    self.market_unmatched_loads.update_and_get_unmatched_loads(
-                        current_results, current_results_uuid)
 
     def _update_cumulative_grid_trades(self, area):
         market_type = \
@@ -136,29 +128,29 @@ class SimulationEndpointBuffer:
     def update_stats(self, area, simulation_status, eta):
         self.status = simulation_status
         self.eta = eta
-        self._update_unmatched_loads(area)
-        # Should always precede tree-summary update
-        self.price_energy_day.update(area)
-        self.cumulative_loads = {
-            "price-currency": "Euros",
-            "load-unit": "kWh",
-            "cumulative-load-price": export_cumulative_loads(area)
-        }
+        self.cumulative_loads = export_cumulative_loads(area)
 
         self._update_cumulative_grid_trades(area)
 
         self.market_bills.update(area)
         self.balancing_bills.update(area)
 
-        self._update_tree_summary(area)
         self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 
+        self.file_export_endpoints(area)
+        self.market_unmatched_loads.update_unmatched_loads(area)
         self.device_statistics.update(area)
 
-        self.file_export_endpoints(area)
-        self.energy_trade_profile = self.file_export_endpoints.traded_energy_profile
-        self.energy_trade_profile_redis = self._round_energy_trade_profile(
-            self.file_export_endpoints.traded_energy_profile_redis)
+        self._update_price_energy_day_tree_summary(area)
+
+        self.generate_result_report()
+
+    def _update_price_energy_day_tree_summary(self, area):
+        # Update of the price_energy_day endpoint should always precede tree-summary.
+        # The reason is that the price_energy_day data are used when calculating the
+        # tree-summary data.
+        self.price_energy_day.update(area)
+        self._update_tree_summary(area)
 
     def _update_tree_summary(self, area):
         price_energy_list = self.price_energy_day.csv_output
@@ -166,6 +158,7 @@ class SimulationEndpointBuffer:
         def calculate_prices(key, functor):
             if area.name not in price_energy_list:
                 return 0.
+
             energy_prices = [
                 price_energy[key]
                 for price_energy in price_energy_list[area.name]["price-energy-day"]
@@ -181,14 +174,3 @@ class SimulationEndpointBuffer:
         for child in area.children:
             if child.children:
                 self._update_tree_summary(child)
-
-    @classmethod
-    def _round_energy_trade_profile(cls, profile):
-        for k in profile.keys():
-            for sold_bought in ['sold_energy', 'bought_energy']:
-                for dev in profile[k][sold_bought].keys():
-                    for target in profile[k][sold_bought][dev].keys():
-                        for timestamp in profile[k][sold_bought][dev][target].keys():
-                            profile[k][sold_bought][dev][target][timestamp] = round_floats_for_ui(
-                                profile[k][sold_bought][dev][target][timestamp])
-        return profile

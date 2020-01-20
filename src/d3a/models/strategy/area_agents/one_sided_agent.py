@@ -57,19 +57,16 @@ class OneSidedAgent(InterAreaAgent):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_trade(trade=trade)
 
-    def event_offer(self, *, market_id, offer):
-        for engine in sorted(self.engines, key=lambda _: random()):
-            engine.event_offer(market_id=market_id, offer=offer)
-
     def event_offer_deleted(self, *, market_id, offer):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_offer_deleted(offer=offer)
 
-    def event_offer_changed(self, *, market_id, existing_offer, new_offer):
+    def event_offer_split(self, *, market_id,  original_offer, accepted_offer, residual_offer):
         for engine in sorted(self.engines, key=lambda _: random()):
-            engine.event_offer_changed(market_id=market_id,
-                                       existing_offer=existing_offer,
-                                       new_offer=new_offer)
+            engine.event_offer_split(market_id=market_id,
+                                     original_offer=original_offer,
+                                     accepted_offer=accepted_offer,
+                                     residual_offer=residual_offer)
 
     def __repr__(self):
         return "<OneSidedAgent {s.name} {s.time_slot}>".format(s=self)
