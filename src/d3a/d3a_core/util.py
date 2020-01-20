@@ -488,3 +488,7 @@ def convert_kilo_to_mega(unit_k):
 
 def convert_percent_to_ratio(unit_percent):
     return unit_percent / 100
+
+
+def short_offer_log_str(offer):
+    return f"({{{offer.id!s:.6s}}}: {offer.energy} kWh)"

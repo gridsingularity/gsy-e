@@ -76,7 +76,7 @@ class FakeOffer:
 
 
 class FakeMarket:
-    def __init__(self, *, raises, id=11):
+    def __init__(self, *, raises, id="11"):
         self.raises = raises
         self.transfer_fee_ratio = 0
         self.bids = {}
@@ -111,7 +111,9 @@ def offers():
 
 def test_offers_open(offers):
     assert len(offers.open) == 1
-    offers.sold['market'].append('id')
+    market = offers.__fake_market
+    old_offer = offers.posted_in_market(market.id)[0]
+    offers.sold_offer(old_offer, 'market')
     assert len(offers.open) == 0
 
 
@@ -119,7 +121,7 @@ def test_offers_replace_open_offer(offers):
     market = offers.__fake_market
     old_offer = offers.posted_in_market(market.id)[0]
     new_offer = FakeOffer('new_id')
-    offers.replace(old_offer, new_offer, market)
+    offers.replace(old_offer, new_offer, market.id)
     assert offers.posted_in_market(market.id)[0].id == 'new_id'
     assert 'id' not in offers.posted
 
@@ -127,7 +129,7 @@ def test_offers_replace_open_offer(offers):
 def test_offers_does_not_replace_sold_offer(offers):
     old_offer = offers.posted_in_market('market')[0]
     new_offer = FakeOffer('new_id')
-    offers.sold_offer('id', 'market')
+    offers.sold_offer(old_offer, 'market')
     offers.replace(old_offer, new_offer, 'market')
     assert old_offer in offers.posted and new_offer not in offers.posted
 
@@ -142,8 +144,9 @@ def offers2():
 
 
 def test_offers_in_market(offers2):
+    old_offer = next(o for o in offers2.posted_in_market('market') if o.id == "id2")
     assert len(offers2.posted_in_market('market')) == 2
-    offers2.sold_offer('id2', 'market')
+    offers2.sold_offer(old_offer, 'market')
     assert len(offers2.sold_in_market('market')) == 1
     assert len(offers2.sold_in_market('market2')) == 0
 
@@ -163,13 +166,13 @@ def offers3(offer1):
 
 
 def test_offers_partial_offer(offer1, offers3):
-    accepted_offer = Offer('id', 1, 1.8, offer1.seller, 'market')
+    accepted_offer = Offer('id', 1, 0.6, offer1.seller, 'market')
     residual_offer = Offer('new_id', 1, 1.2, offer1.seller, 'market')
+    offers3.on_offer_split(offer1, accepted_offer, residual_offer, 'market')
     trade = Trade('trade_id', pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, 'buyer')
-    offers3.on_offer_changed(offer1, residual_offer)
     offers3.on_trade('market', trade)
     assert len(offers3.sold_in_market('market')) == 1
-    assert accepted_offer in offers3.sold_in_market('market')
+    assert accepted_offer.id in offers3.sold_in_market('market')
 
 
 @pytest.fixture
