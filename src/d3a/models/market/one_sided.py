@@ -175,7 +175,7 @@ class OneSidedMarket(Market):
                 GridFees.calculate_trade_price_and_fees(
                     trade_bid_info, self.transfer_fee_ratio
                 )
-            self.market_fee += fees
+            self.market_fee += fees * energy_portion * energy
             return energy * (trade_rate_incl_fees - fees) \
                 if original_offer.seller_origin == offer.seller else \
                 energy * trade_rate_incl_fees

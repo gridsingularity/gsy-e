@@ -151,7 +151,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             revenue, fees, final_trade_rate = GridFees.calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
             )
-            self.market_fee += fees
+            self.market_fee += fees * energy_portion * energy
             final_price = energy * final_trade_rate
             bid = Bid(bid.id, final_price, energy, buyer, seller,
                       original_bid_price=energy_portion * orig_price,

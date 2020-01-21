@@ -19,6 +19,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
+from d3a.models.market.market_structures import Offer
 from d3a_interface.constants_limits import ConstSettings
 
 
@@ -62,12 +63,12 @@ class MarketEnergyBills:
         self.market_fees = {}
 
     @classmethod
-    def _store_bought_trade(cls, result_dict, trade_offer):
+    def _store_bought_trade(cls, result_dict, trade_offer, m_fee=0):
         # Division by 100 to convert cents to Euros
         result_dict['bought'] += trade_offer.energy
-        result_dict['spent'] += trade_offer.price / 100.
+        result_dict['spent'] += trade_offer.price / 100. + m_fee
         result_dict['total_energy'] += trade_offer.energy
-        result_dict['total_cost'] += trade_offer.price / 100.
+        result_dict['total_cost'] += trade_offer.price / 100. + m_fee
 
     @classmethod
     def _store_sold_trade(cls, result_dict, trade_offer):
@@ -119,7 +120,11 @@ class MarketEnergyBills:
                 buyer = area_name_from_area_or_iaa_name(trade.buyer)
                 seller = area_name_from_area_or_iaa_name(trade.seller)
                 if buyer in result:
-                    self._store_bought_trade(result[buyer], trade.offer)
+                    if isinstance(trade.offer, Offer):
+                        m_fee = self.market_fees[area.name]
+                    else:
+                        m_fee = 0
+                    self._store_bought_trade(result[buyer], trade.offer, m_fee)
                 if seller in result:
                     self._store_sold_trade(result[seller], trade.offer)
         for child in area.children:
