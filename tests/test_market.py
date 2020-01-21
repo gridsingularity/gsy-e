@@ -300,7 +300,6 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(time_slot=
 
 
 def test_market_bid_trade(market=TwoSidedPayAsBid(time_slot=DateTime.now())):
-    # market = TwoSidedPayAsBid(time_slot=DateTime.now())
     bid = market.bid(20, 10, 'A', 'B', original_bid_price=20)
 
     trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=[2, 2, 0.5, 0.5, 2])

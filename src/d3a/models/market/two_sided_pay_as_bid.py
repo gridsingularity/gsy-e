@@ -181,6 +181,12 @@ class TwoSidedPayAsBid(OneSidedMarket):
             # partial bid trade
             accepted_bid, residual_bid = self.split_bid(market_bid, energy, orig_price)
             bid = accepted_bid
+
+            # Delete the accepted bid from self.bids:
+            try:
+                self.bids.pop(accepted_bid.id)
+            except KeyError:
+                raise BidNotFound
         else:
             # full bid trade, nothing further to do here
             pass
