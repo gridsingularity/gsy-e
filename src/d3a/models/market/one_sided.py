@@ -112,7 +112,7 @@ class OneSidedMarket(Market):
         fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
         self.market_fee += fees
-        return energy * trade_rate - fees
+        return fees, energy * trade_rate - fees
 
     @classmethod
     def _calculate_original_prices(cls, offer):
@@ -176,7 +176,7 @@ class OneSidedMarket(Market):
                     trade_bid_info, self.transfer_fee_ratio
                 )
             self.market_fee += fees * energy_portion * energy
-            return energy * (trade_rate_incl_fees - fees) \
+            return fees, energy * (trade_rate_incl_fees - fees) \
                 if original_offer.seller_origin == offer.seller else \
                 energy * trade_rate_incl_fees
 
@@ -217,9 +217,9 @@ class OneSidedMarket(Market):
 
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
-                trade_price = self.determine_offer_price(energy / offer.energy, energy,
-                                                         trade_rate, trade_bid_info,
-                                                         orig_offer_price, original_offer, offer)
+                fee_rate, trade_price = self.determine_offer_price(
+                    energy / offer.energy, energy, trade_rate, trade_bid_info,
+                    orig_offer_price, original_offer, offer)
 
                 offer = accepted_offer
                 offer.price = trade_price
@@ -228,9 +228,9 @@ class OneSidedMarket(Market):
                 raise InvalidTrade("Energy can't be greater than offered energy")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
-                offer.price = self.determine_offer_price(1, energy,
-                                                         trade_rate, trade_bid_info,
-                                                         orig_offer_price, original_offer, offer)
+                fee_rate, offer.price = self.determine_offer_price(
+                    1, energy, trade_rate, trade_bid_info, orig_offer_price,
+                    original_offer, offer)
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
@@ -243,11 +243,13 @@ class OneSidedMarket(Market):
 
         # Delete the accepted offer from self.offers:
         self.offers.pop(offer.id, None)
-
+        fee_price = fee_rate * offer.energy
+        offer_bid_trade_info = GridFees.propagate_original_bid_info_on_offer_trade(
+            trade_bid_info, self.transfer_fee_ratio)
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
-                      offer_bid_trade_info=GridFees.propagate_original_bid_info_on_offer_trade(
-                          trade_bid_info, self.transfer_fee_ratio),
-                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin
+                      offer_bid_trade_info=offer_bid_trade_info,
+                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
+                      fee_price=fee_price
                       )
         self.bc_interface.track_trade_event(trade)
 

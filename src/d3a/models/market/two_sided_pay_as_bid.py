@@ -160,7 +160,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             revenue, fees, final_trade_rate = GridFees.calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
             )
-            self.market_fee += fees
+            self.market_fee += fees * energy
             final_price = energy * final_trade_rate
             bid = bid._replace(price=final_price)
 
@@ -168,11 +168,12 @@ class TwoSidedPayAsBid(OneSidedMarket):
         # the behavior of the forwarded bids which use the source market fee.
         updated_bid_trade_info = GridFees.propagate_original_offer_info_on_bid_trade(
                           trade_offer_info, 0.0)
+        fee_price = fees * bid.energy
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual, already_tracked=already_tracked,
-                      offer_bid_trade_info=updated_bid_trade_info,
-                      buyer_origin=bid.buyer_origin, seller_origin=seller_origin
+                      offer_bid_trade_info=updated_bid_trade_info, buyer_origin=bid.buyer_origin,
+                      seller_origin=seller_origin, fee_price=fee_price
                       )
 
         if already_tracked is False:
