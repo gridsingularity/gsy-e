@@ -31,6 +31,10 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
     def shutdown(self):
         self.redis_db.terminate_connection()
 
+    def publish_market_cycle(self):
+        self.publish(f"{self.area.parent.slug}/{self.area.slug}/market_cycle",
+                     self.market.info)
+
     @property
     def market(self):
         return self.area.parent.next_market
@@ -226,3 +230,7 @@ class ExternalStrategy(BaseStrategy):
 
     def shutdown(self):
         self.redis.shutdown()
+
+    def event_market_cycle(self):
+        super().event_market_cycle()
+        self.redis.publish_market_cycle()
