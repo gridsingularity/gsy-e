@@ -21,7 +21,6 @@ import termios
 import tty
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 import json
-import time
 
 from click.types import ParamType
 from pendulum import duration, from_format
@@ -366,15 +365,6 @@ def constsettings_to_dict():
     except Exception:
         raise SyntaxError("Error when serializing the const settings file. Incorrect "
                           "setting structure.")
-
-
-def wait_until_timeout_blocking(functor, timeout=10, polling_period=0.01):
-    current_time = 0.0
-    while not functor() and current_time < timeout:
-        start_time = time.time()
-        time.sleep(polling_period)
-        current_time += time.time() - start_time
-    assert functor()
 
 
 def retry_function(max_retries=3):
