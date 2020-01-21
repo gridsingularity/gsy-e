@@ -194,7 +194,16 @@ class MarketEnergyBills:
         }})
 
         if area.name in flattened:
-            external = {k: v for k, v in flattened[area.name].items() if k != 'market_fee'}
+            # External trades are the trades of the parent area
+            external = deepcopy(flattened[area.name])
+            # Should not include market fee to the external trades
+            external.pop("market_fee", None)
+            # Should switch spent/earned and bought/sold, to match the perspective of the UI
+            spent = external.pop("spent")
+            earned = external.pop("earned")
+            bought = external.pop("bought")
+            sold = external.pop("sold")
+            external.update(**{"spent": earned, "earned": spent, "bought": sold, "sold": bought})
             results[area.name].update({"External Trades": external})
         return results
 
