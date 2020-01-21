@@ -15,6 +15,7 @@ d3a.models.market.market_redis_connection.ResettableCommunicator = MagicMock
 class TestExternalStrategy(unittest.TestCase):
 
     def setUp(self):
+        ConstSettings.IAASettings.MARKET_TYPE = 1
         self.area = Area(name="test_area")
         self.parent_area = Area(name="parent_area")
         self.test_market = TwoSidedPayAsBid(name="test_market")
@@ -36,6 +37,8 @@ class TestExternalStrategy(unittest.TestCase):
                 "parent-area/test-area/delete_offer": self.external_strategy2.redis._delete_offer,
                 "parent-area/test-area/delete_bid": self.external_strategy2.redis._delete_bid,
                 "parent-area/test-area/bid": self.external_strategy2.redis._bid,
+                "parent-area/test-area/bids": self.external_strategy2.redis._list_bids,
+                "parent-area/test-area/offers": self.external_strategy2.redis._offer_lists,
             }
         )
 
@@ -51,10 +54,8 @@ class TestExternalStrategy(unittest.TestCase):
 
     def _assert_dict_is_the_same_as_offer(self, offer_dict, offer):
         assert offer.id == offer_dict["id"]
-        assert offer.real_id == offer_dict["real_id"]
         assert offer.price == offer_dict["price"]
         assert offer.energy == offer_dict["energy"]
-        assert offer.seller == offer_dict["seller"]
 
     def test_list_offers(self):
         offer1 = self.test_market.offer(1, 2, "A")
@@ -66,11 +67,28 @@ class TestExternalStrategy(unittest.TestCase):
             "parent-area/test-area/offers/response"
         response_payload = json.loads(
             self.external_redis.redis_db.publish.call_args_list[0][0][1])
-        offers_dict = json.loads(response_payload["offer_list"])
-        assert len(offers_dict.keys()) == 3
-        self._assert_dict_is_the_same_as_offer(json.loads(offers_dict[offer1.id]), offer1)
-        self._assert_dict_is_the_same_as_offer(json.loads(offers_dict[offer2.id]), offer2)
-        self._assert_dict_is_the_same_as_offer(json.loads(offers_dict[offer3.id]), offer3)
+        offers_dict = response_payload["offer_list"]
+        assert len(offers_dict) == 3
+        self._assert_dict_is_the_same_as_offer(offers_dict[0], offer1)
+        self._assert_dict_is_the_same_as_offer(offers_dict[1], offer2)
+        self._assert_dict_is_the_same_as_offer(offers_dict[2], offer3)
+
+    @parameterized.expand([(2, ), (3, )])
+    def test_list_offers_two_sided(self, market_type):
+        ConstSettings.IAASettings.MARKET_TYPE = market_type
+        offer1 = self.test_market.offer(1, 2, "test_area")
+        offer2 = self.test_market.offer(2, 3, "test_area")
+        self.test_market.offer(3, 4, "C")
+        self.external_redis._offer_lists("")
+        self.external_redis.redis_db.publish.assert_called_once()
+        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+            "parent-area/test-area/offers/response"
+        response_payload = json.loads(
+            self.external_redis.redis_db.publish.call_args_list[0][0][1])
+        offers_dict = response_payload["offer_list"]
+        assert len(offers_dict) == 2
+        self._assert_dict_is_the_same_as_offer(offers_dict[0], offer1)
+        self._assert_dict_is_the_same_as_offer(offers_dict[1], offer2)
 
     def test_offer(self):
         payload = {"data": json.dumps({"energy": 22, "price": 54})}
@@ -132,3 +150,21 @@ class TestExternalStrategy(unittest.TestCase):
         self.external_redis.redis_db.publish.assert_called_once()
         assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
             "parent-area/test-area/delete_bid/response"
+
+    @parameterized.expand([(2, ), (3, )])
+    def test_list_bids(self, market_type):
+        ConstSettings.IAASettings.MARKET_TYPE = market_type
+        bid1 = self.test_market.bid(1, 2, "test_area", "A")
+        bid2 = self.test_market.bid(2, 3, "test_area", "B")
+        bid3 = self.test_market.bid(3, 4, "test_area", "C")
+        self.external_redis._list_bids("")
+        self.external_redis.redis_db.publish.assert_called_once()
+        assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
+            "parent-area/test-area/bids/response"
+        response_payload = json.loads(
+            self.external_redis.redis_db.publish.call_args_list[0][0][1])
+        bids_list = response_payload["bid_list"]
+        assert len(bids_list) == 3
+        self._assert_dict_is_the_same_as_offer(bids_list[0], bid1)
+        self._assert_dict_is_the_same_as_offer(bids_list[1], bid2)
+        self._assert_dict_is_the_same_as_offer(bids_list[2], bid3)
