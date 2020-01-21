@@ -208,6 +208,7 @@ class StorageState:
         max_value = self.capacity - self.min_allowed_soc_ratio * self.capacity
         assert self.min_allowed_soc_ratio < charge or \
             isclose(self.min_allowed_soc_ratio, charge, rel_tol=1e-06)
+        assert limit_float_precision(self.used_storage) <= self.capacity
         assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value

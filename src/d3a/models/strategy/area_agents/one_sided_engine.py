@@ -20,7 +20,7 @@ from typing import Dict, Set  # noqa
 from copy import deepcopy
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
-
+from d3a.d3a_core.util import short_offer_log_str
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
 from d3a.models.market.grid_fees.base_model import GridFees
 
@@ -66,18 +66,15 @@ class IAAEngine:
         else:
             return self.markets.target.offer(**kwargs)
 
-    def _forward_offer(self, offer, offer_id):
+    def _forward_offer(self, offer):
         # TODO: This is an ugly solution. After the december release this check needs to
         #  implemented after grid fee being incorporated while forwarding in target market
         if offer.price < 0.0:
-            self.owner.log.debug("Offer is not forwarded because price<0")
+            self.owner.log.debug("Offer is not forwarded because price < 0")
             return
-
         forwarded_offer = self._offer_in_market(offer)
 
-        offer_info = OfferInfo(deepcopy(offer), deepcopy(forwarded_offer))
-        self.forwarded_offers[forwarded_offer.id] = offer_info
-        self.forwarded_offers[offer_id] = offer_info
+        self._add_to_forward_offers(offer, forwarded_offer)
         self.owner.log.trace(f"Forwarding offer {offer} to {forwarded_offer}")
         # TODO: Ugly solution, required in order to decouple offer placement from
         # new offer event triggering
@@ -125,9 +122,10 @@ class IAAEngine:
             if self.owner.name == offer.seller:
                 continue
 
-            forwarded_offer = self._forward_offer(offer, offer_id)
+            forwarded_offer = self._forward_offer(offer)
             if forwarded_offer:
-                self.owner.log.debug("Offering %s", forwarded_offer)
+                self.owner.log.debug(f"Forwarded offer to {self.markets.source.name} "
+                                     f"{self.owner.name}, {self.name} {forwarded_offer}")
 
     def event_trade(self, *, trade):
         offer_info = self.forwarded_offers.get(trade.offer.id)
@@ -137,27 +135,16 @@ class IAAEngine:
 
         if trade.offer.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
-            residual_info = None
             source_rate = offer_info.source_offer.price / offer_info.source_offer.energy
             target_rate = offer_info.target_offer.price / offer_info.target_offer.energy
             assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
-            if trade.offer.energy < offer_info.source_offer.energy:
-                try:
-                    residual_info = ResidualInfo(
-                        forwarded=self.trade_residual.pop(trade.offer.id),
-                        age=self.offer_age[offer_info.source_offer.id]
-                    )
-                except KeyError:
-                    self.owner.log.error("Not forwarding residual offer for "
-                                         "{} (Forwarded offer not found)".format(trade.offer))
-
             try:
                 trade_offer_rate = trade.offer.price / trade.offer.energy
                 trade_source = self.owner.accept_offer(
-                    self.markets.source,
-                    offer_info.source_offer,
+                    market_or_id=self.markets.source,
+                    offer=offer_info.source_offer,
                     energy=trade.offer.energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
@@ -170,22 +157,6 @@ class IAAEngine:
                 raise OfferNotFoundException()
             self.owner.log.debug(
                 f"[{self.markets.source.time_slot_str}] Offer accepted {trade_source}")
-
-            if residual_info is not None:
-                # connect residual of the forwarded offer to that of the source offer
-                if trade_source.residual is not None:
-                    if trade_source.residual.id not in self.forwarded_offers:
-                        res_offer_info = OfferInfo(trade_source.residual, residual_info.forwarded)
-                        self.forwarded_offers[trade_source.residual.id] = res_offer_info
-                        self.forwarded_offers[residual_info.forwarded.id] = res_offer_info
-                        self.offer_age[trade_source.residual.id] = residual_info.age
-                        self.ignored_offers.add(trade_source.residual.id)
-                else:
-                    self.owner.log.warning(
-                        "Expected residual offer in source market trade {} - deleting "
-                        "corresponding offer in target market".format(trade_source)
-                    )
-                    self.owner.delete_offer(self.markets.target, residual_info.forwarded)
 
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
@@ -228,60 +199,70 @@ class IAAEngine:
         # TODO: Should potentially handle the flip side, by not deleting the source market offer
         # but by deleting the offered_offers entries
 
-    def event_offer_changed(self, *, market_id, existing_offer, new_offer):
+    def event_offer_split(self, *, market_id, original_offer, accepted_offer, residual_offer):
         market = self.owner._get_market_from_market_id(market_id)
         if market is None:
             return
 
-        if market == self.markets.target and existing_offer.seller == self.owner.name:
-            # one of our forwarded offers was split, so save the residual offer
-            # for handling the upcoming trade event
-            assert existing_offer.id not in self.trade_residual, \
-                   "Offer should only change once before each trade."
+        if market == self.markets.target and accepted_offer.id in self.forwarded_offers:
+            # offer was split in target market, also split in source market
 
-            self.trade_residual[existing_offer.id] = new_offer
+            local_offer = self.forwarded_offers[original_offer.id].source_offer
+            original_offer_price = local_offer.original_offer_price \
+                if local_offer.original_offer_price is not None else local_offer.price
 
-        elif market == self.markets.source and existing_offer.id in self.forwarded_offers:
-            # an offer in the source market was split - delete the corresponding offer
-            # in the target market and forward the new residual offer
+            local_split_offer, local_residual_offer = \
+                self.markets.source.split_offer(local_offer, accepted_offer.energy,
+                                                original_offer_price)
 
-            if not self.owner.usable_offer(existing_offer) or \
-                    self.owner.name == existing_offer.seller:
+            #  add the new offers to forwarded_offers
+            self._add_to_forward_offers(local_residual_offer, residual_offer)
+            self._add_to_forward_offers(local_split_offer, accepted_offer)
+
+        elif market == self.markets.source and accepted_offer.id in self.forwarded_offers:
+            # offer was split in source market, also split in target market
+            if not self.owner.usable_offer(accepted_offer) or \
+                    self.owner.name == accepted_offer.seller:
                 return
 
-            if new_offer.id in self.ignored_offers:
-                self.ignored_offers.remove(new_offer.id)
-                return
-            self.offer_age[new_offer.id] = self.offer_age.pop(existing_offer.id)
-            offer_info = self.forwarded_offers[existing_offer.id]
-            forwarded = self._forward_offer(new_offer, new_offer.id)
-            if not forwarded:
-                return
+            local_offer = self.forwarded_offers[original_offer.id].source_offer
 
-            self.owner.log.debug("Offer %s changed to residual offer %s",
-                                 offer_info.target_offer,
-                                 forwarded)
+            original_offer_price = local_offer.original_offer_price \
+                if local_offer.original_offer_price is not None else local_offer.price
 
-            # Do not delete the forwarded offer entries for the case of residual offers
-            if existing_offer.seller != new_offer.seller:
-                self._delete_forwarded_offer_entries(offer_info.source_offer)
+            local_split_offer, local_residual_offer = \
+                self.markets.target.split_offer(local_offer, accepted_offer.energy,
+                                                original_offer_price)
 
-    def event_offer(self, *, market_id, offer):
-        if offer.seller != self.owner.name:
-            self.propagate_offer(self.owner.owner.current_tick)
+            #  add the new offers to forwarded_offers
+            self._add_to_forward_offers(residual_offer, local_residual_offer)
+            self._add_to_forward_offers(accepted_offer, local_split_offer)
+
+        else:
+            return
+
+        if original_offer.id in self.offer_age:
+            self.offer_age[residual_offer.id] = self.offer_age.pop(original_offer.id)
+
+        self.owner.log.debug(f"Offer {short_offer_log_str(local_offer)} was split into "
+                             f"{short_offer_log_str(local_split_offer)} and "
+                             f"{short_offer_log_str(local_residual_offer)}")
+
+    def _add_to_forward_offers(self, source_offer, target_offer):
+        offer_info = OfferInfo(deepcopy(source_offer), deepcopy(target_offer))
+        self.forwarded_offers[source_offer.id] = offer_info
+        self.forwarded_offers[target_offer.id] = offer_info
 
 
 class BalancingEngine(IAAEngine):
 
-    def _forward_offer(self, offer, offer_id):
+    def _forward_offer(self, offer):
         forwarded_balancing_offer = self.markets.target.balancing_offer(
             offer.price,
             offer.energy,
             self.owner.name,
             from_agent=True
         )
-        offer_info = OfferInfo(offer, forwarded_balancing_offer)
-        self.forwarded_offers[forwarded_balancing_offer.id] = offer_info
-        self.forwarded_offers[offer_id] = offer_info
+        self._add_to_forward_offers(offer, forwarded_balancing_offer)
         self.owner.log.trace(f"Forwarding balancing offer {offer} to {forwarded_balancing_offer}")
         return forwarded_balancing_offer

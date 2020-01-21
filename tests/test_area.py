@@ -240,7 +240,7 @@ class TestEventDispatcher(unittest.TestCase):
 
     @parameterized.expand([(MarketEvent.OFFER, ),
                            (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])
@@ -256,7 +256,7 @@ class TestEventDispatcher(unittest.TestCase):
 
     @parameterized.expand([(MarketEvent.OFFER, ),
                            (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])
@@ -270,7 +270,7 @@ class TestEventDispatcher(unittest.TestCase):
 
     @parameterized.expand([(MarketEvent.OFFER, ),
                            (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])

@@ -341,7 +341,7 @@ def storage_strategy_test5(area_test5, called):
     s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market.id)
     s.offers.post(area_test5.past_market.offers['id3'], area_test5.past_market.id)
     s.offers.post(area_test5.past_market.offers['id2'], area_test5.past_market.id)
-    s.offers.sold_offer('id2', area_test5.past_market)
+    s.offers.sold_offer(area_test5.past_market.offers['id2'], area_test5.past_market)
     assert s.state.used_storage == 5
     return s
 
@@ -382,8 +382,8 @@ def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
     storage_strategy_test6.area.get_future_market_from_id = \
         lambda _id: market_test6 if _id == market_test6.id else None
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
-    assert market_test6.trade.offer in \
-        storage_strategy_test6.offers.sold_in_market(market_test6.id)
+    assert market_test6.trade.offer.id in \
+        storage_strategy_test6.offers.sold[market_test6.id]
     assert market_test6.trade.offer not in storage_strategy_test6.offers.open
 
 
@@ -630,8 +630,10 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
     for i in range(2):
         area_test11.current_tick += 310
         storage_strategy_test11.event_tick()
+    # storage should not be able to buy energy after this tick because
+    # self.state._battery_energy_per_slot is exceeded
     te = storage_strategy_test11.state.energy_to_buy_dict[buy_market.time_slot]
-    assert te == float(storage_strategy_test11.accept_offer.calls[0][1]['energy'])
+    assert te == 0.
     assert len(storage_strategy_test11.accept_offer.calls) >= 1
 
 
