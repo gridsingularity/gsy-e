@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 from copy import deepcopy
 import pendulum
+from math import isclose
 
 from d3a.constants import TIME_FORMAT
 from d3a.constants import TIME_ZONE
@@ -29,6 +30,7 @@ from d3a.models.strategy.area_agents.two_sided_pay_as_bid_engine import BidInfo
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.market import TransferFees
+from d3a.models.market.grid_fees.base_model import GridFees
 
 
 def teardown_function():
@@ -61,8 +63,9 @@ class FakeMarket:
         self.id = m_id
         self.offers = {o.id: o for o in offers}
         self._bids = bids
+        self.bids = {bid.id: bid for bid in self._bids}
         self.offer_call_count = 0
-        self.bid_count = 0
+        self.bid_call_count = 0
         self.forwarded_offer_id = 'fwd'
         self.forwarded_bid_id = 'fwd_bid_id'
         self.calls_energy = []
@@ -83,10 +86,6 @@ class FakeMarket:
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot
 
-    @property
-    def bids(self):
-        return {bid.id: bid for bid in self._bids}
-
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None):
         offer = offer_or_id
@@ -97,9 +96,11 @@ class FakeMarket:
             residual = Offer('res', offer.price, residual_energy, offer.seller,
                              seller_origin='res')
             traded = Offer(offer.id, offer.price, energy, offer.seller, seller_origin='res')
+            self.bids.pop(traded.id, None)
             return Trade('trade_id', time, traded, traded.seller, buyer, residual,
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
         else:
+            self.bids.pop(offer.id, None)
             return Trade('trade_id', time, offer, offer.seller, buyer,
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
@@ -120,11 +121,13 @@ class FakeMarket:
                            buyer_origin='res')
             traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller,
                          buyer_origin='res')
+            self.bids.pop(traded.id, None)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual,
                          buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
         else:
             traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller,
                          buyer_origin=bid.id)
+            self.bids.pop(traded.id, None)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer,
                          buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
 
@@ -138,6 +141,10 @@ class FakeMarket:
         return offer_price \
             + self.transfer_fee_ratio * original_offer_price \
             + self.transfer_fee_const * energy
+
+    def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
+        return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price,
+                                                     self.transfer_fee_ratio)
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
@@ -160,14 +167,29 @@ class FakeMarket:
     def dispatch_market_offer_event(self, offer):
         pass
 
-    def bid(self, price, energy, buyer, seller, original_bid_price=None, buyer_origin=None):
-        self.bid_count += 1
-        self.forwarded_bid = Bid(self.forwarded_bid_id, price, energy, buyer, seller,
-                                 original_bid_price=original_bid_price,
-                                 buyer_origin=buyer_origin)
-        return self.forwarded_bid
+    def bid(self, price: float, energy: float, buyer: str, seller: str,
+            bid_id: str = None, original_bid_price=None, buyer_origin=None,
+            adapt_price_with_fees=True):
+        self.bid_call_count += 1
 
-    def split_offer(self, original_offer, energy, orig_offer_price=None):
+        if original_bid_price is None:
+            original_bid_price = price
+
+        if bid_id is None:
+            bid_id = "uuid"
+
+        if adapt_price_with_fees:
+            price = self._update_new_bid_price_with_fee(price, original_bid_price)
+
+        bid = Bid(bid_id, price, energy, buyer, seller,
+                  original_bid_price=original_bid_price,
+                  buyer_origin=buyer_origin)
+        self._bids.append(deepcopy(bid))
+        self.forwarded_bid = deepcopy(bid)
+
+        return bid
+
+    def split_offer(self, original_offer, energy, orig_offer_price):
         self.offers.pop(original_offer.id, None)
         # same offer id is used for the new accepted_offer
         accepted_offer = self.offer(offer_id=original_offer.id,
@@ -179,8 +201,6 @@ class FakeMarket:
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
-        if orig_offer_price is None:
-            orig_offer_price = original_offer.price
         original_residual_price = \
             ((original_offer.energy - energy) / original_offer.energy) * orig_offer_price
 
@@ -193,6 +213,29 @@ class FakeMarket:
                                     adapt_price_with_fees=False)
 
         return accepted_offer, residual_offer
+
+    def split_bid(self, original_bid, energy, orig_bid_price):
+        self.offers.pop(original_bid.id, None)
+        # same offer id is used for the new accepted_offer
+        accepted_bid = self.bid(bid_id=original_bid.id,
+                                buyer=original_bid.buyer,
+                                price=original_bid.price * (energy / original_bid.energy),
+                                energy=energy,
+                                seller=original_bid.seller,
+                                buyer_origin=original_bid.buyer_origin)
+        residual_price = (1 - energy / original_bid.energy) * original_bid.price
+        residual_energy = original_bid.energy - energy
+        original_residual_price = \
+            ((original_bid.energy - energy) / original_bid.energy) * orig_bid_price
+
+        residual_bid = self.bid(price=residual_price,
+                                buyer=original_bid.buyer,
+                                energy=residual_energy,
+                                seller=original_bid.seller,
+                                original_bid_price=original_residual_price,
+                                buyer_origin=original_bid.buyer_origin,
+                                adapt_price_with_fees=False)
+        return accepted_bid, residual_bid
 
 
 @pytest.fixture
@@ -270,24 +313,24 @@ def iaa_bid():
 
 
 def test_iaa_forwards_bids(iaa_bid):
-    assert iaa_bid.lower_market.bid_count == 2
-    assert iaa_bid.higher_market.bid_count == 1
+    assert iaa_bid.lower_market.bid_call_count == 2
+    assert iaa_bid.higher_market.bid_call_count == 1
 
 
 def test_iaa_does_not_forward_bids_if_the_IAA_name_is_the_same_as_the_target_market(iaa_bid):
-    assert iaa_bid.lower_market.bid_count == 2
-    assert iaa_bid.higher_market.bid_count == 1
+    assert iaa_bid.lower_market.bid_call_count == 2
+    assert iaa_bid.higher_market.bid_call_count == 1
     engine = next(filter(lambda e: e.name == 'Low -> High', iaa_bid.engines))
     engine.owner.name = "TARGET MARKET"
     iaa_bid.higher_market.name = "TARGET MARKET"
     bid = Bid('id', 1, 1, 'this', 'other')
     engine._forward_bid(bid)
-    assert iaa_bid.lower_market.bid_count == 2
-    assert iaa_bid.higher_market.bid_count == 1
+    assert iaa_bid.lower_market.bid_call_count == 2
+    assert iaa_bid.higher_market.bid_call_count == 1
 
 
 def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
-    assert iaa_bid.higher_market.bid_count == 1
+    assert iaa_bid.higher_market.bid_call_count == 1
     expected_price = \
         list(iaa_bid.lower_market.bids.values())[-1].price * \
         (1 - iaa_bid.lower_market.transfer_fee_ratio)
@@ -312,7 +355,7 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
     iaa.owner.current_tick = 14
     iaa.event_tick()
 
-    assert iaa.higher_market.bid_count == 1
+    assert iaa.higher_market.bid_call_count == 1
     assert iaa.higher_market.forwarded_bid.price == \
         list(iaa.lower_market.bids.values())[-1].price * (1 - iaa_fee)
 
@@ -334,7 +377,7 @@ def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
     iaa.owner.current_tick = 14
     iaa.event_tick()
 
-    assert iaa.higher_market.bid_count == 1
+    assert iaa.higher_market.bid_call_count == 1
     bid = list(iaa.lower_market.bids.values())[-1]
     assert iaa.higher_market.forwarded_bid.price == bid.price - iaa_fee_const * bid.energy
 
@@ -364,28 +407,41 @@ def test_iaa_event_trade_bid_does_not_delete_forwarded_bid_of_counterpart(iaa_bi
 
 
 @pytest.mark.parametrize("partial", [True, False])
-def test_iaa_event_trade_bid_updates_forwarded_bids_on_partial(iaa_bid, called, partial):
+def test_iaa_event_bid_split_and_trade_correctly_populate_forwarded_bid_entries(iaa_bid, called,
+                                                                                partial):
     iaa_bid.lower_market.delete_bid = called
     low_to_high_engine = iaa_bid.engines[0]
     iaa_bid._get_market_from_market_id = lambda x: low_to_high_engine.markets.target
-    if partial:
-        accepted_bid = Bid(*low_to_high_engine.markets.target._bids[0])
-        accepted_bid = \
-            accepted_bid._replace(price=(accepted_bid.energy-0.2) *
-                                        (accepted_bid.price/accepted_bid.energy),
-                                  energy=accepted_bid.energy-0.2)
-        partial_bid = Bid('1234', 12, 0.2, 'owner', 'someone_else')
-        low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target,
-                                           existing_bid=accepted_bid,
-                                           new_bid=partial_bid)
-    else:
-        accepted_bid = low_to_high_engine.markets.target._bids[0]
-        partial_bid = False
+
     source_bid = list(low_to_high_engine.markets.source.bids.values())[0]
     target_bid = list(low_to_high_engine.markets.target.bids.values())[0]
     bidinfo = BidInfo(source_bid=source_bid, target_bid=target_bid)
     low_to_high_engine.forwarded_bids[source_bid.id] = bidinfo
     low_to_high_engine.forwarded_bids[target_bid.id] = bidinfo
+
+    if partial:
+        residual_energy = 0.2
+        residual_id = "resid"
+        original_bid = Bid(*low_to_high_engine.markets.target._bids[0])
+        accepted_bid = original_bid._replace(
+            price=(original_bid.energy-residual_energy) * (original_bid.price/original_bid.energy),
+            energy=original_bid.energy-residual_energy)
+
+        residual_bid = original_bid._replace(
+            id=residual_id,
+            price=residual_energy * (original_bid.price / original_bid.energy),
+            energy=residual_energy)
+
+        low_to_high_engine.event_bid_split(market_id=low_to_high_engine.markets.target,
+                                           original_bid=original_bid,
+                                           accepted_bid=accepted_bid,
+                                           residual_bid=residual_bid)
+        assert set(low_to_high_engine.forwarded_bids.keys()) == \
+            {original_bid.id, accepted_bid.id, residual_bid.id, "uuid", "id3", "id2"}
+    else:
+        original_bid = low_to_high_engine.markets.target._bids[0]
+        accepted_bid = deepcopy(original_bid)
+        residual_bid = None
 
     low_to_high_engine.event_bid_traded(
         bid_trade=Trade('trade_id',
@@ -393,12 +449,15 @@ def test_iaa_event_trade_bid_updates_forwarded_bids_on_partial(iaa_bid, called, 
                         accepted_bid,
                         seller='someone_else',
                         buyer='owner',
-                        residual=partial_bid))
+                        residual=residual_bid))
 
-    assert source_bid.id not in low_to_high_engine.forwarded_bids
-    assert target_bid.id not in low_to_high_engine.forwarded_bids
     if partial:
-        assert partial_bid.id in low_to_high_engine.forwarded_bids
+        # "id" gets traded in the target market, "id2" gets split in the source market, too
+        assert set(low_to_high_engine.forwarded_bids.keys()) == {residual_bid.id, "uuid", "id3"}
+    else:
+        # "id" and "id2" get traded in both target and source,
+        # left over is id3 and its forwarded instance uuid
+        assert set(low_to_high_engine.forwarded_bids.keys()) == {"uuid", "id3"}
 
 
 @pytest.fixture
@@ -490,14 +549,17 @@ def test_iaa_event_trade_buys_partial_accepted_offer(iaa2):
 
 def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
     iaa_double_sided._get_market_from_market_id = lambda x: iaa_double_sided.higher_market
-    total_bid = iaa_double_sided.higher_market.forwarded_bid
-    accepted_bid_price = (total_bid.price/total_bid.energy) * 1
-    residual_bid_price = (total_bid.price/total_bid.energy) * 0.1
-    accepted_bid = Bid(total_bid.id, accepted_bid_price, 1, total_bid.buyer, total_bid.seller)
-    residual_bid = Bid('residual_bid', residual_bid_price, 0.1, total_bid.buyer, total_bid.seller)
+    original_bid = iaa_double_sided.higher_market.forwarded_bid
+    accepted_bid_price = (original_bid.price/original_bid.energy) * 1
+    residual_bid_price = (original_bid.price/original_bid.energy) * 0.1
+    accepted_bid = Bid(original_bid.id, accepted_bid_price, 1, original_bid.buyer,
+                       original_bid.seller)
+    residual_bid = Bid('residual_bid', residual_bid_price, 0.1, original_bid.buyer,
+                       original_bid.seller)
     iaa_double_sided.event_bid_split(market_id=iaa_double_sided.higher_market,
-                                     existing_bid=total_bid,
-                                     new_bid=residual_bid)
+                                     original_bid=original_bid,
+                                     accepted_bid=accepted_bid,
+                                     residual_bid=residual_bid)
     iaa_double_sided.event_bid_traded(
         bid_trade=Trade('trade_id',
                         pendulum.now(tz=TIME_ZONE),
@@ -511,16 +573,19 @@ def test_iaa_event_trade_buys_partial_accepted_bid(iaa_double_sided):
 
 def test_iaa_forwards_partial_bid_from_source_market(iaa_double_sided):
     iaa_double_sided._get_market_from_market_id = lambda x: iaa_double_sided.lower_market
-    total_bid = iaa_double_sided.lower_market._bids[0]
-    accepted_bid = Bid(total_bid.id, total_bid.price, 1, total_bid.buyer,
-                       total_bid.seller, total_bid.price)
-    residual_bid = Bid('residual_bid', total_bid.price, 0.1, total_bid.buyer,
-                       total_bid.seller, total_bid.price)
+    original_bid = iaa_double_sided.lower_market._bids[0]
+    residual_energy = 0.1
+    accepted_bid = Bid(original_bid.id, original_bid.price,
+                       original_bid.energy - residual_energy, original_bid.buyer,
+                       original_bid.seller, original_bid.price)
+    residual_bid = Bid('residual_bid', original_bid.price, residual_energy, original_bid.buyer,
+                       original_bid.seller, original_bid.price)
     iaa_double_sided.usable_bid = lambda s: True
     iaa_double_sided.event_bid_split(market_id=iaa_double_sided.lower_market,
-                                     existing_bid=accepted_bid,
-                                     new_bid=residual_bid)
-    assert iaa_double_sided.higher_market.forwarded_bid.energy == 0.1
+                                     original_bid=original_bid,
+                                     accepted_bid=accepted_bid,
+                                     residual_bid=residual_bid)
+    assert isclose(iaa_double_sided.higher_market.forwarded_bid.energy, residual_energy)
 
 
 def test_iaa_event_offer_split_and_trade_correctly_populate_forwarded_offer_entries(iaa2):

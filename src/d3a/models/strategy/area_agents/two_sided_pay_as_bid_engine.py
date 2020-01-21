@@ -90,8 +90,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         if not bid_info:
             return
 
-        # Bid was traded in target market, buy in source
         if bid_trade.offer.id == bid_info.target_bid.id:
+            # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
@@ -123,9 +123,10 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                     updated_trade_offer_info, market_bid
                 ), seller_origin=bid_trade.seller_origin
             )
+            self.delete_forwarded_bids(bid_info)
 
-        # Bid was traded in the source market by someone else
         elif bid_trade.offer.id == bid_info.source_bid.id:
+            # Bid was traded in the source market by someone else
             self.delete_forwarded_bids(bid_info)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
@@ -167,7 +168,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             self._add_to_forward_bids(local_residual_bid, residual_bid)
             self._add_to_forward_bids(local_split_bid, accepted_bid)
 
-        if market == self.markets.source and accepted_bid.id in self.forwarded_bids:
+        elif market == self.markets.source and accepted_bid.id in self.forwarded_bids:
             # bid in the source market was split, also split in the target market
             if not self.owner.usable_bid(accepted_bid) or \
                     self.owner.name == accepted_bid.seller:

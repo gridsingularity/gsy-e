@@ -179,8 +179,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
             raise InvalidTrade("Traded energy cannot be more than the bid energy.")
         elif energy < market_bid.energy:
             # partial bid trade
-            assert trade_rate + FLOATING_POINT_TOLERANCE <= (market_bid.price / market_bid.energy)
-
             accepted_bid, residual_bid = self.split_bid(market_bid, energy, orig_price)
             bid = accepted_bid
         else:
@@ -196,7 +194,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
                           trade_offer_info, 0.0)
 
         # Delete the accepted bid from self.bids:
-        self.offers.pop(bid.id, None)
+        self.bids.pop(bid.id, None)
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual_bid, already_tracked=already_tracked,
