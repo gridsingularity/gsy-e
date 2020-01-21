@@ -55,7 +55,6 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             original_bid_price=bid.original_bid_price,
             buyer_origin=bid.buyer_origin
         )
-        # assert False
 
         self._add_to_forward_bids(bid, forwarded_bid)
         self.owner.log.trace(f"Forwarding bid {bid} to {forwarded_bid}")

@@ -193,9 +193,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
         updated_bid_trade_info = GridFees.propagate_original_offer_info_on_bid_trade(
                           trade_offer_info, 0.0)
 
-        # Delete the accepted bid from self.bids:
-        self.bids.pop(bid.id, None)
-
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
@@ -207,8 +204,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
             log.info(f"[TRADE][BID] [{self.time_slot_str}] {trade}")
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
-        # if not trade.residual:
-        #     self._notify_listeners(MarketEvent.BID_DELETED, bid=market_bid)
         return trade
 
     def _perform_pay_as_bid_matching(self):
