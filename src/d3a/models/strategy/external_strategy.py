@@ -129,7 +129,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         try:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                                   for _, v in self.market.offers.items()]
+                                   for _, v in self.market.get_offers().items()]
                 self.publish(self._list_offers_response_channel,
                              {"status": "ready", "offer_list": filtered_offers})
             else:
@@ -213,7 +213,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
     def _list_bids(self, payload):
         try:
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.market.bids.items()
+                             for _, v in self.market.get_bids().items()
                              if v.buyer == self.area.name]
             self.publish(self._list_bids_response_channel,
                          {"status": "ready", "bid_list": filtered_bids})
