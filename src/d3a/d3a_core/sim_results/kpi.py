@@ -24,7 +24,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 
 
 class KPIState:
-    def __init__(self):
+    def __init__(self, area):
         self.producer_list = list()
         self.consumer_list = list()
         self.consumer_area_list = list()
@@ -34,6 +34,9 @@ class KPIState:
         self.total_energy_produced_wh = 0
         self.total_self_consumption_wh = 0
         self.self_consumption_buffer_wh = 0
+        self.accounted_markets = []
+
+        self._accumulate_devices(area)
 
     # TODO: D3ASIM-1866 Requirements needed for external strategy classification for KPI
     def _accumulate_devices(self, area):
@@ -45,13 +48,20 @@ class KPIState:
             elif _is_load_node(child):
                 self.consumer_list.append(child.name)
                 self.consumer_area_list.append(child.parent)
-                self.total_energy_demanded_wh += child.strategy.state.total_energy_demanded_wh
             elif _is_prosumer_node(child):
                 self.ess_list.append(child.name)
             elif isinstance(child.strategy, InfiniteBusStrategy):
                 self.buffer_list.append(child.name)
             if child.children:
                 self._accumulate_devices(child)
+
+    def _accumulate_total_energy_demanded(self, area):
+        self.total_energy_demanded_wh = 0
+        for child in area.children:
+            if _is_load_node(child):
+                self.total_energy_demanded_wh += child.strategy.state.total_energy_demanded_wh
+            if child.children:
+                self._accumulate_total_energy_demanded(child)
 
     def _accumulate_self_production(self, trade):
         if trade.seller_origin in self.producer_list:
@@ -95,6 +105,9 @@ class KPIState:
     def _accumulate_energy_trace(self):
         for c_area in self.consumer_area_list:
             for market in c_area.past_markets:
+                if market.time_slot_str in self.accounted_markets:
+                    continue
+                self.accounted_markets.append(market.time_slot_str)
                 for trade in market.trades:
                     self._accumulate_self_consumption(trade)
                     self._accumulate_self_production(trade)
@@ -104,40 +117,42 @@ class KPIState:
                     self._dissipate_infinite_consumption(trade)
 
     def update_area_kpi(self, area):
-        self._accumulate_devices(area)
+        self._accumulate_total_energy_demanded(area)
         self._accumulate_energy_trace()
 
 
 class KPI:
     def __init__(self):
         self.performance_indices = dict()
-        self.state = None
+        self.state = {}
 
     def __repr__(self):
         return f"KPI: {self.performance_indices}"
 
     def area_performance_indices(self, area):
-        self.state = KPIState()
+        if area.name not in self.state:
+            self.state[area.name] = KPIState(area)
 
-        self.state.update_area_kpi(area)
+        self.state[area.name].update_area_kpi(area)
 
         # in case when the area doesn't have any load demand
-        if self.state.total_energy_demanded_wh <= 0:
+        if self.state[area.name].total_energy_demanded_wh <= 0:
             self_sufficiency = None
-        elif self.state.total_self_consumption_wh >= self.state.total_energy_demanded_wh:
+        elif self.state[area.name].total_self_consumption_wh >= \
+                self.state[area.name].total_energy_demanded_wh:
             self_sufficiency = 1.0
         else:
-            self_sufficiency = \
-                self.state.total_self_consumption_wh / self.state.total_energy_demanded_wh
+            self_sufficiency = self.state[area.name].total_self_consumption_wh / \
+                               self.state[area.name].total_energy_demanded_wh
 
-        # in case when the area doesn't have any producing devices
-        if self.state.total_energy_produced_wh <= 0:
+        if self.state[area.name].total_energy_produced_wh <= 0:
             self_consumption = None
-        elif self.state.total_self_consumption_wh >= self.state.total_energy_produced_wh:
+        elif self.state[area.name].total_self_consumption_wh >= \
+                self.state[area.name].total_energy_produced_wh:
             self_consumption = 1.0
         else:
-            self_consumption = \
-                self.state.total_self_consumption_wh / self.state.total_energy_produced_wh
+            self_consumption = self.state[area.name].total_self_consumption_wh / \
+                               self.state[area.name].total_energy_produced_wh
         return {"self_sufficiency": self_sufficiency, "self_consumption": self_consumption}
 
     def update_kpis_from_area(self, area):

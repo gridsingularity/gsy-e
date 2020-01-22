@@ -65,6 +65,7 @@ class SimulationEndpointBuffer:
             "tree_summary": self.tree_summary.current_results_redis,
             "status": self.status,
             "eta_seconds": self.eta.seconds,
+            "kpi": self.kpi.performance_indices
         }
 
         if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
@@ -97,6 +98,7 @@ class SimulationEndpointBuffer:
             "status": self.status,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
+            "kpi": self.kpi.performance_indices
         }
 
     def update_stats(self, area, simulation_status, eta):

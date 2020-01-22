@@ -92,9 +92,6 @@ class ExportAndPlot:
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        kpi_file = os.path.join(json_dir, "KPI.json")
-        with open(kpi_file, 'w') as outfile:
-            json.dump(self.endpoint_buffer.kpi.performance_indices, outfile, indent=2)
         trade_file = os.path.join(json_dir, "trade-detail.json")
         with open(trade_file, 'w') as outfile:
             json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)

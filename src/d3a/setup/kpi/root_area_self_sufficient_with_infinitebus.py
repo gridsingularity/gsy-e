@@ -14,7 +14,6 @@ from d3a.models.appliance.simple import SimpleAppliance
 import os
 
 current_dir = os.path.dirname(__file__)
-print(current_dir)
 
 user_profile_path1 = os.path.join(current_dir, "../resources/House_1_Winter_Berlin.csv")
 user_profile_path2 = os.path.join(current_dir, "../resources/House_2_Winter_Berlin.csv")
@@ -24,7 +23,6 @@ user_profile_path4 = os.path.join(current_dir, "../resources/House_2_Autumn_Berl
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 1
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
     Houses_initial_buying_rate = 6
