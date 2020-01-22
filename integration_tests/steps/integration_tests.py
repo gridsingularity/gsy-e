@@ -371,6 +371,9 @@ def save_reported_bills(context):
 
 @when('the past markets are not kept in memory')
 def past_markets_not_in_memory(context):
+    # d3a has to be set to publish the full results:
+    ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS = True
+
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
 
 
