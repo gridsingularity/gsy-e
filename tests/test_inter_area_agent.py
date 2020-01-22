@@ -96,11 +96,9 @@ class FakeMarket:
             residual = Offer('res', offer.price, residual_energy, offer.seller,
                              seller_origin='res')
             traded = Offer(offer.id, offer.price, energy, offer.seller, seller_origin='res')
-            self.bids.pop(traded.id, None)
             return Trade('trade_id', time, traded, traded.seller, buyer, residual,
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
         else:
-            self.bids.pop(offer.id, None)
             return Trade('trade_id', time, offer, offer.seller, buyer,
                          seller_origin=offer.seller_origin, buyer_origin=buyer_origin)
 
@@ -121,13 +119,11 @@ class FakeMarket:
                            buyer_origin='res')
             traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller,
                          buyer_origin='res')
-            self.bids.pop(traded.id, None)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual,
                          buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
         else:
             traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller,
                          buyer_origin=bid.id)
-            self.bids.pop(traded.id, None)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer,
                          buyer_origin=bid.buyer_origin, seller_origin=seller_origin)
 
