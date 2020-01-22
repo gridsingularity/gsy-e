@@ -80,10 +80,10 @@ class BalancingMarket(OneSidedMarket):
     def determine_offer_price(self, energy_portion, energy, already_tracked, trade_rate,
                               trade_bid_info, orig_offer_price):
 
-        final_price = self._update_offer_fee_and_calculate_final_price(
+        fee, final_price = self._update_offer_fee_and_calculate_final_price(
             energy, trade_rate, energy_portion, orig_offer_price
         ) if already_tracked is False else energy * trade_rate
-        return final_price
+        return fee, final_price
 
     def split_offer(self, original_offer, energy, orig_offer_price=None):
 
@@ -171,10 +171,10 @@ class BalancingMarket(OneSidedMarket):
 
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
-                trade_price = self.determine_offer_price(energy / offer.energy, energy,
-                                                         already_tracked,
-                                                         trade_rate, trade_bid_info,
-                                                         orig_offer_price)
+                fees, trade_price = self.determine_offer_price(energy / offer.energy, energy,
+                                                               already_tracked,
+                                                               trade_rate, trade_bid_info,
+                                                               orig_offer_price)
                 offer = accepted_offer
                 offer.price = trade_price
 
@@ -182,7 +182,7 @@ class BalancingMarket(OneSidedMarket):
                 raise InvalidBalancingTradeException("Energy can't be greater than offered energy")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
-                offer.price = self._update_offer_fee_and_calculate_final_price(
+                fees, offer.price = self._update_offer_fee_and_calculate_final_price(
                     energy, trade_rate, 1, orig_offer_price
                 ) if already_tracked is False else energy * trade_rate
 
@@ -200,7 +200,7 @@ class BalancingMarket(OneSidedMarket):
             )
         trade = BalancingTrade(trade_id, time, offer, offer.seller, buyer,
                                residual_offer, seller_origin=offer.seller_origin,
-                               buyer_origin=buyer_origin)
+                               buyer_origin=buyer_origin, fee_price=fees)
         self.bc_interface.track_trade_event(trade)
 
         if already_tracked is False:
