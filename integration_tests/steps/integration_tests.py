@@ -458,6 +458,7 @@ def test_aggregated_result_files(context):
                  os.path.join(base_path, 'unmatched_loads.json'),
                  os.path.join(base_path, 'kpi.json')]
 
+    print(file_list)
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > 0 for f in file_list)
 
