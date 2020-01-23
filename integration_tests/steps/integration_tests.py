@@ -449,21 +449,14 @@ def test_aggregated_result_files(context):
                  os.path.join(base_path, 'cumulative_grid_trades.json'),
                  os.path.join(base_path, 'cumulative_loads.json'),
                  os.path.join(base_path, 'job_id.json'),
-                 os.path.join(base_path, 'KPI.json'),
+                 os.path.join(base_path, 'kpi.json'),
                  os.path.join(base_path, 'price_energy_day.json'),
                  os.path.join(base_path, 'random_seed.json'),
                  os.path.join(base_path, 'status.json'),
                  os.path.join(base_path, 'trade-detail.json'),
                  os.path.join(base_path, 'tree_summary.json'),
-                 os.path.join(base_path, 'unmatched_loads.json'),
-                 os.path.join(base_path, 'kpi.json')]
+                 os.path.join(base_path, 'unmatched_loads.json')]
 
-    print(base_path)
-    print(glob.glob(base_path))
-    for f in file_list:
-        print(f)
-        print(glob.glob(f))
-        print("####")
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > 0 for f in file_list)
 
