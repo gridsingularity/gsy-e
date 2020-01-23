@@ -42,8 +42,8 @@ class EventMixin:
             return self.event_bid_traded
         elif event == MarketEvent.BID_DELETED:
             return self.event_bid_deleted
-        elif event == MarketEvent.BID_CHANGED:
-            return self.event_bid_changed
+        elif event == MarketEvent.BID_SPLIT:
+            return self.event_bid_split
         elif event == MarketEvent.BALANCING_OFFER:
             return self.event_balancing_offer
         elif event == MarketEvent.BALANCING_OFFER_SPLIT:
@@ -87,7 +87,7 @@ class EventMixin:
     def event_bid_deleted(self, *, market_id, bid):
         pass
 
-    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+    def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
         pass
 
     def event_balancing_offer(self, *, market_id, offer):

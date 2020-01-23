@@ -300,7 +300,6 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(time_slot=
 
 
 def test_market_bid_trade(market=TwoSidedPayAsBid(time_slot=DateTime.now())):
-    # market = TwoSidedPayAsBid(time_slot=DateTime.now())
     bid = market.bid(20, 10, 'A', 'B', original_bid_price=20)
 
     trade = market.accept_bid(bid, energy=10, seller='B', trade_offer_info=[2, 2, 0.5, 0.5, 2])
@@ -414,32 +413,14 @@ def test_market_trade_bid_partial(market=TwoSidedPayAsBid(time_slot=DateTime.now
     assert market.bids[trade.residual.id].buyer == 'A'
 
 
-def test_market_accept_bid_emits_bid_traded_and_bid_deleted_event(
-        called, market=TwoSidedPayAsBid(time_slot=DateTime.now())):
-    market.add_listener(called)
-    bid = market.bid(20, 20, 'A', 'B')
-    trade = market.accept_bid(bid, trade_offer_info=[1, 1, 1, 1, 1])
-    assert len(called.calls) == 2
-    assert called.calls[0][0] == (repr(MarketEvent.BID_TRADED), )
-    assert called.calls[1][0] == (repr(MarketEvent.BID_DELETED), )
-    assert called.calls[0][1] == {
-        'market_id': repr(market.id),
-        'bid_trade': repr(trade),
-    }
-    assert called.calls[1][1] == {
-        'market_id': repr(market.id),
-        'bid': repr(bid),
-    }
-
-
-def test_market_accept_bid_does_not_emit_bid_deleted_on_partial_bid(
+def test_market_accept_bid_emits_bid_split_on_partial_bid(
         called, market=TwoSidedPayAsBid(time_slot=DateTime.now())):
     market.add_listener(called)
     bid = market.bid(20, 20, 'A', 'B')
     trade = market.accept_bid(bid, energy=1, trade_offer_info=[1, 1, 1, 1, 1])
     assert all([ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0]])
     assert len(called.calls) == 2
-    assert called.calls[0][0] == (repr(MarketEvent.BID_CHANGED),)
+    assert called.calls[0][0] == (repr(MarketEvent.BID_SPLIT),)
     assert called.calls[1][0] == (repr(MarketEvent.BID_TRADED),)
     assert called.calls[1][1] == {
         'market_id': repr(market.id),

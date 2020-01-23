@@ -60,6 +60,10 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         return f"{self.area.parent.slug}/{self.area.slug}/delete_bid"
 
     @property
+    def _list_bids_channel(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/bids"
+
+    @property
     def _offer_response_channel(self):
         return f"{self._offer_channel}/response"
 
@@ -83,6 +87,10 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
     def _delete_bid_response_channel(self):
         return f"{self._delete_bid_channel}/response"
 
+    @property
+    def _list_bids_response_channel(self):
+        return f"{self._list_bids_channel}/response"
+
     def sub_to_external_requests(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             self.redis_db.sub_to_multiple_channels({
@@ -96,7 +104,9 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                 self._offer_channel: self._offer,
                 self._delete_offer_channel: self._delete_offer,
                 self._bid_channel: self._bid,
-                self._delete_bid_channel: self._delete_bid
+                self._delete_bid_channel: self._delete_bid,
+                self._list_bids_channel: self._list_bids,
+                self._list_offers_channel: self._offer_lists
             })
 
     @classmethod
@@ -113,9 +123,17 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
 
     def _offer_lists(self, payload):
         try:
-            return_data = self._serialize_offer_dict(self.market.offers)
-            self.publish(self._list_offers_response_channel,
-                         {"status": "ready", "offer_list": return_data})
+            if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
+                                   for _, v in self.market.offers.items()]
+                self.publish(self._list_offers_response_channel,
+                             {"status": "ready", "offer_list": filtered_offers})
+            else:
+                filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
+                                   for _, v in self.market.offers.items()
+                                   if v.seller == self.area.name]
+                self.publish(self._list_offers_response_channel,
+                             {"status": "ready", "offer_list": filtered_offers})
         except Exception as e:
             self.publish(self._list_offers_response_channel,
                          {"status": "error",  "exception": str(type(e)),
@@ -187,6 +205,18 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
             )
         else:
             return self._delete_bid_impl(arguments)
+
+    def _list_bids(self, payload):
+        try:
+            filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
+                             for _, v in self.market.bids.items()
+                             if v.buyer == self.area.name]
+            self.publish(self._list_bids_response_channel,
+                         {"status": "ready", "bid_list": filtered_bids})
+        except Exception as e:
+            self.publish(self._list_bids_response_channel,
+                         {"status": "error",  "exception": str(type(e)),
+                          "error_message": str(e)})
 
 
 class ExternalStrategy(BaseStrategy):
