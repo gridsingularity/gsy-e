@@ -36,7 +36,7 @@ class MarketEvent(Enum):
     TRADE = 3
     BID_TRADED = 5
     BID_DELETED = 6
-    BID_CHANGED = 7
+    BID_SPLIT = 7
     BALANCING_OFFER = 8
     BALANCING_OFFER_SPLIT = 9
     BALANCING_OFFER_DELETED = 10

@@ -254,7 +254,8 @@ def test_bid_events_fail_for_one_sided_market(base):
     with pytest.raises(AssertionError):
         base.event_bid_deleted(market_id=123, bid=test_bid)
     with pytest.raises(AssertionError):
-        base.event_bid_changed(market_id=123, existing_bid=test_bid, new_bid=test_bid)
+        base.event_bid_split(market_id=123, original_bid=test_bid, accepted_bid=test_bid,
+                             residual_bid=test_bid)
 
 
 def test_bid_deleted_removes_bid_from_posted(base):
@@ -267,14 +268,17 @@ def test_bid_deleted_removes_bid_from_posted(base):
     assert base.get_posted_bids(market) == []
 
 
-def test_bid_changed_adds_bid_to_posted(base):
+def test_bid_split_adds_bid_to_posted(base):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", 12, 23, base.owner.name, 'B')
+    test_bid = Bid("123", 12, 12, base.owner.name, 'B')
+    accepted_bid = Bid("123", 8, 8, base.owner.name, 'B')
+    residual_bid = Bid("456", 4, 4, base.owner.name, 'B')
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = []
-    base.event_bid_changed(market_id=21, existing_bid=test_bid, new_bid=test_bid)
-    assert base.get_posted_bids(market) == [test_bid]
+    base.event_bid_split(market_id=21, original_bid=test_bid, accepted_bid=accepted_bid,
+                         residual_bid=residual_bid)
+    assert base.get_posted_bids(market) == [accepted_bid, residual_bid]
 
 
 def test_bid_traded_moves_bid_from_posted_to_traded(base):

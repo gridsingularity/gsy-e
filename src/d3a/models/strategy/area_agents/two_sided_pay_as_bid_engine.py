@@ -17,11 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict  # NOQA
+from copy import deepcopy
 from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # NOQA
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
 from d3a.models.market.market_structures import Bid
 from d3a.models.market.grid_fees.base_model import GridFees
+from d3a.d3a_core.util import short_offer_bid_log_str
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
@@ -45,17 +47,16 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
 
         forwarded_bid = self.markets.target.bid(
-            GridFees.update_forwarded_bid_with_fee(
+            price=GridFees.update_forwarded_bid_with_fee(
                 bid.price, bid.original_bid_price, self.markets.source.transfer_fee_ratio),
-            bid.energy,
-            self.owner.name,
-            self.markets.target.name,
+            energy=bid.energy,
+            buyer=self.owner.name,
+            seller=self.markets.target.name,
             original_bid_price=bid.original_bid_price,
             buyer_origin=bid.buyer_origin
         )
-        bid_coupling = BidInfo(bid, forwarded_bid)
-        self.forwarded_bids[forwarded_bid.id] = bid_coupling
-        self.forwarded_bids[bid.id] = bid_coupling
+
+        self._add_to_forward_bids(bid, forwarded_bid)
         self.owner.log.trace(f"Forwarding bid {bid} to {forwarded_bid}")
         return forwarded_bid
 
@@ -88,8 +89,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         if not bid_info:
             return
 
-        # Bid was traded in target market, buy in source
         if bid_trade.offer.id == bid_info.target_bid.id:
+            # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
@@ -111,8 +112,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             else:
                 updated_trade_offer_info = bid_trade.offer_bid_trade_info
 
-            source_trade = self.markets.source.accept_bid(
-                market_bid,
+            self.markets.source.accept_bid(
+                bid=market_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False,
@@ -121,28 +122,14 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                     updated_trade_offer_info, market_bid
                 ), seller_origin=bid_trade.seller_origin
             )
+            self.delete_forwarded_bids(bid_info)
 
-            self.after_successful_trade_event(source_trade, bid_info)
-        # Bid was traded in the source market by someone else
         elif bid_trade.offer.id == bid_info.source_bid.id:
+            # Bid was traded in the source market by someone else
             self.delete_forwarded_bids(bid_info)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
-
-    def after_successful_trade_event(self, source_trade, bid_info):
-        if source_trade.residual:
-            target_residual_bid = self.bid_trade_residual.pop(bid_info.target_bid.id)
-            assert target_residual_bid.id != source_trade.residual.id, \
-                f"Residual bid from the trade ({source_trade.residual}) is not the same as the" \
-                f" residual bid from event_bid_changed ({target_residual_bid})."
-            assert source_trade.residual.id not in self.forwarded_bids, \
-                f"Residual bid has not been forwarded even though it was transmitted via " \
-                f"event_bid_trade."
-            res_bid_info = BidInfo(source_trade.residual, target_residual_bid)
-            self.forwarded_bids[source_trade.residual.id] = res_bid_info
-            self.forwarded_bids[target_residual_bid.id] = res_bid_info
-        self._delete_forwarded_bid_entries(bid_info.source_bid)
 
     def event_bid_deleted(self, *, bid):
         bid_id = bid.id if isinstance(bid, Bid) else bid
@@ -153,34 +140,61 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
 
         if bid_info.source_bid.id == bid_id:
-            # Bid in source market of an bid we're already offering in the target market
+            # Bid in source market of an bid we're already bidding the target market
             # was deleted - also delete in target market
             try:
                 self.delete_forwarded_bids(bid_info)
             except MarketException:
-                self.owner.log.exception("Error deleting InterAreaAgent offer")
+                self.owner.log.exception("Error deleting InterAreaAgent bid")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
 
-    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+    def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
         market = self.owner._get_market_from_market_id(market_id)
         if market is None:
             return
 
-        if market == self.markets.target:
-            # one of our forwarded bids was split, so save the residual bid for handling
-            # the upcoming trade event
-            assert existing_bid.id not in self.bid_trade_residual, \
-                "Bid should only change once before each trade, there has been already " \
-                "an event_bid_changed for the same bid ({existing_bid.id})."
-            self.bid_trade_residual[existing_bid.id] = new_bid
-        if market == self.markets.source and existing_bid.id in self.forwarded_bids:
-            # a bid in the source market was split - forward the new residual bid
-            if not self.owner.usable_bid(existing_bid) or \
-                    self.owner.name == existing_bid.seller:
+        if market == self.markets.target and accepted_bid.id in self.forwarded_bids:
+            # bid was split in target market, also split the corresponding forwarded bid
+            # in the source market
+
+            local_bid = self.forwarded_bids[original_bid.id].source_bid
+            original_bid_price = local_bid.original_bid_price \
+                if local_bid.original_bid_price is not None else local_bid.price
+
+            local_split_bid, local_residual_bid = \
+                self.markets.source.split_bid(local_bid, accepted_bid.energy, original_bid_price)
+
+            #  add the new bids to forwarded_bids
+            self._add_to_forward_bids(local_residual_bid, residual_bid)
+            self._add_to_forward_bids(local_split_bid, accepted_bid)
+
+        elif market == self.markets.source and accepted_bid.id in self.forwarded_bids:
+            # bid in the source market was split, also split the corresponding forwarded bid
+            # in the target market
+            if not self.owner.usable_bid(accepted_bid) or \
+                    self.owner.name == accepted_bid.seller:
                 return
 
-            bid_info = self.forwarded_bids.get(existing_bid.id)
-            forwarded = self._forward_bid(new_bid)
-            if forwarded:
-                self.owner.log.debug("Bid %s changed to residual bid %s",
-                                     bid_info.target_bid, forwarded)
+            local_bid = self.forwarded_bids[original_bid.id].source_bid
+
+            original_bid_price = local_bid.original_bid_price \
+                if local_bid.original_bid_price is not None else local_bid.price
+
+            local_split_bid, local_residual_bid = \
+                self.markets.target.split_bid(local_bid, accepted_bid.energy, original_bid_price)
+
+            #  add the new bids to forwarded_bids
+            self._add_to_forward_bids(residual_bid, local_residual_bid)
+            self._add_to_forward_bids(accepted_bid, local_split_bid)
+
+        else:
+            return
+
+        self.owner.log.debug(f"Bid {short_offer_bid_log_str(local_bid)} was split into "
+                             f"{short_offer_bid_log_str(local_split_bid)} and "
+                             f"{short_offer_bid_log_str(local_residual_bid)}")
+
+    def _add_to_forward_bids(self, source_bid, target_bid):
+        bid_info = BidInfo(deepcopy(source_bid), deepcopy(target_bid))
+        self.forwarded_bids[source_bid.id] = bid_info
+        self.forwarded_bids[target_bid.id] = bid_info
