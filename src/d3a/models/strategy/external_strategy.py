@@ -162,6 +162,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.area.name
+            arguments['seller_origin'] = self.area.name
         except Exception as e:
             self.publish(
                 self._offer_response_channel,
@@ -189,6 +190,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer'] = self.area.name
             arguments['seller'] = self.area.parent.name
+            arguments['buyer_origin'] = self.area.name
         except Exception:
             self.publish(
                 self._bid_response_channel,

@@ -65,8 +65,8 @@ class OneSidedMarket(Market):
         return self.offers
 
     @lock_market_action
-    def offer(self, price: float, energy: float, seller: str, offer_id=None,
-              original_offer_price=None, dispatch_event=True, seller_origin=None,
+    def offer(self, price: float, energy: float, seller: str, seller_origin,
+              offer_id=None, original_offer_price=None, dispatch_event=True,
               adapt_price_with_fees=True) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
