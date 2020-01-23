@@ -42,11 +42,12 @@ class TwoSidedPayAsBidAgent(OneSidedAgent):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_bid_deleted(bid=bid)
 
-    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
+    def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
         for engine in sorted(self.engines, key=lambda _: random()):
-            engine.event_bid_changed(market_id=market_id,
-                                     existing_bid=existing_bid,
-                                     new_bid=new_bid)
+            engine.event_bid_split(market_id=market_id,
+                                   original_bid=original_bid,
+                                   accepted_bid=accepted_bid,
+                                   residual_bid=residual_bid)
 
     def __repr__(self):
         return "<TwoSidedPayAsBidAgent {s.name} {s.time_slot}>".format(s=self)
