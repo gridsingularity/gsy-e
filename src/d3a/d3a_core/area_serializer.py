@@ -135,8 +135,9 @@ def area_from_dict(description, config=None):
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
+        transfer_fee_pct = description.get('grid_fee_percentage', None)
         area = Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
-                    optional('budget_keeper'))
+                    optional('budget_keeper'), transfer_fee_pct=transfer_fee_pct)
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area
