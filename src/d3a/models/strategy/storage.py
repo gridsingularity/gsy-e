@@ -261,8 +261,8 @@ class StorageStrategy(BidEnabledStrategy):
     def event_tick(self):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
         for market in self.area.all_markets:
-            self.bid_update.increment_update_counter(self, market.time_slot)
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
+                self.bid_update.increment_update_counter(self, market.time_slot)
                 self.buy_energy(market)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
