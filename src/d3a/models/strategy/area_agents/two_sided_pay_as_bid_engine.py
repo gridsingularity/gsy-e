@@ -154,7 +154,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
 
         if market == self.markets.target and accepted_bid.id in self.forwarded_bids:
-            # bid was split in target market, also split in source market
+            # bid was split in target market, also split the corresponding forwarded bid
+            # in the source market
 
             local_bid = self.forwarded_bids[original_bid.id].source_bid
             original_bid_price = local_bid.original_bid_price \
@@ -168,7 +169,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             self._add_to_forward_bids(local_split_bid, accepted_bid)
 
         elif market == self.markets.source and accepted_bid.id in self.forwarded_bids:
-            # bid in the source market was split, also split in the target market
+            # bid in the source market was split, also split the corresponding forwarded bid
+            # in the target market
             if not self.owner.usable_bid(accepted_bid) or \
                     self.owner.name == accepted_bid.seller:
                 return

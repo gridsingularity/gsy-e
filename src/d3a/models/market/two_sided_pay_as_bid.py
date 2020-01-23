@@ -186,7 +186,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             try:
                 self.bids.pop(accepted_bid.id)
             except KeyError:
-                raise BidNotFound(f"Bid {accepted_bid.id} not found in self.bids.")
+                raise BidNotFound(f"Bid {accepted_bid.id} not found in self.bids ({self.name}).")
         else:
             # full bid trade, nothing further to do here
             pass

@@ -413,7 +413,7 @@ def test_market_trade_bid_partial(market=TwoSidedPayAsBid(time_slot=DateTime.now
     assert market.bids[trade.residual.id].buyer == 'A'
 
 
-def test_market_accept_bid_does_not_emit_bid_deleted_on_partial_bid(
+def test_market_accept_bid_emits_bid_split_on_partial_bid(
         called, market=TwoSidedPayAsBid(time_slot=DateTime.now())):
     market.add_listener(called)
     bid = market.bid(20, 20, 'A', 'B')
