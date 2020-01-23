@@ -112,7 +112,8 @@ class OneSidedMarket(Market):
         fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
         self.market_fee += fees
-        return fees, energy * trade_rate - fees
+        fee_rate = fees / (energy * energy_portion)
+        return fee_rate, energy * trade_rate - fees
 
     @classmethod
     def _calculate_original_prices(cls, offer):
@@ -171,12 +172,12 @@ class OneSidedMarket(Market):
                 energy, trade_rate, energy_portion, orig_offer_price
             )
         else:
-            revenue, fees, trade_rate_incl_fees = \
+            revenue, grid_fee_rate, trade_rate_incl_fees = \
                 GridFees.calculate_trade_price_and_fees(
                     trade_bid_info, self.transfer_fee_ratio
                 )
-            self.market_fee += fees * energy_portion * energy
-            return fees, energy * (trade_rate_incl_fees - fees) \
+            self.market_fee += grid_fee_rate * energy_portion * energy
+            return grid_fee_rate, energy * (trade_rate_incl_fees - grid_fee_rate) \
                 if original_offer.seller_origin == offer.seller else \
                 energy * trade_rate_incl_fees
 
@@ -218,8 +219,9 @@ class OneSidedMarket(Market):
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
                 fee_rate, trade_price = self.determine_offer_price(
-                    energy / offer.energy, energy, trade_rate, trade_bid_info,
-                    orig_offer_price, original_offer, offer)
+                    energy_portion=energy / offer.energy, energy=energy, trade_rate=trade_rate,
+                    trade_bid_info=trade_bid_info, orig_offer_price=orig_offer_price,
+                    original_offer=original_offer, offer=offer)
 
                 offer = accepted_offer
                 offer.price = trade_price
@@ -245,7 +247,7 @@ class OneSidedMarket(Market):
         self.offers.pop(offer.id, None)
         fee_price = fee_rate * offer.energy
         offer_bid_trade_info = GridFees.propagate_original_bid_info_on_offer_trade(
-            trade_bid_info, self.transfer_fee_ratio)
+            trade_original_info=trade_bid_info, tax_ratio=self.transfer_fee_ratio)
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,

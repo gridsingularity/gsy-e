@@ -148,19 +148,19 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                    existing_bid=bid, new_bid=changed_bid)
             residual = changed_bid
 
-            revenue, fees, final_trade_rate = GridFees.calculate_trade_price_and_fees(
+            revenue, grid_fee_rate, final_trade_rate = GridFees.calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
             )
-            self.market_fee += fees * energy_portion * energy
+            self.market_fee += grid_fee_rate * energy_portion * energy
             final_price = energy * final_trade_rate
             bid = Bid(bid.id, final_price, energy, buyer, seller,
                       original_bid_price=energy_portion * orig_price,
                       buyer_origin=bid.buyer_origin)
         else:
-            revenue, fees, final_trade_rate = GridFees.calculate_trade_price_and_fees(
+            revenue, grid_fee_rate, final_trade_rate = GridFees.calculate_trade_price_and_fees(
                 trade_offer_info, self.transfer_fee_ratio
             )
-            self.market_fee += fees * energy
+            self.market_fee += grid_fee_rate * energy
             final_price = energy * final_trade_rate
             bid = bid._replace(price=final_price)
 
@@ -168,7 +168,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         # the behavior of the forwarded bids which use the source market fee.
         updated_bid_trade_info = GridFees.propagate_original_offer_info_on_bid_trade(
                           trade_offer_info, 0.0)
-        fee_price = fees * bid.energy
+        fee_price = grid_fee_rate * bid.energy
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual, already_tracked=already_tracked,
@@ -245,5 +245,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
                     original_offer_rate=offer.original_offer_price/offer.energy,
                     propagated_offer_rate=offer.price/offer.energy,
                     trade_rate=original_bid_rate)
+
                 self.accept_bid_offer_pair(bid, offer, matched_rate,
                                            trade_bid_info, selected_energy)
