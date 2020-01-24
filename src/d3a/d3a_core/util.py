@@ -490,5 +490,5 @@ def convert_percent_to_ratio(unit_percent):
     return unit_percent / 100
 
 
-def short_offer_log_str(offer):
-    return f"({{{offer.id!s:.6s}}}: {offer.energy} kWh)"
+def short_offer_bid_log_str(offer_or_bid):
+    return f"({{{offer_or_bid.id!s:.6s}}}: {offer_or_bid.energy} kWh)"
