@@ -32,12 +32,16 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         self.redis_db.terminate_connection()
 
     def publish_market_cycle(self):
-        self.publish(f"{self.area.parent.slug}/{self.area.slug}/market_cycle",
+        self.publish(self.market_cycle_channel_name,
                      self.market.info)
 
     @property
     def market(self):
         return self.area.parent.next_market
+
+    @property
+    def market_cycle_channel_name(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/market_cycle"
 
     @property
     def _offer_channel(self):
@@ -95,23 +99,27 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
     def _list_bids_response_channel(self):
         return f"{self._list_bids_channel}/response"
 
-    def sub_to_external_requests(self):
+    @property
+    def channel_callback_mapping(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            self.redis_db.sub_to_multiple_channels({
+            return {
                 self._offer_channel: self._offer,
                 self._delete_offer_channel: self._delete_offer,
                 self._accept_offer_channel: self._accept_offer,
                 self._list_offers_channel: self._offer_lists,
-            })
+            }
         else:
-            self.redis_db.sub_to_multiple_channels({
+            return {
                 self._offer_channel: self._offer,
                 self._delete_offer_channel: self._delete_offer,
                 self._bid_channel: self._bid,
                 self._delete_bid_channel: self._delete_bid,
                 self._list_bids_channel: self._list_bids,
                 self._list_offers_channel: self._offer_lists
-            })
+            }
+
+    def sub_to_external_requests(self):
+        self.redis_db.sub_to_multiple_channels(self.channel_callback_mapping)
 
     @classmethod
     def sanitize_parameters(cls, data_dict):
@@ -236,3 +244,13 @@ class ExternalStrategy(BaseStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         self.redis.publish_market_cycle()
+
+    def get_channel_list(self):
+        return {
+            "available_publish_channels": [
+                *self.redis.channel_callback_mapping.keys()
+            ],
+            "available_subscribe_channels": [
+                self.redis.market_cycle_channel_name
+            ]
+        }
