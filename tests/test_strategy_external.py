@@ -58,9 +58,9 @@ class TestExternalStrategy(unittest.TestCase):
         assert offer.energy == offer_dict["energy"]
 
     def test_list_offers(self):
-        offer1 = self.test_market.offer(1, 2, "A")
-        offer2 = self.test_market.offer(2, 3, "B")
-        offer3 = self.test_market.offer(3, 4, "C")
+        offer1 = self.test_market.offer(1, 2, "A", "A")
+        offer2 = self.test_market.offer(2, 3, "B", "B")
+        offer3 = self.test_market.offer(3, 4, "C", "C")
         self.external_redis._offer_lists("")
         self.external_redis.redis_db.publish.assert_called_once()
         assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
@@ -76,9 +76,9 @@ class TestExternalStrategy(unittest.TestCase):
     @parameterized.expand([(2, ), (3, )])
     def test_list_offers_two_sided(self, market_type):
         ConstSettings.IAASettings.MARKET_TYPE = market_type
-        offer1 = self.test_market.offer(1, 2, "test_area")
-        offer2 = self.test_market.offer(2, 3, "test_area")
-        self.test_market.offer(3, 4, "C")
+        offer1 = self.test_market.offer(1, 2, "test_area", "test_area")
+        offer2 = self.test_market.offer(2, 3, "test_area", "test_area")
+        self.test_market.offer(3, 4, "C", "C")
         self.external_redis._offer_lists("")
         self.external_redis.redis_db.publish.assert_called_once()
         assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
@@ -106,7 +106,7 @@ class TestExternalStrategy(unittest.TestCase):
         assert response_payload["offer"] == market_offer_json
 
     def test_delete_offer(self):
-        offer1 = self.test_market.offer(1, 2, "A")
+        offer1 = self.test_market.offer(1, 2, "A", "A")
         payload = {"data": json.dumps({"offer": offer1.id})}
         self.external_redis._delete_offer(payload)
         assert len(self.test_market.offers) == 0
@@ -115,7 +115,7 @@ class TestExternalStrategy(unittest.TestCase):
             "parent-area/test-area/delete_offer/response"
 
     def test_accept_offer(self):
-        offer1 = self.test_market.offer(1, 2, "A")
+        offer1 = self.test_market.offer(1, 2, "A", "A")
         payload = {"data": json.dumps({"offer": offer1.id})}
         self.external_redis._accept_offer(payload)
         assert len(self.test_market.trades) == 1
@@ -143,7 +143,7 @@ class TestExternalStrategy(unittest.TestCase):
         assert response_payload["bid"] == bid.to_JSON_string()
 
     def test_delete_bid(self):
-        bid1 = self.test_market.bid(1, 2, "B", "C")
+        bid1 = self.test_market.bid(1, 2, "B", "C", "B")
         payload = {"data": json.dumps({"bid": bid1.id})}
         self.external_redis._delete_bid(payload)
         assert len(self.test_market.bids) == 0
@@ -154,9 +154,9 @@ class TestExternalStrategy(unittest.TestCase):
     @parameterized.expand([(2, ), (3, )])
     def test_list_bids(self, market_type):
         ConstSettings.IAASettings.MARKET_TYPE = market_type
-        bid1 = self.test_market.bid(1, 2, "test_area", "A")
-        bid2 = self.test_market.bid(2, 3, "test_area", "B")
-        bid3 = self.test_market.bid(3, 4, "test_area", "C")
+        bid1 = self.test_market.bid(1, 2, "test_area", "A", "test_area")
+        bid2 = self.test_market.bid(2, 3, "test_area", "B", "test_area")
+        bid3 = self.test_market.bid(3, 4, "test_area", "C", "test_area")
         self.external_redis._list_bids("")
         self.external_redis.redis_db.publish.assert_called_once()
         assert self.external_redis.redis_db.publish.call_args_list[0][0][0] == \
@@ -168,3 +168,15 @@ class TestExternalStrategy(unittest.TestCase):
         self._assert_dict_is_the_same_as_offer(bids_list[0], bid1)
         self._assert_dict_is_the_same_as_offer(bids_list[1], bid2)
         self._assert_dict_is_the_same_as_offer(bids_list[2], bid3)
+
+    def test_get_channel_list_fetches_correct_channel_names(self):
+        channel_list = self.external_strategy.get_channel_list()
+        assert set(channel_list["available_publish_channels"]) == {
+            "parent-area/test-area/offer",
+            "parent-area/test-area/delete_offer",
+            "parent-area/test-area/accept_offer",
+            "parent-area/test-area/offers"
+        }
+        assert set(channel_list["available_subscribe_channels"]) == {
+            "parent-area/test-area/market_cycle"
+        }

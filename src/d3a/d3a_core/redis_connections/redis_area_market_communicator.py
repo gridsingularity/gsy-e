@@ -12,7 +12,7 @@ REDIS_POLL_TIMEOUT = 0.01
 
 class RedisCommunicator:
     def __init__(self):
-        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
         self.pubsub = self.redis_db.pubsub()
         self.pubsub_response = self.redis_db.pubsub()
         self.event = Event()

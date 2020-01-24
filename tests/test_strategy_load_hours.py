@@ -328,7 +328,6 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick()
     # Get the bid that was posted on event_market_cycle
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
 
@@ -353,7 +352,6 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick()
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
     # Increase energy requirement to cover the energy from the bid + threshold
     load_hours_strategy_test5.energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009

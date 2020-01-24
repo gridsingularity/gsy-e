@@ -1,7 +1,19 @@
 """
-Setup for a microgrid + DSO
+Copyright 2018 Grid Singularity
+This file is part of D3A.
 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
@@ -11,20 +23,12 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.appliance.simple import SimpleAppliance
-import os
 
-current_dir = os.path.dirname(__file__)
-print(current_dir)
-
-user_profile_path1 = os.path.join(current_dir, "../resources/House_1_Winter_Berlin.csv")
-user_profile_path2 = os.path.join(current_dir, "../resources/House_2_Winter_Berlin.csv")
-user_profile_path3 = os.path.join(current_dir, "../resources/House_1_Autumn_Berlin.csv")
-user_profile_path4 = os.path.join(current_dir, "../resources/House_2_Autumn_Berlin.csv")
+# Setup for a microgrid + DSO
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 1
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
     Houses_initial_buying_rate = 6
