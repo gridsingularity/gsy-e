@@ -23,6 +23,7 @@ from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
+from d3a.d3a_core.sim_results.kpi import KPI
 
 from statistics import mean
 from pendulum import duration
@@ -50,6 +51,7 @@ class SimulationEndpointBuffer:
         self.trade_details = {}
         self.device_statistics = DeviceStatistics()
         self.file_export_endpoints = FileExportEndpoints()
+        self.kpi = KPI()
 
         self.last_unmatched_loads = {}
 
@@ -63,6 +65,7 @@ class SimulationEndpointBuffer:
             "tree_summary": self.tree_summary.current_results_redis,
             "status": self.status,
             "eta_seconds": self.eta.seconds,
+            "kpi": self.kpi.performance_indices
         }
 
         if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
@@ -95,6 +98,7 @@ class SimulationEndpointBuffer:
             "status": self.status,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
+            "kpi": self.kpi.performance_indices
         }
 
     def update_stats(self, area, simulation_status, eta):
@@ -116,6 +120,8 @@ class SimulationEndpointBuffer:
         self._update_price_energy_day_tree_summary(area)
 
         self.generate_result_report()
+
+        self.kpi.update_kpis_from_area(area)
 
     def _update_price_energy_day_tree_summary(self, area):
         # Update of the price_energy_day endpoint should always precede tree-summary.
