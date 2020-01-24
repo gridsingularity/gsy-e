@@ -14,7 +14,6 @@ from d3a.models.appliance.simple import SimpleAppliance
 import os
 
 current_dir = os.path.dirname(__file__)
-print(current_dir)
 
 user_profile_path1 = os.path.join(current_dir, "../resources/House_1_Winter_Berlin.csv")
 user_profile_path2 = os.path.join(current_dir, "../resources/House_2_Winter_Berlin.csv")
