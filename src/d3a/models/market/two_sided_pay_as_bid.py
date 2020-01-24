@@ -70,9 +70,12 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                                      self.transfer_fee_ratio)
 
     @lock_market_action
-    def bid(self, price: float, energy: float, buyer: str, seller: str,
-            bid_id: str = None, original_bid_price=None, buyer_origin=None,
-            adapt_price_with_fees=True) -> Bid:
+    def get_bids(self):
+        return self.bids
+
+    @lock_market_action
+    def bid(self, price: float, energy: float, buyer: str, seller: str, buyer_origin,
+            bid_id: str = None, original_bid_price=None, adapt_price_with_fees=True) -> Bid:
         if energy <= 0:
             raise InvalidBid()
 

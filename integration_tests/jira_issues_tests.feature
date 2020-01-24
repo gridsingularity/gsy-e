@@ -127,3 +127,9 @@ Feature: Jira Issues Tests
     And d3a is installed
     When we run the d3a simulation with jira.d3asim_1862 [3, 15, 15]
     Then the DSO should only pay 30 cents
+
+  Scenario: D3ASIM-1896: Storage decreases bid rate until final buying rate
+    Given we have a scenario named jira/d3asim_1896
+    And d3a is installed
+    When we run the d3a simulation with jira.d3asim_1896 [1, 60, 60]
+    Then the storage decreases bid rate until final buying rate
