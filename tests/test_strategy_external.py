@@ -168,3 +168,15 @@ class TestExternalStrategy(unittest.TestCase):
         self._assert_dict_is_the_same_as_offer(bids_list[0], bid1)
         self._assert_dict_is_the_same_as_offer(bids_list[1], bid2)
         self._assert_dict_is_the_same_as_offer(bids_list[2], bid3)
+
+    def test_get_channel_list_fetches_correct_channel_names(self):
+        channel_list = self.external_strategy.get_channel_list()
+        assert set(channel_list["available_publish_channels"]) == {
+            "parent-area/test-area/offer",
+            "parent-area/test-area/delete_offer",
+            "parent-area/test-area/accept_offer",
+            "parent-area/test-area/offers"
+        }
+        assert set(channel_list["available_subscribe_channels"]) == {
+            "parent-area/test-area/market_cycle"
+        }
