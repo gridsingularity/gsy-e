@@ -4,7 +4,7 @@ behave
 coverage
 flake8==3.5.0
 flake8-tuple
-hypothesis
+hypothesis==4.38.0
 isort
 parameterized
 pytest

@@ -31,6 +31,10 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
     def shutdown(self):
         self.redis_db.terminate_connection()
 
+    def publish_market_cycle(self):
+        self.publish(f"{self.area.parent.slug}/{self.area.slug}/market_cycle",
+                     self.market.info)
+
     @property
     def market(self):
         return self.area.parent.next_market
@@ -125,7 +129,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         try:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
-                                   for _, v in self.market.offers.items()]
+                                   for _, v in self.market.get_offers().items()]
                 self.publish(self._list_offers_response_channel,
                              {"status": "ready", "offer_list": filtered_offers})
             else:
@@ -158,6 +162,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
             arguments = self._parse_payload(payload)
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.area.name
+            arguments['seller_origin'] = self.area.name
         except Exception as e:
             self.publish(
                 self._offer_response_channel,
@@ -185,6 +190,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer'] = self.area.name
             arguments['seller'] = self.area.parent.name
+            arguments['buyer_origin'] = self.area.name
         except Exception:
             self.publish(
                 self._bid_response_channel,
@@ -209,7 +215,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
     def _list_bids(self, payload):
         try:
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
-                             for _, v in self.market.bids.items()
+                             for _, v in self.market.get_bids().items()
                              if v.buyer == self.area.name]
             self.publish(self._list_bids_response_channel,
                          {"status": "ready", "bid_list": filtered_bids})
@@ -226,3 +232,7 @@ class ExternalStrategy(BaseStrategy):
 
     def shutdown(self):
         self.redis.shutdown()
+
+    def event_market_cycle(self):
+        super().event_market_cycle()
+        self.redis.publish_market_cycle()
