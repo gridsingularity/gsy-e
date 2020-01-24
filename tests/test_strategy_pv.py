@@ -204,7 +204,7 @@ def testing_decrease_offer_price(area_test3, pv_test3):
     assert len(pv_test3.offers.posted.items()) == 1
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
-
+    pv_test3.event_tick()
     for i in range(2):
         area_test3.current_tick += 310
         old_offer = list(pv_test3.offers.posted.keys())[0]
@@ -330,7 +330,6 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     fake_trade = FakeTrade(market_test3.created_offers[0])
     pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
-    pv_test6.event_tick()
     assert not market_test3.created_offers
 
 
