@@ -303,3 +303,13 @@ def dso_pays_certain_price(context):
             house_trades += 1
             assert trade.offer.price == 45
     assert house_trades == 4
+
+
+@then('the storage decreases bid rate until final buying rate')
+def storage_decreases_bid_rate(context):
+    # print(context.simulation.area.past_markets)
+    for market in context.simulation.area.past_markets:
+        assert len(market.trades) == 1
+        trade = market.trades[0]
+        trade_rate = trade.offer.price / trade.offer.energy
+        assert isclose(trade_rate, 15)
