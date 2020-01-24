@@ -53,7 +53,7 @@ class RedisSimulationCommunication:
         self.result_channel = RESULTS_CHANNEL
 
         try:
-            self.redis_db = StrictRedis.from_url(REDIS_URL)
+            self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
             self.pubsub = self.redis_db.pubsub()
             self._subscribe_to_channels()
         except ConnectionError:
