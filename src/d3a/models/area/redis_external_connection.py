@@ -7,7 +7,7 @@ from d3a.models.strategy.external_strategy import ExternalStrategy
 class RedisAreaExternalConnection:
     def __init__(self, area):
         self.area = area
-        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
         self.pubsub = self.redis_db.pubsub()
         self.sub_to_area_event()
         self.areas_to_register = []

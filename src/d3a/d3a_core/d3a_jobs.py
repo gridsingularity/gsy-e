@@ -115,7 +115,8 @@ def get_simulation_scenarios():
 
 
 def main():
-    with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'))):
+    with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'),
+                                         retry_on_timeout=True)):
         Worker(
             ['d3a'],
             name='simulation.{}.{:%s}'.format(getpid(), now())
