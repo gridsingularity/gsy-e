@@ -228,6 +228,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self._double_sided_market_event_tick(market)
 
+        self.bid_update.increment_update_counter_all_markets(self)
+
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
         market = self.area.get_future_market_from_id(market_id)

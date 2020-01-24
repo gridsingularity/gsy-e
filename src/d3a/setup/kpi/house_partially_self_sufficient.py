@@ -22,11 +22,9 @@ from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     area = Area(
         'Grid',
         [
