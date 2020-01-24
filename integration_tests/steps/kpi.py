@@ -26,7 +26,7 @@ from math import isclose
 @then('{kpi} of {expected_kpis} are correctly reported')
 def test_export_of_kpi_result(context, kpi, expected_kpis):
     sim_data_csv = glob.glob(os.path.join(context.export_path, "*",
-                                          "aggregated_results", "KPI.json"))
+                                          "aggregated_results", "kpi.json"))
     with open(sim_data_csv[0], "r") as sf:
         kpi_data = json.load(sf)
     expected_kpis = ast.literal_eval(expected_kpis)

@@ -73,7 +73,7 @@ class TestAreaClass(unittest.TestCase):
         self.area.config.market_count = 1
         self.area.activate()
         assert self.area.next_market.transfer_fee_ratio == 0.05
-        self.area.next_market.offer(1, 1, "test")
+        self.area.next_market.offer(1, 1, "test", "test")
         assert list(self.area.next_market.offers.values())[0].price == 1.05
 
     def test_markets_are_cycled_according_to_market_count(self):
