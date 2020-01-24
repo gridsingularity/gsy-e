@@ -146,7 +146,7 @@ def sync():
                 )
             )
         )
-        local('pip install --no-deps -e .')
+        local('pip install -e .')
     _post_check()
 
 
