@@ -224,3 +224,12 @@ class Market:
 
     def total_earned(self, seller):
         return sum(trade.offer.price for trade in self.trades if trade.seller == seller)
+
+    @property
+    def info(self):
+        return {
+            "name": self.name,
+            "id": self.id,
+            "start_time": self.time_slot_str,
+            "duration_min": GlobalConfig.slot_length.minutes
+        }
