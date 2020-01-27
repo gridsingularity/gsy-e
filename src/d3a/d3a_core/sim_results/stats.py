@@ -204,6 +204,8 @@ class MarketEnergyBills:
             bought = external.pop("bought")
             sold = external.pop("sold")
             external.update(**{"spent": earned, "earned": spent, "bought": sold, "sold": bought})
+            external["total_energy"] = external["bought"] - external["sold"]
+            external["total_cost"] = external["spent"] - external["earned"]
             results[area.name].update({"External Trades": external})
         return results
 
