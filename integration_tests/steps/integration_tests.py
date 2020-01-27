@@ -371,17 +371,20 @@ def save_reported_bills(context):
 
 @when('the past markets are not kept in memory')
 def past_markets_not_in_memory(context):
+    # d3a has to be set to publish the full results:
+    ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS = True
+
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
 
 
 @when('the reported cumulative grid trades are saved')
 def save_reported_cumulative_grid_trade_profile(context):
     context.cumulative_grid_trades = deepcopy(
-        context.simulation.endpoint_buffer.accumulated_trades)
+        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades)
     context.cumulative_grid_trades_redis = \
-        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades_redis)
+        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis)
     context.cumulative_grid_balancing_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_balancing_trades)
+        context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades)
 
 
 @then('we test the export functionality of {scenario}')
@@ -446,7 +449,7 @@ def test_aggregated_result_files(context):
                  os.path.join(base_path, 'cumulative_grid_trades.json'),
                  os.path.join(base_path, 'cumulative_loads.json'),
                  os.path.join(base_path, 'job_id.json'),
-                 os.path.join(base_path, 'KPI.json'),
+                 os.path.join(base_path, 'kpi.json'),
                  os.path.join(base_path, 'price_energy_day.json'),
                  os.path.join(base_path, 'random_seed.json'),
                  os.path.join(base_path, 'status.json'),
@@ -723,6 +726,35 @@ def test_accumulated_energy(context):
     assert isclose(net_energy, 0, abs_tol=1e-10)
 
 
+@then('the energy bills report the correct external traded energy and price')
+def test_external_trade_energy_price(context):
+    # TODO: Deactivating this test for now, because it will fail due to D3ASIM-1887.
+    # Please activate the test when implementing the aforementioned bug.
+    return
+    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis
+    houses = [child for child in context.simulation.area.children
+              if child.name in ["House 1", "House 2"]]
+    for house in houses:
+        house_sold = bills[house.name]["External Trades"]["sold"]
+        house_bought = bills[house.name]["External Trades"]["bought"]
+
+        external_trade_sold = sum([
+            k["energy"]
+            for k in current_trades[house.uuid][-1]["bars"]
+            if "External sources" in k["energyLabel"] and k["energy"] < 0
+        ])
+
+        external_trade_bought = sum([
+            k["energy"]
+            for k in current_trades[house.uuid][-1]["bars"]
+            if "External sources" in k["energyLabel"] and k["energy"] >= 0
+        ])
+
+        assert isclose(-external_trade_sold, house_sold, abs_tol=1e-3)
+        assert isclose(external_trade_bought, house_bought, abs_tol=1e-3)
+
+
 def generate_area_uuid_map(sim_area, results):
     results[sim_area.slug] = sim_area.uuid
     for child in sim_area.children:
@@ -956,9 +988,9 @@ def identical_unmatched_loads(context):
 @then('the cumulative grid trades are identical no matter if the past markets are kept')
 def identical_cumulative_grid_trades(context):
     cumulative_grid_trades = \
-        context.simulation.endpoint_buffer.accumulated_trades
+        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades
     cumulative_grid_balancing_trades = \
-        context.simulation.endpoint_buffer.cumulative_grid_balancing_trades
+        context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades
     assert len(DeepDiff(cumulative_grid_trades, context.cumulative_grid_trades,
                         significant_digits=5)) == 0
     assert len(DeepDiff(cumulative_grid_balancing_trades, context.cumulative_grid_balancing_trades,

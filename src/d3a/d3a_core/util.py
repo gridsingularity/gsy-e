@@ -21,7 +21,6 @@ import termios
 import tty
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 import json
-import time
 
 from click.types import ParamType
 from pendulum import duration, from_format
@@ -368,15 +367,6 @@ def constsettings_to_dict():
                           "setting structure.")
 
 
-def wait_until_timeout_blocking(functor, timeout=10, polling_period=0.01):
-    current_time = 0.0
-    while not functor() and current_time < timeout:
-        start_time = time.time()
-        time.sleep(polling_period)
-        current_time += time.time() - start_time
-    assert functor()
-
-
 def retry_function(max_retries=3):
     def decorator_with_max_retries(f):
         @wraps(f)
@@ -490,5 +480,5 @@ def convert_percent_to_ratio(unit_percent):
     return unit_percent / 100
 
 
-def short_offer_log_str(offer):
-    return f"({{{offer.id!s:.6s}}}: {offer.energy} kWh)"
+def short_offer_bid_log_str(offer_or_bid):
+    return f"({{{offer_or_bid.id!s:.6s}}}: {offer_or_bid.energy} kWh)"

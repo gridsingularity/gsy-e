@@ -42,6 +42,7 @@ Feature: Run integration tests
     When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
     Then the traded energy report the correct accumulated traded energy
     And the energy bills report the correct accumulated traded energy price
+    And the energy bills report the correct external traded energy and price
     And the traded energy profile is correctly generated
 
   Examples: Settings
@@ -80,7 +81,7 @@ Feature: Run integration tests
      When we run simulation on console with default settings file
      Then we test the export functionality of default_2a
 
-  Scenario: Simulation returns same results for different market counts
+  Scenario: Simulation returns same results for different future market counts
     Given we have a scenario named default_2a
     And d3a is installed
     When we run the simulation with setup file default_2a with two different market_counts

@@ -7,7 +7,7 @@ from d3a.models.strategy.external_strategy import ExternalStrategy
 class RedisAreaExternalConnection:
     def __init__(self, area):
         self.area = area
-        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
         self.pubsub = self.redis_db.pubsub()
         self.sub_to_area_event()
         self.areas_to_register = []
@@ -48,23 +48,11 @@ class RedisAreaExternalConnection:
             area_object.activate()
 
             self.publish(f"{self.area.slug}/register_participant/response",
-                         self._subscribe_channel_list(area_object.slug))
+                         self._subscribe_channel_list(area_object))
         self.areas_to_register = []
 
     def _subscribe_channel_list(self, new_area):
-        return json.dumps({
-            "available_publish_channels": [
-                f"{self.area.slug}/{new_area}/offer",
-                f"{self.area.slug}/{new_area}/offer_delete",
-                f"{self.area.slug}/{new_area}/offer_accept",
-            ],
-            "available_subscribe_channels": [
-                f"{self.area.slug}/{new_area}/offers",
-                f"{self.area.slug}/{new_area}/offer/response",
-                f"{self.area.slug}/{new_area}/offer_delete/response",
-                f"{self.area.slug}/{new_area}/offer_accept/response"
-            ]
-        })
+        return json.dumps(new_area.strategy.get_channel_list())
 
     def publish(self, channel, data):
         self.redis_db.publish(channel, data)

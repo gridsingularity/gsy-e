@@ -36,7 +36,8 @@ class Launcher:
                  queue=None,
                  max_jobs=None,
                  max_delay_seconds=2):
-        self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(REDIS_URL))
+        self.queue = queue or Queue('d3a', connection=StrictRedis.from_url(
+            REDIS_URL, retry_on_timeout=True))
         self.max_jobs = max_jobs if max_jobs is not None else int(MAX_JOBS)
         self.max_delay = timedelta(seconds=max_delay_seconds)
         python_executable = sys.executable \
