@@ -154,6 +154,9 @@ def test_energy_bills_last_past_market(grid):
     assert result['house2']['Accumulated Trades']['spent'] == \
         result['commercial']['earned'] == \
         0.01
+    external_trades = result['house2']['External Trades']
+    assert external_trades['total_energy'] == external_trades['bought'] - external_trades['sold']
+    assert external_trades['total_cost'] == external_trades['spent'] - external_trades['earned']
     assert result['commercial']['spent'] == result['commercial']['bought'] == 0
     assert result['fridge']['bought'] == 2 and isclose(result['fridge']['spent'], 0.01)
     assert result['pv']['sold'] == 2 and isclose(result['pv']['earned'], 0.01)
