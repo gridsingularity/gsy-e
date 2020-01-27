@@ -234,7 +234,7 @@ def test_energy_bills_report_correctly_market_fees(grid_fees):
     assert result["street"]["house1"]["market_fee"] == 0.08
     assert result["street"]["house2"]["market_fee"] == 0.08
     assert result["street"]['Accumulated Trades']["market_fee"] == 0.08
-    # assert result["house1"]['Accumulated Trades']["market_fee"] == \
-    #     result["street"]["house1"]["market_fee"]
-    # assert result["house2"]['Accumulated Trades']["market_fee"] == \
-    #     result["street"]["house2"]["market_fee"]
+    assert result["house1"]['External Trades']["market_fee"] == \
+        result["street"]["house1"]["market_fee"]
+    assert result["house2"]['External Trades']["market_fee"] == \
+        result["street"]["house2"]["market_fee"]
