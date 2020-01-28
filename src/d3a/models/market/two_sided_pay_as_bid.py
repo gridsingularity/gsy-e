@@ -106,7 +106,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                                   energy_portion, original_price):
         fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
-        self.market_fee += fees
         return energy * trade_rate + fees
 
     def split_bid(self, original_bid, energy, orig_bid_price):
@@ -150,11 +149,10 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return accepted_bid, residual_bid
 
     def determine_bid_price(self, trade_offer_info, energy):
-        revenue, fees, final_trade_rate = GridFees.calculate_trade_price_and_fees(
+        revenue, grid_fee_rate, final_trade_rate = GridFees.calculate_trade_price_and_fees(
             trade_offer_info, self.transfer_fee_ratio
         )
-        self.market_fee += fees
-        return energy * final_trade_rate
+        return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
     def accept_bid(self, bid: Bid, energy: float = None,
@@ -194,7 +192,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             # full bid trade, nothing further to do here
             pass
 
-        trade_price = self.determine_bid_price(trade_offer_info, energy)
+        fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
         bid = bid._replace(price=trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
@@ -205,7 +203,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
-                      buyer_origin=bid.buyer_origin, seller_origin=seller_origin
+                      buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
+                      fee_price=fee_price
                       )
 
         if already_tracked is False:
@@ -273,5 +272,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
                     original_offer_rate=offer.original_offer_price/offer.energy,
                     propagated_offer_rate=offer.price/offer.energy,
                     trade_rate=original_bid_rate)
+
                 self.accept_bid_offer_pair(bid, offer, matched_rate,
                                            trade_bid_info, selected_energy)
