@@ -37,6 +37,22 @@ def test_traded_energy_rate(context):
                trade.buyer == make_iaa_name(child))
 
 
+@then('one-on-one matching of offer & bid in PAC happens at bid rate')
+def clearing_rate_at_bid_rate(context):
+    assert all(isclose(clearing[0], 30.0)
+               for child in context.simulation.area.children
+               for market in child.past_markets
+               for clearing in list(market.state.clearing.values()))
+
+
+@then('clearing rate is the bid rate of last matched bid')
+def clearing_rate_at_last_matched_bid_rate(context):
+    assert all(isclose(clearing[0], 15.0)
+               for child in context.simulation.area.children
+               for market in child.past_markets
+               for clearing in list(market.state.clearing.values()))
+
+
 @then('buyers and sellers are not same')
 def test_different_buyer_seller(context):
     assert all(str(trade.offer.seller) != str(trade.buyer)
