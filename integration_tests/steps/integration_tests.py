@@ -945,13 +945,15 @@ def _filter_markets_by_market_name(context, market_name):
         return (list(filter(lambda x: x.name == market_name, neigh2.children))[0]).past_markets
 
 
-@then('trades on the {market_name} market clear with {trade_rate} cents/kWh')
-def assert_trade_rates(context, market_name, trade_rate):
+@then('trades on the {market_name} market clear with {trade_rate} cents/kWh and '
+      'at grid_fee_rate with {grid_fee_rate} cents/kWh')
+def assert_trade_rates(context, market_name, trade_rate, grid_fee_rate=0):
     markets = _filter_markets_by_market_name(context, market_name)
 
     for market in markets:
         for t in market.trades:
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
+            assert isclose(t.fee_price / t.offer.energy, float(grid_fee_rate), rel_tol=1e-05)
 
 
 @then('trades on {market_name} clear with {house_1_rate} or {house_2_rate} cents/kWh')

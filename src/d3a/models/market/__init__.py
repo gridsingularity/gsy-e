@@ -119,6 +119,7 @@ class Market:
         # sequential approach, but once event handling is enabled this needs to be handled
         if not already_tracked:
             self.trades.append(trade)
+            self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(self.traded_energy, offer.seller, offer.energy)
         self.traded_energy = subtract_or_create_key(self.traded_energy, buyer, offer.energy)

@@ -62,20 +62,22 @@ class MarketEnergyBills:
         self.market_fees = {}
 
     @classmethod
-    def _store_bought_trade(cls, result_dict, trade_offer):
+    def _store_bought_trade(cls, result_dict, trade):
         # Division by 100 to convert cents to Euros
-        result_dict['bought'] += trade_offer.energy
-        result_dict['spent'] += trade_offer.price / 100.
-        result_dict['total_energy'] += trade_offer.energy
-        result_dict['total_cost'] += trade_offer.price / 100.
+        result_dict['bought'] += trade.offer.energy
+        result_dict['spent'] += trade.offer.price / 100.
+        result_dict['total_energy'] += trade.offer.energy
+        result_dict['total_cost'] += trade.offer.price / 100.
+        result_dict['market_fee'] += trade.fee_price / 100. if trade.fee_price is not None else 0.
 
     @classmethod
-    def _store_sold_trade(cls, result_dict, trade_offer):
+    def _store_sold_trade(cls, result_dict, trade):
         # Division by 100 to convert cents to Euros
-        result_dict['sold'] += trade_offer.energy
-        result_dict['earned'] += trade_offer.price / 100.
-        result_dict['total_energy'] -= trade_offer.energy
-        result_dict['total_cost'] -= trade_offer.price / 100.
+        result_dict['sold'] += trade.offer.energy
+        result_dict['earned'] += trade.offer.price / 100.
+        result_dict['total_energy'] -= trade.offer.energy
+        result_dict['total_cost'] -= trade.offer.price / 100.
+        result_dict['market_fee'] += trade.fee_price / 100. if trade.fee_price is not None else 0.
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
@@ -92,6 +94,7 @@ class MarketEnergyBills:
         return dict(bought=0.0, sold=0.0,
                     spent=0.0, earned=0.0,
                     total_energy=0.0, total_cost=0.0,
+                    market_fee=0.0,
                     type=area.display_type)
 
     def _get_child_data(self, area):
@@ -105,7 +108,7 @@ class MarketEnergyBills:
                         for child in area.children}
             return self.bills_results[area.name]
 
-    def energy_bills(self, area, past_market_types):
+    def _energy_bills(self, area, past_market_types):
         """
         Return a bill for each of area's children with total energy bought
         and sold (in kWh) and total money earned and spent (in cents).
@@ -119,14 +122,13 @@ class MarketEnergyBills:
                 buyer = area_name_from_area_or_iaa_name(trade.buyer)
                 seller = area_name_from_area_or_iaa_name(trade.seller)
                 if buyer in result:
-                    self._store_bought_trade(result[buyer], trade.offer)
+                    self._store_bought_trade(result[buyer], trade)
                 if seller in result:
-                    self._store_sold_trade(result[seller], trade.offer)
+                    self._store_sold_trade(result[seller], trade)
         for child in area.children:
-            child_result = self.energy_bills(child, past_market_types)
+            child_result = self._energy_bills(child, past_market_types)
             if child_result is not None:
                 result[child.name]['children'] = child_result
-                result[child.name]['market_fee'] = self.market_fees[child.name]
 
         return result
 
@@ -148,7 +150,7 @@ class MarketEnergyBills:
     def update(self, area):
         market_type = "past_markets" if self.is_spot_market else "past_balancing_markets"
         self._update_market_fees(area, market_type)
-        bills = self.energy_bills(area, market_type)
+        bills = self._energy_bills(area, market_type)
         flattened = self._flatten_energy_bills(OrderedDict(sorted(bills.items())), {})
         self.bills_results = self._accumulate_by_children(area, flattened, {})
         self._bills_for_redis(area, deepcopy(self.bills_results))
@@ -197,13 +199,14 @@ class MarketEnergyBills:
             # External trades are the trades of the parent area
             external = deepcopy(flattened[area.name])
             # Should not include market fee to the external trades
-            external.pop("market_fee", None)
+            market_fee = external.pop("market_fee", None)
             # Should switch spent/earned and bought/sold, to match the perspective of the UI
             spent = external.pop("spent")
             earned = external.pop("earned")
             bought = external.pop("bought")
             sold = external.pop("sold")
-            external.update(**{"spent": earned, "earned": spent, "bought": sold, "sold": bought})
+            external.update(**{"spent": earned, "earned": spent, "bought": sold,
+                               "sold": bought, "market_fee": market_fee})
             external["total_energy"] = external["bought"] - external["sold"]
             external["total_cost"] = external["spent"] - external["earned"]
             results[area.name].update({"External Trades": external})

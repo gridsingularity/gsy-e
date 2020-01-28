@@ -142,15 +142,16 @@ class IAAEngine:
 
             try:
                 trade_offer_rate = trade.offer.price / trade.offer.energy
+                updated_trade_bid_info = GridFees.update_forwarded_offer_trade_original_info(
+                    trade.offer_bid_trade_info, offer_info.source_offer)
                 trade_source = self.owner.accept_offer(
                     market_or_id=self.markets.source,
                     offer=offer_info.source_offer,
                     energy=trade.offer.energy,
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
-                    trade_bid_info=GridFees.update_forwarded_offer_trade_original_info(
-                        trade.offer_bid_trade_info, offer_info.source_offer
-                    ), buyer_origin=trade.buyer_origin
+                    trade_bid_info=updated_trade_bid_info,
+                    buyer_origin=trade.buyer_origin
                 )
 
             except OfferNotFoundException:
