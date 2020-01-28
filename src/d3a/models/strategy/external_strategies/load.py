@@ -64,7 +64,7 @@ class LoadHoursExternalStrategy(LoadHoursStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         market_event_channel = f"{self.area.name}/market_event"
-        self.redis.publish_json(market_event_channel, self.owner.current_market)
+        self.redis.publish_json(market_event_channel, self.owner.current_market.info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
