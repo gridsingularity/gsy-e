@@ -23,7 +23,8 @@ from d3a.models.strategy.pv import PVStrategy
 
 
 def get_setup(config):
-    config.update_config_parameters(transfer_fee_pct=5, transfer_fee_const=1, market_maker_rate=35)
+    config.update_config_parameters(grid_fee_percentage=5, transfer_fee_const=1,
+                                    market_maker_rate=35)
     area = Area(
         'Grid',
         [

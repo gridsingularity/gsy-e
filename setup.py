@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 import os
 
 
-d3a_interface_branch = "master"
+d3a_interface_branch = "feature/D3ASIM-1878"
 if "BRANCH" in os.environ:
     d3a_interface_branch = os.environ["BRANCH"]
 

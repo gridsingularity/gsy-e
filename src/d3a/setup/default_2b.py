@@ -37,13 +37,13 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
                                                                        final_buying_rate=25),
-                         appliance=SwitchableAppliance(), transfer_fee_pct=0),
+                         appliance=SwitchableAppliance(), grid_fee_percentage=0),
                     Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
-                         appliance=SwitchableAppliance(), transfer_fee_pct=0),
+                         appliance=SwitchableAppliance(), grid_fee_percentage=0),
                     Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
-                         appliance=SwitchableAppliance(), transfer_fee_pct=0),
+                         appliance=SwitchableAppliance(), grid_fee_percentage=0),
                 ],
-                transfer_fee_pct=0, transfer_fee_const=0,
+                grid_fee_percentage=0, transfer_fee_const=0,
 
             ),
             Area(
@@ -54,19 +54,19 @@ def get_setup(config):
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
                                                                        final_buying_rate=35),
-                         appliance=SwitchableAppliance(), transfer_fee_pct=0),
+                         appliance=SwitchableAppliance(), grid_fee_percentage=0),
                     Area('H2 PV', strategy=PVStrategy(10),
-                         appliance=PVAppliance(), transfer_fee_pct=0),
+                         appliance=PVAppliance(), grid_fee_percentage=0),
 
                 ],
-                transfer_fee_pct=0, transfer_fee_const=0,
+                grid_fee_percentage=0, transfer_fee_const=0,
 
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
                                                                    final_buying_rate=35),
-                 appliance=SwitchableAppliance(), transfer_fee_pct=0)
+                 appliance=SwitchableAppliance(), grid_fee_percentage=0)
             # Area('Commercial Energy Producer',
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
             #      appliance=SimpleAppliance()

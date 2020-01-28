@@ -44,7 +44,7 @@ def get_setup(config):
                                                       final_selling_rate=5),
                          appliance=PVAppliance()),
                 ],
-                transfer_fee_pct=0, transfer_fee_const=0,
+                grid_fee_percentage=0, transfer_fee_const=0,
 
             ),
             Area('Commercial Energy Producer',
