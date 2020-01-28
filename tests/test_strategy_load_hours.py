@@ -284,7 +284,20 @@ def test_event_tick(load_hours_strategy_test1, market_test1):
     assert isclose(load_hours_strategy_test1.energy_requirement_Wh[TIME],
                    market_test1.most_affordable_energy * 1000)
 
-    load_hours_strategy_test1.event_tick()
+
+def test_event_trade(load_hours_strategy_test1, market_test1):
+    market_test1.most_affordable_energy = 0.155
+    load_hours_strategy_test1.event_activate()
+    load_hours_strategy_test1.area.past_markets = {TIME: market_test1}
+    load_hours_strategy_test1.event_market_cycle()
+    assert isclose(load_hours_strategy_test1.energy_requirement_Wh[TIME],
+                   market_test1.most_affordable_energy * 1000)
+
+    trade = Trade(id='id', time=TIME, offer=Offer('id1', 2, 0.155, 'B'),
+                  buyer=load_hours_strategy_test1.owner.name, seller='B')
+    load_hours_strategy_test1.event_trade(
+        market_id=load_hours_strategy_test1.area.current_market,
+        trade=trade)
     assert load_hours_strategy_test1.energy_requirement_Wh[TIME] == 0
 
 
@@ -295,7 +308,6 @@ def test_event_tick_with_partial_offer(load_hours_strategy_test2, market_test2):
     load_hours_strategy_test2.event_market_cycle()
     requirement = load_hours_strategy_test2.energy_requirement_Wh[TIME] / 1000
     load_hours_strategy_test2.event_tick()
-    assert load_hours_strategy_test2.energy_requirement_Wh[TIME] == 0
     assert float(load_hours_strategy_test2.accept_offer.calls[0][1]['energy']) == requirement
 
 
@@ -386,6 +398,7 @@ def test_balancing_offers_are_not_created_if_device_not_in_registry(
 
 def test_balancing_offers_are_created_if_device_in_registry(
         balancing_fixture, area_test2):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     balancing_fixture.event_activate()
     balancing_fixture.event_market_cycle()
@@ -402,6 +415,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
 
     assert actual_balancing_demand_price == expected_balancing_demand_energy * 30
     selected_offer = area_test2.current_market.sorted_offers[0]
+    balancing_fixture.energy_requirement_Wh[area_test2.current_market.time_slot] = \
+        selected_offer.energy * 1000.0
     balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',
                                               time=area_test2.now,
