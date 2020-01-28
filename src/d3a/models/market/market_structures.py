@@ -158,7 +158,7 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
         return (
             "{{{s.id!s:.6s}}} [origin: {s.seller_origin} -> {s.buyer_origin}] "
             "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh @ {s.offer.price} {rate} "
-            "{s.offer.id} [FEE: {s.fee_price} cts.]".
+            "{s.offer.id} [fee: {s.fee_price} cts.]".
             format(s=self, rate=round(self.offer.price / self.offer.energy, 8))
         )
 

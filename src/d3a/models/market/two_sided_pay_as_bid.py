@@ -106,7 +106,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
                                                   energy_portion, original_price):
         fees = self.transfer_fee_ratio * original_price * energy_portion \
             + self.transfer_fee_const * energy
-        self.market_fee += fees
         return energy * trade_rate + fees
 
     def split_bid(self, original_bid, energy, orig_bid_price):
@@ -153,7 +152,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
         revenue, grid_fee_rate, final_trade_rate = GridFees.calculate_trade_price_and_fees(
             trade_offer_info, self.transfer_fee_ratio
         )
-        self.market_fee += grid_fee_rate * energy
         return grid_fee_rate, energy * final_trade_rate
 
     @lock_market_action

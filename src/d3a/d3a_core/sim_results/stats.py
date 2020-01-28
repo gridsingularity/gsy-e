@@ -129,7 +129,6 @@ class MarketEnergyBills:
             child_result = self._energy_bills(child, past_market_types)
             if child_result is not None:
                 result[child.name]['children'] = child_result
-                # result[child.name]['market_fee'] = self.market_fees[child.name]
 
         return result
 

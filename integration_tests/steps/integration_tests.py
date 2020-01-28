@@ -953,7 +953,7 @@ def assert_trade_rates(context, market_name, trade_rate, grid_fee_rate=0):
     for market in markets:
         for t in market.trades:
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
-            assert isclose(t.fee_price / t.offer.energy, float(grid_fee_rate), rel_tol=1e-01)
+            assert isclose(t.fee_price / t.offer.energy, float(grid_fee_rate), rel_tol=1e-05)
 
 
 @then('trades on {market_name} clear with {house_1_rate} or {house_2_rate} cents/kWh')
