@@ -1,4 +1,5 @@
 from d3a.models.market.grid_fees import BaseClassGridFees
+from d3a.models.market.market_structures import TradeBidInfo
 
 
 class GridFees(BaseClassGridFees):
@@ -29,9 +30,9 @@ class GridFees(BaseClassGridFees):
             else offer_propagated_rate / offer_original_rate - 1
         total_tax_ratio = demand_side_tax + supply_side_tax
         revenue = trade_rate_source / (1 + total_tax_ratio)
-        fee_n = revenue * tax_ratio
+        grid_fee_rate = revenue * tax_ratio
         trade_price = revenue + revenue * supply_side_tax
-        return revenue, fee_n, trade_price
+        return revenue, grid_fee_rate, trade_price
 
     @staticmethod
     def calculate_original_trade_rate_from_clearing_rate(
@@ -77,11 +78,12 @@ class GridFees(BaseClassGridFees):
         if not trade_original_info:
             return None
         original_bid_rate, bid_rate, trade_rate_source = trade_original_info
-        return [original_bid_rate,
-                bid_rate,
-                market_offer.original_offer_price / market_offer.energy,
-                market_offer.price / market_offer.energy,
-                trade_rate_source]
+        trade_bid_info = TradeBidInfo(
+            original_bid_rate=original_bid_rate, propagated_bid_rate=bid_rate,
+            original_offer_rate=market_offer.original_offer_price / market_offer.energy,
+            propagated_offer_rate=market_offer.price / market_offer.energy,
+            trade_rate=trade_rate_source)
+        return trade_bid_info
 
     @staticmethod
     def propagate_original_bid_info_on_offer_trade(trade_original_info, tax_ratio):
@@ -102,9 +104,9 @@ class GridFees(BaseClassGridFees):
         original_bid_rate, bid_rate, original_offer_rate, \
             offer_rate, trade_rate_source = trade_bid_info
 
-        revenue, fees, trade_price = GridFees.calculate_fee_revenue_from_clearing_trade(
-            bid_rate, original_bid_rate,
-            offer_rate, original_offer_rate,
-            trade_rate_source, tax_ratio
+        revenue, grid_fee_rate, trade_price = GridFees.calculate_fee_revenue_from_clearing_trade(
+            bid_propagated_rate=bid_rate, bid_original_rate=original_bid_rate,
+            offer_propagated_rate=offer_rate, offer_original_rate=original_offer_rate,
+            trade_rate_source=trade_rate_source, tax_ratio=tax_ratio
         )
-        return revenue, fees, trade_price
+        return revenue, grid_fee_rate, trade_price
