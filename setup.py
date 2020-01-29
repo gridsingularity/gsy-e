@@ -1,10 +1,10 @@
 from setuptools import find_packages, setup
-import os
+# import os
 
 
 d3a_interface_branch = "feature/D3ASIM-1878"
-if "BRANCH" in os.environ:
-    d3a_interface_branch = os.environ["BRANCH"]
+# if "BRANCH" in os.environ:
+#     d3a_interface_branch = os.environ["BRANCH"]
 
 try:
     with open('requirements/base.txt') as req:
