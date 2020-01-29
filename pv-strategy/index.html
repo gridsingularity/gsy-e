@@ -819,6 +819,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+      Market Slots and Ticks
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1086,11 +1098,10 @@
 <p><img alt="img" src="../img/pv-strategy-1.png" /></p>
 <p>Corresponding code: <code>src/d3a/models/strategy/pv.py</code> or for the predefined PV:<code>src/d3a/models/strategy/predefined_pv.py</code></p>
 <p>How to add a PV device to the setup-file:</p>
-<div class="codehilite"><pre><span></span>Area(&#39;H2 PV&#39;, strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+<pre class="codehilite"><code>Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
                                   final_selling_rate=5, fit_to_limit=True,
                                   update_interval=duration(minutes=5)),
-     appliance=PVAppliance()),
-</pre></div>
+     appliance=PVAppliance()),</code></pre>
 
 
 <p>In order to understand how the strategy is actually decreasing its <code>offered_rate</code> in the case of not getting traded, see the following diagram. </p>

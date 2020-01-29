@@ -783,6 +783,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+      Market Slots and Ticks
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1162,48 +1174,42 @@
                 <h2 id="how-to-install-d3a-on-ubuntu-1804">How to Install D3A on Ubuntu 18.04<a class="headerlink" href="#how-to-install-d3a-on-ubuntu-1804" title="Permanent link">&para;</a></h2>
 <h3 id="preparations">Preparations<a class="headerlink" href="#preparations" title="Permanent link">&para;</a></h3>
 <h5 id="in-case-you-have-not-installed-git-python36-and-pip-yet">In case you have not installed git, python3.6 and pip yet:<a class="headerlink" href="#in-case-you-have-not-installed-git-python36-and-pip-yet" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>sudo apt-get update
+<pre class="codehilite"><code>sudo apt-get update
 sudo apt-get install git-core software-properties-common -y
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
 sudo apt-get install python3.6 -y
 sudo apt-get install git-core -y
-sudo apt-get install python3-pip -y
-</pre></div>
+sudo apt-get install python3-pip -y</code></pre>
 
 
 <h5 id="install-virtualenv-and-create-a-python-virtual-environment-for-d3a">Install virtualenv and create a python virtual environment for d3a<a class="headerlink" href="#install-virtualenv-and-create-a-python-virtual-environment-for-d3a" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>pip3 install virtualenv
+<pre class="codehilite"><code>pip3 install virtualenv
 mkdir envs
 cd envs
-virtualenv -p /usr/bin/python3.6 d3a
-</pre></div>
+virtualenv -p /usr/bin/python3.6 d3a</code></pre>
 
 
 <p>How to activate the environment:</p>
-<div class="codehilite"><pre><span></span>source d3a/bin/activate
-</pre></div>
+<pre class="codehilite"><code>source d3a/bin/activate</code></pre>
 
 
 <p>How to deactivate:</p>
-<div class="codehilite"><pre><span></span>deactivate
-</pre></div>
+<pre class="codehilite"><code>deactivate</code></pre>
 
 
 <h4 id="before-you-start">Before you start:<a class="headerlink" href="#before-you-start" title="Permanent link">&para;</a></h4>
 <ol>
 <li>Please add the following lines to your <strong>.bashrc</strong> and reopen the shell:</li>
 </ol>
-<div class="codehilite"><pre><span></span>export LC_ALL=C.UTF-8
-export LANG=C.UTF-8
-</pre></div>
+<pre class="codehilite"><code>export LC_ALL=C.UTF-8
+export LANG=C.UTF-8</code></pre>
 
 
 <ol>
 <li>Clone the d3a repository to a directory of your choice:</li>
 </ol>
-<div class="codehilite"><pre><span></span>git clone https://github.com/gridsingularity/d3a.git
-</pre></div>
+<pre class="codehilite"><code>git clone https://github.com/gridsingularity/d3a.git</code></pre>
 
 
 <h3 id="install-the-d3a">Install the D3A:<a class="headerlink" href="#install-the-d3a" title="Permanent link">&para;</a></h3>

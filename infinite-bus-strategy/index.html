@@ -788,6 +788,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+      Market Slots and Ticks
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1016,9 +1028,8 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
 </ul>
 <p>Corresponding code: <code>src/3a/models/strategy/infinite_bus.py</code></p>
 <p>How to add a infinite power plant to the setup-file:</p>
-<div class="codehilite"><pre><span></span>Area(&#39;Infinite Bus&#39;, strategy=InfiniteBusStrategy(energy_buy_rate=24, energy_sell_rate=25),
-                             appliance=SimpleAppliance()),
-</pre></div>
+<pre class="codehilite"><code>Area('Infinite Bus', strategy=InfiniteBusStrategy(energy_buy_rate=24, energy_sell_rate=25),
+                             appliance=SimpleAppliance()),</code></pre>
                 
                   
                 

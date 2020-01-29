@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#self-sufficiency" tabindex="1" class="md-skip">
+      <a href="#self-sufficiency-self-consumption" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -783,6 +783,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+      Market Slots and Ticks
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -985,8 +997,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#self-sufficiency" title="Self-Sufficiency" class="md-nav__link">
-    Self-Sufficiency
+  <a href="#self-sufficiency-self-consumption" title="Self-Sufficiency &amp; Self-Consumption" class="md-nav__link">
+    Self-Sufficiency &amp; Self-Consumption
   </a>
   
 </li>
@@ -1038,8 +1050,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#self-sufficiency" title="Self-Sufficiency" class="md-nav__link">
-    Self-Sufficiency
+  <a href="#self-sufficiency-self-consumption" title="Self-Sufficiency &amp; Self-Consumption" class="md-nav__link">
+    Self-Sufficiency &amp; Self-Consumption
   </a>
   
 </li>
@@ -1066,10 +1078,13 @@
                   <h1>Key Performance Indicators (KPIs)</h1>
                 
                 <p>In the last few years, distributed energy resources concept has gained ground in the power utility scope. Strictly speaking in terms of D3A, it is necessary to know a metric that could aid in visualising local resource utilisation in distributed energy trading platform. In order to do so we have planned to implement some KPIs to give us a good figure of effectiveness of localised distributed energy trading.</p>
-<h3 id="self-sufficiency">Self-Sufficiency<a class="headerlink" href="#self-sufficiency" title="Permanent link">&para;</a></h3>
+<h3 id="self-sufficiency-self-consumption">Self-Sufficiency &amp; Self-Consumption<a class="headerlink" href="#self-sufficiency-self-consumption" title="Permanent link">&para;</a></h3>
+<p>The <strong>Self-Sufficiency</strong> of an <strong>area</strong> is its <strong>internal consumption</strong> of energy (all energy consumed that was produced internally in the area) <strong>as a fraction of it's demand</strong> of energy (all energy demanded by the area).</p>
+<p>The <strong>Self-Consumption</strong> of an <strong>area</strong> is its <strong>internal consumption</strong> of energy (all energy consumed that was produced internally in the area) <strong>as a fraction of it's production</strong> of energy (all energy produced by the area).</p>
 <p>Strictly speaking in terms of formula:</p>
 <ul>
 <li>self_sufficiency(area) = self_consumed_energy / total_energy_demanded</li>
+<li>self_consumption(area) = self_consumed_energy / total_energy_produced</li>
 </ul>
 <p>If you have a look at the hierarchical energy grid as shown in figure below, the self_consumed energy would be different from the reference point of whole energy grid. Lets consider <strong>house 1</strong> where,</p>
 <ul>
@@ -1082,17 +1097,29 @@
 <li>
 <p><code>house1_pv</code> → <code>house1_storage</code> = 5kWh</p>
 </li>
-<li><code>house1_pv</code> → <code>house2_load</code> = 1kWh</li>
+<li><code>house1_pv</code> → <code>house2_load</code> = 4kWh</li>
 <li><code>house1_storage</code> → <code>house1_load</code> = 2kWh</li>
 <li><code>house1_storage</code> → <code>house2_load</code> = 3kWh</li>
 <li><code>house1_self_consumer_energy</code> = (<code>house1_pv</code> → <code>house1_load</code>) + (<code>house1_pv</code> → <code>house1_storage</code> → <code>house1_load</code>) = 1 + 2 = 3kWh</li>
 <li><code>house1_total_energy_demanded</code> (only includes the demanded energy from house1’s load device) = 4kWh</li>
 </ul>
-<p>Then, self-sufficiency of the house is <code>self_sufficiency(house1) = house1_self_consumer_energy / house1_total_energy_demanded</code></p>
+<p>Then, self-sufficiency of the house 1 is <code>self_sufficiency(house1) = house1_self_consumer_energy / house1_total_energy_demanded</code></p>
 <ul>
-<li><code>self_sufficiency(house1)</code> = 3 / 4 = 0.75</li>
+<li><code>self_sufficiency(house1)</code> = 3 / 4 = 0.75 → 75% </li>
 </ul>
-<p>From the reference point of <strong>GRID</strong> where all others areas are its children, self_sufficiency would always be one unless there is an unmatched load from any of the load devices.</p>
+<p>Then, self-consumption of the house 1 is <code>self_consumption(house1) = house1_self_consumer_energy / house1_total_energy_produced</code></p>
+<ul>
+<li><code>self_consumption(house1)</code> = 3 / 10 = 0.3 → 30%</li>
+</ul>
+<p>From the reference point of <strong>GRID</strong> where all others areas are its children: </p>
+<ul>
+<li>
+<p><strong>self_sufficiency</strong> would always be 100% unless there is an <strong>unmatched load</strong> from any of the load devices</p>
+</li>
+<li>
+<p><strong>self_consumption</strong> would always be 100% unless there is an <strong>unmatched PV’s offer</strong> from any of the PV devices. </p>
+</li>
+</ul>
 <p><img alt="img" src="../img/kpis-1.png" /></p>
                 
                   

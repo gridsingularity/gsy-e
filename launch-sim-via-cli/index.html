@@ -783,6 +783,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+      Market Slots and Ticks
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1088,13 +1100,12 @@
 <li><code>-m, --market-count</code>: Number of tradable market slots into the future [default: 5]</li>
 </ul>
 <h3 id="example-simulation-call">Example simulation call:<a class="headerlink" href="#example-simulation-call" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>d3a -l ERROR run --duration=24h --tick-length=1s --slot-length=15m --cloud-coverage=0 --market-count=5 --setup default_2a
-</pre></div>
+<pre class="codehilite"><code>d3a -l ERROR run --duration=24h --tick-length=1s --slot-length=15m --cloud-coverage=0 --market-count=5 --setup default_2a</code></pre>
 
 
 <h3 id="getting-help-in-the-command-line">Getting help in the command line:<a class="headerlink" href="#getting-help-in-the-command-line" title="Permanent link">&para;</a></h3>
 <p><code>d3a --help</code> returns:</p>
-<div class="codehilite"><pre><span></span>Usage: d3a [OPTIONS] COMMAND [ARGS]...
+<pre class="codehilite"><code>Usage: d3a [OPTIONS] COMMAND [ARGS]...
 
 Options:
   -l, --log-level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG|NOTSET|TRACE]
@@ -1103,12 +1114,11 @@ Options:
 
 Commands:
   run*
-  resume
-</pre></div>
+  resume</code></pre>
 
 
 <p><code>d3a run --help</code> returns:</p>
-<div class="codehilite"><pre><span></span>Usage: d3a run [OPTIONS]
+<pre class="codehilite"><code>Usage: d3a run [OPTIONS]
 
 Options:
   -d, --duration INTERVAL       Duration of simulation  [default: 1d]
@@ -1172,8 +1182,7 @@ Options:
   --enable-bc                   Run simulation on Blockchain
   --compare-alt-pricing         Compare alternative pricing schemes
   --start-date DATE             Start date of the Simulation (YYYY-MM-DD)  [default: 2019-09-27]
-  --help                        Show this message and exit.
-</pre></div>
+  --help                        Show this message and exit.</code></pre>
                 
                   
                 

@@ -819,6 +819,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+      Market Slots and Ticks
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1086,13 +1098,12 @@
 <p>The Load will increase its acceptable energy rate linearly in the frame of a market slot of a one-sided market. It will start at the <code>initial_buying_rate</code> and end at <code>final_buying_rate</code>.</p>
 <p>Corresponding code: src/<code>3a/models/strategy/load_hours.py</code></p>
 <p>How to add load device to setup-file:</p>
-<div class="codehilite"><pre><span></span><span class="n">Area</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
-                                        <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
-                                        <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span>
-                                        <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                        <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">),</span>
-             <span class="n">appliance</span><span class="o">=</span><span class="n">SwitchableAppliance</span><span class="p">())</span>
-</pre></div>
+<pre class="codehilite"><code class="language-python">Area('Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                                        hrs_per_day=6,
+                                        hrs_of_day=list(range(12, 18)),
+                                        initial_buying_rate=0,
+                                        final_buying_rate=35),
+             appliance=SwitchableAppliance())</code></pre>
 
 
 <hr />

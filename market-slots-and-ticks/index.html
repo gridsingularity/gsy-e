@@ -13,7 +13,7 @@
         <meta name="description" content="Wiki for the D3A by Grid Singularity">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/market-smart-contract/">
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/market-slots-and-ticks/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Market Smart Contract - D3A Wiki</title>
+        <title>Market Slots and Ticks - D3A Wiki</title>
       
     
     
@@ -110,6 +110,10 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
+      <a href="#spot-market-slots" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -131,7 +135,7 @@
               D3A Wiki
             </span>
             <span class="md-header-nav__topic">
-              Market Smart Contract
+              Market Slots and Ticks
             </span>
           
         </div>
@@ -692,10 +696,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" checked>
     
     <label class="md-nav__link" for="nav-3-3">
       Markets
@@ -783,11 +789,52 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Market Slots and Ticks
+      </label>
+    
+    <a href="./" title="Market Slots and Ticks" class="md-nav__link md-nav__link--active">
       Market Slots and Ticks
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#spot-market-slots" title="Spot Market Slots" class="md-nav__link">
+    Spot Market Slots
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#market-ticks" title="Market Ticks" class="md-nav__link">
+    Market Ticks
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -800,12 +847,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
     
     <label class="md-nav__link" for="nav-3-4">
       D3A Blockchain Support
@@ -845,18 +890,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Market Smart Contract" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../market-smart-contract/" title="Market Smart Contract" class="md-nav__link">
       Market Smart Contract
     </a>
-    
   </li>
 
         
@@ -1009,23 +1047,60 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#spot-market-slots" title="Spot Market Slots" class="md-nav__link">
+    Spot Market Slots
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#market-ticks" title="Market Ticks" class="md-nav__link">
+    Market Ticks
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/market-smart-contract.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/market-slots-and-ticks.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Market Smart Contract</h1>
+                  <h1>Market Slots and Ticks</h1>
                 
-                <p>The market smart contract is used for performing energy transactions, in exactly the same manner as the Market Python class. There are 3 main non-view functions/transactions (functions that actually mutate the state of the blockchain) on the contract:</p>
-<ul>
-<li><code>offer()</code>: Places an energy offer to the market. Needs the offered energy and the offer price as arguments. The smart contract generates an offer id and stores the offer in its 'offers' mapping, similar to its Python counterpart. Emits a <code>NewOffer</code> event on success, which will notify the listeners of the contract about the new offer that was created.</li>
-<li><code>cancel()</code>: Removes a previously created offer from the market. Needs the offer id in bytes as argument. This function removes the offer id from the 'offers' mapping. Emits a <code>CancelOffer</code> event to notify the listeners about the deleted offer. </li>
-<li><code>trade()</code>: Performs an energy trade. Needs the selected offer id and the desired traded energy as arguments. Similar to the <code>accept_offer</code> Python function, it checks whether the selected offer is eligible for this trade and performs the actual trade. In case the desired energy is less than the offer energy, a partial trade is performed and a new residual offer is generated. The listeners get notified for the offer change by an <code>OfferChanged</code> event that gets emitted, which notifies the listeners about the new and the old offer ids, along with the new offer energy and price. On a successful trade, a <code>NewTrade</code> event is also emitted, which notifies the listeners about the trade that was performed. </li>
-</ul>
-<p>This contract is also responsible for the energy and token balance of the devices registered in it. For the energy balance, it is stored directly on the market contract ('balances' mapping). As for the token balance, a separate smart contract is responsible (<code>ClearingToken</code>) which is invoked via an external function during the trade function, in order to update the price/token balances of the buyer and the seller of the trade. </p>
+                <h2 id="spot-market-slots">Spot Market Slots<a class="headerlink" href="#spot-market-slots" title="Permanent link">&para;</a></h2>
+<p>The energy spot market is broken into slots, the default is set to 15 minutes of simulation time. For a one day simulation, 96 market slots would occur with the default setting. See <a href="../launch-sim-via-cli/">How to launch Simulation via Command Line Interface</a> for how to adjust market slot length.</p>
+<p>Depending on the market type, bids and asks are either matched within or at the end of each slot. Bids and asks that remain unmatched at the end of a market slot are deleted.</p>
+<h2 id="market-ticks">Market Ticks<a class="headerlink" href="#market-ticks" title="Permanent link">&para;</a></h2>
+<p>Each slot is further incremented into ticks. The default setting for a tick is 15 seconds of simulation time, but is <a href="../launch-sim-via-cli/">configurable</a>. The default 15 minute market slot is made up of 60 15-second ticks. The real-time length of both market slots and ticks is determined by the configurable simulation time scale (e.g. 1 simulation-time hour = 1 real-time minute)</p>
+<p>With the API, agents are limited to one update to their bids and asks per tick (60 per market slot).</p>
+<p>In a pay-as-bid market, the market is cleared at the end of each tick. An order submitted in a tick could be matched at the end of that tick. If the order is not matched, it is propogated to all adjacent markets by the <a href="../inter-area-agent/">Inter-Area Agent</a> for the next tick. If it is not matched at the end of that tick, it is further propagated to connected markets in the subsequent ticks following the same logic.</p>
+<p>For example, assume a bid is created in market <code>A</code> in tick <code>t1</code>. If markets <code>A</code> and <code>D</code> are separated by markets <code>B</code> and <code>C</code>, market <code>D</code> would see an unmatched offer from market <code>A</code> in <code>t4</code>. If a match is found in market <code>D</code>, the orders would simultaneously clear in both markets at the end of  <code>t4</code> in a pay-as-bid market. In a pay-as-clear market, offers still propagate to adjacent markets each tick. However, clearing happens at the determined clear frequency (default is 3 times per market slot).</p>
                 
                   
                 
@@ -1046,7 +1121,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../clearingtoken-smart-contract/" title="ClearingToken Smart Contract" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../inter-area-agent/" title="Inter-Area Agent" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1055,19 +1130,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                ClearingToken Smart Contract
+                Inter-Area Agent
               </span>
             </div>
           </a>
         
         
-          <a href="../run-d3a-on-tobalaba/" title="Steps to Run D3A on Tobalaba" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../d3a-blockchain-support/" title="D3A Blockchain Overview" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Steps to Run D3A on Tobalaba
+                D3A Blockchain Overview
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

@@ -788,6 +788,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+      Market Slots and Ticks
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1014,17 +1026,16 @@
 </ul>
 <p>Corresponding code: <code>src/3a/models/strategy/finite_power_plant.py</code></p>
 <p>How to add a finite power plant to the <code>setup-file</code>:</p>
-<div class="codehilite"><pre><span></span>profile_kW = {
+<pre class="codehilite"><code>profile_kW = {
     0: 0.1,
     8: 0.15,
     12: 0.2,
     19: 0.15,
     22: 0.1
 }         
-Area(&#39;Finite Power Plant&#39;, strategy=FinitePowerPlant(energy_rate=31.3,
+Area('Finite Power Plant', strategy=FinitePowerPlant(energy_rate=31.3,
                                                      max_available_power_kW=profile_kW),
-                           appliance=SwitchableAppliance()),
-</pre></div>
+                           appliance=SwitchableAppliance()),</code></pre>
                 
                   
                 
