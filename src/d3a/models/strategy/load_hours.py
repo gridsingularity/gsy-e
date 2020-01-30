@@ -177,10 +177,19 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 if max_energy < FLOATING_POINT_TOLERANCE:
                     return
                 if acceptable_offer.energy > max_energy:
+                    self.energy_requirement_Wh[market.time_slot] = 0
                     self.accept_offer(market, acceptable_offer, energy=max_energy,
                                       buyer_origin=self.owner.name)
+                    self.hrs_per_day[current_day] -= self._operating_hours(max_energy)
                 else:
+                    self.energy_requirement_Wh[market.time_slot] -= \
+                        acceptable_offer.energy * 1000.0
                     self.accept_offer(market, acceptable_offer, buyer_origin=self.owner.name)
+                    self.hrs_per_day[current_day] -= self._operating_hours(acceptable_offer.energy)
+
+                assert self.energy_requirement_Wh[market.time_slot] >= -FLOATING_POINT_TOLERANCE, \
+                    f"Energy requirement for load {self.owner.name} fell below zero " \
+                    f"({self.energy_requirement_Wh[market.time_slot]})."
 
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
@@ -240,6 +249,27 @@ class LoadHoursStrategy(BidEnabledStrategy):
         for market in self.active_markets:
             self._demand_balancing_offer(market)
 
+    def event_bid_traded(self, *, market_id, bid_trade):
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
+        market = self.area.get_future_market_from_id(market_id)
+
+        if bid_trade.offer.buyer == self.owner.name:
+            self.energy_requirement_Wh[market.time_slot] -= bid_trade.offer.energy * 1000.0
+            self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
+                self._operating_hours(bid_trade.offer.energy)
+            assert self.energy_requirement_Wh[market.time_slot] >= -FLOATING_POINT_TOLERANCE, \
+                f"Energy requirement for load {self.owner.name} fell below zero " \
+                f"({self.energy_requirement_Wh[market.time_slot]})."
+
+    def event_trade(self, *, market_id, trade):
+        market = self.area.get_future_market_from_id(market_id)
+        assert market is not None
+
+        if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
+            # Load can only put supply_balancing_offers only when there is a trade in spot_market
+            self._supply_balancing_offer(market, trade)
+        super().event_trade(market_id=market_id, trade=trade)
+
     # committing to increase its consumption when required
     def _demand_balancing_offer(self, market):
         if not self.is_eligible_for_balancing_market:
@@ -267,36 +297,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.area.get_balancing_market(market.time_slot).balancing_offer(ramp_down_price,
                                                                          ramp_down_energy,
                                                                          self.owner.name)
-
-    def event_bid_traded(self, *, market_id, bid_trade):
-        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        market = self.area.get_future_market_from_id(market_id)
-
-        if bid_trade.offer.buyer == self.owner.name:
-            self.energy_requirement_Wh[market.time_slot] -= bid_trade.offer.energy * 1000.0
-            self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
-                self._operating_hours(bid_trade.offer.energy)
-            assert self.energy_requirement_Wh[market.time_slot] >= -FLOATING_POINT_TOLERANCE, \
-                f"Energy requirement for load {self.owner.name} fell below zero " \
-                f"({self.energy_requirement_Wh[market.time_slot]})."
-
-    def event_trade(self, *, market_id, trade):
-        market = self.area.get_future_market_from_id(market_id)
-        assert market is not None
-
-        if trade.buyer == self.owner.name and ConstSettings.IAASettings.MARKET_TYPE == 1:
-            self.energy_requirement_Wh[market.time_slot] -= trade.offer.energy * 1000.0
-            self.hrs_per_day[self._get_day_of_timestamp(market.time_slot)] -= \
-                self._operating_hours(trade.offer.energy)
-
-            assert self.energy_requirement_Wh[market.time_slot] >= -FLOATING_POINT_TOLERANCE, \
-                f"Energy requirement for load {self.owner.name} fell below zero " \
-                f"({self.energy_requirement_Wh[market.time_slot]})."
-
-        if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
-            # Load can only put supply_balancing_offers only when there is a trade in spot_market
-            self._supply_balancing_offer(market, trade)
-        super().event_trade(market_id=market_id, trade=trade)
 
     def event_activate_energy(self):
         self.state.total_energy_demanded_wh = \
