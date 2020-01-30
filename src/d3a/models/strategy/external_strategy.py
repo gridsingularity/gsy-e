@@ -72,6 +72,10 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         return f"{self.area.parent.slug}/{self.area.slug}/bids"
 
     @property
+    def _list_stats_channel(self):
+        return f"{self.area.parent.slug}/{self.area.slug}/stats"
+
+    @property
     def _offer_response_channel(self):
         return f"{self._offer_channel}/response"
 
@@ -100,6 +104,10 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         return f"{self._list_bids_channel}/response"
 
     @property
+    def _list_stats_response_channel(self):
+        return f"{self._list_stats_channel}/response"
+
+    @property
     def channel_callback_mapping(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return {
@@ -107,6 +115,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                 self._delete_offer_channel: self._delete_offer,
                 self._accept_offer_channel: self._accept_offer,
                 self._list_offers_channel: self._offer_lists,
+                self._list_stats_channel: self._list_stats
             }
         else:
             return {
@@ -115,7 +124,8 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                 self._bid_channel: self._bid,
                 self._delete_bid_channel: self._delete_bid,
                 self._list_bids_channel: self._list_bids,
-                self._list_offers_channel: self._offer_lists
+                self._list_offers_channel: self._offer_lists,
+                self._list_stats_channel: self._list_stats
             }
 
     def sub_to_external_requests(self):
@@ -229,6 +239,21 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                          {"status": "ready", "bid_list": filtered_bids})
         except Exception as e:
             self.publish(self._list_bids_response_channel,
+                         {"status": "error",  "exception": str(type(e)),
+                          "error_message": str(e)})
+
+    def _list_stats(self, payload):
+        try:
+            device_stats = {k: v for k, v in self.area.stats.aggregated_stats.items()
+                            if v is not None}
+            market_stats = {k: v for k, v in self.area.parent.stats.aggregated_stats.items()
+                            if v is not None}
+            self.publish(self._list_stats_response_channel,
+                         {"status": "ready",
+                          "market_stats": market_stats,
+                          "device_stats": device_stats})
+        except Exception as e:
+            self.publish(self._list_stats_response_channel,
                          {"status": "error",  "exception": str(type(e)),
                           "error_message": str(e)})
 
