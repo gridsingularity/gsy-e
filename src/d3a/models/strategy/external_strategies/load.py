@@ -95,9 +95,15 @@ class LoadHoursExternalStrategy(LoadHoursStrategy):
                                              self.connected):
             return
         try:
+            device_stats = {k: v for k, v in self.owner.stats.aggregated_stats.items()
+                            if v is not None}
+            market_stats = {k: v for k, v in self.area.stats.aggregated_stats.items()
+                            if v is not None}
             self.redis.publish_json(
                 area_stats_response_channel,
-                {"status": "ready", "stats": self.owner.stats.aggregated_stats})
+                {"status": "ready",
+                 "device_stats": device_stats,
+                 "market_stats": market_stats})
         except Exception as e:
             logging.error(f"Error reporting stats for area {self.device_name}: "
                           f"Exception: {str(e)}")
