@@ -43,7 +43,7 @@ def get_setup(config):
                     Area('H1 Storage2', strategy=StorageStrategy(initial_soc=100),
                          appliance=SwitchableAppliance()),
                 ],
-                transfer_fee_pct=0, transfer_fee_const=0,
+                grid_fee_percentage=0, transfer_fee_const=0,
             ),
             Area(
                 'House 2',
@@ -58,7 +58,7 @@ def get_setup(config):
                          appliance=PVAppliance()),
 
                 ],
-                transfer_fee_pct=0, transfer_fee_const=0,
+                grid_fee_percentage=0, transfer_fee_const=0,
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,

@@ -50,7 +50,7 @@ def get_setup(config):
                                 energy_rate_decrease_per_update=1,
                                 update_interval=5),
                                  appliance=PVAppliance()),
-                        ], transfer_fee_pct=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, transfer_fee_const=0,
                     ),
                     Area(
                         'House 2',
@@ -66,7 +66,7 @@ def get_setup(config):
                                 energy_rate_decrease_per_update=1,
                                 update_interval=5),
                                  appliance=PVAppliance()),
-                            ], transfer_fee_pct=0, transfer_fee_const=0,
+                            ], grid_fee_percentage=0, transfer_fee_const=0,
                     ),
                     Area(
                         'House 3',
@@ -76,7 +76,7 @@ def get_setup(config):
                                 final_buying_rate=30, initial_buying_rate=16,
                                 update_interval=5),
                                  appliance=SwitchableAppliance()),
-                        ], transfer_fee_pct=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, transfer_fee_const=0,
                     ),
                     Area(
                         'House 4',
@@ -86,7 +86,7 @@ def get_setup(config):
                                 final_buying_rate=30, initial_buying_rate=15,
                                 update_interval=5),
                                  appliance=SwitchableAppliance()),
-                        ], transfer_fee_pct=0, transfer_fee_const=0,
+                        ], grid_fee_percentage=0, transfer_fee_const=0,
                     ),
                 ],
             ),

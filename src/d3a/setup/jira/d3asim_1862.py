@@ -39,11 +39,11 @@ def get_setup(config):
                                                                        final_buying_rate=45,
                                                                        fit_to_limit=True),
                          appliance=SwitchableAppliance()),
-                ], transfer_fee_pct=0, transfer_fee_const=0,
+                ], grid_fee_percentage=0, transfer_fee_const=0,
             ),
             Area('DSO', strategy=InfiniteBusStrategy(energy_buy_rate=5, energy_sell_rate=30),
                  appliance=SimpleAppliance()),
         ],
-        config=config, transfer_fee_pct=50, transfer_fee_const=0,
+        config=config, grid_fee_percentage=50, transfer_fee_const=0,
     )
     return area

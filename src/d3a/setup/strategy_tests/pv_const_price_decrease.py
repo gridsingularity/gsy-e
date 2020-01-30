@@ -57,7 +57,7 @@ def get_setup(config):
                                                                 cloud_coverage=2),
                          appliance=PVAppliance()),
                 ],
-                transfer_fee_pct=0,
+                grid_fee_percentage=0,
             ),
         ],
         config=config

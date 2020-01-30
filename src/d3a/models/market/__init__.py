@@ -36,7 +36,7 @@ from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
 
 log = getLogger(__name__)
 
-TransferFees = namedtuple("TransferFees", ('transfer_fee_pct', 'transfer_fee_const'))
+TransferFees = namedtuple("TransferFees", ('grid_fee_percentage', 'transfer_fee_const'))
 
 
 RLOCK_MEMBER_NAME = "rlock"
@@ -74,7 +74,7 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
-        self.transfer_fee_ratio = transfer_fees.transfer_fee_pct / 100 \
+        self.transfer_fee_ratio = transfer_fees.grid_fee_percentage / 100 \
             if transfer_fees is not None else 0
         self.transfer_fee_const = transfer_fees.transfer_fee_const \
             if transfer_fees is not None else 0
