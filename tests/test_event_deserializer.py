@@ -113,9 +113,9 @@ class TestEventDeserializer(unittest.TestCase):
             datetime.datetime.fromtimestamp(1562856000)
         assert area.events.config_events[0].params == \
             {"market_maker_rate": 123, "cloud_coverage": 1,
-             'pv_user_profile': None, 'transfer_fee_pct': None}
+             'pv_user_profile': None, 'grid_fee_percentage': None}
         assert area.events.config_events[1].event_time == \
             datetime.datetime.fromtimestamp(1562856789)
         assert area.events.config_events[1].params == \
             {"market_maker_rate": {"00:00": 123, "10:00": 43242}, "cloud_coverage": 2,
-             'pv_user_profile': None, 'transfer_fee_pct': None}
+             'pv_user_profile': None, 'grid_fee_percentage': None}

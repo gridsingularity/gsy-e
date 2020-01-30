@@ -114,7 +114,7 @@ class AreaMarkets:
                     time_slot=timeframe,
                     bc=area.bc,
                     notification_listener=area.dispatcher.broadcast_callback,
-                    transfer_fees=TransferFees(transfer_fee_pct=area.transfer_fee_pct,
+                    transfer_fees=TransferFees(grid_fee_percentage=area.grid_fee_percentage,
                                                transfer_fee_const=area.transfer_fee_const),
                     name=area.name
                 )
