@@ -27,6 +27,7 @@ class LoadHoursExternalStrategy(LoadHoursStrategy):
             f'{self.device_name}/register_participant': self._register,
             f'{self.device_name}/unregister_participant': self._unregister,
             f'{self.device_name}/bid': self._bid,
+            f'{self.device_name}/delete_bid': self._delete_bid,
             f'{self.device_name}/bids': self._list_bids,
             f'{self.device_name}/stats': self._area_stats
         })
@@ -57,6 +58,36 @@ class LoadHoursExternalStrategy(LoadHoursStrategy):
                 {"status": "error",
                  "error_message": f"Error when listing bids on area {self.device_name}."})
 
+    def _delete_bid(self, payload):
+        delete_bid_response_channel = f'{self.device_name}/delete_bid/response'
+        if not check_for_connected_and_reply(self.redis,
+                                             delete_bid_response_channel, self.connected):
+            return
+        try:
+            arguments = json.loads(payload["data"])
+            assert set(arguments.keys()) == {'bid'}
+        except Exception:
+            self.redis.publish_json(
+                delete_bid_response_channel,
+                {"error": "Incorrect delete bid request. Available parameters: (bid)."}
+            )
+        else:
+            self._delete_bid_impl(arguments, delete_bid_response_channel)
+
+    def _delete_bid_impl(self, arguments, response_channel):
+        try:
+            self.remove_bid_from_pending(arguments["bid"], self.market.id)
+            self.redis.publish_json(response_channel,
+                                    {"status": "ready", "bid_deleted": arguments["bid"]})
+        except Exception as e:
+            logging.error(f"Error when handling bid delete on area {self.device_name}: "
+                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
+            self.redis.publish_json(
+                response_channel,
+                {"status": "error",
+                 "error_message": f"Error when handling bid delete "
+                                  f"on area {self.device_name} with arguments {arguments}."})
+
     def _bid(self, payload):
         bid_response_channel = f'{self.device_name}/bid/response'
         if not check_for_connected_and_reply(self.redis, bid_response_channel, self.connected):
@@ -71,23 +102,26 @@ class LoadHoursExternalStrategy(LoadHoursStrategy):
                 {"error": "Incorrect bid request. Available parameters: (price, energy)."}
             )
         else:
-            try:
-                bid = self.post_bid(
-                    self.market,
-                    arguments["price"],
-                    arguments["energy"],
-                    buyer_origin=arguments["buyer_origin"]
-                )
-                self.redis.publish_json(bid_response_channel,
-                                        {"status": "ready", "bid": bid.to_JSON_string()})
-            except Exception as e:
-                logging.error(f"Error when handling bid create on area {self.device_name}: "
-                              f"Exception: {str(e)}, Bid Arguments: {arguments}")
-                self.redis.publish_json(
-                    bid_response_channel,
-                    {"status": "error",
-                     "error_message": f"Error when handling bid create "
-                                      f"on area {self.device_name} with arguments {arguments}."})
+            self._bid_impl(arguments, bid_response_channel)
+
+    def _bid_impl(self, arguments, bid_response_channel):
+        try:
+            bid = self.post_bid(
+                self.market,
+                arguments["price"],
+                arguments["energy"],
+                buyer_origin=arguments["buyer_origin"]
+            )
+            self.redis.publish_json(bid_response_channel,
+                                    {"status": "ready", "bid": bid.to_JSON_string()})
+        except Exception as e:
+            logging.error(f"Error when handling bid create on area {self.device_name}: "
+                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
+            self.redis.publish_json(
+                bid_response_channel,
+                {"status": "error",
+                 "error_message": f"Error when handling bid create "
+                                  f"on area {self.device_name} with arguments {arguments}."})
 
     def _area_stats(self, payload):
         area_stats_response_channel = f'{self.device_name}/stats/response'
