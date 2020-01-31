@@ -22,6 +22,10 @@ class AreaStats:
         self._accumulated_past_price = 0
         self._accumulated_past_energy = 0
         self._markets = area_markets
+        self.aggregated_stats = {}
+
+    def update_aggregated_stats(self, area_stats):
+        self.aggregated_stats = area_stats
 
     def update_accumulated(self):
         self._accumulated_past_price = sum(

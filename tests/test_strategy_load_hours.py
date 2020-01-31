@@ -386,6 +386,7 @@ def test_balancing_offers_are_not_created_if_device_not_in_registry(
 
 def test_balancing_offers_are_created_if_device_in_registry(
         balancing_fixture, area_test2):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     balancing_fixture.event_activate()
     balancing_fixture.event_market_cycle()
@@ -402,6 +403,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
 
     assert actual_balancing_demand_price == expected_balancing_demand_energy * 30
     selected_offer = area_test2.current_market.sorted_offers[0]
+    balancing_fixture.energy_requirement_Wh[area_test2.current_market.time_slot] = \
+        selected_offer.energy * 1000.0
     balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',
                                               time=area_test2.now,

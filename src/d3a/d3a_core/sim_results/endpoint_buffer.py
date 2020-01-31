@@ -123,6 +123,29 @@ class SimulationEndpointBuffer:
 
         self.kpi.update_kpis_from_area(area)
 
+        self.update_area_aggregated_stats(area)
+
+    def update_area_aggregated_stats(self, area):
+        self._update_area_stats(area)
+        for child in area.children:
+            self.update_area_aggregated_stats(child)
+
+    def _update_area_stats(self, area):
+        area.stats.update_aggregated_stats({
+            "simulation_id": self.job_id,
+            "status": self.status,
+            "bills": self.market_bills.bills_redis_results[area.uuid],
+            "cumulative_grid_trades":
+                self.cumulative_grid_trades.accumulated_trades_redis.get(area.uuid, None),
+            "tree_summary": self.tree_summary.current_results.get(area.slug, None),
+            "unmatched_loads": self.market_unmatched_loads.unmatched_loads.get(area.name, None),
+            "price_energy_day": self.price_energy_day.csv_output.get(area.name, None),
+            "device_statistics": self.device_statistics.device_stats_time_str.get(area.uuid, None),
+            "energy_trade_profile":
+                self.file_export_endpoints.traded_energy_profile.get(area.slug, None),
+            "kpi": self.kpi.performance_indices.get(area.name, None)
+        })
+
     def _update_price_energy_day_tree_summary(self, area):
         # Update of the price_energy_day endpoint should always precede tree-summary.
         # The reason is that the price_energy_day data are used when calculating the
