@@ -55,10 +55,10 @@ class TestAreaClass(unittest.TestCase):
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
         self.area = Area("test_area", None, None, self.strategy,
-                         self.appliance, self.config, None, transfer_fee_pct=1)
+                         self.appliance, self.config, None, grid_fee_percentage=1)
         self.area.parent = self.area
         self.area.children = [self.area]
-        self.area.transfer_fee_pct = 1
+        self.area.grid_fee_percentage = 1
         self.dispatcher = AreaDispatcher(self.area)
         self.stats = AreaStats(self.area._markets)
 
@@ -68,7 +68,7 @@ class TestAreaClass(unittest.TestCase):
 
     def test_respective_area_grid_fee_is_applied(self):
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=5)
+                         config=GlobalConfig, grid_fee_percentage=5)
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 1
         self.area.activate()
@@ -85,7 +85,7 @@ class TestAreaClass(unittest.TestCase):
 
     def test_delete_past_markets_instead_of_last(self):
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=5)
+                         config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = False
@@ -106,7 +106,7 @@ class TestAreaClass(unittest.TestCase):
     def test_keep_past_markets(self):
         ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=5)
+                         config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = False
@@ -164,7 +164,7 @@ class TestAreaClass(unittest.TestCase):
 
     def test_cycle_markets(self):
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=1)
+                         config=GlobalConfig, grid_fee_percentage=1)
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 5
         self.area.activate()

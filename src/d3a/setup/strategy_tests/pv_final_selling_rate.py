@@ -44,7 +44,7 @@ def get_setup(config):
                                                                  final_selling_rate=28.01),
                          appliance=SwitchableAppliance()),
                 ],
-                transfer_fee_pct=0,
+                grid_fee_percentage=0,
             ),
             Area(
                 'House 2',
@@ -54,7 +54,7 @@ def get_setup(config):
                          appliance=PVAppliance()),
 
                 ],
-                transfer_fee_pct=0,
+                grid_fee_percentage=0,
             ),
         ],
         config=config
