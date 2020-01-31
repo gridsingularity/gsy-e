@@ -47,9 +47,9 @@ def get_setup(config):
                 'House 2',
                 [
                     Area('load', strategy=LoadHoursExternalStrategy(avg_power_W=200,
-                                                                    hrs_per_day=4,
+                                                                    hrs_per_day=24,
                                                                     hrs_of_day=list(
-                                                                        range(12, 16)),
+                                                                        range(0, 24)),
                                                                     final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('pv', strategy=PVExternalStrategy(panel_count=4),

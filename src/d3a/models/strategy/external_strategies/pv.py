@@ -59,12 +59,29 @@ class PVExternalStrategy(PVStrategy):
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'offer'}
         except Exception as e:
+            logging.error(f"Error when handling delete offer request. Payload {payload}. "
+                          f"Exception {str(e)}.")
             self.redis.publish_json(
                 delete_offer_response_channel,
                 {"error": "Incorrect delete offer request. Available parameters: (offer)."}
             )
         else:
             self._delete_offer_impl(arguments, delete_offer_response_channel)
+
+    def _delete_offer_impl(self, arguments, response_channel):
+        try:
+            self.market.delete_offer(arguments["offer"])
+            self.offers.remove_by_id(arguments["offer"])
+            self.redis.publish_json(response_channel,
+                                    {"status": "ready", "deleted_offer": arguments["offer"]})
+        except Exception as e:
+            logging.error(f"Error when handling offer delete on area {self.device_name}: "
+                          f"Exception: {str(e)}, Offer Arguments: {arguments}")
+            self.redis.publish_json(
+                response_channel,
+                {"status": "error",
+                 "error_message": f"Error when handling offer delete "
+                                  f"on area {self.device_name} with arguments {arguments}."})
 
     def _offer(self, payload):
         offer_response_channel = f'{self.device_name}/offer/response'
@@ -77,6 +94,7 @@ class PVExternalStrategy(PVStrategy):
             arguments['seller'] = self.device_name
             arguments['seller_origin'] = self.device_name
         except Exception as e:
+            logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
                 offer_response_channel,
                 {"error": "Incorrect offer request. Available parameters: (price, energy)."}
@@ -87,6 +105,7 @@ class PVExternalStrategy(PVStrategy):
     def _offer_impl(self, arguments, response_channel):
         try:
             offer = self.market.offer(**arguments)
+            self.offers.post(offer, self.market.id)
             self.redis.publish_json(response_channel,
                                     {"status": "ready", "offer": offer.to_JSON_string()})
         except Exception as e:
