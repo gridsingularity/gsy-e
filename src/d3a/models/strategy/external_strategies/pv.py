@@ -19,6 +19,7 @@ class PVExternalStrategy(PVStrategy):
             f'{self.device_name}/register_participant': self._register,
             f'{self.device_name}/unregister_participant': self._unregister,
             f'{self.device_name}/offer': self._offer,
+            f'{self.device_name}/delete_offer': self._delete_offer,
             f'{self.device_name}/offers': self._list_offers,
             f'{self.device_name}/stats': self._area_stats
         })
@@ -49,6 +50,22 @@ class PVExternalStrategy(PVStrategy):
                 {"status": "error",
                  "error_message": f"Error when listing offers on area {self.device_name}."})
 
+    def _delete_offer(self, payload):
+        delete_offer_response_channel = f'{self.device_name}/delete_offer/response'
+        if not check_for_connected_and_reply(self.redis, delete_offer_response_channel,
+                                             self.connected):
+            return
+        try:
+            arguments = json.loads(payload["data"])
+            assert set(arguments.keys()) == {'offer'}
+        except Exception as e:
+            self.redis.publish_json(
+                delete_offer_response_channel,
+                {"error": "Incorrect delete offer request. Available parameters: (offer)."}
+            )
+        else:
+            self._delete_offer_impl(arguments, delete_offer_response_channel)
+
     def _offer(self, payload):
         offer_response_channel = f'{self.device_name}/offer/response'
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
@@ -65,19 +82,21 @@ class PVExternalStrategy(PVStrategy):
                 {"error": "Incorrect offer request. Available parameters: (price, energy)."}
             )
         else:
-            try:
+            self._offer_impl(arguments, offer_response_channel)
 
-                offer = self.market.offer(**arguments)
-                self.redis.publish_json(offer_response_channel,
-                                        {"status": "ready", "offer": offer.to_JSON_string()})
-            except Exception as e:
-                logging.error(f"Error when handling offer create on area {self.device_name}: "
-                              f"Exception: {str(e)}, Offer Arguments: {arguments}")
-                self.redis.publish_json(
-                    offer_response_channel,
-                    {"status": "error",
-                     "error_message": f"Error when handling offer create "
-                                      f"on area {self.device_name} with arguments {arguments}."})
+    def _offer_impl(self, arguments, response_channel):
+        try:
+            offer = self.market.offer(**arguments)
+            self.redis.publish_json(response_channel,
+                                    {"status": "ready", "offer": offer.to_JSON_string()})
+        except Exception as e:
+            logging.error(f"Error when handling offer create on area {self.device_name}: "
+                          f"Exception: {str(e)}, Offer Arguments: {arguments}")
+            self.redis.publish_json(
+                response_channel,
+                {"status": "error",
+                 "error_message": f"Error when handling offer create "
+                                  f"on area {self.device_name} with arguments {arguments}."})
 
     def _area_stats(self, payload):
         area_stats_response_channel = f'{self.device_name}/stats/response'
