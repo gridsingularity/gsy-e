@@ -38,6 +38,7 @@ _NO_VALUE = {
 class SimulationEndpointBuffer:
     def __init__(self, job_id, initial_params, area):
         self.job_id = job_id
+        self.current_market = ""
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.eta = duration(seconds=0)
@@ -58,6 +59,7 @@ class SimulationEndpointBuffer:
     def generate_result_report(self):
         redis_results = {
             "job_id": self.job_id,
+            "current_market": self.current_market,
             "random_seed": self.random_seed,
             "cumulative_loads": self.cumulative_loads,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
@@ -103,6 +105,8 @@ class SimulationEndpointBuffer:
 
     def update_stats(self, area, simulation_status, eta):
         self.status = simulation_status
+        if area.current_market is not None:
+            self.current_market = area.current_market.time_slot_str
         self.eta = eta
         self.cumulative_loads = export_cumulative_loads(area)
 
