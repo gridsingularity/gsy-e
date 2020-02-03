@@ -4,8 +4,8 @@ ADD . /app
 
 WORKDIR /app
 
-RUN pip install --upgrade pip
-RUN pip install --upgrade setuptools
+RUN pip install --upgrade pip ptpython
+RUN pip install -r requirements/pandapower.txt
 RUN pip install -e .
 
-ENTRYPOINT ["/venv/bin/d3a"]
+ENTRYPOINT ["d3a"]
