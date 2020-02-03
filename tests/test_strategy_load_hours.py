@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import unittest
+from copy import deepcopy
 from unittest.mock import MagicMock, Mock
 from pendulum import DateTime, duration, today
 from parameterized import parameterized
@@ -103,7 +104,7 @@ class FakeMarket:
         self.bids = {}
 
     def get_bids(self):
-        return self.bids
+        return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str,
             seller: str, original_bid_price=None,
