@@ -70,7 +70,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
     def tick(self, *, area):
         super().tick(area=area)
 
-        for bid_id, bid in self.markets.source.bids.items():
+        for bid_id, bid in self.markets.source.get_bids().items():
             if bid_id not in self.forwarded_bids and \
                     self.owner.usable_bid(bid) and \
                     self.owner.name != bid.buyer:

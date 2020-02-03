@@ -83,6 +83,9 @@ class FakeMarket:
     def sorted_offers(self):
         return list(sorted(self.offers.values(), key=lambda b: b.price / b.energy))
 
+    def get_bids(self):
+        return self.bids
+
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot
 

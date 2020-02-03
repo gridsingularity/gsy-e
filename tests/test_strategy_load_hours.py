@@ -102,6 +102,9 @@ class FakeMarket:
         self.created_balancing_offers = []
         self.bids = {}
 
+    def get_bids(self):
+        return self.bids
+
     def bid(self, price: float, energy: float, buyer: str,
             seller: str, original_bid_price=None,
             buyer_origin=None) -> Bid:
