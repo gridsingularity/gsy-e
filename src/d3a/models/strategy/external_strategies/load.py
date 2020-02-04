@@ -47,7 +47,7 @@ class LoadHoursExternalStrategy(LoadHoursStrategy):
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
                              for _, v in self.market.get_bids().items()
                              if v.buyer == self.device_name]
-            self.redis.publish(
+            self.redis.publish_json(
                 list_bids_response_channel,
                 {"status": "ready", "bid_list": filtered_bids})
         except Exception as e:

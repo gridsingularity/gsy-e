@@ -413,7 +413,7 @@ class BidEnabledStrategy(BaseStrategy):
         # should be only bid from a device to a market at all times, which will be replaced if
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
-        if not all(bid.buyer != self.owner.name for bid in market.bids.values()):
+        if not all(bid.buyer != self.owner.name for bid in market.get_bids().values()):
             self.owner.log.warning(f"There is already another bid posted on the market, therefore"
                                    f" do not repost another first bid.")
             return None
