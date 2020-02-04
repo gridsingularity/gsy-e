@@ -190,3 +190,8 @@ a:hover {
 /*fix footer logo alignment*/
 .md-footer-logo {
   margin-left: .35%;}
+
+p{
+    text-align: justify;
+    text-justify: inter-word;
+}
