@@ -1,8 +1,8 @@
 ###Configuration Model
-![img](img/grid-fee-1.jpg)
+![img](img/grid-fee-1.jpg){:style="display: block;margin-left: auto;margin-right: auto;"}
 ###Introduction and definitions
 
-We will use the grid configuration example above to go into detail about how the grid fees in the D3A work. Grid fees can be configured as percentages or as euro cents. Please see how to configure the grid fee [here](configure-transfer-fee.md). Fees are configured based on the clearing price of the trade. 
+We will use the grid configuration example above to go into detail about how the grid fees in the D3A work. Grid fees can be configured as percentages or as euro cents (constant fees are not yet implemented). Please see how to configure the grid fee [here](configure-transfer-fee.md). Fees are configured based on the clearing price of the trade. 
 
 We have agreed that the buyer should pay all of the fees, at least for this implementation. Any fee that a seller has to pay is ultimately the burden of the buyer. A seller with additional operational costs or taxes will have to raise their prices in a competitive market.
 
@@ -15,7 +15,7 @@ The **Trade Price** is the price the buyer pays (revenue to the seller plus the 
 As seen in the examples below, the price of a bid or offer changes as it is propagated into different markets. The price of an offer increases to account for the added fees of the market. This helps an agent submitting an offer to receive equal or greater revenue than the value of the offer. The price of a bid decreases for the same reason. This helps an agent submitting a bid to pay equal or less than the value of the bid. This way, an agent making an offer will never receive less than their offer and an agent making a bid will never pay more than the bid.
 
 ###One Sided Pay as Offer
-![img](img/grid-fee-2.jpg)
+![img](img/grid-fee-2.jpg){:style="display: block;margin-left: auto;margin-right: auto;"}
 
 In the One Sided Pay as Offer market, there are no bids and only offers exist. The offers are propagated throughout the markets in the hierarchy. The grid fees are taken into account when an offer is forwarded to the higher market, by the higher market itself. Therefore the agent is not responsible for adapting the offer price to include the grid fees. The grid fees' unit is a ratio of the original offer price, therefore the formula to calculate the new offer price when placing an offer to a market is the following:
 
@@ -34,7 +34,7 @@ trade_price = energy * trade_rate
 ```
 
 ###Two Sided Pay as Bid
-![img](img/grid-fee-3.jpg)
+![img](img/grid-fee-3.jpg){:style="display: block;margin-left: auto;margin-right: auto;"}
 
 In the Two Sided Pay as Bid market, there are both bids and offers, which are both propagated throughout the markets in the hierarchy. If a bid or offer is not purchased after one tick, it is moved into the next market. In order to prevent the double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter that market (**target market**) and market fees are subtracted from bids when they leave that market and enter the another one (**source market**). The formula for propagating the offers is exactly the same as on the one-sided market :
 ```
@@ -51,7 +51,6 @@ In the example above, the bid and offer are matched in the Grid Market. However,
 In the Grid Market, the Load bid is listed as € 0.285 and the PV offer is listed as € 0.115. As the bid is greater than the offer a trade can be scheduled. The trade clears at the bid price, giving a Clearing Price of € 0.285.
 
 There is a separate algorithm that calculates the grid fee according to the clearing price. This allows the markets to act more independently and in a decentralized manner, without having to share information regarding their fees with other markets. In order to calculate the fee correctly based on the original price, the algorithm needs to be able to calculate the supply side and demand side tax. It is easy to calculate this, since the original bid/offer prices are available:
-WARNING -  Config value: 'footer'. Warning: Unrecognised configuration name: footer 
 ```
 demand_side_tax = 1 - (forwarded_bid_rate / original_bid_rate)
 supply_side_tax = (forwarded_offer_rate / original_offer_rate) - 1
@@ -91,7 +90,7 @@ House 2 Market = 0.25 * (1 + 0) = 0.25
 
 ###Two Sided Pay as Clear
 
-![img](img/grid-fee-4.jpg)
+![img](img/grid-fee-4.jpg){:style="display: block;margin-left: auto;margin-right: auto;"}
 
 
 The Two Sided Pay as Clear market operates the same as the Two Sided Pay as Bid market, except that an algorithm is used to determine the clearing price, which is uniform for all the trades happening in a particular market. In the Grid Market the bid of € 0.286 is matched with the offer of € 0.115, and the Clearing Price is determined by algorithm as € 0.20. The grid fees are calculated based on the Clearing Price to yield `0.20*(1+0.05+0.10+0.05)=0.24` a Trade Price of € 0.24.
