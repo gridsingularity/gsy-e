@@ -151,7 +151,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._validate_rates()
         self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()
-        self.event_activate_energy()
 
     def _area_reconfigure_prices(self, final_buying_rate):
         if final_buying_rate is not None:
