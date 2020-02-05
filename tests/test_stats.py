@@ -235,7 +235,7 @@ def test_energy_bills_report_correctly_market_fees(grid_fees):
     m_bills.update(grid_fees)
     result = m_bills.bills_results
     assert result["street"]["house1"]["market_fee"] == 0.04
-    assert result["street"]["house2"]["market_fee"] == 0.04
+    assert result["street"]["house2"]["market_fee"] == 0.0
     assert result["street"]['Accumulated Trades']["market_fee"] == 0.04
     assert result["house1"]['External Trades']["market_fee"] == \
         result["street"]["house1"]["market_fee"]
