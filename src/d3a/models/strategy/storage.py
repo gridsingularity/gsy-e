@@ -58,6 +58,8 @@ class StorageStrategy(BidEnabledStrategy):
                  StorageSettings.BUYING_RATE_RANGE.initial,
                  final_buying_rate: Union[float, dict] =
                  StorageSettings.BUYING_RATE_RANGE.final,
+                 loss_per_hour=StorageSettings.LOSS_PER_HOUR,
+                 loss_function=StorageSettings.LOSS_FUNCTION,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  energy_rate_decrease_per_update=None,
                  update_interval=None,
@@ -76,6 +78,8 @@ class StorageStrategy(BidEnabledStrategy):
         validate_storage_device(initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
                                 battery_capacity_kWh=battery_capacity_kWh,
                                 max_abs_battery_power_kW=max_abs_battery_power_kW,
+                                loss_per_hour=loss_per_hour,
+                                loss_function=loss_function,
                                 fit_to_limit=fit_to_limit,
                                 energy_rate_increase_per_update=energy_rate_increase_per_update,
                                 energy_rate_decrease_per_update=energy_rate_decrease_per_update)
@@ -113,7 +117,8 @@ class StorageStrategy(BidEnabledStrategy):
                          initial_energy_origin=initial_energy_origin,
                          capacity=battery_capacity_kWh,
                          max_abs_battery_power_kW=max_abs_battery_power_kW,
-                         loss_per_hour=0.0,
+                         loss_per_hour=loss_per_hour,
+                         loss_function=loss_function,
                          min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
@@ -455,7 +460,7 @@ class StorageStrategy(BidEnabledStrategy):
             return self.offer_update.initial_rate[market.time_slot]
 
     def capacity_dependant_sell_rate(self, market):
-        if self.state.charge_history[market.time_slot] is '-':
+        if self.state.charge_history[market.time_slot] == "-":
             soc = self.state.used_storage / self.state.capacity
         else:
             soc = self.state.charge_history[market.time_slot] / 100.0

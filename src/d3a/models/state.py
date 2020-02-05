@@ -43,13 +43,13 @@ StorageSettings = ConstSettings.StorageSettings
 class PVState:
     def __init__(self):
         self.available_energy_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: 0. for slot in generate_market_slot_list()}
 
 
 class LoadState:
     def __init__(self):
         self.desired_energy_Wh = \
-            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: 0. for slot in generate_market_slot_list()}
         self.total_energy_demanded_wh = 0
 
 
@@ -69,6 +69,7 @@ class StorageState:
                  capacity=StorageSettings.CAPACITY,
                  max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
                  loss_per_hour=0.01,
+                 loss_function=1,
                  min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC):
 
         initial_capacity_kWh = capacity * initial_soc / 100
@@ -77,34 +78,35 @@ class StorageState:
 
         self.capacity = capacity
         self.loss_per_hour = loss_per_hour
+        self.loss_function = loss_function
         self.max_abs_battery_power_kW = max_abs_battery_power_kW
 
         # storage capacity, that is already sold:
         self.pledged_sell_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: 0. for slot in generate_market_slot_list()}
         # storage capacity, that has been offered (but not traded yet):
         self.offered_sell_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: 0. for slot in generate_market_slot_list()}
         # energy, that has been bought:
         self.pledged_buy_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: 0. for slot in generate_market_slot_list()}
         # energy, that the storage wants to buy (but not traded yet):
         self.offered_buy_kWh = \
-            {slot: 0. for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: 0. for slot in generate_market_slot_list()}
         self.time_series_ess_share = \
             {slot: {ESSEnergyOrigin.UNKNOWN: 0.,
                     ESSEnergyOrigin.LOCAL: 0.,
                     ESSEnergyOrigin.EXTERNAL: 0.}
-             for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+             for slot in generate_market_slot_list()}
 
         self.charge_history = \
-            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: '-' for slot in generate_market_slot_list()}
         self.charge_history_kWh = \
-            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: '-' for slot in generate_market_slot_list()}
         self.offered_history = \
-            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: '-' for slot in generate_market_slot_list()}
         self.used_history = \
-            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
+            {slot: '-' for slot in generate_market_slot_list()}
         self.energy_to_buy_dict = {slot: 0. for slot in generate_market_slot_list()}
 
         self._used_storage = initial_capacity_kWh
@@ -214,12 +216,22 @@ class StorageState:
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value
 
-    def lose(self, proportion):
-        self._used_storage *= 1.0 - proportion
+    def lose(self, loss_function, loss_per_hour):
+        if loss_function == 1:
+            if self._used_storage * (1.0 - loss_per_hour) >= 0:
+                self._used_storage *= 1.0 - loss_per_hour
+            else:
+                self._used_storage = 0
+        else:
+            if self._used_storage >= loss_per_hour:
+                self._used_storage += - loss_per_hour
+            else:
+                self._used_storage = 0
 
     def tick(self, area, time_slot):
         self.check_state(time_slot)
-        self.lose(self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
+        self.lose(self.loss_function,
+                  self.loss_per_hour * area.config.tick_length.in_seconds() / 3600)
 
     def calculate_soc_for_time_slot(self, time_slot):
         self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
