@@ -85,7 +85,6 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for each slot.
         :return: None
         """
-        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
         self.load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self.daily_load_profile)
