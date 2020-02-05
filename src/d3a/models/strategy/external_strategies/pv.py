@@ -1,13 +1,17 @@
 import json
 import logging
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.strategy.external_strategies import register_area, unregister_area, \
     check_for_connected_and_reply
 
 
-class PVExternalStrategy(PVStrategy):
-
+class PVExternalMixin:
+    """
+    Mixin for enabling an external api for the PV strategies.
+    Should always be inherited together with a superclass of PVStrategy.
+    """
     def __init__(self, *args, **kwargs):
         self.connected = False
         super().__init__(*args, **kwargs)
@@ -16,42 +20,42 @@ class PVExternalStrategy(PVStrategy):
     def event_activate(self):
         super().event_activate()
         self.redis.sub_to_multiple_channels({
-            f'{self.device_name}/register_participant': self._register,
-            f'{self.device_name}/unregister_participant': self._unregister,
-            f'{self.device_name}/offer': self._offer,
-            f'{self.device_name}/delete_offer': self._delete_offer,
-            f'{self.device_name}/offers': self._list_offers,
-            f'{self.device_name}/stats': self._area_stats
+            f'{self.device.name}/register_participant': self._register,
+            f'{self.device.name}/unregister_participant': self._unregister,
+            f'{self.device.name}/offer': self._offer,
+            f'{self.device.name}/delete_offer': self._delete_offer,
+            f'{self.device.name}/offers': self._list_offers,
+            f'{self.device.name}/stats': self._area_stats
         })
 
     def _register(self, payload):
-        self.connected = register_area(self.redis, self.device_name, self.connected)
+        self.connected = register_area(self.redis, self.device.name, self.connected)
 
     def _unregister(self, payload):
-        self.connected = unregister_area(self.redis, self.device_name, self.connected)
+        self.connected = unregister_area(self.redis, self.device.name, self.connected)
 
     def _list_offers(self, payload):
-        list_offers_response_channel = f'{self.device_name}/offers/response'
+        list_offers_response_channel = f'{self.device.name}/offers/response'
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
             return
         try:
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in self.market.get_offers().items()
-                               if v.buyer == self.device_name]
+                               if v.buyer == self.device.name]
             self.redis.publish_json(
                 list_offers_response_channel,
                 {"status": "ready", "offer_list": filtered_offers})
         except Exception as e:
-            logging.error(f"Error when handling list offers on area {self.device_name}: "
+            logging.error(f"Error when handling list offers on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 list_offers_response_channel,
                 {"status": "error",
-                 "error_message": f"Error when listing offers on area {self.device_name}."})
+                 "error_message": f"Error when listing offers on area {self.device.name}."})
 
     def _delete_offer(self, payload):
-        delete_offer_response_channel = f'{self.device_name}/delete_offer/response'
+        delete_offer_response_channel = f'{self.device.name}/delete_offer/response'
         if not check_for_connected_and_reply(self.redis, delete_offer_response_channel,
                                              self.connected):
             return
@@ -75,24 +79,24 @@ class PVExternalStrategy(PVStrategy):
             self.redis.publish_json(response_channel,
                                     {"status": "ready", "deleted_offer": arguments["offer"]})
         except Exception as e:
-            logging.error(f"Error when handling offer delete on area {self.device_name}: "
+            logging.error(f"Error when handling offer delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
                 {"status": "error",
                  "error_message": f"Error when handling offer delete "
-                                  f"on area {self.device_name} with arguments {arguments}."})
+                                  f"on area {self.device.name} with arguments {arguments}."})
 
     def _offer(self, payload):
-        offer_response_channel = f'{self.device_name}/offer/response'
+        offer_response_channel = f'{self.device.name}/offer/response'
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'price', 'energy'}
-            arguments['seller'] = self.device_name
-            arguments['seller_origin'] = self.device_name
+            arguments['seller'] = self.device.name
+            arguments['seller_origin'] = self.device.name
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -109,23 +113,23 @@ class PVExternalStrategy(PVStrategy):
             self.redis.publish_json(response_channel,
                                     {"status": "ready", "offer": offer.to_JSON_string()})
         except Exception as e:
-            logging.error(f"Error when handling offer create on area {self.device_name}: "
+            logging.error(f"Error when handling offer create on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
                 {"status": "error",
                  "error_message": f"Error when handling offer create "
-                                  f"on area {self.device_name} with arguments {arguments}."})
+                                  f"on area {self.device.name} with arguments {arguments}."})
 
     def _area_stats(self, payload):
-        area_stats_response_channel = f'{self.device_name}/stats/response'
+        area_stats_response_channel = f'{self.device.name}/stats/response'
         if not check_for_connected_and_reply(self.redis, area_stats_response_channel,
                                              self.connected):
             return
         try:
-            device_stats = {k: v for k, v in self.owner.stats.aggregated_stats.items()
+            device_stats = {k: v for k, v in self.device.stats.aggregated_stats.items()
                             if v is not None}
-            market_stats = {k: v for k, v in self.area.stats.aggregated_stats.items()
+            market_stats = {k: v for k, v in self.market_area.stats.aggregated_stats.items()
                             if v is not None}
             self.redis.publish_json(
                 area_stats_response_channel,
@@ -133,24 +137,28 @@ class PVExternalStrategy(PVStrategy):
                  "device_stats": device_stats,
                  "market_stats": market_stats})
         except Exception as e:
-            logging.error(f"Error reporting stats for area {self.device_name}: "
+            logging.error(f"Error reporting stats for area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 area_stats_response_channel,
                 {"status": "error",
-                 "error_message": f"Error reporting stats for area {self.device_name}."})
+                 "error_message": f"Error reporting stats for area {self.device.name}."})
 
     @property
     def market(self):
-        return self.area.next_market
+        return self.market_area.next_market
 
     @property
-    def device_name(self):
-        return self.owner.name
+    def market_area(self):
+        return self.area
+
+    @property
+    def device(self):
+        return self.owner
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        market_event_channel = f"{self.device_name}/market_event"
+        market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info
         current_market_info['available_energy_kWh'] = \
             self.state.available_energy_kWh[self.market.time_slot]
@@ -182,3 +190,15 @@ class PVExternalStrategy(PVStrategy):
     def event_market_cycle_price(self):
         if not self.connected:
             super().event_market_cycle_price()
+
+
+class PVExternalStrategy(PVExternalMixin, PVStrategy):
+    pass
+
+
+class PVUserProfileExternalStrategy(PVExternalMixin, PVUserProfileStrategy):
+    pass
+
+
+class PVPredefinedExternalStrategy(PVExternalMixin, PVPredefinedStrategy):
+    pass
