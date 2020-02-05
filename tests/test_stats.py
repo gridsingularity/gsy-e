@@ -201,7 +201,8 @@ def grid_fees():
                                     FakeMarket([], name='house1', fees=6.0)])
     house2 = FakeArea('house2',
                       children=[FakeArea("testLoad")],
-                      past_markets=[FakeMarket([], name='house2', fees=3.0)])
+                      past_markets=[FakeMarket((_trade(2, "testload", 3, "IAA house2",
+                                                       fee_price=3.0),), name='house2', fees=3.0)])
     house1.display_type = "House 1 type"
     house2.display_type = "House 2 type"
     return FakeArea(
