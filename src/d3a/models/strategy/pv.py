@@ -30,6 +30,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.constants_limits import GlobalConfig
+from d3a.models.market.market_structures import Offer
 
 
 class PVStrategy(BaseStrategy):
@@ -204,6 +205,11 @@ class PVStrategy(BaseStrategy):
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return
+
+        if isinstance(trade.offer, Offer) and trade.offer.seller == self.owner.name:
+            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer.id][0]
+            assert trade.offer.price / trade.offer.energy >= \
+                offer.price / offer.energy - FLOATING_POINT_TOLERANCE
 
         if trade.seller == self.owner.name:
             self.state.available_energy_kWh[market.time_slot] -= trade.offer.energy

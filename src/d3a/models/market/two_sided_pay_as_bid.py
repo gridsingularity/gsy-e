@@ -166,11 +166,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
         seller = market_bid.seller if seller is None else seller
         buyer = market_bid.buyer if buyer is None else buyer
         energy = market_bid.energy if energy is None else energy
-        if trade_rate is None:
-            trade_rate = market_bid.price / market_bid.energy
-
-        assert trade_rate <= (market_bid.price / market_bid.energy) + FLOATING_POINT_TOLERANCE, \
-            f"trade rate: {trade_rate} market {market_bid.price / market_bid.energy}"
 
         orig_price = bid.original_bid_price if bid.original_bid_price is not None else bid.price
         residual_bid = None

@@ -62,7 +62,7 @@ class Offers:
         self.strategy = strategy
         self.bought = {}  # type: Dict[Offer, str]
         self.posted = {}  # type: Dict[Offer, str]
-        self.sold = {}  # type: Dict[str, List[str]]
+        self.sold = {}  # type: Dict[str, List[Offer]]
         self.split = {}  # type: Dict[str, Offer]
 
     @property
@@ -89,7 +89,7 @@ class Offers:
         for offer, market_id in self.posted.items():
             if market_id not in self.sold:
                 self.sold[market_id] = []
-            if offer.id not in self.sold[market_id]:
+            if offer not in self.sold[market_id]:
                 open_offers[offer] = market_id
         return open_offers
 
@@ -97,7 +97,7 @@ class Offers:
         self.bought[offer] = market_id
 
     def sold_offer(self, offer, market_id):
-        self.sold = append_or_create_key(self.sold, market_id, offer.id)
+        self.sold = append_or_create_key(self.sold, market_id, offer)
 
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
@@ -121,7 +121,7 @@ class Offers:
         try:
             market_id = self.posted.pop(offer)
             assert type(market_id) == str
-            if market_id in self.sold and offer.id in self.sold[market_id]:
+            if market_id in self.sold and offer in self.sold[market_id]:
                 self.strategy.log.warning("Offer already sold, cannot remove it.")
                 self.posted[offer] = market_id
             else:

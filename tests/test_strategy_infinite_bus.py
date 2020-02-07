@@ -244,7 +244,7 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
     assert len(bus_test2.offers.posted) == 1
     assert len(bus_test2.offers.split) == 1
     assert len(bus_test2.offers.sold) == 1
-    assert original_offer.id in bus_test2.offers.sold_in_market(area_test2.test_market.id)
+    assert original_offer in bus_test2.offers.sold_in_market(area_test2.test_market.id)
 
 
 def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, bus_test2):
