@@ -1,6 +1,10 @@
 import logging
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.models.strategy import BaseStrategy
+from collections import namedtuple
+
+
+IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
 
 
 def check_for_connected_and_reply(redis, channel_name, is_connected):

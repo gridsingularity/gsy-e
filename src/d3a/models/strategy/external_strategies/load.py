@@ -1,5 +1,6 @@
 import json
 import logging
+from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
@@ -12,6 +13,7 @@ class LoadExternalMixin(ExternalMixin):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.pending_requests = []
 
     def event_activate(self):
         super().event_activate()
@@ -58,7 +60,8 @@ class LoadExternalMixin(ExternalMixin):
                 {"error": "Incorrect delete bid request. Available parameters: (bid)."}
             )
         else:
-            self._delete_bid_impl(arguments, delete_bid_response_channel)
+            self.pending_requests.append(
+                IncomingRequest("delete_bid", arguments, delete_bid_response_channel))
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
@@ -88,7 +91,8 @@ class LoadExternalMixin(ExternalMixin):
                 {"error": "Incorrect bid request. Available parameters: (price, energy)."}
             )
         else:
-            self._bid_impl(arguments, bid_response_channel)
+            self.pending_requests.append(
+                IncomingRequest("bid", arguments, bid_response_channel))
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
@@ -137,6 +141,15 @@ class LoadExternalMixin(ExternalMixin):
     def event_tick(self):
         if not self.connected:
             super().event_tick()
+        else:
+            while len(self.pending_requests) > 0:
+                req = self.pending_requests.pop()
+                if req.request_type == "bid":
+                    self._bid_impl(req.arguments, req.response_channel)
+                elif req.request_type == "delete_bid":
+                    self._delete_bid_impl(req.arguments, req.response_channel)
+                else:
+                    assert False, f"Incorrect incoming request name: {req}"
 
     def event_offer(self, *, market_id, offer):
         if not self.connected:

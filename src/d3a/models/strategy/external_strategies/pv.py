@@ -1,5 +1,6 @@
 import json
 import logging
+from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
@@ -12,6 +13,7 @@ class PVExternalMixin(ExternalMixin):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.pending_requests = []
 
     def event_activate(self):
         super().event_activate()
@@ -32,7 +34,7 @@ class PVExternalMixin(ExternalMixin):
         try:
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in self.market.get_offers().items()
-                               if v.buyer == self.device.name]
+                               if v.seller == self.device.name]
             self.redis.publish_json(
                 list_offers_response_channel,
                 {"status": "ready", "offer_list": filtered_offers})
@@ -60,7 +62,8 @@ class PVExternalMixin(ExternalMixin):
                 {"error": "Incorrect delete offer request. Available parameters: (offer)."}
             )
         else:
-            self._delete_offer_impl(arguments, delete_offer_response_channel)
+            self.pending_requests.append(
+                IncomingRequest("delete_offer", arguments, delete_offer_response_channel))
 
     def _delete_offer_impl(self, arguments, response_channel):
         try:
@@ -94,7 +97,8 @@ class PVExternalMixin(ExternalMixin):
                 {"error": "Incorrect offer request. Available parameters: (price, energy)."}
             )
         else:
-            self._offer_impl(arguments, offer_response_channel)
+            self.pending_requests.append(
+                IncomingRequest("offer", arguments, offer_response_channel))
 
     def _offer_impl(self, arguments, response_channel):
         try:
@@ -137,6 +141,15 @@ class PVExternalMixin(ExternalMixin):
     def event_tick(self):
         if not self.connected:
             super().event_tick()
+        else:
+            while len(self.pending_requests) > 0:
+                req = self.pending_requests.pop()
+                if req.request_type == "offer":
+                    self._offer_impl(req.arguments, req.response_channel)
+                elif req.request_type == "delete_offer":
+                    self._delete_offer_impl(req.arguments, req.response_channel)
+                else:
+                    assert False, f"Incorrect incoming request name: {req}"
 
     def event_offer(self, *, market_id, offer):
         if not self.connected:

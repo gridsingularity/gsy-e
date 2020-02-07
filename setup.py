@@ -7,7 +7,7 @@ if "BRANCH" in os.environ:
     d3a_interface_branch = os.environ["BRANCH"]
 
 try:
-    with open('requirements/base.txt') as req:
+    with open('requirements/dev.txt') as req:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]
         # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
         REQUIREMENTS.extend(
