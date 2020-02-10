@@ -22,7 +22,7 @@ from uuid import uuid4
 
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.market.market_structures import Offer
+from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -32,8 +32,23 @@ from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
+
+
+def assert_if_trade_bid_price_is_too_high(strategy, market, trade):
+    if isinstance(trade.offer, Bid) and trade.offer.buyer == strategy.owner.name:
+        bid = [b for b in strategy.get_posted_bids(market) if b.id == trade.offer.id][0]
+        assert trade.offer.price / trade.offer.energy <= \
+            bid.price / bid.energy + FLOATING_POINT_TOLERANCE
+
+
+def assert_if_trade_offer_price_is_too_low(strategy, market_id, trade):
+    if isinstance(trade.offer, Offer) and trade.offer.seller == strategy.owner.name:
+        offer = [o for o in strategy.offers.sold[market_id] if o.id == trade.offer.id][0]
+        assert trade.offer.price / trade.offer.energy >= \
+            offer.price / offer.energy - FLOATING_POINT_TOLERANCE
 
 
 class _TradeLookerUpper:

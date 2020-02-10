@@ -30,8 +30,8 @@ from d3a_interface.device_validator import validate_storage_device
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.market.market_structures import Offer, Bid
-from d3a.constants import FLOATING_POINT_TOLERANCE
+from d3a.models.strategy import assert_if_trade_bid_price_is_too_high, \
+    assert_if_trade_offer_price_is_too_low
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
@@ -288,14 +288,8 @@ class StorageStrategy(BidEnabledStrategy):
         market = self.area.get_future_market_from_id(market_id)
         super().event_trade(market_id=market_id, trade=trade)
 
-        if isinstance(trade.offer, Offer) and trade.offer.seller == self.owner.name:
-            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer.id][0]
-            assert trade.offer.price / trade.offer.energy >= \
-                offer.price / offer.energy - FLOATING_POINT_TOLERANCE
-        elif isinstance(trade.offer, Bid) and trade.offer.buyer == self.owner.name:
-            bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer.id][0]
-            assert trade.offer.price / trade.offer.energy <= \
-                bid.price/bid.energy + FLOATING_POINT_TOLERANCE
+        assert_if_trade_bid_price_is_too_high(self, market, trade)
+        assert_if_trade_offer_price_is_too_low(self, market_id, trade)
 
         if trade.buyer == self.owner.name:
             self._track_energy_bought_type(trade)
