@@ -4,7 +4,7 @@ ADD . /app
 
 WORKDIR /app
 
-RUN pip install --upgrade pip ptpython
+RUN pip install --upgrade pip
 RUN pip install -r requirements/pandapower.txt
 RUN pip install -e .
 

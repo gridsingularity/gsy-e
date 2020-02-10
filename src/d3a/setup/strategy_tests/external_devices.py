@@ -22,6 +22,9 @@ from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHours
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from d3a_interface.constants_limits import ConstSettings
+
+ConstSettings.IAASettings.MARKET_TYPE = 2
 
 
 def get_setup(config):
@@ -37,9 +40,11 @@ def get_setup(config):
                                                                            range(12, 18)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
+                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=100,
+                                                                 battery_capacity_kWh=20),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
+                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=100,
+                                                                 battery_capacity_kWh=20),
                          appliance=SwitchableAppliance()),
                 ],
             ),
