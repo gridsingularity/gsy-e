@@ -307,7 +307,6 @@ def dso_pays_certain_price(context):
 
 @then('the storage decreases bid rate until final buying rate')
 def storage_decreases_bid_rate(context):
-    # print(context.simulation.area.past_markets)
     for market in context.simulation.area.past_markets:
         assert len(market.trades) == 1
         trade = market.trades[0]

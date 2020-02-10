@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import unittest
+from copy import deepcopy
 from unittest.mock import MagicMock, Mock
 from pendulum import DateTime, duration, today
 from parameterized import parameterized
@@ -101,6 +102,9 @@ class FakeMarket:
         self.most_affordable_energy = 0.1551
         self.created_balancing_offers = []
         self.bids = {}
+
+    def get_bids(self):
+        return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str,
             seller: str, original_bid_price=None,
@@ -386,6 +390,7 @@ def test_balancing_offers_are_not_created_if_device_not_in_registry(
 
 def test_balancing_offers_are_created_if_device_in_registry(
         balancing_fixture, area_test2):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     balancing_fixture.event_activate()
     balancing_fixture.event_market_cycle()
@@ -402,6 +407,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
 
     assert actual_balancing_demand_price == expected_balancing_demand_energy * 30
     selected_offer = area_test2.current_market.sorted_offers[0]
+    balancing_fixture.energy_requirement_Wh[area_test2.current_market.time_slot] = \
+        selected_offer.energy * 1000.0
     balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',
                                               time=area_test2.now,

@@ -38,6 +38,7 @@ _NO_VALUE = {
 class SimulationEndpointBuffer:
     def __init__(self, job_id, initial_params, area):
         self.job_id = job_id
+        self.current_market = ""
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
         self.eta = duration(seconds=0)
@@ -58,6 +59,7 @@ class SimulationEndpointBuffer:
     def generate_result_report(self):
         redis_results = {
             "job_id": self.job_id,
+            "current_market": self.current_market,
             "random_seed": self.random_seed,
             "cumulative_loads": self.cumulative_loads,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
@@ -103,6 +105,8 @@ class SimulationEndpointBuffer:
 
     def update_stats(self, area, simulation_status, eta):
         self.status = simulation_status
+        if area.current_market is not None:
+            self.current_market = area.current_market.time_slot_str
         self.eta = eta
         self.cumulative_loads = export_cumulative_loads(area)
 
@@ -122,6 +126,29 @@ class SimulationEndpointBuffer:
         self.generate_result_report()
 
         self.kpi.update_kpis_from_area(area)
+
+        self.update_area_aggregated_stats(area)
+
+    def update_area_aggregated_stats(self, area):
+        self._update_area_stats(area)
+        for child in area.children:
+            self.update_area_aggregated_stats(child)
+
+    def _update_area_stats(self, area):
+        area.stats.update_aggregated_stats({
+            "simulation_id": self.job_id,
+            "status": self.status,
+            "bills": self.market_bills.bills_redis_results[area.uuid],
+            "cumulative_grid_trades":
+                self.cumulative_grid_trades.accumulated_trades_redis.get(area.uuid, None),
+            "tree_summary": self.tree_summary.current_results.get(area.slug, None),
+            "unmatched_loads": self.market_unmatched_loads.unmatched_loads.get(area.name, None),
+            "price_energy_day": self.price_energy_day.csv_output.get(area.name, None),
+            "device_statistics": self.device_statistics.device_stats_time_str.get(area.uuid, None),
+            "energy_trade_profile":
+                self.file_export_endpoints.traded_energy_profile.get(area.slug, None),
+            "kpi": self.kpi.performance_indices.get(area.name, None)
+        })
 
     def _update_price_energy_day_tree_summary(self, area):
         # Update of the price_energy_day endpoint should always precede tree-summary.

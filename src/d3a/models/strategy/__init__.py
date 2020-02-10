@@ -60,9 +60,9 @@ class Offers:
 
     def __init__(self, strategy):
         self.strategy = strategy
-        self.bought = {}  # type: Dict[Offer, Str]
-        self.posted = {}  # type: Dict[Offer, Str]
-        self.sold = {}  # type: Dict[Str, List[str]]
+        self.bought = {}  # type: Dict[Offer, str]
+        self.posted = {}  # type: Dict[Offer, str]
+        self.sold = {}  # type: Dict[str, List[str]]
         self.split = {}  # type: Dict[str, Offer]
 
     @property
@@ -109,6 +109,13 @@ class Offers:
         # If offer was split already, don't post one with the same uuid again
         if offer.id not in self.split:
             self.posted[offer] = market_id
+
+    def remove_by_id(self, offer_id):
+        try:
+            offer = [o for o, m in self.posted.items() if o.id == offer_id][0]
+            self.remove(offer)
+        except (IndexError, KeyError):
+            self.strategy.warning(f"Could not find offer to remove: {offer_id}")
 
     def remove(self, offer):
         try:
@@ -406,7 +413,7 @@ class BidEnabledStrategy(BaseStrategy):
         # should be only bid from a device to a market at all times, which will be replaced if
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
-        if not all(bid.buyer != self.owner.name for bid in market.bids.values()):
+        if not all(bid.buyer != self.owner.name for bid in market.get_bids().values()):
             self.owner.log.warning(f"There is already another bid posted on the market, therefore"
                                    f" do not repost another first bid.")
             return None
@@ -423,7 +430,7 @@ class BidEnabledStrategy(BaseStrategy):
         return self._bids[market.id]
 
     def event_bid_deleted(self, *, market_id, bid):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
 
         if bid.buyer != self.owner.name:
@@ -431,7 +438,7 @@ class BidEnabledStrategy(BaseStrategy):
         self.remove_bid_from_pending(bid.id, market_id)
 
     def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
         if accepted_bid.buyer != self.owner.name:
             return
@@ -439,7 +446,7 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market_id, bid=residual_bid)
 
     def event_bid_traded(self, *, market_id, bid_trade):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
 
         if bid_trade.buyer == self.owner.name:

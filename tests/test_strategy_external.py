@@ -39,6 +39,7 @@ class TestExternalStrategy(unittest.TestCase):
                 "parent-area/test-area/bid": self.external_strategy2.redis._bid,
                 "parent-area/test-area/bids": self.external_strategy2.redis._list_bids,
                 "parent-area/test-area/offers": self.external_strategy2.redis._offer_lists,
+                "parent-area/test-area/stats": self.external_strategy2.redis._list_stats,
             }
         )
 
@@ -49,6 +50,7 @@ class TestExternalStrategy(unittest.TestCase):
                 "parent-area/test-area/delete_offer": self.external_redis._delete_offer,
                 "parent-area/test-area/accept_offer": self.external_redis._accept_offer,
                 "parent-area/test-area/offers": self.external_redis._offer_lists,
+                "parent-area/test-area/stats": self.external_redis._list_stats,
             }
         )
 
@@ -175,7 +177,8 @@ class TestExternalStrategy(unittest.TestCase):
             "parent-area/test-area/offer",
             "parent-area/test-area/delete_offer",
             "parent-area/test-area/accept_offer",
-            "parent-area/test-area/offers"
+            "parent-area/test-area/offers",
+            "parent-area/test-area/stats",
         }
         assert set(channel_list["available_subscribe_channels"]) == {
             "parent-area/test-area/market_cycle"

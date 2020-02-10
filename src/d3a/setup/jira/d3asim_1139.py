@@ -9,7 +9,7 @@ from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
     market_maker_rate = 3
     ConstSettings.IAASettings.MARKET_TYPE = 1
-    config.update_config_parameters(market_maker_rate=market_maker_rate, transfer_fee_pct=0)
+    config.update_config_parameters(market_maker_rate=market_maker_rate, grid_fee_percentage=0)
 
     houses_1 = [Area(f'House 1 {i}', children=[
         Area(f'House 1 {i} Loads ', strategy=LoadHoursStrategy(avg_power_W=500,

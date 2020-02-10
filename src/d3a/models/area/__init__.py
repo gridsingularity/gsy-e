@@ -36,6 +36,7 @@ from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_connection import RedisAreaExternalConnection
 import d3a.constants
 
@@ -65,9 +66,10 @@ class Area:
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=[],
-                 transfer_fee_pct: float = None,
+                 grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
                  external_connection_available=False):
+        validate_area(grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -92,7 +94,7 @@ class Area:
         self._bc = None
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
-        self.transfer_fee_pct = transfer_fee_pct
+        self.grid_fee_percentage = grid_fee_percentage
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
@@ -124,9 +126,9 @@ class Area:
             if self.budget_keeper:
                 self.budget_keeper.activate()
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            self.transfer_fee_pct = 0
-        elif self.transfer_fee_pct is None:
-            self.transfer_fee_pct = self.config.iaa_fee
+            self.grid_fee_percentage = 0
+        elif self.grid_fee_percentage is None:
+            self.grid_fee_percentage = self.config.iaa_fee
         if self.transfer_fee_const is None:
             self.transfer_fee_const = self.config.iaa_fee_const
 
