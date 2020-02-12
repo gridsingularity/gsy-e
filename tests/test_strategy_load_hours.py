@@ -492,3 +492,22 @@ def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false():
     load.area = FakeArea()
     load.event_activate()
     assert all([rate == -10 for rate in load.bid_update.energy_rate_change_per_update.values()])
+
+
+@pytest.fixture
+def load_hours_strategy_test3(area_test1):
+    load = LoadHoursStrategy(avg_power_W=100)
+    load.area = area_test1
+    load.owner = area_test1
+    return load
+
+
+def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3):
+    market_id = 0
+    load_hours_strategy_test3._bids[market_id] = \
+        [Bid("bid_id", 30, 1, buyer="FakeArea", seller="producer")]
+    expensive_bid = Bid("bid_id", 31, 1, buyer="FakeArea", seller="producer")
+    trade = Trade("trade_id", "time", expensive_bid, load_hours_strategy_test3, "buyer")
+
+    with pytest.raises(AssertionError):
+        load_hours_strategy_test3.event_trade(market_id=market_id, trade=trade)

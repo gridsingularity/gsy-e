@@ -172,7 +172,7 @@ def test_offers_partial_offer(offer1, offers3):
     trade = Trade('trade_id', pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, 'buyer')
     offers3.on_trade('market', trade)
     assert len(offers3.sold_in_market('market')) == 1
-    assert accepted_offer.id in offers3.sold_in_market('market')
+    assert accepted_offer in offers3.sold_in_market('market')
 
 
 @pytest.fixture
