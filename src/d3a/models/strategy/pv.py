@@ -30,7 +30,6 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.constants_limits import GlobalConfig
-from d3a.models.strategy import assert_if_trade_offer_price_is_too_low
 
 
 class PVStrategy(BaseStrategy):
@@ -206,7 +205,7 @@ class PVStrategy(BaseStrategy):
         if market is None:
             return
 
-        assert_if_trade_offer_price_is_too_low(self, market_id, trade)
+        self.assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.seller == self.owner.name:
             self.state.available_energy_kWh[market.time_slot] -= trade.offer.energy

@@ -21,7 +21,6 @@ from typing import Union
 from collections import namedtuple
 from d3a.d3a_core.util import generate_market_slot_list, is_market_in_simulation_duration
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy import assert_if_trade_bid_price_is_too_high
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
 from d3a_interface.constants_limits import ConstSettings
@@ -265,7 +264,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         market = self.area.get_future_market_from_id(market_id)
         assert market is not None
 
-        assert_if_trade_bid_price_is_too_high(self, market, trade)
+        self.assert_if_trade_bid_price_is_too_high(market, trade)
 
         if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
             # Load can only put supply_balancing_offers only when there is a trade in spot_market

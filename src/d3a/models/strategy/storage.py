@@ -30,8 +30,7 @@ from d3a_interface.device_validator import validate_storage_device
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
-from d3a.models.strategy import assert_if_trade_bid_price_is_too_high, \
-    assert_if_trade_offer_price_is_too_low
+
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
@@ -288,8 +287,8 @@ class StorageStrategy(BidEnabledStrategy):
         market = self.area.get_future_market_from_id(market_id)
         super().event_trade(market_id=market_id, trade=trade)
 
-        assert_if_trade_bid_price_is_too_high(self, market, trade)
-        assert_if_trade_offer_price_is_too_low(self, market_id, trade)
+        self.assert_if_trade_bid_price_is_too_high(market, trade)
+        self.assert_if_trade_offer_price_is_too_low(market_id, trade)
 
         if trade.buyer == self.owner.name:
             self._track_energy_bought_type(trade)

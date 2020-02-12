@@ -37,20 +37,6 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 log = getLogger(__name__)
 
 
-def assert_if_trade_bid_price_is_too_high(strategy, market, trade):
-    if isinstance(trade.offer, Bid) and trade.offer.buyer == strategy.owner.name:
-        bid = [b for b in strategy.get_posted_bids(market) if b.id == trade.offer.id][0]
-        assert trade.offer.price / trade.offer.energy <= \
-            bid.price / bid.energy + FLOATING_POINT_TOLERANCE
-
-
-def assert_if_trade_offer_price_is_too_low(strategy, market_id, trade):
-    if isinstance(trade.offer, Offer) and trade.offer.seller == strategy.owner.name:
-        offer = [o for o in strategy.offers.sold[market_id] if o.id == trade.offer.id][0]
-        assert trade.offer.price / trade.offer.energy >= \
-            offer.price / offer.energy - FLOATING_POINT_TOLERANCE
-
-
 class _TradeLookerUpper:
     def __init__(self, owner_name):
         self.owner_name = owner_name
@@ -372,6 +358,12 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.offers.delete_past_markets_offers()
         self.event_responses = []
 
+    def assert_if_trade_offer_price_is_too_low(self, market_id, trade):
+        if isinstance(trade.offer, Offer) and trade.offer.seller == self.owner.name:
+            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer.id][0]
+            assert trade.offer.price / trade.offer.energy >= \
+                offer.price / offer.energy - FLOATING_POINT_TOLERANCE
+
 
 class BidEnabledStrategy(BaseStrategy):
     def __init__(self):
@@ -472,3 +464,9 @@ class BidEnabledStrategy(BaseStrategy):
             self._bids = {}
             self._traded_bids = {}
             super().event_market_cycle()
+
+    def assert_if_trade_bid_price_is_too_high(self, market, trade):
+        if isinstance(trade.offer, Bid) and trade.offer.buyer == self.owner.name:
+            bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer.id][0]
+            assert trade.offer.price / trade.offer.energy <= \
+                bid.price / bid.energy + FLOATING_POINT_TOLERANCE
