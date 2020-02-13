@@ -163,11 +163,17 @@ class StorageStrategy(BidEnabledStrategy):
     def event_on_disabled_area(self):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
 
-    def event_activate(self):
-        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
+    def event_activate_price(self):
         self.offer_update.update_on_activate()
         self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()
+
+    def event_activate_energy(self):
+        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
+
+    def event_activate(self):
+        self.event_activate_energy()
+        self.event_activate_price()
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:

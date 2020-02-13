@@ -85,6 +85,7 @@ class LoadExternalMixin(ExternalMixin):
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer_origin'] = self.device.name
+            print(f"arguments: {arguments}")
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -104,6 +105,7 @@ class LoadExternalMixin(ExternalMixin):
             )
             self.redis.publish_json(bid_response_channel,
                                     {"status": "ready", "bid": bid.to_JSON_string()})
+            print(f"bid : {bid}")
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
