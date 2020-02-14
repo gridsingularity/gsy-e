@@ -24,8 +24,6 @@ from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.kpi import KPI
-
-from statistics import mean
 from pendulum import duration
 
 _NO_VALUE = {
@@ -45,7 +43,6 @@ class SimulationEndpointBuffer:
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
         self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
-        self.tree_summary = TreeSummary()
         self.market_bills = MarketEnergyBills()
         self.balancing_bills = MarketEnergyBills(is_spot_market=False)
         self.cumulative_grid_trades = CumulativeGridTrades()
@@ -64,7 +61,6 @@ class SimulationEndpointBuffer:
             "cumulative_loads": self.cumulative_loads,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_redis_results,
-            "tree_summary": self.tree_summary.current_results_redis,
             "status": self.status,
             "eta_seconds": self.eta.seconds,
             "kpi": self.kpi.performance_indices
@@ -96,7 +92,6 @@ class SimulationEndpointBuffer:
             "price_energy_day": self.price_energy_day.csv_output,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_results,
-            "tree_summary": self.tree_summary.current_results,
             "status": self.status,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
@@ -121,7 +116,7 @@ class SimulationEndpointBuffer:
         self.market_unmatched_loads.update_unmatched_loads(area)
         self.device_statistics.update(area)
 
-        self._update_price_energy_day_tree_summary(area)
+        self.price_energy_day.update(area)
 
         self.generate_result_report()
 
@@ -141,7 +136,6 @@ class SimulationEndpointBuffer:
             "bills": self.market_bills.bills_redis_results[area.uuid],
             "cumulative_grid_trades":
                 self.cumulative_grid_trades.accumulated_trades_redis.get(area.uuid, None),
-            "tree_summary": self.tree_summary.current_results.get(area.slug, None),
             "unmatched_loads": self.market_unmatched_loads.unmatched_loads.get(area.name, None),
             "price_energy_day": self.price_energy_day.csv_output.get(area.name, None),
             "device_statistics": self.device_statistics.device_stats_time_str.get(area.uuid, None),
@@ -149,42 +143,6 @@ class SimulationEndpointBuffer:
                 self.file_export_endpoints.traded_energy_profile.get(area.slug, None),
             "kpi": self.kpi.performance_indices.get(area.name, None)
         })
-
-    def _update_price_energy_day_tree_summary(self, area):
-        # Update of the price_energy_day endpoint should always precede tree-summary.
-        # The reason is that the price_energy_day data are used when calculating the
-        # tree-summary data.
-        self.price_energy_day.update(area)
-        self.tree_summary.update(area, self.price_energy_day.csv_output)
-
-
-class TreeSummary:
-    def __init__(self):
-        self.current_results = {}
-        self.current_results_redis = {}
-
-    def update(self, area, price_energy_day_csv_output):
-        price_energy_list = price_energy_day_csv_output
-
-        def calculate_prices(key, functor):
-            if area.name not in price_energy_list:
-                return 0.
-
-            energy_prices = [
-                price_energy[key]
-                for price_energy in price_energy_list[area.name]["price-energy-day"]
-            ]
-            return round(functor(energy_prices), 2) if len(energy_prices) > 0 else 0.0
-
-        self.current_results[area.slug] = {
-            "min_trade_price": calculate_prices("min_price", min),
-            "max_trade_price": calculate_prices("max_price", max),
-            "avg_trade_price": calculate_prices("av_price", mean),
-        }
-        self.current_results_redis[area.uuid] = self.current_results[area.slug]
-        for child in area.children:
-            if child.children:
-                self.update(child, price_energy_day_csv_output)
 
 
 class CumulativeGridTrades:
