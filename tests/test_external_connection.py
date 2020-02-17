@@ -35,7 +35,9 @@ class TestExternalConnectionRedis(unittest.TestCase):
                 "base-area/register_participant":
                     self.external_connection.channel_register_callback,
                 "base-area/unregister_participant":
-                    self.external_connection.channel_unregister_callback
+                    self.external_connection.channel_unregister_callback,
+                "base-area/market_stats":
+                    self.external_connection.market_stats_callback,
             }
         )
 

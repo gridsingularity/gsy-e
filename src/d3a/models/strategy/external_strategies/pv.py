@@ -131,15 +131,14 @@ class PVExternalMixin:
                                              self.connected):
             return
         try:
-            device_stats = {k: v for k, v in self.device.stats.aggregated_stats.items()
-                            if v is not None}
-            market_stats = {k: v for k, v in self.market_area.stats.aggregated_stats.items()
-                            if v is not None}
+            device_stats = self.device.stats.aggregated_stats["bills"]
+            market_stats = self.market_area.stats.min_max_avg_rate_market(
+                self.market_area.current_market.time_slot)
             self.redis.publish_json(
                 area_stats_response_channel,
                 {"status": "ready",
-                 "device_stats": device_stats,
-                 "market_stats": market_stats})
+                 "device_bill": device_stats,
+                 "last_market_stats": market_stats})
         except Exception as e:
             logging.error(f"Error reporting stats for area {self.device.name}: "
                           f"Exception: {str(e)}")

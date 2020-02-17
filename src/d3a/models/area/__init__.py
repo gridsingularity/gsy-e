@@ -313,7 +313,7 @@ class Area:
 
     @property
     def current_market(self):
-        """Returns the 'current' market (i.e. the one currently 'running')"""
+        """Returns the 'last' market (i.e. the one that has be finished last)"""
         try:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:

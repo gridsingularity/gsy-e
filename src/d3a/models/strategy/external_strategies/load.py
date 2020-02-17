@@ -141,15 +141,15 @@ class LoadExternalMixin:
                                              self.connected):
             return
         try:
-            device_stats = {k: v for k, v in self.device.stats.aggregated_stats.items()
-                            if v is not None}
-            market_stats = {k: v for k, v in self.market_area.stats.aggregated_stats.items()
-                            if v is not None}
+            device_stats = self.device.stats.aggregated_stats["bills"]
+            market_stats = self.market_area.stats.min_max_avg_rate_market(
+                self.market_area.current_market.time_slot)
+
             self.redis.publish_json(
                 area_stats_response_channel,
                 {"status": "ready",
-                 "device_stats": device_stats,
-                 "market_stats": market_stats})
+                 "device_bill": device_stats,
+                 "last_market_stats": market_stats})
         except Exception as e:
             logging.error(f"Error reporting stats for area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -166,6 +166,10 @@ class LoadExternalMixin:
         current_market_info = self.market.info
         current_market_info['energy_requirement_kWh'] = \
             self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0
+        current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+        current_market_info['last_market_stats'] = \
+            self.market_area.stats.min_max_avg_rate_market(
+                self.market_area.current_market.time_slot)
         self.redis.publish_json(market_event_channel, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,

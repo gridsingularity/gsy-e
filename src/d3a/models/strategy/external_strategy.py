@@ -15,10 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import json
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
-import json
 from d3a.models.market.market_redis_connection import TwoSidedMarketRedisEventSubscriber
 
 
@@ -243,15 +242,14 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                           "error_message": str(e)})
 
     def _list_stats(self, payload):
+        arguments = self._parse_payload(payload)
+        assert set(arguments.keys()) == {'market_slot_list'}
         try:
-            device_stats = {k: v for k, v in self.area.stats.aggregated_stats.items()
-                            if v is not None}
-            market_stats = {k: v for k, v in self.area.parent.stats.aggregated_stats.items()
-                            if v is not None}
+            market_stats = self.market.stats.get_market_price_stats(arguments['market_slot_list'])
             self.publish(self._list_stats_response_channel,
                          {"status": "ready",
-                          "market_stats": market_stats,
-                          "device_stats": device_stats})
+                          "market_stats": market_stats})
+
         except Exception as e:
             self.publish(self._list_stats_response_channel,
                          {"status": "error",  "exception": str(type(e)),

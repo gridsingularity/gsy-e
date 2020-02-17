@@ -15,6 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from pendulum import from_format
+from statistics import mean
+from d3a_interface.constants_limits import DATE_TIME_FORMAT
+from d3a.constants import TIME_ZONE
 
 
 class AreaStats:
@@ -90,3 +94,26 @@ class AreaStats:
         for market in self._markets.markets.values():
             cheapest_offers.extend(market.sorted_offers[0:1])
         return cheapest_offers
+
+    def min_max_avg_rate_market(self, time_slot):
+        out_dict = {"min_trade_rate": None,
+                    "max_trade_rate": None,
+                    "avg_trade_rate": None}
+        for market in self._markets.all_spot_markets:
+            if market.time_slot == time_slot and len(market.trades) > 0:
+                trade_rates = [trade.offer.price/trade.offer.energy for trade in market.trades]
+                out_dict["min_trade_rate"] = round(min(trade_rates), 6)
+                out_dict["max_trade_rate"] = round(max(trade_rates), 6)
+                out_dict["avg_trade_rate"] = round(mean(trade_rates), 6)
+        return out_dict
+
+    def get_market_price_stats(self, market_slot_list):
+        out_dict = {}
+        for time_slot_str in market_slot_list:
+            try:
+                time_slot = from_format(time_slot_str, DATE_TIME_FORMAT, tz=TIME_ZONE)
+            except ValueError:
+                return {"ERROR": f"Time string '{time_slot_str}' is not following "
+                                 f"the format '{DATE_TIME_FORMAT}'"}
+            out_dict[time_slot_str] = self.min_max_avg_rate_market(time_slot)
+        return out_dict
