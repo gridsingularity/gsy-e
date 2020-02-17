@@ -118,6 +118,7 @@ class PVExternalMixin(ExternalMixin):
     def event_market_cycle(self):
         self.register_on_market_cycle()
         super().event_market_cycle()
+        self._reset_event_tick_counter()
         market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info
         current_market_info['available_energy_kWh'] = \

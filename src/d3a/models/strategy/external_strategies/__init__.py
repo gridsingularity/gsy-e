@@ -113,13 +113,16 @@ class ExternalMixin:
     def device(self):
         return self.owner
 
+    def _reset_event_tick_counter(self):
+        self._last_dispatched_tick = 0
+
     def _dispatch_event_tick_to_external_agent(self):
-        current_tick = self.device.current_tick
+        current_tick = self.device.current_tick % self.device.config.ticks_per_slot
         if current_tick - self._last_dispatched_tick >= self._dispatch_tick_frequency:
-            tick_event_channel = f"{self.device.name}/tick_event"
+            tick_event_channel = f"{self.device.name}/tick"
             current_tick_info = {
                 "slot_completion":
-                    f"{int((self.device.current_tick / self.device.config.ticks_per_slot) * 100)}%"
+                    f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%"
             }
             self._last_dispatched_tick = current_tick
             self.redis.publish_json(tick_event_channel, current_tick_info)

@@ -58,7 +58,7 @@ class TestExternalMixin(unittest.TestCase):
         area.current_tick = 18
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_called_once()
-        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/tick_event"
+        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/tick"
         assert strategy.redis.publish_json.call_args_list[0][0][1] == {'slot_completion': '20%'}
         strategy.redis.reset_mock()
         strategy.redis.publish_json.reset_mock()
@@ -68,5 +68,5 @@ class TestExternalMixin(unittest.TestCase):
         area.current_tick = 36
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_called_once()
-        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/tick_event"
+        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/tick"
         assert strategy.redis.publish_json.call_args_list[0][0][1] == {'slot_completion': '40%'}
