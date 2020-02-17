@@ -217,6 +217,7 @@ class StorageExternalMixin(ExternalMixin):
                                   f"on area {self.device.name} with arguments {arguments}."})
 
     def event_market_cycle(self):
+        self.register_on_market_cycle()
         if self.connected:
             self.state.market_cycle(self.market_area.current_market.time_slot,
                                     self.market.time_slot)

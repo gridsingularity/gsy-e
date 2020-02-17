@@ -116,6 +116,7 @@ class LoadExternalMixin(ExternalMixin):
                                   f"on area {self.device.name} with arguments {arguments}."})
 
     def event_market_cycle(self):
+        self.register_on_market_cycle()
         super().event_market_cycle()
         if not self.connected:
             return

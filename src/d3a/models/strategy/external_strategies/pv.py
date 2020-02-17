@@ -116,6 +116,7 @@ class PVExternalMixin(ExternalMixin):
                                   f"on area {self.device.name} with arguments {arguments}."})
 
     def event_market_cycle(self):
+        self.register_on_market_cycle()
         super().event_market_cycle()
         market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info

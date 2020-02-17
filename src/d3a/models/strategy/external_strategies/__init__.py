@@ -1,6 +1,5 @@
 import logging
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
-from d3a.models.strategy import BaseStrategy
 from collections import namedtuple
 
 
@@ -54,17 +53,21 @@ def unregister_area(redis, device_name, is_connected):
         return is_connected
 
 
-class ExternalMixin(BaseStrategy):
+class ExternalMixin:
     def __init__(self, *args, **kwargs):
         self.connected = False
+        self._connected = False
         self.redis = ResettableCommunicator()
         super().__init__(*args, **kwargs)
 
     def _register(self, payload):
-        self.connected = register_area(self.redis, self.device.name, self.connected)
+        self._connected = register_area(self.redis, self.device.name, self.connected)
 
     def _unregister(self, payload):
-        self.connected = unregister_area(self.redis, self.device.name, self.connected)
+        self._connected = unregister_area(self.redis, self.device.name, self.connected)
+
+    def register_on_market_cycle(self):
+        self.connected = self._connected
 
     def _area_stats(self, payload):
         area_stats_response_channel = f'{self.device.name}/stats/response'
