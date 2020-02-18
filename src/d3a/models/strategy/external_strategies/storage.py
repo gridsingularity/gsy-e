@@ -92,7 +92,11 @@ class StorageExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
-            assert arguments['energy'] <= self.state.energy_to_sell_dict[self.market.time_slot]
+            cumulative_allowed = \
+                arguments['energy'] + \
+                self.state.pledged_sell_kWh[self.market.time_slot] + \
+                self.state.offered_sell_kWh[self.market.time_slot]
+            assert cumulative_allowed <= self.state.energy_to_sell_dict[self.market.time_slot]
             self.state.offered_sell_kWh[self.market.time_slot] += arguments['energy']
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
@@ -179,9 +183,11 @@ class StorageExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer_origin'] = self.device.name
             max_energy = self.state.energy_to_buy_dict[self.market.time_slot]
-            assert arguments["energy"] <= max_energy
+            cumulative_allowed = \
+                arguments["energy"] + self.state.pledged_buy_kWh[self.market.time_slot] + \
+                self.state.offered_buy_kWh[self.market.time_slot]
+            assert cumulative_allowed <= max_energy
             self.state.offered_buy_kWh[self.market.time_slot] += arguments["energy"]
-
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -199,7 +205,6 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["energy"],
                 buyer_origin=arguments["buyer_origin"]
             )
-            self.state.offered_buy_kWh[self.market.time_slot] += arguments["energy"]
             self.redis.publish_json(bid_response_channel,
                                     {"status": "ready", "bid": bid.to_JSON_string()})
         except Exception as e:
