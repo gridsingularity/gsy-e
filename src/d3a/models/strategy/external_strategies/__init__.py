@@ -126,3 +126,14 @@ class ExternalMixin:
             }
             self._last_dispatched_tick = current_tick
             self.redis.publish_json(tick_event_channel, current_tick_info)
+
+    def event_trade(self, market_id, trade):
+        super().event_trade(market_id=market_id, trade=trade)
+        trade_dict = trade._asdict()
+        trade_dict['offer'] = trade_dict['offer'].to_JSON_string()
+        trade_dict.pop('already_tracked', None)
+        trade_dict.pop('offer_bid_trade_info', None)
+        trade_dict.pop('seller_origin', None)
+        trade_dict.pop('buyer_origin', None)
+        trade_event_channel = f"{self.device.name}/trade"
+        self.redis.publish_json(trade_event_channel, trade_dict)

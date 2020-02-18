@@ -70,3 +70,27 @@ class TestExternalMixin(unittest.TestCase):
         strategy.redis.publish_json.assert_called_once()
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/tick"
         assert strategy.redis.publish_json.call_args_list[0][0][1] == {'slot_completion': '40%'}
+
+    @parameterized.expand([
+        [LoadHoursExternalStrategy(100)],
+        [PVExternalStrategy(2, max_panel_power_W=160)]
+    ])
+    def test_dispatch_event_trade_to_external_agent(self, strategy):
+        config = MagicMock()
+        config.max_panel_power_W = 160
+        area = Area(name="test_area", config=config, strategy=strategy)
+        parent = Area(name="parent_area", children=[area])
+        parent.activate()
+        market = MagicMock()
+        parent.get_future_market_from_id = lambda _: market
+        area.get_future_market_from_id = lambda _: market
+        from d3a.models.market.market_structures import Trade, Offer
+        trade = Trade('id', 'time', Offer('id', 20, 1.0, 'ParentArea'), 'FakeArea', 'FakeArea')
+        strategy.event_trade(market_id="test_market", trade=trade)
+        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/trade"
+        call_args = strategy.redis.publish_json.call_args_list[0][0][1]
+        assert call_args['id'] == trade.id
+        assert call_args['time'] == trade.time
+        assert call_args['seller'] == trade.seller
+        assert call_args['buyer'] == trade.buyer
+        assert call_args['offer'] == trade.offer.to_JSON_string()
