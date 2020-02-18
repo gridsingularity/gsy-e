@@ -71,6 +71,7 @@ class StorageExternalMixin(ExternalMixin):
         try:
             self.market.delete_offer(arguments["offer"])
             self.offers.remove_by_id(arguments["offer"])
+            self.state.offered_sell_kWh[self.market.time_slot] -= arguments["offer"]["energy"]
             self.redis.publish_json(response_channel,
                                     {"status": "ready", "deleted_offer": arguments["offer"]})
         except Exception as e:
@@ -97,7 +98,6 @@ class StorageExternalMixin(ExternalMixin):
                 self.state.pledged_sell_kWh[self.market.time_slot] + \
                 self.state.offered_sell_kWh[self.market.time_slot]
             assert cumulative_allowed <= self.state.energy_to_sell_dict[self.market.time_slot]
-            self.state.offered_sell_kWh[self.market.time_slot] += arguments['energy']
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -112,6 +112,7 @@ class StorageExternalMixin(ExternalMixin):
         try:
             offer = self.market.offer(**arguments)
             self.offers.post(offer, self.market.id)
+            self.state.offered_sell_kWh[self.market.time_slot] += offer.energy
             self.redis.publish_json(response_channel,
                                     {"status": "ready", "offer": offer.to_JSON_string()})
         except Exception as e:
@@ -163,6 +164,7 @@ class StorageExternalMixin(ExternalMixin):
     def _delete_bid_impl(self, arguments, response_channel):
         try:
             self.remove_bid_from_pending(arguments["bid"], self.market.id)
+            self.state.offered_buy_kWh[self.market.time_slot] -= arguments["bid"]["energy"]
             self.redis.publish_json(response_channel,
                                     {"status": "ready", "bid_deleted": arguments["bid"]})
         except Exception as e:
@@ -187,7 +189,6 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["energy"] + self.state.pledged_buy_kWh[self.market.time_slot] + \
                 self.state.offered_buy_kWh[self.market.time_slot]
             assert cumulative_allowed <= max_energy
-            self.state.offered_buy_kWh[self.market.time_slot] += arguments["energy"]
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -205,6 +206,7 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["energy"],
                 buyer_origin=arguments["buyer_origin"]
             )
+            self.state.offered_buy_kWh[self.market.time_slot] += bid.energy
             self.redis.publish_json(bid_response_channel,
                                     {"status": "ready", "bid": bid.to_JSON_string()})
         except Exception as e:
