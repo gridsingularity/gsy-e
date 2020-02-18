@@ -205,6 +205,8 @@ class PVStrategy(BaseStrategy):
         if market is None:
             return
 
+        self.assert_if_trade_offer_price_is_too_low(market_id, trade)
+
         if trade.seller == self.owner.name:
             self.state.available_energy_kWh[market.time_slot] -= trade.offer.energy
 

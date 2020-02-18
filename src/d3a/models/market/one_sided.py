@@ -26,7 +26,6 @@ from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
 from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a_interface.constants_limits import ConstSettings
@@ -214,7 +213,6 @@ class OneSidedMarket(Market):
                 raise InvalidTrade("Energy can not be zero.")
             elif energy < offer.energy:
                 # partial energy is requested
-                assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 

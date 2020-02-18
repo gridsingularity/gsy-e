@@ -264,6 +264,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         market = self.area.get_future_market_from_id(market_id)
         assert market is not None
 
+        self.assert_if_trade_bid_price_is_too_high(market, trade)
+
         if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
             # Load can only put supply_balancing_offers only when there is a trade in spot_market
             self._supply_balancing_offer(market, trade)
