@@ -39,7 +39,6 @@ class LoadExternalMixin:
             f'{self.device.name}/bid': self._bid,
             f'{self.device.name}/delete_bid': self._delete_bid,
             f'{self.device.name}/bids': self._list_bids,
-            f'{self.device.name}/stats': self._area_stats
         })
 
     def _register(self, payload):
@@ -134,29 +133,6 @@ class LoadExternalMixin:
                 {"status": "error",
                  "error_message": f"Error when handling bid create "
                                   f"on area {self.device.name} with arguments {arguments}."})
-
-    def _area_stats(self, payload):
-        area_stats_response_channel = f'{self.device.name}/stats/response'
-        if not check_for_connected_and_reply(self.redis, area_stats_response_channel,
-                                             self.connected):
-            return
-        try:
-            device_stats = self.device.stats.aggregated_stats["bills"]
-            market_stats = self.market_area.stats.min_max_avg_rate_market(
-                self.market_area.current_market.time_slot)
-
-            self.redis.publish_json(
-                area_stats_response_channel,
-                {"status": "ready",
-                 "device_bill": device_stats,
-                 "last_market_stats": market_stats})
-        except Exception as e:
-            logging.error(f"Error reporting stats for area {self.device.name}: "
-                          f"Exception: {str(e)}")
-            self.redis.publish_json(
-                area_stats_response_channel,
-                {"status": "error",
-                 "error_message": f"Error reporting stats for area {self.device.name}."})
 
     def event_market_cycle(self):
         super().event_market_cycle()

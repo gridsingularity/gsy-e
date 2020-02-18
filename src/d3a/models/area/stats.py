@@ -18,7 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pendulum import from_format
 from statistics import mean
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
-from d3a.constants import TIME_ZONE, DEFAULT_PRECISION
+from d3a.constants import TIME_ZONE
+from d3a import limit_float_precision
 
 
 class AreaStats:
@@ -98,13 +99,16 @@ class AreaStats:
     def min_max_avg_rate_market(self, time_slot):
         out_dict = {"min_trade_rate": None,
                     "max_trade_rate": None,
-                    "avg_trade_rate": None}
+                    "avg_trade_rate": None,
+                    "total_traded_energy_kWh": None}
         for market in self._markets.all_spot_markets:
             if market.time_slot == time_slot and len(market.trades) > 0:
+                trade_volumes = [trade.offer.energy for trade in market.trades]
                 trade_rates = [trade.offer.price/trade.offer.energy for trade in market.trades]
-                out_dict["min_trade_rate"] = round(min(trade_rates), DEFAULT_PRECISION)
-                out_dict["max_trade_rate"] = round(max(trade_rates), DEFAULT_PRECISION)
-                out_dict["avg_trade_rate"] = round(mean(trade_rates), DEFAULT_PRECISION)
+                out_dict["min_trade_rate"] = limit_float_precision(min(trade_rates))
+                out_dict["max_trade_rate"] = limit_float_precision(max(trade_rates))
+                out_dict["avg_trade_rate"] = limit_float_precision(mean(trade_rates))
+                out_dict["total_traded_energy_kWh"] = limit_float_precision(sum(trade_volumes))
         return out_dict
 
     def get_market_price_stats(self, market_slot_list):
