@@ -78,14 +78,9 @@ class RedisAreaExternalConnection:
         self.pubsub.run_in_thread(daemon=True)
 
     def market_stats_callback(self, payload):
-        market_stats_respsonse_channel = f"{self.area.slug}/market_stats/response"
+        market_stats_response_channel = f"{self.area.slug}/market_stats/response"
         payload_data = json.loads(payload["data"])
         ret_val = {"status": "ready",
                    "market_stats":
                        self.area.stats.get_market_price_stats(payload_data["market_slots"])}
-        self.redis_db.publish(market_stats_respsonse_channel, json.dumps(ret_val))
-
-    # def sub_to_market_stats(self):
-    #     channel = f"{self.area.slug}/market_stats"
-    #     self.pubsub.subscribe(**{channel: self.market_stats_callback})
-    #     self.pubsub.run_in_thread(daemon=True)
+        self.redis_db.publish(market_stats_response_channel, json.dumps(ret_val))

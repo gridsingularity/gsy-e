@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from pendulum import from_format
 from statistics import mean
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
-from d3a.constants import TIME_ZONE
+from d3a.constants import TIME_ZONE, DEFAULT_PRECISION
 
 
 class AreaStats:
@@ -102,9 +102,9 @@ class AreaStats:
         for market in self._markets.all_spot_markets:
             if market.time_slot == time_slot and len(market.trades) > 0:
                 trade_rates = [trade.offer.price/trade.offer.energy for trade in market.trades]
-                out_dict["min_trade_rate"] = round(min(trade_rates), 6)
-                out_dict["max_trade_rate"] = round(max(trade_rates), 6)
-                out_dict["avg_trade_rate"] = round(mean(trade_rates), 6)
+                out_dict["min_trade_rate"] = round(min(trade_rates), DEFAULT_PRECISION)
+                out_dict["max_trade_rate"] = round(max(trade_rates), DEFAULT_PRECISION)
+                out_dict["avg_trade_rate"] = round(mean(trade_rates), DEFAULT_PRECISION)
         return out_dict
 
     def get_market_price_stats(self, market_slot_list):
