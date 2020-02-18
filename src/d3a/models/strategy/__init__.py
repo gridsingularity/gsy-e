@@ -22,7 +22,7 @@ from uuid import uuid4
 
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.market.market_structures import Offer
+from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -32,6 +32,7 @@ from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
 
@@ -62,7 +63,7 @@ class Offers:
         self.strategy = strategy
         self.bought = {}  # type: Dict[Offer, str]
         self.posted = {}  # type: Dict[Offer, str]
-        self.sold = {}  # type: Dict[str, List[str]]
+        self.sold = {}  # type: Dict[str, List[Offer]]
         self.split = {}  # type: Dict[str, Offer]
 
     @property
@@ -89,7 +90,7 @@ class Offers:
         for offer, market_id in self.posted.items():
             if market_id not in self.sold:
                 self.sold[market_id] = []
-            if offer.id not in self.sold[market_id]:
+            if offer not in self.sold[market_id]:
                 open_offers[offer] = market_id
         return open_offers
 
@@ -97,7 +98,7 @@ class Offers:
         self.bought[offer] = market_id
 
     def sold_offer(self, offer, market_id):
-        self.sold = append_or_create_key(self.sold, market_id, offer.id)
+        self.sold = append_or_create_key(self.sold, market_id, offer)
 
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
@@ -121,7 +122,7 @@ class Offers:
         try:
             market_id = self.posted.pop(offer)
             assert type(market_id) == str
-            if market_id in self.sold and offer.id in self.sold[market_id]:
+            if market_id in self.sold and offer in self.sold[market_id]:
                 self.strategy.log.warning("Offer already sold, cannot remove it.")
                 self.posted[offer] = market_id
             else:
@@ -357,6 +358,12 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             self.offers.delete_past_markets_offers()
         self.event_responses = []
 
+    def assert_if_trade_offer_price_is_too_low(self, market_id, trade):
+        if isinstance(trade.offer, Offer) and trade.offer.seller == self.owner.name:
+            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer.id][0]
+            assert trade.offer.price / trade.offer.energy >= \
+                offer.price / offer.energy - FLOATING_POINT_TOLERANCE
+
 
 class BidEnabledStrategy(BaseStrategy):
     def __init__(self):
@@ -457,3 +464,9 @@ class BidEnabledStrategy(BaseStrategy):
             self._bids = {}
             self._traded_bids = {}
             super().event_market_cycle()
+
+    def assert_if_trade_bid_price_is_too_high(self, market, trade):
+        if isinstance(trade.offer, Bid) and trade.offer.buyer == self.owner.name:
+            bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer.id][0]
+            assert trade.offer.price / trade.offer.energy <= \
+                bid.price / bid.energy + FLOATING_POINT_TOLERANCE
