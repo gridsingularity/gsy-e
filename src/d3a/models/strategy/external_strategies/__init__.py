@@ -71,10 +71,10 @@ class ExternalMixin:
         )
 
     def _register(self, payload):
-        self._connected = register_area(self.redis, self.device.name, self._connected)
+        self._connected = register_area(self.redis, self.device.name, self.connected)
 
     def _unregister(self, payload):
-        self._connected = unregister_area(self.redis, self.device.name, self._connected)
+        self._connected = unregister_area(self.redis, self.device.name, self.connected)
 
     def register_on_market_cycle(self):
         self.connected = self._connected
