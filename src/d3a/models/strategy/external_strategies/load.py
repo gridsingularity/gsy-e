@@ -118,6 +118,7 @@ class LoadExternalMixin(ExternalMixin):
         super().event_market_cycle()
         if not self.connected:
             return
+        self._reset_event_tick_counter()
         market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info
         current_market_info['energy_requirement_kWh'] = \
@@ -151,6 +152,7 @@ class LoadExternalMixin(ExternalMixin):
                     self._delete_bid_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
+            self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
         if not self.connected:

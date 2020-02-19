@@ -1,5 +1,6 @@
 import logging
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
+from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
 
 
@@ -59,6 +60,14 @@ class ExternalMixin:
         self._connected = False
         self.redis = ResettableCommunicator()
         super().__init__(*args, **kwargs)
+        self._last_dispatched_tick = 0
+
+    @property
+    def _dispatch_tick_frequency(self):
+        return int(
+            self.device.config.ticks_per_slot *
+            (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
+        )
 
     def _register(self, payload):
         self._connected = register_area(self.redis, self.device.name, self.connected)
@@ -103,3 +112,17 @@ class ExternalMixin:
     @property
     def device(self):
         return self.owner
+
+    def _reset_event_tick_counter(self):
+        self._last_dispatched_tick = 0
+
+    def _dispatch_event_tick_to_external_agent(self):
+        current_tick = self.device.current_tick % self.device.config.ticks_per_slot
+        if current_tick - self._last_dispatched_tick >= self._dispatch_tick_frequency:
+            tick_event_channel = f"{self.device.name}/tick"
+            current_tick_info = {
+                "slot_completion":
+                    f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%"
+            }
+            self._last_dispatched_tick = current_tick
+            self.redis.publish_json(tick_event_channel, current_tick_info)
