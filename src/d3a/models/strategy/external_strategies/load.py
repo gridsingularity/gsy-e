@@ -3,33 +3,17 @@ import logging
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
-from d3a.models.strategy.external_strategies import check_for_connected_and_reply, register_area, \
-    unregister_area
+from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 
 
-class LoadExternalMixin:
+class LoadExternalMixin(ExternalMixin):
     """
     Mixin for enabling an external api for the load strategies.
     Should always be inherited together with a superclass of LoadHoursStrategy.
     """
     def __init__(self, *args, **kwargs):
-        self.connected = False
         super().__init__(*args, **kwargs)
-        self.redis = ResettableCommunicator()
         self.pending_requests = []
-
-    @property
-    def market(self):
-        return self.market_area.next_market
-
-    @property
-    def device(self):
-        return self.owner
-
-    @property
-    def market_area(self):
-        return self.area
 
     def event_activate(self):
         super().event_activate()
@@ -40,12 +24,6 @@ class LoadExternalMixin:
             f'{self.device.name}/delete_bid': self._delete_bid,
             f'{self.device.name}/bids': self._list_bids,
         })
-
-    def _register(self, payload):
-        self.connected = register_area(self.redis, self.device.name, self.connected)
-
-    def _unregister(self, payload):
-        self.connected = unregister_area(self.redis, self.device.name, self.connected)
 
     def _list_bids(self, payload):
         list_bids_response_channel = f'{self.device.name}/bids/response'
@@ -135,9 +113,11 @@ class LoadExternalMixin:
                                   f"on area {self.device.name} with arguments {arguments}."})
 
     def event_market_cycle(self):
+        self.register_on_market_cycle()
         super().event_market_cycle()
         if not self.connected:
             return
+        self._reset_event_tick_counter()
         market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info
         current_market_info['energy_requirement_kWh'] = \
@@ -175,6 +155,7 @@ class LoadExternalMixin:
                     self._delete_bid_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
+            self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
         if not self.connected:

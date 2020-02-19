@@ -3,20 +3,16 @@ import logging
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
-from d3a.models.strategy.external_strategies import register_area, unregister_area, \
-    check_for_connected_and_reply
+from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 
 
-class PVExternalMixin:
+class PVExternalMixin(ExternalMixin):
     """
     Mixin for enabling an external api for the PV strategies.
     Should always be inherited together with a superclass of PVStrategy.
     """
     def __init__(self, *args, **kwargs):
-        self.connected = False
         super().__init__(*args, **kwargs)
-        self.redis = ResettableCommunicator()
         self.pending_requests = []
 
     def event_activate(self):
@@ -28,12 +24,6 @@ class PVExternalMixin:
             f'{self.device.name}/delete_offer': self._delete_offer,
             f'{self.device.name}/offers': self._list_offers,
         })
-
-    def _register(self, payload):
-        self.connected = register_area(self.redis, self.device.name, self.connected)
-
-    def _unregister(self, payload):
-        self.connected = unregister_area(self.redis, self.device.name, self.connected)
 
     def _list_offers(self, payload):
         list_offers_response_channel = f'{self.device.name}/offers/response'
@@ -124,20 +114,10 @@ class PVExternalMixin:
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
-    @property
-    def market(self):
-        return self.market_area.next_market
-
-    @property
-    def market_area(self):
-        return self.area
-
-    @property
-    def device(self):
-        return self.owner
-
     def event_market_cycle(self):
+        self.register_on_market_cycle()
         super().event_market_cycle()
+        self._reset_event_tick_counter()
         market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info
         current_market_info['available_energy_kWh'] = \
@@ -171,6 +151,7 @@ class PVExternalMixin:
                     self._delete_offer_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
+            self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
         if not self.connected:
