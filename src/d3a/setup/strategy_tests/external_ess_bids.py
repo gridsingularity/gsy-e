@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.appliance.switchable import SwitchableAppliance
-from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 from d3a_interface.constants_limits import ConstSettings
 
@@ -29,13 +29,12 @@ def get_setup(config):
     area = Area(
         'Grid',
         [
-            Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=30,
-                                                              grid_connected=True),
-                 appliance=SimpleAppliance()
-                 ),
             Area(
                 'House 1',
                 [
+                    Area('PV', strategy=PVStrategy(
+                        max_panel_power_W=2000, initial_selling_rate=30, final_selling_rate=30.0),
+                         appliance=PVAppliance()),
                     Area('storage', strategy=StorageExternalStrategy(
                         initial_soc=50, battery_capacity_kWh=20),
                          appliance=SwitchableAppliance()),
