@@ -3,20 +3,16 @@ import logging
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
-from d3a.models.strategy.external_strategies import register_area, unregister_area, \
-    check_for_connected_and_reply
+from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
 
 
-class PVExternalMixin:
+class PVExternalMixin(ExternalMixin):
     """
     Mixin for enabling an external api for the PV strategies.
     Should always be inherited together with a superclass of PVStrategy.
     """
     def __init__(self, *args, **kwargs):
-        self.connected = False
         super().__init__(*args, **kwargs)
-        self.redis = ResettableCommunicator()
         self.pending_requests = []
 
     def event_activate(self):
@@ -29,12 +25,6 @@ class PVExternalMixin:
             f'{self.device.name}/offers': self._list_offers,
             f'{self.device.name}/stats': self._area_stats
         })
-
-    def _register(self, payload):
-        self.connected = register_area(self.redis, self.device.name, self.connected)
-
-    def _unregister(self, payload):
-        self.connected = unregister_area(self.redis, self.device.name, self.connected)
 
     def _list_offers(self, payload):
         list_offers_response_channel = f'{self.device.name}/offers/response'
@@ -125,42 +115,8 @@ class PVExternalMixin:
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
-    def _area_stats(self, payload):
-        area_stats_response_channel = f'{self.device.name}/stats/response'
-        if not check_for_connected_and_reply(self.redis, area_stats_response_channel,
-                                             self.connected):
-            return
-        try:
-            device_stats = {k: v for k, v in self.device.stats.aggregated_stats.items()
-                            if v is not None}
-            market_stats = {k: v for k, v in self.market_area.stats.aggregated_stats.items()
-                            if v is not None}
-            self.redis.publish_json(
-                area_stats_response_channel,
-                {"status": "ready",
-                 "device_stats": device_stats,
-                 "market_stats": market_stats})
-        except Exception as e:
-            logging.error(f"Error reporting stats for area {self.device.name}: "
-                          f"Exception: {str(e)}")
-            self.redis.publish_json(
-                area_stats_response_channel,
-                {"status": "error",
-                 "error_message": f"Error reporting stats for area {self.device.name}."})
-
-    @property
-    def market(self):
-        return self.market_area.next_market
-
-    @property
-    def market_area(self):
-        return self.area
-
-    @property
-    def device(self):
-        return self.owner
-
     def event_market_cycle(self):
+        self.register_on_market_cycle()
         super().event_market_cycle()
         market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info

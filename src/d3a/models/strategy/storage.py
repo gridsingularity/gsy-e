@@ -31,6 +31,7 @@ from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
 
+
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 StorageSettings = ConstSettings.StorageSettings
@@ -163,11 +164,17 @@ class StorageStrategy(BidEnabledStrategy):
     def event_on_disabled_area(self):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
 
-    def event_activate(self):
-        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
+    def event_activate_price(self):
         self.offer_update.update_on_activate()
         self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()
+
+    def event_activate_energy(self):
+        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
+
+    def event_activate(self):
+        self.event_activate_energy()
+        self.event_activate_price()
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
@@ -285,6 +292,10 @@ class StorageStrategy(BidEnabledStrategy):
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
         super().event_trade(market_id=market_id, trade=trade)
+
+        self.assert_if_trade_bid_price_is_too_high(market, trade)
+        self.assert_if_trade_offer_price_is_too_low(market_id, trade)
+
         if trade.buyer == self.owner.name:
             self._track_energy_bought_type(trade)
         if trade.offer.seller == self.owner.name:
