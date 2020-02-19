@@ -219,6 +219,7 @@ class StorageExternalMixin(ExternalMixin):
     def event_market_cycle(self):
         self.register_on_market_cycle()
         if self.connected:
+            self._reset_event_tick_counter()
             self.state.market_cycle(self.market_area.current_market.time_slot,
                                     self.market.time_slot)
             self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
@@ -255,6 +256,7 @@ class StorageExternalMixin(ExternalMixin):
                     self._delete_offer_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
+            self._dispatch_event_tick_to_external_agent()
 
 
 class StorageExternalStrategy(StorageExternalMixin, StorageStrategy):
