@@ -130,10 +130,11 @@ class ExternalMixin:
 
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
-        trade_dict = json.loads(trade.to_JSON_string())
-        trade_dict.pop('already_tracked', None)
-        trade_dict.pop('offer_bid_trade_info', None)
-        trade_dict.pop('seller_origin', None)
-        trade_dict.pop('buyer_origin', None)
-        trade_event_channel = f"{self.device.name}/trade"
-        self.redis.publish_json(trade_event_channel, trade_dict)
+        if self.connected:
+            trade_dict = json.loads(trade.to_JSON_string())
+            trade_dict.pop('already_tracked', None)
+            trade_dict.pop('offer_bid_trade_info', None)
+            trade_dict.pop('seller_origin', None)
+            trade_dict.pop('buyer_origin', None)
+            trade_event_channel = f"{self.device.name}/trade"
+            self.redis.publish_json(trade_event_channel, trade_dict)
