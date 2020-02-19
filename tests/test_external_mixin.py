@@ -4,6 +4,7 @@ from parameterized import parameterized
 from d3a.models.area import Area
 from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 import d3a.models.strategy.external_strategies
 
 d3a.models.strategy.external_strategies.ResettableCommunicator = MagicMock
@@ -38,7 +39,8 @@ class TestExternalMixin(unittest.TestCase):
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
-        [PVExternalStrategy(2, max_panel_power_W=160)]
+        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_agent(self, strategy):
         config = MagicMock()
