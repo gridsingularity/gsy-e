@@ -237,7 +237,8 @@ class StorageExternalMixin(ExternalMixin):
             current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
             current_market_info['last_market_stats'] = \
                 self.market_area.stats.min_max_avg_rate_market(
-                    self.market_area.current_market.time_slot)
+                    self.market_area.current_market.time_slot) \
+                if self.market_area.current_market is not None else None
             self.redis.publish_json(market_event_channel, current_market_info)
         else:
             super().event_market_cycle()
