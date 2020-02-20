@@ -122,6 +122,10 @@ class PVExternalMixin(ExternalMixin):
         current_market_info = self.market.info
         current_market_info['available_energy_kWh'] = \
             self.state.available_energy_kWh[self.market.time_slot]
+        current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+        current_market_info['last_market_stats'] = \
+            self.market_area.stats.min_max_avg_rate_market(
+                self.market_area.current_market.time_slot)
         self.redis.publish_json(market_event_channel, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
