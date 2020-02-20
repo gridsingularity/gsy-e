@@ -36,7 +36,7 @@ DISPATCH_EVENTS_BOTTOM_TO_TOP = True
 # 20% of the slot length
 DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
 
-REDIS_JOB_ID = ""
+COLLABORATION_ID = ""
 # Controls whether the external connection is for use with the redis api client
 # or with th3 d3a-web.
 # False -> Redis api client

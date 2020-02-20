@@ -16,11 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.area_serializer import area_from_dict
+import d3a.constants
 
 
 def get_setup(config):
     try:
         area_description = config.area
+        if "collaboration_uuid" in area_description:
+            d3a.constants.COLLABORATION_ID = area_description.pop("collaboration_uuid")
+            d3a.constants.EXTERNAL_CONNECTION_REDIS_OR_WEB = True
         return area_from_dict(area_description, config)
     except AttributeError as ex:
         raise RuntimeError('Area not found') from ex
