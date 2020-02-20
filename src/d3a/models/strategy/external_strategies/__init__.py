@@ -114,6 +114,10 @@ class ExternalMixin:
     def device(self):
         return self.owner
 
+    @property
+    def _device_info_dict(self):
+        return {}
+
     def _reset_event_tick_counter(self):
         self._last_dispatched_tick = 0
 
@@ -123,7 +127,8 @@ class ExternalMixin:
             tick_event_channel = f"{self.device.name}/tick"
             current_tick_info = {
                 "slot_completion":
-                    f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%"
+                    f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%",
+                "device_info": self._device_info_dict
             }
             self._last_dispatched_tick = current_tick
             self.redis.publish_json(tick_event_channel, current_tick_info)
@@ -136,5 +141,6 @@ class ExternalMixin:
             trade_dict.pop('offer_bid_trade_info', None)
             trade_dict.pop('seller_origin', None)
             trade_dict.pop('buyer_origin', None)
+            trade_dict["device_info"] = self._device_info_dict
             trade_event_channel = f"{self.device.name}/trade"
             self.redis.publish_json(trade_event_channel, trade_dict)

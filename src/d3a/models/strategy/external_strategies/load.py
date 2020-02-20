@@ -113,6 +113,13 @@ class LoadExternalMixin(ExternalMixin):
                  "error_message": f"Error when handling bid create "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
+    @property
+    def _device_info_dict(self):
+        return {
+            'energy_requirement_kWh':
+                self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0
+        }
+
     def event_market_cycle(self):
         self.register_on_market_cycle()
         super().event_market_cycle()
@@ -121,8 +128,7 @@ class LoadExternalMixin(ExternalMixin):
         self._reset_event_tick_counter()
         market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info
-        current_market_info['energy_requirement_kWh'] = \
-            self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0
+        current_market_info['device_info'] = self._device_info_dict
         self.redis.publish_json(market_event_channel, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,

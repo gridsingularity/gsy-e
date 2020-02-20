@@ -218,6 +218,15 @@ class StorageExternalMixin(ExternalMixin):
                  "error_message": f"Error when handling bid create "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
+    @property
+    def _device_info_dict(self):
+        return {
+            "energy_to_sell": self.state.energy_to_sell_dict[self.market.time_slot],
+            "energy_to_buy": self.state.energy_to_buy_dict[self.market.time_slot],
+            "free_storage": self.state.free_storage(self.market.time_slot),
+            "used_storage": self.state.used_storage
+        }
+
     def event_market_cycle(self):
         self.register_on_market_cycle()
         if self.connected:
@@ -228,12 +237,7 @@ class StorageExternalMixin(ExternalMixin):
             self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
             market_event_channel = f"{self.device.name}/market_event"
             current_market_info = self.market.info
-            current_market_info["energy_to_sell"] = \
-                self.state.energy_to_sell_dict[self.market.time_slot]
-            current_market_info["energy_to_buy_dict"] = \
-                self.state.energy_to_buy_dict[self.market.time_slot]
-            current_market_info["free_storage"] = self.state.free_storage(self.market.time_slot)
-            current_market_info["used_storage"] = self.state.used_storage
+            current_market_info.update(**self._device_info_dict)
             self.redis.publish_json(market_event_channel, current_market_info)
         else:
             super().event_market_cycle()

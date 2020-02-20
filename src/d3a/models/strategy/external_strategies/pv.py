@@ -115,14 +115,19 @@ class PVExternalMixin(ExternalMixin):
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
+    @property
+    def _device_info_dict(self):
+        return {
+            'available_energy_kWh': self.state.available_energy_kWh[self.market.time_slot]
+        }
+
     def event_market_cycle(self):
         self.register_on_market_cycle()
         super().event_market_cycle()
         self._reset_event_tick_counter()
         market_event_channel = f"{self.device.name}/market_event"
         current_market_info = self.market.info
-        current_market_info['available_energy_kWh'] = \
-            self.state.available_energy_kWh[self.market.time_slot]
+        current_market_info['device_info'] = self._device_info_dict
         self.redis.publish_json(market_event_channel, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
