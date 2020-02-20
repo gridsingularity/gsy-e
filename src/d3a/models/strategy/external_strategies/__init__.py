@@ -2,6 +2,7 @@ import logging
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
+import json
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -126,3 +127,14 @@ class ExternalMixin:
             }
             self._last_dispatched_tick = current_tick
             self.redis.publish_json(tick_event_channel, current_tick_info)
+
+    def event_trade(self, market_id, trade):
+        super().event_trade(market_id=market_id, trade=trade)
+        if self.connected:
+            trade_dict = json.loads(trade.to_JSON_string())
+            trade_dict.pop('already_tracked', None)
+            trade_dict.pop('offer_bid_trade_info', None)
+            trade_dict.pop('seller_origin', None)
+            trade_dict.pop('buyer_origin', None)
+            trade_event_channel = f"{self.device.name}/trade"
+            self.redis.publish_json(trade_event_channel, trade_dict)
