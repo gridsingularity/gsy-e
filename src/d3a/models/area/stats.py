@@ -111,6 +111,10 @@ class AreaStats:
                 out_dict["total_traded_energy_kWh"] = limit_float_precision(sum(trade_volumes))
         return out_dict
 
+    @property
+    def current_market(self):
+        return list(self._markets.past_markets.values())[-1]
+
     def get_market_price_stats(self, market_slot_list):
         out_dict = {}
         for time_slot_str in market_slot_list:
@@ -119,5 +123,8 @@ class AreaStats:
             except ValueError:
                 return {"ERROR": f"Time string '{time_slot_str}' is not following "
                                  f"the format '{DATE_TIME_FORMAT}'"}
-            out_dict[time_slot_str] = self.min_max_avg_rate_market(time_slot)
+            if time_slot > self.current_market.time_slot:
+                out_dict[time_slot_str] = {"ERROR": "This market is not in the past."}
+            else:
+                out_dict[time_slot_str] = self.min_max_avg_rate_market(time_slot)
         return out_dict

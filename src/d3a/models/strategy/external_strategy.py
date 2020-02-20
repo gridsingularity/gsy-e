@@ -21,7 +21,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.models.market.market_redis_connection import TwoSidedMarketRedisEventSubscriber
 
 
-class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
+class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
     def __init__(self, area):
         self.area = area
         super().__init__(None)
@@ -71,10 +71,6 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         return f"{self.area.parent.slug}/{self.area.slug}/bids"
 
     @property
-    def _list_stats_channel(self):
-        return f"{self.area.parent.slug}/{self.area.slug}/stats"
-
-    @property
     def _offer_response_channel(self):
         return f"{self._offer_channel}/response"
 
@@ -103,10 +99,6 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
         return f"{self._list_bids_channel}/response"
 
     @property
-    def _list_stats_response_channel(self):
-        return f"{self._list_stats_channel}/response"
-
-    @property
     def channel_callback_mapping(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return {
@@ -114,7 +106,6 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                 self._delete_offer_channel: self._delete_offer,
                 self._accept_offer_channel: self._accept_offer,
                 self._list_offers_channel: self._offer_lists,
-                self._list_stats_channel: self._list_stats
             }
         else:
             return {
@@ -124,7 +115,6 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                 self._delete_bid_channel: self._delete_bid,
                 self._list_bids_channel: self._list_bids,
                 self._list_offers_channel: self._offer_lists,
-                self._list_stats_channel: self._list_stats
             }
 
     def sub_to_external_requests(self):
@@ -241,25 +231,11 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                          {"status": "error",  "exception": str(type(e)),
                           "error_message": str(e)})
 
-    def _list_stats(self, payload):
-        arguments = self._parse_payload(payload)
-        assert set(arguments.keys()) == {'market_slot_list'}
-        try:
-            market_stats = self.market.stats.get_market_price_stats(arguments['market_slot_list'])
-            self.publish(self._list_stats_response_channel,
-                         {"status": "ready",
-                          "market_stats": market_stats})
-
-        except Exception as e:
-            self.publish(self._list_stats_response_channel,
-                         {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e)})
-
 
 class ExternalStrategy(BaseStrategy):
     def __init__(self, area):
         super().__init__()
-        self.redis = RedisMarketExternalConnection(area)
+        self.redis = RedisExternalStrategyConnection(area)
 
     def shutdown(self):
         self.redis.shutdown()

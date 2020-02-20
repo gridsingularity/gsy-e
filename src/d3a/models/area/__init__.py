@@ -37,7 +37,7 @@ from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
-from d3a.models.area.redis_external_connection import RedisAreaExternalConnection
+from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
 import d3a.constants
 
 log = getLogger(__name__)
@@ -99,7 +99,7 @@ class Area:
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
-        self.redis_ext_conn = RedisAreaExternalConnection(self) \
+        self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
 
     def set_events(self, event_list):
@@ -156,9 +156,6 @@ class Area:
         initial area activation.
         """
         self.events.update_events(self.now)
-
-        if self.redis_ext_conn:
-            self.redis_ext_conn.market_cycle_event()
 
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
