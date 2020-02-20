@@ -237,7 +237,7 @@ class StorageExternalMixin(ExternalMixin):
             self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
             market_event_channel = f"{self.device.name}/market_event"
             current_market_info = self.market.info
-            current_market_info.update(**self._device_info_dict)
+            current_market_info['device_info'] = self._device_info_dict
             self.redis.publish_json(market_event_channel, current_market_info)
         else:
             super().event_market_cycle()
