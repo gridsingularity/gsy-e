@@ -33,6 +33,7 @@ from ptpython.repl import embed
 
 from d3a.d3a_core.area_serializer import are_all_areas_unique
 from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
+import d3a.constants
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
@@ -91,6 +92,7 @@ class Simulation:
         self.setup_module_name = setup_module_name
         self.use_bc = enable_bc
         self.is_stopped = False
+        d3a.constants.REDIS_JOB_ID = redis_job_id
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
         self._started_from_cli = redis_job_id is None
 
