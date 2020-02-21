@@ -35,3 +35,8 @@ DISPATCH_EVENTS_BOTTOM_TO_TOP = True
 # Controls how often will event tick be dispatched to external connections. Defaults to
 # 20% of the slot length
 DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+
+COLLABORATION_ID = ""
+# Controls whether the external connection is for use with the redis api client
+# or with the d3a-web. Default is to connect via Redis.
+EXTERNAL_CONNECTION_WEB = False

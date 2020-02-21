@@ -64,9 +64,9 @@ class TestExternalMixin(unittest.TestCase):
         self.area.current_tick = 18
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_called_once()
-        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/tick"
+        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/tick"
         assert strategy.redis.publish_json.call_args_list[0][0][1] == \
-            {'device_info': strategy._device_info_dict, 'slot_completion': '20%'}
+            {'device_info': strategy._device_info_dict, 'event': 'tick', 'slot_completion': '20%'}
         strategy.redis.reset_mock()
         strategy.redis.publish_json.reset_mock()
         self.area.current_tick = 35
@@ -75,9 +75,9 @@ class TestExternalMixin(unittest.TestCase):
         self.area.current_tick = 36
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_called_once()
-        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/tick"
+        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/tick"
         assert strategy.redis.publish_json.call_args_list[0][0][1] == \
-            {'device_info': strategy._device_info_dict, 'slot_completion': '40%'}
+            {'device_info': strategy._device_info_dict, 'event': 'tick', 'slot_completion': '40%'}
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -90,7 +90,7 @@ class TestExternalMixin(unittest.TestCase):
         trade = Trade('id', current_time, Offer('id', 20, 1.0, 'ParentArea'),
                       'FakeArea', 'FakeArea')
         strategy.event_trade(market_id="test_market", trade=trade)
-        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/trade"
+        assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
         call_args = strategy.redis.publish_json.call_args_list[0][0][1]
         assert call_args['id'] == trade.id
         assert call_args['time'] == current_time.isoformat()
