@@ -24,7 +24,7 @@ def get_setup(config):
         area_description = config.area
         if "collaboration_uuid" in area_description:
             d3a.constants.COLLABORATION_ID = area_description.pop("collaboration_uuid")
-            d3a.constants.EXTERNAL_CONNECTION_REDIS_OR_WEB = True
+            d3a.constants.EXTERNAL_CONNECTION_WEB = True
         return area_from_dict(area_description, config)
     except AttributeError as ex:
         raise RuntimeError('Area not found') from ex

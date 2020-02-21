@@ -38,7 +38,5 @@ DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
 
 COLLABORATION_ID = ""
 # Controls whether the external connection is for use with the redis api client
-# or with th3 d3a-web.
-# False -> Redis api client
-# True -> d3a-web
-EXTERNAL_CONNECTION_REDIS_OR_WEB = False
+# or with the d3a-web. Default is to connect via Redis.
+EXTERNAL_CONNECTION_WEB = False

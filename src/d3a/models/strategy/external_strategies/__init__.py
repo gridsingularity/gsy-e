@@ -66,7 +66,7 @@ class ExternalMixin:
 
     @property
     def channel_prefix(self):
-        if d3a.constants.EXTERNAL_CONNECTION_REDIS_OR_WEB:
+        if d3a.constants.EXTERNAL_CONNECTION_WEB:
             return f"external/{d3a.constants.COLLABORATION_ID}/{self.device.uuid}"
         else:
             return f"{self.device.name}"
