@@ -1,8 +1,9 @@
 import logging
+import json
+import d3a.constants
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
-import json
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -18,25 +19,25 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
     return True
 
 
-def register_area(redis, device_name, is_connected):
-    register_response_channel = f'{device_name}/register_participant/response'
+def register_area(redis, channel_prefix, is_connected):
+    register_response_channel = f'{channel_prefix}/response/register_participant'
     try:
         redis.publish_json(
             register_response_channel,
             {"status": "ready", "registered": True})
         return True
     except Exception as e:
-        logging.error(f"Error when registering to area {device_name}: "
+        logging.error(f"Error when registering to area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             register_response_channel,
             {"status": "error",
-             "error_message": f"Error when registering to area {device_name}."})
+             "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
 
-def unregister_area(redis, device_name, is_connected):
-    unregister_response_channel = f'{device_name}/unregister_participant/response'
+def unregister_area(redis, channel_prefix, is_connected):
+    unregister_response_channel = f'{channel_prefix}/response/unregister_participant'
     if not check_for_connected_and_reply(redis, unregister_response_channel,
                                          is_connected):
         return
@@ -46,12 +47,12 @@ def unregister_area(redis, device_name, is_connected):
             {"status": "ready", "unregistered": True})
         return False
     except Exception as e:
-        logging.error(f"Error when unregistering from area {device_name}: "
+        logging.error(f"Error when unregistering from area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             unregister_response_channel,
             {"status": "error",
-             "error_message": f"Error when unregistering from area {device_name}."})
+             "error_message": f"Error when unregistering from area {channel_prefix}."})
         return is_connected
 
 
@@ -64,6 +65,13 @@ class ExternalMixin:
         self._last_dispatched_tick = 0
 
     @property
+    def channel_prefix(self):
+        if d3a.constants.EXTERNAL_CONNECTION_WEB:
+            return f"external/{d3a.constants.COLLABORATION_ID}/{self.device.uuid}"
+        else:
+            return f"{self.device.name}"
+
+    @property
     def _dispatch_tick_frequency(self):
         return int(
             self.device.config.ticks_per_slot *
@@ -71,16 +79,16 @@ class ExternalMixin:
         )
 
     def _register(self, payload):
-        self._connected = register_area(self.redis, self.device.name, self.connected)
+        self._connected = register_area(self.redis, self.channel_prefix, self.connected)
 
     def _unregister(self, payload):
-        self._connected = unregister_area(self.redis, self.device.name, self.connected)
+        self._connected = unregister_area(self.redis, self.channel_prefix, self.connected)
 
     def register_on_market_cycle(self):
         self.connected = self._connected
 
     def _area_stats(self, payload):
-        area_stats_response_channel = f'{self.device.name}/stats/response'
+        area_stats_response_channel = f'{self.channel_prefix}/response/stats'
         if not check_for_connected_and_reply(self.redis, area_stats_response_channel,
                                              self.connected):
             return
@@ -120,8 +128,9 @@ class ExternalMixin:
     def _dispatch_event_tick_to_external_agent(self):
         current_tick = self.device.current_tick % self.device.config.ticks_per_slot
         if current_tick - self._last_dispatched_tick >= self._dispatch_tick_frequency:
-            tick_event_channel = f"{self.device.name}/tick"
+            tick_event_channel = f"{self.channel_prefix}/events/tick"
             current_tick_info = {
+                "event": "tick",
                 "slot_completion":
                     f"{int((current_tick / self.device.config.ticks_per_slot) * 100)}%"
             }
@@ -136,5 +145,6 @@ class ExternalMixin:
             trade_dict.pop('offer_bid_trade_info', None)
             trade_dict.pop('seller_origin', None)
             trade_dict.pop('buyer_origin', None)
-            trade_event_channel = f"{self.device.name}/trade"
+            trade_dict["event"] = "trade"
+            trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, trade_dict)
