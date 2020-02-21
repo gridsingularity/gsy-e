@@ -13,14 +13,16 @@ class RedisMarketExternalConnection:
     def publish(self, channel, data):
         self.redis_db.publish(channel, data)
 
-    def sub_to_area_event(self):
-        channel_market_stats = f"{self.area.slug}/market_stats"
+    @property
+    def _market_stats_channel(self):
+        return f"market_stats/{self.area.slug}"
 
-        self.pubsub.subscribe(**{channel_market_stats: self.market_stats_callback})
+    def sub_to_area_event(self):
+        self.pubsub.subscribe(**{self._market_stats_channel: self.market_stats_callback})
         self.pubsub.run_in_thread(daemon=True)
 
     def market_stats_callback(self, payload):
-        market_stats_response_channel = f"{self.area.slug}/market_stats/response"
+        market_stats_response_channel = f"{self._market_stats_channel}/response"
         payload_data = json.loads(payload["data"])
         ret_val = {"status": "ready",
                    "market_stats":
