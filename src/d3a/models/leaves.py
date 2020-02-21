@@ -27,6 +27,20 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHours
 from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy, \
+    LoadProfileExternalStrategy
+from d3a.models.strategy.external_strategies.pv import PVExternalStrategy, \
+    PVPredefinedExternalStrategy, PVUserProfileExternalStrategy
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
+
+external_strategies_mapping = {
+    LoadHoursStrategy: LoadHoursExternalStrategy,
+    DefinedLoadStrategy: LoadProfileExternalStrategy,
+    PVStrategy: PVExternalStrategy,
+    PVPredefinedStrategy: PVPredefinedExternalStrategy,
+    PVUserProfileStrategy: PVUserProfileExternalStrategy,
+    StorageStrategy: StorageExternalStrategy
+}
 
 
 class Leaf(Area):
@@ -38,6 +52,8 @@ class Leaf(Area):
     appliance_type = SimpleAppliance
 
     def __init__(self, name, config=None, uuid=None, **kwargs):
+        if kwargs.get("allow_external_connection", False) is True:
+            self.strategy_type = external_strategies_mapping[self.strategy_type]
         super(Leaf, self).__init__(
             name=name,
             strategy=self.strategy_type(**{
