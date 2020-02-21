@@ -113,9 +113,12 @@ class AreaStats:
 
     @property
     def current_market(self):
-        return list(self._markets.past_markets.values())[-1]
+        past_markets = list(self._markets.past_markets.values())
+        return past_markets[-1] if len(past_markets) > 0 else None
 
     def get_market_price_stats(self, market_slot_list):
+        if self.current_market is None:
+            return {"INFO": "No market stats available yet"}
         out_dict = {}
         for time_slot_str in market_slot_list:
             try:
