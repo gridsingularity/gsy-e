@@ -23,7 +23,6 @@ class LoadExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/bid': self._bid,
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
             f'{self.channel_prefix}/bids': self._list_bids,
-            f'{self.channel_prefix}/stats': self._area_stats
         })
 
     def _list_bids(self, payload):
@@ -129,6 +128,11 @@ class LoadExternalMixin(ExternalMixin):
         current_market_info["event"] = "market"
         current_market_info['energy_requirement_kWh'] = \
             self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0
+        current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+        current_market_info['last_market_stats'] = \
+            self.market_area.stats.min_max_avg_rate_market(
+                self.market_area.current_market.time_slot) \
+            if self.market_area.current_market is not None else None
         self.redis.publish_json(market_event_channel, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,

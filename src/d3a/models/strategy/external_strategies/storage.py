@@ -244,6 +244,11 @@ class StorageExternalMixin(ExternalMixin):
                 self.state.energy_to_buy_dict[self.market.time_slot]
             current_market_info["free_storage"] = self.state.free_storage(self.market.time_slot)
             current_market_info["used_storage"] = self.state.used_storage
+            current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+            current_market_info['last_market_stats'] = \
+                self.market_area.stats.min_max_avg_rate_market(
+                    self.market_area.current_market.time_slot) \
+                if self.market_area.current_market is not None else None
             self.redis.publish_json(market_event_channel, current_market_info)
         else:
             super().event_market_cycle()
