@@ -106,6 +106,10 @@ class Offers:
     def posted_offer_energy(self, market_id):
         return sum(o.energy for o in self.posted_in_market(market_id))
 
+    def can_offer_be_posted(self, offer_energy, available_energy, market):
+        posted_energy = (offer_energy + self.posted_offer_energy(market.id))
+        return posted_energy <= available_energy
+
     def sold_in_market(self, market_id):
         return self.sold[market_id] if market_id in self.sold else {}
 
@@ -385,6 +389,10 @@ class BidEnabledStrategy(BaseStrategy):
         )
         self.add_bid_to_posted(market.id, bid)
         return bid
+
+    def can_bid_be_posted(self, bid_energy, required_energy_Wh, market):
+        posted_energy = (bid_energy + self.posted_bid_energy(market.id))
+        return posted_energy <= required_energy_Wh / 1000.0
 
     def posted_bid_energy(self, market_id):
         if market_id not in self._bids:

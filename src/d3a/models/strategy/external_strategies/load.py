@@ -87,8 +87,9 @@ class LoadExternalMixin(ExternalMixin):
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer_origin'] = self.device.name
-            posted_energy = (arguments['price'] + self.posted_bid_energy(self.market.id)) * 1000.0
-            if posted_energy > self.energy_requirement_Wh.get(self.market, 0.0):
+            if self.can_bid_be_posted(arguments["energy"],
+                                      self.energy_requirement_Wh.get(self.market, 0.0),
+                                      self.market):
                 self.redis.publish_json(
                     bid_response_channel,
                     {"command": "bid",

@@ -93,8 +93,9 @@ class PVExternalMixin(ExternalMixin):
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
 
-            posted_energy = (arguments['price'] + self.posted_offer_energy(self.market.id))
-            if posted_energy > self.available_energy_kWh.get(self.market, 0.0):
+            if self.can_offer_be_posted(arguments["energy"],
+                                        self.available_energy_kWh.get(self.market, 0.0),
+                                        self.market):
                 self.redis.publish_json(
                     offer_response_channel,
                     {"command": "offer",
