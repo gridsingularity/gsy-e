@@ -103,6 +103,9 @@ class Offers:
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
 
+    def posted_offer_energy(self, market_id):
+        return sum(o.energy for o in self.posted_in_market(market_id))
+
     def sold_in_market(self, market_id):
         return self.sold[market_id] if market_id in self.sold else {}
 
@@ -382,6 +385,11 @@ class BidEnabledStrategy(BaseStrategy):
         )
         self.add_bid_to_posted(market.id, bid)
         return bid
+
+    def posted_bid_energy(self, market_id):
+        if market_id not in self._bids:
+            return 0.0
+        return sum(b.energy for b in self._bids[market_id]) * 1000.0
 
     def remove_bid_from_pending(self, bid_id, market_id):
         market = self.area.get_future_market_from_id(market_id)

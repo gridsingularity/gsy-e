@@ -92,6 +92,16 @@ class PVExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
+
+            posted_energy = (arguments['price'] + self.posted_offer_energy(self.market.id))
+            if posted_energy > self.available_energy_kWh.get(self.market, 0.0):
+                self.redis.publish_json(
+                    offer_response_channel,
+                    {"command": "offer",
+                     "error": "Offer cannot be posted. Available energy has been reached with "
+                              "existing offers."}
+                )
+                return
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
