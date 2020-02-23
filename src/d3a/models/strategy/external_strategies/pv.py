@@ -23,7 +23,6 @@ class PVExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/offer': self._offer,
             f'{self.channel_prefix}/delete_offer': self._delete_offer,
             f'{self.channel_prefix}/offers': self._list_offers,
-            f'{self.channel_prefix}/stats': self._area_stats
         })
 
     def _list_offers(self, payload):
@@ -134,6 +133,11 @@ class PVExternalMixin(ExternalMixin):
         current_market_info = self.market.info
         current_market_info['device_info'] = self._device_info_dict
         current_market_info["event"] = "market"
+        current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+        current_market_info['last_market_stats'] = \
+            self.market_area.stats.min_max_avg_rate_market(
+                self.market_area.current_market.time_slot) \
+            if self.market_area.current_market is not None else None
         self.redis.publish_json(market_event_channel, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
