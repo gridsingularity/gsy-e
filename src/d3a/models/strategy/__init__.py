@@ -371,6 +371,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
             assert trade.offer.price / trade.offer.energy >= \
                 offer.price / offer.energy - FLOATING_POINT_TOLERANCE
 
+    def can_offer_be_posted(self, offer_energy, available_energy, market):
+        return self.offers.can_offer_be_posted(offer_energy, available_energy, market)
+
 
 class BidEnabledStrategy(BaseStrategy):
     def __init__(self):
@@ -390,14 +393,14 @@ class BidEnabledStrategy(BaseStrategy):
         self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def can_bid_be_posted(self, bid_energy, required_energy_Wh, market):
+    def can_bid_be_posted(self, bid_energy, required_energy_kWh, market):
         posted_energy = (bid_energy + self.posted_bid_energy(market.id))
-        return posted_energy <= required_energy_Wh / 1000.0
+        return posted_energy <= required_energy_kWh
 
     def posted_bid_energy(self, market_id):
         if market_id not in self._bids:
             return 0.0
-        return sum(b.energy for b in self._bids[market_id]) * 1000.0
+        return sum(b.energy for b in self._bids[market_id])
 
     def remove_bid_from_pending(self, bid_id, market_id):
         market = self.area.get_future_market_from_id(market_id)
