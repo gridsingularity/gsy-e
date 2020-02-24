@@ -77,7 +77,6 @@ class MarketEnergyBills:
         result_dict['earned'] += trade.offer.price / 100.
         result_dict['total_energy'] -= trade.offer.energy
         result_dict['total_cost'] -= trade.offer.price / 100.
-        result_dict['market_fee'] += trade.fee_price / 100. if trade.fee_price is not None else 0.
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):

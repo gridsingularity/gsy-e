@@ -60,7 +60,7 @@ def get_setup(config):
                     Area('pv', strategy=PVExternalStrategy(panel_count=4),
                          appliance=PVAppliance()),
 
-                ],
+                ], external_connection_available=True
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,

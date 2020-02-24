@@ -151,7 +151,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._validate_rates()
         self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()
-        self.event_activate_energy()
 
     def _area_reconfigure_prices(self, final_buying_rate):
         if final_buying_rate is not None:
@@ -264,6 +263,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
         assert market is not None
+
+        self.assert_if_trade_bid_price_is_too_high(market, trade)
 
         if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
             # Load can only put supply_balancing_offers only when there is a trade in spot_market
