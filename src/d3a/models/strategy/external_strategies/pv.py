@@ -18,16 +18,15 @@ class PVExternalMixin(ExternalMixin):
     def event_activate(self):
         super().event_activate()
         self.redis.sub_to_multiple_channels({
-            f'{self.device.name}/register_participant': self._register,
-            f'{self.device.name}/unregister_participant': self._unregister,
-            f'{self.device.name}/offer': self._offer,
-            f'{self.device.name}/delete_offer': self._delete_offer,
-            f'{self.device.name}/offers': self._list_offers,
-            f'{self.device.name}/stats': self._area_stats
+            f'{self.channel_prefix}/register_participant': self._register,
+            f'{self.channel_prefix}/unregister_participant': self._unregister,
+            f'{self.channel_prefix}/offer': self._offer,
+            f'{self.channel_prefix}/delete_offer': self._delete_offer,
+            f'{self.channel_prefix}/offers': self._list_offers,
         })
 
     def _list_offers(self, payload):
-        list_offers_response_channel = f'{self.device.name}/offers/response'
+        list_offers_response_channel = f'{self.channel_prefix}/response/offers'
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
             return
@@ -37,17 +36,17 @@ class PVExternalMixin(ExternalMixin):
                                if v.seller == self.device.name]
             self.redis.publish_json(
                 list_offers_response_channel,
-                {"status": "ready", "offer_list": filtered_offers})
+                {"command": "offers", "status": "ready", "offer_list": filtered_offers})
         except Exception as e:
             logging.error(f"Error when handling list offers on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 list_offers_response_channel,
-                {"status": "error",
+                {"command": "offers", "status": "error",
                  "error_message": f"Error when listing offers on area {self.device.name}."})
 
     def _delete_offer(self, payload):
-        delete_offer_response_channel = f'{self.device.name}/delete_offer/response'
+        delete_offer_response_channel = f'{self.channel_prefix}/response/delete_offer'
         if not check_for_connected_and_reply(self.redis, delete_offer_response_channel,
                                              self.connected):
             return
@@ -59,7 +58,8 @@ class PVExternalMixin(ExternalMixin):
                           f"Exception {str(e)}.")
             self.redis.publish_json(
                 delete_offer_response_channel,
-                {"error": "Incorrect delete offer request. Available parameters: (offer)."}
+                {"command": "offer_delete",
+                 "error": "Incorrect delete offer request. Available parameters: (offer)."}
             )
         else:
             self.pending_requests.append(
@@ -69,19 +69,21 @@ class PVExternalMixin(ExternalMixin):
         try:
             self.market.delete_offer(arguments["offer"])
             self.offers.remove_by_id(arguments["offer"])
-            self.redis.publish_json(response_channel,
-                                    {"status": "ready", "deleted_offer": arguments["offer"]})
+            self.redis.publish_json(
+                response_channel,
+                {"command": "offer_delete", "status": "ready",
+                 "deleted_offer": arguments["offer"]})
         except Exception as e:
             logging.error(f"Error when handling offer delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
-                {"status": "error",
+                {"command": "offer_delete", "status": "error",
                  "error_message": f"Error when handling offer delete "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
     def _offer(self, payload):
-        offer_response_channel = f'{self.device.name}/offer/response'
+        offer_response_channel = f'{self.channel_prefix}/response/offer'
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
             return
@@ -94,7 +96,8 @@ class PVExternalMixin(ExternalMixin):
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
                 offer_response_channel,
-                {"error": "Incorrect offer request. Available parameters: (price, energy)."}
+                {"command": "offer",
+                 "error": "Incorrect offer request. Available parameters: (price, energy)."}
             )
         else:
             self.pending_requests.append(
@@ -104,24 +107,37 @@ class PVExternalMixin(ExternalMixin):
         try:
             offer = self.market.offer(**arguments)
             self.offers.post(offer, self.market.id)
-            self.redis.publish_json(response_channel,
-                                    {"status": "ready", "offer": offer.to_JSON_string()})
+            self.redis.publish_json(
+                response_channel,
+                {"command": "offer", "status": "ready", "offer": offer.to_JSON_string()})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
             self.redis.publish_json(
                 response_channel,
-                {"status": "error",
+                {"command": "offer", "status": "error",
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}."})
+
+    @property
+    def _device_info_dict(self):
+        return {
+            'available_energy_kWh': self.state.available_energy_kWh[self.market.time_slot]
+        }
 
     def event_market_cycle(self):
         self.register_on_market_cycle()
         super().event_market_cycle()
-        market_event_channel = f"{self.device.name}/market_event"
+        self._reset_event_tick_counter()
+        market_event_channel = f"{self.channel_prefix}/events/market"
         current_market_info = self.market.info
-        current_market_info['available_energy_kWh'] = \
-            self.state.available_energy_kWh[self.market.time_slot]
+        current_market_info['device_info'] = self._device_info_dict
+        current_market_info["event"] = "market"
+        current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+        current_market_info['last_market_stats'] = \
+            self.market_area.stats.min_max_avg_rate_market(
+                self.market_area.current_market.time_slot) \
+            if self.market_area.current_market is not None else None
         self.redis.publish_json(market_event_channel, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
@@ -151,6 +167,7 @@ class PVExternalMixin(ExternalMixin):
                     self._delete_offer_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
+            self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
         if not self.connected:
