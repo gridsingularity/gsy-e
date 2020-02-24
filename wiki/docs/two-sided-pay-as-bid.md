@@ -4,4 +4,6 @@ The market collects offers and bids and serves the functionality of accepting an
 
 The auction is continuous, meaning that once an offer or bid is posted, it can be matched right away, even before the end of the slot market.
 
-An [Inter-Area Agent (IAA)](inter-area-agent.md) is created and operated by each area to deal with forwarding offers and bids to the connected markets. The area is constantly triggers the matching between bids and offers according to the matching algorithm.
+An [Inter-Area Agent (IAA)](inter-area-agent.md) is created and operated by each area to deal with forwarding offers and bids to the connected markets. The area constantly triggers the matching between bids and offers according to the matching algorithm.
+
+![img](img/two-sided-pay-as-bid-1.png){:style="display: block;margin-left: auto;margin-right: auto;"}
