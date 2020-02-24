@@ -791,6 +791,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -873,10 +885,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1024,18 +1072,19 @@
 </ul>
 <p>The formula for the increased trade price is: <code>offer/bid_price * (1 + transfer_fee_pct/100 ) + transfer_fee_const</code></p>
 <p>A percentage transfer fee (in %) and the constant transfer fee (in cents/kWh) can be configured for each area individually in the setup file with the keyword <code>transfer_fee_pct</code> and <code>transfer_fee_const</code>:</p>
-<pre class="codehilite"><code>Area(
-    'House 1',
+<div class="codehilite"><pre><span></span>Area(
+    &#39;House 1&#39;,
     [
-        Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+        Area(&#39;H1 General Load&#39;, strategy=LoadHoursStrategy(avg_power_W=200,
                                                            hrs_per_day=6,
                                                            final_buying_rate=35),
              appliance=SwitchableAppliance()),
-        Area('H1 Storage1', strategy=StorageStrategy(initial_capacity_kWh=0.6),
+        Area(&#39;H1 Storage1&#39;, strategy=StorageStrategy(initial_capacity_kWh=0.6),
              appliance=SwitchableAppliance()),
     ],
     transfer_fee_pct=1, transfer_fee_const=2,
-),</code></pre>
+),
+</pre></div>
 
 
 <p>If no <code>transfer_fee_pct</code> or <code>transfer_fee_const</code> is provided, the global values of <code>transfer_fee_pct</code> or <code>transfer_fee_const</code> is used (set via the <code>update_config_parameters</code> function, see <a href="../change-global-sim-settings/">Setting Global Configuration Parameters</a>)

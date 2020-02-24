@@ -800,6 +800,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -882,10 +894,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1023,9 +1071,9 @@
 <p>The Two Sided Pay-As-Clear behaves the same as the <a href="../two-sided-pay-as-bid/">Two Sided Pay-As-Bid</a> market</p>
 <p>The only difference is the offer/bid matching algorithm.
 Currently, there is a so-called merit-order-effect mechanism implemented that works like the following:
-Bids and offers are aggregated in a specified discrete interval (clearing interval). At the end of that interval, bids are arranged in a descending order, offers in an ascending order and the equilibrium quantity of energy and price is calculated. The clearing point (the amount of energy that is accepted [trade volume] for a specific energy rate [clearing rate]) is determined by point where arranged bid curve for the Consumers drops below the offer curve for the Producers.</p>
-<p><img alt="img" src="../img/two-sided-pay-as-clear.png" /></p>
-<p>All offers that have an energy rate below or equal to the clearing rate are accepted and matched randomly with all bids that have an energy rate higher or equal to the clearing energy. The remaining bids and offers (right of the clearing point in the plot above) are not cleared at this clearing point and stay in the market for later matching. </p>
+Bids and offers are aggregated in a specified discrete interval (clearing interval). At the end of that interval, bids are arranged in a descending order, offers in an ascending order and the equilibrium quantity of energy and price is calculated. The <strong>clearing point</strong> (the amount of energy that is accepted [<strong>trade volume</strong>] for a specific energy rate [<strong>clearing price</strong>]) is determined by point where arranged bid curve for the Consumers drops below the offer curve for the Producers.</p>
+<p><img alt="img" src="../img/two-sided-pay-as-clear-1.png" style="display: block;margin-left: auto;margin-right: auto;" /></p>
+<p>All offers that have an energy rate below or equal to the clearing price are accepted and matched randomly with all bids that have an energy rate higher or equal to the clearing price. The remaining bids and offers (right of the clearing point in the plot above) are not cleared at this clearing point and stay in the market for later matching. </p>
                 
                   
                 

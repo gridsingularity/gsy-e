@@ -831,6 +831,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -913,10 +925,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1098,12 +1146,13 @@
 <p>The Load will increase its acceptable energy rate linearly in the frame of a market slot of a one-sided market. It will start at the <code>initial_buying_rate</code> and end at <code>final_buying_rate</code>.</p>
 <p>Corresponding code: src/<code>3a/models/strategy/load_hours.py</code></p>
 <p>How to add load device to setup-file:</p>
-<pre class="codehilite"><code class="language-python">Area('Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                        hrs_per_day=6,
-                                        hrs_of_day=list(range(12, 18)),
-                                        initial_buying_rate=0,
-                                        final_buying_rate=35),
-             appliance=SwitchableAppliance())</code></pre>
+<div class="codehilite"><pre><span></span><span class="n">Area</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                                        <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+                                        <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span>
+                                        <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                        <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">),</span>
+             <span class="n">appliance</span><span class="o">=</span><span class="n">SwitchableAppliance</span><span class="p">())</span>
+</pre></div>
 
 
 <hr />

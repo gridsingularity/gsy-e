@@ -838,6 +838,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -920,10 +932,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1112,7 +1160,8 @@ Currently, three spot market types are implemented:</p>
 <li>Two sided pay-as-clear</li>
 </ol>
 <p>In the d3a setup file, the spot market type can be defined by the following line (example for one sided pay-as-offer):</p>
-<pre class="codehilite"><code>ConstSettings.IAASettings.MARKET_TYPE = 1</code></pre>
+<div class="codehilite"><pre><span></span>ConstSettings.IAASettings.MARKET_TYPE = 1
+</pre></div>
 
 
 <p>Setting the market type influences the behaviour of both the markets as well as the behaviour of the devices or agents. For individual behaviour of the device strategies please refer to <a href="../load-strategy/">Strategies</a> documentation.</p>

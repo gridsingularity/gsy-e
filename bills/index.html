@@ -13,7 +13,7 @@
         <meta name="description" content="Wiki for the D3A by Grid Singularity">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/infinite-bus-strategy/">
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/bills/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Infinite Bus Strategy - D3A Wiki</title>
+        <title>Bills - D3A Wiki</title>
       
     
     
@@ -131,7 +131,7 @@
               D3A Wiki
             </span>
             <span class="md-header-nav__topic">
-              Infinite Bus Strategy
+              Bills
             </span>
           
         </div>
@@ -536,12 +536,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
     
     <label class="md-nav__link" for="nav-3-2">
       Strategies
@@ -641,18 +639,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Infinite Bus Strategy" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../infinite-bus-strategy/" title="Infinite Bus Strategy" class="md-nav__link">
       Infinite Bus Strategy
     </a>
-    
   </li>
 
         
@@ -893,10 +884,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5" checked>
     
     <label class="md-nav__link" for="nav-3-5">
       Simulation Results
@@ -924,11 +917,18 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../bills/" title="Bills" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+    <a href="./" title="Bills" class="md-nav__link md-nav__link--active">
       Bills
     </a>
+    
   </li>
 
         
@@ -1062,23 +1062,46 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/infinite-bus-strategy.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/bills.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Infinite Bus Strategy</h1>
+                  <h1>Bills</h1>
                 
-                <p>This device is the same as the commercial energy producer / infinite power plant in that it produces an infinite amount of energy at the <code>energy_sell_rate</code>. 
-However, the infinite bus can also buy an infinite amount of energy at a predefined price, the <code>energy_buy_rate.</code></p>
-<p>Configuration parameters:</p>
+                <p>All the cumulated bills of each area and device is reported in the JSON file “bills.json” at the end of the simulation. The bills are reported according to the various markets' point of view.</p>
+<p>In order to have a visual example, let’s take this configuration : </p>
+<p><img alt="img" src="../img/bills-1.png" style="display: block;margin-left: auto;margin-right: auto;height:300px;width:550px" /></p>
+<p>In this example we will simulate this configuration for one day using the Pay as Bid market type and the load only have to buy some energy at 12:00. </p>
+<p>Let’s now see more precisely the only trade of the day and the propagation of the bid of the load and the offer of the DSO until they are matched : </p>
+<p><img alt="img" src="../img/bills-2.png" style="display: block;margin-left: auto;margin-right: auto;height:400px;width:750px" /></p>
+<p>The bid and the offer is forwarded to the upper market (for more information on this process, please read the <a href="../grid-fees/">grid fees documentation</a>) and are matched in the Grid market with a clearing price (and trade price) of 0.45 €.</p>
+<p>In the bills.json file, bills will be reported multiple times according to the different market point of view.For each bill we will have the following structure : </p>
 <ul>
-<li><code>energy_buy_rate</code>: energy rate for selling in cents/kWh (can be a profile in JSON or dict format as well as a filename) </li>
-<li><code>energy_sell_rate</code>: energy rate for buying in cents/kWh (can be a profile in JSON or dict format as well as a filename) </li>
+<li>“Parent area“: {<ul>
+<li>"Agent": {<ul>
+<li>"bought": Energy that has been bought during the simulation [kWh],</li>
+<li>"sold": Energy that has been sold during the simulation [kWh],</li>
+<li>"spent": Amount of money that has been spent in trades during the simulation [€] ,</li>
+<li>"earned": Amount of money that has been earned in trades during the simulation [€],</li>
+<li>"total_energy": energy bought - energy sold [kWh],</li>
+<li>"total_cost": money spent in trades - money earned in trades [€],</li>
+<li>"market_fee": Money spent to the “Parent area“ as grid fees [€] ,</li>
+<li>"type": Type of the agent. Can either be an Area or the name of the device strategy</li>
 </ul>
-<p>Corresponding code: <code>src/3a/models/strategy/infinite_bus.py</code></p>
-<p>How to add a infinite power plant to the setup-file:</p>
-<div class="codehilite"><pre><span></span>Area(&#39;Infinite Bus&#39;, strategy=InfiniteBusStrategy(energy_buy_rate=24, energy_sell_rate=25),
-                             appliance=SimpleAppliance()),
-</pre></div>
+</li>
+<li>},</li>
+</ul>
+</li>
+<li>},</li>
+</ul>
+<p>Now we will look at the results of our previous example. The first point of view is the highest market and in our case the Grid market : </p>
+<p><img alt="img" src="../img/bills-3.png" style="display: block;margin-left: auto;margin-right: auto;height:600px;width:280px" /></p>
+<p>From the point of view of the Grid, the House 1 area has bought 1 kWh from the DSO and spent 0.375€ in this trade. House 1 also pays the market fee that the Grid is charging : 0.075€. </p>
+<p>After that we go down in the hierarchy  and look from the House 1 market :</p>
+<p><img alt="img" src="../img/bills-4.png" style="display: block;margin-left: auto;margin-right: auto;height:580px;width:260px" /></p>
+<p>The House 1 market has no information on the other markets and this why from its point of view the Load has spent 0.45€ (0.0375+0.075) for 1 kWh and no fees are added up because this market has no fee.</p>
+<p>At the very end of the results we have the bills of each device (from their point of view):</p>
+<p><img alt="img" src="../img/bills-5.png" style="display: block;margin-left: auto;margin-right: auto;height:400px;width:255px" /></p>
+<p>With this we see that the Load, from his point of view has bought 1 kWh for 0.45€. From the point of view of the DSO, this latter only received 0.375€ for 1 kWh.</p>
                 
                   
                 
@@ -1099,7 +1122,7 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../custom-pv-strategy/" title="Custom PV Strategy" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../simulation-results/" title="Simulation Results Overview" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1108,19 +1131,19 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Custom PV Strategy
+                Simulation Results Overview
               </span>
             </div>
           </a>
         
         
-          <a href="../how-implement-custom-device-strategies/" title="How to Implement Custom Device Strategies" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../alternative-pricing-schemes/" title="Alternative Pricing Schemes" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                How to Implement Custom Device Strategies
+                Alternative Pricing Schemes
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

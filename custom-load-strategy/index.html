@@ -800,6 +800,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -882,10 +894,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1024,7 +1072,8 @@
 <li><code>user_profile_load_csv.py</code></li>
 </ul>
 <p>In this setup file, the csv file is connected to the configuration via a pathway :</p>
-<pre class="codehilite"><code>user_profile_path = os.path.join(d3a_path,&quot;resources/LOAD_DATA_1.csv&quot;)</code></pre>
+<div class="codehilite"><pre><span></span>user_profile_path = os.path.join(d3a_path,&quot;resources/LOAD_DATA_1.csv&quot;)
+</pre></div>
 
 
 <p>Comma or semicolon separated values are allowed. The timestamp can be provided in two formats: <code>HH:mm</code>, <code>YYYY-MM-DDTHH:mm</code>. For more information on what format is accepted by the D3A, see "<a href="../upload-file-formats/">Upload File Formats</a>".</p>
@@ -1032,7 +1081,7 @@
 <li><code>user_profile_load_dict.py</code></li>
 </ul>
 <p>In this setup file, the user profile is inserted directly into the configuration:</p>
-<pre class="codehilite"><code>user_profile = {
+<div class="codehilite"><pre><span></span>user_profile = {
       8: 100,
       9: 200,
       10: 50,
@@ -1043,12 +1092,13 @@
       15: 15,
       16: 45,
       17: 100
-}</code></pre>
+}
+</pre></div>
 
 
 <p>Corresponding code: <code>/src/3a/models/strategy/predefined_load.py</code></p>
 <p>How to add a load device with custom profile to the setup-file:</p>
-<pre class="codehilite"><code>user_profile = {
+<div class="codehilite"><pre><span></span>user_profile = {
         8: 100,
         9: 200,
         10: 50,
@@ -1060,9 +1110,10 @@
         16: 45,
         17: 100
     }
-Area('DefinedLoad', strategy=DefinedLoadStrategy(daily_load_profile=user_profile,
+Area(&#39;DefinedLoad&#39;, strategy=DefinedLoadStrategy(daily_load_profile=user_profile,
                                                  max_energy_rate=35),
-                    appliance=SwitchableAppliance()),</code></pre>
+                    appliance=SwitchableAppliance()),
+</pre></div>
                 
                   
                 

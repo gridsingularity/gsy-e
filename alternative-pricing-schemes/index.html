@@ -795,6 +795,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -877,10 +889,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1104,12 +1152,14 @@
 This will run separate <code>d3a-simulation</code>s with all 4 alternative pricing schemes in parallel for the selected setup file. 
 The results of each simulation are stored in separate subfolders in the <code>export-path</code>.</p>
 <p>If you want to run a simulation only for one specific pricing scheme, set it via a <code>ConstSetting</code> in the setup file in which you are configuring your grid, e.g. by adding the following line:</p>
-<pre class="codehilite"><code>ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1</code></pre>
+<div class="codehilite"><pre><span></span>ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1
+</pre></div>
 
 
 <p>(You should not set this parameter and use the <code>--compare-alt-pricing</code> cli parameter combined)</p>
 <p>The feed-in-tariff (FIT) is a percentage that is set in the <code>ConstSetting</code>s as well, the default is 50%. Set this parameter yourself via a <code>ConstSetting</code> in the setup file in which you are configuring your grid, by adding the following line (e.g. FIT = 60% of <code>market_maker_rate</code>):</p>
-<pre class="codehilite"><code>ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE = 60</code></pre>
+<div class="codehilite"><pre><span></span>ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE = 60
+</pre></div>
 
 
 <p>For more information we refer to Alternative Pricing Mechanisms.</p>
@@ -1146,7 +1196,7 @@ The results of each simulation are stored in separate subfolders in the <code>ex
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../simulation-results/" title="Simulation Results" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../bills/" title="Bills" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1155,7 +1205,7 @@ The results of each simulation are stored in separate subfolders in the <code>ex
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Simulation Results
+                Bills
               </span>
             </div>
           </a>

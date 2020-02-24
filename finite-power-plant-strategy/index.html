@@ -800,6 +800,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -882,10 +894,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1026,16 +1074,17 @@
 </ul>
 <p>Corresponding code: <code>src/3a/models/strategy/finite_power_plant.py</code></p>
 <p>How to add a finite power plant to the <code>setup-file</code>:</p>
-<pre class="codehilite"><code>profile_kW = {
+<div class="codehilite"><pre><span></span>profile_kW = {
     0: 0.1,
     8: 0.15,
     12: 0.2,
     19: 0.15,
     22: 0.1
 }         
-Area('Finite Power Plant', strategy=FinitePowerPlant(energy_rate=31.3,
+Area(&#39;Finite Power Plant&#39;, strategy=FinitePowerPlant(energy_rate=31.3,
                                                      max_available_power_kW=profile_kW),
-                           appliance=SwitchableAppliance()),</code></pre>
+                           appliance=SwitchableAppliance()),
+</pre></div>
                 
                   
                 

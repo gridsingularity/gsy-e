@@ -831,6 +831,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -913,10 +925,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1098,10 +1146,11 @@
 <p><img alt="img" src="../img/pv-strategy-1.png" /></p>
 <p>Corresponding code: <code>src/d3a/models/strategy/pv.py</code> or for the predefined PV:<code>src/d3a/models/strategy/predefined_pv.py</code></p>
 <p>How to add a PV device to the setup-file:</p>
-<pre class="codehilite"><code>Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+<div class="codehilite"><pre><span></span>Area(&#39;H2 PV&#39;, strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
                                   final_selling_rate=5, fit_to_limit=True,
                                   update_interval=duration(minutes=5)),
-     appliance=PVAppliance()),</code></pre>
+     appliance=PVAppliance()),
+</pre></div>
 
 
 <p>In order to understand how the strategy is actually decreasing its <code>offered_rate</code> in the case of not getting traded, see the following diagram. </p>

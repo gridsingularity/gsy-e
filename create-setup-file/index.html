@@ -791,6 +791,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -873,10 +885,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1021,10 +1069,11 @@
 In this setup-file, global and strategy related settings can be set.</p>
 <p>Examples can be found in: <code>d3a/src/d3a/setup/</code></p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<pre class="codehilite"><code>from d3a.models.area import Area
+<div class="codehilite"><pre><span></span>from d3a.models.area import Area
 def get_setup(config):
-    area = Area('Grid', [])
-    return area</code></pre>
+    area = Area(&#39;Grid&#39;, [])
+    return area
+</pre></div>
 
 
 <p>Now the user can ad more sub areas recursively by adding more instances of area to the second parameter (list) of the Area class.
@@ -1048,7 +1097,7 @@ The following grid architecture is given:</p>
 </ul>
 <p>(<strong>Bold</strong> instances are areas, not devices. For each of these non-device areas, an inter-area-agent is created in the background that deals with offer/bid forwarding and matching.)</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<pre class="codehilite"><code>from d3a.models.appliance.switchable import SwitchableAppliance
+<div class="codehilite"><pre><span></span>from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
@@ -1058,34 +1107,34 @@ from d3a.models.strategy.pv import PVStrategy
 
 def get_setup(config):
     area = Area(
-        'Grid',
+        &#39;Grid&#39;,
         [
             Area(
-                'House 1',
+                &#39;House 1&#39;,
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area(&#39;H1 General Load&#39;, strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50),
+                    Area(&#39;H1 Storage1&#39;, strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50),
+                    Area(&#39;H1 Storage2&#39;, strategy=StorageStrategy(initial_soc=50),
                          appliance=SwitchableAppliance()),
                 ],
                 transfer_fee_pct=0, transfer_fee_const=0,
             ),
             Area(
-                'House 2',
+                &#39;House 2&#39;,
                 [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                    Area(&#39;H2 General Load&#39;, strategy=LoadHoursStrategy(avg_power_W=200,
                                                                        hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
                                                                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
-                    Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+                    Area(&#39;H2 PV&#39;, strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
                                                       final_selling_rate=5),
                          appliance=PVAppliance()),
 
@@ -1093,7 +1142,7 @@ def get_setup(config):
                 transfer_fee_pct=0, transfer_fee_const=0,
 
             ),
-            Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
+            Area(&#39;Cell Tower&#39;, strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
                                                                    final_buying_rate=35),
@@ -1101,7 +1150,8 @@ def get_setup(config):
         ],
         config=config
     )
-    return area</code></pre>
+    return area
+</pre></div>
                 
                   
                 

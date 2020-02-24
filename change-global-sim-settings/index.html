@@ -795,6 +795,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -877,10 +889,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../simulation-results/" title="Simulation Results" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
       Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1143,11 +1191,12 @@ There are two ways of changing global constants and settings via:</p>
 <p>For setting the grid fee please consult <a href="../configure-transfer-fee/">How to configure grid transfer fee</a>.</p>
 <p>The user can overwrite the configuration settings by changing the wanted variables of the <code>ConstSettings</code> class in the <code>setup-file</code>.
 For instance, if the user wants to set the market type to double-sided-market, and set the default min and max energy rate for all loads the following lines have to be added to the <code>get_setup</code> function:</p>
-<pre class="codehilite"><code>from d3a_interface.constants_limits import ConstSettings
+<div class="codehilite"><pre><span></span>from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
-    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35</code></pre>
+    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
+</pre></div>
 
 
 <h3 id="2-d3a-settingsjson">2. d3a-settings.json<a class="headerlink" href="#2-d3a-settingsjson" title="Permanent link">&para;</a></h3>
@@ -1169,26 +1218,27 @@ The settings JSON file can be parsed via the <code>--settings-file</code> keywor
 <li><code>max_panel_power_W</code></li>
 </ul>
 <p>In order to update the some of these parameters (starred in list above), please use <code>update_config_parameters</code> method to update the global config parameters in the setup file:</p>
-<pre class="codehilite"><code>def get_setup(config):
+<div class="codehilite"><pre><span></span>def get_setup(config):
     config.update_config_parameters(transfer_fee_pct=5,
                                     transfer_fee_const=35,
                                     cloud_coverage=2,
                                     pv_user_profile=&quot;&lt;path&gt;/&lt;profile_name&gt;&quot;,
                                     market_maker_rate=30)
    area = Area(
-        'Grid',
+        &#39;Grid&#39;,
         [
-            Area('General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+            Area(&#39;General Load&#39;, strategy=LoadHoursStrategy(avg_power_W=200,
                                                             hrs_per_day=4,
                                                             hrs_of_day=list(range(12, 16)),
                                                             final_buying_rate=35),
                  appliance=SwitchableAppliance()),
-            Area('PV', strategy=PVStrategy(4, 80),
+            Area(&#39;PV&#39;, strategy=PVStrategy(4, 80),
                  appliance=PVAppliance()),
         ],
         config=config
     )
-    return area</code></pre>
+    return area
+</pre></div>
                 
                   
                 
