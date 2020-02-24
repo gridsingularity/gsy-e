@@ -51,7 +51,9 @@ nav:
         - 'ClearingToken Smart Contract': 'clearingtoken-smart-contract.md' 
         - 'Market Smart Contract': 'market-smart-contract.md' 
         - 'Steps to Run D3A on Tobalaba': 'run-d3a-on-tobalaba.md' 
-    - 'Simulation Results': 'simulation-results.md' 
+    - 'Simulation Results':
+        - 'Simulation Results Overview': 'simulation-results.md'
+        - 'Bills': 'bills.md'
     - 'Alternative Pricing Schemes': 'alternative-pricing-schemes.md' 
     - 'How to Configure Grid Transfer Fee': 'configure-transfer-fee.md'
     - 'Simulation Events': 'simulation-events.md' 

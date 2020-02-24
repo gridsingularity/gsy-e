@@ -90,14 +90,7 @@ House 2 Market = 0.25 * (1 + 0) = 0.25
 
 ###Two Sided Pay as Clear
 
-![img](img/grid-fee-4.jpg){:style="display: block;margin-left: auto;margin-right: auto;"}
-
-
-The Two Sided Pay as Clear market operates the same as the Two Sided Pay as Bid market, except that an algorithm is used to determine the clearing price, which is uniform for all the trades happening in a particular market. In the Grid Market the bid of € 0.286 is matched with the offer of € 0.115, and the Clearing Price is determined by algorithm as € 0.20. The grid fees are calculated based on the Clearing Price to yield `0.20*(1+0.05+0.10+0.05)=0.24` a Trade Price of € 0.24.
-
-**The Load pays the Trade Price of € 0.24, which includes € 0.20 revenue to the PV, € 0.01 fees to Neighborhood Market 1, € 0.02 fees to Grid Market, and € 0.01 fees to Neighborhood Market 2.**
-
-
+In construction...
 
 
 
