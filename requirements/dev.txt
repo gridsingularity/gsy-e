@@ -10,7 +10,7 @@ attrs==19.3.0
 awesome-slugify==1.6.5
 base58==2.0.0
 bcrypt==3.1.7             # via paramiko
-bleach==3.1.0             # via readme-renderer
+bleach==3.1.1             # via readme-renderer
 cached-property==1.5.1
 certifi==2019.11.28
 cffi==1.13.2              # via bcrypt, cryptography, pynacl
@@ -38,7 +38,6 @@ hexbytes==0.2.0
 identify==1.4.10          # via pre-commit
 idna==2.8
 importlib-metadata==1.4.0
-importlib-resources==1.0.2  # via pre-commit
 ipfshttpclient==0.4.12
 jedi==0.15.2              # via ptpython
 jsonschema==3.2.0
