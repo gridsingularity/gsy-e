@@ -87,6 +87,16 @@ class LoadExternalMixin(ExternalMixin):
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer_origin'] = self.device.name
+            if self.can_bid_be_posted(arguments["energy"],
+                                      self.energy_requirement_Wh.get(self.market, 0.0) / 1000.0,
+                                      self.market):
+                self.redis.publish_json(
+                    bid_response_channel,
+                    {"command": "bid",
+                     "error": "Bid cannot be posted. Required energy has been reached with "
+                              "existing bids."}
+                )
+                return
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -117,17 +127,23 @@ class LoadExternalMixin(ExternalMixin):
                  "error_message": f"Error when handling bid create "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
+    @property
+    def _device_info_dict(self):
+        return {
+            'energy_requirement_kWh':
+                self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0
+        }
+
     def event_market_cycle(self):
-        self.register_on_market_cycle()
         super().event_market_cycle()
+        self.register_on_market_cycle()
         if not self.connected:
             return
         self._reset_event_tick_counter()
         market_event_channel = f"{self.channel_prefix}/events/market"
         current_market_info = self.market.info
+        current_market_info['device_info'] = self._device_info_dict
         current_market_info["event"] = "market"
-        current_market_info['energy_requirement_kWh'] = \
-            self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0
         current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
         current_market_info['last_market_stats'] = \
             self.market_area.stats.min_max_avg_rate_market(

@@ -92,6 +92,17 @@ class PVExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
+
+            if self.can_offer_be_posted(arguments["energy"],
+                                        self.available_energy_kWh.get(self.market, 0.0),
+                                        self.market):
+                self.redis.publish_json(
+                    offer_response_channel,
+                    {"command": "offer",
+                     "error": "Offer cannot be posted. Available energy has been reached with "
+                              "existing offers."}
+                )
+                return
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -119,15 +130,20 @@ class PVExternalMixin(ExternalMixin):
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
+    @property
+    def _device_info_dict(self):
+        return {
+            'available_energy_kWh': self.state.available_energy_kWh[self.market.time_slot]
+        }
+
     def event_market_cycle(self):
         self.register_on_market_cycle()
         super().event_market_cycle()
         self._reset_event_tick_counter()
         market_event_channel = f"{self.channel_prefix}/events/market"
         current_market_info = self.market.info
+        current_market_info['device_info'] = self._device_info_dict
         current_market_info["event"] = "market"
-        current_market_info['available_energy_kWh'] = \
-            self.state.available_energy_kWh[self.market.time_slot]
         current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
         current_market_info['last_market_stats'] = \
             self.market_area.stats.min_max_avg_rate_market(
