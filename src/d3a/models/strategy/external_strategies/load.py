@@ -24,23 +24,27 @@ class LoadExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/bids': self._list_bids,
         })
 
-    def _list_bids(self, payload):
+    def _list_bids(self, _):
         list_bids_response_channel = f'{self.channel_prefix}/response/bids'
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
                                              self.connected):
             return
+        self.pending_requests.append(
+            IncomingRequest("list_bids", None, list_bids_response_channel))
+
+    def _list_bids_impl(self, _, response_channel):
         try:
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
                              for _, v in self.market.get_bids().items()
                              if v.buyer == self.device.name]
             self.redis.publish_json(
-                list_bids_response_channel,
+                response_channel,
                 {"command": "bids", "status": "ready", "bid_list": filtered_bids})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
-                list_bids_response_channel,
+                response_channel,
                 {"command": "bids", "status": "error",
                  "error_message": f"Error when listing bids on area {self.device.name}."})
 
@@ -178,6 +182,8 @@ class LoadExternalMixin(ExternalMixin):
                     self._bid_impl(req.arguments, req.response_channel)
                 elif req.request_type == "delete_bid":
                     self._delete_bid_impl(req.arguments, req.response_channel)
+                elif req.request_type == "list_bids":
+                    self._list_bids_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()

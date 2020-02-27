@@ -24,23 +24,27 @@ class PVExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/offers': self._list_offers,
         })
 
-    def _list_offers(self, payload):
+    def _list_offers(self, _):
         list_offers_response_channel = f'{self.channel_prefix}/response/offers'
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
             return
+        self.pending_requests.append(
+            IncomingRequest("list_offers", None, list_offers_response_channel))
+
+    def _list_offers_impl(self, _, response_channel):
         try:
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in self.market.get_offers().items()
                                if v.seller == self.device.name]
             self.redis.publish_json(
-                list_offers_response_channel,
+                response_channel,
                 {"command": "offers", "status": "ready", "offer_list": filtered_offers})
         except Exception as e:
             logging.error(f"Error when handling list offers on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
-                list_offers_response_channel,
+                response_channel,
                 {"command": "offers", "status": "error",
                  "error_message": f"Error when listing offers on area {self.device.name}."})
 
@@ -177,6 +181,8 @@ class PVExternalMixin(ExternalMixin):
                     self._offer_impl(req.arguments, req.response_channel)
                 elif req.request_type == "delete_offer":
                     self._delete_offer_impl(req.arguments, req.response_channel)
+                elif req.request_type == "list_offers":
+                    self._list_offers_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()
