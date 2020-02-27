@@ -28,9 +28,18 @@ class AreaStats:
         self._accumulated_past_energy = 0
         self._markets = area_markets
         self.aggregated_stats = {}
+        self.market_bills = {}
+        self.rate_stats_market = {}
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
+
+    def update_area_market_stats(self):
+        if self.current_market is not None:
+            self.market_bills[self.current_market.time_slot] = \
+                self.aggregated_stats["bills"]['Accumulated Trades']
+            self.rate_stats_market[self.current_market.time_slot] = \
+                self.min_max_avg_rate_current_market()
 
     def update_accumulated(self):
         self._accumulated_past_price = sum(
@@ -96,19 +105,31 @@ class AreaStats:
             cheapest_offers.extend(market.sorted_offers[0:1])
         return cheapest_offers
 
-    def min_max_avg_rate_market(self, time_slot):
+    def _get_market_bills(self, time_slot):
+        return {key: self.market_bills[time_slot][key]
+                for key in ["earned", "spent", "bought", "sold"]} \
+            if time_slot in self.market_bills.keys() else None
+
+    def get_price_stats_current_market(self):
+        if self.current_market is None:
+            return None
+        else:
+            return self.rate_stats_market[self.current_market.time_slot] \
+                if self.current_market.time_slot in self.rate_stats_market else None
+
+    def min_max_avg_rate_current_market(self):
         out_dict = {"min_trade_rate": None,
                     "max_trade_rate": None,
                     "avg_trade_rate": None,
                     "total_traded_energy_kWh": None}
-        for market in self._markets.all_spot_markets:
-            if market.time_slot == time_slot and len(market.trades) > 0:
-                trade_volumes = [trade.offer.energy for trade in market.trades]
-                trade_rates = [trade.offer.price/trade.offer.energy for trade in market.trades]
-                out_dict["min_trade_rate"] = limit_float_precision(min(trade_rates))
-                out_dict["max_trade_rate"] = limit_float_precision(max(trade_rates))
-                out_dict["avg_trade_rate"] = limit_float_precision(mean(trade_rates))
-                out_dict["total_traded_energy_kWh"] = limit_float_precision(sum(trade_volumes))
+        trade_volumes = [trade.offer.energy for trade in self.current_market.trades]
+        trade_rates = [trade.offer.price/trade.offer.energy
+                       for trade in self.current_market.trades]
+        if len(trade_rates) > 0:
+            out_dict["min_trade_rate"] = limit_float_precision(min(trade_rates))
+            out_dict["max_trade_rate"] = limit_float_precision(max(trade_rates))
+            out_dict["avg_trade_rate"] = limit_float_precision(mean(trade_rates))
+            out_dict["total_traded_energy_kWh"] = limit_float_precision(sum(trade_volumes))
         return out_dict
 
     @property
@@ -116,7 +137,7 @@ class AreaStats:
         past_markets = list(self._markets.past_markets.values())
         return past_markets[-1] if len(past_markets) > 0 else None
 
-    def get_market_price_stats(self, market_slot_list):
+    def get_market_stats(self, market_slot_list):
         if self.current_market is None:
             return {"INFO": "No market stats available yet"}
         out_dict = {}
@@ -129,5 +150,7 @@ class AreaStats:
             if time_slot > self.current_market.time_slot:
                 out_dict[time_slot_str] = {"ERROR": "This market is not in the past."}
             else:
-                out_dict[time_slot_str] = self.min_max_avg_rate_market(time_slot)
+                if time_slot in self.rate_stats_market:
+                    out_dict[time_slot_str] = self.rate_stats_market[time_slot]
+                    out_dict[time_slot_str]["market_bills"] = self._get_market_bills(time_slot)
         return out_dict
