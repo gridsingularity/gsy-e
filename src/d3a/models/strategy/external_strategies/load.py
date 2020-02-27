@@ -13,7 +13,6 @@ class LoadExternalMixin(ExternalMixin):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pending_requests = []
 
     def event_activate(self):
         super().event_activate()
@@ -77,7 +76,8 @@ class LoadExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "bid_delete", "status": "error",
                  "error_message": f"Error when handling bid delete "
-                                  f"on area {self.device.name} with arguments {arguments}."})
+                                  f"on area {self.device.name} with arguments {arguments}. "
+                                  f"Bid does not exist on the current market."})
 
     def _bid(self, payload):
         bid_response_channel = f'{self.channel_prefix}/response/bid'
@@ -87,9 +87,10 @@ class LoadExternalMixin(ExternalMixin):
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer_origin'] = self.device.name
-            if self.can_bid_be_posted(arguments["energy"],
-                                      self.energy_requirement_Wh.get(self.market, 0.0) / 1000.0,
-                                      self.market):
+            if not self.can_bid_be_posted(
+                    arguments["energy"],
+                    self.energy_requirement_Wh.get(self.market, 0.0) / 1000.0,
+                    self.market):
                 self.redis.publish_json(
                     bid_response_channel,
                     {"command": "bid",
@@ -135,6 +136,7 @@ class LoadExternalMixin(ExternalMixin):
         }
 
     def event_market_cycle(self):
+        self._reject_all_pending_requests()
         super().event_market_cycle()
         self.register_on_market_cycle()
         if not self.connected:

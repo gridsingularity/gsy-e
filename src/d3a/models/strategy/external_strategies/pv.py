@@ -13,7 +13,6 @@ class PVExternalMixin(ExternalMixin):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pending_requests = []
 
     def event_activate(self):
         super().event_activate()
@@ -93,9 +92,9 @@ class PVExternalMixin(ExternalMixin):
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
 
-            if self.can_offer_be_posted(arguments["energy"],
-                                        self.state.available_energy_kWh.get(self.market, 0.0),
-                                        self.market):
+            if not self.can_offer_be_posted(arguments["energy"],
+                                            self.state.available_energy_kWh.get(self.market, 0.0),
+                                            self.market):
                 self.redis.publish_json(
                     offer_response_channel,
                     {"command": "offer",
@@ -137,6 +136,7 @@ class PVExternalMixin(ExternalMixin):
         }
 
     def event_market_cycle(self):
+        self._reject_all_pending_requests()
         self.register_on_market_cycle()
         super().event_market_cycle()
         self._reset_event_tick_counter()
