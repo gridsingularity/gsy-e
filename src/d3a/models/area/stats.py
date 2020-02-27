@@ -37,7 +37,9 @@ class AreaStats:
     def update_area_market_stats(self):
         if self.current_market is not None:
             self.market_bills[self.current_market.time_slot] = \
-                self.aggregated_stats["bills"]['Accumulated Trades']
+                {key: self.aggregated_stats["bills"]['Accumulated Trades'][key]
+                 for key in ["earned", "spent", "bought", "sold"]} \
+                if "bills" in self.aggregated_stats else None
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_rate_current_market()
 
@@ -106,9 +108,7 @@ class AreaStats:
         return cheapest_offers
 
     def _get_market_bills(self, time_slot):
-        return {key: self.market_bills[time_slot][key]
-                for key in ["earned", "spent", "bought", "sold"]} \
-            if time_slot in self.market_bills.keys() else None
+        return self.market_bills[time_slot] if time_slot in self.market_bills.keys() else None
 
     def get_price_stats_current_market(self):
         if self.current_market is None:
@@ -152,5 +152,5 @@ class AreaStats:
             else:
                 if time_slot in self.rate_stats_market:
                     out_dict[time_slot_str] = self.rate_stats_market[time_slot]
-                    out_dict[time_slot_str]["market_bills"] = self._get_market_bills(time_slot)
+                    out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
         return out_dict
