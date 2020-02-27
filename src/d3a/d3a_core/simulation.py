@@ -304,7 +304,7 @@ class Simulation:
                     if console is not None:
                         self._handle_input(console, diff_slowdown)
                     else:
-                        sleep(diff_slowdown / 100.0)
+                        sleep(diff_slowdown)
 
                 if ConstSettings.GeneralSettings.RUN_REAL_TIME:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
