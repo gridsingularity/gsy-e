@@ -21,11 +21,11 @@ class LoadExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/unregister_participant': self._unregister,
             f'{self.channel_prefix}/bid': self._bid,
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
-            f'{self.channel_prefix}/bids': self._list_bids,
+            f'{self.channel_prefix}/list_bids': self._list_bids,
         })
 
     def _list_bids(self, payload):
-        list_bids_response_channel = f'{self.channel_prefix}/response/bids'
+        list_bids_response_channel = f'{self.channel_prefix}/response/list_bids'
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
                                              self.connected):
             return
@@ -35,13 +35,13 @@ class LoadExternalMixin(ExternalMixin):
                              if v.buyer == self.device.name]
             self.redis.publish_json(
                 list_bids_response_channel,
-                {"command": "bids", "status": "ready", "bid_list": filtered_bids})
+                {"command": "list_bids", "status": "ready", "bid_list": filtered_bids})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 list_bids_response_channel,
-                {"command": "bids", "status": "error",
+                {"command": "list_bids", "status": "error",
                  "error_message": f"Error when listing bids on area {self.device.name}."})
 
     def _delete_bid(self, payload):
