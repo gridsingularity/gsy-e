@@ -63,6 +63,7 @@ class ExternalMixin:
         self.redis = ResettableCommunicator()
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
+        self.pending_requests = []
 
     @property
     def channel_prefix(self):
@@ -154,3 +155,13 @@ class ExternalMixin:
             trade_dict["event"] = "trade"
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, trade_dict)
+
+    def _reject_all_pending_requests(self):
+        for req in self.pending_requests:
+            self.redis.publish_json(
+                req.response_channel,
+                {"command": "bid", "status": "error",
+                 "error_message": f"Error when handling {req.request_type} "
+                                  f"on area {self.device.name} with arguments {req.arguments}."
+                                  f"Market cycle already finished."})
+        self.pending_requests = []
