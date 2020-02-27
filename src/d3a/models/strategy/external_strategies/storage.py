@@ -12,7 +12,6 @@ class StorageExternalMixin(ExternalMixin):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pending_requests = []
 
     def event_activate(self):
         super().event_activate()
@@ -237,6 +236,7 @@ class StorageExternalMixin(ExternalMixin):
         }
 
     def event_market_cycle(self):
+        self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if self.connected:
             self._reset_event_tick_counter()
