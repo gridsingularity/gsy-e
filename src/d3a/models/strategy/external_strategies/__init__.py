@@ -24,14 +24,14 @@ def register_area(redis, channel_prefix, is_connected):
     try:
         redis.publish_json(
             register_response_channel,
-            {"status": "ready", "registered": True})
+            {"command": "register", "status": "ready", "registered": True})
         return True
     except Exception as e:
         logging.error(f"Error when registering to area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             register_response_channel,
-            {"status": "error",
+            {"command": "register", "status": "error",
              "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
@@ -44,14 +44,14 @@ def unregister_area(redis, channel_prefix, is_connected):
     try:
         redis.publish_json(
             unregister_response_channel,
-            {"status": "ready", "unregistered": True})
+            {"command": "unregister", "status": "ready", "unregistered": True})
         return False
     except Exception as e:
         logging.error(f"Error when unregistering from area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             unregister_response_channel,
-            {"status": "error",
+            {"command": "unregister", "status": "error",
              "error_message": f"Error when unregistering from area {channel_prefix}."})
         return is_connected
 
