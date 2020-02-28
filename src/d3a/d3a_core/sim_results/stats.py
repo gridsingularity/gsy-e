@@ -20,6 +20,9 @@ from copy import deepcopy
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a_interface.constants_limits import ConstSettings
+from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.pv import PVStrategy
+from d3a.constants import DEVICE_PENALTY_RATE
 
 
 def recursive_current_markets(area):
@@ -107,6 +110,26 @@ class MarketEnergyBills:
                         for child in area.children}
             return self.bills_results[area.name]
 
+    def _store_area_penalties(self, results_dict, area):
+        if len(area.children) > 0:
+            return
+        if isinstance(area.strategy, LoadHoursStrategy):
+            penalty_energy = sum(
+                area.strategy.energy_requirement_Wh.get(market.time_slot, 0) / 1000.0
+                for market in self._get_past_markets_from_area(area.parent, "past_markets"))
+        elif isinstance(area.strategy, PVStrategy):
+            penalty_energy = sum(
+                area.strategy.state.available_energy_kWh.get(market.time_slot, 0)
+                for market in self._get_past_markets_from_area(area.parent, "past_markets"))
+        else:
+            return
+        if "penalty_energy" not in results_dict:
+            results_dict["penalty_energy"] = 0.0
+            results_dict["penalty_cost"] = 0.0
+
+        results_dict["penalty_energy"] += penalty_energy
+        results_dict["penalty_cost"] += penalty_energy * DEVICE_PENALTY_RATE
+
     def _energy_bills(self, area, past_market_types):
         """
         Return a bill for each of area's children with total energy bought
@@ -125,6 +148,7 @@ class MarketEnergyBills:
                 if seller in result:
                     self._store_sold_trade(result[seller], trade)
         for child in area.children:
+            self._store_area_penalties(result[child.name], child)
             child_result = self._energy_bills(child, past_market_types)
             if child_result is not None:
                 result[child.name]['children'] = child_result
@@ -232,6 +256,11 @@ class MarketEnergyBills:
         results['total_cost'] = round_floats_for_ui(results['total_cost'])
         if "market_fee" in results:
             results["market_fee"] = round_floats_for_ui(results['market_fee'])
+        if "penalty_energy" in results:
+            results["penalty_energy"] = round_floats_for_ui(results['penalty_energy'])
+        if "penalty_cost" in results:
+            results["penalty_cost"] = round_floats_for_ui(results['penalty_cost'])
+
         return results
 
     @classmethod
