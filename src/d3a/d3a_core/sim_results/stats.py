@@ -128,7 +128,8 @@ class MarketEnergyBills:
             results_dict["penalty_cost"] = 0.0
 
         results_dict["penalty_energy"] += penalty_energy
-        results_dict["penalty_cost"] += penalty_energy * DEVICE_PENALTY_RATE
+        # Penalty cost unit should be Euro
+        results_dict["penalty_cost"] += penalty_energy * DEVICE_PENALTY_RATE / 100.0
 
     def _energy_bills(self, area, past_market_types):
         """

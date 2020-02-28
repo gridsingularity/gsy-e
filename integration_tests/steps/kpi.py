@@ -47,7 +47,6 @@ def device_reports_penalties(context, device_name, penalty_energy):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     device = list(filter(lambda x: device_name in x.name, house1.children))[0]
     bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
-    print(bills[str(device.uuid)]["penalty_energy"])
     assert isclose(bills[str(device.uuid)]["penalty_energy"], float(penalty_energy))
 
 
@@ -83,8 +82,6 @@ def penalty_rate_respected(context, device_name):
     house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
     device = list(filter(lambda x: device_name in x.name, house1.children))[0]
     bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
-    print(bills[str(device.uuid)]["penalty_energy"] * DEVICE_PENALTY_RATE)
-    print(bills[str(device.uuid)]["penalty_cost"])
     assert isclose(bills[str(device.uuid)]["penalty_cost"],
-                   bills[str(device.uuid)]["penalty_energy"] * DEVICE_PENALTY_RATE,
+                   bills[str(device.uuid)]["penalty_energy"] * DEVICE_PENALTY_RATE / 100.0,
                    rel_tol=0.0003 * DEVICE_PENALTY_RATE)
