@@ -96,8 +96,14 @@ class PVExternalMixin(ExternalMixin):
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
 
+            pending_offer_energy = sum(
+                req.arguments["energy"]
+                for req in self.pending_requests
+                if req.request_type == "offer"
+            )
+
             if not self.can_offer_be_posted(
-                    arguments["energy"],
+                    arguments["energy"] + pending_offer_energy,
                     self.state.available_energy_kWh.get(self.market.time_slot, 0.0),
                     self.market):
                 self.redis.publish_json(
