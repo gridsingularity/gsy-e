@@ -34,3 +34,21 @@ Feature: KPI integration tests
      When we run the d3a simulation on console with kpi.root_area_self_sufficient_with_infinitebus for 24 hrs
      Then self_sufficiency of {'Grid': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0} are correctly reported
+
+  Scenario: Load penalties are reported correctly
+     Given we have a scenario named kpi.penalty_load
+     And d3a is installed
+     When we run the simulation with setup file kpi.penalty_load and parameters [24, 60, 60, 0, 1]
+     Then device 'Penalty Load' reports penalties of 9.131 kWh
+     And device 'Non Penalty PV' does not report penalties
+     And the penalties of the 'Penalty Load' is the sum of the residual energy requirement
+     And the penalty cost of the 'Penalty Load' is respecting the penalty rate
+
+  Scenario: PV penalties are reported correctly
+     Given we have a scenario named kpi.penalty_pv
+     And d3a is installed
+     When we run the simulation with setup file kpi.penalty_pv and parameters [24, 60, 60, 0, 1]
+     Then device 'Penalty PV' reports penalties of 8.087 kWh
+     And device 'Non Penalty Load' does not report penalties
+     And the penalties of the 'Penalty PV' is the sum of the residual available energy
+     And the penalty cost of the 'Penalty PV' is respecting the penalty rate
