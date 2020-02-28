@@ -40,3 +40,5 @@ COLLABORATION_ID = ""
 # Controls whether the external connection is for use with the redis api client
 # or with the d3a-web. Default is to connect via Redis.
 EXTERNAL_CONNECTION_WEB = False
+
+DEVICE_PENALTY_RATE = 40.0
