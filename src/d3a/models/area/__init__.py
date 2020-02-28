@@ -172,6 +172,9 @@ class Area:
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
 
+        # area_market_stats have to updated when cycling market of each area:
+        self.stats.update_area_market_stats()
+
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(self.now, True, self)
 
