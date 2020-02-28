@@ -34,7 +34,7 @@ MAX_WORKER_THREADS = 10
 DISPATCH_EVENTS_BOTTOM_TO_TOP = True
 # Controls how often will event tick be dispatched to external connections. Defaults to
 # 20% of the slot length
-DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 10
 
 COLLABORATION_ID = ""
 # Controls whether the external connection is for use with the redis api client
