@@ -21,7 +21,7 @@ import pendulum
 
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy import BidEnabledStrategy, Offers
+from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a_interface.constants_limits import ConstSettings
 
@@ -293,3 +293,31 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     base.event_bid_traded(market_id=21, bid_trade=trade)
     assert base.get_posted_bids(market) == []
     assert base.get_traded_bids_from_market(market) == [test_bid]
+
+
+def test_can_offer_be_posted(base):
+    base = BaseStrategy()
+    base.owner = FakeOwner()
+    base.area = FakeArea()
+    market = FakeMarket(raises=True)
+    base.area._market = market
+    base.offers.post(Offer('id', price=1, energy=12, seller='A'), market.id)
+    base.offers.post(Offer('id2', price=1, energy=13, seller='A'), market.id)
+    base.offers.post(Offer('id3', price=1, energy=20, seller='A'), market.id)
+    assert base.can_offer_be_posted(4.999, 50, market) is True
+    assert base.can_offer_be_posted(5.0, 50, market) is True
+    assert base.can_offer_be_posted(5.001, 50, market) is False
+
+
+def test_can_bid_be_posted(base):
+    base = BidEnabledStrategy()
+    base.owner = FakeOwner()
+    base.area = FakeArea()
+    market = FakeMarket(raises=True)
+    base.area._market = market
+    base.post_bid(market, 1, 23)
+    base.post_bid(market, 1, 27)
+    base.post_bid(market, 1, 10)
+    assert base.can_bid_be_posted(9.999, 70, market) is True
+    assert base.can_bid_be_posted(10.0, 70, market) is True
+    assert base.can_bid_be_posted(10.001, 70, market) is False

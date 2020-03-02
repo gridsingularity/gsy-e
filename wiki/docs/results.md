@@ -70,9 +70,9 @@ If there was no trade happening during a certain market interval, the price is s
 
 **Compare results**
 
-The user have the possibility to compare the results to another simulation (in order to compare results, the simulation should already have been run) :
+The user has the possibility to compare the results to another simulation (in order to compare results, the simulation should already have been run). The user can also download the results using the interface shown below:
 
-![img](img/results-7.png){:style="height:35px;width:100px"}
+![img](img/results-7.png)
 
 **Settings**
 

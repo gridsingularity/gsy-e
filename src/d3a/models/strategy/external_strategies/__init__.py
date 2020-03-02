@@ -24,14 +24,14 @@ def register_area(redis, channel_prefix, is_connected):
     try:
         redis.publish_json(
             register_response_channel,
-            {"status": "ready", "registered": True})
+            {"command": "register", "status": "ready", "registered": True})
         return True
     except Exception as e:
         logging.error(f"Error when registering to area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             register_response_channel,
-            {"status": "error",
+            {"command": "register", "status": "error",
              "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
@@ -44,14 +44,14 @@ def unregister_area(redis, channel_prefix, is_connected):
     try:
         redis.publish_json(
             unregister_response_channel,
-            {"status": "ready", "unregistered": True})
+            {"command": "unregister", "status": "ready", "unregistered": True})
         return False
     except Exception as e:
         logging.error(f"Error when unregistering from area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             unregister_response_channel,
-            {"status": "error",
+            {"command": "unregister", "status": "error",
              "error_message": f"Error when unregistering from area {channel_prefix}."})
         return is_connected
 
@@ -63,6 +63,7 @@ class ExternalMixin:
         self.redis = ResettableCommunicator()
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
+        self.pending_requests = []
 
     @property
     def channel_prefix(self):
@@ -154,3 +155,13 @@ class ExternalMixin:
             trade_dict["event"] = "trade"
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, trade_dict)
+
+    def _reject_all_pending_requests(self):
+        for req in self.pending_requests:
+            self.redis.publish_json(
+                req.response_channel,
+                {"command": "bid", "status": "error",
+                 "error_message": f"Error when handling {req.request_type} "
+                                  f"on area {self.device.name} with arguments {req.arguments}."
+                                  f"Market cycle already finished."})
+        self.pending_requests = []

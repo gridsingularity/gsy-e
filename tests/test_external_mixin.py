@@ -28,6 +28,7 @@ class TestExternalMixin(unittest.TestCase):
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(self.external_strategy)
+        d3a.models.strategy.external_strategies.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self.config.ticks_per_slot = 90
         assert self.external_strategy._dispatch_tick_frequency == 18
         self.config.ticks_per_slot = 10
@@ -52,6 +53,7 @@ class TestExternalMixin(unittest.TestCase):
         [StorageExternalStrategy()]
     ])
     def test_dispatch_event_tick_to_external_agent(self, strategy):
+        d3a.models.strategy.external_strategies.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         self.config.ticks_per_slot = 90
         assert strategy._dispatch_tick_frequency == 18

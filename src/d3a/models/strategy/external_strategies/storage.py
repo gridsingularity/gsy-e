@@ -12,7 +12,6 @@ class StorageExternalMixin(ExternalMixin):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pending_requests = []
 
     def event_activate(self):
         super().event_activate()
@@ -21,31 +20,35 @@ class StorageExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/unregister_participant': self._unregister,
             f'{self.channel_prefix}/offer': self._offer,
             f'{self.channel_prefix}/delete_offer': self._delete_offer,
-            f'{self.channel_prefix}/offers': self._list_offers,
+            f'{self.channel_prefix}/list_offers': self._list_offers,
             f'{self.channel_prefix}/bid': self._bid,
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
-            f'{self.channel_prefix}/bids': self._list_bids,
+            f'{self.channel_prefix}/list_bids': self._list_bids,
             f'{self.channel_prefix}/stats': self._area_stats
         })
 
     def _list_offers(self, payload):
-        list_offers_response_channel = f'{self.channel_prefix}/response/offers/response'
+        list_offers_response_channel = f'{self.channel_prefix}/response/list_offers/response'
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
             return
+        self.pending_requests.append(
+            IncomingRequest("list_offers", None, list_offers_response_channel))
+
+    def _list_offers_impl(self, _, response_channel):
         try:
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in self.market.get_offers().items()
                                if v.seller == self.device.name]
             self.redis.publish_json(
-                list_offers_response_channel,
-                {"command": "offers", "status": "ready", "offer_list": filtered_offers})
+                response_channel,
+                {"command": "list_offers", "status": "ready", "offer_list": filtered_offers})
         except Exception as e:
             logging.error(f"Error when handling list offers on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
-                list_offers_response_channel,
-                {"command": "offers", "status": "error",
+                response_channel,
+                {"command": "list_offers", "status": "error",
                  "error_message": f"Error when listing offers on area {self.device.name}."})
 
     def _delete_offer(self, payload):
@@ -129,24 +132,28 @@ class StorageExternalMixin(ExternalMixin):
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}."})
 
-    def _list_bids(self, payload):
-        list_bids_response_channel = f'{self.channel_prefix}/response/bids'
+    def _list_bids(self, _):
+        list_bids_response_channel = f'{self.channel_prefix}/response/list_bids'
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
                                              self.connected):
             return
+        self.pending_requests.append(
+            IncomingRequest("list_bids", None, list_bids_response_channel))
+
+    def _list_bids_impl(self, _, response_channel):
         try:
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
                              for _, v in self.market.get_bids().items()
                              if v.buyer == self.device.name]
             self.redis.publish_json(
-                list_bids_response_channel,
-                {"command": "bids", "status": "ready", "bid_list": filtered_bids})
+                response_channel,
+                {"command": "list_bids", "status": "ready", "bid_list": filtered_bids})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
-                list_bids_response_channel,
-                {"command": "bids", "status": "error",
+                response_channel,
+                {"command": "list_bids", "status": "error",
                  "error_message": f"Error when listing bids on area {self.device.name}."})
 
     def _delete_bid(self, payload):
@@ -237,6 +244,7 @@ class StorageExternalMixin(ExternalMixin):
         }
 
     def event_market_cycle(self):
+        self._reject_all_pending_requests()
         self.register_on_market_cycle()
         if self.connected:
             self._reset_event_tick_counter()
@@ -250,9 +258,7 @@ class StorageExternalMixin(ExternalMixin):
             current_market_info["event"] = "market"
             current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
             current_market_info['last_market_stats'] = \
-                self.market_area.stats.min_max_avg_rate_market(
-                    self.market_area.current_market.time_slot) \
-                if self.market_area.current_market is not None else None
+                self.market_area.stats.get_price_stats_current_market()
             self.redis.publish_json(market_event_channel, current_market_info)
         else:
             super().event_market_cycle()
@@ -273,10 +279,14 @@ class StorageExternalMixin(ExternalMixin):
                     self._bid_impl(req.arguments, req.response_channel)
                 elif req.request_type == "delete_bid":
                     self._delete_bid_impl(req.arguments, req.response_channel)
+                elif req.request_type == "list_bids":
+                    self._list_bids_impl(req.arguments, req.response_channel)
                 elif req.request_type == "offer":
                     self._offer_impl(req.arguments, req.response_channel)
                 elif req.request_type == "delete_offer":
                     self._delete_offer_impl(req.arguments, req.response_channel)
+                elif req.request_type == "list_offers":
+                    self._list_offers_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()
