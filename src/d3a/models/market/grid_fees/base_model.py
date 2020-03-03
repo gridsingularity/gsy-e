@@ -1,4 +1,5 @@
 from d3a.models.market.grid_fees import BaseClassGridFees
+from d3a.models.market.market_structures import TradeBidInfo
 
 
 class GridFees(BaseClassGridFees):
@@ -29,9 +30,27 @@ class GridFees(BaseClassGridFees):
             else offer_propagated_rate / offer_original_rate - 1
         total_tax_ratio = demand_side_tax + supply_side_tax
         revenue = trade_rate_source / (1 + total_tax_ratio)
-        fee_n = revenue * tax_ratio
+        grid_fee_rate = revenue * tax_ratio
         trade_price = revenue + revenue * supply_side_tax
-        return revenue, fee_n, trade_price
+        return revenue, grid_fee_rate, trade_price
+
+    @staticmethod
+    def calculate_original_trade_rate_from_clearing_rate(
+            original_bid_rate, propagated_bid_rate,
+            clearing_rate):
+        """
+        Used only for 2-sided pay as clear market. The purpose of this function is to adapt the
+        clearing rate calculated via the clearing algorithm to match the expected price the
+        original device has to pay once the trade chain settles. The clearing rate is scaled
+        with regards to the demand side tax (to be precise, the ratio of the original bid rate to
+        the propagated bid rate).
+        :param original_bid_rate: Original bid rate
+        :param propagated_bid_rate: Propagated bid rate
+        :param clearing_rate: Clearing rate calculated by the 2-sided pay as clear algorithm
+        :return: Original trade rate, that the original device has to pay once the trade
+        chain settles.
+        """
+        return clearing_rate * (original_bid_rate / propagated_bid_rate)
 
     @staticmethod
     def update_forwarded_bid_with_fee(source_bid, original_bid, tax_ratio):
@@ -59,11 +78,12 @@ class GridFees(BaseClassGridFees):
         if not trade_original_info:
             return None
         original_bid_rate, bid_rate, trade_rate_source = trade_original_info
-        return [original_bid_rate,
-                bid_rate,
-                market_offer.original_offer_price / market_offer.energy,
-                market_offer.price / market_offer.energy,
-                trade_rate_source]
+        trade_bid_info = TradeBidInfo(
+            original_bid_rate=original_bid_rate, propagated_bid_rate=bid_rate,
+            original_offer_rate=market_offer.original_offer_price / market_offer.energy,
+            propagated_offer_rate=market_offer.price / market_offer.energy,
+            trade_rate=trade_rate_source)
+        return trade_bid_info
 
     @staticmethod
     def propagate_original_bid_info_on_offer_trade(trade_original_info, tax_ratio):
@@ -84,9 +104,9 @@ class GridFees(BaseClassGridFees):
         original_bid_rate, bid_rate, original_offer_rate, \
             offer_rate, trade_rate_source = trade_bid_info
 
-        revenue, fees, trade_price = GridFees.calculate_fee_revenue_from_clearing_trade(
-            bid_rate, original_bid_rate,
-            offer_rate, original_offer_rate,
-            trade_rate_source, tax_ratio
+        revenue, grid_fee_rate, trade_price = GridFees.calculate_fee_revenue_from_clearing_trade(
+            bid_propagated_rate=bid_rate, bid_original_rate=original_bid_rate,
+            offer_propagated_rate=offer_rate, offer_original_rate=original_offer_rate,
+            trade_rate_source=trade_rate_source, tax_ratio=tax_ratio
         )
-        return revenue, fees, trade_price
+        return revenue, grid_fee_rate, trade_price

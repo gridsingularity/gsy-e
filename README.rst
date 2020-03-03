@@ -148,4 +148,4 @@ _`docker`: https://docker.io
 
 Detailed Documentation
 ===============
-Please refer to: https://gridsingularity.atlassian.net/wiki/spaces/D3AD/pages/855212151/D3A+Documentation
+Please refer to: https://gridsingularity.github.io/d3a/d3a-documentation/

@@ -36,7 +36,9 @@ from d3a.models.area.event_dispatcher import DispatcherFactory
 from d3a.models.area.markets import AreaMarkets
 from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
-from d3a.models.area.redis_external_connection import RedisAreaExternalConnection
+from d3a_interface.area_validator import validate_area
+from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
+import d3a.constants
 
 log = getLogger(__name__)
 
@@ -64,9 +66,10 @@ class Area:
                  budget_keeper=None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=[],
-                 transfer_fee_pct: float = None,
+                 grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
                  external_connection_available=False):
+        validate_area(grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
@@ -91,12 +94,12 @@ class Area:
         self._bc = None
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
-        self.transfer_fee_pct = transfer_fee_pct
+        self.grid_fee_percentage = grid_fee_percentage
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets)
-        self.redis_ext_conn = RedisAreaExternalConnection(self) \
+        self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
 
     def set_events(self, event_list):
@@ -123,9 +126,9 @@ class Area:
             if self.budget_keeper:
                 self.budget_keeper.activate()
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-            self.transfer_fee_pct = 0
-        elif self.transfer_fee_pct is None:
-            self.transfer_fee_pct = self.config.iaa_fee
+            self.grid_fee_percentage = 0
+        elif self.grid_fee_percentage is None:
+            self.grid_fee_percentage = self.config.iaa_fee
         if self.transfer_fee_const is None:
             self.transfer_fee_const = self.config.iaa_fee_const
 
@@ -154,9 +157,6 @@ class Area:
         """
         self.events.update_events(self.now)
 
-        if self.redis_ext_conn:
-            self.redis_ext_conn.market_cycle_event()
-
         if not self.children:
             # Since children trade in markets we only need to populate them if there are any
             return
@@ -171,6 +171,9 @@ class Area:
 
         # Clear `current_market` cache
         self.__dict__.pop('current_market', None)
+
+        # area_market_stats have to updated when cycling market of each area:
+        self.stats.update_area_market_stats()
 
         # Markets range from one slot to market_count into the future
         changed = self._markets.create_future_markets(self.now, True, self)
@@ -190,7 +193,7 @@ class Area:
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
 
-    def tick(self, is_root_area=False):
+    def tick(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                 ConstSettings.IAASettings.MARKET_TYPE == 3:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
@@ -198,14 +201,20 @@ class Area:
             else:
                 for market in self.all_markets:
                     market.match_offers_bids()
+
         self.events.update_events(self.now)
-        if self.current_tick % self.config.ticks_per_slot == 0 and is_root_area:
-            self._cycle_markets()
-        self.dispatcher.broadcast_tick()
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
                 market.update_clock(self.current_tick)
+
+    def tick_and_dispatch(self):
+        if d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP:
+            self.dispatcher.broadcast_tick()
+            self.tick()
+        else:
+            self.tick()
+            self.dispatcher.broadcast_tick()
 
     def __repr__(self):
         return "<Area '{s.name}' markets: {markets}>".format(
@@ -304,7 +313,8 @@ class Area:
 
     @property
     def current_market(self):
-        """Returns the 'current' market (i.e. the one currently 'running')"""
+        """Returns the 'most recent past market' market
+        (i.e. the one that has been finished last)"""
         try:
             return list(self._markets.past_markets.values())[-1]
         except IndexError:

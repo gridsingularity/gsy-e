@@ -87,7 +87,7 @@ def test_baa_event_trade(baa):
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
                   'IAA owner')
-    fake_spot_market = FakeMarket(15)
+    fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(baa.lower_market.time_slot)
     baa.event_trade(trade=trade,
                     market_id=fake_spot_market.id)
@@ -111,7 +111,7 @@ def test_baa_unmatched_event_trade(baa2):
                   Offer('A', 2, 2, 'B'),
                   'someone_else',
                   'IAA owner')
-    fake_spot_market = FakeMarket(15)
+    fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(baa2.lower_market.time_slot)
     baa2.owner._fake_spot_market = fake_spot_market
     baa2.event_trade(trade=trade,

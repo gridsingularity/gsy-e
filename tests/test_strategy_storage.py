@@ -24,7 +24,7 @@ from copy import deepcopy
 
 from d3a.d3a_core.util import change_global_config
 from d3a.constants import TIME_ZONE
-from d3a.models.market.market_structures import Offer, Trade, BalancingOffer
+from d3a.models.market.market_structures import Offer, Trade, BalancingOffer, Bid
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.state import EnergyOrigin, ESSEnergyOrigin
 from d3a_interface.constants_limits import ConstSettings
@@ -341,7 +341,7 @@ def storage_strategy_test5(area_test5, called):
     s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market.id)
     s.offers.post(area_test5.past_market.offers['id3'], area_test5.past_market.id)
     s.offers.post(area_test5.past_market.offers['id2'], area_test5.past_market.id)
-    s.offers.sold_offer('id2', area_test5.past_market)
+    s.offers.sold_offer(area_test5.past_market.offers['id2'], area_test5.past_market)
     assert s.state.used_storage == 5
     return s
 
@@ -383,7 +383,7 @@ def test_if_trades_are_handled_correctly(storage_strategy_test6, market_test6):
         lambda _id: market_test6 if _id == market_test6.id else None
     storage_strategy_test6.event_trade(market_id=market_test6.id, trade=market_test6.trade)
     assert market_test6.trade.offer in \
-        storage_strategy_test6.offers.sold_in_market(market_test6.id)
+        storage_strategy_test6.offers.sold[market_test6.id]
     assert market_test6.trade.offer not in storage_strategy_test6.offers.open
 
 
@@ -630,8 +630,10 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
     for i in range(2):
         area_test11.current_tick += 310
         storage_strategy_test11.event_tick()
+    # storage should not be able to buy energy after this tick because
+    # self.state._battery_energy_per_slot is exceeded
     te = storage_strategy_test11.state.energy_to_buy_dict[buy_market.time_slot]
-    assert te == float(storage_strategy_test11.accept_offer.calls[0][1]['energy'])
+    assert te == 0.
     assert len(storage_strategy_test11.accept_offer.calls) >= 1
 
 
@@ -855,3 +857,35 @@ def test_storage_strategy_increases_rate_when_fit_to_limit_is_false():
     storage.event_activate()
     assert all([rate == -1 for rate in storage.bid_update.energy_rate_change_per_update.values()])
     assert all([rate == 1 for rate in storage.offer_update.energy_rate_change_per_update.values()])
+
+
+"""Test 16"""
+
+
+@pytest.fixture()
+def storage_test11(area_test3):
+    s = StorageStrategy()
+    s.area = area_test3
+    s.owner = area_test3
+    return s
+
+
+def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
+    market_id = "market_id"
+    storage_test11.offers.sold[market_id] = [Offer("offer_id", 30, 1, "FakeArea")]
+    to_cheap_offer = Offer("offer_id", 29, 1, "FakeArea")
+    trade = Trade("trade_id", "time", to_cheap_offer, storage_test11, "buyer")
+
+    with pytest.raises(AssertionError):
+        storage_test11.event_trade(market_id=market_id, trade=trade)
+
+
+def test_assert_if_trade_rate_is_higher_than_bid_rate(storage_test11):
+    market_id = "2"
+    storage_test11._bids[market_id] = \
+        [Bid("bid_id", 30, 1, buyer="FakeArea", seller="producer")]
+    expensive_bid = Bid("bid_id", 31, 1, buyer="FakeArea", seller="producer")
+    trade = Trade("trade_id", "time", expensive_bid, storage_test11, "buyer")
+
+    with pytest.raises(AssertionError):
+        storage_test11.event_trade(market_id=market_id, trade=trade)

@@ -37,7 +37,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
 from d3a.models.leaves import Leaf # NOQA
 from d3a.models.leaves import *  # NOQA
-from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a_interface.utils import convert_datetime_to_str_keys
 
 
 class AreaEncoder(json.JSONEncoder):
@@ -135,8 +135,9 @@ def area_from_dict(description, config=None):
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
+        grid_fee_percentage = description.get('grid_fee_percentage', None)
         area = Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
-                    optional('budget_keeper'))
+                    optional('budget_keeper'), grid_fee_percentage=grid_fee_percentage)
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area

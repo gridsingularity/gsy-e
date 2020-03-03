@@ -1,6 +1,7 @@
 from redis import StrictRedis
 from threading import Event, Lock
 import logging
+import json
 from time import time
 from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
@@ -12,7 +13,7 @@ REDIS_POLL_TIMEOUT = 0.01
 
 class RedisCommunicator:
     def __init__(self):
-        self.redis_db = StrictRedis.from_url(REDIS_URL)
+        self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
         self.pubsub = self.redis_db.pubsub()
         self.pubsub_response = self.redis_db.pubsub()
         self.event = Event()
@@ -69,6 +70,9 @@ class ResettableCommunicator(RedisCommunicator):
             f" thread {self.thread} already exists."
         thread = super().sub_to_response(channel, callback)
         self.thread = thread
+
+    def publish_json(self, channel, data):
+        self.publish(channel, json.dumps(data))
 
 
 class BlockingCommunicator(RedisCommunicator):

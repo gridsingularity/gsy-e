@@ -22,7 +22,7 @@ from uuid import uuid4
 
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.models.base import AreaBehaviorBase
-from d3a.models.market.market_structures import Offer
+from d3a.models.market.market_structures import Offer, Bid
 from d3a_interface.constants_limits import ConstSettings
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from d3a.d3a_core.device_registry import DeviceRegistry
@@ -32,6 +32,7 @@ from d3a.d3a_core.exceptions import D3ARedisException
 from d3a.d3a_core.util import append_or_create_key
 from d3a.models.market.market_structures import trade_from_JSON_string, offer_from_JSON_string
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import BlockingCommunicator
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
 
@@ -60,10 +61,10 @@ class Offers:
 
     def __init__(self, strategy):
         self.strategy = strategy
-        self.bought = {}  # type: Dict[Offer, Str]
-        self.posted = {}  # type: Dict[Offer, Str]
-        self.sold = {}  # type: Dict[Str, List[str]]
-        self.changed = {}  # type: Dict[str, Offer]
+        self.bought = {}  # type: Dict[Offer, str]
+        self.posted = {}  # type: Dict[Offer, str]
+        self.sold = {}  # type: Dict[str, List[Offer]]
+        self.split = {}  # type: Dict[str, Offer]
 
     @property
     def area(self):
@@ -81,7 +82,7 @@ class Offers:
     def delete_past_markets_offers(self):
         self.posted = self._delete_past_offers(self.posted)
         self.bought = self._delete_past_offers(self.bought)
-        self.changed = {}
+        self.split = {}
 
     @property
     def open(self):
@@ -89,44 +90,46 @@ class Offers:
         for offer, market_id in self.posted.items():
             if market_id not in self.sold:
                 self.sold[market_id] = []
-            if offer.id not in self.sold[market_id]:
+            if offer not in self.sold[market_id]:
                 open_offers[offer] = market_id
         return open_offers
 
     def bought_offer(self, offer, market_id):
         self.bought[offer] = market_id
 
-    def sold_offer(self, offer_id, market_id):
-        self.sold = append_or_create_key(self.sold, market_id, offer_id)
-
-    def _update_offer(self, offer):
-        old_offer_list = [o for o in self.posted.keys() if o.id == offer.id]
-        assert len(old_offer_list) <= 1, "Expected to find a unique offer to update"
-        if len(old_offer_list) == 0:
-            return
-        old_offer = old_offer_list[0]
-        self.posted[offer] = self.posted.pop(old_offer)
+    def sold_offer(self, offer, market_id):
+        self.sold = append_or_create_key(self.sold, market_id, offer)
 
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
 
+    def posted_offer_energy(self, market_id):
+        return sum(o.energy for o in self.posted_in_market(market_id))
+
+    def can_offer_be_posted(self, offer_energy, available_energy, market):
+        posted_energy = (offer_energy + self.posted_offer_energy(market.id))
+        return posted_energy <= available_energy
+
     def sold_in_market(self, market_id):
-        sold_offers = []
-        for offer in self.posted_in_market(market_id):
-            if market_id not in self.sold:
-                self.sold[market_id] = []
-            if offer.id in self.sold[market_id]:
-                sold_offers.append(offer)
-        return sold_offers
+        return self.sold[market_id] if market_id in self.sold else {}
 
     def post(self, offer, market_id):
-        self.posted[offer] = market_id
+        # If offer was split already, don't post one with the same uuid again
+        if offer.id not in self.split:
+            self.posted[offer] = market_id
+
+    def remove_by_id(self, offer_id):
+        try:
+            offer = [o for o, m in self.posted.items() if o.id == offer_id][0]
+            self.remove(offer)
+        except (IndexError, KeyError):
+            self.strategy.warning(f"Could not find offer to remove: {offer_id}")
 
     def remove(self, offer):
         try:
             market_id = self.posted.pop(offer)
             assert type(market_id) == str
-            if market_id in self.sold and offer.id in self.sold[market_id]:
+            if market_id in self.sold and offer in self.sold[market_id]:
                 self.strategy.log.warning("Offer already sold, cannot remove it.")
                 self.posted[offer] = market_id
             else:
@@ -134,25 +137,26 @@ class Offers:
         except KeyError:
             self.strategy.log.warning("Could not find offer to remove")
 
-    def replace(self, old_offer, new_offer, market):
+    def replace(self, old_offer, new_offer, market_id):
         if self.remove(old_offer):
-            self.post(new_offer, market.id)
+            self.post(new_offer, market_id)
 
     def on_trade(self, market_id, trade):
         try:
             if trade.offer.seller == self.strategy.owner.name:
-                if trade.offer.id in self.changed:
-                    self._update_offer(trade.offer)
-                    self.post(self.changed.pop(trade.offer.id), market_id)
-                self.sold_offer(trade.offer.id, market_id)
+                if trade.offer.id in self.split and trade.offer in self.posted:
+                    # remove from posted as it is traded already
+                    self.remove(self.split[trade.offer.id])
+                self.sold_offer(trade.offer, market_id)
         except AttributeError:
             raise SimulationException("Trade event before strategy was initialized.")
 
-    def on_offer_changed(self, existing_offer, new_offer):
-        if existing_offer.seller == self.strategy.owner.name:
-            assert existing_offer.id not in self.changed, \
-                   "Offer should only change once before each trade."
-            self.changed[existing_offer.id] = new_offer
+    def on_offer_split(self, original_offer, accepted_offer, residual_offer, market_id):
+        if original_offer.seller == self.strategy.owner.name:
+            self.split[original_offer.id] = accepted_offer
+            self.post(residual_offer, market_id)
+            if original_offer in self.posted:
+                self.replace(original_offer, accepted_offer, market_id)
 
 
 class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
@@ -353,13 +357,22 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def event_trade(self, *, market_id, trade):
         self.offers.on_trade(market_id, trade)
 
-    def event_offer_changed(self, *, market_id, existing_offer, new_offer):
-        self.offers.on_offer_changed(existing_offer, new_offer)
+    def event_offer_split(self, *, market_id, original_offer, accepted_offer, residual_offer):
+        self.offers.on_offer_split(original_offer, accepted_offer, residual_offer, market_id)
 
     def event_market_cycle(self):
         if not ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
             self.offers.delete_past_markets_offers()
         self.event_responses = []
+
+    def assert_if_trade_offer_price_is_too_low(self, market_id, trade):
+        if isinstance(trade.offer, Offer) and trade.offer.seller == self.owner.name:
+            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer.id][0]
+            assert trade.offer.price / trade.offer.energy >= \
+                offer.price / offer.energy - FLOATING_POINT_TOLERANCE
+
+    def can_offer_be_posted(self, offer_energy, available_energy, market):
+        return self.offers.can_offer_be_posted(offer_energy, available_energy, market)
 
 
 class BidEnabledStrategy(BaseStrategy):
@@ -379,6 +392,15 @@ class BidEnabledStrategy(BaseStrategy):
         )
         self.add_bid_to_posted(market.id, bid)
         return bid
+
+    def can_bid_be_posted(self, bid_energy, required_energy_kWh, market):
+        posted_energy = (bid_energy + self.posted_bid_energy(market.id))
+        return posted_energy <= required_energy_kWh
+
+    def posted_bid_energy(self, market_id):
+        if market_id not in self._bids:
+            return 0.0
+        return sum(b.energy for b in self._bids[market_id])
 
     def remove_bid_from_pending(self, bid_id, market_id):
         market = self.area.get_future_market_from_id(market_id)
@@ -417,7 +439,7 @@ class BidEnabledStrategy(BaseStrategy):
         # should be only bid from a device to a market at all times, which will be replaced if
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
-        if not all(bid.buyer != self.owner.name for bid in market.bids.values()):
+        if not all(bid.buyer != self.owner.name for bid in market.get_bids().values()):
             self.owner.log.warning(f"There is already another bid posted on the market, therefore"
                                    f" do not repost another first bid.")
             return None
@@ -434,22 +456,23 @@ class BidEnabledStrategy(BaseStrategy):
         return self._bids[market.id]
 
     def event_bid_deleted(self, *, market_id, bid):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
 
         if bid.buyer != self.owner.name:
             return
         self.remove_bid_from_pending(bid.id, market_id)
 
-    def event_bid_changed(self, *, market_id, existing_bid, new_bid):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+    def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
-        if new_bid.buyer != self.owner.name:
+        if accepted_bid.buyer != self.owner.name:
             return
-        self.add_bid_to_posted(market_id, bid=new_bid)
+        self.add_bid_to_posted(market_id, bid=accepted_bid)
+        self.add_bid_to_posted(market_id, bid=residual_bid)
 
     def event_bid_traded(self, *, market_id, bid_trade):
-        assert ConstSettings.IAASettings.MARKET_TYPE is not 1, \
+        assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
             "Invalid state, cannot receive a bid if single sided market is globally configured."
 
         if bid_trade.buyer == self.owner.name:
@@ -460,3 +483,9 @@ class BidEnabledStrategy(BaseStrategy):
             self._bids = {}
             self._traded_bids = {}
             super().event_market_cycle()
+
+    def assert_if_trade_bid_price_is_too_high(self, market, trade):
+        if isinstance(trade.offer, Bid) and trade.offer.buyer == self.owner.name:
+            bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer.id][0]
+            assert trade.offer.price / trade.offer.energy <= \
+                bid.price / bid.energy + FLOATING_POINT_TOLERANCE

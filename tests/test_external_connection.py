@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
 import json
-from slugify import slugify
 import d3a.models.area.redis_external_connection
 from d3a.models.area import Area
 from d3a.models.area.redis_external_connection import RedisAreaExternalConnection
@@ -11,6 +10,7 @@ class TestExternalConnectionRedis(unittest.TestCase):
 
     def setUp(self):
         self.ext_strategy_mock = MagicMock
+        self.ext_strategy_mock.get_channel_list = lambda s: {}
         d3a.models.area.redis_external_connection.ExternalStrategy = self.ext_strategy_mock
         d3a.models.area.redis_external_connection.StrictRedis = MagicMock()
         redis_db_object = MagicMock()
@@ -63,17 +63,6 @@ class TestExternalConnectionRedis(unittest.TestCase):
         for i, created_area in enumerate(area_list):
             assert self.external_connection.redis_db.publish.call_args_list[i][0][0] == \
                 "base-area/register_participant/response"
-            assert self.external_connection.redis_db.publish.call_args_list[i][0][1] == \
-                json.dumps({"available_publish_channels": [
-                   f"base-area/{slugify(created_area)}/offer",
-                   f"base-area/{slugify(created_area)}/offer_delete",
-                   f"base-area/{slugify(created_area)}/offer_accept"
-                ], "available_subscribe_channels": [
-                   f"base-area/{slugify(created_area)}/offers",
-                   f"base-area/{slugify(created_area)}/offer/response",
-                   f"base-area/{slugify(created_area)}/offer_delete/response",
-                   f"base-area/{slugify(created_area)}/offer_accept/response"
-                ]})
 
     def test_unregister_areas_deletes_children_from_area(self):
         area_list = self.add_external_connections_to_area()
@@ -107,17 +96,3 @@ class TestExternalConnectionRedis(unittest.TestCase):
         assert len(self.area.children) == 3
         self.external_connection.redis_db.publish.assert_called_with(
             "base-area/unregister_participant/response", json.dumps({"response": "failed"}))
-
-    def test_subscribe_channel_list_fetches_correct_channel_names(self):
-        channel_list = json.loads(self.external_connection._subscribe_channel_list("test-area"))
-        assert set(channel_list["available_publish_channels"]) == {
-            "base-area/test-area/offer",
-            "base-area/test-area/offer_delete",
-            "base-area/test-area/offer_accept"
-        }
-        assert set(channel_list["available_subscribe_channels"]) == {
-            "base-area/test-area/offers",
-            "base-area/test-area/offer/response",
-            "base-area/test-area/offer_delete/response",
-            "base-area/test-area/offer_accept/response"
-        }

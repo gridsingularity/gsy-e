@@ -99,14 +99,22 @@ class UpdateFrequencyMixin:
         updated_rate = self.rate_limit_object(calculated_rate, self.final_rate[time_slot])
         return updated_rate
 
-    def get_price_update_point(self, strategy, time_slot):
+    @staticmethod
+    def elapsed_seconds(strategy):
         current_tick_number = strategy.area.current_tick % strategy.area.config.ticks_per_slot
-        elapsed_seconds = current_tick_number * strategy.area.config.tick_length.seconds
-        if elapsed_seconds >= self.update_interval.seconds * (self.update_counter[time_slot]+1):
+        return current_tick_number * strategy.area.config.tick_length.seconds
+
+    def increment_update_counter_all_markets(self, strategy):
+        for market in strategy.area.all_markets:
+            self.increment_update_counter(strategy, market.time_slot)
+
+    def increment_update_counter(self, strategy, time_slot):
+        if self.time_for_price_update(strategy, time_slot):
             self.update_counter[time_slot] += 1
-            return True
-        else:
-            return False
+
+    def time_for_price_update(self, strategy, time_slot):
+        return self.elapsed_seconds(strategy) >= \
+               self.update_interval.seconds * (self.update_counter[time_slot])
 
     def update_energy_price(self, market, strategy):
         if market.id not in strategy.offers.open.values():
@@ -126,7 +134,7 @@ class UpdateFrequencyMixin:
                     original_offer_price=updated_price,
                     seller_origin=offer.seller_origin
                 )
-                strategy.offers.replace(offer, new_offer, iterated_market)
+                strategy.offers.replace(offer, new_offer, iterated_market.id)
             except MarketException:
                 continue
 
@@ -137,7 +145,7 @@ class UpdateFrequencyMixin:
 
     def update_offer(self, strategy):
         for market in strategy.area.all_markets:
-            if self.get_price_update_point(strategy, market.time_slot):
+            if self.time_for_price_update(strategy, market.time_slot):
                 self.update_energy_price(market, strategy)
 
     def update_market_cycle_bids(self, strategy):
@@ -159,6 +167,6 @@ class UpdateFrequencyMixin:
                               bid.energy, buyer_origin=bid.buyer_origin)
 
     def update_posted_bids_over_ticks(self, market, strategy):
-        if self.get_price_update_point(strategy, market.time_slot):
+        if self.time_for_price_update(strategy, market.time_slot):
             if strategy.are_bids_posted(market.id):
                 self._post_bids(market, strategy)

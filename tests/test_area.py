@@ -55,10 +55,10 @@ class TestAreaClass(unittest.TestCase):
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
         self.area = Area("test_area", None, None, self.strategy,
-                         self.appliance, self.config, None, transfer_fee_pct=1)
+                         self.appliance, self.config, None, grid_fee_percentage=1)
         self.area.parent = self.area
         self.area.children = [self.area]
-        self.area.transfer_fee_pct = 1
+        self.area.grid_fee_percentage = 1
         self.dispatcher = AreaDispatcher(self.area)
         self.stats = AreaStats(self.area._markets)
 
@@ -68,12 +68,12 @@ class TestAreaClass(unittest.TestCase):
 
     def test_respective_area_grid_fee_is_applied(self):
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=5)
+                         config=GlobalConfig, grid_fee_percentage=5)
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 1
         self.area.activate()
         assert self.area.next_market.transfer_fee_ratio == 0.05
-        self.area.next_market.offer(1, 1, "test")
+        self.area.next_market.offer(1, 1, "test", "test")
         assert list(self.area.next_market.offers.values())[0].price == 1.05
 
     def test_markets_are_cycled_according_to_market_count(self):
@@ -85,7 +85,7 @@ class TestAreaClass(unittest.TestCase):
 
     def test_delete_past_markets_instead_of_last(self):
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=5)
+                         config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = False
@@ -106,7 +106,7 @@ class TestAreaClass(unittest.TestCase):
     def test_keep_past_markets(self):
         ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=5)
+                         config=GlobalConfig, grid_fee_percentage=5)
         self.area.config.market_count = 1
         self.area.activate()
         self.area._bc = False
@@ -164,7 +164,7 @@ class TestAreaClass(unittest.TestCase):
 
     def test_cycle_markets(self):
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, transfer_fee_pct=1)
+                         config=GlobalConfig, grid_fee_percentage=1)
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 5
         self.area.activate()
@@ -172,7 +172,7 @@ class TestAreaClass(unittest.TestCase):
 
         assert len(self.area.balancing_markets) == 5
         self.area.current_tick = 900
-        self.area.tick(is_root_area=True)
+        self.area._cycle_markets()
         assert len(self.area.past_markets) == 1
         assert len(self.area.past_balancing_markets) == 1
         assert len(self.area.all_markets) == 5
@@ -240,7 +240,7 @@ class TestEventDispatcher(unittest.TestCase):
 
     @parameterized.expand([(MarketEvent.OFFER, ),
                            (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])
@@ -256,7 +256,7 @@ class TestEventDispatcher(unittest.TestCase):
 
     @parameterized.expand([(MarketEvent.OFFER, ),
                            (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])
@@ -270,7 +270,7 @@ class TestEventDispatcher(unittest.TestCase):
 
     @parameterized.expand([(MarketEvent.OFFER, ),
                            (MarketEvent.TRADE, ),
-                           (MarketEvent.OFFER_CHANGED, ),
+                           (MarketEvent.OFFER_SPLIT, ),
                            (MarketEvent.BID_TRADED, ),
                            (MarketEvent.BID_DELETED, ),
                            (MarketEvent.OFFER_DELETED, )])

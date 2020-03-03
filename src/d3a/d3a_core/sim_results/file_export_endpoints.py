@@ -20,13 +20,12 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
-from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node, \
-    _is_producer_node
 from d3a.models.strategy.pv import PVStrategy
-from d3a.d3a_core.util import convert_datetime_to_str_keys
+from d3a_interface.utils import convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import generate_market_slot_list
+from d3a.d3a_core.util import generate_market_slot_list, round_floats_for_ui
 from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.sim_results.aggregate_results import merge_energy_trade_profile_to_global
 
 
 class FileExportEndpoints:
@@ -34,6 +33,7 @@ class FileExportEndpoints:
         self.traded_energy = {}
         self.traded_energy_profile = {}
         self.traded_energy_profile_redis = {}
+        self.traded_energy_current = {}
         self.balancing_traded_energy = {}
         self.plot_stats = {}
         self.plot_balancing_stats = {}
@@ -46,7 +46,12 @@ class FileExportEndpoints:
 
     def __call__(self, area):
         self.time_slots = generate_market_slot_list(area)
+        # Resetting traded energy before repopulating it
+        self.traded_energy_current = {}
         self._populate_area_children_data(area)
+        self.traded_energy_profile_redis = self._round_energy_trade_profile(
+            self.traded_energy_profile_redis)
+        self.traded_energy_current = self._round_energy_trade_profile(self.traded_energy_current)
 
     def _populate_area_children_data(self, area):
         if area.children:
@@ -68,6 +73,9 @@ class FileExportEndpoints:
             self.balancing_traded_energy[area.name] = \
                 self._calculate_devices_sold_bought_energy_past_markets(
                     area, area.past_balancing_markets)
+            self.traded_energy_profile_redis[area.uuid] = \
+                self._serialize_traded_energy_lists(self.traded_energy, area.uuid)
+            self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
         else:
             if area.uuid not in self.traded_energy:
                 self.traded_energy[area.uuid] = {"sold_energy": {}, "bought_energy": {}}
@@ -80,15 +88,32 @@ class FileExportEndpoints:
                 self._calculate_devices_sold_bought_energy(self.balancing_traded_energy[area.name],
                                                            area.current_balancing_market)
 
-        self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
-        self.traded_energy_profile_redis[area.uuid] = self._serialize_traded_energy_lists(area)
-        self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
+            if area.uuid not in self.traded_energy_current:
+                self.traded_energy_current[area.uuid] = {"sold_energy": {}, "bought_energy": {}}
+            if area.current_market is not None:
+                self.time_slots = [area.current_market.time_slot]
+                self._calculate_devices_sold_bought_energy(self.traded_energy_current[area.uuid],
+                                                           area.current_market)
+                self.traded_energy_current[area.uuid] = self._serialize_traded_energy_lists(
+                    self.traded_energy_current, area.uuid)
+                self.time_slots = generate_market_slot_list(area)
 
-    def _serialize_traded_energy_lists(self, area):
+            self.balancing_traded_energy[area.uuid] = self.balancing_traded_energy[area.name]
+
+            # TODO: Adapt to not store the full results on D3A.
+            self.traded_energy_profile_redis = merge_energy_trade_profile_to_global(
+                self.traded_energy_current, self.traded_energy_profile_redis,
+                generate_market_slot_list(area))
+            self.traded_energy_profile[area.slug] = self.traded_energy_profile_redis[area.uuid]
+
+    @classmethod
+    def _serialize_traded_energy_lists(cls, traded_energy, area_uuid):
         outdict = {}
+        if area_uuid not in traded_energy:
+            return outdict
         for direction in ["sold_energy", "bought_energy"]:
             outdict[direction] = {}
-            for seller, buyer_dict in self.traded_energy[area.uuid][direction].items():
+            for seller, buyer_dict in traded_energy[area_uuid][direction].items():
                 outdict[direction][seller] = {}
                 for buyer, profile_dict in buyer_dict.items():
                     outdict[direction][seller][buyer] = convert_datetime_to_str_keys(
@@ -234,6 +259,19 @@ class FileExportEndpoints:
                         self.buyer_trades[buyer_slug][ri].append(values[ii])
                         self.seller_trades[seller_slug][ri].append(values[ii])
 
+    @classmethod
+    def _round_energy_trade_profile(cls, profile):
+        for k in profile.keys():
+            for sold_bought in ['sold_energy', 'bought_energy']:
+                if sold_bought not in profile[k]:
+                    continue
+                for dev in profile[k][sold_bought].keys():
+                    for target in profile[k][sold_bought][dev].keys():
+                        for timestamp in profile[k][sold_bought][dev][target].keys():
+                            profile[k][sold_bought][dev][target][timestamp] = round_floats_for_ui(
+                                profile[k][sold_bought][dev][target][timestamp])
+        return profile
+
 
 class ExportData:
     def __init__(self, area):
@@ -337,100 +375,3 @@ class ExportLeafData(ExportData):
                     self.area.strategy.energy_production_forecast_kWh[slot]
                     ]
         return []
-
-
-class SelfSufficiency:
-    def __init__(self):
-        self.producer_list = list()
-        self.consumer_list = list()
-        self.consumer_area_list = list()
-        self.ess_list = list()
-        self.total_energy_demanded_wh = 0
-        self.total_self_consumption_wh = 0
-        self.self_consumption_buffer_wh = 0
-
-    def _accumulate_devices(self, area):
-        for child in area.children:
-            if _is_producer_node(child):
-                self.producer_list.append(child.name)
-            elif _is_load_node(child):
-                self.consumer_list.append(child.name)
-                self.consumer_area_list.append(child.parent)
-                self.total_energy_demanded_wh += child.strategy.state.total_energy_demanded_wh
-            elif _is_prosumer_node(child):
-                self.ess_list.append(child.name)
-
-            if child.children:
-                self._accumulate_devices(child)
-
-    def _accumulate_self_consumption(self, trade):
-        if trade.seller_origin in self.producer_list and trade.buyer_origin in self.consumer_list:
-            self.total_self_consumption_wh += trade.offer.energy * 1000
-
-    def _accumulate_self_consumption_buffer(self, trade):
-        if trade.seller_origin in self.producer_list and trade.buyer_origin in self.ess_list:
-            self.self_consumption_buffer_wh += trade.offer.energy * 1000
-
-    def _dissipate_self_consumption_buffer(self, trade):
-        if trade.seller_origin in self.ess_list:
-            # self_consumption_buffer needs to be exhausted to total_self_consumption
-            # if sold to internal consumer
-            if trade.buyer_origin in self.consumer_list and self.self_consumption_buffer_wh > 0:
-                if (self.self_consumption_buffer_wh - trade.offer.energy * 1000) > 0:
-                    self.self_consumption_buffer_wh -= trade.offer.energy * 1000
-                    self.total_self_consumption_wh += trade.offer.energy * 1000
-                else:
-                    self.total_self_consumption_wh += self.self_consumption_buffer_wh
-                    self.self_consumption_buffer_wh = 0
-            # self_consumption_buffer needs to be exhausted if sold to any external agent
-            elif trade.buyer_origin not in [*self.ess_list, *self.consumer_list] and \
-                    self.self_consumption_buffer_wh > 0:
-                if (self.self_consumption_buffer_wh - trade.offer.energy * 1000) > 0:
-                    self.self_consumption_buffer_wh -= trade.offer.energy * 1000
-                else:
-                    self.self_consumption_buffer_wh = 0
-
-    def _accumulate_energy_trace(self):
-        for c_area in self.consumer_area_list:
-            for market in c_area.past_markets:
-                for trade in market.trades:
-                    self._accumulate_self_consumption(trade)
-                    self._accumulate_self_consumption_buffer(trade)
-                    self._dissipate_self_consumption_buffer(trade)
-
-    def area_self_sufficiency(self, area):
-        self.producer_list = []
-        self.consumer_list = []
-        self.consumer_area_list = []
-        self.ess_list = []
-        self.total_energy_demanded_wh = 0
-        self.total_self_consumption_wh = 0
-        self.self_consumption_buffer_wh = 0
-
-        self._accumulate_devices(area)
-
-        self._accumulate_energy_trace()
-
-        # in case when the area doesn't have any load demand
-        if self.total_energy_demanded_wh <= 0:
-            return {"self_sufficiency": None}
-
-        self_sufficiency = self.total_self_consumption_wh / self.total_energy_demanded_wh
-        return {"self_sufficiency": self_sufficiency}
-
-
-class KPI:
-    def __init__(self):
-        self.performance_index = dict()
-        self.self_sufficiency = SelfSufficiency()
-
-    def __repr__(self):
-        return f"KPI: {self.performance_index}"
-
-    def update_kpis_from_area(self, area):
-        self.performance_index[area.name] = \
-            self.self_sufficiency.area_self_sufficiency(area)
-
-        for child in area.children:
-            if len(child.children) > 0:
-                self.update_kpis_from_area(child)

@@ -65,7 +65,7 @@ class FakeArea:
 
 class FakeMarket:
     def __init__(self, count):
-        self.id = count
+        self.id = str(count)
         self.count = count
         self.created_offers = []
         self.created_balancing_offers = []
@@ -209,40 +209,42 @@ def test_event_trade(area_test2, bus_test2):
 
 def test_on_offer_changed(area_test2, bus_test2):
     bus_test2.event_activate()
-    existing_offer = Offer(id='id', price=20, energy=1, seller='FakeArea')
-    new_offer = Offer(id='new_id', price=15, energy=0.75, seller='FakeArea')
-    bus_test2.event_offer_changed(market_id=area_test2.test_market.id,
-                                  existing_offer=existing_offer,
-                                  new_offer=new_offer)
-    assert existing_offer.id in bus_test2.offers.changed
-    assert bus_test2.offers.changed[existing_offer.id] == new_offer
+    original_offer = Offer(id='id', price=20, energy=1, seller='FakeArea')
+    accepted_offer = Offer(id='new', price=15, energy=0.75, seller='FakeArea')
+    residual_offer = Offer(id='new_id', price=5, energy=0.25, seller='FakeArea')
+    bus_test2.event_offer_split(market_id=area_test2.test_market.id,
+                                original_offer=original_offer,
+                                accepted_offer=accepted_offer,
+                                residual_offer=residual_offer)
+    assert original_offer.id in bus_test2.offers.split
+    assert bus_test2.offers.split[original_offer.id] == accepted_offer
 
 
 def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
-    existing_offer = Offer(id='old_id', price=20, energy=1, seller='FakeArea')
-    new_offer = Offer(id='new_id', price=15, energy=0.75, seller='FakeArea')
-
-    bus_test2.offers.post(existing_offer, area_test2.test_market)
-    bus_test2.offers.post(new_offer, area_test2.test_market)
-    bus_test2.event_offer_changed(market_id=area_test2.test_market.id,
-                                  existing_offer=existing_offer,
-                                  new_offer=new_offer)
-    assert existing_offer.id in bus_test2.offers.changed
-    assert bus_test2.offers.changed[existing_offer.id] == new_offer
+    original_offer = Offer(id='old_id', price=20, energy=1, seller='FakeArea')
+    accepted_offer = Offer(id='old_id', price=15, energy=0.75, seller='FakeArea')
+    residual_offer = Offer(id='res_id', price=5, energy=0.25, seller='FakeArea')
+    bus_test2.offers.post(original_offer, area_test2.test_market.id)
+    bus_test2.event_offer_split(market_id=area_test2.test_market.id,
+                                original_offer=original_offer,
+                                accepted_offer=accepted_offer,
+                                residual_offer=residual_offer)
+    assert original_offer.id in bus_test2.offers.split
+    assert bus_test2.offers.split[original_offer.id] == accepted_offer
     bus_test2.event_trade(market_id=area_test2.test_market.id,
                           trade=Trade(id='id',
                                       time='time',
-                                      offer=existing_offer,
+                                      offer=original_offer,
                                       seller='FakeArea',
                                       buyer='buyer')
                           )
 
-    assert len(bus_test2.offers.posted) == 2
-    assert new_offer in bus_test2.offers.posted
-    assert bus_test2.offers.posted[new_offer] == area_test2.test_market.id
-    assert len(bus_test2.offers.changed) == 0
+    assert residual_offer in bus_test2.offers.posted
+    assert bus_test2.offers.posted[residual_offer] == area_test2.test_market.id
+    assert len(bus_test2.offers.posted) == 1
+    assert len(bus_test2.offers.split) == 1
     assert len(bus_test2.offers.sold) == 1
-    assert existing_offer.id in bus_test2.offers.sold[area_test2.test_market.id]
+    assert original_offer in bus_test2.offers.sold_in_market(area_test2.test_market.id)
 
 
 def test_validate_posted_offers_get_updated_on_offer_energy_method(area_test2, bus_test2):

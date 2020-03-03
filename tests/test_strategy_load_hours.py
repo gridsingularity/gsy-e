@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import unittest
+from copy import deepcopy
 from unittest.mock import MagicMock, Mock
 from pendulum import DateTime, duration, today
 from parameterized import parameterized
@@ -101,6 +102,9 @@ class FakeMarket:
         self.most_affordable_energy = 0.1551
         self.created_balancing_offers = []
         self.bids = {}
+
+    def get_bids(self):
+        return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str,
             seller: str, original_bid_price=None,
@@ -328,7 +332,6 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick()
     # Get the bid that was posted on event_market_cycle
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
 
@@ -353,7 +356,6 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     load_hours_strategy_test5.event_activate()
     load_hours_strategy_test5.area.markets = {TIME: trade_market}
     load_hours_strategy_test5.event_market_cycle()
-    load_hours_strategy_test5.event_tick()
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
     # Increase energy requirement to cover the energy from the bid + threshold
     load_hours_strategy_test5.energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009
@@ -388,6 +390,7 @@ def test_balancing_offers_are_not_created_if_device_not_in_registry(
 
 def test_balancing_offers_are_created_if_device_in_registry(
         balancing_fixture, area_test2):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     balancing_fixture.event_activate()
     balancing_fixture.event_market_cycle()
@@ -404,6 +407,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
 
     assert actual_balancing_demand_price == expected_balancing_demand_energy * 30
     selected_offer = area_test2.current_market.sorted_offers[0]
+    balancing_fixture.energy_requirement_Wh[area_test2.current_market.time_slot] = \
+        selected_offer.energy * 1000.0
     balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',
                                               time=area_test2.now,
@@ -487,3 +492,22 @@ def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false():
     load.area = FakeArea()
     load.event_activate()
     assert all([rate == -10 for rate in load.bid_update.energy_rate_change_per_update.values()])
+
+
+@pytest.fixture
+def load_hours_strategy_test3(area_test1):
+    load = LoadHoursStrategy(avg_power_W=100)
+    load.area = area_test1
+    load.owner = area_test1
+    return load
+
+
+def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3):
+    market_id = 0
+    load_hours_strategy_test3._bids[market_id] = \
+        [Bid("bid_id", 30, 1, buyer="FakeArea", seller="producer")]
+    expensive_bid = Bid("bid_id", 31, 1, buyer="FakeArea", seller="producer")
+    trade = Trade("trade_id", "time", expensive_bid, load_hours_strategy_test3, "buyer")
+
+    with pytest.raises(AssertionError):
+        load_hours_strategy_test3.event_trade(market_id=market_id, trade=trade)

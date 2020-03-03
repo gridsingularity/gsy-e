@@ -111,6 +111,7 @@ class FakeMarket:
 class FakeTrade:
     def __init__(self, offer):
         self.offer = offer
+        self.seller = "FakeSeller"
 
     @property
     def buyer(self):
@@ -168,6 +169,8 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     pv_test3.event_market_cycle()
     old_offer = list(pv_test3.offers.posted.keys())[0]
     area_test3.current_tick += 310
+    # in order to mimic at least one past price update:
+    pv_test3.offer_update.increment_update_counter_all_markets(pv_test3)
     pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[0]
     assert new_offer.price < old_offer.price
@@ -270,6 +273,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     pv_test6.event_market_cycle()
     assert market_test3.created_offers[0].energy == pv_test6.energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
+    fake_trade.seller = pv_test6.owner.name
     pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     pv_test6.event_tick()

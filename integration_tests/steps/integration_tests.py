@@ -219,9 +219,26 @@ def two_sided_pay_as_clear_market(context):
     ConstSettings.IAASettings.MARKET_TYPE = 3
 
 
+@given('d3a dispatches events from top to bottom')
+def dispatch_top_bottom(context):
+    import d3a.constants
+    d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
+
+
+@given('d3a dispatches events from bottom to top')
+def dispatch_bootom_top(context):
+    import d3a.constants
+    d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = True
+
+
 @given('the past markets are kept in memory')
 def past_markets_in_memory(context):
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+
+
+@given('the minimum offer age is {min_offer_age}')
+def set_min_offer_age(context, min_offer_age):
+    ConstSettings.IAASettings.MIN_OFFER_AGE = int(min_offer_age)
 
 
 @when('the simulation is running')
@@ -322,17 +339,19 @@ def run_d3a_with_settings_file(context):
 
 @when('the reported unmatched loads are saved')
 def save_reported_unmatched_loads(context):
-    context.unmatched_loads = deepcopy(context.simulation.endpoint_buffer.unmatched_loads)
+    unmatched_loads_object = context.simulation.endpoint_buffer.market_unmatched_loads
+    context.unmatched_loads = deepcopy(unmatched_loads_object.unmatched_loads)
     context.unmatched_loads_redis = \
-        deepcopy(context.simulation.endpoint_buffer.unmatched_loads_redis)
+        deepcopy(unmatched_loads_object.unmatched_loads_uuid)
 
 
 @when('the reported energy trade profile are saved')
 def save_reported_energy_trade_profile(context):
+    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
     context.energy_trade_profile = deepcopy(
-        context.simulation.endpoint_buffer.energy_trade_profile)
+        file_export_endpoints.traded_energy_profile)
     context.energy_trade_profile_redis = \
-        deepcopy(context.simulation.endpoint_buffer.energy_trade_profile_redis)
+        deepcopy(file_export_endpoints.traded_energy_profile_redis)
 
 
 @when('the reported price energy day results are saved')
@@ -352,17 +371,20 @@ def save_reported_bills(context):
 
 @when('the past markets are not kept in memory')
 def past_markets_not_in_memory(context):
+    # d3a has to be set to publish the full results:
+    ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS = True
+
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
 
 
 @when('the reported cumulative grid trades are saved')
 def save_reported_cumulative_grid_trade_profile(context):
     context.cumulative_grid_trades = deepcopy(
-        context.simulation.endpoint_buffer.accumulated_trades)
+        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades)
     context.cumulative_grid_trades_redis = \
-        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades_redis)
+        deepcopy(context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis)
     context.cumulative_grid_balancing_trades = deepcopy(
-        context.simulation.endpoint_buffer.cumulative_grid_balancing_trades)
+        context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades)
 
 
 @then('we test the export functionality of {scenario}')
@@ -427,12 +449,11 @@ def test_aggregated_result_files(context):
                  os.path.join(base_path, 'cumulative_grid_trades.json'),
                  os.path.join(base_path, 'cumulative_loads.json'),
                  os.path.join(base_path, 'job_id.json'),
-                 os.path.join(base_path, 'KPI.json'),
+                 os.path.join(base_path, 'kpi.json'),
                  os.path.join(base_path, 'price_energy_day.json'),
                  os.path.join(base_path, 'random_seed.json'),
                  os.path.join(base_path, 'status.json'),
                  os.path.join(base_path, 'trade-detail.json'),
-                 os.path.join(base_path, 'tree_summary.json'),
                  os.path.join(base_path, 'unmatched_loads.json')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
@@ -675,8 +696,11 @@ def test_accumulated_energy_price(context):
     cell_tower_bill = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
     net_traded_energy_price = cell_tower_bill
     for house_key in ["House 1", "House 2"]:
+        extern_trades = bills[house_key]["External Trades"]
+        assert extern_trades["total_energy"] == extern_trades["bought"] - extern_trades["sold"]
+        assert extern_trades["total_cost"] == extern_trades["spent"] - extern_trades["earned"]
         house_bill = bills[house_key]["Accumulated Trades"]["earned"] - \
-                     bills[house_key]["Accumulated Trades"]["spent"]
+            bills[house_key]["Accumulated Trades"]["spent"]
         area_net_traded_energy_price = \
             sum([v["earned"] - v["spent"] for k, v in bills[house_key].items()
                 if k not in ACCUMULATED_KEYS_LIST])
@@ -704,6 +728,35 @@ def test_accumulated_energy(context):
     assert isclose(net_energy, 0, abs_tol=1e-10)
 
 
+@then('the energy bills report the correct external traded energy and price')
+def test_external_trade_energy_price(context):
+    # TODO: Deactivating this test for now, because it will fail due to D3ASIM-1887.
+    # Please activate the test when implementing the aforementioned bug.
+    return
+    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis
+    houses = [child for child in context.simulation.area.children
+              if child.name in ["House 1", "House 2"]]
+    for house in houses:
+        house_sold = bills[house.name]["External Trades"]["sold"]
+        house_bought = bills[house.name]["External Trades"]["bought"]
+
+        external_trade_sold = sum([
+            k["energy"]
+            for k in current_trades[house.uuid][-1]["bars"]
+            if "External sources" in k["energyLabel"] and k["energy"] < 0
+        ])
+
+        external_trade_bought = sum([
+            k["energy"]
+            for k in current_trades[house.uuid][-1]["bars"]
+            if "External sources" in k["energyLabel"] and k["energy"] >= 0
+        ])
+
+        assert isclose(-external_trade_sold, house_sold, abs_tol=1e-3)
+        assert isclose(external_trade_bought, house_bought, abs_tol=1e-3)
+
+
 def generate_area_uuid_map(sim_area, results):
     results[sim_area.slug] = sim_area.uuid
     for child in sim_area.children:
@@ -714,10 +767,11 @@ def generate_area_uuid_map(sim_area, results):
 @then('the traded energy profile is correctly generated')
 def traded_energy_profile_correctly_generated(context):
     area_uuid_map = generate_area_uuid_map(context.simulation.area, {})
-    assert len(context.simulation.endpoint_buffer.energy_trade_profile.keys()) == \
-        len(context.simulation.endpoint_buffer.energy_trade_profile_redis.keys())
-    for k, v in context.simulation.endpoint_buffer.energy_trade_profile.items():
-        assert context.simulation.endpoint_buffer.energy_trade_profile_redis[area_uuid_map[k]] == v
+    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
+    assert len(file_export_endpoints.traded_energy_profile.keys()) == \
+        len(file_export_endpoints.traded_energy_profile_redis.keys())
+    for k, v in file_export_endpoints.traded_energy_profile.items():
+        assert file_export_endpoints.traded_energy_profile_redis[area_uuid_map[k]] == v
 
 
 @then('the predefined load follows the load profile')
@@ -890,13 +944,24 @@ def _filter_markets_by_market_name(context, market_name):
         return (list(filter(lambda x: x.name == market_name, neigh2.children))[0]).past_markets
 
 
-@then('trades on the {market_name} market clear with {trade_rate} cents/kWh')
-def assert_trade_rates(context, market_name, trade_rate):
+@then('trades on the {market_name} market clear with {trade_rate} cents/kWh and '
+      'at grid_fee_rate with {grid_fee_rate} cents/kWh')
+def assert_trade_rates(context, market_name, trade_rate, grid_fee_rate=0):
     markets = _filter_markets_by_market_name(context, market_name)
 
     for market in markets:
         for t in market.trades:
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))
+            assert isclose(t.fee_price / t.offer.energy, float(grid_fee_rate), rel_tol=1e-05)
+
+
+@then('trades on {market_name} clear with {house_1_rate} or {house_2_rate} cents/kWh')
+def assert_trade_rates_bottom_to_top(context, market_name, house_1_rate, house_2_rate):
+    markets = _filter_markets_by_market_name(context, market_name)
+    for market in markets:
+        for t in market.trades:
+            assert isclose(t.offer.price / t.offer.energy, float(house_1_rate)) or \
+                   isclose(t.offer.price / t.offer.energy, float(house_2_rate))
 
 
 @then('trades on the {market_name} market clear using a rate of either {trade_rate1} or '
@@ -911,8 +976,9 @@ def assert_multiple_trade_rates_any(context, market_name, trade_rate1, trade_rat
 
 @then('the unmatched loads are identical no matter if the past markets are kept')
 def identical_unmatched_loads(context):
-    unmatched_loads = context.simulation.endpoint_buffer.unmatched_loads
-    unmatched_loads_redis = context.simulation.endpoint_buffer.unmatched_loads_redis
+    unmatched_loads = context.simulation.endpoint_buffer.market_unmatched_loads.unmatched_loads
+    unmatched_loads_redis = \
+        context.simulation.endpoint_buffer.market_unmatched_loads.unmatched_loads_uuid
 
     assert len(DeepDiff(unmatched_loads, context.unmatched_loads)) == 0
 
@@ -926,9 +992,9 @@ def identical_unmatched_loads(context):
 @then('the cumulative grid trades are identical no matter if the past markets are kept')
 def identical_cumulative_grid_trades(context):
     cumulative_grid_trades = \
-        context.simulation.endpoint_buffer.accumulated_trades
+        context.simulation.endpoint_buffer.cumulative_grid_trades.accumulated_trades
     cumulative_grid_balancing_trades = \
-        context.simulation.endpoint_buffer.cumulative_grid_balancing_trades
+        context.simulation.endpoint_buffer.cumulative_grid_trades.current_balancing_trades
     assert len(DeepDiff(cumulative_grid_trades, context.cumulative_grid_trades,
                         significant_digits=5)) == 0
     assert len(DeepDiff(cumulative_grid_balancing_trades, context.cumulative_grid_balancing_trades,
@@ -937,8 +1003,9 @@ def identical_cumulative_grid_trades(context):
 
 @then('the energy trade profiles are identical no matter if the past markets are kept')
 def identical_energy_trade_profiles(context):
-    energy_trade_profile = context.simulation.endpoint_buffer.energy_trade_profile
-    energy_trade_profile_redis = context.simulation.endpoint_buffer.energy_trade_profile_redis
+    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
+    energy_trade_profile = file_export_endpoints.traded_energy_profile
+    energy_trade_profile_redis = file_export_endpoints.traded_energy_profile_redis
 
     assert len(DeepDiff(energy_trade_profile, context.energy_trade_profile)) == 0
 

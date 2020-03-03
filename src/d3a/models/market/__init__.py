@@ -36,7 +36,7 @@ from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
 
 log = getLogger(__name__)
 
-TransferFees = namedtuple("TransferFees", ('transfer_fee_pct', 'transfer_fee_const'))
+TransferFees = namedtuple("TransferFees", ('grid_fee_percentage', 'transfer_fee_const'))
 
 
 RLOCK_MEMBER_NAME = "rlock"
@@ -74,7 +74,7 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
-        self.transfer_fee_ratio = transfer_fees.transfer_fee_pct / 100 \
+        self.transfer_fee_ratio = transfer_fees.grid_fee_percentage / 100 \
             if transfer_fees is not None else 0
         self.transfer_fee_const = transfer_fees.transfer_fee_const \
             if transfer_fees is not None else 0
@@ -119,6 +119,7 @@ class Market:
         # sequential approach, but once event handling is enabled this needs to be handled
         if not already_tracked:
             self.trades.append(trade)
+            self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(self.traded_energy, offer.seller, offer.energy)
         self.traded_energy = subtract_or_create_key(self.traded_energy, buyer, offer.energy)
@@ -224,3 +225,12 @@ class Market:
 
     def total_earned(self, seller):
         return sum(trade.offer.price for trade in self.trades if trade.seller == seller)
+
+    @property
+    def info(self):
+        return {
+            "name": self.name,
+            "id": self.id,
+            "start_time": self.time_slot_str,
+            "duration_min": GlobalConfig.slot_length.minutes
+        }

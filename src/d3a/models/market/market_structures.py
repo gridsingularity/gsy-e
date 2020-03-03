@@ -143,24 +143,23 @@ def trade_bid_info_from_JSON_string(info_string):
     return TradeBidInfo(**info_dict)
 
 
-class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller',
-                                 'buyer', 'residual', 'already_tracked',
-                                 'offer_bid_trade_info', 'seller_origin', 'buyer_origin'))):
+class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'residual',
+                                 'already_tracked', 'offer_bid_trade_info', 'seller_origin',
+                                 'buyer_origin', 'fee_price'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None,
                 already_tracked=False, offer_bid_trade_info=None,
-                seller_origin=None, buyer_origin=None):
+                seller_origin=None, buyer_origin=None, fee_price=None):
         # overridden to give the residual field a default value
         return super(Trade, cls).__new__(cls, id, time, offer, seller, buyer, residual,
                                          already_tracked, offer_bid_trade_info, seller_origin,
-                                         buyer_origin)
+                                         buyer_origin, fee_price)
 
     def __str__(self):
-        mark_partial = "(partial)" if self.residual is not None else ""
         return (
             "{{{s.id!s:.6s}}} [origin: {s.seller_origin} -> {s.buyer_origin}] "
-            "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh {p} @ {s.offer.price} {rate} "
-            "{s.offer.id}".
-            format(s=self, p=mark_partial, rate=round(self.offer.price / self.offer.energy, 8))
+            "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh @ {s.offer.price} {rate} "
+            "{s.offer.id} [fee: {s.fee_price} cts.]".
+            format(s=self, rate=round(self.offer.price / self.offer.energy, 8))
         )
 
     @classmethod
@@ -206,20 +205,19 @@ class BalancingOffer(Offer):
 
 class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'seller',
                                                    'buyer', 'residual', 'offer_bid_trade_info',
-                                                   'seller_origin', 'buyer_origin'))):
+                                                   'seller_origin', 'buyer_origin', 'fee_price'))):
     def __new__(cls, id, time, offer, seller, buyer, residual=None, offer_bid_trade_info=None,
-                seller_origin=None, buyer_origin=None):
+                seller_origin=None, buyer_origin=None, fee_price=None):
         # overridden to give the residual field a default value
         return super(BalancingTrade, cls).__new__(cls, id, time, offer, seller,
                                                   buyer, residual, offer_bid_trade_info,
-                                                  seller_origin, buyer_origin)
+                                                  seller_origin, buyer_origin, fee_price)
 
     def __str__(self):
-        mark_partial = "(partial)" if self.residual is not None else ""
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
-            "{s.offer.energy} kWh {p} @ {s.offer.price} {rate} {s.offer.id}".
-            format(s=self, p=mark_partial, rate=self.offer.price / self.offer.energy)
+            "{s.offer.energy} kWh @ {s.offer.price} {rate} {s.offer.id}".
+            format(s=self, rate=self.offer.price / self.offer.energy)
         )
 
     @classmethod

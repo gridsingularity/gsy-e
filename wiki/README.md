@@ -24,7 +24,7 @@ Now install all necessary dependencies, once again by using `pip`.
 pip install -r requirements.txt
 ```
 
-Run `mkdocs serve` from the repository root to spawn a hot reloading development server and navigate to `localhost:8000` in a web browser.
+Run `mkdocs serve` from the repository root to spawn a hot reloading development server and navigate to `localhost:8000/d3a-documentation` in a web browser.
 
 ## Publishing
 

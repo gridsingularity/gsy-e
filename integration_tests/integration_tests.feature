@@ -42,6 +42,7 @@ Feature: Run integration tests
     When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
     Then the traded energy report the correct accumulated traded energy
     And the energy bills report the correct accumulated traded energy price
+    And the energy bills report the correct external traded energy and price
     And the traded energy profile is correctly generated
 
   Examples: Settings
@@ -80,7 +81,7 @@ Feature: Run integration tests
      When we run simulation on console with default settings file
      Then we test the export functionality of default_2a
 
-  Scenario: Simulation returns same results for different market counts
+  Scenario: Simulation returns same results for different future market counts
     Given we have a scenario named default_2a
     And d3a is installed
     When we run the simulation with setup file default_2a with two different market_counts
@@ -91,39 +92,6 @@ Feature: Run integration tests
      And d3a is installed
      When we run the d3a simulation on console with default_2a for 2 hrs
      Then aggregated result files are exported
-
-  Scenario: Grid fees are calculated based on the original offer rate
-     Given we have a scenario named non_compounded_grid_fees
-     And d3a is installed
-     And d3a uses an one-sided market
-     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
-     Then trades on the House 1 market clear with 12.0 cents/kWh
-     Then trades on the Neighborhood 1 market clear with 11.5 cents/kWh
-     Then trades on the Grid market clear with 10.5 cents/kWh
-     Then trades on the Neighborhood 2 market clear with 10.0 cents/kWh
-     Then trades on the House 2 market clear with 10.0 cents/kWh
-
-  Scenario: Grid fees are calculated based on the original bid rate
-     Given we have a scenario named non_compounded_grid_fees
-     And d3a is installed
-     And d3a uses an two-sided pay-as-bid market
-     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
-     Then trades on the House 1 market clear with 30.0 cents/kWh
-     Then trades on the Neighborhood 1 market clear with 30 cents/kWh
-     Then trades on the Grid market clear with 28.75 cents/kWh
-     Then trades on the Neighborhood 2 market clear with 26.25 cents/kWh
-     Then trades on the House 2 market clear with 25.0 cents/kWh
-
-  Scenario: Grid fees are calculated based on the clearing rate for pay as clear
-     Given we have a scenario named non_compounded_grid_fees
-     And d3a is installed
-     And d3a uses an two-sided pay-as-clear market
-     When we run the simulation with setup file non_compounded_grid_fees and parameters [24, 60, 60, 0, 1]
-     Then trades on the House 1 market clear with 28.5 cents/kWh
-     Then trades on the Neighborhood 1 market clear with 28.5 cents/kWh
-     Then trades on the Grid market clear with 27.3125 cents/kWh
-     Then trades on the Neighborhood 2 market clear with 24.9375 cents/kWh
-     Then trades on the House 2 market clear with 23.75 cents/kWh
 
   Scenario Outline: Unmatched loads are the same with and without keeping the past markets
      Given we have a scenario named <scenario>

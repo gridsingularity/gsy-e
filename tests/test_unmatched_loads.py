@@ -50,11 +50,11 @@ class TestUnmatchedLoad(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
         self.area1 = Area("load1", None, None, self.strategy1, self.appliance,
-                          self.config, None, transfer_fee_pct=0)
+                          self.config, None, grid_fee_percentage=0)
         self.area2 = Area("load2", None, None, self.strategy2, self.appliance,
-                          self.config, None, transfer_fee_pct=0)
+                          self.config, None, grid_fee_percentage=0)
         self.area3 = Area("load3", None, None, self.strategy3, self.appliance,
-                          self.config, None, transfer_fee_pct=0)
+                          self.config, None, grid_fee_percentage=0)
 
     def tearDown(self):
         pass
@@ -182,8 +182,8 @@ class TestUnmatchedLoad(unittest.TestCase):
         house1 = Area("House1", [])
         self.grid = Area("Grid", [house1])
         epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid)
-        epb._update_unmatched_loads(self.grid)
-        unmatched_loads = epb.unmatched_loads
+        epb.market_unmatched_loads.update_unmatched_loads(self.grid)
+        unmatched_loads = epb.market_unmatched_loads.unmatched_loads
         assert unmatched_loads["House1"] is None
         assert unmatched_loads["Grid"] is None
 
@@ -191,7 +191,7 @@ class TestUnmatchedLoad(unittest.TestCase):
         house1 = Area("House1", [self.area1, self.area3])
         self.grid = Area("Grid", [house1])
         epb = SimulationEndpointBuffer("1", {"seed": 0}, self.grid)
-        epb._update_unmatched_loads(self.grid)
-        unmatched_loads = epb.unmatched_loads
+        epb.market_unmatched_loads.update_unmatched_loads(self.grid)
+        unmatched_loads = epb.market_unmatched_loads.unmatched_loads
         assert unmatched_loads["House1"] is not None
         assert unmatched_loads["Grid"] is not None

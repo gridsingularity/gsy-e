@@ -23,11 +23,9 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     area = Area(
         'Grid',
         [
@@ -46,7 +44,7 @@ def get_setup(config):
                                                       final_selling_rate=5),
                          appliance=PVAppliance()),
                 ],
-                transfer_fee_pct=0, transfer_fee_const=0,
+                grid_fee_percentage=0, transfer_fee_const=0,
 
             ),
             Area('Commercial Energy Producer',

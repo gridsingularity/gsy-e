@@ -31,6 +31,7 @@ from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
 
+
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
 StorageSettings = ConstSettings.StorageSettings
@@ -163,11 +164,17 @@ class StorageStrategy(BidEnabledStrategy):
     def event_on_disabled_area(self):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)
 
-    def event_activate(self):
-        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
+    def event_activate_price(self):
         self.offer_update.update_on_activate()
         self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()
+
+    def event_activate_energy(self):
+        self.state.set_battery_energy_per_slot(self.area.config.slot_length)
+
+    def event_activate(self):
+        self.event_activate_energy()
+        self.event_activate_price()
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
@@ -262,11 +269,10 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
         for market in self.area.all_markets:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                if self.bid_update.get_price_update_point(self, market.time_slot):
-                    self.buy_energy(market)
+                self.buy_energy(market)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
-
+                self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
                 if self.are_bids_posted(market.id):
                     self.bid_update.update_posted_bids_over_ticks(market, self)
                 else:
@@ -280,9 +286,16 @@ class StorageStrategy(BidEnabledStrategy):
             if self.cap_price_strategy is False:
                 self.offer_update.update_offer(self)
 
+        self.bid_update.increment_update_counter_all_markets(self)
+        self.offer_update.increment_update_counter_all_markets(self)
+
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
         super().event_trade(market_id=market_id, trade=trade)
+
+        self.assert_if_trade_bid_price_is_too_high(market, trade)
+        self.assert_if_trade_offer_price_is_too_low(market_id, trade)
+
         if trade.buyer == self.owner.name:
             self._track_energy_bought_type(trade)
         if trade.offer.seller == self.owner.name:
@@ -377,32 +390,35 @@ class StorageStrategy(BidEnabledStrategy):
     def buy_energy(self, market):
         max_affordable_offer_rate = min(self.bid_update.get_updated_rate(market.time_slot),
                                         self.bid_update.final_rate[market.time_slot])
+        # Check if storage has free capacity
+        if self.state.free_storage(market.time_slot) <= 0.0:
+            return
+
         for offer in market.sorted_offers:
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
-
+            # Check if the price is cheap enough
+            if (offer.price / offer.energy) > max_affordable_offer_rate:
+                continue
             alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
             if offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME \
                     and alt_pricing_settings.PRICING_SCHEME != 0:
                 # don't buy from IAA if alternative pricing scheme is activated
                 continue
-            # Check if storage has free capacity and if the price is cheap enough
-            if self.state.free_storage(market.time_slot) > 0.0 \
-                    and (offer.price / offer.energy) <= max_affordable_offer_rate:
-                try:
-                    max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
-                    if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
-                        self.accept_offer(market, offer, energy=max_energy,
-                                          buyer_origin=self.owner.name)
-                        self.state.pledged_buy_kWh[market.time_slot] += max_energy
-                        return True
 
-                except MarketException:
-                    # Offer already gone etc., try next one.
-                    return False
-            else:
-                return False
+            try:
+                self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+                max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
+                if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
+                    self.accept_offer(market, offer, energy=max_energy,
+                                      buyer_origin=self.owner.name)
+                    self.state.pledged_buy_kWh[market.time_slot] += max_energy
+                    continue
+
+            except MarketException:
+                # Offer already gone etc., try next one.
+                continue
 
     def sell_energy(self):
         markets_to_sell = self.select_market_to_sell()
@@ -414,9 +430,9 @@ class StorageStrategy(BidEnabledStrategy):
             if not self.state.has_battery_reached_max_power(energy, market.time_slot):
                 if energy > 0.0:
                     offer = market.offer(
-                        energy * selling_rate,
-                        energy,
-                        self.owner.name,
+                        price=energy * selling_rate,
+                        energy=energy,
+                        seller=self.owner.name,
                         original_offer_price=energy * selling_rate,
                         seller_origin=self.owner.name
                     )

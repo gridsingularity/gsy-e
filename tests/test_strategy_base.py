@@ -21,7 +21,7 @@ import pendulum
 
 from d3a.constants import TIME_ZONE
 from d3a.d3a_core.exceptions import MarketException
-from d3a.models.strategy import BidEnabledStrategy, Offers
+from d3a.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
 from d3a.models.market.market_structures import Offer, Trade, Bid
 from d3a_interface.constants_limits import ConstSettings
 
@@ -76,7 +76,7 @@ class FakeOffer:
 
 
 class FakeMarket:
-    def __init__(self, *, raises, id=11):
+    def __init__(self, *, raises, id="11"):
         self.raises = raises
         self.transfer_fee_ratio = 0
         self.bids = {}
@@ -111,7 +111,9 @@ def offers():
 
 def test_offers_open(offers):
     assert len(offers.open) == 1
-    offers.sold['market'].append('id')
+    market = offers.__fake_market
+    old_offer = offers.posted_in_market(market.id)[0]
+    offers.sold_offer(old_offer, 'market')
     assert len(offers.open) == 0
 
 
@@ -119,7 +121,7 @@ def test_offers_replace_open_offer(offers):
     market = offers.__fake_market
     old_offer = offers.posted_in_market(market.id)[0]
     new_offer = FakeOffer('new_id')
-    offers.replace(old_offer, new_offer, market)
+    offers.replace(old_offer, new_offer, market.id)
     assert offers.posted_in_market(market.id)[0].id == 'new_id'
     assert 'id' not in offers.posted
 
@@ -127,7 +129,7 @@ def test_offers_replace_open_offer(offers):
 def test_offers_does_not_replace_sold_offer(offers):
     old_offer = offers.posted_in_market('market')[0]
     new_offer = FakeOffer('new_id')
-    offers.sold_offer('id', 'market')
+    offers.sold_offer(old_offer, 'market')
     offers.replace(old_offer, new_offer, 'market')
     assert old_offer in offers.posted and new_offer not in offers.posted
 
@@ -142,8 +144,9 @@ def offers2():
 
 
 def test_offers_in_market(offers2):
+    old_offer = next(o for o in offers2.posted_in_market('market') if o.id == "id2")
     assert len(offers2.posted_in_market('market')) == 2
-    offers2.sold_offer('id2', 'market')
+    offers2.sold_offer(old_offer, 'market')
     assert len(offers2.sold_in_market('market')) == 1
     assert len(offers2.sold_in_market('market2')) == 0
 
@@ -163,10 +166,10 @@ def offers3(offer1):
 
 
 def test_offers_partial_offer(offer1, offers3):
-    accepted_offer = Offer('id', 1, 1.8, offer1.seller, 'market')
+    accepted_offer = Offer('id', 1, 0.6, offer1.seller, 'market')
     residual_offer = Offer('new_id', 1, 1.2, offer1.seller, 'market')
+    offers3.on_offer_split(offer1, accepted_offer, residual_offer, 'market')
     trade = Trade('trade_id', pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, 'buyer')
-    offers3.on_offer_changed(offer1, residual_offer)
     offers3.on_trade('market', trade)
     assert len(offers3.sold_in_market('market')) == 1
     assert accepted_offer in offers3.sold_in_market('market')
@@ -251,7 +254,8 @@ def test_bid_events_fail_for_one_sided_market(base):
     with pytest.raises(AssertionError):
         base.event_bid_deleted(market_id=123, bid=test_bid)
     with pytest.raises(AssertionError):
-        base.event_bid_changed(market_id=123, existing_bid=test_bid, new_bid=test_bid)
+        base.event_bid_split(market_id=123, original_bid=test_bid, accepted_bid=test_bid,
+                             residual_bid=test_bid)
 
 
 def test_bid_deleted_removes_bid_from_posted(base):
@@ -264,14 +268,17 @@ def test_bid_deleted_removes_bid_from_posted(base):
     assert base.get_posted_bids(market) == []
 
 
-def test_bid_changed_adds_bid_to_posted(base):
+def test_bid_split_adds_bid_to_posted(base):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", 12, 23, base.owner.name, 'B')
+    test_bid = Bid("123", 12, 12, base.owner.name, 'B')
+    accepted_bid = Bid("123", 8, 8, base.owner.name, 'B')
+    residual_bid = Bid("456", 4, 4, base.owner.name, 'B')
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = []
-    base.event_bid_changed(market_id=21, existing_bid=test_bid, new_bid=test_bid)
-    assert base.get_posted_bids(market) == [test_bid]
+    base.event_bid_split(market_id=21, original_bid=test_bid, accepted_bid=accepted_bid,
+                         residual_bid=residual_bid)
+    assert base.get_posted_bids(market) == [accepted_bid, residual_bid]
 
 
 def test_bid_traded_moves_bid_from_posted_to_traded(base):
@@ -286,3 +293,31 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     base.event_bid_traded(market_id=21, bid_trade=trade)
     assert base.get_posted_bids(market) == []
     assert base.get_traded_bids_from_market(market) == [test_bid]
+
+
+def test_can_offer_be_posted(base):
+    base = BaseStrategy()
+    base.owner = FakeOwner()
+    base.area = FakeArea()
+    market = FakeMarket(raises=True)
+    base.area._market = market
+    base.offers.post(Offer('id', price=1, energy=12, seller='A'), market.id)
+    base.offers.post(Offer('id2', price=1, energy=13, seller='A'), market.id)
+    base.offers.post(Offer('id3', price=1, energy=20, seller='A'), market.id)
+    assert base.can_offer_be_posted(4.999, 50, market) is True
+    assert base.can_offer_be_posted(5.0, 50, market) is True
+    assert base.can_offer_be_posted(5.001, 50, market) is False
+
+
+def test_can_bid_be_posted(base):
+    base = BidEnabledStrategy()
+    base.owner = FakeOwner()
+    base.area = FakeArea()
+    market = FakeMarket(raises=True)
+    base.area._market = market
+    base.post_bid(market, 1, 23)
+    base.post_bid(market, 1, 27)
+    base.post_bid(market, 1, 10)
+    assert base.can_bid_be_posted(9.999, 70, market) is True
+    assert base.can_bid_be_posted(10.0, 70, market) is True
+    assert base.can_bid_be_posted(10.001, 70, market) is False

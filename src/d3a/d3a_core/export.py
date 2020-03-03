@@ -29,7 +29,6 @@ from sortedcontainers import SortedDict
 from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
-from d3a.d3a_core.sim_results.file_export_endpoints import KPI
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
@@ -72,7 +71,6 @@ class ExportAndPlot:
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
         self.export_data = self.endpoint_buffer.file_export_endpoints
-        self.kpi = KPI()
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -94,11 +92,6 @@ class ExportAndPlot:
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        kpi_file = os.path.join(json_dir, "KPI.json")
-        self.kpi.update_kpis_from_area(area)
-        with open(kpi_file, 'w') as outfile:
-
-            json.dump(self.kpi.performance_index, outfile, indent=2)
         trade_file = os.path.join(json_dir, "trade-detail.json")
         with open(trade_file, 'w') as outfile:
             json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)
@@ -182,8 +175,6 @@ class ExportAndPlot:
         self._export_area_stats_csv_file(area, directory, balancing=True, is_first=is_first)
 
         if area.children:
-            # TODO: To be uncommented once KPI is implemented
-            # self.kpi.update_kpis_from_area(area)
             self._export_trade_csv_files(area, directory, balancing=False, is_first=is_first)
             self._export_trade_csv_files(area, directory, balancing=True, is_first=is_first)
             self._export_area_offers_bids_csv_files(area, directory, "offers", Offer,

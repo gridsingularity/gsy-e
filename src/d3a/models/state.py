@@ -103,9 +103,8 @@ class StorageState:
             {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
         self.offered_history = \
             {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
-        self.used_history = \
-            {slot: '-' for slot in generate_market_slot_list()}  # type: Dict[DateTime, float]
         self.energy_to_buy_dict = {slot: 0. for slot in generate_market_slot_list()}
+        self.energy_to_sell_dict = {slot: 0. for slot in generate_market_slot_list()}
 
         self._used_storage = initial_capacity_kWh
         self._battery_energy_per_slot = 0.0
@@ -175,6 +174,7 @@ class StorageState:
                                                             energy / len(market_slot_time_list),
                                                             self.max_offer_energy_kWh(time_slot),
                                                             self._battery_energy_per_slot))
+            self.energy_to_sell_dict[time_slot] = storage_dict[time_slot]
 
         return storage_dict
 
@@ -206,8 +206,9 @@ class StorageState:
         """
         charge = limit_float_precision(self.used_storage / self.capacity)
         max_value = self.capacity - self.min_allowed_soc_ratio * self.capacity
-        assert self.min_allowed_soc_ratio < charge or \
+        assert self.min_allowed_soc_ratio <= charge or \
             isclose(self.min_allowed_soc_ratio, charge, rel_tol=1e-06)
+        assert limit_float_precision(self.used_storage) <= self.capacity
         assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
         assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value

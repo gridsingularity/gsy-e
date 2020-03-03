@@ -26,6 +26,7 @@ from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
+    # Left this for testing that the KPIs export also works with KEEP_PAST_MARKETS
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     area = Area(
         'Grid',
@@ -44,7 +45,7 @@ def get_setup(config):
                          appliance=PVAppliance()),
 
                 ],
-                transfer_fee_pct=0, transfer_fee_const=0,
+                grid_fee_percentage=0, transfer_fee_const=0,
 
             ),
             Area('Commercial Energy Producer',

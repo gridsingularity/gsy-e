@@ -275,6 +275,8 @@ class Simulation:
                 sleep(5)
                 break
 
+            self.area._cycle_markets()
+
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 # reset tick_resume after possible resume
                 tick_resume = 0
@@ -290,7 +292,7 @@ class Simulation:
                     (tick_no + 1) / config.ticks_per_slot * 100,
                 )
 
-                self.area.tick(is_root_area=True)
+                self.area.tick_and_dispatch()
 
                 realtime_tick_length = time.monotonic() - tick_start
                 if self.slowdown and realtime_tick_length < tick_lengths_s:
@@ -301,6 +303,8 @@ class Simulation:
                     log.trace("Slowdown: %.4f", diff_slowdown)
                     if console is not None:
                         self._handle_input(console, diff_slowdown)
+                    else:
+                        sleep(diff_slowdown)
 
                 if ConstSettings.GeneralSettings.RUN_REAL_TIME:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
