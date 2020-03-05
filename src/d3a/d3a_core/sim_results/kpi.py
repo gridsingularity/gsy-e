@@ -124,6 +124,7 @@ class KPIState:
 class KPI:
     def __init__(self):
         self.performance_indices = dict()
+        self.performance_indices_redis = dict()
         self.state = {}
 
     def __repr__(self):
@@ -158,6 +159,7 @@ class KPI:
     def update_kpis_from_area(self, area):
         self.performance_indices[area.name] = \
             self.area_performance_indices(area)
+        self.performance_indices_redis[area.uuid] = self.performance_indices[area.name]
 
         for child in area.children:
             if len(child.children) > 0:
