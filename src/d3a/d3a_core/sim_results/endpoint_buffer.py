@@ -63,7 +63,7 @@ class SimulationEndpointBuffer:
             "bills": self.market_bills.bills_redis_results,
             "status": self.status,
             "eta_seconds": self.eta.seconds,
-            "kpi": self.kpi.performance_indices
+            "kpi": self.kpi.performance_indices_redis
         }
 
         if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
