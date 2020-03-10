@@ -24,7 +24,6 @@ from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.kpi import KPI
-from pendulum import duration
 
 _NO_VALUE = {
     'min': None,
@@ -39,7 +38,11 @@ class SimulationEndpointBuffer:
         self.current_market = ""
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
-        self.eta = duration(seconds=0)
+        self.simulation_progress = {
+            "eta_seconds": 0,
+            "elapsed_time_seconds": 0,
+            "percentage_completed": 0
+        }
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
         self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
@@ -62,7 +65,7 @@ class SimulationEndpointBuffer:
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_redis_results,
             "status": self.status,
-            "eta_seconds": self.eta.seconds,
+            "progress_info": self.simulation_progress,
             "kpi": self.kpi.performance_indices_redis
         }
 
@@ -93,16 +96,21 @@ class SimulationEndpointBuffer:
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_results,
             "status": self.status,
+            "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
             "kpi": self.kpi.performance_indices
         }
 
-    def update_stats(self, area, simulation_status, eta):
+    def update_stats(self, area, simulation_status, progress_info):
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market = area.current_market.time_slot_str
-        self.eta = eta
+        self.simulation_progress = {
+            "eta_seconds": progress_info.eta.seconds,
+            "elapsed_time_seconds": progress_info.elapsed_time.seconds,
+            "percentage_completed": int(progress_info.percentage_completed)
+        }
         self.cumulative_loads = export_cumulative_loads(area)
 
         self.cumulative_grid_trades.update(area)
