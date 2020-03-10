@@ -62,6 +62,13 @@ class SimulationResetException(Exception):
     pass
 
 
+class SimulationProgressInfo:
+    def __init__(self):
+        self.eta = duration(seconds=0)
+        self.elapsed_time = duration(seconds=0)
+        self.percentage_completed = 0
+
+
 class Simulation:
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig = None,
                  simulation_events: str = None, slowdown: int = 0, seed=None,
@@ -74,7 +81,7 @@ class Simulation:
             paused=paused,
             pause_after=pause_after
         )
-        self.eta = duration(seconds=0)
+        self.progress_info = SimulationProgressInfo()
         self.simulation_config = simulation_config
         self.use_repl = repl
         self.export_on_finish = not no_export
@@ -233,7 +240,7 @@ class Simulation:
             self._execute_simulation(slot_resume, tick_resume, console)
 
     def _update_and_send_results(self, is_final=False):
-        self.endpoint_buffer.update_stats(self.area, self.status, self.eta)
+        self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
         if not self.redis_connection.is_enabled():
             return
         if is_final:
@@ -250,6 +257,16 @@ class Simulation:
                 self.endpoint_buffer
             )
 
+    def _update_progress_info(self, slot_no, slot_count):
+        run_duration = (
+                DateTime.now(tz=TIME_ZONE) - self.run_start -
+                duration(seconds=self.paused_time)
+        )
+
+        self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
+        self.progress_info.elapsed_time = run_duration
+        self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
+
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
         tick_lengths_s = config.tick_length.total_seconds()
@@ -257,19 +274,17 @@ class Simulation:
 
         self._update_and_send_results()
         for slot_no in range(slot_resume, slot_count):
-            run_duration = (
-                    DateTime.now(tz=TIME_ZONE) - self.run_start -
-                    duration(seconds=self.paused_time)
-            )
+            self._update_progress_info(slot_no, slot_count)
 
-            self.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
             log.info(
                 "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
                 slot_no + 1,
                 slot_count,
-                (slot_no + 1) / slot_count * 100,
-                run_duration, self.eta
+                self.progress_info.percentage_completed,
+                self.progress_info.elapsed_time,
+                self.progress_info.eta
             )
+
             if self.is_stopped:
                 log.info("Received stop command.")
                 sleep(5)
@@ -316,18 +331,15 @@ class Simulation:
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
 
-        run_duration = (
-                DateTime.now(tz=TIME_ZONE) - self.run_start -
-                duration(seconds=self.paused_time)
-        )
+        self._update_progress_info(slot_count - 1, slot_count)
         paused_duration = duration(seconds=self.paused_time)
 
         if not self.is_stopped:
             log.info(
                 "Run finished in %s%s / %.2fx real time",
-                run_duration,
+                self.progress_info.elapsed_time,
                 " ({} paused)".format(paused_duration) if paused_duration else "",
-                config.sim_duration / (run_duration - paused_duration)
+                config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
             )
 
         self._update_and_send_results(is_final=True)
@@ -406,7 +418,7 @@ class Simulation:
         if self.paused:
             start = time.monotonic()
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
-            self.endpoint_buffer.update_stats(self.area, self.status, self.eta)
+            self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
             self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
             while self.paused:
                 self._handle_input(console, 0.1)
