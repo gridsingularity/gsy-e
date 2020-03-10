@@ -176,9 +176,7 @@ class OneSidedMarket(Market):
                     trade_bid_info, self.transfer_fee_ratio
                 )
             grid_fee_price = grid_fee_rate * energy
-            return grid_fee_price, energy * (trade_rate_incl_fees - grid_fee_rate) \
-                if original_offer.seller_origin == offer.seller else \
-                energy * trade_rate_incl_fees
+            return grid_fee_price, energy * energy * trade_rate_incl_fees
 
     @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
