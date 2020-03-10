@@ -68,10 +68,12 @@ class LoadExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
-            self.remove_bid_from_pending(arguments["bid"], self.market.id)
+            deleted_bids_dict = self.remove_bid_from_pending(self.market.id, arguments["bid"])
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete", "status": "ready", "bid_deleted": arguments["bid"]}
+                {"command": "bid_delete",
+                 "status": "ready",
+                 "bids_deleted": list(deleted_bids_dict.keys())}
             )
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "

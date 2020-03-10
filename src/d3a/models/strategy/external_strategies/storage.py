@@ -176,11 +176,14 @@ class StorageExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
-            self.remove_bid_from_pending(arguments["bid"], self.market.id)
-            self.state.offered_buy_kWh[self.market.time_slot] -= arguments["bid"]["energy"]
+            deleted_bids_dict = self.remove_bid_from_pending(self.market.id, arguments["bid"])
+            for energy in deleted_bids_dict.values():
+                self.state.offered_buy_kWh[self.market.time_slot] -= energy
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete", "status": "ready", "bid_deleted": arguments["bid"]})
+                {"command": "bid_delete",
+                 "status": "ready",
+                 "bids_deleted": list(deleted_bids_dict.keys())})
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")

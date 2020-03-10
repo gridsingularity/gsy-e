@@ -402,13 +402,25 @@ class BidEnabledStrategy(BaseStrategy):
             return 0.0
         return sum(b.energy for b in self._bids[market_id])
 
-    def remove_bid_from_pending(self, bid_id, market_id):
+    def remove_bid_from_pending(self, market_id, bid_id=None):
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return
-        if bid_id in market.bids.keys():
-            market.delete_bid(bid_id)
-        self._bids[market.id] = [bid for bid in self._bids[market.id] if bid.id != bid_id]
+        if bid_id is None:
+            # delete all bids associated with this strategy
+            deleted_bids_dict = {b_id: bid.energy for b_id, bid in market.bids.items()
+                                 if bid.buyer == self.owner.name}
+            for b_id in deleted_bids_dict:
+                market.delete_bid(b_id)
+            self._bids[market.id] = []
+        else:
+            # delete only one bid
+            deleted_bids_dict = {b_id: bid.energy for b_id, bid in market.bids.items()
+                                 if bid.id == bid_id}
+            if bid_id in market.bids.keys():
+                market.delete_bid(bid_id)
+            self._bids[market.id] = [bid for bid in self._bids[market.id] if bid.id != bid_id]
+        return deleted_bids_dict
 
     def add_bid_to_posted(self, market_id, bid):
         if market_id not in self._bids.keys():
@@ -420,7 +432,7 @@ class BidEnabledStrategy(BaseStrategy):
             self._traded_bids[market_id] = []
         self._traded_bids[market_id].append(bid)
         if remove_bid:
-            self.remove_bid_from_pending(bid.id, market_id)
+            self.remove_bid_from_pending(market_id, bid.id)
 
     def get_traded_bids_from_market(self, market):
         if market.id not in self._traded_bids:
@@ -461,7 +473,7 @@ class BidEnabledStrategy(BaseStrategy):
 
         if bid.buyer != self.owner.name:
             return
-        self.remove_bid_from_pending(bid.id, market_id)
+        self.remove_bid_from_pending(market_id, bid.id)
 
     def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
         assert ConstSettings.IAASettings.MARKET_TYPE != 1, \
