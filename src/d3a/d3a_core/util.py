@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import pendulum
 import select
 import sys
 import termios
@@ -482,3 +483,19 @@ def convert_percent_to_ratio(unit_percent):
 
 def short_offer_bid_log_str(offer_or_bid):
     return f"({{{offer_or_bid.id!s:.6s}}}: {offer_or_bid.energy} kWh)"
+
+
+def export_default_settings_to_json_file():
+    base_settings = {
+            "sim_duration": f"{GlobalConfig.DURATION_D*24}h",
+            "slot_length": f"{GlobalConfig.SLOT_LENGTH_M}m",
+            "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
+            "market_count": GlobalConfig.MARKET_COUNT,
+            "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
+            "iaa_fee": GlobalConfig.IAA_FEE,
+            "start_date": pendulum.instance(GlobalConfig.start_date).format(DATE_FORMAT),
+    }
+    all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
+    settings_filename = os.path.join(d3a_path, "setup", "d3a-settings.json")
+    with open(settings_filename, "w") as settings_file:
+        settings_file.write(json.dumps(all_settings, indent=2))
