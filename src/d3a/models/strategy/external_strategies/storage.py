@@ -163,8 +163,7 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'bid'}
-            if arguments["bid"] is not None and \
+            if ("bid" in arguments and arguments["bid"] is not None) and \
                     not self.is_bid_posted(self.market, arguments["bid"]):
                 raise Exception("Bid_id is not associated with any posted bid.")
         except Exception as e:

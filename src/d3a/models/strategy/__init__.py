@@ -409,11 +409,8 @@ class BidEnabledStrategy(BaseStrategy):
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return
-        posted_bid_ids = [bid.id for bid in self.get_posted_bids(market)]
-        if posted_bid_ids == []:
-            return []
         if bid_id is None:
-            deleted_bid_ids = posted_bid_ids
+            deleted_bid_ids = [bid.id for bid in self.get_posted_bids(market)]
         else:
             deleted_bid_ids = [bid_id]
         for b_id in deleted_bid_ids:
