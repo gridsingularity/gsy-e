@@ -100,6 +100,10 @@ class Offers:
     def sold_offer(self, offer, market_id):
         self.sold = append_or_create_key(self.sold, market_id, offer)
 
+    def is_offer_posted(self, market_id, offer_id):
+        return offer_id in [offer.id for offer, _market in self.posted.items()
+                            if market_id == _market]
+
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
 
@@ -118,7 +122,19 @@ class Offers:
         if offer.id not in self.split:
             self.posted[offer] = market_id
 
-    def remove_by_id(self, offer_id):
+    def remove_offer_from_cache_and_market(self, market, offer_id=None):
+        if offer_id is None:
+            to_delete_offers = self.posted_in_market(market.id)
+        else:
+            to_delete_offers = [o for o, m in self.posted.items() if o.id == offer_id]
+        deleted_offer_ids = []
+        for offer in to_delete_offers:
+            market.delete_offer(offer.id)
+            self.remove(offer)
+            deleted_offer_ids.append(offer.id)
+        return deleted_offer_ids
+
+    def remove_offer_by_id(self, market_id, offer_id=None):
         try:
             offer = [o for o, m in self.posted.items() if o.id == offer_id][0]
             self.remove(offer)
