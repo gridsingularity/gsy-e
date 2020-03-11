@@ -98,11 +98,14 @@ class ExternalMixin:
                             if v is not None}
             market_stats = {k: v for k, v in self.market_area.stats.aggregated_stats.items()
                             if v is not None}
+            trade_stats = {k: v for k, v in self.market_area.stats.rate_stats_market.items()
+                           if v is not None}
             self.redis.publish_json(
                 area_stats_response_channel,
                 {"status": "ready",
                  "device_stats": device_stats,
-                 "market_stats": market_stats})
+                 "market_stats": market_stats,
+                 "trade_stats": trade_stats})
         except Exception as e:
             logging.error(f"Error reporting stats for area {self.device.name}: "
                           f"Exception: {str(e)}")
