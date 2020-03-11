@@ -56,11 +56,15 @@ class LoadExternalMixin(ExternalMixin):
         try:
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'bid'}
-        except Exception:
+            if arguments["bid"] is not None and \
+                    not self.is_bid_posted(self.market, arguments["bid"]):
+                raise Exception("Bid_id is not associated with any posted bid.")
+        except Exception as e:
             self.redis.publish_json(
                 delete_bid_response_channel,
                 {"command": "bid_delete",
-                 "error": "Incorrect delete bid request. Available parameters: (bid)."}
+                 "error": f"Incorrect delete bid request. Available parameters: (bid)."
+                          f"Exception: {str(e)}"}
             )
         else:
             self.pending_requests.append(
@@ -68,12 +72,11 @@ class LoadExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
-            deleted_bids_dict = self.remove_bid_from_pending(self.market.id, arguments["bid"])
+            to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
+            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete",
-                 "status": "ready",
-                 "bids_deleted": list(deleted_bids_dict.keys())}
+                {"command": "bid_delete", "status": "ready", "bids_deleted": deleted_bids}
             )
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "

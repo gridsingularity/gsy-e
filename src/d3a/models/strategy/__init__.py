@@ -397,6 +397,9 @@ class BidEnabledStrategy(BaseStrategy):
         posted_energy = (bid_energy + self.posted_bid_energy(market.id))
         return posted_energy <= required_energy_kWh
 
+    def is_bid_posted(self, market, bid_id):
+        return bid_id in [bid.id for bid in self.get_posted_bids(market)]
+
     def posted_bid_energy(self, market_id):
         if market_id not in self._bids:
             return 0.0
@@ -406,21 +409,19 @@ class BidEnabledStrategy(BaseStrategy):
         market = self.area.get_future_market_from_id(market_id)
         if market is None:
             return
+        posted_bid_ids = [bid.id for bid in self.get_posted_bids(market)]
+        if posted_bid_ids == []:
+            return []
         if bid_id is None:
-            # delete all bids associated with this strategy
-            deleted_bids_dict = {b_id: bid.energy for b_id, bid in market.bids.items()
-                                 if bid.buyer == self.owner.name}
-            for b_id in deleted_bids_dict:
-                market.delete_bid(b_id)
-            self._bids[market.id] = []
+            deleted_bid_ids = posted_bid_ids
         else:
-            # delete only one bid
-            deleted_bids_dict = {b_id: bid.energy for b_id, bid in market.bids.items()
-                                 if bid.id == bid_id}
-            if bid_id in market.bids.keys():
-                market.delete_bid(bid_id)
-            self._bids[market.id] = [bid for bid in self._bids[market.id] if bid.id != bid_id]
-        return deleted_bids_dict
+            deleted_bid_ids = [bid_id]
+        for b_id in deleted_bid_ids:
+            if b_id in market.bids.keys():
+                market.delete_bid(b_id)
+        self._bids[market.id] = [bid for bid in self._bids[market.id]
+                                 if bid.id not in deleted_bid_ids]
+        return deleted_bid_ids
 
     def add_bid_to_posted(self, market_id, bid):
         if market_id not in self._bids.keys():
@@ -464,7 +465,7 @@ class BidEnabledStrategy(BaseStrategy):
 
     def get_posted_bids(self, market):
         if market.id not in self._bids:
-            return {}
+            return []
         return self._bids[market.id]
 
     def event_bid_deleted(self, *, market_id, bid):
