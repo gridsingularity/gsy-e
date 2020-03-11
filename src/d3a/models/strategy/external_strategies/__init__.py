@@ -88,6 +88,28 @@ class ExternalMixin:
     def register_on_market_cycle(self):
         self.connected = self._connected
 
+    def _device_stats(self, _):
+        device_stats_response_channel = f'{self.channel_prefix}/response/device_stats'
+        if not check_for_connected_and_reply(self.redis, device_stats_response_channel,
+                                             self.connected):
+            return
+        self.pending_requests.append(
+            IncomingRequest("device_stats", None, device_stats_response_channel))
+
+    def _device_stats_impl(self, _, response_channel):
+        try:
+            self.redis.publish_json(
+                response_channel,
+                {"command": "device_stats", "status": "ready",
+                 "device_info": self._device_info_dict})
+        except Exception as e:
+            logging.error(f"Error when handling device stats on area {self.device.name}: "
+                          f"Exception: {str(e)}")
+            self.redis.publish_json(
+                response_channel,
+                {"command": "device_stats", "status": "error",
+                 "error_message": f"Error when listing bids on area {self.device.name}."})
+
     def _area_stats(self, payload):
         area_stats_response_channel = f'{self.channel_prefix}/response/stats'
         if not check_for_connected_and_reply(self.redis, area_stats_response_channel,
