@@ -22,7 +22,7 @@ class PVExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/offer': self._offer,
             f'{self.channel_prefix}/delete_offer': self._delete_offer,
             f'{self.channel_prefix}/list_offers': self._list_offers,
-            f'{self.channel_prefix}/device_stats': self._device_stats,
+            f'{self.channel_prefix}/device_info': self._device_info,
         })
 
     def _list_offers(self, _):
@@ -188,8 +188,8 @@ class PVExternalMixin(ExternalMixin):
                     self._delete_offer_impl(req.arguments, req.response_channel)
                 elif req.request_type == "list_offers":
                     self._list_offers_impl(req.arguments, req.response_channel)
-                elif req.request_type == "device_stats":
-                    self._device_stats_impl(req.arguments, req.response_channel)
+                elif req.request_type == "device_info":
+                    self._device_info_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()

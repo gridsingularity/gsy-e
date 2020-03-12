@@ -88,50 +88,27 @@ class ExternalMixin:
     def register_on_market_cycle(self):
         self.connected = self._connected
 
-    def _device_stats(self, _):
-        device_stats_response_channel = f'{self.channel_prefix}/response/device_stats'
-        if not check_for_connected_and_reply(self.redis, device_stats_response_channel,
+    def _device_info(self, _):
+        device_info_response_channel = f'{self.channel_prefix}/response/device_info'
+        if not check_for_connected_and_reply(self.redis, device_info_response_channel,
                                              self.connected):
             return
         self.pending_requests.append(
-            IncomingRequest("device_stats", None, device_stats_response_channel))
+            IncomingRequest("device_info", None, device_info_response_channel))
 
-    def _device_stats_impl(self, _, response_channel):
+    def _device_info_impl(self, _, response_channel):
         try:
             self.redis.publish_json(
                 response_channel,
-                {"command": "device_stats", "status": "ready",
+                {"command": "device_info", "status": "ready",
                  "device_info": self._device_info_dict})
         except Exception as e:
-            logging.error(f"Error when handling device stats on area {self.device.name}: "
+            logging.error(f"Error when handling device info on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 response_channel,
-                {"command": "device_stats", "status": "error",
-                 "error_message": f"Error when listing bids on area {self.device.name}."})
-
-    def _area_stats(self, payload):
-        area_stats_response_channel = f'{self.channel_prefix}/response/stats'
-        if not check_for_connected_and_reply(self.redis, area_stats_response_channel,
-                                             self.connected):
-            return
-        try:
-            device_stats = {k: v for k, v in self.device.stats.aggregated_stats.items()
-                            if v is not None}
-            market_stats = {k: v for k, v in self.market_area.stats.aggregated_stats.items()
-                            if v is not None}
-            self.redis.publish_json(
-                area_stats_response_channel,
-                {"status": "ready",
-                 "device_stats": device_stats,
-                 "market_stats": market_stats})
-        except Exception as e:
-            logging.error(f"Error reporting stats for area {self.device.name}: "
-                          f"Exception: {str(e)}")
-            self.redis.publish_json(
-                area_stats_response_channel,
-                {"status": "error",
-                 "error_message": f"Error reporting stats for area {self.device.name}."})
+                {"command": "device_info", "status": "error",
+                 "error_message": f"Error when handling device info on area {self.device.name}."})
 
     @property
     def market(self):
