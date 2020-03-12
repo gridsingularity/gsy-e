@@ -76,10 +76,11 @@ class MarketEnergyBills:
     @classmethod
     def _store_sold_trade(cls, result_dict, trade):
         # Division by 100 to convert cents to Euros
+        fee_price = trade.fee_price if trade.fee_price is not None else 0.
         result_dict['sold'] += trade.offer.energy
-        result_dict['earned'] += (trade.offer.price - trade.fee_price) / 100.
+        result_dict['earned'] += (trade.offer.price - fee_price) / 100.
         result_dict['total_energy'] -= trade.offer.energy
-        result_dict['total_cost'] -= (trade.offer.price - trade.fee_price) / 100.
+        result_dict['total_cost'] -= (trade.offer.price - fee_price) / 100.
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
