@@ -28,7 +28,7 @@ class StorageExternalMixin(ExternalMixin):
         })
 
     def _list_offers(self, payload):
-        list_offers_response_channel = f'{self.channel_prefix}/response/list_offers/response'
+        list_offers_response_channel = f'{self.channel_prefix}/response/list_offers'
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
             return
