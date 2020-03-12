@@ -162,7 +162,7 @@ class UpdateFrequencyMixin:
                 bid = market.bids[bid.id]
             market.delete_bid(bid.id)
 
-            strategy.remove_bid_from_pending(bid.id, market.id)
+            strategy.remove_bid_from_pending(market.id, bid.id)
             strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
                               bid.energy, buyer_origin=bid.buyer_origin)
 

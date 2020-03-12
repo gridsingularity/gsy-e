@@ -58,7 +58,9 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'offer'}
+            if ("offer" in arguments and arguments["offer"] is not None) and \
+                    not self.offers.is_offer_posted(self.market.id, arguments["offer"]):
+                raise Exception("Offer_id is not associated with any posted offer.")
         except Exception as e:
             logging.error(f"Error when handling delete offer request. Payload {payload}. "
                           f"Exception {str(e)}.")
@@ -73,14 +75,15 @@ class StorageExternalMixin(ExternalMixin):
 
     def _delete_offer_impl(self, arguments, response_channel):
         try:
+            to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
+            deleted_offers = \
+                self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
             self.state.offered_sell_kWh[self.market.time_slot] -= \
-                self.market.offers[arguments['offer']].energy
-            self.market.delete_offer(arguments["offer"])
-            self.offers.remove_by_id(arguments["offer"])
+                self.offers.posted_offer_energy(self.market.id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
-                 "deleted_offer": arguments["offer"]})
+                 "deleted_offers": deleted_offers})
         except Exception as e:
             logging.error(f"Error when handling offer delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -165,12 +168,15 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'bid'}
-        except Exception:
+            if ("bid" in arguments and arguments["bid"] is not None) and \
+                    not self.is_bid_posted(self.market, arguments["bid"]):
+                raise Exception("Bid_id is not associated with any posted bid.")
+        except Exception as e:
             self.redis.publish_json(
                 delete_bid_response_channel,
                 {"command": "bid_delete",
-                 "error": "Incorrect delete bid request. Available parameters: (bid)."}
+                 "error": f"Incorrect delete bid request. Available parameters: (bid)."
+                          f"Exception: {str(e)}"}
             )
         else:
             self.pending_requests.append(
@@ -178,12 +184,13 @@ class StorageExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
+            to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
+            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
             self.state.offered_buy_kWh[self.market.time_slot] -= \
-                self.market.bids[arguments['bid']].energy
-            self.remove_bid_from_pending(arguments["bid"], self.market.id)
+                self.posted_bid_energy(self.market.id)
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete", "status": "ready", "bid_deleted": arguments["bid"]})
+                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids})
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
