@@ -190,7 +190,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.posted_bid_energy(self.market.id)
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete", "status": "ready", "bids_deleted": deleted_bids})
+                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids})
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
