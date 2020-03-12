@@ -22,6 +22,7 @@ class LoadExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/bid': self._bid,
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
             f'{self.channel_prefix}/list_bids': self._list_bids,
+            f'{self.channel_prefix}/device_info': self._device_info,
         })
 
     def _list_bids(self, _):
@@ -55,12 +56,15 @@ class LoadExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'bid'}
-        except Exception:
+            if ("bid" in arguments and arguments["bid"] is not None) and \
+                    not self.is_bid_posted(self.market, arguments["bid"]):
+                raise Exception("Bid_id is not associated with any posted bid.")
+        except Exception as e:
             self.redis.publish_json(
                 delete_bid_response_channel,
                 {"command": "bid_delete",
-                 "error": "Incorrect delete bid request. Available parameters: (bid)."}
+                 "error": f"Incorrect delete bid request. Available parameters: (bid)."
+                          f"Exception: {str(e)}"}
             )
         else:
             self.pending_requests.append(
@@ -68,10 +72,11 @@ class LoadExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
-            self.remove_bid_from_pending(arguments["bid"], self.market.id)
+            to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
+            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete", "status": "ready", "bid_deleted": arguments["bid"]}
+                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids}
             )
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
@@ -187,6 +192,8 @@ class LoadExternalMixin(ExternalMixin):
                     self._delete_bid_impl(req.arguments, req.response_channel)
                 elif req.request_type == "list_bids":
                     self._list_bids_impl(req.arguments, req.response_channel)
+                elif req.request_type == "device_info":
+                    self._device_info_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()

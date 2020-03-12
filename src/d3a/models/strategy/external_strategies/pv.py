@@ -22,6 +22,7 @@ class PVExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/offer': self._offer,
             f'{self.channel_prefix}/delete_offer': self._delete_offer,
             f'{self.channel_prefix}/list_offers': self._list_offers,
+            f'{self.channel_prefix}/device_info': self._device_info,
         })
 
     def _list_offers(self, _):
@@ -55,7 +56,9 @@ class PVExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'offer'}
+            if ("offer" in arguments and arguments["offer"] is not None) and \
+                    not self.offers.is_offer_posted(self.market.id, arguments["offer"]):
+                raise Exception("Offer_id is not associated with any posted offer.")
         except Exception as e:
             logging.error(f"Error when handling delete offer request. Payload {payload}. "
                           f"Exception {str(e)}.")
@@ -70,12 +73,13 @@ class PVExternalMixin(ExternalMixin):
 
     def _delete_offer_impl(self, arguments, response_channel):
         try:
-            self.market.delete_offer(arguments["offer"])
-            self.offers.remove_by_id(arguments["offer"])
+            to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
+            deleted_offers = \
+                self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
-                 "deleted_offer": arguments["offer"]})
+                 "deleted_offers": deleted_offers})
         except Exception as e:
             logging.error(f"Error when handling offer delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -187,6 +191,8 @@ class PVExternalMixin(ExternalMixin):
                     self._delete_offer_impl(req.arguments, req.response_channel)
                 elif req.request_type == "list_offers":
                     self._list_offers_impl(req.arguments, req.response_channel)
+                elif req.request_type == "device_info":
+                    self._device_info_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()

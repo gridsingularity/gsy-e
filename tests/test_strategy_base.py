@@ -230,7 +230,7 @@ def test_remove_bid_from_pending(base):
     bid = base.post_bid(market, 10, 5)
     assert base.are_bids_posted(market.id)
 
-    base.remove_bid_from_pending(bid.id, market.id)
+    base.remove_bid_from_pending(market.id, bid.id)
     assert not base.are_bids_posted(market.id)
 
 

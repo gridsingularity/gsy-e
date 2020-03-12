@@ -341,8 +341,8 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == repr(bid.id)
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == \
         repr(trade_market.id)
 
 
@@ -363,8 +363,8 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == repr(bid.id)
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == \
         repr(trade_market.id)
 
 

@@ -24,11 +24,11 @@ class StorageExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/bid': self._bid,
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
             f'{self.channel_prefix}/list_bids': self._list_bids,
-            f'{self.channel_prefix}/stats': self._area_stats
+            f'{self.channel_prefix}/device_info': self._device_info,
         })
 
     def _list_offers(self, payload):
-        list_offers_response_channel = f'{self.channel_prefix}/response/list_offers/response'
+        list_offers_response_channel = f'{self.channel_prefix}/response/list_offers'
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
             return
@@ -58,7 +58,9 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'offer'}
+            if ("offer" in arguments and arguments["offer"] is not None) and \
+                    not self.offers.is_offer_posted(self.market.id, arguments["offer"]):
+                raise Exception("Offer_id is not associated with any posted offer.")
         except Exception as e:
             logging.error(f"Error when handling delete offer request. Payload {payload}. "
                           f"Exception {str(e)}.")
@@ -73,13 +75,15 @@ class StorageExternalMixin(ExternalMixin):
 
     def _delete_offer_impl(self, arguments, response_channel):
         try:
-            self.market.delete_offer(arguments["offer"])
-            self.offers.remove_by_id(arguments["offer"])
-            self.state.offered_sell_kWh[self.market.time_slot] -= arguments["offer"]["energy"]
+            to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
+            deleted_offers = \
+                self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
+            self.state.offered_sell_kWh[self.market.time_slot] -= \
+                self.offers.posted_offer_energy(self.market.id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
-                 "deleted_offer": arguments["offer"]})
+                 "deleted_offers": deleted_offers})
         except Exception as e:
             logging.error(f"Error when handling offer delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -99,11 +103,6 @@ class StorageExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
-            cumulative_allowed = \
-                arguments['energy'] + \
-                self.state.pledged_sell_kWh[self.market.time_slot] + \
-                self.state.offered_sell_kWh[self.market.time_slot]
-            assert cumulative_allowed <= self.state.energy_to_sell_dict[self.market.time_slot]
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -117,6 +116,12 @@ class StorageExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
+            cumulative_allowed = \
+                arguments['energy'] + \
+                self.state.pledged_sell_kWh[self.market.time_slot] + \
+                self.state.offered_sell_kWh[self.market.time_slot]
+            assert cumulative_allowed <= self.state.energy_to_sell_dict[self.market.time_slot], \
+                "ESS energy limit for this market_slot has been surpassed."
             offer = self.market.offer(**arguments)
             self.offers.post(offer, self.market.id)
             self.state.offered_sell_kWh[self.market.time_slot] += offer.energy
@@ -163,12 +168,15 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'bid'}
-        except Exception:
+            if ("bid" in arguments and arguments["bid"] is not None) and \
+                    not self.is_bid_posted(self.market, arguments["bid"]):
+                raise Exception("Bid_id is not associated with any posted bid.")
+        except Exception as e:
             self.redis.publish_json(
                 delete_bid_response_channel,
                 {"command": "bid_delete",
-                 "error": "Incorrect delete bid request. Available parameters: (bid)."}
+                 "error": f"Incorrect delete bid request. Available parameters: (bid)."
+                          f"Exception: {str(e)}"}
             )
         else:
             self.pending_requests.append(
@@ -176,11 +184,13 @@ class StorageExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
-            self.remove_bid_from_pending(arguments["bid"], self.market.id)
-            self.state.offered_buy_kWh[self.market.time_slot] -= arguments["bid"]["energy"]
+            to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
+            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
+            self.state.offered_buy_kWh[self.market.time_slot] -= \
+                self.posted_bid_energy(self.market.id)
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete", "status": "ready", "bid_deleted": arguments["bid"]})
+                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids})
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -197,12 +207,8 @@ class StorageExternalMixin(ExternalMixin):
         try:
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'price', 'energy'}
+            arguments['buyer'] = self.device.name
             arguments['buyer_origin'] = self.device.name
-            max_energy = self.state.energy_to_buy_dict[self.market.time_slot]
-            cumulative_allowed = \
-                arguments["energy"] + self.state.pledged_buy_kWh[self.market.time_slot] + \
-                self.state.offered_buy_kWh[self.market.time_slot]
-            assert cumulative_allowed <= max_energy
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -215,6 +221,12 @@ class StorageExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            max_energy = self.state.energy_to_buy_dict[self.market.time_slot]
+            cumulative_allowed = \
+                arguments["energy"] + self.state.pledged_buy_kWh[self.market.time_slot] + \
+                self.state.offered_buy_kWh[self.market.time_slot]
+            assert cumulative_allowed <= max_energy, \
+                "ESS energy limit for this market_slot has been surpassed."
             bid = self.post_bid(
                 self.market,
                 arguments["price"],
@@ -287,6 +299,8 @@ class StorageExternalMixin(ExternalMixin):
                     self._delete_offer_impl(req.arguments, req.response_channel)
                 elif req.request_type == "list_offers":
                     self._list_offers_impl(req.arguments, req.response_channel)
+                elif req.request_type == "device_info":
+                    self._device_info_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()
