@@ -103,11 +103,6 @@ class StorageExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
-            cumulative_allowed = \
-                arguments['energy'] + \
-                self.state.pledged_sell_kWh[self.market.time_slot] + \
-                self.state.offered_sell_kWh[self.market.time_slot]
-            assert cumulative_allowed <= self.state.energy_to_sell_dict[self.market.time_slot]
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -121,6 +116,12 @@ class StorageExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
+            cumulative_allowed = \
+                arguments['energy'] + \
+                self.state.pledged_sell_kWh[self.market.time_slot] + \
+                self.state.offered_sell_kWh[self.market.time_slot]
+            assert cumulative_allowed <= self.state.energy_to_sell_dict[self.market.time_slot], \
+                "ESS energy limit for this market_slot has been surpassed."
             offer = self.market.offer(**arguments)
             self.offers.post(offer, self.market.id)
             self.state.offered_sell_kWh[self.market.time_slot] += offer.energy
@@ -206,12 +207,8 @@ class StorageExternalMixin(ExternalMixin):
         try:
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'price', 'energy'}
+            arguments['buyer'] = self.device.name
             arguments['buyer_origin'] = self.device.name
-            max_energy = self.state.energy_to_buy_dict[self.market.time_slot]
-            cumulative_allowed = \
-                arguments["energy"] + self.state.pledged_buy_kWh[self.market.time_slot] + \
-                self.state.offered_buy_kWh[self.market.time_slot]
-            assert cumulative_allowed <= max_energy
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -224,6 +221,12 @@ class StorageExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            max_energy = self.state.energy_to_buy_dict[self.market.time_slot]
+            cumulative_allowed = \
+                arguments["energy"] + self.state.pledged_buy_kWh[self.market.time_slot] + \
+                self.state.offered_buy_kWh[self.market.time_slot]
+            assert cumulative_allowed <= max_energy, \
+                "ESS energy limit for this market_slot has been surpassed."
             bid = self.post_bid(
                 self.market,
                 arguments["price"],
