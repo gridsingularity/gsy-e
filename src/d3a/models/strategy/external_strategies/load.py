@@ -22,6 +22,7 @@ class LoadExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/bid': self._bid,
             f'{self.channel_prefix}/delete_bid': self._delete_bid,
             f'{self.channel_prefix}/list_bids': self._list_bids,
+            f'{self.channel_prefix}/device_info': self._device_info,
         })
 
     def _list_bids(self, _):
@@ -187,6 +188,8 @@ class LoadExternalMixin(ExternalMixin):
                     self._delete_bid_impl(req.arguments, req.response_channel)
                 elif req.request_type == "list_bids":
                     self._list_bids_impl(req.arguments, req.response_channel)
+                elif req.request_type == "device_info":
+                    self._device_info_impl(req.arguments, req.response_channel)
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()
