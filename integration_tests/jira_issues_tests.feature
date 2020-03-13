@@ -126,7 +126,13 @@ Feature: Jira Issues Tests
     Given we have a scenario named jira/d3asim_1862
     And d3a is installed
     When we run the d3a simulation with jira.d3asim_1862 [3, 15, 15]
-    Then the DSO should only pay 30 cents
+    Then the DSO doesnt pay the grid fee of the Grid, but House 1
+
+Scenario: D3ASIM-2034: DSO doesnt pay the grid fee of the Grid
+    Given we have a scenario named jira/d3asim_2034
+    And d3a is installed
+    When we run the d3a simulation with jira.d3asim_2034 [3, 60, 60]
+    Then the DSO doesnt pay the grid fee of the Grid, but Community
 
   Scenario: D3ASIM-1896: Storage decreases bid rate until final buying rate
     Given we have a scenario named jira/d3asim_1896
