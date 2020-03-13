@@ -131,13 +131,15 @@ def area_from_dict(description, config=None):
             return _leaf_from_dict(description)  # Area is a Leaf
         name = description['name']
         uuid = description.get('uuid', None)
+        external_connection_available = description.get('allow_external_connection', False)
         if 'children' in description:
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None
         grid_fee_percentage = description.get('grid_fee_percentage', None)
         area = Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
-                    optional('budget_keeper'), grid_fee_percentage=grid_fee_percentage)
+                    optional('budget_keeper'), grid_fee_percentage=grid_fee_percentage,
+                    external_connection_available=external_connection_available)
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area
