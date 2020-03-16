@@ -97,12 +97,12 @@ class IAAEngine:
             if offer.id not in self.offer_age:
                 self.offer_age[offer.id] = current_tick
 
+        offers = {o_id: age for o_id, age in self.offer_age.items()
+                  if o_id in self.forwarded_offers and
+                  current_tick - age < self.min_offer_age}
+
         # Use `list()` to avoid in place modification errors
-        for offer_id, age in list(self.offer_age.items()):
-            if offer_id in self.forwarded_offers:
-                continue
-            if current_tick - age < self.min_offer_age:
-                continue
+        for offer_id, age in list(offers):
             offer = self.markets.source.offers.get(offer_id)
             if not offer:
                 # Offer has gone - remove from age dict

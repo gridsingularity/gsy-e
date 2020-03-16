@@ -222,8 +222,7 @@ def area_name_from_area_or_iaa_name(name):
 
 
 def is_market_in_simulation_duration(config, market):
-    return config.start_date <= market.time_slot < \
-           (config.start_date + config.sim_duration)
+    return config.start_date <= market.time_slot < config.end_date
 
 
 def format_interval(interval, show_day=True):

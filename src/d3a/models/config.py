@@ -38,6 +38,7 @@ class SimulationConfig:
 
         self.sim_duration = sim_duration
         self.start_date = start_date
+        self.end_date = start_date + sim_duration
         self.slot_length = slot_length
         self.tick_length = tick_length
         self.market_count = market_count
