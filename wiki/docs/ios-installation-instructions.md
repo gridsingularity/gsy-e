@@ -54,7 +54,7 @@ echo -e 'BREW_PREFIX="$(brew --prefix openssl)"\nexport CFLAGS="-I${BREW_PREFIX}
 
 ### Installation
 
-#####  Close and re-open the terminal
+##### Close and re-open the terminal
 
 ##### Clone d3a repository (do this inside the directory where you want the project to be):
 ```
@@ -67,8 +67,8 @@ cd d3a
 brew install npm 
 npm install --global ganache-cli
 mkvirtualenv d3a
-pip install fabric3 pendulum pip-tools
-fab sync
+pip install pendulum pip-tools
+pip install -e . 
 ```
 
 #####  Install 
@@ -76,4 +76,4 @@ fab sync
 #####  Done, you now should have a working d3a setup.
 
 
-Now, if you run d3a run `–help` , the help of d3a should be shown.
+Now, if you run `d3a run -–help` , the help of d3a should be shown.
