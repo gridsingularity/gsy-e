@@ -155,6 +155,15 @@ class ExternalMixin:
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, trade_dict)
 
+    def deactivate(self):
+        super().deactivate()
+        if self.connected:
+            deactivate_event_channel = f"{self.channel_prefix}/events/finish"
+            deactivate_msg = {
+                "event": "finished"
+            }
+            self.redis.publish_json(deactivate_event_channel, deactivate_msg)
+
     def _reject_all_pending_requests(self):
         for req in self.pending_requests:
             self.redis.publish_json(
