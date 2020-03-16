@@ -1,4 +1,4 @@
-## How to Install D3A on IOS
+## How to Install D3A on macOS
 
 ### Preparations 
 
