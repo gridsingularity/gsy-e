@@ -432,12 +432,10 @@ class BidEnabledStrategy(BaseStrategy):
             deleted_bid_ids = [bid.id for bid in self.get_posted_bids(market)]
         else:
             deleted_bid_ids = [bid_id]
-        if len(deleted_bid_ids) == 0:
-            return
         for b_id in deleted_bid_ids:
             if b_id in market.bids.keys():
                 market.delete_bid(b_id)
-        self._bids[market.id] = [bid for bid in self._bids[market.id]
+        self._bids[market.id] = [bid for bid in self.get_posted_bids(market)
                                  if bid.id not in deleted_bid_ids]
         return deleted_bid_ids
 
