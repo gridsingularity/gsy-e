@@ -390,6 +390,9 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def can_offer_be_posted(self, offer_energy, available_energy, market):
         return self.offers.can_offer_be_posted(offer_energy, available_energy, market)
 
+    def deactivate(self):
+        pass
+
 
 class BidEnabledStrategy(BaseStrategy):
     def __init__(self):
