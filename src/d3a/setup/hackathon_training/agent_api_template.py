@@ -258,7 +258,7 @@ class AutoDeviceStrategy(DeviceClient):
                 price_per_kWh = \
                     self.sell_start_ramp_price_per_kWh - (
                         self.sell_start_ramp_price_per_kWh - self.sell_end_ramp_price_per_kWh) * (
-                                        float(tick_info['slot_completion'][:-1]) - 10) / 70
+                                        float(tick_info['slot_completion'][:-1]) - 10) / 80
                 energy = self.device_info()['device_info']['energy_to_sell']
                 self.offer_energy_print(energy, price_per_kWh)
 
@@ -296,19 +296,13 @@ class AutoDeviceStrategy(DeviceClient):
                   f'at {round(trade_price_per_kWh,2)}/kWh')
 
 
-    def _on_finish(self, message):
+    def on_finish(self, finish_info):
         """
         Triggered each time a new market is created.
         :param message: Incoming message about finished simulation
         :return: None
         """
-
-        print(f"Simulation finished. Information: {message}")
-
-        def executor_function():
-            self.on_finish(message)
-
-        self.callback_thread.submit(executor_function)
+        print(f"Simulation finished. Information: {finish_info}")
 
 ################################################
 # REGISTER MARKETS AND DEVICES
