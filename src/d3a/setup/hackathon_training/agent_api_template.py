@@ -28,7 +28,7 @@ TIME_ZONE = "UTC"
 market_names = ['community']
 load_names = ['h1-load-s'] # e.g. ['h1-load-s', 'h2-load'], first load is 'master' strategy
 pv_names = ['h1-pv-s']
-storage_names = ['h1-storage-s']
+storage_names = [] # ['h1-storage-s']
 
 # D3A WEB SETUP
 # This section to be used for running on live simulations on d3a.io. Ignore for now.
