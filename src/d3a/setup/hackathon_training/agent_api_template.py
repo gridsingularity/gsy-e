@@ -330,8 +330,9 @@ def register_list(device_flag, asset_list, collaboration_id=None,
             "websockets_domain_name": websockets_domain
         } for a in asset_list]
     else:
+        device_key_name = "device_id" if device_flag else "area_id"
         kwargs_list = [{
-            "device_id": a
+            device_key_name: a
         } for a in asset_list]
 
     if device_flag:
