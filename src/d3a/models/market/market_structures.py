@@ -33,6 +33,7 @@ class Offer:
         self.energy = energy
         self.seller = seller
         self.seller_origin = seller_origin
+        self.energy_rate = price / energy
 
     def __repr__(self):
         return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
@@ -46,6 +47,7 @@ class Offer:
     def to_JSON_string(self):
         offer_dict = self.__dict__
         offer_dict["type"] = "Offer"
+        offer_dict.pop('energy_rate', None)
         return json.dumps(self.__dict__)
 
     def __hash__(self):
@@ -72,18 +74,21 @@ def offer_from_JSON_string(offer_string):
     object_type = offer_dict.pop("type")
     assert object_type == "Offer"
     real_id = offer_dict.pop('real_id')
+    offer_dict.pop('energy_rate', None)
     offer = Offer(**offer_dict)
     offer.real_id = real_id
     return offer
 
 
 class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
-                             'original_bid_price', 'buyer_origin'))):
+                             'original_bid_price', 'buyer_origin', 'energy_rate'))):
     def __new__(cls, id, price, energy, buyer, seller, original_bid_price=None,
-                buyer_origin=None):
+                buyer_origin=None, energy_rate=None):
+        if energy_rate is None:
+            energy_rate = price / energy
         # overridden to give the residual field a default value
         return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller,
-                                       original_bid_price, buyer_origin)
+                                       original_bid_price, buyer_origin, energy_rate)
 
     def __repr__(self):
         return (

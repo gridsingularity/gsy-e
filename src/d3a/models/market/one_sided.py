@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
-from copy import deepcopy
 
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
@@ -26,7 +25,8 @@ from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
 from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.models.market.blockchain_interface import MarketBlockchainInterface
+from d3a.models.market.blockchain_interface import MarketBlockchainInterface, \
+    NonBlockchainInterface
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a_interface.constants_limits import ConstSettings
 
@@ -38,7 +38,9 @@ class OneSidedMarket(Market):
     def __init__(self, time_slot=None, bc=None, notification_listener=None,
                  readonly=False, transfer_fees=None, name=None):
         super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
-        self.bc_interface = MarketBlockchainInterface(bc)
+        self.bc_interface = MarketBlockchainInterface(bc) \
+            if bc is not None \
+            else NonBlockchainInterface()
 
     def __repr__(self):  # pragma: no cover
         return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
@@ -82,7 +84,7 @@ class OneSidedMarket(Market):
         offer = Offer(offer_id, price, energy, seller, original_offer_price,
                       seller_origin=seller_origin)
 
-        self.offers[offer.id] = deepcopy(offer)
+        self.offers[offer.id] = offer
         self.offer_history.append(offer)
         log.debug(f"[OFFER][NEW][{self.name}][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
@@ -201,7 +203,7 @@ class OneSidedMarket(Market):
         residual_offer = None
 
         if trade_rate is None:
-            trade_rate = offer.price / offer.energy
+            trade_rate = offer.energy_rate
 
         orig_offer_price = self._calculate_original_prices(offer)
 
