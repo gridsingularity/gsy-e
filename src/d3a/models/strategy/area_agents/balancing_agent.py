@@ -34,6 +34,7 @@ class BalancingAgent(OneSidedAgent):
 
     def event_tick(self):
         super().event_tick()
+        self._repopulate_forwarded_offers()
         if self.lower_market.unmatched_energy_downward > 0.0 or \
                 self.lower_market.unmatched_energy_upward > 0.0:
             self._trigger_balancing_trades(self.lower_market.unmatched_energy_upward,
@@ -115,3 +116,7 @@ class BalancingAgent(OneSidedAgent):
                                      original_offer=original_offer,
                                      accepted_offer=accepted_offer,
                                      residual_offer=residual_offer)
+
+    def _repopulate_forwarded_offers(self):
+        for engine in sorted(self.engines, key=lambda _: random()):
+            engine.repopulate_non_forwarded_offers()

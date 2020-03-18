@@ -42,6 +42,10 @@ class IAAEngine:
         self.forwarded_offers = {}  # type: Dict[str, OfferInfo]
         self.trade_residual = {}  # type Dict[str, Offer]
         self.ignored_offers = set()  # type: Set[str]
+        self._not_forwarded_offers = {
+            offer_id for offer_id in self.markets.source.offers.keys()
+            if offer_id not in self.forwarded_offers
+        }
 
     def __repr__(self):
         return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
@@ -58,12 +62,14 @@ class IAAEngine:
             "seller": self.owner.name,
             "original_offer_price": offer.original_offer_price,
             "dispatch_event": False,
-            "seller_origin": offer.seller_origin
+            "seller_origin": offer.seller_origin,
+            "adapt_price_with_fees": self.markets.target.transfer_fee_ratio > 0.0
         }
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             return self.owner.offer(market_id=self.markets.target, offer_args=kwargs)
         else:
+
             return self.markets.target.offer(**kwargs)
 
     def _forward_offer(self, offer):
@@ -91,18 +97,46 @@ class IAAEngine:
     def tick(self, *, area):
         self.propagate_offer(area.current_tick)
 
+    def event_offer(self, market_id, offer):
+        if market_id != self.markets.source.id:
+            return
+        if offer.id in self.forwarded_offers:
+            return
+        if offer.id in self.offer_age:
+            return
+        if offer.id not in self.markets.source.offers:
+            # TODO: Potential further optimisation here
+            # This case handles trade events that we receive but are not contained in any of
+            # the source and target market. This happens when another device accepts the offer
+            # before the offer event is dispatched to this market. Current solution is to
+            # recalculate the _not_forwarded_offers dict. However, this could be fairly optimized
+            # if the trade event was captured and notified that the offer was deleted/made partial
+            self.repopulate_non_forwarded_offers()
+        else:
+            self._not_forwarded_offers.add(offer.id)
+            self.offer_age[offer.id] = self.owner.owner.current_tick
+
+    def repopulate_non_forwarded_offers(self):
+        self._not_forwarded_offers.update({
+            offer_id for offer_id in self.markets.source.offers.keys()
+        })
+        for offer_id in self._not_forwarded_offers:
+            if offer_id not in self.offer_age:
+                self.offer_age[offer_id] = self.owner.owner.current_tick
+
     def propagate_offer(self, current_tick):
         # Store age of offer
-        for offer in self.markets.source.sorted_offers:
-            if offer.id not in self.offer_age:
-                self.offer_age[offer.id] = current_tick
+        for offer_id in self._not_forwarded_offers:
+            if offer_id not in self.offer_age:
+                self.offer_age[offer_id] = current_tick
 
-        offers = {o_id: age for o_id, age in self.offer_age.items()
-                  if o_id in self.forwarded_offers and
-                  current_tick - age < self.min_offer_age}
-
+        self._not_forwarded_offers.clear()
         # Use `list()` to avoid in place modification errors
-        for offer_id, age in list(offers):
+        for offer_id, age in list(self.offer_age.items()):
+            if offer_id in self.forwarded_offers:
+                continue
+            if current_tick - age < self.min_offer_age:
+                continue
             offer = self.markets.source.offers.get(offer_id)
             if not offer:
                 # Offer has gone - remove from age dict
@@ -114,12 +148,14 @@ class IAAEngine:
                 continue
             if not self.owner.usable_offer(offer):
                 # Forbidden offer (i.e. our counterpart's)
+                self.offer_age.pop(offer_id, None)
                 continue
 
             # Should never reach this point.
             # This means that the IAA is forwarding offers with the same seller and buyer name.
             # If we ever again reach a situation like this, we should never forward the offer.
             if self.owner.name == offer.seller:
+                self.offer_age.pop(offer_id, None)
                 continue
 
             forwarded_offer = self._forward_offer(offer)
@@ -238,7 +274,6 @@ class IAAEngine:
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(residual_offer, local_residual_offer)
             self._add_to_forward_offers(accepted_offer, local_split_offer)
-
         else:
             return
 
