@@ -119,6 +119,7 @@ class IAAEngine:
     def repopulate_non_forwarded_offers(self):
         self._not_forwarded_offers.update({
             offer_id for offer_id in self.markets.source.offers.keys()
+            if offer_id not in self.forwarded_offers
         })
         for offer_id in self._not_forwarded_offers:
             if offer_id not in self.offer_age:
