@@ -1073,10 +1073,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../installation-instructions/" title="Installation Instructions" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
+    
+    <label class="md-nav__link" for="nav-3-12">
       Installation Instructions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-12">
+        Installation Instructions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions/" title="Linux" class="md-nav__link">
+      Linux
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ios-installation-instructions/" title="Mac" class="md-nav__link">
+      Mac
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1195,67 +1231,67 @@
 <h3 id="one-sided-pay-as-offer">One Sided Pay as Offer<a class="headerlink" href="#one-sided-pay-as-offer" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/grid-fee-2.jpg" style="display: block;margin-left: auto;margin-right: auto;" /></p>
 <p>In the One Sided Pay as Offer market, there are no bids and only offers exist. The offers are propagated throughout the markets in the hierarchy. The grid fees are taken into account when an offer is forwarded to the higher market, by the higher market itself. Therefore the agent is not responsible for adapting the offer price to include the grid fees. The grid fees' unit is a ratio of the original offer price, therefore the formula to calculate the new offer price when placing an offer to a market is the following:</p>
-<div class="codehilite"><pre><span></span>offer_price_after_fees = offer_price + original_offer_price * grid_fee_ratio
-</pre></div>
+<div class="codehilite"><pre><span></span><code>offer_price_after_fees = offer_price + original_offer_price * grid_fee_ratio
+</code></pre></div>
 
 
 <p>If the offer is not purchased after one tick, it is moved into the next market. When entering a new market, the offer's price is increased according that that market's grid fee. The PV offer of € 0.10 is first placed into the House 2 Market where it gains zero fees. Then it moves into the Neighborhood 2 Market, gaining a fee of 5% of the original offer <code>0.10*0.05+0.10=0.105</code> to become € 0.105. Then if not purchased it moves into the Grid Market, gaining a fee of 10% of the original offer <code>0.10*0.10+0.105=0.115</code> to become € 0.115. Continuing into the Neighborhood 1 Market, the offer gains a fee of 5% <code>0.10*0.05+0.115=0.12</code> to become € 0.12. Continuing into the House 1 Market, the offer gains zero fees. The Load buys the offer in the House 1 Market at the Clearing Price of € 0.12. From the initial offer price, the total fees are calculated <code>0.10*(1+0.05+0.10+0.05)</code> to yield the Trade Price of € 0.12.</p>
 <p><strong>The Load pays the Trade Price of € 0.12, which includes € 0.10 revenue to the PV, € 0.005 fees to Neighborhood Market 1, € 0.01 fees to Grid Market, and € 0.005 fees to Neighborhood Market 2.</strong></p>
 <p>Since the market is pay-as-offer, the offer prices are used as 'clearing' prices. On each market trade, the grid fee is calculated based on the original offer price (according to the accepted energy to cover partial trades) and subtracted from the offer price, in order to calculate the trade price after fees. However, the trade price includes the grid fees. The following formula is used: </p>
-<div class="codehilite"><pre><span></span>market_fees = grid_fee_ratio * original_price * energy_portion
+<div class="codehilite"><pre><span></span><code>market_fees = grid_fee_ratio * original_price * energy_portion
 trade_price_after_fees = energy * trade_rate - market_fees
 trade_price = energy * trade_rate
-</pre></div>
+</code></pre></div>
 
 
 <h3 id="two-sided-pay-as-bid">Two Sided Pay as Bid<a class="headerlink" href="#two-sided-pay-as-bid" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/grid-fee-3.jpg" style="display: block;margin-left: auto;margin-right: auto;" /></p>
 <p>In the Two Sided Pay as Bid market, there are both bids and offers, which are both propagated throughout the markets in the hierarchy. If a bid or offer is not purchased after one tick, it is moved into the next market. In order to prevent the double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter that market (<strong>target market</strong>) and market fees are subtracted from bids when they leave that market and enter the another one (<strong>source market</strong>). The formula for propagating the offers is exactly the same as on the one-sided market :</p>
-<div class="codehilite"><pre><span></span>offer_price_after_fees = offer_price + original_offer_price * grid_fee_ratio
-</pre></div>
+<div class="codehilite"><pre><span></span><code>offer_price_after_fees = offer_price + original_offer_price * grid_fee_ratio
+</code></pre></div>
 
 
 <p>The bids are not adapted by the market itself, but the area/IAA is responsible to subtract the fees from the bid before propagating the bid to the higher market. As mentioned above, the difference in behavior compared to offers is to avoid double accounting of the grid fee on one market. The formula for an area to update the bid to include grid fees is the following:</p>
-<div class="codehilite"><pre><span></span>bid_price_after_fees = bid_price - original_bid_price * grid_fee_ratio
-</pre></div>
+<div class="codehilite"><pre><span></span><code>bid_price_after_fees = bid_price - original_bid_price * grid_fee_ratio
+</code></pre></div>
 
 
 <p>In the case of the Two Sided Pay as Bid market, the offer has moved into the Grid Market by the same mechanism as explained in the One Sided Pay as Offer market. The bid of € 0.30 follows a similar mechanism and is placed into the House 1 Market where there are zero fees. If the bid is not purchased after one tick, it is moved into the Neighborhood 1 Market. As explained above, only the fees from the source market are added, which are zero in this case. So the bid remains at € 0.30. Next the bid moves into the Grid Market, where it its value is lowered according to the fees of its source market, the Neighborhood 1 Market at 5%. With the Neighborhood 1 Market fee, the bid is lowered to <code>0.30-0.30*0.05=0.285</code> € 0.285 as it enters the Grid Market.</p>
 <p>In the example above, the bid and offer are matched in the Grid Market. However, when the offer entered the Grid Market, its price was immediately updated to account for the Grid Market's fees <code>0.10*0.10+0.105=0.115</code>. The bid on the other hand did not add the 10% fee. In the case that the bid was not matched in the Grid Market and moved into the Neighborhood 2 Market, the 10% fee from the Grid Market would be added. In this case the bid would become <code>0.285-0.30*0.10=0.255</code> € 0.255. The fees from the Neighborhood 2 Market would not be added to the bid unless it entered the House 2 Market (fees added according to the source market).</p>
 <p>In the Grid Market, the Load bid is listed as € 0.285 and the PV offer is listed as € 0.115. As the bid is greater than the offer a trade can be scheduled. The trade clears at the bid price, giving a Clearing Price of € 0.285.</p>
 <p>There is a separate algorithm that calculates the grid fee according to the clearing price. This allows the markets to act more independently and in a decentralized manner, without having to share information regarding their fees with other markets. In order to calculate the fee correctly based on the original price, the algorithm needs to be able to calculate the supply side and demand side tax. It is easy to calculate this, since the original bid/offer prices are available:</p>
-<div class="codehilite"><pre><span></span>demand_side_tax = 1 - (forwarded_bid_rate / original_bid_rate)
+<div class="codehilite"><pre><span></span><code>demand_side_tax = 1 - (forwarded_bid_rate / original_bid_rate)
 supply_side_tax = (forwarded_offer_rate / original_offer_rate) - 1
-</pre></div>
+</code></pre></div>
 
 
 <p>For the example, we have the following values: <code>supply_side_tax=(0.115/0.1)-1=0.15</code>, <code>demand_side_tax=1-(0.285/0.3)=0.05</code>.</p>
 <p>After calculating the supply and demand side tax, we can calculate the revenue of the trade. Note the original_trade_rate is the amount that the original buyer (in our case the Load) will need to pay, therefore for pay as bid this is the original bid price. The calculation is the following: </p>
-<div class="codehilite"><pre><span></span>total_tax_ratio = supply_side_tax + demand_side_tax
+<div class="codehilite"><pre><span></span><code>total_tax_ratio = supply_side_tax + demand_side_tax
 revenue = original_trade_rate / (1 + total_tax_ratio)
-</pre></div>
+</code></pre></div>
 
 
 <p>For the example, the revenue will be: <code>revenue = 0.30/(1+0.15+0.05)=0.25</code></p>
 <p>The grid fees are then calculated based on the revenue and the individual market fees.</p>
-<div class="codehilite"><pre><span></span>fees = revenue * grid_fee_ratio
-</pre></div>
+<div class="codehilite"><pre><span></span><code>fees = revenue * grid_fee_ratio
+</code></pre></div>
 
 
 <p>For the case of the Grid Market in our example, the fees are <code>0.25*0.1=0.025</code>, and for each Neighborhood market, the fees are <code>0.25*0.05=0.0125</code>. </p>
 <p>Finally, the trade rate is adapted according to the supply side tax, in order to include the fees of the current market: </p>
-<div class="codehilite"><pre><span></span>trade_rate = revenue * (1 + supply_side_tax)
+<div class="codehilite"><pre><span></span><code>trade_rate = revenue * (1 + supply_side_tax)
 trade_price = energy * trade_rate
-</pre></div>
+</code></pre></div>
 
 
 <p>For our example, the trade price for each market is: </p>
-<div class="codehilite"><pre><span></span>Grid Market = 0.25 * (1 + 0.15) = 0.2875
+<div class="codehilite"><pre><span></span><code>Grid Market = 0.25 * (1 + 0.15) = 0.2875
 Neighborhood 2 Market = 0.25 * (1 + 0.05) = 0.2625 
 Neighborhood 1 Market = 0.25 * (1 + 0.2) = 0.3
 House 1 Market = 0.25 * (1 + 0.2) = 0.3
 House 2 Market = 0.25 * (1 + 0) = 0.25
-</pre></div>
+</code></pre></div>
 
 
 <p><strong>The Load pays the Trade Price of € 0.30, which includes € 0.25 revenue to the PV, € 0.0125 fees to Neighborhood Market 1, € 0.025 fees to Grid Market, and € 0.0125 fees to Neighborhood Market 2.</strong></p>

@@ -1050,10 +1050,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../installation-instructions/" title="Installation Instructions" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
+    
+    <label class="md-nav__link" for="nav-3-12">
       Installation Instructions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-12">
+        Installation Instructions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions/" title="Linux" class="md-nav__link">
+      Linux
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ios-installation-instructions/" title="Mac" class="md-nav__link">
+      Mac
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1148,13 +1184,13 @@
 <li><code>-m, --market-count</code>: Number of tradable market slots into the future [default: 5]</li>
 </ul>
 <h3 id="example-simulation-call">Example simulation call:<a class="headerlink" href="#example-simulation-call" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span>d3a -l ERROR run --duration=24h --tick-length=1s --slot-length=15m --cloud-coverage=0 --market-count=5 --setup default_2a
-</pre></div>
+<div class="codehilite"><pre><span></span><code>d3a -l ERROR run --duration=24h --tick-length=1s --slot-length=15m --cloud-coverage=0 --market-count=5 --setup default_2a
+</code></pre></div>
 
 
 <h3 id="getting-help-in-the-command-line">Getting help in the command line:<a class="headerlink" href="#getting-help-in-the-command-line" title="Permanent link">&para;</a></h3>
 <p><code>d3a --help</code> returns:</p>
-<div class="codehilite"><pre><span></span>Usage: d3a [OPTIONS] COMMAND [ARGS]...
+<div class="codehilite"><pre><span></span><code>Usage: d3a [OPTIONS] COMMAND [ARGS]...
 
 Options:
   -l, --log-level [CRITICAL|FATAL|ERROR|WARN|WARNING|INFO|DEBUG|NOTSET|TRACE]
@@ -1164,11 +1200,11 @@ Options:
 Commands:
   run*
   resume
-</pre></div>
+</code></pre></div>
 
 
 <p><code>d3a run --help</code> returns:</p>
-<div class="codehilite"><pre><span></span>Usage: d3a run [OPTIONS]
+<div class="codehilite"><pre><span></span><code>Usage: d3a run [OPTIONS]
 
 Options:
   -d, --duration INTERVAL       Duration of simulation  [default: 1d]
@@ -1233,7 +1269,7 @@ Options:
   --compare-alt-pricing         Compare alternative pricing schemes
   --start-date DATE             Start date of the Simulation (YYYY-MM-DD)  [default: 2019-09-27]
   --help                        Show this message and exit.
-</pre></div>
+</code></pre></div>
                 
                   
                 
@@ -1269,13 +1305,13 @@ Options:
           </a>
         
         
-          <a href="../installation-instructions/" title="Installation Instructions" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../installation-instructions/" title="Linux" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Installation Instructions
+                Linux
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

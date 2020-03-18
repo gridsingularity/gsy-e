@@ -1012,10 +1012,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../installation-instructions/" title="Installation Instructions" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
+    
+    <label class="md-nav__link" for="nav-3-12">
       Installation Instructions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-12">
+        Installation Instructions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions/" title="Linux" class="md-nav__link">
+      Linux
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ios-installation-instructions/" title="Mac" class="md-nav__link">
+      Mac
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1069,11 +1105,11 @@
 In this setup-file, global and strategy related settings can be set.</p>
 <p>Examples can be found in: <code>d3a/src/d3a/setup/</code></p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<div class="codehilite"><pre><span></span>from d3a.models.area import Area
+<div class="codehilite"><pre><span></span><code>from d3a.models.area import Area
 def get_setup(config):
     area = Area(&#39;Grid&#39;, [])
     return area
-</pre></div>
+</code></pre></div>
 
 
 <p>Now the user can ad more sub areas recursively by adding more instances of area to the second parameter (list) of the Area class.
@@ -1097,7 +1133,7 @@ The following grid architecture is given:</p>
 </ul>
 <p>(<strong>Bold</strong> instances are areas, not devices. For each of these non-device areas, an inter-area-agent is created in the background that deals with offer/bid forwarding and matching.)</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<div class="codehilite"><pre><span></span>from d3a.models.appliance.switchable import SwitchableAppliance
+<div class="codehilite"><pre><span></span><code>from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
@@ -1151,7 +1187,7 @@ def get_setup(config):
         config=config
     )
     return area
-</pre></div>
+</code></pre></div>
                 
                   
                 

@@ -1070,10 +1070,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../installation-instructions/" title="Installation Instructions" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
+    
+    <label class="md-nav__link" for="nav-3-12">
       Installation Instructions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-12">
+        Installation Instructions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions/" title="Linux" class="md-nav__link">
+      Linux
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ios-installation-instructions/" title="Mac" class="md-nav__link">
+      Mac
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1191,12 +1227,12 @@ There are two ways of changing global constants and settings via:</p>
 <p>For setting the grid fee please consult <a href="../configure-transfer-fee/">How to configure grid transfer fee</a>.</p>
 <p>The user can overwrite the configuration settings by changing the wanted variables of the <code>ConstSettings</code> class in the <code>setup-file</code>.
 For instance, if the user wants to set the market type to double-sided-market, and set the default min and max energy rate for all loads the following lines have to be added to the <code>get_setup</code> function:</p>
-<div class="codehilite"><pre><span></span>from d3a_interface.constants_limits import ConstSettings
+<div class="codehilite"><pre><span></span><code>from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
     ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
-</pre></div>
+</code></pre></div>
 
 
 <h3 id="2-d3a-settingsjson">2. d3a-settings.json<a class="headerlink" href="#2-d3a-settingsjson" title="Permanent link">&para;</a></h3>
@@ -1218,7 +1254,7 @@ The settings JSON file can be parsed via the <code>--settings-file</code> keywor
 <li><code>max_panel_power_W</code></li>
 </ul>
 <p>In order to update the some of these parameters (starred in list above), please use <code>update_config_parameters</code> method to update the global config parameters in the setup file:</p>
-<div class="codehilite"><pre><span></span>def get_setup(config):
+<div class="codehilite"><pre><span></span><code>def get_setup(config):
     config.update_config_parameters(transfer_fee_pct=5,
                                     transfer_fee_const=35,
                                     cloud_coverage=2,
@@ -1238,7 +1274,7 @@ The settings JSON file can be parsed via the <code>--settings-file</code> keywor
         config=config
     )
     return area
-</pre></div>
+</code></pre></div>
                 
                   
                 

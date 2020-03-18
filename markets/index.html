@@ -1052,10 +1052,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../installation-instructions/" title="Installation Instructions" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
+    
+    <label class="md-nav__link" for="nav-3-12">
       Installation Instructions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-12">
+        Installation Instructions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions/" title="Linux" class="md-nav__link">
+      Linux
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ios-installation-instructions/" title="Mac" class="md-nav__link">
+      Mac
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1160,8 +1196,8 @@ Currently, three spot market types are implemented:</p>
 <li>Two sided pay-as-clear</li>
 </ol>
 <p>In the d3a setup file, the spot market type can be defined by the following line (example for one sided pay-as-offer):</p>
-<div class="codehilite"><pre><span></span>ConstSettings.IAASettings.MARKET_TYPE = 1
-</pre></div>
+<div class="codehilite"><pre><span></span><code>ConstSettings.IAASettings.MARKET_TYPE = 1
+</code></pre></div>
 
 
 <p>Setting the market type influences the behaviour of both the markets as well as the behaviour of the devices or agents. For individual behaviour of the device strategies please refer to <a href="../load-strategy/">Strategies</a> documentation.</p>
