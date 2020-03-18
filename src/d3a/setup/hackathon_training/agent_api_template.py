@@ -381,8 +381,8 @@ if __name__ == '__main__':
     ################################################
 
     # allow devices to be called within master method
-    loads[0].store_reference(models=prediction_models, markets=markets,
-                             loads=loads, pvs=pvs, storages=storages)
+    loads[0].store_reference(models_list=prediction_models, markets_list=markets,
+                             loads_list=loads, pvs_list=pvs, storages_list=storages)
 
     # infinite loop to allow client to run in the background
     while True:
