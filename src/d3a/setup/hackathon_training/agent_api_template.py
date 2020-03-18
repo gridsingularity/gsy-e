@@ -1,6 +1,6 @@
 # flake8: noqa
 """
-Test file for the device client. Depends on d3a test setup file strategy_tests.external_devices
+Template file for a trading strategy through the d3a API client
 """
 import json
 from time import sleep
@@ -17,21 +17,26 @@ import pickle
 from sklearn.metrics import mean_squared_error
 # from apiTest.agents.pricePredictor import PricePredictor
 from d3a_api_client.utils import get_area_uuid_from_area_name_and_collaboration_id
-
+import os
+TIME_ZONE = "UTC"
 
 ################################################
 # CONFIGURATIONS
 ################################################
 
-RUN_ON_D3A_WEB = False  # if False, runs to local simulation. If True, runs to D3A web
-MASTER_NAME = 'h1-load-s'  # designates device that will act as master strategy which does predictions
-TIME_ZONE = "UTC"
+# DESIGNATE DEVICES AND MARKETS TO MANAGE
+market_names = ['community']
+load_names = ['h1-load-s'] # e.g. ['h1-load-s', 'h2-load'], first load is 'master' strategy
+pv_names = ['h1-pv-s']
+storage_names = ['h1-storage-s']
+
 # D3A WEB SETUP
+# This section to be used for running on live simulations on d3a.io. Ignore for now.
+RUN_ON_D3A_WEB = False # if False, runs to local simulation. If True, runs to D3A web
 # Set web username and password
 # Note, can also be done using export commands in terminal
 # export API_CLIENT_USERNAME=username
 # export API_CLIENT_PASSWORD=password
-import os
 os.environ["API_CLIENT_USERNAME"] = "email@email.com"
 os.environ["API_CLIENT_PASSWORD"] = "password here"
 # set collaboration information
@@ -258,6 +263,11 @@ class AutoDeviceStrategy(DeviceClient):
                 self.offer_energy_print(energy, price_per_kWh)
 
     def on_trade(self, trade_info):
+        """
+        Triggered each time a trade occurs.
+        :param trade_info: Incoming message about the trade
+        :return: None
+        """
 
         ################################################
         # TRADE EVENT HANDLING
@@ -284,6 +294,21 @@ class AutoDeviceStrategy(DeviceClient):
             trade_price_per_kWh = trade_price / trade_energy
             print(f'--> {self.device_id} SOLD {round(trade_energy, 4)} kWh '
                   f'at {round(trade_price_per_kWh,2)}/kWh')
+
+
+    def _on_finish(self, message):
+        """
+        Triggered each time a new market is created.
+        :param message: Incoming message about finished simulation
+        :return: None
+        """
+
+        print(f"Simulation finished. Information: {message}")
+
+        def executor_function():
+            self.on_finish(message)
+
+        self.callback_thread.submit(executor_function)
 
 ################################################
 # REGISTER MARKETS AND DEVICES
@@ -323,27 +348,23 @@ def register_list(device_flag, asset_list, collaboration_id=None,
 
 if __name__ == '__main__':
 
-    # register for markets to get information
-    # market_names must be slugs for local, names for remote
     kwargs = {
         "collaboration_id": collab_id,
         "domain": domain_name,
         "websockets_domain": websockets_domain_name
     }
-    market_names = ['community']
+
+    # register for markets to get information
     markets = register_list(device_flag=False, asset_list=market_names, **kwargs)
 
     # register for loads
-    load_names = ['h1-load-s']  # ['h1-load-s', 'h2-load']
     loads = register_list(device_flag=True, asset_list=load_names, **kwargs)
     MASTER_NAME = loads[0].device_id
 
     # register for pvs
-    pv_names = ['h1-pv-s']
     pvs = register_list(device_flag=True, asset_list=pv_names, **kwargs)
 
     # register for storages
-    storage_names = ['h1-storage-s']
     storages = register_list(device_flag=True, asset_list=storage_names, **kwargs)
 
 
