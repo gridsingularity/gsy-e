@@ -329,10 +329,7 @@ class Area:
             return None
 
     def get_future_market_from_id(self, _id):
-        try:
-            return [m for m in self._markets.markets.values() if m.id == _id][0]
-        except IndexError:
-            return None
+        return self._markets.indexed_future_markets.get(_id, None)
 
     @property
     def last_past_market(self):

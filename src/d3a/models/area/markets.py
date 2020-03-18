@@ -37,6 +37,7 @@ class AreaMarkets:
         # Past markets
         self.past_markets = OrderedDict()  # type: Dict[DateTime, Market]
         self.past_balancing_markets = OrderedDict()  # type: Dict[DateTime, BalancingMarket]
+        self.indexed_future_markets = {}
 
     @property
     def all_spot_markets(self):
@@ -54,6 +55,9 @@ class AreaMarkets:
                                   past_markets=self.past_balancing_markets,
                                   area_agent=dispatcher.balancing_agents)
         stats.update_accumulated()
+        self.indexed_future_markets = {
+            m.id: m for m in self.all_spot_markets
+        }
 
     def _market_rotation(self, current_time, markets, past_markets, area_agent):
         first = True
@@ -128,4 +132,7 @@ class AreaMarkets:
                            if area.config.slot_length.total_seconds() > 60
                     else "%H:%M:%S"
                 ))
+        self.indexed_future_markets = {
+            m.id: m for m in self.all_spot_markets
+        }
         return changed
