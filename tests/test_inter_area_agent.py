@@ -84,7 +84,7 @@ class FakeMarket:
         return list(sorted(self.offers.values(), key=lambda b: b.price / b.energy))
 
     def get_bids(self):
-        return deepcopy(self.bids)
+        return self.bids
 
     def set_time_slot(self, timeslot):
         self.time_slot = timeslot
@@ -183,8 +183,8 @@ class FakeMarket:
         bid = Bid(bid_id, price, energy, buyer, seller,
                   original_bid_price=original_bid_price,
                   buyer_origin=buyer_origin)
-        self._bids.append(deepcopy(bid))
-        self.forwarded_bid = deepcopy(bid)
+        self._bids.append(bid)
+        self.forwarded_bid = bid
 
         return bid
 

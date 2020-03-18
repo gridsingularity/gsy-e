@@ -54,6 +54,7 @@ class TestAreaClass(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
+        self.config.end_date = self.config.start_date + self.config.sim_duration
         self.area = Area("test_area", None, None, self.strategy,
                          self.appliance, self.config, None, grid_fee_percentage=1)
         self.area.parent = self.area
@@ -163,6 +164,7 @@ class TestAreaClass(unittest.TestCase):
         assert self.area.market_with_most_expensive_offer is m3
 
     def test_cycle_markets(self):
+        GlobalConfig.end_date = GlobalConfig.start_date + GlobalConfig.sim_duration
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=GlobalConfig, grid_fee_percentage=1)
         self.area.parent = Area(name="GRID")

@@ -52,8 +52,9 @@ class FakeArea:
         self.name = 'FakeArea'
 
         self._next_market = FakeMarket(0)
+        self.current_market = FakeMarket(0)
         self._bids = {}
-        self.markets = {TIME: FakeMarket(0),
+        self.markets = {TIME: self.current_market,
                         TIME + self.config.slot_length: FakeMarket(0),
                         TIME + 2 * self.config.slot_length: FakeMarket(0)}
         self.test_balancing_market = FakeMarket(1)
