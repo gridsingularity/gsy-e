@@ -144,6 +144,8 @@ class Area:
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)
+        if self.strategy:
+            self.strategy.deactivate()
 
     def _cycle_markets(self, _trigger_event=True, _market_cycle=False, deactivate=False):
         """
