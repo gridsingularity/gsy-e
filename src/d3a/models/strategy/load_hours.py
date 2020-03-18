@@ -83,6 +83,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self._init_price_update(fit_to_limit, energy_rate_increase_per_update, update_interval,
                                 use_market_maker_rate, initial_buying_rate, final_buying_rate)
+        self._calculate_active_markets()
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -119,11 +120,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 final_buying_rate=self.bid_update.final_rate[time_slot])
 
     def event_activate(self):
+        self._calculate_active_markets()
         self.event_activate_price()
         self.event_activate_energy()
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self._calculate_active_markets()
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
@@ -309,8 +312,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     @property
     def active_markets(self):
-        return [market for market in self.area.all_markets
-                if self._is_market_active(market)]
+        return self._active_markets
+
+    def _calculate_active_markets(self):
+        self._active_markets = [
+            market for market in self.area.all_markets
+            if self._is_market_active(market)
+        ] if self.area else []
 
     def _is_market_active(self, market):
         return self._allowed_operating_hours(market.time_slot) and \

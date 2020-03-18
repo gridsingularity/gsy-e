@@ -185,6 +185,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
         super(BaseStrategy, self).__init__()
         self.offers = Offers(self)
         self.enabled = True
+        self._allowed_disable_events = [AreaEvent.ACTIVATE, MarketEvent.TRADE]
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis = BlockingCommunicator()
             self.trade_buffer = None
@@ -367,7 +368,7 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
                 f"{data['exception']}:  {data['error_message']}")
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
-        if self.enabled or event_type in (AreaEvent.ACTIVATE, MarketEvent.TRADE):
+        if self.enabled or event_type in self._allowed_disable_events:
             super().event_listener(event_type, **kwargs)
 
     def event_trade(self, *, market_id, trade):
