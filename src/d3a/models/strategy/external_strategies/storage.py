@@ -185,9 +185,9 @@ class StorageExternalMixin(ExternalMixin):
     def _delete_bid_impl(self, arguments, response_channel):
         try:
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
-            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
             self.state.offered_buy_kWh[self.market.time_slot] -= \
                 self.posted_bid_energy(self.market.id)
+            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids})
