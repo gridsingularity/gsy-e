@@ -388,6 +388,8 @@ class StorageStrategy(BidEnabledStrategy):
                                                                               self.owner.name)
 
     def buy_energy(self, market):
+        if self.state.has_battery_reached_max_power(-0.0001, market.time_slot):
+            return
         max_affordable_offer_rate = min(self.bid_update.get_updated_rate(market.time_slot),
                                         self.bid_update.final_rate[market.time_slot])
         # Check if storage has free capacity
@@ -399,8 +401,10 @@ class StorageStrategy(BidEnabledStrategy):
                 # Don't buy our own offer
                 continue
             # Check if the price is cheap enough
-            if (offer.price / offer.energy) > max_affordable_offer_rate:
-                continue
+            if offer.energy_rate > max_affordable_offer_rate:
+                # Can early return here, because the offers are sorted according to energy rate
+                # therefore the following offers will be more expensive
+                return
             alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
             if offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME \
                     and alt_pricing_settings.PRICING_SCHEME != 0:
