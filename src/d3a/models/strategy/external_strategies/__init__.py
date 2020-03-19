@@ -82,16 +82,20 @@ class ExternalMixin:
         )
 
     @staticmethod
-    def _extract_trans_id(payload):
-        return json.loads(payload["data"])["transaction_id"]
+    def _get_transaction_id(payload):
+        data = json.loads(payload["data"])
+        if "transaction_id" in data and data["transaction_id"] is not None:
+            return data["transaction_id"]
+        else:
+            raise ValueError("transaction_id not in payload or None")
 
     def _register(self, payload):
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
-                                        self._extract_trans_id(payload))
+                                        self._get_transaction_id(payload))
 
     def _unregister(self, payload):
         self._connected = unregister_area(self.redis, self.channel_prefix, self.connected,
-                                          self._extract_trans_id(payload))
+                                          self._get_transaction_id(payload))
 
     def register_on_market_cycle(self):
         self.connected = self._connected

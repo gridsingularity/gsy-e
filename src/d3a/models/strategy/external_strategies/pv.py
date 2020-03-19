@@ -26,6 +26,7 @@ class PVExternalMixin(ExternalMixin):
         })
 
     def _list_offers(self, payload):
+        self._get_transaction_id(payload)
         list_offers_response_channel = f'{self.channel_prefix}/response/list_offers'
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
@@ -42,7 +43,7 @@ class PVExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "ready", "offer_list": filtered_offers,
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling list offers on area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -50,9 +51,10 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "list_offers", "status": "error",
                  "error_message": f"Error when listing offers on area {self.device.name}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _delete_offer(self, payload):
+        transaction_id = self._get_transaction_id(payload)
         delete_offer_response_channel = f'{self.channel_prefix}/response/delete_offer'
         if not check_for_connected_and_reply(self.redis, delete_offer_response_channel,
                                              self.connected):
@@ -69,7 +71,7 @@ class PVExternalMixin(ExternalMixin):
                 delete_offer_response_channel,
                 {"command": "offer_delete",
                  "error": "Incorrect delete offer request. Available parameters: (offer).",
-                 "transaction_id": self._extract_trans_id(payload)})
+                 "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
                 IncomingRequest("delete_offer", arguments, delete_offer_response_channel))
@@ -83,7 +85,7 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
                  "deleted_offers": deleted_offers,
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -92,9 +94,10 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer_delete", "status": "error",
                  "error_message": f"Error when handling offer delete "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _offer(self, payload):
+        transaction_id = self._get_transaction_id(payload)
         offer_response_channel = f'{self.channel_prefix}/response/offer'
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
@@ -120,7 +123,7 @@ class PVExternalMixin(ExternalMixin):
                     {"command": "offer",
                      "error": "Offer cannot be posted. Available energy has been reached with "
                               "existing offers.",
-                     "transaction_id": self._extract_trans_id(payload)})
+                     "transaction_id": transaction_id})
                 return
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
@@ -128,7 +131,7 @@ class PVExternalMixin(ExternalMixin):
                 offer_response_channel,
                 {"command": "offer",
                  "error": "Incorrect offer request. Available parameters: (price, energy).",
-                 "transaction_id": self._extract_trans_id(payload)})
+                 "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
                 IncomingRequest("offer", arguments, offer_response_channel))
@@ -141,7 +144,7 @@ class PVExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -150,7 +153,7 @@ class PVExternalMixin(ExternalMixin):
                 {"command": "offer", "status": "error",
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     @property
     def _device_info_dict(self):

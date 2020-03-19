@@ -28,6 +28,7 @@ class StorageExternalMixin(ExternalMixin):
         })
 
     def _list_offers(self, payload):
+        self._get_transaction_id(payload)
         list_offers_response_channel = f'{self.channel_prefix}/response/list_offers'
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
@@ -44,7 +45,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "ready", "offer_list": filtered_offers,
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling list offers on area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -52,9 +53,10 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "list_offers", "status": "error",
                  "error_message": f"Error when listing offers on area {self.device.name}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _delete_offer(self, payload):
+        transaction_id = self._get_transaction_id(payload)
         delete_offer_response_channel = f'{self.channel_prefix}/response/delete_offer'
         if not check_for_connected_and_reply(self.redis, delete_offer_response_channel,
                                              self.connected):
@@ -71,7 +73,7 @@ class StorageExternalMixin(ExternalMixin):
                 delete_offer_response_channel,
                 {"command": "offer_delete",
                  "error": "Incorrect delete offer request. Available parameters: (offer).",
-                 "transaction_id": self._extract_trans_id(payload)})
+                 "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
                 IncomingRequest("delete_offer", arguments, delete_offer_response_channel))
@@ -87,7 +89,7 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
                  "deleted_offers": deleted_offers,
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -96,9 +98,10 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "offer_delete", "status": "error",
                  "error_message": f"Error when handling offer delete "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _offer(self, payload):
+        transaction_id = self._get_transaction_id(payload)
         offer_response_channel = f'{self.channel_prefix}/response/offer'
         if not check_for_connected_and_reply(self.redis, offer_response_channel,
                                              self.connected):
@@ -114,7 +117,7 @@ class StorageExternalMixin(ExternalMixin):
                 offer_response_channel,
                 {"command": "offer",
                  "error": "Incorrect offer request. Available parameters: (price, energy).",
-                 "transaction_id": self._extract_trans_id(payload)})
+                 "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
                 IncomingRequest("offer", arguments, offer_response_channel))
@@ -134,7 +137,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -143,9 +146,10 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "offer", "status": "error",
                  "error_message": f"Error when handling offer create "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _list_bids(self, payload):
+        self._get_transaction_id(payload)
         list_bids_response_channel = f'{self.channel_prefix}/response/list_bids'
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
                                              self.connected):
@@ -162,7 +166,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_bids", "status": "ready", "bid_list": filtered_bids,
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
@@ -170,9 +174,10 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "list_bids", "status": "error",
                  "error_message": f"Error when listing bids on area {self.device.name}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _delete_bid(self, payload):
+        transaction_id = self._get_transaction_id(payload)
         delete_bid_response_channel = f'{self.channel_prefix}/response/delete_bid'
         if not check_for_connected_and_reply(self.redis,
                                              delete_bid_response_channel, self.connected):
@@ -188,7 +193,7 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "bid_delete",
                  "error": f"Incorrect delete bid request. Available parameters: (bid)."
                           f"Exception: {str(e)}",
-                 "transaction_id": self._extract_trans_id(payload)}
+                 "transaction_id": transaction_id}
             )
         else:
             self.pending_requests.append(
@@ -203,7 +208,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -212,9 +217,10 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "bid_delete", "status": "error",
                  "error_message": f"Error when handling bid delete "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _bid(self, payload):
+        transaction_id = self._get_transaction_id(payload)
         bid_response_channel = f'{self.channel_prefix}/response/bid'
         if not check_for_connected_and_reply(self.redis, bid_response_channel, self.connected):
             return
@@ -228,7 +234,7 @@ class StorageExternalMixin(ExternalMixin):
                 bid_response_channel,
                 {"command": "bid",
                  "error": "Incorrect bid request. Available parameters: (price, energy).",
-                 "transaction_id": self._extract_trans_id(payload)})
+                 "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
                 IncomingRequest("bid", arguments, bid_response_channel))
@@ -251,7 +257,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -260,7 +266,7 @@ class StorageExternalMixin(ExternalMixin):
                 {"command": "bid", "status": "error",
                  "error_message": f"Error when handling bid create "
                                   f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments["transaction_id"]})
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     @property
     def _device_info_dict(self):
