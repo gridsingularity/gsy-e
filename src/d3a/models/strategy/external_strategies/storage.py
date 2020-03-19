@@ -32,24 +32,27 @@ class StorageExternalMixin(ExternalMixin):
         if not check_for_connected_and_reply(self.redis, list_offers_response_channel,
                                              self.connected):
             return
+        arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_offers", None, list_offers_response_channel))
+            IncomingRequest("list_offers", arguments, list_offers_response_channel))
 
-    def _list_offers_impl(self, _, response_channel):
+    def _list_offers_impl(self, arguments, response_channel):
         try:
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in self.market.get_offers().items()
                                if v.seller == self.device.name]
             self.redis.publish_json(
                 response_channel,
-                {"command": "list_offers", "status": "ready", "offer_list": filtered_offers})
+                {"command": "list_offers", "status": "ready", "offer_list": filtered_offers,
+                 "transaction_id": arguments["transaction_id"]})
         except Exception as e:
             logging.error(f"Error when handling list offers on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_offers", "status": "error",
-                 "error_message": f"Error when listing offers on area {self.device.name}."})
+                 "error_message": f"Error when listing offers on area {self.device.name}.",
+                 "transaction_id": arguments["transaction_id"]})
 
     def _delete_offer(self, payload):
         delete_offer_response_channel = f'{self.channel_prefix}/response/delete_offer'
@@ -67,8 +70,8 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 delete_offer_response_channel,
                 {"command": "offer_delete",
-                 "error": "Incorrect delete offer request. Available parameters: (offer)."}
-            )
+                 "error": "Incorrect delete offer request. Available parameters: (offer).",
+                 "transaction_id": self._extract_trans_id(payload)})
         else:
             self.pending_requests.append(
                 IncomingRequest("delete_offer", arguments, delete_offer_response_channel))
@@ -83,7 +86,8 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
-                 "deleted_offers": deleted_offers})
+                 "deleted_offers": deleted_offers,
+                 "transaction_id": arguments["transaction_id"]})
         except Exception as e:
             logging.error(f"Error when handling offer delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -91,7 +95,8 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer_delete", "status": "error",
                  "error_message": f"Error when handling offer delete "
-                                  f"on area {self.device.name} with arguments {arguments}."})
+                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "transaction_id": arguments["transaction_id"]})
 
     def _offer(self, payload):
         offer_response_channel = f'{self.channel_prefix}/response/offer'
@@ -100,7 +105,7 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'price', 'energy'}
+            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
         except Exception as e:
@@ -108,8 +113,8 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 offer_response_channel,
                 {"command": "offer",
-                 "error": "Incorrect offer request. Available parameters: (price, energy)."}
-            )
+                 "error": "Incorrect offer request. Available parameters: (price, energy).",
+                 "transaction_id": self._extract_trans_id(payload)})
         else:
             self.pending_requests.append(
                 IncomingRequest("offer", arguments, offer_response_channel))
@@ -122,12 +127,14 @@ class StorageExternalMixin(ExternalMixin):
                 self.state.offered_sell_kWh[self.market.time_slot]
             assert cumulative_allowed <= self.state.energy_to_sell_dict[self.market.time_slot], \
                 "ESS energy limit for this market_slot has been surpassed."
-            offer = self.market.offer(**arguments)
+            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
+            offer = self.market.offer(**offer_arguments)
             self.offers.post(offer, self.market.id)
             self.state.offered_sell_kWh[self.market.time_slot] += offer.energy
             self.redis.publish_json(
                 response_channel,
-                {"command": "offer", "status": "ready", "offer": offer.to_JSON_string()})
+                {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
+                 "transaction_id": arguments["transaction_id"]})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -135,31 +142,35 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "error",
                  "error_message": f"Error when handling offer create "
-                                  f"on area {self.device.name} with arguments {arguments}."})
+                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "transaction_id": arguments["transaction_id"]})
 
-    def _list_bids(self, _):
+    def _list_bids(self, payload):
         list_bids_response_channel = f'{self.channel_prefix}/response/list_bids'
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
                                              self.connected):
             return
+        arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_bids", None, list_bids_response_channel))
+            IncomingRequest("list_bids", arguments, list_bids_response_channel))
 
-    def _list_bids_impl(self, _, response_channel):
+    def _list_bids_impl(self, arguments, response_channel):
         try:
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
                              for _, v in self.market.get_bids().items()
                              if v.buyer == self.device.name]
             self.redis.publish_json(
                 response_channel,
-                {"command": "list_bids", "status": "ready", "bid_list": filtered_bids})
+                {"command": "list_bids", "status": "ready", "bid_list": filtered_bids,
+                 "transaction_id": arguments["transaction_id"]})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_bids", "status": "error",
-                 "error_message": f"Error when listing bids on area {self.device.name}."})
+                 "error_message": f"Error when listing bids on area {self.device.name}.",
+                 "transaction_id": arguments["transaction_id"]})
 
     def _delete_bid(self, payload):
         delete_bid_response_channel = f'{self.channel_prefix}/response/delete_bid'
@@ -176,7 +187,8 @@ class StorageExternalMixin(ExternalMixin):
                 delete_bid_response_channel,
                 {"command": "bid_delete",
                  "error": f"Incorrect delete bid request. Available parameters: (bid)."
-                          f"Exception: {str(e)}"}
+                          f"Exception: {str(e)}",
+                 "transaction_id": self._extract_trans_id(payload)}
             )
         else:
             self.pending_requests.append(
@@ -190,7 +202,8 @@ class StorageExternalMixin(ExternalMixin):
                 self.posted_bid_energy(self.market.id)
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids})
+                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
+                 "transaction_id": arguments["transaction_id"]})
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -198,7 +211,8 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "bid_delete", "status": "error",
                  "error_message": f"Error when handling bid delete "
-                                  f"on area {self.device.name} with arguments {arguments}."})
+                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "transaction_id": arguments["transaction_id"]})
 
     def _bid(self, payload):
         bid_response_channel = f'{self.channel_prefix}/response/bid'
@@ -206,15 +220,15 @@ class StorageExternalMixin(ExternalMixin):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'price', 'energy'}
+            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
             arguments['buyer'] = self.device.name
             arguments['buyer_origin'] = self.device.name
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid",
-                 "error": "Incorrect bid request. Available parameters: (price, energy)."}
-            )
+                 "error": "Incorrect bid request. Available parameters: (price, energy).",
+                 "transaction_id": self._extract_trans_id(payload)})
         else:
             self.pending_requests.append(
                 IncomingRequest("bid", arguments, bid_response_channel))
@@ -236,7 +250,8 @@ class StorageExternalMixin(ExternalMixin):
             self.state.offered_buy_kWh[self.market.time_slot] += bid.energy
             self.redis.publish_json(
                 bid_response_channel,
-                {"command": "bid", "status": "ready", "bid": bid.to_JSON_string()})
+                {"command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
+                 "transaction_id": arguments["transaction_id"]})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -244,7 +259,8 @@ class StorageExternalMixin(ExternalMixin):
                 bid_response_channel,
                 {"command": "bid", "status": "error",
                  "error_message": f"Error when handling bid create "
-                                  f"on area {self.device.name} with arguments {arguments}."})
+                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "transaction_id": arguments["transaction_id"]})
 
     @property
     def _device_info_dict(self):

@@ -194,6 +194,7 @@ class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
     def _bid(self, payload):
         try:
             arguments = self._parse_payload(payload)
+            del arguments["transaction_id"]
             assert set(arguments.keys()) == {'price', 'energy'}
             arguments['buyer'] = self.area.name
             arguments['seller'] = self.area.parent.name

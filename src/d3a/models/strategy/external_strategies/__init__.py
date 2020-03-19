@@ -19,24 +19,25 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
     return True
 
 
-def register_area(redis, channel_prefix, is_connected):
+def register_area(redis, channel_prefix, is_connected, transaction_id):
     register_response_channel = f'{channel_prefix}/response/register_participant'
     try:
         redis.publish_json(
             register_response_channel,
-            {"command": "register", "status": "ready", "registered": True})
+            {"command": "register", "status": "ready", "registered": True,
+             "transaction_id": transaction_id})
         return True
     except Exception as e:
         logging.error(f"Error when registering to area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             register_response_channel,
-            {"command": "register", "status": "error",
+            {"command": "register", "status": "error", "transaction_id": transaction_id,
              "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
 
-def unregister_area(redis, channel_prefix, is_connected):
+def unregister_area(redis, channel_prefix, is_connected, transaction_id):
     unregister_response_channel = f'{channel_prefix}/response/unregister_participant'
     if not check_for_connected_and_reply(redis, unregister_response_channel,
                                          is_connected):
@@ -44,14 +45,15 @@ def unregister_area(redis, channel_prefix, is_connected):
     try:
         redis.publish_json(
             unregister_response_channel,
-            {"command": "unregister", "status": "ready", "unregistered": True})
+            {"command": "unregister", "status": "ready", "unregistered": True,
+             "transaction_id": transaction_id})
         return False
     except Exception as e:
         logging.error(f"Error when unregistering from area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             unregister_response_channel,
-            {"command": "unregister", "status": "error",
+            {"command": "unregister", "status": "error", "transaction_id": transaction_id,
              "error_message": f"Error when unregistering from area {channel_prefix}."})
         return is_connected
 
@@ -79,11 +81,17 @@ class ExternalMixin:
             (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
         )
 
+    @staticmethod
+    def _extract_trans_id(payload):
+        return json.loads(payload["data"])["transaction_id"]
+
     def _register(self, payload):
-        self._connected = register_area(self.redis, self.channel_prefix, self.connected)
+        self._connected = register_area(self.redis, self.channel_prefix, self.connected,
+                                        self._extract_trans_id(payload))
 
     def _unregister(self, payload):
-        self._connected = unregister_area(self.redis, self.channel_prefix, self.connected)
+        self._connected = unregister_area(self.redis, self.channel_prefix, self.connected,
+                                          self._extract_trans_id(payload))
 
     def register_on_market_cycle(self):
         self.connected = self._connected
