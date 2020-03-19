@@ -128,7 +128,7 @@ class TestExternalStrategy(unittest.TestCase):
         assert response_payload["trade"] == trade.to_JSON_string()
 
     def test_bid(self):
-        payload = {"data": json.dumps({"energy": 12, "price": 32})}
+        payload = {"data": json.dumps({"energy": 12, "price": 32, "transaction_id": "some_id"})}
         self.external_redis._bid(payload)
         assert len(self.test_market.bids) == 1
         bid = list(self.test_market.bids.values())[0]
