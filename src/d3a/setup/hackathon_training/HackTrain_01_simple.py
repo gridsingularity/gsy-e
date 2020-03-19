@@ -118,7 +118,7 @@ def get_setup(config):
                     Area(
                         'house-2',
                         [
-                            Area('h2-load', strategy=DefinedLoadStrategy(daily_load_profile=load2,
+                            Area('h2-load', strategy=DefinedLoadExternalStrategy(daily_load_profile=load2,
                                                                          initial_buying_rate=Houses_initial_buying_rate*round((random()-0.5)*VARIANCE_RATES + 1, 2),
                                                                          use_market_maker_rate=True),
                                  appliance=SwitchableAppliance()),
@@ -139,6 +139,7 @@ def get_setup(config):
                                  appliance=SwitchableAppliance()),
                         ], grid_fee_percentage=0, transfer_fee_const=0,
                     ),
+
                     Area(
                         'house-3',
                         [
