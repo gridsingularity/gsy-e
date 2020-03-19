@@ -120,11 +120,14 @@ class StorageExternalMixin(ExternalMixin):
                 arguments['energy'] + \
                 self.state.pledged_sell_kWh[self.market.time_slot] + \
                 self.state.offered_sell_kWh[self.market.time_slot]
-            assert cumulative_allowed <= self.state.energy_to_sell_dict[self.market.time_slot], \
+            print(f"cumulative_allowed: {cumulative_allowed}")
+            energy_to_sell = self.state.energy_to_sell_dict[self.market.time_slot]
+            assert cumulative_allowed <= energy_to_sell, \
                 "ESS energy limit for this market_slot has been surpassed."
             offer = self.market.offer(**arguments)
             self.offers.post(offer, self.market.id)
             self.state.offered_sell_kWh[self.market.time_slot] += offer.energy
+            self.state.energy_to_sell_dict[self.market.time_slot] -= offer.energy
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready", "offer": offer.to_JSON_string()})
@@ -234,6 +237,7 @@ class StorageExternalMixin(ExternalMixin):
                 buyer_origin=arguments["buyer_origin"]
             )
             self.state.offered_buy_kWh[self.market.time_slot] += bid.energy
+            self.state.energy_to_buy_dict[self.market.time_slot] -= bid.energy
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid", "status": "ready", "bid": bid.to_JSON_string()})
