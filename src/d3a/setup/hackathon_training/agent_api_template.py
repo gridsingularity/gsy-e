@@ -10,12 +10,6 @@ from d3a_api_client.rest_market import RestMarketClient
 from d3a_api_client.rest_device import RestDeviceClient
 from pendulum import from_format
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
-from sklearn.ensemble import RandomForestRegressor
-import pandas as pd
-import numpy as np
-import pickle
-from sklearn.metrics import mean_squared_error
-# from apiTest.agents.pricePredictor import PricePredictor
 from d3a_api_client.utils import get_area_uuid_from_area_name_and_collaboration_id
 import os
 TIME_ZONE = "UTC"
