@@ -52,7 +52,7 @@ Help on there is available via::
 Controlling the simulation
 --------------------------
 
-During a simulation run the following keyboard commands are available:
+While running a simulation, the following keyboard commands are available:
 
 === =======
 Key Command
