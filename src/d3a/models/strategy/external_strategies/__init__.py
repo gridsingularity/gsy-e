@@ -100,27 +100,30 @@ class ExternalMixin:
     def register_on_market_cycle(self):
         self.connected = self._connected
 
-    def _device_info(self, _):
+    def _device_info(self, payload):
         device_info_response_channel = f'{self.channel_prefix}/response/device_info'
         if not check_for_connected_and_reply(self.redis, device_info_response_channel,
                                              self.connected):
             return
+        arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("device_info", None, device_info_response_channel))
+            IncomingRequest("device_info", arguments, device_info_response_channel))
 
-    def _device_info_impl(self, _, response_channel):
+    def _device_info_impl(self, arguments, response_channel):
         try:
             self.redis.publish_json(
                 response_channel,
                 {"command": "device_info", "status": "ready",
-                 "device_info": self._device_info_dict})
+                 "device_info": self._device_info_dict,
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling device info on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "device_info", "status": "error",
-                 "error_message": f"Error when handling device info on area {self.device.name}."})
+                 "error_message": f"Error when handling device info on area {self.device.name}.",
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     @property
     def market(self):
