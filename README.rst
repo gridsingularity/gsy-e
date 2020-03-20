@@ -2,10 +2,7 @@
 d3a: Decentralized Autonomous Area Agent
 ====================================
 
-The D3A is a blockchain-based, distributed energy market model developed by Grid Singularity with
-the objective of supporting the Energy Web Foundation (EWF) mission to enable a decarbonized,
-decentralized, democratized and digitized energy system. See more on https://www.d3a.io .
-
+The D3A is being developed by Grid Singularity as an interface and codebase to model, simulate, optimize and (coming soon) download and deploy a custom energy exchange. See more at https://www.d3a.io .
 
 Code of Conduct
 ===============
