@@ -126,14 +126,17 @@ class TestAreaClass(unittest.TestCase):
 
     def test_market_with_most_expensive_offer(self):
         m1 = MagicMock(spec=Market)
+        m1.in_sim_duration = True
         o1 = MagicMock(spec=Offer)
         o1.price = 12
         o1.energy = 1
         m2 = MagicMock(spec=Market)
+        m2.in_sim_duration = True
         o2 = MagicMock(spec=Offer)
         o2.price = 12
         o2.energy = 1
         m3 = MagicMock(spec=Market)
+        m3.in_sim_duration = True
         o3 = MagicMock(spec=Offer)
         o3.price = 12
         o3.energy = 1

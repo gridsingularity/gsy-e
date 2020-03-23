@@ -103,6 +103,7 @@ class FakeMarket:
         self.most_affordable_energy = 0.1551
         self.created_balancing_offers = []
         self.bids = {}
+        self.in_sim_duration = True
 
     def get_bids(self):
         return deepcopy(self.bids)
@@ -115,6 +116,12 @@ class FakeMarket:
                   buyer_origin=buyer_origin)
         self.bids[bid.id] = bid
         return bid
+
+    @property
+    def offers(self):
+        return {
+            o.id: o for o in self.sorted_offers
+        }
 
     @property
     def sorted_offers(self):
