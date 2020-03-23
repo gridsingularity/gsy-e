@@ -35,8 +35,9 @@ log = getLogger(__name__)
 class TwoSidedPayAsBid(OneSidedMarket):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-                 transfer_fees=None, name=None):
-        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
+                 transfer_fees=None, name=None, in_sim_duration=True):
+        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name,
+                         in_sim_duration=in_sim_duration)
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) " \

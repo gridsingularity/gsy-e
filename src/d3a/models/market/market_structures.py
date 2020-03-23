@@ -69,6 +69,11 @@ class Offer:
         return self.id, rate, self.energy, self.price, self.seller
 
 
+def copy_offer(offer):
+    return Offer(offer.id, offer.price, offer.energy, offer.seller,
+                 offer.original_offer_price, offer.seller_origin)
+
+
 def offer_from_JSON_string(offer_string):
     offer_dict = json.loads(offer_string)
     object_type = offer_dict.pop("type")

@@ -221,8 +221,8 @@ def area_name_from_area_or_iaa_name(name):
     return name[4:] if name[:4] == 'IAA ' else name
 
 
-def is_market_in_simulation_duration(config, market):
-    return config.start_date <= market.time_slot < config.end_date
+def is_timeslot_in_simulation_duration(config, time_slot):
+    return config.start_date <= time_slot < config.end_date
 
 
 def format_interval(interval, show_day=True):

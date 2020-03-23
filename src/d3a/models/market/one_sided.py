@@ -36,11 +36,12 @@ log = getLogger(__name__)
 class OneSidedMarket(Market):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None,
-                 readonly=False, transfer_fees=None, name=None):
+                 readonly=False, transfer_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
         self.bc_interface = MarketBlockchainInterface(bc) \
             if bc is not None \
             else NonBlockchainInterface()
+        self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover
         return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\

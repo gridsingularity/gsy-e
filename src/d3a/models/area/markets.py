@@ -26,6 +26,7 @@ from d3a.models.market.balancing import BalancingMarket
 from d3a.models.market import Market # noqa
 from d3a_interface.constants_limits import ConstSettings
 from collections import OrderedDict
+from d3a.d3a_core.util import is_timeslot_in_simulation_duration
 
 
 class AreaMarkets:
@@ -60,18 +61,14 @@ class AreaMarkets:
         }
 
     def _market_rotation(self, current_time, markets, past_markets, area_agent):
-        first = True
         for timeframe in list(markets.keys()):
             if timeframe < current_time:
                 market = markets.pop(timeframe)
                 market.readonly = True
                 self._delete_past_markets(past_markets, timeframe)
                 past_markets[timeframe] = market
-                if not first:
-                    # Remove inter area agent
-                    area_agent.pop(market, None)
-                else:
-                    first = False
+                # Remove inter area agent
+                area_agent.pop(market.time_slot, None)
                 self.log.trace("Moving {t:%H:%M} {m} to past"
                                .format(t=timeframe, m=past_markets[timeframe].name))
 
@@ -120,7 +117,8 @@ class AreaMarkets:
                     notification_listener=area.dispatcher.broadcast_callback,
                     transfer_fees=TransferFees(grid_fee_percentage=area.grid_fee_percentage,
                                                transfer_fee_const=area.transfer_fee_const),
-                    name=area.name
+                    name=area.name,
+                    in_sim_duration=is_timeslot_in_simulation_duration(area.config, timeframe)
                 )
 
                 area.dispatcher.create_area_agents(is_spot_market, market)
