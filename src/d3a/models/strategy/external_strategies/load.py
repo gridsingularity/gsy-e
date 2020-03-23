@@ -25,31 +25,36 @@ class LoadExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/device_info': self._device_info,
         })
 
-    def _list_bids(self, _):
+    def _list_bids(self, payload):
+        self._get_transaction_id(payload)
         list_bids_response_channel = f'{self.channel_prefix}/response/list_bids'
         if not check_for_connected_and_reply(self.redis, list_bids_response_channel,
                                              self.connected):
             return
+        arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_bids", None, list_bids_response_channel))
+            IncomingRequest("list_bids", arguments, list_bids_response_channel))
 
-    def _list_bids_impl(self, _, response_channel):
+    def _list_bids_impl(self, arguments, response_channel):
         try:
             filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
                              for _, v in self.market.get_bids().items()
                              if v.buyer == self.device.name]
             self.redis.publish_json(
                 response_channel,
-                {"command": "list_bids", "status": "ready", "bid_list": filtered_bids})
+                {"command": "list_bids", "status": "ready", "bid_list": filtered_bids,
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling list bids on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "list_bids", "status": "error",
-                 "error_message": f"Error when listing bids on area {self.device.name}."})
+                 "error_message": f"Error when listing bids on area {self.device.name}.",
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _delete_bid(self, payload):
+        transaction_id = self._get_transaction_id(payload)
         delete_bid_response_channel = f'{self.channel_prefix}/response/delete_bid'
         if not check_for_connected_and_reply(self.redis,
                                              delete_bid_response_channel, self.connected):
@@ -64,7 +69,8 @@ class LoadExternalMixin(ExternalMixin):
                 delete_bid_response_channel,
                 {"command": "bid_delete",
                  "error": f"Incorrect delete bid request. Available parameters: (bid)."
-                          f"Exception: {str(e)}"}
+                          f"Exception: {str(e)}",
+                 "transaction_id": transaction_id}
             )
         else:
             self.pending_requests.append(
@@ -76,8 +82,8 @@ class LoadExternalMixin(ExternalMixin):
             deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids}
-            )
+                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid delete on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -86,15 +92,17 @@ class LoadExternalMixin(ExternalMixin):
                 {"command": "bid_delete", "status": "error",
                  "error_message": f"Error when handling bid delete "
                                   f"on area {self.device.name} with arguments {arguments}. "
-                                  f"Bid does not exist on the current market."})
+                                  f"Bid does not exist on the current market.",
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     def _bid(self, payload):
+        transaction_id = self._get_transaction_id(payload)
         bid_response_channel = f'{self.channel_prefix}/response/bid'
         if not check_for_connected_and_reply(self.redis, bid_response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
-            assert set(arguments.keys()) == {'price', 'energy'}
+            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
             arguments['buyer_origin'] = self.device.name
             pending_bid_energy = sum(
                 req.arguments["energy"]
@@ -109,14 +117,15 @@ class LoadExternalMixin(ExternalMixin):
                     bid_response_channel,
                     {"command": "bid",
                      "error": "Bid cannot be posted. Required energy has been reached with "
-                              "existing bids."}
-                )
+                              "existing bids.",
+                     "transaction_id": transaction_id})
                 return
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid",
-                 "error": "Incorrect bid request. Available parameters: (price, energy)."}
+                 "error": "Incorrect bid request. Available parameters: (price, energy).",
+                 "transaction_id": transaction_id}
             )
         else:
             self.pending_requests.append(
@@ -132,7 +141,8 @@ class LoadExternalMixin(ExternalMixin):
             )
             self.redis.publish_json(
                 bid_response_channel,
-                {"command": "bid", "status": "ready", "bid": bid.to_JSON_string()})
+                {"command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
@@ -140,7 +150,8 @@ class LoadExternalMixin(ExternalMixin):
                 bid_response_channel,
                 {"command": "bid", "status": "error",
                  "error_message": f"Error when handling bid create "
-                                  f"on area {self.device.name} with arguments {arguments}."})
+                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     @property
     def _device_info_dict(self):

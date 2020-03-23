@@ -52,14 +52,14 @@ git clone https://github.com/gridsingularity/d3a.git
 
 ###  Install the D3A:
 
-1. Activate your *virtualenvironment*
+1. Activate your *virtualenvironment* and go into the d3a repository
 
-2. Install fabric
+2. Install pip-tools
 
-   `pip3 install fabric3`
-
-3. Go into your d3a folder and install d3a with:
-
-   `fab sync`
+    `pip3 install pendulum pip-tools`
+   
+   
+3. Install dependencies  
+    `pip install -e . ` 
 
 Now, if you run d3a run `–help` , the help of d3a should be shown.
