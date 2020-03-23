@@ -1,4 +1,4 @@
-This list of frequently asked questions (faq) is updated gradually, by adding the questions that come up on our [gitter](https://gitter.im/D3A-community/welcome) / [slack](https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q)  community chat
+This list of frequently asked questions (faq) is updated gradually, by adding the questions that come up on our [Slack](https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q) community chat (gsycommunity.slack.com). Our [gitter](https://gitter.im/D3A-community/welcome) has been replaced with our Slack community.
 
 # D3A Functionality 
 
