@@ -17,12 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict, Set  # noqa
-from copy import deepcopy
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
 from d3a.models.market.grid_fees.base_model import GridFees
+from d3a.models.market.market_structures import copy_offer
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
@@ -42,10 +42,6 @@ class IAAEngine:
         self.forwarded_offers = {}  # type: Dict[str, OfferInfo]
         self.trade_residual = {}  # type Dict[str, Offer]
         self.ignored_offers = set()  # type: Set[str]
-        self._not_forwarded_offers = {
-            offer_id for offer_id in self.markets.source.offers.keys()
-            if offer_id not in self.forwarded_offers
-        }
 
     def __repr__(self):
         return "<IAAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
@@ -69,7 +65,6 @@ class IAAEngine:
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             return self.owner.offer(market_id=self.markets.target, offer_args=kwargs)
         else:
-
             return self.markets.target.offer(**kwargs)
 
     def _forward_offer(self, offer):
@@ -84,7 +79,7 @@ class IAAEngine:
         self.owner.log.trace(f"Forwarding offer {offer} to {forwarded_offer}")
         # TODO: Ugly solution, required in order to decouple offer placement from
         # new offer event triggering
-        self.markets.target.dispatch_market_offer_event(offer)
+        self.markets.target.dispatch_market_offer_event(forwarded_offer)
         return forwarded_offer
 
     def _delete_forwarded_offer_entries(self, offer):
@@ -97,41 +92,12 @@ class IAAEngine:
     def tick(self, *, area):
         self.propagate_offer(area.current_tick)
 
-    def event_offer(self, market_id, offer):
-        if market_id != self.markets.source.id:
-            return
-        if offer.id in self.forwarded_offers:
-            return
-        if offer.id in self.offer_age:
-            return
-        if offer.id not in self.markets.source.offers:
-            # TODO: Potential further optimisation here
-            # This case handles trade events that we receive but are not contained in any of
-            # the source and target market. This happens when another device accepts the offer
-            # before the offer event is dispatched to this market. Current solution is to
-            # recalculate the _not_forwarded_offers dict. However, this could be fairly optimized
-            # if the trade event was captured and notified that the offer was deleted/made partial
-            self.repopulate_non_forwarded_offers()
-        else:
-            self._not_forwarded_offers.add(offer.id)
-            self.offer_age[offer.id] = self.owner.owner.current_tick
-
-    def repopulate_non_forwarded_offers(self):
-        self._not_forwarded_offers.update({
-            offer_id for offer_id in self.markets.source.offers.keys()
-            if offer_id not in self.forwarded_offers
-        })
-        for offer_id in self._not_forwarded_offers:
-            if offer_id not in self.offer_age:
-                self.offer_age[offer_id] = self.owner.owner.current_tick
-
     def propagate_offer(self, current_tick):
         # Store age of offer
-        for offer_id in self._not_forwarded_offers:
-            if offer_id not in self.offer_age:
-                self.offer_age[offer_id] = current_tick
+        for offer in self.markets.source.offers.values():
+            if offer.id not in self.offer_age:
+                self.offer_age[offer.id] = current_tick
 
-        self._not_forwarded_offers.clear()
         # Use `list()` to avoid in place modification errors
         for offer_id, age in list(self.offer_age.items()):
             if offer_id in self.forwarded_offers:
@@ -275,6 +241,7 @@ class IAAEngine:
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(residual_offer, local_residual_offer)
             self._add_to_forward_offers(accepted_offer, local_split_offer)
+
         else:
             return
 
@@ -286,7 +253,7 @@ class IAAEngine:
                              f"{short_offer_bid_log_str(local_residual_offer)}")
 
     def _add_to_forward_offers(self, source_offer, target_offer):
-        offer_info = OfferInfo(deepcopy(source_offer), deepcopy(target_offer))
+        offer_info = OfferInfo(copy_offer(source_offer), copy_offer(target_offer))
         self.forwarded_offers[source_offer.id] = offer_info
         self.forwarded_offers[target_offer.id] = offer_info
 

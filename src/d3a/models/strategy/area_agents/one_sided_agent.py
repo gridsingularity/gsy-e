@@ -68,9 +68,5 @@ class OneSidedAgent(InterAreaAgent):
                                      accepted_offer=accepted_offer,
                                      residual_offer=residual_offer)
 
-    def event_offer(self, *, market_id, offer):
-        for engine in sorted(self.engines, key=lambda _: random()):
-            engine.event_offer(market_id=market_id, offer=offer)
-
     def __repr__(self):
         return "<OneSidedAgent {s.name} {s.time_slot}>".format(s=self)
