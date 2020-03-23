@@ -78,10 +78,9 @@ class StorageExternalMixin(ExternalMixin):
             to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
             deleted_offers = \
                 self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
-            self.state.offered_sell_kWh[self.market.time_slot] -= \
+            self.state.offered_sell_kWh[self.market.time_slot] = \
                 self.offers.posted_offer_energy(self.market.id)
-            self.state.energy_to_sell_dict[self.market.time_slot] += \
-                self.offers.posted_offer_energy(self.market.id)
+            self.state.clamp_energy_to_sell_kWh(self.market.time_slot)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
@@ -122,7 +121,6 @@ class StorageExternalMixin(ExternalMixin):
                 arguments['energy'] + \
                 self.state.pledged_sell_kWh[self.market.time_slot] + \
                 self.state.offered_sell_kWh[self.market.time_slot]
-            print(f"cumulative_allowed: {cumulative_allowed}")
             energy_to_sell = self.state.energy_to_sell_dict[self.market.time_slot]
             assert cumulative_allowed <= energy_to_sell, \
                 "ESS energy limit for this market_slot has been surpassed."
@@ -190,11 +188,10 @@ class StorageExternalMixin(ExternalMixin):
     def _delete_bid_impl(self, arguments, response_channel):
         try:
             to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
-            self.state.offered_buy_kWh[self.market.time_slot] -= \
-                self.posted_bid_energy(self.market.id)
-            self.state.energy_to_buy_dict[self.market.time_slot] += \
-                self.posted_bid_energy(self.market.id)
             deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
+            self.state.offered_buy_kWh[self.market.time_slot] = \
+                self.posted_bid_energy(self.market.id)
+            self.state.energy_to_buy_dict([self.market.time_slot])
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids})
