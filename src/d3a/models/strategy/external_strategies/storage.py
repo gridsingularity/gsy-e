@@ -85,7 +85,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
             self.state.offered_sell_kWh[self.market.time_slot] = \
                 self.offers.posted_offer_energy(self.market.id)
-            self.state.clamp_energy_to_sell_kWh(self.market.time_slot)
+            self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer_delete", "status": "ready",
@@ -135,8 +135,9 @@ class StorageExternalMixin(ExternalMixin):
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
             offer = self.market.offer(**offer_arguments)
             self.offers.post(offer, self.market.id)
-            self.state.offered_sell_kWh[self.market.time_slot] += offer.energy
-            self.state.energy_to_sell_dict[self.market.time_slot] -= offer.energy
+            self.state.offered_sell_kWh[self.market.time_slot] = \
+                self.offers.posted_offer_energy(self.market.id)
+            self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
@@ -208,7 +209,7 @@ class StorageExternalMixin(ExternalMixin):
             deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
             self.state.offered_buy_kWh[self.market.time_slot] = \
                 self.posted_bid_energy(self.market.id)
-            self.state.energy_to_buy_dict([self.market.time_slot])
+            self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
             self.redis.publish_json(
                 response_channel,
                 {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
@@ -257,8 +258,9 @@ class StorageExternalMixin(ExternalMixin):
                 arguments["energy"],
                 buyer_origin=arguments["buyer_origin"]
             )
-            self.state.offered_buy_kWh[self.market.time_slot] += bid.energy
-            self.state.energy_to_buy_dict[self.market.time_slot] -= bid.energy
+            self.state.offered_buy_kWh[self.market.time_slot] = \
+                self.posted_bid_energy(self.market.id)
+            self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
