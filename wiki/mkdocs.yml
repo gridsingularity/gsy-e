@@ -107,7 +107,9 @@ extra:
     - type: 'linkedin'
       size: 'lg'
       link: 'https://www.linkedin.com/company/grid-singularity'
-
+    - type: 'slack'
+      size: 'lg'
+      link: 'https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q'
 footer:
   logo: 'img/d3a-logo.png'
 
