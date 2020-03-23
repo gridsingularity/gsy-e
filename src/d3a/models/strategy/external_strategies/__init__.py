@@ -19,24 +19,25 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
     return True
 
 
-def register_area(redis, channel_prefix, is_connected):
+def register_area(redis, channel_prefix, is_connected, transaction_id):
     register_response_channel = f'{channel_prefix}/response/register_participant'
     try:
         redis.publish_json(
             register_response_channel,
-            {"command": "register", "status": "ready", "registered": True})
+            {"command": "register", "status": "ready", "registered": True,
+             "transaction_id": transaction_id})
         return True
     except Exception as e:
         logging.error(f"Error when registering to area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             register_response_channel,
-            {"command": "register", "status": "error",
+            {"command": "register", "status": "error", "transaction_id": transaction_id,
              "error_message": f"Error when registering to area {channel_prefix}."})
         return is_connected
 
 
-def unregister_area(redis, channel_prefix, is_connected):
+def unregister_area(redis, channel_prefix, is_connected, transaction_id):
     unregister_response_channel = f'{channel_prefix}/response/unregister_participant'
     if not check_for_connected_and_reply(redis, unregister_response_channel,
                                          is_connected):
@@ -44,14 +45,15 @@ def unregister_area(redis, channel_prefix, is_connected):
     try:
         redis.publish_json(
             unregister_response_channel,
-            {"command": "unregister", "status": "ready", "unregistered": True})
+            {"command": "unregister", "status": "ready", "unregistered": True,
+             "transaction_id": transaction_id})
         return False
     except Exception as e:
         logging.error(f"Error when unregistering from area {channel_prefix}: "
                       f"Exception: {str(e)}")
         redis.publish_json(
             unregister_response_channel,
-            {"command": "unregister", "status": "error",
+            {"command": "unregister", "status": "error", "transaction_id": transaction_id,
              "error_message": f"Error when unregistering from area {channel_prefix}."})
         return is_connected
 
@@ -79,36 +81,49 @@ class ExternalMixin:
             (DISPATCH_EVENT_TICK_FREQUENCY_PERCENT / 100)
         )
 
+    @staticmethod
+    def _get_transaction_id(payload):
+        data = json.loads(payload["data"])
+        if "transaction_id" in data and data["transaction_id"] is not None:
+            return data["transaction_id"]
+        else:
+            raise ValueError("transaction_id not in payload or None")
+
     def _register(self, payload):
-        self._connected = register_area(self.redis, self.channel_prefix, self.connected)
+        self._connected = register_area(self.redis, self.channel_prefix, self.connected,
+                                        self._get_transaction_id(payload))
 
     def _unregister(self, payload):
-        self._connected = unregister_area(self.redis, self.channel_prefix, self.connected)
+        self._connected = unregister_area(self.redis, self.channel_prefix, self.connected,
+                                          self._get_transaction_id(payload))
 
     def register_on_market_cycle(self):
         self.connected = self._connected
 
-    def _device_info(self, _):
+    def _device_info(self, payload):
         device_info_response_channel = f'{self.channel_prefix}/response/device_info'
         if not check_for_connected_and_reply(self.redis, device_info_response_channel,
                                              self.connected):
             return
+        arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("device_info", None, device_info_response_channel))
+            IncomingRequest("device_info", arguments, device_info_response_channel))
 
-    def _device_info_impl(self, _, response_channel):
+    def _device_info_impl(self, arguments, response_channel):
         try:
             self.redis.publish_json(
                 response_channel,
                 {"command": "device_info", "status": "ready",
-                 "device_info": self._device_info_dict})
+                 "device_info": self._device_info_dict,
+                 "transaction_id": arguments.get("transaction_id", None)})
         except Exception as e:
             logging.error(f"Error when handling device info on area {self.device.name}: "
                           f"Exception: {str(e)}")
             self.redis.publish_json(
                 response_channel,
                 {"command": "device_info", "status": "error",
-                 "error_message": f"Error when handling device info on area {self.device.name}."})
+                 "error_message": f"Error when handling device info on area {self.device.name}.",
+                 "transaction_id": arguments.get("transaction_id", None)})
 
     @property
     def market(self):
