@@ -1,4 +1,6 @@
 import unittest
+import uuid
+import json
 from unittest.mock import MagicMock
 from parameterized import parameterized
 from pendulum import now
@@ -123,3 +125,27 @@ class TestExternalMixin(unittest.TestCase):
         assert strategy._device_info_dict["energy_to_buy"] == 0.03
         assert strategy._device_info_dict["used_storage"] == 0.01
         assert strategy._device_info_dict["free_storage"] == 0.49
+
+    @parameterized.expand([
+        [LoadHoursExternalStrategy(100)],
+        [PVExternalStrategy(2, max_panel_power_W=160)],
+        [StorageExternalStrategy()]
+    ])
+    def test_register_device(self, strategy):
+        self.config = MagicMock()
+        self.device = Area(name="test_area", config=self.config, strategy=strategy)
+        payload = {"data": json.dumps({"transaction_id": str(uuid.uuid4())})}
+        self.device.strategy.owner = self.device
+        assert self.device.strategy.connected is False
+        self.device.strategy._register(payload)
+        self.device.strategy.register_on_market_cycle()
+        assert self.device.strategy.connected is True
+        self.device.strategy._unregister(payload)
+        self.device.strategy.register_on_market_cycle()
+        assert self.device.strategy.connected is False
+
+        payload = {"data": json.dumps({"transaction_id": None})}
+        with self.assertRaises(ValueError):
+            self.device.strategy._register(payload)
+        with self.assertRaises(ValueError):
+            self.device.strategy._unregister(payload)
