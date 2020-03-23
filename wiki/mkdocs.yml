@@ -60,7 +60,9 @@ nav:
     - 'How to Create a setup-file': 'create-setup-file.md' 
     - 'How to Change Global Simulation Settings': 'change-global-sim-settings.md' 
     - 'How to launch Simulation via Command Line Interface (CLI)': 'launch-sim-via-cli.md' 
-    - 'Installation Instructions': 'installation-instructions.md' 
+    - 'Installation Instructions':
+        - 'Linux': 'installation-instructions.md'
+        - 'Mac': 'ios-installation-instructions.md'
     - 'Key Performance Indicators (KPIs)': 'kpis.md'                 
 - FAQ: 'faq.md' 
 
