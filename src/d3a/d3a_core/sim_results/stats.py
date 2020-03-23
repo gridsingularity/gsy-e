@@ -47,7 +47,7 @@ def primary_trades(markets):
 
 def primary_unit_prices(markets):
     for trade in primary_trades(markets):
-        yield trade.offer.price / trade.offer.energy
+        yield trade.offer.energy_rate
 
 
 def total_avg_trade_price(markets):

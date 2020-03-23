@@ -303,7 +303,7 @@ class Area:
         # In case of a tie, max returns the first market occurrence in order to
         # satisfy the most recent market slot
         return max(self.all_markets,
-                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
+                   key=lambda m: m.sorted_offers[0].energy_rate)
 
     @property
     def next_market(self):

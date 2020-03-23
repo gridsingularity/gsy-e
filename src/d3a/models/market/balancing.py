@@ -155,7 +155,7 @@ class BalancingMarket(OneSidedMarket):
         residual_offer = None
 
         if trade_rate is None:
-            trade_rate = offer.price / offer.energy
+            trade_rate = offer.energy_rate
 
         orig_offer_price = self._calculate_original_prices(offer)
 

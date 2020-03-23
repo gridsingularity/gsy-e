@@ -130,16 +130,19 @@ class TestAreaClass(unittest.TestCase):
         o1 = MagicMock(spec=Offer)
         o1.price = 12
         o1.energy = 1
+        o1.energy_rate = 12
         m2 = MagicMock(spec=Market)
         m2.in_sim_duration = True
         o2 = MagicMock(spec=Offer)
         o2.price = 12
         o2.energy = 1
+        o2.energy_rate = 12
         m3 = MagicMock(spec=Market)
         m3.in_sim_duration = True
         o3 = MagicMock(spec=Offer)
         o3.price = 12
         o3.energy = 1
+        o3.energy_rate = 12
         markets = OrderedDict()
         td = today(tz=TIME_ZONE)
         td1 = td + self.config.slot_length
@@ -157,13 +160,13 @@ class TestAreaClass(unittest.TestCase):
         m2.sorted_offers = [o2, o2]
         m3.sorted_offers = [o3, o3]
         assert self.area.market_with_most_expensive_offer is m1
-        o1.price = 19
-        o2.price = 20
-        o3.price = 18
+        o1.energy_rate = 19
+        o2.energy_rate = 20
+        o3.energy_rate = 18
         assert self.area.market_with_most_expensive_offer is m2
-        o1.price = 18
-        o2.price = 19
-        o3.price = 20
+        o1.energy_rate = 18
+        o2.energy_rate = 19
+        o3.energy_rate = 20
         assert self.area.market_with_most_expensive_offer is m3
 
     def test_cycle_markets(self):

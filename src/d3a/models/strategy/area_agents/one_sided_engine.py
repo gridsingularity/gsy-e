@@ -138,13 +138,13 @@ class IAAEngine:
 
         if trade.offer.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
-            source_rate = offer_info.source_offer.price / offer_info.source_offer.energy
-            target_rate = offer_info.target_offer.price / offer_info.target_offer.energy
+            source_rate = offer_info.source_offer.energy_rate
+            target_rate = offer_info.target_offer.energy_rate
             assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             try:
-                trade_offer_rate = trade.offer.price / trade.offer.energy
+                trade_offer_rate = trade.offer.energy_rate
                 updated_trade_bid_info = GridFees.update_forwarded_offer_trade_original_info(
                     trade.offer_bid_trade_info, offer_info.source_offer)
                 trade_source = self.owner.accept_offer(

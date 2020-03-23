@@ -37,12 +37,12 @@ class Offer:
 
     def __repr__(self):
         return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
-            .format(s=self, rate=self.price / self.energy)
+            .format(s=self, rate=self.energy_rate)
 
     def __str__(self):
         return "{{{s.id!s:.6s}}} [origin: {s.seller_origin}] " \
                "[{s.seller}]: {s.energy} kWh @ {s.price} @ {rate}"\
-            .format(s=self, rate=self.price / self.energy)
+            .format(s=self, rate=self.energy_rate)
 
     def to_JSON_string(self):
         offer_dict = self.__dict__
@@ -65,7 +65,7 @@ class Offer:
         return 'id', 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'seller'
 
     def _to_csv(self):
-        rate = round(self.price / self.energy, 4)
+        rate = round(self.energy_rate, 4)
         return self.id, rate, self.energy, self.price, self.seller
 
 
@@ -98,13 +98,13 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
     def __repr__(self):
         return (
             "<Bid {{{s.id!s:.6s}}} [{s.buyer}] [{s.seller}] "
-            "{s.energy} kWh @ {s.price} {rate}>".format(s=self, rate=self.price / self.energy)
+            "{s.energy} kWh @ {s.price} {rate}>".format(s=self, rate=self.energy_rate)
         )
 
     def __str__(self):
         return (
             "{{{s.id!s:.6s}}} [origin: {s.buyer_origin}] [{s.buyer}] [{s.seller}] "
-            "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.price / self.energy)
+            "{s.energy} kWh @ {s.price} {rate}".format(s=self, rate=self.energy_rate)
         )
 
     @classmethod
@@ -112,7 +112,7 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
         return 'id', 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'buyer'
 
     def _to_csv(self):
-        rate = round(self.price / self.energy, 4)
+        rate = round(self.energy_rate, 4)
         return self.id, rate, self.energy, self.price, self.buyer
 
     def to_JSON_string(self):
@@ -169,7 +169,7 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
             "{{{s.id!s:.6s}}} [origin: {s.seller_origin} -> {s.buyer_origin}] "
             "[{s.seller} -> {s.buyer}] {s.offer.energy} kWh @ {s.offer.price} {rate} "
             "{s.offer.id} [fee: {s.fee_price} cts.]".
-            format(s=self, rate=round(self.offer.price / self.offer.energy, 8))
+            format(s=self, rate=round(self.offer.energy_rate, 8))
         )
 
     @classmethod
@@ -178,7 +178,7 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
                 cls._fields[3:5])
 
     def _to_csv(self):
-        rate = round(self.offer.price / self.offer.energy, 4)
+        rate = round(self.offer.energy_rate, 4)
         return self[:2] + (rate, self.offer.energy) + self[3:5]
 
     def to_JSON_string(self):
@@ -205,12 +205,12 @@ class BalancingOffer(Offer):
 
     def __repr__(self):
         return "<BalancingOffer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
-            .format(s=self, rate=self.price / self.energy)
+            .format(s=self, rate=self.energy_rate)
 
     def __str__(self):
         return "<BalancingOffer{{{s.id!s:.6s}}} [{s.seller}]: " \
                "{s.energy} kWh @ {s.price} @ {rate}>".format(s=self,
-                                                             rate=self.price / self.energy)
+                                                             rate=self.energy_rate)
 
 
 class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'seller',
@@ -227,7 +227,7 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
         return (
             "{{{s.id!s:.6s}}} [{s.seller} -> {s.buyer}] "
             "{s.offer.energy} kWh @ {s.offer.price} {rate} {s.offer.id}".
-            format(s=self, rate=self.offer.price / self.offer.energy)
+            format(s=self, rate=self.offer.energy_rate)
         )
 
     @classmethod
@@ -236,7 +236,7 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
                 cls._fields[3:5])
 
     def _to_csv(self):
-        rate = round(self.offer.price / self.offer.energy, 4)
+        rate = round(self.offer.energy_rate, 4)
         return self[:2] + (rate, self.offer.energy) + self[3:5]
 
 

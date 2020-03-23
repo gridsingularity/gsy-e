@@ -229,7 +229,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         for offer in sorted_offers:
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
-                        (offer.price / offer.energy - bid.price / bid.energy) <= \
+                        (offer.energy_rate - bid.energy_rate) <= \
                         FLOATING_POINT_TOLERANCE and offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
                     offer_bid_pairs.append(tuple((bid, offer)))
@@ -261,7 +261,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             for bid, offer in self._perform_pay_as_bid_matching():
                 selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
                 original_bid_rate = bid.original_bid_price / bid.energy
-                matched_rate = bid.price / bid.energy
+                matched_rate = bid.energy_rate
 
                 trade_bid_info = TradeBidInfo(
                     original_bid_rate=original_bid_rate,

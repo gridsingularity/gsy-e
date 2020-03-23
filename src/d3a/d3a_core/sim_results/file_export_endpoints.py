@@ -252,7 +252,7 @@ class FileExportEndpoints:
                     self.seller_trades[seller_slug] = dict((key, []) for key in labels)
                 else:
                     values = (market.time_slot,) + \
-                             (round(trade.offer.price / trade.offer.energy, 4),
+                             (round(trade.offer.energy_rate, 4),
                               (trade.offer.energy * -1),) + \
                              (slugify(trade.seller, to_lower=True),)
                     for ii, ri in enumerate(labels):

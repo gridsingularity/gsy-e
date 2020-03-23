@@ -385,8 +385,8 @@ class BaseStrategy(TriggerMixin, EventMixin, AreaBehaviorBase):
     def assert_if_trade_offer_price_is_too_low(self, market_id, trade):
         if isinstance(trade.offer, Offer) and trade.offer.seller == self.owner.name:
             offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer.id][0]
-            assert trade.offer.price / trade.offer.energy >= \
-                offer.price / offer.energy - FLOATING_POINT_TOLERANCE
+            assert trade.offer.energy_rate >= \
+                offer.energy_rate - FLOATING_POINT_TOLERANCE
 
     def can_offer_be_posted(self, offer_energy, available_energy, market):
         return self.offers.can_offer_be_posted(offer_energy, available_energy, market)
@@ -517,5 +517,4 @@ class BidEnabledStrategy(BaseStrategy):
     def assert_if_trade_bid_price_is_too_high(self, market, trade):
         if isinstance(trade.offer, Bid) and trade.offer.buyer == self.owner.name:
             bid = [b for b in self.get_posted_bids(market) if b.id == trade.offer.id][0]
-            assert trade.offer.price / trade.offer.energy <= \
-                bid.price / bid.energy + FLOATING_POINT_TOLERANCE
+            assert trade.offer.energy_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE

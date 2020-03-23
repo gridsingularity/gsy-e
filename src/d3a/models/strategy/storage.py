@@ -21,6 +21,7 @@ from enum import Enum
 from pendulum import duration
 
 from d3a import limit_float_precision
+from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, generate_market_slot_list
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
@@ -418,7 +419,7 @@ class StorageStrategy(BidEnabledStrategy):
     def buy_energy(self, market, offer=None):
         if not market:
             return
-        if self.state.has_battery_reached_max_power(-0.0001, market.time_slot):
+        if self.state.has_battery_reached_max_power(-FLOATING_POINT_TOLERANCE, market.time_slot):
             return
         max_affordable_offer_rate = min(self.bid_update.get_updated_rate(market.time_slot),
                                         self.bid_update.final_rate[market.time_slot])
@@ -460,7 +461,7 @@ class StorageStrategy(BidEnabledStrategy):
                 most_expensive_market = self.area.all_markets[0]
                 for market in self.area.all_markets:
                     if len(market.sorted_offers) > 0 and \
-                       market.sorted_offers[0].price / market.sorted_offers[0].energy > max_rate:
+                       market.sorted_offers[0].energy_rate > max_rate:
                         max_rate = market.sorted_offers[0].price / market.sorted_offers[0].energy
                         most_expensive_market = market
             except IndexError:
