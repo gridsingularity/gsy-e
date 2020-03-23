@@ -139,6 +139,7 @@ def get_setup(config):
                                  appliance=SwitchableAppliance()),
                         ], grid_fee_percentage=0, transfer_fee_const=0,
                     ),
+
                     Area(
                         'house-3',
                         [
