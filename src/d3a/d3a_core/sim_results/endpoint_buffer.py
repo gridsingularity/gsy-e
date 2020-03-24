@@ -47,7 +47,7 @@ class SimulationEndpointBuffer:
         self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
         self.market_bills = MarketEnergyBills()
-        # self.balancing_bills = MarketEnergyBills(is_spot_market=False)
+        self.balancing_bills = MarketEnergyBills(is_spot_market=False)
         self.cumulative_grid_trades = CumulativeGridTrades()
         self.trade_details = {}
         self.device_statistics = DeviceStatistics()
@@ -116,6 +116,8 @@ class SimulationEndpointBuffer:
         self.cumulative_grid_trades.update(area)
 
         self.market_bills.update(area)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self.balancing_bills.update(area)
 
         self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 

@@ -337,14 +337,14 @@ def generate_market_slot_list(area=None):
     Returns a list of all slot times
     """
     config = GlobalConfig if area is None else area.config
-    if not hasattr(config, 'market_slot_list') or not config.market_slot_list:
+    if not hasattr(config, 'market_slot_list') or len(config.market_slot_list) == 0:
         config.market_slot_list = generate_market_slot_list_from_config(
             config.sim_duration, config.start_date, config.market_count, config.slot_length
         )
     return config.market_slot_list
 
 
-@lru_cache(maxsize=5000, typed=False)
+@lru_cache(maxsize=100, typed=False)
 def format_datetime(datetime, ui_format=False):
     return datetime.format(DATE_TIME_FORMAT) \
         if not ui_format \
