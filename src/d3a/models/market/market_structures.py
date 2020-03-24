@@ -35,6 +35,10 @@ class Offer:
         self.seller_origin = seller_origin
         self.energy_rate = price / energy
 
+    def update_price(self, price):
+        self.price = price
+        self.energy_rate = self.price / self.energy
+
     def __repr__(self):
         return "<Offer('{s.id!s:.6s}', '{s.energy} kWh@{s.price}', '{s.seller} {rate}'>"\
             .format(s=self, rate=self.energy_rate)

@@ -177,15 +177,16 @@ class BalancingMarket(OneSidedMarket):
                                                                trade_rate, trade_bid_info,
                                                                orig_offer_price)
                 offer = accepted_offer
-                offer.price = trade_price
+                offer.update_price(trade_price)
 
             elif abs(energy) > abs(offer.energy):
                 raise InvalidBalancingTradeException("Energy can't be greater than offered energy")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
-                fees, offer.price = self._update_offer_fee_and_calculate_final_price(
+                fees, trade_price = self._update_offer_fee_and_calculate_final_price(
                     energy, trade_rate, 1, orig_offer_price
                 ) if already_tracked is False else energy * trade_rate
+                offer.update_price(trade_price)
 
         except Exception:
             # Exception happened - restore offer
