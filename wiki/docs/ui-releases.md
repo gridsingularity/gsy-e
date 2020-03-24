@@ -1,4 +1,12 @@
+##Version 0.4.0
+The following features were implemented :
 
+* Grid fees configuration
+* User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges
+* API connection to energy devices allowing bids and offers to be submitted by external algorithms 
+
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
 ##December 2019
@@ -10,7 +18,6 @@ The following features were implemented :
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/0hOJ_GAH-rs" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</iframe>
 
 ##October 2019
 The following features were implemented :
@@ -23,6 +30,5 @@ The following features were implemented :
 * Download simulation results
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/hHXWzs1PJGI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</iframe>
 
 
