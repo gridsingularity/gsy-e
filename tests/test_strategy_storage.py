@@ -416,8 +416,6 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     assert storage_strategy_test7.state.offered_sell_kWh[sell_market.time_slot] == \
         energy_sell_dict[sell_market.time_slot]
     assert(isclose(storage_strategy_test7.state.used_storage, 3.0, rel_tol=1e-03))
-    assert area_test7._markets_return["Fake Market"].created_offers[0].energy == \
-        energy_sell_dict[sell_market.time_slot]
     assert len(storage_strategy_test7.offers.posted_in_market(sell_market.id)) > 0
 
 
@@ -599,7 +597,6 @@ def test_free_storage_calculation_takes_into_account_storage_capacity(storage_st
             storage_strategy_test1.state.capacity \
             + storage_strategy_test1.state.pledged_sell_kWh[time_slot] \
             - storage_strategy_test1.state.pledged_buy_kWh[time_slot] \
-            - storage_strategy_test1.state.offered_buy_kWh[time_slot] \
             - storage_strategy_test1.state.used_storage
 
 

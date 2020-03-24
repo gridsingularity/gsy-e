@@ -84,7 +84,7 @@ class StorageExternalMixin(ExternalMixin):
             deleted_offers = \
                 self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
             self.state.offered_sell_kWh[self.market.time_slot] = \
-                self.offers.posted_offer_energy(self.market.id)
+                self.offers.open_offer_energy(self.market.id)
             self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
             self.redis.publish_json(
                 response_channel,
@@ -125,18 +125,13 @@ class StorageExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
-            cumulative_allowed = \
-                arguments['energy'] + \
-                self.state.pledged_sell_kWh[self.market.time_slot] + \
-                self.state.offered_sell_kWh[self.market.time_slot]
-            energy_to_sell = self.state.energy_to_sell_dict[self.market.time_slot]
-            assert cumulative_allowed <= energy_to_sell, \
+            assert arguments['energy'] <= self._device_info_dict['energy_to_sell'], \
                 "ESS energy limit for this market_slot has been surpassed."
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
             offer = self.market.offer(**offer_arguments)
             self.offers.post(offer, self.market.id)
             self.state.offered_sell_kWh[self.market.time_slot] = \
-                self.offers.posted_offer_energy(self.market.id)
+                self.offers.open_offer_energy(self.market.id)
             self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
             self.redis.publish_json(
                 response_channel,
@@ -246,11 +241,8 @@ class StorageExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
-            max_energy = self.state.energy_to_buy_dict[self.market.time_slot]
-            cumulative_allowed = \
-                arguments["energy"] + self.state.pledged_buy_kWh[self.market.time_slot] + \
-                self.state.offered_buy_kWh[self.market.time_slot]
-            assert cumulative_allowed <= max_energy, \
+            max_energy = self._device_info_dict['energy_to_buy']
+            assert arguments["energy"] <= max_energy, \
                 "ESS energy limit for this market_slot has been surpassed."
             bid = self.post_bid(
                 self.market,
@@ -277,9 +269,8 @@ class StorageExternalMixin(ExternalMixin):
 
     @property
     def _device_info_dict(self):
-        energy_to_sell = \
-            self.state.energy_to_sell_dict[self.market.time_slot] + \
-            self.state.offered_sell_kWh[self.market.time_slot]
+        energy_to_sell = self.state.energy_to_sell_dict[self.market.time_slot] + \
+                         self.state.offered_sell_kWh[self.market.time_slot]
         energy_to_buy = \
             self.state.energy_to_buy_dict[self.market.time_slot] + \
             self.state.offered_buy_kWh[self.market.time_slot]
@@ -320,6 +311,9 @@ class StorageExternalMixin(ExternalMixin):
             super().event_tick()
         else:
             self.state.tick(self.market_area, self.market.time_slot)
+            self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
+            self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
+            # print(f"tick_info_dict: {self._device_info_dict}")
 
             while len(self.pending_requests) > 0:
                 req = self.pending_requests.pop()
