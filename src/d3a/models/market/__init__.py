@@ -33,6 +33,8 @@ from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber, \
     MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
+from d3a.models.market.grid_fees.base_model import GridFees
+from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 
 log = getLogger(__name__)
 
@@ -78,6 +80,13 @@ class Market:
             if transfer_fees is not None else 0
         self.transfer_fee_const = transfer_fees.transfer_fee_const \
             if transfer_fees is not None else 0
+
+        self.fee_class = GridFees
+        self.grid_fee_value = self.transfer_fee_ratio
+        if self.transfer_fee_const > 0:
+            self.fee_class = ConstantGridFees
+            self.grid_fee_value = self.transfer_fee_const
+
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
         self.traded_energy = {}

@@ -27,7 +27,6 @@ from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.models.market.blockchain_interface import MarketBlockchainInterface
-from d3a.models.market.grid_fees.base_model import GridFees
 from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
@@ -172,8 +171,8 @@ class OneSidedMarket(Market):
             )
         else:
             revenue, grid_fee_rate, trade_rate_incl_fees = \
-                GridFees.calculate_trade_price_and_fees(
-                    trade_bid_info, self.transfer_fee_ratio
+                self.fee_class.calculate_trade_price_and_fees(
+                    trade_bid_info, self.grid_fee_value
                 )
             grid_fee_price = grid_fee_rate * energy
             return grid_fee_price, energy * trade_rate_incl_fees
@@ -242,8 +241,8 @@ class OneSidedMarket(Market):
 
         # Delete the accepted offer from self.offers:
         self.offers.pop(offer.id, None)
-        offer_bid_trade_info = GridFees.propagate_original_bid_info_on_offer_trade(
-            trade_original_info=trade_bid_info, tax_ratio=self.transfer_fee_ratio)
+        offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
+            trade_original_info=trade_bid_info, tax_ratio=self.grid_fee_value)
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
