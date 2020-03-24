@@ -162,9 +162,6 @@ class AreaDispatcher:
                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
             )
 
-            self._delete_past_agents(self._inter_area_agents)
-            self._delete_past_agents(self.area.parent.dispatcher._inter_area_agents)
-
             # Attach agent to own IAA list
             self._inter_area_agents = create_subdict_or_update(self._inter_area_agents,
                                                                market.time_slot,

@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import OrderedDict
-from copy import deepcopy
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a_interface.constants_limits import ConstSettings
@@ -178,7 +177,7 @@ class MarketEnergyBills:
         bills = self._energy_bills(area, market_type)
         flattened = self._flatten_energy_bills(OrderedDict(sorted(bills.items())), {})
         self.bills_results = self._accumulate_by_children(area, flattened, {})
-        self._bills_for_redis(area, deepcopy(self.bills_results))
+        self._bills_for_redis(area, self.bills_results.copy())
 
     @classmethod
     def _flatten_energy_bills(cls, energy_bills, flat_results):
@@ -222,7 +221,7 @@ class MarketEnergyBills:
 
         if area.name in flattened:
             # External trades are the trades of the parent area
-            external = deepcopy(flattened[area.name])
+            external = flattened[area.name].copy()
             # Should not include market fee to the external trades
             market_fee = external.pop("market_fee", None)
             # Should switch spent/earned and bought/sold, to match the perspective of the UI

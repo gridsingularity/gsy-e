@@ -21,7 +21,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHours
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.utils import convert_datetime_to_str_keys
+from d3a.d3a_core.util import convert_datetime_to_str_keys_cached as convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import generate_market_slot_list, round_floats_for_ui
 from d3a_interface.constants_limits import ConstSettings

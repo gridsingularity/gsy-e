@@ -68,6 +68,7 @@ class SimulationConfig:
         max_panel_power_W = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W \
             if max_panel_power_W is None else max_panel_power_W
         self.max_panel_power_W = max_panel_power_W
+        self.market_slot_list = []
 
     def __repr__(self):
         return (

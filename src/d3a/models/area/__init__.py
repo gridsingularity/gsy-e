@@ -169,6 +169,8 @@ class Area:
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(self.now, self.stats, self.dispatcher)
+        self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
+
         if deactivate:
             return
 
