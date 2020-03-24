@@ -409,12 +409,12 @@ def storage_strategy_test7(area_test7):
 
 def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     storage_strategy_test7.event_activate()
-    storage_strategy_test7.sell_energy()
     sell_market = area_test7.all_markets[0]
-    energy_sell_dict = storage_strategy_test7.state.clamp_energy_to_sell_kWh(
-        [sell_market.time_slot])
-    assert storage_strategy_test7.state.offered_sell_kWh[sell_market.time_slot] == \
-        energy_sell_dict[sell_market.time_slot]
+    energy_sell_dict = \
+        storage_strategy_test7.state.clamp_energy_to_sell_kWh([sell_market.time_slot])
+    storage_strategy_test7.sell_energy()
+    assert(isclose(storage_strategy_test7.state.offered_sell_kWh[sell_market.time_slot],
+                   energy_sell_dict[sell_market.time_slot], rel_tol=1e-03))
     assert(isclose(storage_strategy_test7.state.used_storage, 3.0, rel_tol=1e-03))
     assert len(storage_strategy_test7.offers.posted_in_market(sell_market.id)) > 0
 
