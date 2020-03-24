@@ -98,6 +98,7 @@ class Area:
         self.transfer_fee_const = transfer_fee_const
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
+        self.endpoint_stats = {}
         self.stats = AreaStats(self._markets)
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
@@ -195,6 +196,9 @@ class Area:
         if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
+
+        if self.redis_ext_conn is not None:
+            self.redis_ext_conn.event_market_cycle()
 
     def tick(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \

@@ -241,6 +241,7 @@ class Simulation:
 
     def _update_and_send_results(self, is_final=False):
         self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
+        self.endpoint_buffer.send_results_to_child_areas(self.area)
         if not self.redis_connection.is_enabled():
             return
         if is_final:
@@ -419,6 +420,7 @@ class Simulation:
             start = time.monotonic()
             log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
+            self.endpoint_buffer.send_results_to_child_areas(self.area)
             self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
             while self.paused:
                 self._handle_input(console, 0.1)
