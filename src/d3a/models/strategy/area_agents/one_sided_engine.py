@@ -51,8 +51,7 @@ class IAAEngine:
 
         kwargs = {
             "price": self.markets.target.fee_class.update_forwarded_offer_with_fee(
-                        offer.price, offer.original_offer_price,
-                        self.markets.target.grid_fee_value),
+                        offer.price, offer.original_offer_price),
             "energy": offer.energy,
             "seller": self.owner.name,
             "original_offer_price": offer.original_offer_price,

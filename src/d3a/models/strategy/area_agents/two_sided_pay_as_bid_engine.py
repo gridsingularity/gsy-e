@@ -47,7 +47,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
 
         forwarded_bid = self.markets.target.bid(
             price=self.markets.source.fee_class.update_forwarded_bid_with_fee(
-                bid.price, bid.original_bid_price, self.markets.source.grid_fee_value),
+                bid.price, bid.original_bid_price),
             energy=bid.energy,
             buyer=self.owner.name,
             seller=self.markets.target.name,
@@ -106,8 +106,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 # which was skipped when accepting the bid during the trade operation.
                 updated_trade_offer_info = \
                     self.markets.source.fee_class.propagate_original_offer_info_on_bid_trade(
-                        [None, None, *bid_trade.offer_bid_trade_info],
-                        self.markets.source.grid_fee_value
+                        [None, None, *bid_trade.offer_bid_trade_info]
                     )
             else:
                 updated_trade_offer_info = bid_trade.offer_bid_trade_info

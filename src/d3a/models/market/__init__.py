@@ -76,17 +76,8 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
-        self.transfer_fee_ratio = transfer_fees.grid_fee_percentage / 100 \
-            if transfer_fees is not None else 0
-        self.transfer_fee_const = transfer_fees.transfer_fee_const \
-            if transfer_fees is not None else 0
 
-        self.fee_class = GridFees
-        self.grid_fee_value = self.transfer_fee_ratio
-        if self.transfer_fee_const > 0:
-            self.fee_class = ConstantGridFees
-            self.grid_fee_value = self.transfer_fee_const
-
+        self._create_fee_handler(transfer_fees)
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
         self.traded_energy = {}
@@ -110,6 +101,22 @@ class Market:
                 if ConstSettings.IAASettings.MARKET_TYPE == 1 \
                 else TwoSidedMarketRedisEventSubscriber(self)
         setattr(self, RLOCK_MEMBER_NAME, RLock())
+
+    def _create_fee_handler(self, transfer_fees):
+        if not transfer_fees:
+            transfer_fees = TransferFees(grid_fee_percentage=0.0, transfer_fee_const=0.0)
+        if transfer_fees.transfer_fee_const is not None and transfer_fees.transfer_fee_const > 0.0:
+            self.fee_class = ConstantGridFees(transfer_fees.transfer_fee_const)
+        else:
+            self.fee_class = GridFees(
+                transfer_fees.grid_fee_percentage / 100
+                if transfer_fees.grid_fee_percentage is not None
+                else 0
+            )
+
+    @property
+    def _is_constant_fees(self):
+        return isinstance(self.fee_class, ConstantGridFees)
 
     def add_listener(self, listener):
         self.notification_listeners.append(listener)

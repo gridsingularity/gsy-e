@@ -54,9 +54,10 @@ class OneSidedMarket(Market):
         assert False
 
     def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
-        return offer_price \
-            + self.transfer_fee_ratio * original_offer_price \
-            + self.transfer_fee_const * energy
+        if self._is_constant_fees:
+            return offer_price + self.fee_class.grid_fee_rate * energy
+        else:
+            return offer_price + self.fee_class.grid_fee_rate * original_offer_price
 
     @lock_market_action
     def get_offers(self):
@@ -110,8 +111,10 @@ class OneSidedMarket(Market):
 
     def _update_offer_fee_and_calculate_final_price(self, energy, trade_rate,
                                                     energy_portion, original_price):
-        fees = self.transfer_fee_ratio * original_price * energy_portion \
-            + self.transfer_fee_const * energy
+        if self._is_constant_fees:
+            fees = self.fee_class.grid_fee_rate * energy
+        else:
+            fees = self.fee_class.grid_fee_rate * original_price * energy_portion
         return fees, energy * trade_rate - fees
 
     @classmethod
@@ -164,7 +167,7 @@ class OneSidedMarket(Market):
         return accepted_offer, residual_offer
 
     def determine_offer_price(self, energy_portion, energy, trade_rate,
-                              trade_bid_info, orig_offer_price, original_offer, offer):
+                              trade_bid_info, orig_offer_price):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
@@ -172,7 +175,7 @@ class OneSidedMarket(Market):
         else:
             revenue, grid_fee_rate, trade_rate_incl_fees = \
                 self.fee_class.calculate_trade_price_and_fees(
-                    trade_bid_info, self.grid_fee_value
+                    trade_bid_info
                 )
             grid_fee_price = grid_fee_rate * energy
             return grid_fee_price, energy * trade_rate_incl_fees
@@ -216,8 +219,7 @@ class OneSidedMarket(Market):
                 fee_price, trade_price = self.determine_offer_price(
                     energy_portion=energy / accepted_offer.energy, energy=energy,
                     trade_rate=trade_rate, trade_bid_info=trade_bid_info,
-                    orig_offer_price=orig_offer_price, original_offer=original_offer,
-                    offer=accepted_offer)
+                    orig_offer_price=orig_offer_price)
 
                 offer = accepted_offer
                 offer.price = trade_price
@@ -227,8 +229,7 @@ class OneSidedMarket(Market):
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 fee_price, offer.price = self.determine_offer_price(
-                    1, energy, trade_rate, trade_bid_info, orig_offer_price,
-                    original_offer, offer)
+                    1, energy, trade_rate, trade_bid_info, orig_offer_price)
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
@@ -242,7 +243,7 @@ class OneSidedMarket(Market):
         # Delete the accepted offer from self.offers:
         self.offers.pop(offer.id, None)
         offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
-            trade_original_info=trade_bid_info, tax_ratio=self.grid_fee_value)
+            trade_original_info=trade_bid_info)
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,

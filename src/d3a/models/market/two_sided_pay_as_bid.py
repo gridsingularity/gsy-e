@@ -62,12 +62,11 @@ class TwoSidedPayAsBid(OneSidedMarket):
         :return: Updated price for the forwarded offer on this market
         """
         return self.fee_class.update_incoming_offer_with_fee(
-            offer_price, original_offer_price, self.grid_fee_value
+            offer_price, original_offer_price
         )
 
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
-        return self.fee_class.update_incoming_bid_with_fee(bid_price, original_bid_price,
-                                                           self.grid_fee_value)
+        return self.fee_class.update_incoming_bid_with_fee(bid_price, original_bid_price)
 
     @lock_market_action
     def get_bids(self):
@@ -101,12 +100,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
             raise BidNotFound(bid_or_id)
         log.debug(f"[BID][DEL][{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
-
-    def _update_bid_fee_and_calculate_final_price(self, energy, trade_rate,
-                                                  energy_portion, original_price):
-        fees = self.transfer_fee_ratio * original_price * energy_portion \
-            + self.transfer_fee_const * energy
-        return energy * trade_rate + fees
 
     def split_bid(self, original_bid, energy, orig_bid_price):
 
@@ -149,9 +142,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return accepted_bid, residual_bid
 
     def determine_bid_price(self, trade_offer_info, energy):
-        revenue, grid_fee_rate, final_trade_rate = self.fee_class.calculate_trade_price_and_fees(
-            trade_offer_info, self.grid_fee_value
-        )
+        revenue, grid_fee_rate, final_trade_rate = \
+            self.fee_class.calculate_trade_price_and_fees(trade_offer_info)
         return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
@@ -193,7 +185,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
         updated_bid_trade_info = self.fee_class.propagate_original_offer_info_on_bid_trade(
-                          trade_offer_info, 0.0)
+            trade_offer_info, ignore_fees=True
+        )
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual_bid, already_tracked=already_tracked,

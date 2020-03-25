@@ -4,21 +4,18 @@ from d3a.models.market.market_structures import TradeBidInfo
 
 class ConstantGridFees(BaseClassGridFees):
 
-    @staticmethod
-    def update_incoming_bid_with_fee(source_bid, original_bid, tax_ratio=None):
+    def update_incoming_bid_with_fee(self, source_bid, original_bid):
         if source_bid is None:
             return original_bid
         return source_bid
 
-    @staticmethod
-    def update_incoming_offer_with_fee(source_offer_price, original_offer_price, tax_ratio):
+    def update_incoming_offer_with_fee(self, source_offer_price, original_offer_price):
         if source_offer_price is None:
-            return original_offer_price + tax_ratio
-        return source_offer_price + tax_ratio
+            return original_offer_price + self.grid_fee_rate
+        return source_offer_price + self.grid_fee_rate
 
-    @staticmethod
     def calculate_original_trade_rate_from_clearing_rate(
-            original_bid_rate, propagated_bid_rate,
+            self, original_bid_rate, propagated_bid_rate,
             clearing_rate):
         """
         Used only for 2-sided pay as clear market. The purpose of this function is to adapt the
@@ -34,18 +31,15 @@ class ConstantGridFees(BaseClassGridFees):
         """
         return clearing_rate + (original_bid_rate - propagated_bid_rate)
 
-    @staticmethod
-    def update_forwarded_bid_with_fee(source_bid, original_bid, tax_ratio):
+    def update_forwarded_bid_with_fee(self, source_bid, original_bid):
         if source_bid is None:
-            return original_bid - tax_ratio
-        return source_bid - tax_ratio
+            return original_bid - self.grid_fee_rate
+        return source_bid - self.grid_fee_rate
 
-    @staticmethod
-    def update_forwarded_offer_with_fee(source_offer, original_offer, tax_ratio):
+    def update_forwarded_offer_with_fee(self, source_offer, original_offer):
         return source_offer
 
-    @staticmethod
-    def update_forwarded_bid_trade_original_info(trade_original_info, market_bid):
+    def update_forwarded_bid_trade_original_info(self, trade_original_info, market_bid):
         if not trade_original_info:
             return None
         original_offer_rate, offer_rate, trade_rate_source = trade_original_info
@@ -55,8 +49,7 @@ class ConstantGridFees(BaseClassGridFees):
                 offer_rate,
                 trade_rate_source]
 
-    @staticmethod
-    def update_forwarded_offer_trade_original_info(trade_original_info, market_offer):
+    def update_forwarded_offer_trade_original_info(self, trade_original_info, market_offer):
         if not trade_original_info:
             return None
         original_bid_rate, bid_rate, trade_rate_source = trade_original_info
@@ -67,23 +60,20 @@ class ConstantGridFees(BaseClassGridFees):
             trade_rate=trade_rate_source)
         return trade_bid_info
 
-    @staticmethod
-    def propagate_original_bid_info_on_offer_trade(trade_original_info, tax_ratio):
+    def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
         if trade_original_info is None:
             return None
         original_bid_rate, bid_rate, _, _, trade_rate_source = trade_original_info
-        bid_rate = bid_rate - tax_ratio
+        bid_rate = bid_rate - self.grid_fee_rate
         return [original_bid_rate, bid_rate, trade_rate_source]
 
-    @staticmethod
-    def propagate_original_offer_info_on_bid_trade(trade_original_info, tax_ratio):
+    def propagate_original_offer_info_on_bid_trade(self, trade_original_info):
         _, _, original_offer_rate, offer_rate, trade_rate_source = trade_original_info
-        offer_rate = offer_rate + tax_ratio
+        offer_rate = offer_rate + self.grid_fee_rate
         return [original_offer_rate, offer_rate, trade_rate_source]
 
-    @staticmethod
-    def calculate_trade_price_and_fees(trade_bid_info, tax_ratio):
+    def calculate_trade_price_and_fees(self, trade_bid_info):
         original_bid_rate, bid_rate, original_offer_rate, \
             offer_rate, trade_rate_source = trade_bid_info
 
-        return trade_rate_source - tax_ratio, tax_ratio, trade_rate_source
+        return trade_rate_source - self.grid_fee_rate, self.grid_fee_rate, trade_rate_source
