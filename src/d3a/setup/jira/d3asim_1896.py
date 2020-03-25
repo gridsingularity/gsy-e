@@ -38,19 +38,21 @@ def get_setup(config):
                     Area(
                         'House 1',
                         [
-                            Area('H1 storage', strategy=StorageStrategy(initial_soc=10,
-                                                                        battery_capacity_kWh=1,
-                                                                        max_abs_battery_power_kW=5,
-                                                                        initial_buying_rate=5,
-                                                                        final_buying_rate=15,
-                                                                        initial_selling_rate=30,
-                                                                        final_selling_rate=15.1),
-                                 appliance=SwitchableAppliance())
+                            Area('H1 storage', strategy=StorageStrategy(
+                                initial_soc=10,
+                                battery_capacity_kWh=1,
+                                max_abs_battery_power_kW=0.01,
+                                initial_buying_rate=5,
+                                final_buying_rate=15,
+                                initial_selling_rate=30,
+                                final_selling_rate=15.1
+                            ), appliance=SwitchableAppliance())
 
                         ], grid_fee_percentage=0, transfer_fee_const=0,
                     ),
                 ],),
-            Area('DSO', strategy=InfiniteBusStrategy(energy_sell_rate=15),
+            Area('DSO', strategy=InfiniteBusStrategy(energy_sell_rate=15,
+                                                     energy_buy_rate=0),
                  appliance=SimpleAppliance()),
         ],
         config=config
