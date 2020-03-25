@@ -175,7 +175,7 @@ class ExternalMixin:
         if self.connected:
             deactivate_event_channel = f"{self.channel_prefix}/events/finish"
             deactivate_msg = {
-                "event": "finished"
+                "event": "finish"
             }
             self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
