@@ -130,17 +130,16 @@ class StorageState:
         """
         in_use = self._used_storage \
             - self.pledged_sell_kWh[time_slot] \
-            + self.pledged_buy_kWh[time_slot] \
-            + self.offered_buy_kWh[time_slot]
+            + self.pledged_buy_kWh[time_slot]
         return self.capacity - in_use
 
     def max_offer_energy_kWh(self, time_slot):
-        return self.used_storage - self.pledged_sell_kWh[time_slot] \
-                                 - self.offered_sell_kWh[time_slot]
+        return self._battery_energy_per_slot - self.pledged_sell_kWh[time_slot] \
+               - self.offered_sell_kWh[time_slot]
 
     def max_buy_energy_kWh(self, time_slot):
         return self._battery_energy_per_slot - self.pledged_buy_kWh[time_slot] \
-                                             - self.offered_buy_kWh[time_slot]
+               - self.offered_buy_kWh[time_slot]
 
     def set_battery_energy_per_slot(self, slot_length):
         self._battery_energy_per_slot = self.max_abs_battery_power_kW * \
