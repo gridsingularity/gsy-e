@@ -313,7 +313,6 @@ class StorageExternalMixin(ExternalMixin):
             self.state.tick(self.market_area, self.market.time_slot)
             self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
             self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
-            # print(f"tick_info_dict: {self._device_info_dict}")
 
             while len(self.pending_requests) > 0:
                 req = self.pending_requests.pop()
