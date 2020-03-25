@@ -11,8 +11,8 @@ class RedisMarketExternalConnection:
         self.pubsub = self.redis_db.pubsub()
         self.sub_to_area_event()
 
-    def publish(self, channel, data):
-        self.redis_db.publish(channel, data)
+    def publish_json(self, channel, data):
+        self.redis_db.publish(channel, json.dumps(data))
 
     @property
     def channel_prefix(self):
@@ -45,16 +45,16 @@ class RedisMarketExternalConnection:
                    "market_fee_const":
                        self.area.stats.get_market_stats(payload_data["market_slots"]),
                    "transaction_id": payload_data.get("transaction_id", None)}
-        self.publish(market_stats_response_channel, json.dumps(ret_val))
+        self.publish_json(market_stats_response_channel, ret_val)
 
     def set_grid_fees_callback(self, payload):
         market_stats_response_channel = f"{self.channel_prefix}/response/grid_fees"
         payload_data = json.loads(payload["data"])
         self.area.transfer_fee_const = payload_data["fee"]
-        self.publish(market_stats_response_channel, json.dumps({
+        self.publish_json(market_stats_response_channel, {
             "status": "ready", "command": "grid_fees",
             "market_fee_const": str(self.area.transfer_fee_const),
-            "transaction_id": payload_data.get("transaction_id", None)})
+            "transaction_id": payload_data.get("transaction_id", None)}
          )
 
     def dso_market_stats_callback(self, payload):
@@ -66,7 +66,7 @@ class RedisMarketExternalConnection:
                        self.area.stats.get_market_stats(payload_data["market_slots"]),
                    "market_fee_const": str(self.area.transfer_fee_const),
                    "transaction_id": payload_data.get("transaction_id", None)}
-        self.publish(market_stats_response_channel, json.dumps(ret_val))
+        self.publish_json(market_stats_response_channel, ret_val)
 
     def event_market_cycle(self):
         if self.area.current_market is None:
@@ -81,4 +81,11 @@ class RedisMarketExternalConnection:
         data = {"status": "ready",
                 "event": "market",
                 "market_info": current_market_info}
-        self.redis_db.publish(market_event_channel, json.dumps(data))
+        self.publish_json(market_event_channel, data)
+
+    def deactivate(self):
+        deactivate_event_channel = f"{self.channel_prefix}/events/finish"
+        deactivate_msg = {
+            "event": "finish"
+        }
+        self.publish_json(deactivate_event_channel, deactivate_msg)

@@ -145,6 +145,8 @@ class Area:
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)
+        if self.redis_ext_conn is not None:
+            self.redis_ext_conn.deactivate()
         if self.strategy:
             self.strategy.deactivate()
 

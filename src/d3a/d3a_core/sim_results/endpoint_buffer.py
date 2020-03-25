@@ -56,14 +56,6 @@ class SimulationEndpointBuffer:
 
         self.last_unmatched_loads = {}
 
-    def send_results_to_child_areas(self, area):
-        for child in area.children:
-            stats = {
-                "kpi": self.kpi.performance_indices_redis.get(child.uuid, None)
-            }
-            child.endpoint_stats.update(stats)
-            self.send_results_to_child_areas(child)
-
     def generate_result_report(self):
         redis_results = {
             "job_id": self.job_id,
@@ -140,8 +132,15 @@ class SimulationEndpointBuffer:
 
         self.update_area_aggregated_stats(area)
 
+    def _send_results_to_areas(self, area):
+        stats = {
+            "kpi": self.kpi.performance_indices_redis.get(area.uuid, None)
+        }
+        area.endpoint_stats.update(stats)
+
     def update_area_aggregated_stats(self, area):
         self._update_area_stats(area)
+        self._send_results_to_areas(area)
         for child in area.children:
             self.update_area_aggregated_stats(child)
 
