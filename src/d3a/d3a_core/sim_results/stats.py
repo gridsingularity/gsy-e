@@ -47,7 +47,7 @@ def primary_trades(markets):
 
 def primary_unit_prices(markets):
     for trade in primary_trades(markets):
-        yield trade.offer.price / trade.offer.energy
+        yield trade.offer.energy_rate
 
 
 def total_avg_trade_price(markets):
@@ -222,7 +222,7 @@ class MarketEnergyBills:
 
         if area.name in flattened:
             # External trades are the trades of the parent area
-            external = deepcopy(flattened[area.name])
+            external = flattened[area.name].copy()
             # Should not include market fee to the external trades
             market_fee = external.pop("market_fee", None)
             # Should switch spent/earned and bought/sold, to match the perspective of the UI

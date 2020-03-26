@@ -94,8 +94,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
 
-            source_rate = bid_info.source_bid.price / bid_info.source_bid.energy
-            target_rate = bid_info.target_bid.price / bid_info.target_bid.energy
+            source_rate = bid_info.source_bid.energy_rate
+            target_rate = bid_info.target_bid.energy_rate
             assert source_rate >= target_rate, \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 

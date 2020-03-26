@@ -22,9 +22,10 @@ import termios
 import tty
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 import json
+from functools import lru_cache
 
 from click.types import ParamType
-from pendulum import duration, from_format
+from pendulum import duration, from_format, DateTime
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
@@ -33,7 +34,7 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config
@@ -221,9 +222,8 @@ def area_name_from_area_or_iaa_name(name):
     return name[4:] if name[:4] == 'IAA ' else name
 
 
-def is_market_in_simulation_duration(config, market):
-    return config.start_date <= market.time_slot < \
-           (config.start_date + config.sim_duration)
+def is_timeslot_in_simulation_duration(config, time_slot):
+    return config.start_date <= time_slot < config.end_date
 
 
 def format_interval(interval, show_day=True):
@@ -337,9 +337,34 @@ def generate_market_slot_list(area=None):
     Returns a list of all slot times
     """
     config = GlobalConfig if area is None else area.config
-    return generate_market_slot_list_from_config(
-        config.sim_duration, config.start_date, config.market_count, config.slot_length
-    )
+    if not hasattr(config, 'market_slot_list') or len(config.market_slot_list) == 0:
+        config.market_slot_list = generate_market_slot_list_from_config(
+            config.sim_duration, config.start_date, config.market_count, config.slot_length
+        )
+    return config.market_slot_list
+
+
+@lru_cache(maxsize=100, typed=False)
+def format_datetime(datetime, ui_format=False):
+    return datetime.format(DATE_TIME_FORMAT) \
+        if not ui_format \
+        else datetime.format(DATE_TIME_UI_FORMAT)
+
+
+def convert_datetime_to_str_keys_cached(indict, outdict, ui_format=False):
+    """
+    Converts all Datetime keys in a dict into strings in DATE_TIME_FORMAT
+    """
+
+    for key, value in indict.items():
+        if isinstance(key, DateTime):
+            outdict[format_datetime(key, ui_format)] = indict[key]
+        else:
+            if isinstance(indict[key], dict):
+                outdict[key] = {}
+                convert_datetime_to_str_keys_cached(indict[key], outdict[key])
+
+    return outdict
 
 
 def constsettings_to_dict():

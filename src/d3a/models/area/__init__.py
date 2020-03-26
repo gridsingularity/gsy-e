@@ -27,7 +27,7 @@ from d3a.models.appliance.base import BaseAppliance
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
-from d3a.d3a_core.util import TaggedLogWrapper, is_market_in_simulation_duration
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import TIME_FORMAT
@@ -172,6 +172,8 @@ class Area:
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(self.now, self.stats, self.dispatcher)
+        self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
+
         if deactivate:
             return
 
@@ -281,8 +283,7 @@ class Area:
 
     @property
     def all_markets(self):
-        return [m for m in self._markets.markets.values()
-                if is_market_in_simulation_duration(self.config, m)]
+        return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
     def past_markets(self):
@@ -310,7 +311,7 @@ class Area:
         # In case of a tie, max returns the first market occurrence in order to
         # satisfy the most recent market slot
         return max(self.all_markets,
-                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
+                   key=lambda m: m.sorted_offers[0].energy_rate)
 
     @property
     def next_market(self):
@@ -338,10 +339,7 @@ class Area:
             return None
 
     def get_future_market_from_id(self, _id):
-        try:
-            return [m for m in self._markets.markets.values() if m.id == _id][0]
-        except IndexError:
-            return None
+        return self._markets.indexed_future_markets.get(_id, None)
 
     @property
     def last_past_market(self):

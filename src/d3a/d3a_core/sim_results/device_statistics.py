@@ -1,12 +1,11 @@
 from typing import Dict
-from copy import deepcopy
 from d3a.constants import TIME_FORMAT
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.area import Area
-from d3a_interface.utils import convert_datetime_to_str_keys
+from d3a.d3a_core.util import convert_datetime_to_str_keys_cached as convert_datetime_to_str_keys
 from d3a import limit_float_precision
 from d3a_interface.sim_results.aggregate_results import merge_device_statistics_results_to_global
 
@@ -23,7 +22,6 @@ class DeviceStatistics:
 
     def __init__(self):
         self.device_stats_dict = {}
-        self.flat_results_dict = {}
         self.device_stats_time_str = {}
         self.flat_stats_time_str = {}
         self.current_stats_dict = {}
@@ -124,7 +122,7 @@ class DeviceStatistics:
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
     def update(self, area):
-        self.gather_device_statistics(area, self.device_stats_dict, self.flat_results_dict)
+        self.gather_device_statistics(area, self.device_stats_dict, {})
         self.device_stats_time_str = convert_datetime_to_str_keys(self.device_stats_dict, {})
 
         # Calculate last market stats
@@ -166,4 +164,4 @@ class DeviceStatistics:
             _create_or_append_dict(subdict, "production_kWh",
                                    {market.time_slot: area.strategy.energy_per_slot_kWh})
 
-        flat_result_dict[area.uuid] = deepcopy(subdict)
+        flat_result_dict[area.uuid] = subdict.copy()
