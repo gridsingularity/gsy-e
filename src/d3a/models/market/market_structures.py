@@ -53,7 +53,7 @@ class Offer:
         offer_dict = deepcopy(self.__dict__)
         offer_dict["type"] = "Offer"
         offer_dict.pop('energy_rate', None)
-        return json.dumps(self.__dict__)
+        return json.dumps(offer_dict)
 
     def __hash__(self):
         return hash(self.id)
