@@ -19,7 +19,7 @@ from numpy import random
 from pendulum import duration
 from typing import Union
 from collections import namedtuple
-from d3a.d3a_core.util import generate_market_slot_list, is_market_in_simulation_duration
+from d3a.d3a_core.util import generate_market_slot_list
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.state import LoadState
 from d3a.models.strategy import BidEnabledStrategy
@@ -83,6 +83,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self._init_price_update(fit_to_limit, energy_rate_increase_per_update, update_interval,
                                 use_market_maker_rate, initial_buying_rate, final_buying_rate)
+        self._calculate_active_markets()
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -119,11 +120,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 final_buying_rate=self.bid_update.final_rate[time_slot])
 
     def event_activate(self):
+        self._calculate_active_markets()
         self.event_activate_price()
         self.event_activate_energy()
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self._calculate_active_markets()
         for market in self.active_markets:
             current_day = self._get_day_of_timestamp(market.time_slot)
             if self.hrs_per_day[current_day] <= FLOATING_POINT_TOLERANCE:
@@ -162,15 +165,20 @@ class LoadHoursStrategy(BidEnabledStrategy):
         offers = market.most_affordable_offers
         return random.choice(offers)
 
-    def _one_sided_market_event_tick(self, market):
+    def _one_sided_market_event_tick(self, market, offer=None):
         try:
-            if len(market.sorted_offers) < 1:
-                return
-            acceptable_offer = self._find_acceptable_offer(market)
+            if offer is None:
+                if not market.offers:
+                    return
+                acceptable_offer = self._find_acceptable_offer(market)
+            else:
+                if offer.id not in market.offers:
+                    return
+                acceptable_offer = offer
             current_day = self._get_day_of_timestamp(market.time_slot)
             if acceptable_offer and \
                     self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE and \
-                    round(acceptable_offer.price / acceptable_offer.energy, 8) <= \
+                    round(acceptable_offer.energy_rate, 8) <= \
                     self.bid_update.final_rate[market.time_slot]:
                 max_energy = self.energy_requirement_Wh[market.time_slot] / 1000.0
                 if max_energy < FLOATING_POINT_TOLERANCE:
@@ -200,7 +208,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         for market in self.active_markets:
             if market.time_slot not in self.energy_requirement_Wh:
                 continue
-            if self.energy_requirement_Wh[market.time_slot] <= 0:
+            if self.energy_requirement_Wh[market.time_slot] <= FLOATING_POINT_TOLERANCE:
                 continue
 
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
@@ -216,9 +224,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
         market = self.area.get_future_market_from_id(market_id)
         if market.time_slot in self.energy_requirement_Wh and \
                 self._is_market_active(market) and \
-                self.energy_requirement_Wh[market.time_slot] > FLOATING_POINT_TOLERANCE:
+                self.energy_requirement_Wh[market.time_slot] > FLOATING_POINT_TOLERANCE and \
+                offer.seller != self.owner.name and \
+                offer.seller != self.area.name:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self._one_sided_market_event_tick(market)
+                self._one_sided_market_event_tick(market, offer)
 
     def _set_alternative_pricing_scheme(self):
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
@@ -309,12 +319,17 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     @property
     def active_markets(self):
-        return [market for market in self.area.all_markets
-                if self._is_market_active(market)]
+        return self._active_markets
+
+    def _calculate_active_markets(self):
+        self._active_markets = [
+            market for market in self.area.all_markets
+            if self._is_market_active(market)
+        ] if self.area else []
 
     def _is_market_active(self, market):
         return self._allowed_operating_hours(market.time_slot) and \
-            is_market_in_simulation_duration(self.area.config, market) and \
+            market.in_sim_duration and \
             (not self.area.current_market or
              market.time_slot >= self.area.current_market.time_slot)
 

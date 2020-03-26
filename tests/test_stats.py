@@ -55,6 +55,7 @@ class FakeOffer:
         self.price = price
         self.energy = energy
         self.seller = seller
+        self.energy_rate = price / energy
 
 
 def _trade(price, buyer, energy=1, seller=None, fee_price=None):

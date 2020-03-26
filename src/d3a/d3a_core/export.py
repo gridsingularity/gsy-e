@@ -172,20 +172,24 @@ class ExportAndPlot:
                 self._export_area_with_children(child, subdirectory, is_first)
 
         self._export_area_stats_csv_file(area, directory, balancing=False, is_first=is_first)
-        self._export_area_stats_csv_file(area, directory, balancing=True, is_first=is_first)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self._export_area_stats_csv_file(area, directory, balancing=True, is_first=is_first)
 
         if area.children:
             self._export_trade_csv_files(area, directory, balancing=False, is_first=is_first)
-            self._export_trade_csv_files(area, directory, balancing=True, is_first=is_first)
+            if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+                self._export_trade_csv_files(area, directory, balancing=True, is_first=is_first)
             self._export_area_offers_bids_csv_files(area, directory, "offers", Offer,
                                                     "offer_history", area.past_markets,
                                                     is_first=is_first)
             self._export_area_offers_bids_csv_files(area, directory, "bids", Bid,
                                                     "bid_history", area.past_markets,
                                                     is_first=is_first)
-            self._export_area_offers_bids_csv_files(area, directory, "balancing-offers",
-                                                    BalancingOffer, "offer_history",
-                                                    area.past_balancing_markets, is_first=is_first)
+            if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+                self._export_area_offers_bids_csv_files(area, directory, "balancing-offers",
+                                                        BalancingOffer, "offer_history",
+                                                        area.past_balancing_markets,
+                                                        is_first=is_first)
             if ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
@@ -629,7 +633,8 @@ class ExportAndPlot:
                 self._plot_avg_trade_graph(self.export_data.plot_stats,
                                            area_name, key, area_name)
             )
-            if self.export_data.plot_balancing_stats[area_name.lower()] is not None:
+            if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
+                    self.export_data.plot_balancing_stats[area_name.lower()] is not None:
                 area_name_balancing = area_name.lower() + "-demand-balancing-trades"
                 data.append(self._plot_avg_trade_graph(
                     self.export_data.plot_balancing_stats, area_name,

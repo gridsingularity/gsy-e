@@ -61,7 +61,7 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                         sell_rate = area.config.market_maker_rate[self.lower_market.time_slot]
                     else:
                         raise MarketException
-                    offer.price = offer.energy * sell_rate
+                    offer.update_price(offer.energy * sell_rate)
                     self.accept_offer(self.lower_market, offer)
 
         except MarketException:

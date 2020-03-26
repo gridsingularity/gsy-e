@@ -116,7 +116,8 @@ class SimulationEndpointBuffer:
         self.cumulative_grid_trades.update(area)
 
         self.market_bills.update(area)
-        self.balancing_bills.update(area)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self.balancing_bills.update(area)
 
         self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 

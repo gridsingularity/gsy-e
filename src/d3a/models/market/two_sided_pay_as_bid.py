@@ -34,8 +34,9 @@ log = getLogger(__name__)
 class TwoSidedPayAsBid(OneSidedMarket):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-                 transfer_fees=None, name=None):
-        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
+                 transfer_fees=None, name=None, in_sim_duration=True):
+        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name,
+                         in_sim_duration=in_sim_duration)
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) " \
@@ -220,7 +221,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
         for offer in sorted_offers:
             for bid in sorted_bids:
                 if bid.id not in already_selected_bids and \
-                        (offer.price / offer.energy - bid.price / bid.energy) <= \
+                        (offer.energy_rate - bid.energy_rate) <= \
                         FLOATING_POINT_TOLERANCE and offer.seller != bid.buyer:
                     already_selected_bids.add(bid.id)
                     offer_bid_pairs.append(tuple((bid, offer)))
@@ -252,7 +253,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             for bid, offer in self._perform_pay_as_bid_matching():
                 selected_energy = bid.energy if bid.energy < offer.energy else offer.energy
                 original_bid_rate = bid.original_bid_price / bid.energy
-                matched_rate = bid.price / bid.energy
+                matched_rate = bid.energy_rate
 
                 trade_bid_info = TradeBidInfo(
                     original_bid_rate=original_bid_rate,

@@ -36,40 +36,52 @@ BC_EVENT_MAP = {
 }
 
 
+class NonBlockchainInterface:
+    def __init__(self):
+        pass
+
+    def create_new_offer(self, energy, price, seller):
+        return str(uuid.uuid4())
+
+    def cancel_offer(self, offer):
+        pass
+
+    def change_offer(self, offer, original_offer, residual_offer):
+        pass
+
+    def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
+        return str(uuid.uuid4()), residual_offer
+
+    def track_trade_event(self, trade):
+        pass
+
+    def bc_listener(self):
+        pass
+
+
 class MarketBlockchainInterface:
     def __init__(self, bc):
         self.offers_deleted = {}  # type: Dict[str, Offer]
         self.offers_changed = {}  # type: Dict[str, (Offer, Offer)]
         self._trades_by_id = {}  # type: Dict[str, Trade]
 
-        if bc:
-            self.bc_interface = bc
-            self.bc_contract = create_market_contract(bc,
-                                                      GlobalConfig.sim_duration.in_seconds(),
-                                                      [self.bc_listener])
-        else:
-            self.bc_interface = None
+        self.bc_interface = bc
+        self.bc_contract = create_market_contract(bc,
+                                                  GlobalConfig.sim_duration.in_seconds(),
+                                                  [self.bc_listener])
 
     def create_new_offer(self, energy, price, seller):
-        if not self.bc_interface:
-            return str(uuid.uuid4())
-        else:
-            return create_new_offer(self.bc_interface, self.bc_contract, energy, price, seller)
+        return create_new_offer(self.bc_interface, self.bc_contract, energy, price, seller)
 
     def cancel_offer(self, offer):
-        if self.bc_interface and offer:
-            cancel_offer(self.bc_interface, self.bc_contract, offer)
-            # Hold on to deleted offer until bc event is processed
-            self.offers_deleted[offer.id] = offer
+        cancel_offer(self.bc_interface, self.bc_contract, offer)
+        # Hold on to deleted offer until bc event is processed
+        self.offers_deleted[offer.id] = offer
 
     def change_offer(self, offer, original_offer, residual_offer):
-        if self.bc_interface:
-            self.offers_changed[offer.id] = (original_offer, residual_offer)
+        self.offers_changed[offer.id] = (original_offer, residual_offer)
 
     def handle_blockchain_trade_event(self, offer, buyer, original_offer, residual_offer):
-        if not self.bc_interface:
-            return str(uuid.uuid4()), residual_offer
-
         trade_id, new_offer_id = trade_offer(
             self.bc_interface, self.bc_contract, offer.real_id, offer.energy, buyer
         )
@@ -82,8 +94,7 @@ class MarketBlockchainInterface:
         return trade_id, residual_offer
 
     def track_trade_event(self, trade):
-        if self.bc_interface:
-            self._trades_by_id[trade.id] = trade
+        self._trades_by_id[trade.id] = trade
 
     def bc_listener(self):
         # TODO: Disabled for now, should be added once event driven blockchain transaction
