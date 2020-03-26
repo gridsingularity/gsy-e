@@ -92,7 +92,7 @@ class AutoDeviceStrategy(DeviceClient):
         :param market_info: Incoming message containing the newly-created market info
         :return: None
         """
-
+        print(self.__dict__)
         ################################################
         # FEATURE EXTRACTION AND PRICE PREDICTIONS
         ################################################
@@ -106,8 +106,6 @@ class AutoDeviceStrategy(DeviceClient):
             self.handle_storage_device_market_cycle(market_info)
 
     def handle_master_device_market_cycle(self, market_time):
-        # device_bill = market_info['device_bill']
-        # last_market_stats = market_info['last_market_stats']
         print("============================================")
         print("Market", market_time)
         print('--------', '00%', '--------')
@@ -118,7 +116,7 @@ class AutoDeviceStrategy(DeviceClient):
         for time in times:
             slots.append(market_time.subtract(minutes=time).format(DATE_TIME_FORMAT))
         for market in self.markets:
-            stats = market.list_market_stats(slots)['market_stats']
+            stats = market.list_market_stats(slots)
 
         # load trading strategy setup
         for l in self.loads:
