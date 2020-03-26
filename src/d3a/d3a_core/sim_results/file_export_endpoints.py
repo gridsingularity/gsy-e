@@ -148,7 +148,8 @@ class FileExportEndpoints:
 
     def update_plot_stats(self, area):
         self._get_stats_from_market_data(self.plot_stats, area, False)
-        self._get_stats_from_market_data(self.plot_balancing_stats, area, True)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self._get_stats_from_market_data(self.plot_balancing_stats, area, True)
         self._populate_plots_stats_for_supply_demand_curve(area)
 
     def _calculate_devices_sold_bought_energy(self, res_dict, market):
