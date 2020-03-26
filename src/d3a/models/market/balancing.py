@@ -36,7 +36,7 @@ log = getLogger(__name__)
 
 class BalancingMarket(OneSidedMarket):
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-                 transfer_fees=None, name=None):
+                 transfer_fees=None, name=None, in_sim_duration=True):
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
         self.accumulated_supply_balancing_trade_price = 0
@@ -44,7 +44,8 @@ class BalancingMarket(OneSidedMarket):
         self.accumulated_demand_balancing_trade_price = 0
         self.accumulated_demand_balancing_trade_energy = 0
 
-        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
+        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name,
+                         in_sim_duration=in_sim_duration)
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
@@ -155,7 +156,7 @@ class BalancingMarket(OneSidedMarket):
         residual_offer = None
 
         if trade_rate is None:
-            trade_rate = offer.price / offer.energy
+            trade_rate = offer.energy_rate
 
         orig_offer_price = self._calculate_original_prices(offer)
 
@@ -175,15 +176,16 @@ class BalancingMarket(OneSidedMarket):
                 fees, trade_price = self.determine_offer_price(
                     energy / offer.energy, energy, trade_rate, trade_bid_info, orig_offer_price)
                 offer = accepted_offer
-                offer.price = trade_price
+                offer.update_price(trade_price)
 
             elif abs(energy) > abs(offer.energy):
                 raise InvalidBalancingTradeException("Energy can't be greater than offered energy")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
-                fees, offer.price = self._update_offer_fee_and_calculate_final_price(
+                fees, trade_price = self._update_offer_fee_and_calculate_final_price(
                     energy, trade_rate, 1, orig_offer_price
                 ) if already_tracked is False else energy * trade_rate
+                offer.update_price(trade_price)
 
         except Exception:
             # Exception happened - restore offer

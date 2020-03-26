@@ -139,7 +139,7 @@ class Market:
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(self.traded_energy, offer.seller, offer.energy)
         self.traded_energy = subtract_or_create_key(self.traded_energy, buyer, offer.energy)
-        self._update_min_max_avg_trade_prices(offer.price / offer.energy)
+        self._update_min_max_avg_trade_prices(offer.energy_rate)
         # Recalculate offer min/max price since offer was removed
         self._update_min_max_avg_offer_prices()
 
@@ -149,7 +149,7 @@ class Market:
 
     def _update_min_max_avg_offer_prices(self):
         self._avg_offer_price = None
-        offer_prices = [o.price / o.energy for o in self.offers.values()]
+        offer_prices = [o.energy_rate for o in self.offers.values()]
         if offer_prices:
             self.min_offer_price = round(min(offer_prices), 4)
             self.max_offer_price = round(max(offer_prices), 4)
@@ -177,13 +177,13 @@ class Market:
             # Sorted bids in descending order
             return list(reversed(sorted(
                 obj.values(),
-                key=lambda b: b.price / b.energy)))
+                key=lambda b: b.energy_rate)))
 
         else:
             # Sorted bids in ascending order
             return list(sorted(
                 obj.values(),
-                key=lambda b: b.price / b.energy))
+                key=lambda b: b.energy_rate))
 
     @property
     def avg_offer_price(self):
@@ -208,9 +208,9 @@ class Market:
     @property
     def most_affordable_offers(self):
         cheapest_offer = self.sorted_offers[0]
-        rate = cheapest_offer.price / cheapest_offer.energy
+        rate = cheapest_offer.energy_rate
         return [o for o in self.sorted_offers if
-                abs(o.price / o.energy - rate) < FLOATING_POINT_TOLERANCE]
+                abs(o.energy_rate - rate) < FLOATING_POINT_TOLERANCE]
 
     def update_clock(self, current_tick):
         self.current_tick = current_tick

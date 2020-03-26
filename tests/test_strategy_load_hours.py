@@ -52,8 +52,9 @@ class FakeArea:
         self.name = 'FakeArea'
 
         self._next_market = FakeMarket(0)
+        self.current_market = FakeMarket(0)
         self._bids = {}
-        self.markets = {TIME: FakeMarket(0),
+        self.markets = {TIME: self.current_market,
                         TIME + self.config.slot_length: FakeMarket(0),
                         TIME + 2 * self.config.slot_length: FakeMarket(0)}
         self.test_balancing_market = FakeMarket(1)
@@ -102,6 +103,7 @@ class FakeMarket:
         self.most_affordable_energy = 0.1551
         self.created_balancing_offers = []
         self.bids = {}
+        self.in_sim_duration = True
 
     def get_bids(self):
         return deepcopy(self.bids)
@@ -114,6 +116,12 @@ class FakeMarket:
                   buyer_origin=buyer_origin)
         self.bids[bid.id] = bid
         return bid
+
+    @property
+    def offers(self):
+        return {
+            o.id: o for o in self.sorted_offers
+        }
 
     @property
     def sorted_offers(self):

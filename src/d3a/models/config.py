@@ -38,6 +38,7 @@ class SimulationConfig:
 
         self.sim_duration = sim_duration
         self.start_date = start_date
+        self.end_date = start_date + sim_duration
         self.slot_length = slot_length
         self.tick_length = tick_length
         self.market_count = market_count
@@ -53,10 +54,11 @@ class SimulationConfig:
             ))
         self.total_ticks = self.sim_duration // self.slot_length * self.ticks_per_slot
 
-        change_global_config(**self.__dict__)
-
         self.cloud_coverage = cloud_coverage
 
+        self.market_slot_list = []
+
+        change_global_config(**self.__dict__)
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 

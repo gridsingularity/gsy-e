@@ -1,5 +1,6 @@
 Feature: Run power flow integration tests
 
+  @disabled
   Scenario: Run power flow integration tests on console
      Given we have a scenario named power_flow.test_power_flow
      And d3a is installed

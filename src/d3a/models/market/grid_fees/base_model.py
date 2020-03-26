@@ -61,7 +61,7 @@ class GridFees(BaseClassGridFees):
             return None
         original_offer_rate, offer_rate, trade_rate_source = trade_original_info
         return [market_bid.original_bid_price / market_bid.energy,
-                market_bid.price / market_bid.energy,
+                market_bid.energy_rate,
                 original_offer_rate,
                 offer_rate,
                 trade_rate_source]
@@ -73,7 +73,7 @@ class GridFees(BaseClassGridFees):
         trade_bid_info = TradeBidInfo(
             original_bid_rate=original_bid_rate, propagated_bid_rate=bid_rate,
             original_offer_rate=market_offer.original_offer_price / market_offer.energy,
-            propagated_offer_rate=market_offer.price / market_offer.energy,
+            propagated_offer_rate=market_offer.energy_rate,
             trade_rate=trade_rate_source)
         return trade_bid_info
 

@@ -32,8 +32,9 @@ log = getLogger(__name__)
 class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-                 transfer_fees=None, name=None):
-        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
+                 transfer_fees=None, name=None, in_sim_duration=True):
+        super().__init__(time_slot, bc, notification_listener, readonly,
+                         transfer_fees, name, in_sim_duration=in_sim_duration)
         self.state = MarketClearingState()
         self.sorted_bids = []
         self.mcp_update_point = \
@@ -58,7 +59,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
     def _discrete_point_curve(self, obj_list, round_functor):
         cumulative = {}
         for obj in obj_list:
-            rate = round_functor(obj.price / obj.energy)
+            rate = round_functor(obj.energy_rate)
             cumulative = add_or_create_key(cumulative, rate, obj.energy)
         return cumulative
 
@@ -130,8 +131,8 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
     def _populate_market_cumulative_offer_and_bid(self, cumulative_bids, cumulative_offers):
         max_rate = max(
-            math.ceil(self.sorted_offers[-1].price / self.sorted_offers[-1].energy),
-            math.floor(self.sorted_bids[0].price / self.sorted_bids[0].energy)
+            math.ceil(self.sorted_offers[-1].energy_rate),
+            math.floor(self.sorted_bids[0].energy_rate)
         )
         self.state.cumulative_offers[self.now] = \
             self._smooth_discrete_point_curve(cumulative_offers, max_rate)
@@ -167,9 +168,9 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
             selected_energy = match.offer_energy
             original_bid_rate = bid.original_bid_price / bid.energy
-            propagated_bid_rate = bid.price / bid.energy
+            propagated_bid_rate = bid.energy_rate
             offer_original_rate = offer.original_offer_price / offer.energy
-            offer_propagated_rate = offer.price / offer.energy
+            offer_propagated_rate = offer.energy_rate
 
             trade_rate_original = self.fee_class.calculate_original_trade_rate_from_clearing_rate(
                 original_bid_rate, propagated_bid_rate, clearing_rate
