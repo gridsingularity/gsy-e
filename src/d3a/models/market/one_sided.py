@@ -231,7 +231,7 @@ class OneSidedMarket(Market):
                 raise InvalidTrade("Energy can't be greater than offered energy")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
-                fee_price, offer.price = self.determine_offer_price(
+                fee_price, trade_price = self.determine_offer_price(
                     1, energy, trade_rate, trade_bid_info, orig_offer_price)
                 offer.update_price(trade_price)
         except Exception:

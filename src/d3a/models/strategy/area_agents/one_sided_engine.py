@@ -57,8 +57,7 @@ class IAAEngine:
             "seller": self.owner.name,
             "original_offer_price": offer.original_offer_price,
             "dispatch_event": False,
-            "seller_origin": offer.seller_origin,
-            "adapt_price_with_fees": self.markets.target.transfer_fee_ratio > 0.0
+            "seller_origin": offer.seller_origin
         }
 
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
