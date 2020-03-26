@@ -137,5 +137,5 @@ Scenario: D3ASIM-2034: DSO doesnt pay the grid fee of the Grid
   Scenario: D3ASIM-1896: Storage decreases bid rate until final buying rate
     Given we have a scenario named jira/d3asim_1896
     And d3a is installed
-    When we run the d3a simulation with jira.d3asim_1896 [1, 60, 60]
+    When we run the d3a simulation with jira.d3asim_1896 [6, 60, 60]
     Then the storage decreases bid rate until final buying rate

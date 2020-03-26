@@ -76,8 +76,7 @@ class FakeMarket:
         self.time_slot = pendulum.now(tz=TIME_ZONE)
         self.time_slot_str = self.time_slot.format(TIME_FORMAT)
         self.state = MarketClearingState()
-        self.transfer_fee_ratio = transfer_fees.grid_fee_percentage
-        self.transfer_fee_const = transfer_fees.transfer_fee_const
+        self.fee_class = GridFees(transfer_fees.grid_fee_percentage)
 
     @property
     def sorted_offers(self):
@@ -137,13 +136,11 @@ class FakeMarket:
         pass
 
     def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
-        return offer_price \
-            + self.transfer_fee_ratio * original_offer_price \
-            + self.transfer_fee_const * energy
+        return offer_price + self.fee_class.grid_fee_rate * original_offer_price
 
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
-        return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price,
-                                                     self.transfer_fee_ratio)
+        return self.fee_class.update_incoming_bid_with_fee(
+            bid_price, original_bid_price)
 
     def offer(self, price: float, energy: float, seller: str, offer_id=None,
               original_offer_price=None, dispatch_event=True, seller_origin=None,
@@ -278,9 +275,8 @@ def test_iaa_forwarded_offers_complied_to_transfer_fee(iaa_grid_fee):
     source_offer = [o for o in iaa_grid_fee.lower_market.sorted_offers if o.id == "id"][0]
     target_offer = [o for o in iaa_grid_fee.higher_market.sorted_offers if o.id == "uuid"][0]
     earned_iaa_fee = target_offer.price - source_offer.price
-    expected_iaa_fee = iaa_grid_fee.higher_market.transfer_fee_ratio + \
-        iaa_grid_fee.higher_market.transfer_fee_const
-    assert earned_iaa_fee == expected_iaa_fee
+    expected_iaa_fee = iaa_grid_fee.higher_market.fee_class.grid_fee_rate
+    assert isclose(earned_iaa_fee, expected_iaa_fee)
 
 
 def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
@@ -332,7 +328,7 @@ def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
     assert iaa_bid.higher_market.bid_call_count == 1
     expected_price = \
         list(iaa_bid.lower_market.bids.values())[-1].price * \
-        (1 - iaa_bid.lower_market.transfer_fee_ratio)
+        (1 - iaa_bid.lower_market.fee_class.grid_fee_rate)
     assert iaa_bid.higher_market.forwarded_bid.price == expected_price
 
 
@@ -513,7 +509,7 @@ def test_iaa_event_trade_buys_accepted_bid(iaa_double_sided):
         market_id=iaa_double_sided.higher_market.id)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
 
-    expected_price = 10 * (1 - iaa_double_sided.lower_market.transfer_fee_ratio)
+    expected_price = 10 * (1 - iaa_double_sided.lower_market.fee_class.grid_fee_rate)
     assert iaa_double_sided.higher_market.forwarded_bid.price == expected_price
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10.0
 
@@ -527,7 +523,7 @@ def test_iaa_event_bid_trade_increases_bid_price(iaa_double_sided):
                         'someone_else'),
         market_id=iaa_double_sided.higher_market.id)
     assert len(iaa_double_sided.lower_market.calls_energy_bids) == 1
-    expected_price = 10 * (1 - iaa_double_sided.lower_market.transfer_fee_ratio)
+    expected_price = 10 * (1 - iaa_double_sided.lower_market.fee_class.grid_fee_rate)
     assert iaa_double_sided.higher_market.forwarded_bid.price == expected_price
 
     assert iaa_double_sided.lower_market.calls_bids_price[-1] == 10

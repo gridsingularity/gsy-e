@@ -21,8 +21,8 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
-from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.models.market.market_structures import copy_offer
+
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
@@ -51,9 +51,8 @@ class IAAEngine:
     def _offer_in_market(self, offer):
 
         kwargs = {
-            "price": GridFees.update_forwarded_offer_with_fee(
-                        offer.price, offer.original_offer_price,
-                        self.markets.target.transfer_fee_ratio),
+            "price": self.markets.target.fee_class.update_forwarded_offer_with_fee(
+                        offer.price, offer.original_offer_price),
             "energy": offer.energy,
             "seller": self.owner.name,
             "original_offer_price": offer.original_offer_price,
@@ -145,8 +144,10 @@ class IAAEngine:
 
             try:
                 trade_offer_rate = trade.offer.energy_rate
-                updated_trade_bid_info = GridFees.update_forwarded_offer_trade_original_info(
-                    trade.offer_bid_trade_info, offer_info.source_offer)
+                updated_trade_bid_info = \
+                    self.markets.source.fee_class.update_forwarded_offer_trade_original_info(
+                        trade.offer_bid_trade_info, offer_info.source_offer)
+
                 trade_source = self.owner.accept_offer(
                     market_or_id=self.markets.source,
                     offer=offer_info.source_offer,

@@ -104,6 +104,23 @@ class Offers:
         return offer_id in [offer.id for offer, _market in self.posted.items()
                             if market_id == _market]
 
+    def get_sold_offer_ids_in_market(self, market_id):
+        sold_offer_ids = []
+        for sold_offer in self.sold.get(market_id, []):
+            sold_offer_ids.append(sold_offer.id)
+        return sold_offer_ids
+
+    def open_in_market(self, market_id):
+        open_offer = []
+        sold_offer_ids = self.get_sold_offer_ids_in_market(market_id)
+        for offer, _market in self.posted.items():
+            if offer.id not in sold_offer_ids and market_id == _market:
+                open_offer.append(offer)
+        return open_offer
+
+    def open_offer_energy(self, market_id):
+        return sum(o.energy for o in self.open_in_market(market_id))
+
     def posted_in_market(self, market_id):
         return [offer for offer, _market in self.posted.items() if market_id == _market]
 
@@ -124,7 +141,7 @@ class Offers:
 
     def remove_offer_from_cache_and_market(self, market, offer_id=None):
         if offer_id is None:
-            to_delete_offers = self.posted_in_market(market.id)
+            to_delete_offers = self.open_in_market(market.id)
         else:
             to_delete_offers = [o for o, m in self.posted.items() if o.id == offer_id]
         deleted_offer_ids = []

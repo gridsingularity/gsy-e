@@ -64,7 +64,10 @@ class BalancingMarket(OneSidedMarket):
         if energy == 0:
             raise InvalidOffer()
         if adapt_price_with_fees:
-            price = price * (1 + self.transfer_fee_ratio) + self.transfer_fee_const * energy
+            if self._is_constant_fees:
+                price = price + self.fee_class.grid_fee_rate * energy
+            else:
+                price = price * (1 + self.fee_class.grid_fee_rate)
 
         if offer_id is None:
             offer_id = str(uuid.uuid4())
@@ -77,14 +80,6 @@ class BalancingMarket(OneSidedMarket):
         if dispatch_event is True:
             self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
-
-    def determine_offer_price(self, energy_portion, energy, already_tracked, trade_rate,
-                              trade_bid_info, orig_offer_price):
-
-        fee, final_price = self._update_offer_fee_and_calculate_final_price(
-            energy, trade_rate, energy_portion, orig_offer_price
-        ) if already_tracked is False else energy * trade_rate
-        return fee, final_price
 
     def split_offer(self, original_offer, energy, orig_offer_price=None):
 
@@ -131,6 +126,12 @@ class BalancingMarket(OneSidedMarket):
 
         return accepted_offer, residual_offer
 
+    def determine_offer_price(self, energy_portion, energy, trade_rate,
+                              trade_bid_info, orig_offer_price):
+        return self._update_offer_fee_and_calculate_final_price(
+            energy, trade_rate, energy_portion, orig_offer_price
+        )
+
     def accept_offer(self, offer_or_id: Union[str, BalancingOffer], buyer: str, *,
                      energy: int = None, time: DateTime = None,
                      already_tracked: bool = False, trade_rate: float = None,
@@ -172,10 +173,8 @@ class BalancingMarket(OneSidedMarket):
 
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
-                fees, trade_price = self.determine_offer_price(energy / offer.energy, energy,
-                                                               already_tracked,
-                                                               trade_rate, trade_bid_info,
-                                                               orig_offer_price)
+                fees, trade_price = self.determine_offer_price(
+                    energy / offer.energy, energy, trade_rate, trade_bid_info, orig_offer_price)
                 offer = accepted_offer
                 offer.update_price(trade_price)
 

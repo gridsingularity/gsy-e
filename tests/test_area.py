@@ -73,7 +73,7 @@ class TestAreaClass(unittest.TestCase):
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 1
         self.area.activate()
-        assert self.area.next_market.transfer_fee_ratio == 0.05
+        assert self.area.next_market.fee_class.grid_fee_rate == 0.05
         self.area.next_market.offer(1, 1, "test", "test")
         assert list(self.area.next_market.offers.values())[0].price == 1.05
 
