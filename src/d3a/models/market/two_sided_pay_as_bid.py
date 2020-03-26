@@ -26,7 +26,6 @@ from d3a.d3a_core.exceptions import BidNotFound, InvalidBid, InvalidTrade
 from d3a.models.market.market_structures import Bid, Trade, TradeBidInfo
 from d3a.events.event_structures import MarketEvent
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.d3a_core.util import short_offer_bid_log_str
 
 log = getLogger(__name__)
@@ -62,13 +61,12 @@ class TwoSidedPayAsBid(OneSidedMarket):
         :param energy: Not required here, added to comply with the one-sided market implementation
         :return: Updated price for the forwarded offer on this market
         """
-        return GridFees.update_incoming_offer_with_fee(
-            offer_price, original_offer_price, self.transfer_fee_ratio
+        return self.fee_class.update_incoming_offer_with_fee(
+            offer_price, original_offer_price
         )
 
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
-        return GridFees.update_incoming_bid_with_fee(bid_price, original_bid_price,
-                                                     self.transfer_fee_ratio)
+        return self.fee_class.update_incoming_bid_with_fee(bid_price, original_bid_price)
 
     @lock_market_action
     def get_bids(self):
@@ -102,12 +100,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
             raise BidNotFound(bid_or_id)
         log.debug(f"[BID][DEL][{self.time_slot_str}] {bid}")
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
-
-    def _update_bid_fee_and_calculate_final_price(self, energy, trade_rate,
-                                                  energy_portion, original_price):
-        fees = self.transfer_fee_ratio * original_price * energy_portion \
-            + self.transfer_fee_const * energy
-        return energy * trade_rate + fees
 
     def split_bid(self, original_bid, energy, orig_bid_price):
 
@@ -150,9 +142,8 @@ class TwoSidedPayAsBid(OneSidedMarket):
         return accepted_bid, residual_bid
 
     def determine_bid_price(self, trade_offer_info, energy):
-        revenue, grid_fee_rate, final_trade_rate = GridFees.calculate_trade_price_and_fees(
-            trade_offer_info, self.transfer_fee_ratio
-        )
+        revenue, grid_fee_rate, final_trade_rate = \
+            self.fee_class.calculate_trade_price_and_fees(trade_offer_info)
         return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
@@ -193,8 +184,9 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
-        updated_bid_trade_info = GridFees.propagate_original_offer_info_on_bid_trade(
-                          trade_offer_info, 0.0)
+        updated_bid_trade_info = self.fee_class.propagate_original_offer_info_on_bid_trade(
+            trade_offer_info, ignore_fees=True
+        )
 
         trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
                       buyer, residual_bid, already_tracked=already_tracked,

@@ -2,7 +2,7 @@ from d3a.models.market.grid_fees import BaseClassGridFees
 from d3a.models.market.market_structures import TradeBidInfo
 
 
-class GridFees(BaseClassGridFees):
+class ConstantGridFees(BaseClassGridFees):
 
     def update_incoming_bid_with_fee(self, source_bid, original_bid):
         if source_bid is None:
@@ -11,25 +11,8 @@ class GridFees(BaseClassGridFees):
 
     def update_incoming_offer_with_fee(self, source_offer_price, original_offer_price):
         if source_offer_price is None:
-            return original_offer_price * (1 + self.grid_fee_rate)
-        return source_offer_price + original_offer_price * self.grid_fee_rate
-
-    def calculate_fee_revenue_from_clearing_trade(
-            self, bid_propagated_rate, bid_original_rate,
-            offer_propagated_rate, offer_original_rate,
-            trade_rate_source
-    ):
-        demand_side_tax = 0 \
-            if bid_original_rate == 0 \
-            else 1 - bid_propagated_rate / bid_original_rate
-        supply_side_tax = 0 \
-            if offer_original_rate == 0 \
-            else offer_propagated_rate / offer_original_rate - 1
-        total_grid_fee_rate = demand_side_tax + supply_side_tax
-        revenue = trade_rate_source / (1 + total_grid_fee_rate)
-        grid_fee_rate = revenue * self.grid_fee_rate
-        trade_price = revenue + revenue * supply_side_tax
-        return revenue, grid_fee_rate, trade_price
+            return original_offer_price + self.grid_fee_rate
+        return source_offer_price + self.grid_fee_rate
 
     def calculate_original_trade_rate_from_clearing_rate(
             self, original_bid_rate, propagated_bid_rate,
@@ -46,12 +29,12 @@ class GridFees(BaseClassGridFees):
         :return: Original trade rate, that the original device has to pay once the trade
         chain settles.
         """
-        return clearing_rate * (original_bid_rate / propagated_bid_rate)
+        return clearing_rate + (original_bid_rate - propagated_bid_rate)
 
     def update_forwarded_bid_with_fee(self, source_bid, original_bid):
         if source_bid is None:
-            return original_bid * (1 - self.grid_fee_rate)
-        return source_bid - original_bid * self.grid_fee_rate
+            return original_bid - self.grid_fee_rate
+        return source_bid - self.grid_fee_rate
 
     def update_forwarded_offer_with_fee(self, source_offer, original_offer):
         return source_offer
@@ -61,7 +44,7 @@ class GridFees(BaseClassGridFees):
             return None
         original_offer_rate, offer_rate, trade_rate_source = trade_original_info
         return [market_bid.original_bid_price / market_bid.energy,
-                market_bid.price / market_bid.energy,
+                market_bid.energy_rate,
                 original_offer_rate,
                 offer_rate,
                 trade_rate_source]
@@ -73,7 +56,7 @@ class GridFees(BaseClassGridFees):
         trade_bid_info = TradeBidInfo(
             original_bid_rate=original_bid_rate, propagated_bid_rate=bid_rate,
             original_offer_rate=market_offer.original_offer_price / market_offer.energy,
-            propagated_offer_rate=market_offer.price / market_offer.energy,
+            propagated_offer_rate=market_offer.energy_rate,
             trade_rate=trade_rate_source)
         return trade_bid_info
 
@@ -81,22 +64,16 @@ class GridFees(BaseClassGridFees):
         if trade_original_info is None:
             return None
         original_bid_rate, bid_rate, _, _, trade_rate_source = trade_original_info
-        bid_rate = bid_rate - original_bid_rate * self.grid_fee_rate
+        bid_rate = bid_rate - self.grid_fee_rate
         return [original_bid_rate, bid_rate, trade_rate_source]
 
-    def propagate_original_offer_info_on_bid_trade(self, trade_original_info, ignore_fees=False):
+    def propagate_original_offer_info_on_bid_trade(self, trade_original_info):
         _, _, original_offer_rate, offer_rate, trade_rate_source = trade_original_info
-        grid_fee_rate = self.grid_fee_rate if not ignore_fees else 0.0
-        offer_rate = offer_rate + original_offer_rate * grid_fee_rate
+        offer_rate = offer_rate + self.grid_fee_rate
         return [original_offer_rate, offer_rate, trade_rate_source]
 
     def calculate_trade_price_and_fees(self, trade_bid_info):
         original_bid_rate, bid_rate, original_offer_rate, \
             offer_rate, trade_rate_source = trade_bid_info
 
-        revenue, grid_fee_rate, trade_price = self.calculate_fee_revenue_from_clearing_trade(
-            bid_propagated_rate=bid_rate, bid_original_rate=original_bid_rate,
-            offer_propagated_rate=offer_rate, offer_original_rate=original_offer_rate,
-            trade_rate_source=trade_rate_source
-        )
-        return revenue, grid_fee_rate, trade_price
+        return trade_rate_source - self.grid_fee_rate, self.grid_fee_rate, trade_rate_source
