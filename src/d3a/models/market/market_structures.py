@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict # noqa
+from copy import deepcopy
 import json
 import pendulum
 from d3a.events import MarketEvent
@@ -49,7 +50,7 @@ class Offer:
             .format(s=self, rate=self.energy_rate)
 
     def to_JSON_string(self):
-        offer_dict = self.__dict__
+        offer_dict = deepcopy(self.__dict__)
         offer_dict["type"] = "Offer"
         offer_dict.pop('energy_rate', None)
         return json.dumps(self.__dict__)
