@@ -20,7 +20,6 @@ import os
 import ast
 from enum import Enum
 from pendulum import duration, from_format, from_timestamp, today, DateTime
-from statistics import mean
 from typing import Dict
 from d3a.constants import TIME_FORMAT, DATE_TIME_FORMAT, TIME_ZONE
 from d3a_interface.constants_limits import GlobalConfig
@@ -167,9 +166,8 @@ def _calculate_energy_from_power_profile(profile_data_W: Dict[str, float],
     avg_power_kW = []
     for index, slot in enumerate(slot_time_list):
         first_index = index * slot_length.in_seconds()
-        second_index = first_index + slot_length.in_seconds()
-        if (first_index <= len(second_power_list_W)) or (second_index <= len(second_power_list_W)):
-            avg_power_kW.append(mean(second_power_list_W[first_index:second_index]) / 1000.)
+        if first_index <= len(second_power_list_W):
+            avg_power_kW.append(second_power_list_W[first_index] / 1000.)
 
     slot_energy_kWh = list(map(lambda x: x / (duration(hours=1) / slot_length), avg_power_kW))
 

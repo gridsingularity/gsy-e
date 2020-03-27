@@ -30,11 +30,19 @@ from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_se
 from d3a.d3a_core.simulation import run_simulation
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.settings_validators import validate_global_settings
+from zlib import decompress
+import pickle
+
+
+def decompress_and_decode_queued_strings(queued_string):
+    return pickle.loads(decompress(queued_string))
 
 
 @job('d3a')
 def start(scenario, settings, events):
     logging.getLogger().setLevel(logging.ERROR)
+
+    scenario = decompress_and_decode_queued_strings(scenario)
 
     job = get_current_job()
     job.save_meta()

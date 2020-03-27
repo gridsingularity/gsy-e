@@ -87,7 +87,7 @@ class Simulation:
         self.export_on_finish = not no_export
         self.export_path = export_path
 
-        self.sim_status = "initialized"
+        self.sim_status = "initializing"
 
         if export_subdir is None:
             self.export_subdir = \
@@ -105,13 +105,11 @@ class Simulation:
         self.paused_time = None
 
         self._load_setup_module()
-        self._init(**self.initial_params)
+        self._init(**self.initial_params, redis_job_id=redis_job_id)
 
         deserialize_events_to_areas(simulation_events, self.area)
 
         validate_const_settings_for_simulation()
-        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
-                                                        self.area)
         if self.export_on_finish or self.redis_connection.is_enabled():
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.endpoint_buffer)
@@ -148,7 +146,7 @@ class Simulation:
             raise SimulationException(
                 "Invalid setup module '{}'".format(self.setup_module_name)) from ex
 
-    def _init(self, slowdown, seed, paused, pause_after):
+    def _init(self, slowdown, seed, paused, pause_after, redis_job_id):
         self.paused = paused
         self.pause_after = pause_after
         self.slowdown = slowdown
@@ -162,6 +160,11 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
+        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
+                                                        self.area)
+
+        self._update_and_send_results()
+
         if GlobalConfig.POWER_FLOW:
             self.power_flow = PandaPowerFlow(self.area)
             self.power_flow.run_power_flow()
