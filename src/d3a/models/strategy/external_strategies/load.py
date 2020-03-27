@@ -162,8 +162,8 @@ class LoadExternalMixin(ExternalMixin):
 
     def event_market_cycle(self):
         self._reject_all_pending_requests()
-        super().event_market_cycle()
         self.register_on_market_cycle()
+        super().event_market_cycle()
         if not self.connected:
             return
         self._reset_event_tick_counter()
