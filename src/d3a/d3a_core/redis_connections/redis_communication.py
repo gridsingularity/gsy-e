@@ -23,6 +23,7 @@ from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
 from d3a_interface.results_validator import results_validator
+from zlib import compress
 
 log = getLogger(__name__)
 
@@ -111,9 +112,18 @@ class RedisSimulationCommunication:
             return
         result_report = endpoint_buffer.generate_result_report()
         results_validator(result_report)
-        results = json.dumps(result_report)
 
-        log.debug(f"Publishing {utf8len(results)} KB of data via Redis.")
+        results = json.dumps(result_report)
+        message_size = utf8len(results)
+        if message_size > 64000:
+            log.error(f"Do not publish message bigger than 64 MB, current message size "
+                      f"{message_size / 1000.0} MB.")
+            return
+        log.debug(f"Publishing {message_size} KB of data via Redis.")
+
+        results = results.encode('utf-8')
+        results = compress(results)
+
         self.redis_db.publish(self.result_channel, results)
         self._handle_redis_job_metadata()
 
