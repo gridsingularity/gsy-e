@@ -1,0 +1,2042 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Wiki for the D3A by Grid Singularity">
+      
+      
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/api/">
+      
+      
+        <meta name="author" content="Grid Singularity">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../img/d3a-favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.0.2">
+    
+    
+      
+        <title>API - D3A Wiki</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/application.982221ab.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/application-palette.224b79ff.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="">
+      
+    
+    
+      <script src="../assets/javascripts/modernizr.01ccdecf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:300,400,400i,700|Ubuntu+Mono">
+        <style>body,input{font-family:"PT Sans","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Ubuntu Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="white" data-md-color-accent="teal">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#api-documentation" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="https://gridsingularity.github.io/d3a/d3a-documentation/" title="D3A Wiki" class="md-header-nav__button md-logo">
+          
+            <img src="../img/d3a-logo.png" width="32" height="32">
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              D3A Wiki
+            </span>
+            <span class="md-header-nav__topic">
+              API
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/gridsingularity/d3a/wiki/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    D3A on github
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="https://gridsingularity.github.io/d3a/d3a-documentation/" title="D3A Wiki" class="md-nav__button md-logo">
+      
+        <img src="../img/d3a-logo.png" width="48" height="48">
+      
+    </a>
+    D3A Wiki
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/gridsingularity/d3a/wiki/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    D3A on github
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../d3a-documentation/" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+    
+    <label class="md-nav__link" for="nav-2">
+      User Interface (d3a.io)
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        User Interface (d3a.io)
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../user-interface-d3a/" title="UI Overview" class="md-nav__link">
+      UI Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ui-releases/" title="Releases" class="md-nav__link">
+      Releases
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../projects-home-page/" title="Projects (Home Page)" class="md-nav__link">
+      Projects (Home Page)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Simulation Configuration
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Simulation Configuration
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-configuration/" title="Simulation Configuration Overview" class="md-nav__link">
+      Simulation Configuration Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../general-settings/" title="General Settings" class="md-nav__link">
+      General Settings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4-3" type="checkbox" id="nav-2-4-3">
+    
+    <label class="md-nav__link" for="nav-2-4-3">
+      Grid Setup
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-2-4-3">
+        Grid Setup
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-setup/" title="Initial Grid Setup" class="md-nav__link">
+      Initial Grid Setup
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../pv/" title="PV" class="md-nav__link">
+      PV
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../storage/" title="Storage" class="md-nav__link">
+      Storage
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../load/" title="Load" class="md-nav__link">
+      Load
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-maker/" title="Market Maker" class="md-nav__link">
+      Market Maker
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../power-plant/" title="Power Plant" class="md-nav__link">
+      Power Plant
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../areas/" title="Areas" class="md-nav__link">
+      Areas
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../libraries/" title="Libraries" class="md-nav__link">
+      Libraries
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../upload-file-formats/" title="Upload File Formats" class="md-nav__link">
+      Upload File Formats
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../results/" title="Results" class="md-nav__link">
+      Results
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Backend Codebase
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Backend Codebase
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../backend-codebase/" title="Backend Codebase Overview" class="md-nav__link">
+      Backend Codebase Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
+    
+    <label class="md-nav__link" for="nav-3-2">
+      Strategies
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        Strategies
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../load-strategy/" title="Load Strategy" class="md-nav__link">
+      Load Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ess-strategy/" title="Energy Storage System (ESS) Strategy" class="md-nav__link">
+      Energy Storage System (ESS) Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../pv-strategy/" title="PV Strategy" class="md-nav__link">
+      PV Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../infinite-power-plant-strategy/" title="Infinite Power Plant Strategy" class="md-nav__link">
+      Infinite Power Plant Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../custom-load-strategy/" title="Custom Load Strategy" class="md-nav__link">
+      Custom Load Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../finite-power-plant-strategy/" title="Finite Power Plant Strategy" class="md-nav__link">
+      Finite Power Plant Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../custom-pv-strategy/" title="Custom PV Strategy" class="md-nav__link">
+      Custom PV Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../infinite-bus-strategy/" title="Infinite Bus Strategy" class="md-nav__link">
+      Infinite Bus Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../how-implement-custom-device-strategies/" title="How to Implement Custom Device Strategies" class="md-nav__link">
+      How to Implement Custom Device Strategies
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-maker-strategy/" title="Market Maker Strategy" class="md-nav__link">
+      Market Maker Strategy
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../how-strategies-adjust-prices/" title="How Strategies Adjust the Prices of Offers and Bids" class="md-nav__link">
+      How Strategies Adjust the Prices of Offers and Bids
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
+    
+    <label class="md-nav__link" for="nav-3-3">
+      Markets
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        Markets
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../markets/" title="Markets Overview" class="md-nav__link">
+      Markets Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../one-sided-pay-as-offer/" title="One Sided Pay-As-Offer" class="md-nav__link">
+      One Sided Pay-As-Offer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../two-sided-pay-as-bid/" title="Two Sided Pay-As-Bid" class="md-nav__link">
+      Two Sided Pay-As-Bid
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../two-sided-pay-as-clear/" title="Two Sided Pay-As-Clear" class="md-nav__link">
+      Two Sided Pay-As-Clear
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../balancing-market/" title="Balancing Market" class="md-nav__link">
+      Balancing Market
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../inter-area-agent/" title="Inter-Area Agent" class="md-nav__link">
+      Inter-Area Agent
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-nav__link">
+      Market Slots and Ticks
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+      Grid Fees
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
+    
+    <label class="md-nav__link" for="nav-3-4">
+      D3A Blockchain Support
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-4">
+        D3A Blockchain Support
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../d3a-blockchain-support/" title="D3A Blockchain Overview" class="md-nav__link">
+      D3A Blockchain Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../clearingtoken-smart-contract/" title="ClearingToken Smart Contract" class="md-nav__link">
+      ClearingToken Smart Contract
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../market-smart-contract/" title="Market Smart Contract" class="md-nav__link">
+      Market Smart Contract
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../run-d3a-on-tobalaba/" title="Steps to Run D3A on Tobalaba" class="md-nav__link">
+      Steps to Run D3A on Tobalaba
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-5" type="checkbox" id="nav-3-5">
+    
+    <label class="md-nav__link" for="nav-3-5">
+      Simulation Results
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-5">
+        Simulation Results
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-results/" title="Simulation Results Overview" class="md-nav__link">
+      Simulation Results Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../bills/" title="Bills" class="md-nav__link">
+      Bills
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../alternative-pricing-schemes/" title="Alternative Pricing Schemes" class="md-nav__link">
+      Alternative Pricing Schemes
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../configure-transfer-fee/" title="How to Configure Grid Transfer Fee" class="md-nav__link">
+      How to Configure Grid Transfer Fee
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../simulation-events/" title="Simulation Events" class="md-nav__link">
+      Simulation Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../create-setup-file/" title="How to Create a setup-file" class="md-nav__link">
+      How to Create a setup-file
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../change-global-sim-settings/" title="How to Change Global Simulation Settings" class="md-nav__link">
+      How to Change Global Simulation Settings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../launch-sim-via-cli/" title="How to launch Simulation via Command Line Interface (CLI)" class="md-nav__link">
+      How to launch Simulation via Command Line Interface (CLI)
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
+    
+    <label class="md-nav__link" for="nav-3-12">
+      Installation Instructions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-12">
+        Installation Instructions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions/" title="Linux" class="md-nav__link">
+      Linux
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ios-installation-instructions/" title="Mac" class="md-nav__link">
+      Mac
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-nav__link">
+      Key Performance Indicators (KPIs)
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        API
+      </label>
+    
+    <a href="./" title="API" class="md-nav__link md-nav__link--active">
+      API
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#api-client-installation" title="API Client Installation" class="md-nav__link">
+    API Client Installation
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-redis-server-open-a-new-terminal-and-type" title="Install Redis server. Open a new terminal and type" class="md-nav__link">
+    Install Redis server. Open a new terminal and type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-d3a-client" title="Install d3a-client" class="md-nav__link">
+    Install d3a-client
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-d3a-client-as-needed-when-an-update-is-deployed" title="Update d3a-client (as needed when an update is deployed)" class="md-nav__link">
+    Update d3a-client (as needed when an update is deployed)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-the-api-client-with-a-running-simulation" title="Using the API Client with a Running Simulation" class="md-nav__link">
+    Using the API Client with a Running Simulation
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-redis-server" title="Start Redis server" class="md-nav__link">
+    Start Redis server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#launch-simulation" title="Launch simulation" class="md-nav__link">
+    Launch simulation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launch-smart-agents" title="Launch smart agents" class="md-nav__link">
+    Launch smart agents
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#simulation-speed" title="Simulation speed" class="md-nav__link">
+    Simulation speed
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-install-pypy3" title="1. Install pypy3" class="md-nav__link">
+    1. Install pypy3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-create-a-virtual-environment-using-pypy3" title="2. Create a virtual environment using pypy3" class="md-nav__link">
+    2. Create a virtual environment using pypy3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-work-in-your-new-virtual-environment" title="3. Work in your new virtual environment" class="md-nav__link">
+    3. Work in your new virtual environment
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-install-fabric3" title="4. Install fabric3" class="md-nav__link">
+    4. Install fabric3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-install-all-dependencies" title="5. Install all dependencies" class="md-nav__link">
+    5. Install all dependencies
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grid-setup-file-configuration" title="Grid Setup File Configuration" class="md-nav__link">
+    Grid Setup File Configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-device-for-external-connection" title="Open Device for external connection" class="md-nav__link">
+    Open Device for external connection
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-area-for-external-connection" title="Open Area for external connection" class="md-nav__link">
+    Open Area for external connection
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-commands" title="API Commands" class="md-nav__link">
+    API Commands
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#event-triggered-functions" title="Event-Triggered Functions" class="md-nav__link">
+    Event-Triggered Functions
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#each-new-market-slot-on_market_cycleself-market_info" title="Each New Market Slot (on_market_cycle(self, market_info))" class="md-nav__link">
+    Each New Market Slot (on_market_cycle(self, market_info))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-of-market-slot-completion-on_tickself-tick_info" title="On % of Market Slot Completion (on_tick(self, tick_info))" class="md-nav__link">
+    On % of Market Slot Completion (on_tick(self, tick_info))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-trade-on_tradeself-trade_info" title="On Trade (on_trade(self, trade_info))" class="md-nav__link">
+    On Trade (on_trade(self, trade_info))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-simulation-finish-on_finishedself" title="On Simulation Finish (on_finished(self))" class="md-nav__link">
+    On Simulation Finish (on_finished(self))
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-commands" title="Device Commands" class="md-nav__link">
+    Device Commands
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register-backend" title="Register - Backend" class="md-nav__link">
+    Register - Backend
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-frontend" title="Register - Frontend" class="md-nav__link">
+    Register - Frontend
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#send-an-energy-offer-offer_energyenergykwh-price" title="Send an energy offer (offer_energy(energy[kWh], price[€]))" class="md-nav__link">
+    Send an energy offer (offer_energy(energy[kWh], price[€]))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#send-an-energy-bid-bid_energyenergykwh-price" title="Send an energy bid (bid_energy(energy[kWh], price[€]))" class="md-nav__link">
+    Send an energy bid (bid_energy(energy[kWh], price[€]))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lists-all-posted-offers" title="Lists all posted offers" class="md-nav__link">
+    Lists all posted offers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lists-all-posted-bids" title="Lists all posted bids" class="md-nav__link">
+    Lists all posted bids
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-offer-using-its-id-delete_offeridnone" title="Delete offer using its ID (delete_offer(id=None))" class="md-nav__link">
+    Delete offer using its ID (delete_offer(id=None))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-bid-using-its-id-delete_bididnone" title="Delete bid using its ID (delete_bid(id=None))" class="md-nav__link">
+    Delete bid using its ID (delete_bid(id=None))
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../faq-odyssey/" title="FAQ Odyssey hackathon" class="md-nav__link">
+      FAQ Odyssey hackathon
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#api-client-installation" title="API Client Installation" class="md-nav__link">
+    API Client Installation
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-redis-server-open-a-new-terminal-and-type" title="Install Redis server. Open a new terminal and type" class="md-nav__link">
+    Install Redis server. Open a new terminal and type
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#install-d3a-client" title="Install d3a-client" class="md-nav__link">
+    Install d3a-client
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-d3a-client-as-needed-when-an-update-is-deployed" title="Update d3a-client (as needed when an update is deployed)" class="md-nav__link">
+    Update d3a-client (as needed when an update is deployed)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-the-api-client-with-a-running-simulation" title="Using the API Client with a Running Simulation" class="md-nav__link">
+    Using the API Client with a Running Simulation
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-redis-server" title="Start Redis server" class="md-nav__link">
+    Start Redis server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#launch-simulation" title="Launch simulation" class="md-nav__link">
+    Launch simulation
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#launch-smart-agents" title="Launch smart agents" class="md-nav__link">
+    Launch smart agents
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#simulation-speed" title="Simulation speed" class="md-nav__link">
+    Simulation speed
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-install-pypy3" title="1. Install pypy3" class="md-nav__link">
+    1. Install pypy3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-create-a-virtual-environment-using-pypy3" title="2. Create a virtual environment using pypy3" class="md-nav__link">
+    2. Create a virtual environment using pypy3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-work-in-your-new-virtual-environment" title="3. Work in your new virtual environment" class="md-nav__link">
+    3. Work in your new virtual environment
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-install-fabric3" title="4. Install fabric3" class="md-nav__link">
+    4. Install fabric3
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-install-all-dependencies" title="5. Install all dependencies" class="md-nav__link">
+    5. Install all dependencies
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grid-setup-file-configuration" title="Grid Setup File Configuration" class="md-nav__link">
+    Grid Setup File Configuration
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-device-for-external-connection" title="Open Device for external connection" class="md-nav__link">
+    Open Device for external connection
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-area-for-external-connection" title="Open Area for external connection" class="md-nav__link">
+    Open Area for external connection
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-commands" title="API Commands" class="md-nav__link">
+    API Commands
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#event-triggered-functions" title="Event-Triggered Functions" class="md-nav__link">
+    Event-Triggered Functions
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#each-new-market-slot-on_market_cycleself-market_info" title="Each New Market Slot (on_market_cycle(self, market_info))" class="md-nav__link">
+    Each New Market Slot (on_market_cycle(self, market_info))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-of-market-slot-completion-on_tickself-tick_info" title="On % of Market Slot Completion (on_tick(self, tick_info))" class="md-nav__link">
+    On % of Market Slot Completion (on_tick(self, tick_info))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-trade-on_tradeself-trade_info" title="On Trade (on_trade(self, trade_info))" class="md-nav__link">
+    On Trade (on_trade(self, trade_info))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-simulation-finish-on_finishedself" title="On Simulation Finish (on_finished(self))" class="md-nav__link">
+    On Simulation Finish (on_finished(self))
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-commands" title="Device Commands" class="md-nav__link">
+    Device Commands
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register-backend" title="Register - Backend" class="md-nav__link">
+    Register - Backend
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-frontend" title="Register - Frontend" class="md-nav__link">
+    Register - Frontend
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#send-an-energy-offer-offer_energyenergykwh-price" title="Send an energy offer (offer_energy(energy[kWh], price[€]))" class="md-nav__link">
+    Send an energy offer (offer_energy(energy[kWh], price[€]))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#send-an-energy-bid-bid_energyenergykwh-price" title="Send an energy bid (bid_energy(energy[kWh], price[€]))" class="md-nav__link">
+    Send an energy bid (bid_energy(energy[kWh], price[€]))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lists-all-posted-offers" title="Lists all posted offers" class="md-nav__link">
+    Lists all posted offers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lists-all-posted-bids" title="Lists all posted bids" class="md-nav__link">
+    Lists all posted bids
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-offer-using-its-id-delete_offeridnone" title="Delete offer using its ID (delete_offer(id=None))" class="md-nav__link">
+    Delete offer using its ID (delete_offer(id=None))
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete-bid-using-its-id-delete_bididnone" title="Delete bid using its ID (delete_bid(id=None))" class="md-nav__link">
+    Delete bid using its ID (delete_bid(id=None))
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/api.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="api-documentation">API documentation<a class="headerlink" href="#api-documentation" title="Permanent link">&para;</a></h1>
+<p>The D3A API allows your smart agents to place bids &amp; offers based on multiple inputs that they can get through specific calls.</p>
+<h3 id="api-client-installation">API Client Installation<a class="headerlink" href="#api-client-installation" title="Permanent link">&para;</a></h3>
+<h4 id="install-redis-server-open-a-new-terminal-and-type">Install Redis server. Open a new terminal and type<a class="headerlink" href="#install-redis-server-open-a-new-terminal-and-type" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>brew install redis
+</code></pre></div>
+
+
+<h4 id="install-d3a-client">Install d3a-client<a class="headerlink" href="#install-d3a-client" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>mkvirtualenv d3a-api-env
+pip install git+https://github.com/gridsingularity/d3a-api-client.git
+</code></pre></div>
+
+
+<h4 id="update-d3a-client-as-needed-when-an-update-is-deployed">Update d3a-client (as needed when an update is deployed)<a class="headerlink" href="#update-d3a-client-as-needed-when-an-update-is-deployed" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>pip uninstall d3a-api-client
+pip install git+https://github.com/gridsingularity/d3a-api-client.git
+</code></pre></div>
+
+
+<h3 id="using-the-api-client-with-a-running-simulation">Using the API Client with a Running Simulation<a class="headerlink" href="#using-the-api-client-with-a-running-simulation" title="Permanent link">&para;</a></h3>
+<h4 id="start-redis-server">Start Redis server<a class="headerlink" href="#start-redis-server" title="Permanent link">&para;</a></h4>
+<p>To use the API locally, your script connects to the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command : </p>
+<div class="codehilite"><pre><span></span><code>redis-server /usr/local/etc/redis.conf
+</code></pre></div>
+
+
+<h4 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h4>
+<p>First navigate to the d3a folder in a new terminal, then activate the d3a environment with:</p>
+<div class="codehilite"><pre><span></span><code>workon d3a
+</code></pre></div>
+
+
+<p>Then run:</p>
+<div class="codehilite"><pre><span></span><code>d3a -l INFO run -t 15s -s 15m --setup hackathon_training.HackTrain_01_simple --start-date 2016-10-06
+</code></pre></div>
+
+
+<p>Note that this uses the simpler version of the full hack file, and runs more quickly. To run the full community, run:</p>
+<div class="codehilite"><pre><span></span><code>d3a -l INFO run -t 15s -s 15m --setup hackathon_training.HackTrain_01 --start-date 2016-10-06
+</code></pre></div>
+
+
+<p>After a few seconds, trading should begin, and should look something like the below.
+<img alt="img" src="../img/api-1.png" /></p>
+<h3 id="launch-smart-agents">Launch smart agents<a class="headerlink" href="#launch-smart-agents" title="Permanent link">&para;</a></h3>
+<p>Open a new terminal to run your trading strategy script (python file). In this python file you can code the trading strategy for the assets you manage. A template python script is provided. You are also able to print some information that you will get with your API calls.</p>
+<p>You can run your script in the terminal. First navigate to the folder <code>d3a/src/d3a/setup/hackathon_training/</code></p>
+<p>Then run</p>
+<div class="codehilite"><pre><span></span><code>python agent_api_template.py
+</code></pre></div>
+
+
+<h3 id="simulation-speed">Simulation speed<a class="headerlink" href="#simulation-speed" title="Permanent link">&para;</a></h3>
+<p>There are multiple factors that can impact the simulation speed and therefore your training time. </p>
+<p><strong>First the number of Areas/Devices</strong>: The more Areas/Devices that you have in your simulation the longer it will take to finish. (Warning: the correlation between the number of nodes and the simulation speed is not linear, but exponential!)</p>
+<p><strong>Secondly this variable: ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL</strong></p>
+<p>By decreasing the latter’s value, template agents will update their bids/offers more frequently and therefore the simulation will take more time to finish.</p>
+<p><strong>Third, your python interpreter:</strong></p>
+<p>To significantly increase the simulation speed you can also change your interpreter. Instead of using the default interpreter “Cpython”, you can use “pypy” which is much faster for repetitive tasks. Here are the steps to use pypy with the d3a:</p>
+<h4 id="1-install-pypy3">1. Install pypy3<a class="headerlink" href="#1-install-pypy3" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>Brew install pypy3
+</code></pre></div>
+
+
+<h4 id="2-create-a-virtual-environment-using-pypy3">2. Create a virtual environment using pypy3<a class="headerlink" href="#2-create-a-virtual-environment-using-pypy3" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>mkvirtualenv -p [path_to_pypy3] env_name
+</code></pre></div>
+
+
+<h4 id="3-work-in-your-new-virtual-environment">3. Work in your new virtual environment<a class="headerlink" href="#3-work-in-your-new-virtual-environment" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>workon env_name
+</code></pre></div>
+
+
+<h4 id="4-install-fabric3">4. Install fabric3<a class="headerlink" href="#4-install-fabric3" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>pip install fabric3
+</code></pre></div>
+
+
+<p>Go to d3a folder <code>cd d3a</code></p>
+<h4 id="5-install-all-dependencies">5. Install all dependencies<a class="headerlink" href="#5-install-all-dependencies" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code>pip install -e .
+</code></pre></div>
+
+
+<p>You’re all set to launch simulations from this virtual environment. </p>
+<h3 id="grid-setup-file-configuration">Grid Setup File Configuration<a class="headerlink" href="#grid-setup-file-configuration" title="Permanent link">&para;</a></h3>
+<p>Backend simulations require modifications to the setup files to allow API connections. When you connect to the web application, the grid operator will make the necessary changes instead. This section is only relevant if you’re modifying your own setup files.</p>
+<h4 id="open-device-for-external-connection">Open Device for external connection<a class="headerlink" href="#open-device-for-external-connection" title="Permanent link">&para;</a></h4>
+<p>In the setup file, a device must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant device: </p>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span> <span class="s1">&#39;house-1-s&#39;</span><span class="p">,</span>
+              <span class="p">[</span>
+                     <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;h1-load-s&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileExternalStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">load1</span><span class="p">,</span>
+                                                                             <span class="n">initial_buying_rate</span><span class="o">=</span><span class="n">Houses_initial_buying_rate</span><span class="p">,</span>
+                                                                             <span class="n">use_market_maker_rate</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                     <span class="n">appliance</span><span class="o">=</span><span class="n">SwitchableAppliance</span><span class="p">()),</span>
+
+                     <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;h1-pv-s&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">PVUserProfileExternalStrategy</span><span class="p">(</span><span class="n">power_profile</span><span class="o">=</span><span class="n">pv1</span><span class="p">,</span>
+                                                                             <span class="n">initial_selling_rate</span><span class="o">=</span><span class="n">PV_initial</span><span class="p">,</span>
+                                                                             <span class="n">final_selling_rate</span><span class="o">=</span><span class="n">PV_final</span><span class="p">),</span>
+                     <span class="n">appliance</span><span class="o">=</span><span class="n">PVAppliance</span><span class="p">()),</span>
+
+                     <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;h1-storage-s&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">StorageExternalStrategy</span><span class="p">(</span><span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">),</span>
+                     <span class="n">appliance</span><span class="o">=</span><span class="n">SwitchableAppliance</span><span class="p">()),</span>
+
+               <span class="p">],</span> <span class="n">grid_fee_percentage</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">transfer_fee_const</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">external_connection_available</span><span class="o">=</span><span class="kc">True</span>
+           <span class="p">),</span>
+</code></pre></div>
+
+
+<p>By default, template strategies do not allow connections. Please also ensure that the appropriate libraries are imported (as in the template setup file provided).</p>
+<h4 id="open-area-for-external-connection">Open Area for external connection<a class="headerlink" href="#open-area-for-external-connection" title="Permanent link">&para;</a></h4>
+<p>The API supports multiple areas exposing their market statistics (e.g. min, max, avg, median price and volume of energy) to external devices. Access is controlled when setting up the simulation, using the Area class boolean argument called external_connection_available: </p>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span>
+         <span class="s1">&#39;House 2&#39;</span><span class="p">,</span>
+         <span class="p">[</span> <span class="o">...</span> <span class="p">],</span> <span class="c1"># Children of the area</span>
+         <span class="n">external_connection_available</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">),</span>
+</code></pre></div>
+
+
+<p>If set to true, the area allows all of its ‘child’ devices to request its market statistics. By default, this external_connection_available is set to False.</p>
+<h3 id="api-commands">API Commands<a class="headerlink" href="#api-commands" title="Permanent link">&para;</a></h3>
+<p>There are multiple instances that can get you information or enable you to take action in the simulation.</p>
+<h4 id="event-triggered-functions">Event-Triggered Functions<a class="headerlink" href="#event-triggered-functions" title="Permanent link">&para;</a></h4>
+<p>In order to facilitate offer and bid management and scheduling, a python file with the class AutoDeviceStrategy is provided, where four functions which are triggered on different types of events can be overridden, useful to take actions when market events occur.</p>
+<h5 id="each-new-market-slot-on_market_cycleself-market_info">Each New Market Slot (on_market_cycle(self, market_info))<a class="headerlink" href="#each-new-market-slot-on_market_cycleself-market_info" title="Permanent link">&para;</a></h5>
+<p>When a new market slot is available the client will get notified via an event. It is possible to capture this event and perform operations after it by overriding the on_market_cycle method.</p>
+<p>Ex: <code>def on_market_cycle(self, market_info):</code></p>
+<p>In the variable market_info you will get a dictionary with information on the market and your devices. The return values are the following : </p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;house2&quot;</span><span class="p">,</span> 
+  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;13023c7d-205d-4b3a-a434-02375eb277ca&quot;</span><span class="p">,</span> 
+  <span class="nt">&quot;start_time&quot;</span><span class="p">:</span> <span class="err">start-time</span> <span class="err">of</span> <span class="err">the</span> <span class="err">market</span> <span class="err">slot</span><span class="p">,</span> 
+  <span class="nt">&quot;duration_min&quot;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span> 
+  <span class="nt">&quot;device_info&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;energy_requirement_kWh&quot;</span><span class="p">:</span> <span class="err">energy</span> <span class="err">that</span> <span class="err">the</span> <span class="err">device</span> <span class="err">has</span> <span class="err">to</span> <span class="err">buy</span> <span class="err">during</span> <span class="err">this</span> <span class="err">market</span> <span class="err">slot</span><span class="p">,</span> 
+    <span class="nt">&quot;available_energy_kWh&quot;</span><span class="p">:</span> <span class="err">energy</span> <span class="err">that</span> <span class="err">the</span> <span class="err">device</span> <span class="err">has</span> <span class="err">to</span> <span class="err">sell</span> <span class="err">during</span> <span class="err">this</span> <span class="err">market</span> <span class="err">slot</span>
+  <span class="p">},</span> 
+  <span class="nt">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;market&quot;</span><span class="p">,</span> 
+  <span class="nt">&quot;device_bill&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;bought&quot;</span><span class="p">:</span> <span class="err">energy</span> <span class="err">bought</span> <span class="err">in</span> <span class="err">kWh</span><span class="p">,</span> 
+    <span class="nt">&quot;sold&quot;</span><span class="p">:</span> <span class="err">energy</span> <span class="err">sold</span> <span class="err">in</span> <span class="err">kWh</span><span class="p">,</span> 
+    <span class="nt">&quot;spent&quot;</span><span class="p">:</span> <span class="err">money</span> <span class="err">spent</span> <span class="err">in</span> <span class="err">€</span><span class="p">,</span> 
+    <span class="nt">&quot;earned&quot;</span><span class="p">:</span> <span class="err">money</span> <span class="err">earned</span> <span class="err">in</span> <span class="err">€</span><span class="p">,</span> 
+    <span class="nt">&quot;total_energy&quot;</span><span class="p">:</span> <span class="err">bought</span> <span class="err">-</span> <span class="err">sold</span><span class="p">,</span> 
+    <span class="nt">&quot;total_cost&quot;</span><span class="p">:</span> <span class="err">spent</span> <span class="err">-</span> <span class="err">earned</span><span class="p">,</span> 
+    <span class="nt">&quot;market_fee&quot;</span><span class="p">:</span> <span class="err">€</span> <span class="err">that</span> <span class="err">goes</span> <span class="err">in</span> <span class="err">grid</span> <span class="err">fee</span><span class="p">,</span> 
+    <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="err">type</span> <span class="err">of</span> <span class="err">the</span> <span class="err">strategy</span>
+    <span class="p">},</span> 
+  <span class="nt">&quot;last_market_stats&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;min_trade_rate&quot;</span><span class="p">:</span> <span class="err">minimum</span> <span class="err">trade</span> <span class="err">price</span> <span class="err">in</span> <span class="err">€/kWh</span><span class="p">,</span> 
+    <span class="nt">&quot;max_trade_rate&quot;</span><span class="p">:</span> <span class="err">maximum</span> <span class="err">trade</span> <span class="err">price</span> <span class="err">in</span> <span class="err">€/kWh</span><span class="p">,</span> 
+    <span class="nt">&quot;avg_trade_rate&quot;</span><span class="p">:</span> <span class="err">average</span> <span class="err">trade</span> <span class="err">price</span> <span class="err">in</span> <span class="err">€/kWh</span><span class="p">,</span> 
+    <span class="nt">&quot;total_traded_energy_kWh&quot;</span><span class="p">:</span> <span class="err">total</span> <span class="err">energy</span> <span class="err">traded</span> <span class="err">in</span> <span class="err">kWh</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+<h5 id="on-of-market-slot-completion-on_tickself-tick_info">On % of Market Slot Completion (on_tick(self, tick_info))<a class="headerlink" href="#on-of-market-slot-completion-on_tickself-tick_info" title="Permanent link">&para;</a></h5>
+<p>Each 10% of market slot completion (e.g. 10%, 20%, 30%, …), the same information as market_info will be passed, updated with new device energy requirements. This can be used to update your bid or offer price at these milestones.</p>
+<h5 id="on-trade-on_tradeself-trade_info">On Trade (on_trade(self, trade_info))<a class="headerlink" href="#on-trade-on_tradeself-trade_info" title="Permanent link">&para;</a></h5>
+<p>Each time the device you manage makes a trade, information about the trade is passed through trade_info. This information can be stored locally or acted upon.</p>
+<h5 id="on-simulation-finish-on_finishedself">On Simulation Finish (on_finished(self))<a class="headerlink" href="#on-simulation-finish-on_finishedself" title="Permanent link">&para;</a></h5>
+<p>This executes when the simulation finishes, and can be used to trigger exporting data, training a model or exiting the code.</p>
+<h3 id="device-commands">Device Commands<a class="headerlink" href="#device-commands" title="Permanent link">&para;</a></h3>
+<h4 id="register-backend">Register - Backend<a class="headerlink" href="#register-backend" title="Permanent link">&para;</a></h4>
+<p>Each team will have to register to devices in order to implement their strategies.  Let’s take this area excerpt from the setup file as an example:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span>
+                <span class="s1">&#39;house2&#39;</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;load2&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursExternalStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                                             <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                                             <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span>
+                                             <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">22</span><span class="p">)),</span>
+                                            <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span> <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                         <span class="n">appliance</span><span class="o">=</span><span class="n">SwitchableAppliance</span><span class="p">()),</span>
+                                   <span class="p">],</span>
+                <span class="n">grid_fee_percentage</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">transfer_fee_const</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">external_connection_available</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">),</span>
+</code></pre></div>
+
+
+<p>Here we will take control of the area “load2”. There are 2 ways to register for this device: </p>
+<ol>
+<li>The constructor of the API class can connect and register automatically to a running simulation:</li>
+</ol>
+<div class="codehilite"><pre><span></span><code>r = RedisDeviceClient(&#39;load2&#39;, autoregister=True)
+</code></pre></div>
+
+
+<ol>
+<li>You can also do it manually :</li>
+</ol>
+<div class="codehilite"><pre><span></span><code>r = RedisDeviceClient(&#39;load2&#39;, autoregister=False)
+r.register()
+</code></pre></div>
+
+
+<p>To disconnect/unregister from a simulation, the following command is available:</p>
+<div class="codehilite"><pre><span></span><code>r.unregister()
+</code></pre></div>
+
+
+<h4 id="register-frontend">Register - Frontend<a class="headerlink" href="#register-frontend" title="Permanent link">&para;</a></h4>
+<p>To register for a collaboration (public simulation hosted by a grid operator) on d3a.io, limited changes must be made in the agent script. This information will be available before the first test on d3a.io.</p>
+<h5 id="send-an-energy-offer-offer_energyenergykwh-price">Send an energy offer (offer_energy(energy[kWh], price[€]))<a class="headerlink" href="#send-an-energy-offer-offer_energyenergykwh-price" title="Permanent link">&para;</a></h5>
+<p>PVs and batteries can offer energy.</p>
+<p>Ex: <code>r.offer_energy(3, 0.8)</code></p>
+<h5 id="send-an-energy-bid-bid_energyenergykwh-price">Send an energy bid (bid_energy(energy[kWh], price[€]))<a class="headerlink" href="#send-an-energy-bid-bid_energyenergykwh-price" title="Permanent link">&para;</a></h5>
+<p>Loads, batteries, and flexible loads can bid for energy.</p>
+<p>Ex: <code>r.bid_energy(2, 3)</code></p>
+<h5 id="lists-all-posted-offers">Lists all posted offers<a class="headerlink" href="#lists-all-posted-offers" title="Permanent link">&para;</a></h5>
+<p>Ex: <code>r.list_offers()</code></p>
+<h5 id="lists-all-posted-bids">Lists all posted bids<a class="headerlink" href="#lists-all-posted-bids" title="Permanent link">&para;</a></h5>
+<p>Ex: <code>r.list_bids()</code></p>
+<h5 id="delete-offer-using-its-id-delete_offeridnone">Delete offer using its ID (delete_offer(id=None))<a class="headerlink" href="#delete-offer-using-its-id-delete_offeridnone" title="Permanent link">&para;</a></h5>
+<p>With no argument, delete all active offers. With ID as argument, delete only offer with set ID</p>
+<p>Ex: <code>r.delete_offer('1d352704-d787-4aa1-b1ad-dc10e22b2fc2')</code></p>
+<h5 id="delete-bid-using-its-id-delete_bididnone">Delete bid using its ID (delete_bid(id=None))<a class="headerlink" href="#delete-bid-using-its-id-delete_bididnone" title="Permanent link">&para;</a></h5>
+<p>With no argument, delete all active bids. With ID as argument, delete only bid with set ID</p>
+<p>Ex: <code>r.delete_bid('1d352704-d787-4aa1-b1ad-dc10e22b2fc2')</code></p>
+<p>Note: The total amount of energy bid at any point is limited to the energy requirement of the device. If you want to update a bid during a market slot, you must delete the specific bid and post a new one.</p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Key Performance Indicators (KPIs)
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../faq/" title="FAQ" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                FAQ
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-logo">
+        <img src="../img/d3a-logo.png" height="50"/>
+      </div>
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/gridsingularity" class="md-footer-social__link fa fa-lg fa-github"></a>
+    
+      <a href="https://twitter.com/gridsingularity" class="md-footer-social__link fa fa-lg fa-twitter"></a>
+    
+      <a href="https://www.linkedin.com/company/grid-singularity" class="md-footer-social__link fa fa-lg fa-linkedin"></a>
+    
+      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q" class="md-footer-social__link fa fa-lg fa-slack"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/application.05d1c8d6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      
+        <script src="https://research.web3.foundation/en/latest/mathjax-config.js"></script>
+      
+        <script src="../search/main.js"></script>
+      
+    
+  </body>
+</html>
