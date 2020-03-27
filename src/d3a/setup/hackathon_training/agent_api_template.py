@@ -212,7 +212,8 @@ class AutoDeviceStrategy(DeviceClient):
                                 self.end_ramp_price_per_kWh - self.start_ramp_price_per_kWh) * (
                                                 float(tick_info['slot_completion'][:-1]) - 10) / 70
                     energy = self.device_info()['device_info']['energy_requirement_kWh']
-                    self.bid_energy_print(energy, price_per_kWh)
+                    if energy > 0.:
+                        self.bid_energy_print(energy, price_per_kWh)
 
     def handle_pv_device_tick(self, tick_info):
         # pv strategy
@@ -228,7 +229,8 @@ class AutoDeviceStrategy(DeviceClient):
                             self.start_ramp_price_per_kWh - self.end_ramp_price_per_kWh) * (
                                             float(tick_info['slot_completion'][:-1]) - 10) / 70
                     energy = self.device_info()['device_info']['available_energy_kWh']
-                    self.offer_energy_print(energy, price_per_kWh)
+                    if energy > 0.:
+                        self.offer_energy_print(energy, price_per_kWh)
 
     def handle_storage_device_tick(self, tick_info):
         # battery strategy
