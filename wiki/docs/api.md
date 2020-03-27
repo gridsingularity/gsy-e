@@ -1,5 +1,5 @@
 # API documentation
-The D3A API allows your smart agents to place bids & offers based on multiple inputs that they can get through specific calls.
+The D3A API client allows you to create agents that follow custom trading strategies to buy and sell energy in the energy market. The agent can request and receive information through the API, feed that information into an algorithm, and post bids or offers on a live simulated exchange. This document covers installation and descriptions of the functions available.
 
 ### API Client Installation
 #### Install Redis server. Open a new terminal and type
