@@ -35,15 +35,14 @@ collab_id = "XXX-XXX"
 domain_name = 'TBD'
 websockets_domain_name = 'TBD'
 
-################################################
-# HELPER FUNCTIONS
-################################################
-
 if RUN_ON_D3A_WEB:
     MarketClient = RestMarketClient
 else:
     MarketClient = RedisMarketClient
 
+################################################
+# MARKET STRATEGY CLASS
+################################################
 
 class AutoMarketStrategy(MarketClient):
 
@@ -57,17 +56,13 @@ class AutoMarketStrategy(MarketClient):
         return argument if argument is not None else []
 
     # store references to models, markets, and devices - two phase initialization
-    def store_reference(self, models_list=None, markets_list=None, loads_list=None,
-                        pvs_list=None, storages_list=None):
+    def store_reference(self, models_list=None, markets_list=None):
         self.models = self._handle_list_sentinel_value(models_list)
         self.markets = self._handle_list_sentinel_value(markets_list)
 
-    def change_fee_print(self, energy, price_per_kWh):
-        # TODO update with changed grid fee
-        bid = self.bid_energy(energy, energy * price_per_kWh)
-        bid = json.loads(bid['bid'])
-        print(f"{self.device_id} bid {round(bid['energy'], 4)} kWh "
-              f"at {round(bid['price'] / bid['energy'], 2)}/kWh")
+    def change_fee_print(self):
+        fee = self.change_grid_fees(self.next_fee)
+        print(f"{self.area_id} changed grid fee from {self.current_fee} to {self.next_fee}")
 
     def on_market_cycle(self, market_info):
         """
@@ -75,19 +70,33 @@ class AutoMarketStrategy(MarketClient):
         :param market_info: Incoming message containing the newly-created market info
         :return: None
         """
-        print(market_info)
         ################################################
         # FEATURE EXTRACTION AND PRICE PREDICTIONS
         ################################################
-
-        if self.device_id == MASTER_NAME:
-            market_time = from_format(market_info['start_time'], DATE_TIME_FORMAT, tz=TIME_ZONE)
+        if self.area_id == MASTER_NAME:
+            market_time = from_format(market_info['market_info']['start_time'], DATE_TIME_FORMAT, tz=TIME_ZONE)
             self.handle_master_market_market_cycle(market_time)
+
+        self.current_fee = market_info['market_info']['market_fee']
+        self.min_trade_rate = market_info['market_info']['last_market_stats']['min_trade_rate']
+        self.avg_trade_rate = market_info['market_info']['last_market_stats']['avg_trade_rate']
+        self.max_trade_rate = market_info['market_info']['last_market_stats']['max_trade_rate']
+        self.median_trade_rate = market_info['market_info']['last_market_stats']['median_trade_rate']
+        self.total_traded_energy_kWh = market_info['market_info']['last_market_stats']['total_traded_energy_kWh']
+        self.self_sufficiency = market_info['market_info']['self_sufficiency']
+
+
+        THRESHOLD = 2.5
+        if self.total_traded_energy_kWh > THRESHOLD:
+            self.next_fee = min(self.current_fee + 5, 30)
+        else:
+            self.next_fee = max(self.current_fee - 2, 0)
+
+        self.change_fee_print()
 
     def handle_master_market_market_cycle(self, market_time):
         print("============================================")
         print("Market", market_time)
-        print('--------', '00%', '--------')
 
         # request market stats
         slots = []
@@ -95,7 +104,7 @@ class AutoMarketStrategy(MarketClient):
         for time in times:
             slots.append(market_time.subtract(minutes=time).format(DATE_TIME_FORMAT))
         for market in self.markets:
-            stats = market.list_dso_stats(slots)
+            stats = market.list_dso_market_stats(slots)
 
 
     def on_finish(self, finish_info):

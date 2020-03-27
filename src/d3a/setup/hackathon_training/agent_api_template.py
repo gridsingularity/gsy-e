@@ -22,7 +22,7 @@ TIME_ZONE = "UTC"
 market_names = ['community']
 load_names = ['h1-load-s'] # e.g. ['h1-load-s', 'h2-load'], first load is 'master' strategy
 pv_names = ['h1-pv-s']
-storage_names = [] # ['h1-storage-s']
+storage_names = ['h1-storage-s']
 
 # D3A WEB SETUP
 # This section to be used for running on live simulations on d3a.io. Ignore for now.
@@ -92,7 +92,6 @@ class AutoDeviceStrategy(DeviceClient):
         :param market_info: Incoming message containing the newly-created market info
         :return: None
         """
-        print(self.__dict__)
         ################################################
         # FEATURE EXTRACTION AND PRICE PREDICTIONS
         ################################################
@@ -122,7 +121,7 @@ class AutoDeviceStrategy(DeviceClient):
         for l in self.loads:
             # set prices
             l.start_ramp_price_per_kWh = 15
-            l.end_ramp_price_per_kWh = 25
+            l.end_ramp_price_per_kWh = 26
             l.max_price_per_kWh = 30.0
 
         # pv trading strategy setup
@@ -137,8 +136,8 @@ class AutoDeviceStrategy(DeviceClient):
             # set prices
             s.buy_start_ramp_price_per_kWh = 10
             s.buy_end_ramp_price_per_kWh = 20
-            s.sell_start_ramp_price_per_kWh = 31
-            s.sell_end_ramp_price_per_kWh = 25
+            s.sell_start_ramp_price_per_kWh = 28
+            s.sell_end_ramp_price_per_kWh = 23
 
         ################################################
         # INITIAL DEVICE STRATEGIES
