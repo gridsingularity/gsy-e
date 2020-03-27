@@ -63,8 +63,10 @@ nav:
     - 'Installation Instructions':
         - 'Linux': 'installation-instructions.md'
         - 'Mac': 'ios-installation-instructions.md'
-    - 'Key Performance Indicators (KPIs)': 'kpis.md'                 
-- FAQ: 'faq.md' 
+    - 'Key Performance Indicators (KPIs)': 'kpis.md'
+- API: 'api.md'
+- FAQ: 'faq.md'
+- FAQ Odyssey hackathon: 'faq-odyssey.md'
 
 # Configuration for the Material theme
 theme:
