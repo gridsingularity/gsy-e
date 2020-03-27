@@ -241,7 +241,8 @@ class AutoDeviceStrategy(DeviceClient):
                         self.buy_end_ramp_price_per_kWh - self.buy_start_ramp_price_per_kWh) * (
                         float(tick_info['slot_completion'][:-1]) - 10) / 80
                 energy = self.device_info()['device_info']['energy_to_buy']
-                self.bid_energy_print(energy, price_per_kWh)
+                if energy > 0.:
+                    self.bid_energy_print(energy, price_per_kWh)
         if 'energy_to_sell' in tick_info['device_info']:
             self.energy_to_sell = tick_info['device_info']['energy_to_sell']
             if self.energy_to_sell > 0.:
@@ -251,7 +252,8 @@ class AutoDeviceStrategy(DeviceClient):
                         self.sell_start_ramp_price_per_kWh - self.sell_end_ramp_price_per_kWh) * (
                                         float(tick_info['slot_completion'][:-1]) - 10) / 80
                 energy = self.device_info()['device_info']['energy_to_sell']
-                self.offer_energy_print(energy, price_per_kWh)
+                if energy > 0.:
+                    self.offer_energy_print(energy, price_per_kWh)
 
     def on_trade(self, trade_info):
         """
