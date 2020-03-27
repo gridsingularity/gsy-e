@@ -22,7 +22,7 @@ TIME_ZONE = "UTC"
 market_names = ['community']
 load_names = ['h1-load-s'] # e.g. ['h1-load-s', 'h2-load'], first load is 'master' strategy
 pv_names = ['h1-pv-s']
-storage_names = [] # ['h1-storage-s']
+storage_names = ['h1-storage-s']
 
 # D3A WEB SETUP
 # This section to be used for running on live simulations on d3a.io. Ignore for now.
@@ -92,7 +92,6 @@ class AutoDeviceStrategy(DeviceClient):
         :param market_info: Incoming message containing the newly-created market info
         :return: None
         """
-
         ################################################
         # FEATURE EXTRACTION AND PRICE PREDICTIONS
         ################################################
@@ -106,8 +105,6 @@ class AutoDeviceStrategy(DeviceClient):
             self.handle_storage_device_market_cycle(market_info)
 
     def handle_master_device_market_cycle(self, market_time):
-        # device_bill = market_info['device_bill']
-        # last_market_stats = market_info['last_market_stats']
         print("============================================")
         print("Market", market_time)
         print('--------', '00%', '--------')
@@ -118,13 +115,13 @@ class AutoDeviceStrategy(DeviceClient):
         for time in times:
             slots.append(market_time.subtract(minutes=time).format(DATE_TIME_FORMAT))
         for market in self.markets:
-            stats = market.list_market_stats(slots)['market_stats']
+            stats = market.list_market_stats(slots)
 
         # load trading strategy setup
         for l in self.loads:
             # set prices
             l.start_ramp_price_per_kWh = 15
-            l.end_ramp_price_per_kWh = 25
+            l.end_ramp_price_per_kWh = 26
             l.max_price_per_kWh = 30.0
 
         # pv trading strategy setup
@@ -139,8 +136,8 @@ class AutoDeviceStrategy(DeviceClient):
             # set prices
             s.buy_start_ramp_price_per_kWh = 10
             s.buy_end_ramp_price_per_kWh = 20
-            s.sell_start_ramp_price_per_kWh = 31
-            s.sell_end_ramp_price_per_kWh = 25
+            s.sell_start_ramp_price_per_kWh = 28
+            s.sell_end_ramp_price_per_kWh = 23
 
         ################################################
         # INITIAL DEVICE STRATEGIES
@@ -215,7 +212,8 @@ class AutoDeviceStrategy(DeviceClient):
                                 self.end_ramp_price_per_kWh - self.start_ramp_price_per_kWh) * (
                                                 float(tick_info['slot_completion'][:-1]) - 10) / 70
                     energy = self.device_info()['device_info']['energy_requirement_kWh']
-                    self.bid_energy_print(energy, price_per_kWh)
+                    if energy > 0.:
+                        self.bid_energy_print(energy, price_per_kWh)
 
     def handle_pv_device_tick(self, tick_info):
         # pv strategy
@@ -231,7 +229,8 @@ class AutoDeviceStrategy(DeviceClient):
                             self.start_ramp_price_per_kWh - self.end_ramp_price_per_kWh) * (
                                             float(tick_info['slot_completion'][:-1]) - 10) / 70
                     energy = self.device_info()['device_info']['available_energy_kWh']
-                    self.offer_energy_print(energy, price_per_kWh)
+                    if energy > 0.:
+                        self.offer_energy_print(energy, price_per_kWh)
 
     def handle_storage_device_tick(self, tick_info):
         # battery strategy
@@ -244,7 +243,8 @@ class AutoDeviceStrategy(DeviceClient):
                         self.buy_end_ramp_price_per_kWh - self.buy_start_ramp_price_per_kWh) * (
                         float(tick_info['slot_completion'][:-1]) - 10) / 80
                 energy = self.device_info()['device_info']['energy_to_buy']
-                self.bid_energy_print(energy, price_per_kWh)
+                if energy > 0.:
+                    self.bid_energy_print(energy, price_per_kWh)
         if 'energy_to_sell' in tick_info['device_info']:
             self.energy_to_sell = tick_info['device_info']['energy_to_sell']
             if self.energy_to_sell > 0.:
@@ -254,7 +254,8 @@ class AutoDeviceStrategy(DeviceClient):
                         self.sell_start_ramp_price_per_kWh - self.sell_end_ramp_price_per_kWh) * (
                                         float(tick_info['slot_completion'][:-1]) - 10) / 80
                 energy = self.device_info()['device_info']['energy_to_sell']
-                self.offer_energy_print(energy, price_per_kWh)
+                if energy > 0.:
+                    self.offer_energy_print(energy, price_per_kWh)
 
     def on_trade(self, trade_info):
         """
