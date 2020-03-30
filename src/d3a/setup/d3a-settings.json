@@ -5,7 +5,6 @@
     "tick_length": "15s",
     "market_count": 1,
     "cloud_coverage": 0,
-    "iaa_fee": 0,
     "start_date": "2020-03-09"
   },
   "advanced_settings": {

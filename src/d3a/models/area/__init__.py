@@ -49,8 +49,6 @@ DEFAULT_CONFIG = SimulationConfig(
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-    iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE,
-    iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
     start_date=today(tz=TIME_ZONE),
     max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
 )
@@ -129,10 +127,6 @@ class Area:
                 self.budget_keeper.activate()
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self.grid_fee_percentage = 0
-        elif self.grid_fee_percentage is None:
-            self.grid_fee_percentage = self.config.iaa_fee
-        if self.transfer_fee_const is None:
-            self.transfer_fee_const = self.config.iaa_fee_const
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)

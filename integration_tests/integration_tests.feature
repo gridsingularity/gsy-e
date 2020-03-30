@@ -9,7 +9,7 @@ Feature: Run integration tests
   Scenario: Run integration tests on console to test config parameters
      Given we have a scenario named config_parameter_test
      And d3a is installed
-     When we run the simulation with setup file config_parameter_test and parameters [24, 60, 60, 0, 1]
+     When we run the simulation with setup file config_parameter_test and parameters [24, 60, 60, 1]
      Then we test the config parameters
 
   Scenario: Test offers, bids and balancing offers are exported
@@ -21,7 +21,7 @@ Feature: Run integration tests
   Scenario Outline: Run general integration tests for simulation
      Given we have a scenario named <scenario>
      And d3a is installed
-     When we run the d3a simulation with <scenario> [<duration>, <slot_length>, <tick_length>]
+     When we run the simulation with setup file <scenario> and parameters [<duration>, <slot_length>, <tick_length>, 1]
      Then we test the output of the simulation of <scenario> [<duration>, <slot_length>, <tick_length>]
   Examples: Settings
      | scenario               | duration | slot_length | tick_length |
@@ -35,14 +35,12 @@ Feature: Run integration tests
      |        default_5       |    24    |      60     |      60     |
      |        default_csv     |    24    |      60     |      60     |
 
-  # TODO: Once iaa_fee is included in billing, this test to be run non-zero iaa_fee
   Scenario Outline: Test Balanced Energy Bills
     Given we have a scenario named <scenario>
     And d3a is installed
-    When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
+    When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 1]
     Then the traded energy report the correct accumulated traded energy
     And the energy bills report the correct accumulated traded energy price
-    And the energy bills report the correct external traded energy and price
     And the traded energy profile is correctly generated
 
   Examples: Settings
@@ -97,10 +95,10 @@ Feature: Run integration tests
      Given we have a scenario named <scenario>
      And d3a is installed
      And the past markets are kept in memory
-     When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
+     When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 1]
      And the reported unmatched loads are saved
      And the past markets are not kept in memory
-     And we run the simulation with setup file <scenario> and parameters [24, 60, 60, 0, 1]
+     And we run the simulation with setup file <scenario> and parameters [24, 60, 60, 1]
      Then the unmatched loads are identical no matter if the past markets are kept
 
   Examples: Settings
@@ -113,40 +111,40 @@ Feature: Run integration tests
      Given we have a scenario named balancing_market.default_2a
      And d3a is installed
      And the past markets are kept in memory
-     When we run the simulation with setup file balancing_market.default_2a and parameters [24, 60, 60, 0, 1]
+     When we run the simulation with setup file balancing_market.default_2a and parameters [24, 60, 60, 1]
      And the reported cumulative grid trades are saved
      And the past markets are not kept in memory
-     And we run the simulation with setup file balancing_market.default_2a and parameters [24, 60, 60, 0, 1]
+     And we run the simulation with setup file balancing_market.default_2a and parameters [24, 60, 60, 1]
      Then the cumulative grid trades are identical no matter if the past markets are kept
 
   Scenario: Energy trade profile is the same with and without keeping the past markets
      Given we have a scenario named default_2a
      And d3a is installed
      And the past markets are kept in memory
-     When we run the simulation with setup file default_2a and parameters [24, 60, 60, 0, 1]
+     When we run the simulation with setup file default_2a and parameters [24, 60, 60, 1]
      And the reported energy trade profile are saved
      And the past markets are not kept in memory
-     And we run the simulation with setup file default_2a and parameters [24, 60, 60, 0, 1]
+     And we run the simulation with setup file default_2a and parameters [24, 60, 60, 1]
      Then the energy trade profiles are identical no matter if the past markets are kept
 
   Scenario: Energy bills are the same with and without keeping the past markets
      Given we have a scenario named default_2a
      And d3a is installed
      And the past markets are kept in memory
-     When we run the simulation with setup file default_2a and parameters [24, 60, 60, 0, 1]
+     When we run the simulation with setup file default_2a and parameters [24, 60, 60, 1]
      And the reported energy bills are saved
      And the past markets are not kept in memory
-     And we run the simulation with setup file default_2a and parameters [24, 60, 60, 0, 1]
+     And we run the simulation with setup file default_2a and parameters [24, 60, 60, 1]
      Then the energy bills are identical no matter if the past markets are kept
 
   Scenario Outline: Price energy day results are the same with and without keeping the past markets
      Given we have a scenario named <scenario>
      And d3a is installed
      And the past markets are kept in memory
-     When we run the simulation with setup file <scenario> and parameters [24, 60, <tick_length>, 0, 1]
+     When we run the simulation with setup file <scenario> and parameters [24, 60, <tick_length>, 1]
      And the reported price energy day results are saved
      And the past markets are not kept in memory
-     And we run the simulation with setup file <scenario> and parameters [24, 60, <tick_length>, 0, 1]
+     And we run the simulation with setup file <scenario> and parameters [24, 60, <tick_length>, 1]
      Then the price energy day results are identical no matter if the past markets are kept
 
   Examples: Settings
@@ -158,5 +156,5 @@ Feature: Run integration tests
   Scenario: Uploaded one-day-profile gets duplicated when running the simulations for multiple days
     Given we have a scenario named strategy_tests.user_profile_load_csv
     And d3a is installed
-    When we run the d3a simulation with strategy_tests.user_profile_load_csv [48, 60, 60]
+    When we run the simulation with setup file strategy_tests.user_profile_load_csv and parameters [48, 60, 60, 1]
     Then the load profile should be identical on each day
