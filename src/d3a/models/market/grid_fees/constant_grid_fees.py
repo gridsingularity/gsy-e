@@ -93,4 +93,4 @@ class ConstantGridFees(BaseClassGridFees):
         original_bid_rate, bid_rate, original_offer_rate, \
             offer_rate, trade_rate_source = trade_bid_info
 
-        return trade_rate_source - self.grid_fee_rate, self.grid_fee_rate, trade_rate_source
+        return bid_rate - self.grid_fee_rate, self.grid_fee_rate, bid_rate
