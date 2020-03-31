@@ -45,7 +45,9 @@ nav:
         - 'Balancing Market': 'balancing-market.md'
         - 'Inter-Area Agent': 'inter-area-agent.md'  
         - 'Market Slots and Ticks': 'market-slots-and-ticks.md'
-        - 'Grid Fees': 'grid-fees.md'
+        - 'Grid Fees':
+          - 'Constant fees': 'constant-fees.md'
+          - 'Percentage fees': 'percentage-fees.md'
     - 'D3A Blockchain Support': 
         - 'D3A Blockchain Overview': 'd3a-blockchain-support.md' 
         - 'ClearingToken Smart Contract': 'clearingtoken-smart-contract.md' 
