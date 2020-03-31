@@ -53,19 +53,6 @@ class TwoSidedPayAsBid(OneSidedMarket):
                     self.accumulated_trade_price
                     )
 
-    def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
-        """
-        Override one sided market private method to abstract away the grid fee calculation
-        when placing an offer to a market.
-        :param offer_price: Price of the offer coming from the source market, in cents
-        :param original_offer_price: Price of the original offer from the device
-        :param energy: Not required here, added to comply with the one-sided market implementation
-        :return: Updated price for the forwarded offer on this market
-        """
-        return self.fee_class.update_incoming_offer_with_fee(
-            offer_price, original_offer_price
-        )
-
     def _update_new_bid_price_with_fee(self, bid_price, original_bid_price):
         return self.fee_class.update_incoming_bid_with_fee(bid_price, original_bid_price)
 
