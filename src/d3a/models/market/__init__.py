@@ -35,7 +35,7 @@ from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
     MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
-from d3a.constants import GRID_FEE_TYPE
+import d3a.constants
 
 log = getLogger(__name__)
 
@@ -106,7 +106,7 @@ class Market:
     def _create_fee_handler(self, transfer_fees):
         if not transfer_fees:
             transfer_fees = TransferFees(grid_fee_percentage=0.0, transfer_fee_const=0.0)
-        if GRID_FEE_TYPE == 1:
+        if d3a.constants.GRID_FEE_TYPE == 1:
             if not (transfer_fees.transfer_fee_const is not None
                     and transfer_fees.transfer_fee_const > 0.0):
                 self.fee_class = ConstantGridFees(0.0)
