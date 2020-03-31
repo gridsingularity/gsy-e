@@ -297,10 +297,7 @@ def read_settings_from_file(settings_file):
                 settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
             "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
-                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
-            "iaa_fee": settings["basic_settings"].get(
-                'INTER_AREA_AGENT_FEE_PERCENTAGE',
-                advanced_settings["IAASettings"]["FEE_PERCENTAGE"])
+                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
         }
         return simulation_settings, advanced_settings
     else:
@@ -517,7 +514,6 @@ def export_default_settings_to_json_file():
             "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
             "market_count": GlobalConfig.MARKET_COUNT,
             "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
-            "iaa_fee": GlobalConfig.IAA_FEE,
             "start_date": pendulum.instance(GlobalConfig.start_date).format(DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
