@@ -4,6 +4,7 @@ Vagrant.configure("2") do |config|
     v.memory = 4096
     v.gui = true
     v.cpus = 4
+    v.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
   end
  config.vm.provision "shell", inline: <<-SHELL
     export DEBIAN_FRONTEND=noninteractive
