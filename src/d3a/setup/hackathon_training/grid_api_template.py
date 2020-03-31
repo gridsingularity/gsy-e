@@ -70,6 +70,7 @@ class AutoMarketStrategy(MarketClient):
         :param market_info: Incoming message containing the newly-created market info
         :return: None
         """
+
         ################################################
         # FEATURE EXTRACTION AND PRICE PREDICTIONS
         ################################################
