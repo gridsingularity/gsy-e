@@ -709,6 +709,35 @@ def test_accumulated_energy(context):
     assert isclose(net_energy, 0, abs_tol=1e-10)
 
 
+@then('the energy bills report the correct external traded energy and price')
+def test_external_trade_energy_price(context):
+    # TODO: Deactivating this test for now, because it will fail due to D3ASIM-1887.
+    # Please activate the test when implementing the aforementioned bug.
+    return
+    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    current_trades = context.simulation.endpoint_buffer.cumulative_grid_trades.current_trades_redis
+    houses = [child for child in context.simulation.area.children
+              if child.name in ["House 1", "House 2"]]
+    for house in houses:
+        house_sold = bills[house.name]["External Trades"]["sold"]
+        house_bought = bills[house.name]["External Trades"]["bought"]
+
+        external_trade_sold = sum([
+            k["energy"]
+            for k in current_trades[house.uuid][-1]["bars"]
+            if "External sources" in k["energyLabel"] and k["energy"] < 0
+        ])
+
+        external_trade_bought = sum([
+            k["energy"]
+            for k in current_trades[house.uuid][-1]["bars"]
+            if "External sources" in k["energyLabel"] and k["energy"] >= 0
+        ])
+
+        assert isclose(-external_trade_sold, house_sold, abs_tol=1e-3)
+        assert isclose(external_trade_bought, house_bought, abs_tol=1e-3)
+
+
 def generate_area_uuid_map(sim_area, results):
     results[sim_area.slug] = sim_area.uuid
     for child in sim_area.children:

@@ -43,7 +43,8 @@ import d3a.constants
 log = getLogger(__name__)
 
 
-# TODO: As this is only used in the unittests, please move to the tests package
+# TODO: As this is only used in the unittests, please remove it here and replace the usages
+#       of this class with d3a-interface.constants_limits.GlobalConfig class:
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
     market_count=1,
