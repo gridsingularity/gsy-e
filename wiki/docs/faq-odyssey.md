@@ -110,7 +110,7 @@ For example if a load is required to buy 1 kWh but only buys 0.8 kWh, the remain
 This is to penalise unaccounted for power flow that could be detrimental to the physical grid.
 
 ### What is a Grid Fee ?
-A grid fee is a percentage of trade price or a fixed value that is paid to the market for using the electrical grid. Please visit this [page](grid-fees.md) to understand how they are determined in the Pay-as-Bid.
+A grid fee is a [percentage](percentage-fees.md) of trade price or a [fixed value](constant-fees.md) that is paid to the market for using the electrical grid.
 
 
 ## Simulation and API Setup
