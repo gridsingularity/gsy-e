@@ -50,7 +50,7 @@ class IAAEngine:
 
     def _offer_in_market(self, offer):
         updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
-            offer.rate, offer.original_offer_price / offer.energy) * offer.energy
+            offer.energy_rate, offer.original_offer_price / offer.energy) * offer.energy
 
         kwargs = {
             "price": updated_price,
