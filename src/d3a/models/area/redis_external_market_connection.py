@@ -42,7 +42,7 @@ class RedisMarketExternalConnection:
         payload_data = json.loads(payload["data"])
         ret_val = {"status": "ready",
                    "command": "market_stats",
-                   "market_fee_const":
+                   "market_stats":
                        self.area.stats.get_market_stats(payload_data["market_slots"]),
                    "transaction_id": payload_data.get("transaction_id", None)}
         self.publish_json(market_stats_response_channel, ret_val)

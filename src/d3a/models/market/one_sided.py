@@ -57,10 +57,17 @@ class OneSidedMarket(Market):
         assert False
 
     def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
-        if self._is_constant_fees:
-            return offer_price + self.fee_class.grid_fee_rate * energy
-        else:
-            return offer_price + self.fee_class.grid_fee_rate * original_offer_price
+        """
+        Override one sided market private method to abstract away the grid fee calculation
+        when placing an offer to a market.
+        :param offer_price: Price of the offer coming from the source market, in cents
+        :param original_offer_price: Price of the original offer from the device
+        :param energy: Energy of the offer
+        :return: Updated price for the forwarded offer on this market, in cents
+        """
+        return self.fee_class.update_incoming_offer_with_fee(
+            offer_price / energy, original_offer_price / energy
+        ) * energy
 
     @lock_market_action
     def get_offers(self):
