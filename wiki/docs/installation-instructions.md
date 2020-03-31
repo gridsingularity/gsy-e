@@ -1,6 +1,6 @@
 ## How to Install D3A on Ubuntu 18.04
 
-### Preparations 
+### Preparations
 
 #####  In case you have not installed git, python3.6 and pip yet:
 
@@ -57,9 +57,9 @@ git clone https://github.com/gridsingularity/d3a.git
 2. Install pip-tools
 
     `pip3 install pendulum pip-tools`
-   
-   
-3. Install dependencies  
-    `pip install -e . ` 
 
-Now, if you run d3a run `–help` , the help of d3a should be shown.
+
+3. Install dependencies  
+    `pip install -e . `
+
+Now, if you run `d3a run`–help` , the help of d3a should be shown.
