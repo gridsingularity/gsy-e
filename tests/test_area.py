@@ -82,7 +82,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._bc = False
         for i in range(2, 97):
             self.config.market_count = i
-            self.config.grid_fee_type = 1
+            self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
             self.area._cycle_markets(False, False)
             assert len(self.area.all_markets) == i
 
