@@ -107,8 +107,8 @@ class Market:
         if not transfer_fees:
             transfer_fees = TransferFees(grid_fee_percentage=0.0, transfer_fee_const=0.0)
         if grid_fee_type == 1:
-            if not (transfer_fees.transfer_fee_const is not None
-                    and transfer_fees.transfer_fee_const > 0.0):
+            if transfer_fees.transfer_fee_const is None or \
+                    transfer_fees.transfer_fee_const <= 0.0:
                 self.fee_class = ConstantGridFees(0.0)
             else:
                 self.fee_class = ConstantGridFees(transfer_fees.transfer_fee_const)
