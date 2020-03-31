@@ -68,8 +68,8 @@ class TestAreaClass(unittest.TestCase):
         ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
 
     def test_respective_area_grid_fee_is_applied(self):
-        self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, grid_fee_percentage=5)
+        ConstSettings.IAASettings.GRID_FEE_TYPE = 2
+        self.area = Area(name="Street", children=[Area(name="House")], grid_fee_percentage=5)
         self.area.parent = Area(name="GRID")
         self.area.config.market_count = 1
         self.area.activate()

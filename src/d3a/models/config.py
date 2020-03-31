@@ -32,7 +32,7 @@ class SimulationConfig:
                  market_count: int, cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE),
-                 max_panel_power_W=None):
+                 max_panel_power_W=None, grid_fee_type=1):
 
         self.sim_duration = sim_duration
         self.start_date = start_date
@@ -40,6 +40,7 @@ class SimulationConfig:
         self.slot_length = slot_length
         self.tick_length = tick_length
         self.market_count = market_count
+        self.grid_fee_type = grid_fee_type
         self.ticks_per_slot = self.slot_length / self.tick_length
         if self.ticks_per_slot != int(self.ticks_per_slot):
             raise D3AException(
@@ -75,12 +76,13 @@ class SimulationConfig:
             "cloud_coverage='{s.cloud_coverage}', "
             "pv_user_profile='{s.pv_user_profile}', "
             "max_panel_power_W='{s.max_panel_power_W}', "
+            "grid_fee_type='{s.grid_fee_type}', "
             ")>"
         ).format(s=self)
 
     def as_dict(self):
         fields = {'sim_duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
-                  'total_ticks', 'cloud_coverage', 'max_panel_power_W'}
+                  'total_ticks', 'cloud_coverage', 'max_panel_power_W', 'grid_fee_type'}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
             for k, v in self.__dict__.items()

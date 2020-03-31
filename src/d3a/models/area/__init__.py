@@ -43,6 +43,7 @@ import d3a.constants
 log = getLogger(__name__)
 
 
+# TODO: As this is only used in the unittests, please move to the tests package
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
     market_count=1,
@@ -92,8 +93,7 @@ class Area:
         self._bc = None
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
-        self.grid_fee_percentage = grid_fee_percentage
-        self.transfer_fee_const = transfer_fee_const
+        self._set_grid_fees(transfer_fee_const, grid_fee_percentage)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.endpoint_stats = {}
@@ -101,6 +101,14 @@ class Area:
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
+
+    def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
+        if ConstSettings.IAASettings.GRID_FEE_TYPE == 1:
+            grid_fee_percentage = None
+        elif ConstSettings.IAASettings.GRID_FEE_TYPE == 2:
+            transfer_fee_const = None
+        self.transfer_fee_const = transfer_fee_const
+        self.grid_fee_percentage = grid_fee_percentage
 
     def set_events(self, event_list):
         self.events = Events(event_list, self)
