@@ -125,6 +125,6 @@ Feature: GridFee integration tests
      Given we have a scenario named grid_fees/no_trades_high_fees
      And d3a is installed
      And d3a uses an two-sided pay-as-bid market
-     When we run the simulation with setup file grid_fees.no_trades_high_fees and parameters [24, 60, 60, 0, 1]
+     When we run the simulation with setup file grid_fees.no_trades_high_fees and parameters [24, 60, 60, 1]
      Then no trades are performed in all markets
 
