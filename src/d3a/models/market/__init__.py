@@ -35,7 +35,6 @@ from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber
     MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
 from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
-import d3a.constants
 
 log = getLogger(__name__)
 
@@ -61,6 +60,7 @@ def lock_market_action(function):
 class Market:
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  transfer_fees: TransferFees = None, name=None):
         self.name = name
         self.bc = bc
@@ -78,7 +78,7 @@ class Market:
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
 
-        self._create_fee_handler(transfer_fees)
+        self._create_fee_handler(grid_fee_type, transfer_fees)
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
         self.traded_energy = {}
@@ -103,10 +103,10 @@ class Market:
                 else TwoSidedMarketRedisEventSubscriber(self)
         setattr(self, RLOCK_MEMBER_NAME, RLock())
 
-    def _create_fee_handler(self, transfer_fees):
+    def _create_fee_handler(self, grid_fee_type, transfer_fees):
         if not transfer_fees:
             transfer_fees = TransferFees(grid_fee_percentage=0.0, transfer_fee_const=0.0)
-        if d3a.constants.GRID_FEE_TYPE == 1:
+        if grid_fee_type == 1:
             if not (transfer_fees.transfer_fee_const is not None
                     and transfer_fees.transfer_fee_const > 0.0):
                 self.fee_class = ConstantGridFees(0.0)

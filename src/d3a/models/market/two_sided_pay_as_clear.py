@@ -32,9 +32,11 @@ log = getLogger(__name__)
 class TwoSidedPayAsClear(TwoSidedPayAsBid):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  transfer_fees=None, name=None, in_sim_duration=True):
         super().__init__(time_slot, bc, notification_listener, readonly,
-                         transfer_fees, name, in_sim_duration=in_sim_duration)
+                         grid_fee_type, transfer_fees, name,
+                         in_sim_duration=in_sim_duration)
         self.state = MarketClearingState()
         self.sorted_bids = []
         self.mcp_update_point = \

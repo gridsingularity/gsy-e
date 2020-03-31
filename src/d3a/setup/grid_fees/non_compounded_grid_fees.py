@@ -20,11 +20,12 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
-import d3a.constants
+from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    d3a.constants.GRID_FEE_TYPE = 2
+    ConstSettings.IAASettings.GRID_FEE_TYPE = 2
+    config.grid_fee_type = 2
     area = Area(
         'Grid',
         [

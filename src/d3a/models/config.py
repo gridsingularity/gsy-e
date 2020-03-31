@@ -30,11 +30,9 @@ from d3a.d3a_core.util import change_global_config
 class SimulationConfig:
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
                  market_count: int, cloud_coverage: int,
-                 iaa_fee: float = ConstSettings.IAASettings.FEE_PERCENTAGE,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-                 iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE),
-                 max_panel_power_W=None):
+                 max_panel_power_W=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE):
 
         self.sim_duration = sim_duration
         self.start_date = start_date
@@ -42,6 +40,7 @@ class SimulationConfig:
         self.slot_length = slot_length
         self.tick_length = tick_length
         self.market_count = market_count
+        self.grid_fee_type = grid_fee_type
         self.ticks_per_slot = self.slot_length / self.tick_length
         if self.ticks_per_slot != int(self.ticks_per_slot):
             raise D3AException(
@@ -62,10 +61,6 @@ class SimulationConfig:
         self.read_pv_user_profile(pv_user_profile)
         self.read_market_maker_rate(market_maker_rate)
 
-        self.iaa_fee = iaa_fee if iaa_fee is not None else ConstSettings.IAASettings.FEE_PERCENTAGE
-        self.iaa_fee_const = iaa_fee_const if iaa_fee_const is not None else \
-            ConstSettings.IAASettings.FEE_CONSTANT
-
         max_panel_power_W = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W \
             if max_panel_power_W is None else max_panel_power_W
         self.max_panel_power_W = max_panel_power_W
@@ -81,12 +76,13 @@ class SimulationConfig:
             "cloud_coverage='{s.cloud_coverage}', "
             "pv_user_profile='{s.pv_user_profile}', "
             "max_panel_power_W='{s.max_panel_power_W}', "
+            "grid_fee_type='{s.grid_fee_type}', "
             ")>"
         ).format(s=self)
 
     def as_dict(self):
         fields = {'sim_duration', 'slot_length', 'tick_length', 'market_count', 'ticks_per_slot',
-                  'total_ticks', 'cloud_coverage', 'max_panel_power_W'}
+                  'total_ticks', 'cloud_coverage', 'max_panel_power_W', 'grid_fee_type'}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
             for k, v in self.__dict__.items()
@@ -94,16 +90,11 @@ class SimulationConfig:
         }
 
     def update_config_parameters(self, cloud_coverage=None, pv_user_profile=None,
-                                 grid_fee_percentage=None, market_maker_rate=None,
-                                 transfer_fee_const=None, max_panel_power_W=None):
+                                 market_maker_rate=None, max_panel_power_W=None):
         if cloud_coverage is not None:
             self.cloud_coverage = cloud_coverage
         if pv_user_profile is not None:
             self.read_pv_user_profile(pv_user_profile)
-        if grid_fee_percentage is not None:
-            self.iaa_fee = grid_fee_percentage
-        if transfer_fee_const is not None:
-            self.iaa_fee_const = transfer_fee_const
         if market_maker_rate is not None:
             self.read_market_maker_rate(market_maker_rate)
         if max_panel_power_W is not None:

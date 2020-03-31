@@ -21,7 +21,6 @@ from d3a.models.area import Area
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-import d3a.constants
 '''
 Setup load + DSO
 Test for constant_fee in pay as bid
@@ -29,7 +28,7 @@ Test for constant_fee in pay as bid
 
 
 def get_setup(config):
-    d3a.constants.GRID_FEE_TYPE = 1
+    ConstSettings.IAASettings.GRID_FEE_TYPE = 1
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 3
     ConstSettings.IAASettings.MARKET_TYPE = 2
     ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
