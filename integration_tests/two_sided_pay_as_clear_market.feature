@@ -33,3 +33,20 @@ Feature: Two sided pay_as_clear market tests
      When we run the d3a simulation on console with two_sided_pay_as_clear.test_clearing_energy for 24 hrs
      Then the export functionality of supply/demand curve is tested
 
+  Scenario: One Offer and One Bid are matched at the Bid Rate
+     Given we have a scenario named two_sided_pay_as_clear/one_offer_one_bid
+     And d3a is installed
+     When we run the simulation with setup file two_sided_pay_as_clear.one_offer_one_bid and parameters [24, 60, 60, 0, 1]
+     Then one-on-one matching of offer & bid in PAC happens at bid rate
+
+  Scenario: One Offer and multiple Bids are matched at the last clearing bid rate
+     Given we have a scenario named two_sided_pay_as_clear/one_offer_multiple_bids
+     And d3a is installed
+     When we run the simulation with setup file two_sided_pay_as_clear.one_offer_multiple_bids and parameters [24, 60, 60, 0, 1]
+     Then clearing rate is the bid rate of last matched bid
+
+  Scenario: Multiple Offer and One Bid is matched at the bid rate
+     Given we have a scenario named two_sided_pay_as_clear/multiple_offers_one_bid
+     And d3a is installed
+     When we run the simulation with setup file two_sided_pay_as_clear.multiple_offers_one_bid and parameters [24, 60, 60, 0, 1]
+     Then clearing rate is equal to the bid_rate

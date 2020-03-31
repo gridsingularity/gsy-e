@@ -99,3 +99,27 @@ def test_offer_bid_market_clearing_rate_files(context):
                  os.path.join(base_path, 'grid', 'house-2-market-clearing-rate.csv')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
+
+
+@then('one-on-one matching of offer & bid in PAC happens at bid rate')
+def one_on_one_matching_at_clearing_rate_at_bid_rate(context):
+    assert all(isclose(clearing[0], 30.0)
+               for child in context.simulation.area.children
+               for market in child.past_markets
+               for clearing in list(market.state.clearing.values()))
+
+
+@then('clearing rate is the bid rate of last matched bid')
+def clearing_rate_at_last_matched_bid_rate(context):
+    assert all(isclose(clearing[0], 15.0)
+               for child in context.simulation.area.children
+               for market in child.past_markets
+               for clearing in list(market.state.clearing.values()))
+
+
+@then('clearing rate is equal to the bid_rate')
+def clearing_rate_at_bid_rate(context):
+    assert all(isclose(clearing[0], 25.0)
+               for child in context.simulation.area.children
+               for market in child.past_markets
+               for clearing in list(market.state.clearing.values()))
