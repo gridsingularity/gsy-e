@@ -27,7 +27,7 @@ source d3a/bin/activate
 
 Now, if you run `d3a run –help` , the help of d3a should be shown.
 
-#### Setting Up the API Client for Custom Trading Strategies (Optional)
+### Setting Up the API Client for Custom Trading Strategies (Optional)
 
 Open a second terminal and activate the api client if you'd like to experiment with custom trading or grid fee strategies:
 

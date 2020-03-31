@@ -64,7 +64,7 @@ nav:
     - 'How to launch Simulation via Command Line Interface (CLI)': 'launch-sim-via-cli.md' 
     - 'Installation Instructions':
         - 'Linux': 'installation-instructions.md'
-        - 'Mac': 'ios-installation-instructions.md'.
+        - 'Mac': 'ios-installation-instructions.md'
         - 'Virtual Machine': 'installation-instructions-vm.md'
     - 'Key Performance Indicators (KPIs)': 'kpis.md'
 - API: 'api.md'
