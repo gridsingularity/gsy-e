@@ -13,7 +13,7 @@
         <meta name="description" content="Wiki for the D3A by Grid Singularity">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/infinite-bus-strategy/">
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/constant-fees/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Infinite Bus Strategy - D3A Wiki</title>
+        <title>Constant fees - D3A Wiki</title>
       
     
     
@@ -110,6 +110,10 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
+      <a href="#configuration-model" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -131,7 +135,7 @@
               D3A Wiki
             </span>
             <span class="md-header-nav__topic">
-              Infinite Bus Strategy
+              Constant fees
             </span>
           
         </div>
@@ -536,12 +540,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
     
     <label class="md-nav__link" for="nav-3-2">
       Strategies
@@ -641,18 +643,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Infinite Bus Strategy" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../infinite-bus-strategy/" title="Infinite Bus Strategy" class="md-nav__link">
       Infinite Bus Strategy
     </a>
-    
   </li>
 
         
@@ -701,10 +696,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" checked>
     
     <label class="md-nav__link" for="nav-3-3">
       Markets
@@ -804,10 +801,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3-8" type="checkbox" id="nav-3-3-8">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3-8" type="checkbox" id="nav-3-3-8" checked>
     
     <label class="md-nav__link" for="nav-3-3-8">
       Grid Fees
@@ -823,11 +822,73 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../constant-fees/" title="Constant fees" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Constant fees
+      </label>
+    
+    <a href="./" title="Constant fees" class="md-nav__link md-nav__link--active">
       Constant fees
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-model" title="Configuration Model" class="md-nav__link">
+    Configuration Model
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introduction-and-definitions" title="Introduction and definitions" class="md-nav__link">
+    Introduction and definitions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-sided-pay-as-offer" title="One Sided Pay as Offer" class="md-nav__link">
+    One Sided Pay as Offer
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-sided-pay-as-bid" title="Two Sided Pay as Bid" class="md-nav__link">
+    Two Sided Pay as Bid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-sided-pay-as-clear" title="Two Sided Pay as Clear" class="md-nav__link">
+    Two Sided Pay as Clear
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -1165,28 +1226,158 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-model" title="Configuration Model" class="md-nav__link">
+    Configuration Model
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introduction-and-definitions" title="Introduction and definitions" class="md-nav__link">
+    Introduction and definitions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#one-sided-pay-as-offer" title="One Sided Pay as Offer" class="md-nav__link">
+    One Sided Pay as Offer
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-sided-pay-as-bid" title="Two Sided Pay as Bid" class="md-nav__link">
+    Two Sided Pay as Bid
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-sided-pay-as-clear" title="Two Sided Pay as Clear" class="md-nav__link">
+    Two Sided Pay as Clear
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/infinite-bus-strategy.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/constant-fees.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Infinite Bus Strategy</h1>
+                  <h1>Constant fees</h1>
                 
-                <p>This device is the same as the commercial energy producer / infinite power plant in that it produces an infinite amount of energy at the <code>energy_sell_rate</code>. 
-However, the infinite bus can also buy an infinite amount of energy at a predefined price, the <code>energy_buy_rate.</code></p>
-<p>Configuration parameters:</p>
-<ul>
-<li><code>energy_buy_rate</code>: energy rate for selling in cents/kWh (can be a profile in JSON or dict format as well as a filename) </li>
-<li><code>energy_sell_rate</code>: energy rate for buying in cents/kWh (can be a profile in JSON or dict format as well as a filename) </li>
-</ul>
-<p>Corresponding code: <code>src/3a/models/strategy/infinite_bus.py</code></p>
-<p>How to add a infinite power plant to the setup-file:</p>
-<div class="codehilite"><pre><span></span><code>Area(&#39;Infinite Bus&#39;, strategy=InfiniteBusStrategy(energy_buy_rate=24, energy_sell_rate=25),
-                             appliance=SimpleAppliance()),
+                <h3 id="configuration-model">Configuration Model<a class="headerlink" href="#configuration-model" title="Permanent link">&para;</a></h3>
+<p><img alt="img" src="../img/constant-fee-1.png" style="display: block;margin-left: auto;margin-right: auto;" /></p>
+<h3 id="introduction-and-definitions">Introduction and definitions<a class="headerlink" href="#introduction-and-definitions" title="Permanent link">&para;</a></h3>
+<p>We have agreed that the buyer should pay all of the fees, at least for this implementation. Any fee that a seller has to pay is ultimately the burden of the buyer. A seller with additional operational costs or taxes will have to raise their prices in a competitive market.</p>
+<p>When running D3A simulations, we consider the current grid fees and propose which fees need to be added at which layers in the D3A. Configuring separate grid fees in separate markets or areas helps to accomplish this. The grid fee is a part of the energy trade price and is cumulative so that the fees in each market a trade passes through can be added cumulatively together to get the entire grid fee, often as a percentage of the clearing price. </p>
+<p>The <strong>Clearing Rate</strong> is the rate that the market clears at</p>
+<p>The <strong>Trade Price</strong> is the price the buyer pays (revenue to the seller plus the grid fees)</p>
+<p>As seen in the examples below, the rate of a bid or offer changes as it is propagated into different markets. The rate of an offer increases to account for the added fees of the market. This helps an agent submitting an offer to receive equal or greater revenue than the value of the offer. The rate of a bid decreases for the same reason. This helps an agent submitting a bid to pay equal or less than the value of the bid. This way, an agent making an offer will never receive less than their offer and an agent making a bid will never pay more than the bid.</p>
+<h3 id="one-sided-pay-as-offer">One Sided Pay as Offer<a class="headerlink" href="#one-sided-pay-as-offer" title="Permanent link">&para;</a></h3>
+<p><img alt="img" src="../img/constant-fee-2.png" style="display: block;margin-left: auto;margin-right: auto;" /></p>
+<p>In the One Sided Pay as Offer market, there are no bids and only offers exist. The offers are propagated throughout the markets in the hierarchy. The grid fees are taken into account when an offer is forwarded to the higher market, by the higher market itself. Therefore the agent is not responsible for adapting the offer rate to include the grid fees. The grid fees' unit is a constant value per energy volume <strong>€/kWh</strong>, therefore the formula to calculate the new offer rate when placing an offer to a market is the following: </p>
+<div class="codehilite"><pre><span></span><code>offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
 </code></pre></div>
+
+
+<p>If the offer is not purchased after one tick, it is moved into the next market. When entering a new market, the offer's rate is increased according that that market's grid fee. The PV offer of 0.10 €/kWh is first placed into the House 2 Market where it gains zero fees. Then it moves into the Neighborhood 2 Market, gaining a fee of 0.01 €/kWh to become 0.11 €/kWh. Then if not purchased it moves into the Grid Market, gaining a fee of 0.02 €/kWh to become 0.13 €/kWh. Continuing into the Neighborhood 1 Market, the offer gains a fee of 0.01 €/kWh to become 0.14 €/kWh. Continuing into the House 1 Market, the offer gains zero fees. The Load buys the offer in the House 1 Market at the Clearing Rate of 0.14 €/kWh.</p>
+<p>Using the initial offer rate, the trade price is calculated from the total fees and energy. The total fees are <code>(0.01+0.02+0.01) = 0.04 €/kWh</code> and are added to the original offer (0.10 €/kWh) and multiplied by 1 kWh to yield the Trade Price of € 0.14.</p>
+<p><strong>The Load pays the Trade Price of € 0.14, which includes € 0.10 revenue to the PV, € 0.01 fees to Neighborhood Market 1, € 0.02 fees to Grid Market, and € 0.01 fees to Neighborhood Market 2.</strong></p>
+<p>Since the market is pay-as-offer, the offer rate is used as the clearing rate. The grid fees are added to the offer rate to determine the trade rate and therefore the trade price in each market. The following formula is used: </p>
+<div class="codehilite"><pre><span></span><code>supply_side_tax (€/kWh) = forwarded_offer_rate (€/kWh) - original_offer_rate (€/kWh)
+trade_rate (€/kWh) = clearing rate (€/kWh)
+trade_price (€) = energy (kWh) * trade_rate (€/kWh)
+</code></pre></div>
+
+
+<p>For our example, the trade price for each market is:</p>
+<div class="codehilite"><pre><span></span><code>Market_trade_price (€) = (original_offer_rate (€/kWh) + supply_side_tax (€/kWh)) * energy (kWh)
+
+Grid Market = (0.10 + 0.03)*1 = 0.13,
+Neighborhood 2 Market = (0.10 + 0.01)*1 = 0.11,
+Neighborhood 1 Market = (0.10 + 0.04)*1 = 0.14,
+House 1 Market = (0.10 + 0.04)*1 = 0.14,
+House 2 Market = (0.10 + 0)*1 = 0.10.
+</code></pre></div>
+
+
+<h3 id="two-sided-pay-as-bid">Two Sided Pay as Bid<a class="headerlink" href="#two-sided-pay-as-bid" title="Permanent link">&para;</a></h3>
+<p><img alt="img" src="../img/constant-fee-3.png" style="display: block;margin-left: auto;margin-right: auto;" /></p>
+<p>In the Two Sided Pay as Bid market, there are both bids and offers, which are both propagated throughout the markets in the hierarchy. If a bid or offer is not purchased after one tick, it is moved into the next market. In order to prevent the double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter that market (target market) and market fees are subtracted from bids when they leave that market and enter the another one (source market). The formula for propagating the offers is exactly the same as on the one-sided market :</p>
+<div class="codehilite"><pre><span></span><code>offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
+</code></pre></div>
+
+
+<p>The bids are not adapted by the market itself, but the area/IAA is responsible to subtract the fees from the bid before propagating the bid to the higher market. As mentioned above, the difference in behavior compared to offers is to avoid double accounting of the grid fee on one market. The formula for an area to update the bid to include grid fees is the following:</p>
+<div class="codehilite"><pre><span></span><code>bid_rate_after_fees (€/kWh) = bid_rate (€/kWh) - grid_fee (€/kWh)
+</code></pre></div>
+
+
+<p>In the case of the Two Sided Pay as Bid market, the offer has moved into the Grid Market by the same mechanism as explained in the One Sided Pay as Offer market. The bid of 0.30 €/kWh follows a similar mechanism and is placed into the House 1 Market where there are zero fees. If the bid is not purchased after one tick, it is moved into the Neighborhood 1 Market. As explained above, only the fees from the source market are added, which are zero in this case. So the bid remains at 0.30 €/kWh. Next the bid moves into the Grid Market, where it its value is lowered according to the fees of its source market, the Neighborhood 1 Market at 0.01 €/kWh. With the Neighborhood 1 Market fee, the bid is lowered to 0.29 €/kWh as it enters the Grid Market.</p>
+<p>In the example above, the bid and offer are matched in the Grid Market. However, when the offer entered the Grid Market, its rate was immediately updated to account for the Grid Market's fees (<code>0.11 + 0.02</code>). The bid on the other hand did not add the 0.02 €/kWh fee. In the case that the bid was not matched in the Grid Market and moved into the Neighborhood 2 Market, the 0.02 €/kWh fee from the Grid Market would be added. In this case the bid would become (<code>0.29 - 0.02</code>) 0.27 €/kWh. The fees from the Neighborhood 2 Market would not be added to the bid unless it entered the House 2 Market (fees added according to the source market).</p>
+<p>In the Grid Market, the Load bid is listed as 0.29 €/kWh and the PV offer is listed as 0.13 €/kWh. As the bid is greater than the offer a trade can be scheduled. The trade clears at the bid rate, giving a Clearing Rate of 0.29 €/kWh.</p>
+<p>There is a separate algorithm that calculates the grid fee according to the clearing rate. This allows the markets to act more independently and in a decentralized manner, without having to share information regarding their fees with other markets. In order to calculate the fee correctly based on the original rate, the algorithm needs to be able to calculate the supply side and demand side tax. It is easy to calculate this, since the original bid/offer prices are available:</p>
+<div class="codehilite"><pre><span></span><code>demand_side_tax (€/kWh) = original_bid_rate (€/kWh) - forwarded_bid_rate (€/kWh)
+supply_side_tax (€/kWh) = forwarded_offer_rate (€/kWh) - original_offer_rate (€/kWh)
+</code></pre></div>
+
+
+<p>For the example, we have the following values: <code>supply_side_tax = 0.13 - 0.10 = 0.03</code>, <code>demand_side_tax = 0.30 - 0.29 = 0.01</code>.</p>
+<p>After calculating the supply and demand side tax, we can calculate the revenue of the trade. Note the original_trade_rate is the amount that the original buyer (in our case the Load) will need to pay, therefore for pay as bid this is the original bid price. The calculation is the following: </p>
+<div class="codehilite"><pre><span></span><code>total_tax (€/kWh) = supply_side_tax (€/kWh) + demand_side_tax (€/kWh)
+revenue_rate (€/kWh) = original_trade_rate (€/kWh) - total_tax (€/kWh)
+</code></pre></div>
+
+
+<p>For the example, the revenue will be: <code>revenue = 0.30 - 0.04 = 0.26</code></p>
+<p>Finally, the trade rate is adapted according to the supply side tax, in order to include the fees of the current market: </p>
+<div class="codehilite"><pre><span></span><code>trade_rate (€/kWh) = revenue_rate (€/kWh) + supply_side_tax (€/kWh)
+trade_price (€) = energy (kWh) * trade_rate (€/kWh)
+</code></pre></div>
+
+
+<p>For our example, the trade price for each market is:</p>
+<div class="codehilite"><pre><span></span><code>Market_trade_price (€) = (revenue_rate (€/kWh) + supply_side_tax (€/kWh)) * energy (kWh)
+
+Grid Market = (0.26 + 0.03)*1 = 0.29,
+Neighborhood 2 Market = (0.26 + 0.01)*1 = 0.27,
+Neighborhood 1 Market = (0.26 + 0.04)*1 = 0.30,
+House 1 Market = (0.26 + 0.04)*1 = 0.30,
+House 2 Market = (0.26 + 0)*1 = 0.26.
+</code></pre></div>
+
+
+<p><strong>The Load pays the Trade Price of € 0.30, which includes € 0.26 revenue to the PV, € 0.01 fees to Neighborhood Market 1, € 0.02 fees to Grid Market, and € 0.01 fees to Neighborhood Market 2.</strong></p>
+<h3 id="two-sided-pay-as-clear">Two Sided Pay as Clear<a class="headerlink" href="#two-sided-pay-as-clear" title="Permanent link">&para;</a></h3>
+<p>In construction...</p>
                 
                   
                 
@@ -1207,7 +1398,7 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../custom-pv-strategy/" title="Custom PV Strategy" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../market-slots-and-ticks/" title="Market Slots and Ticks" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1216,19 +1407,19 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Custom PV Strategy
+                Market Slots and Ticks
               </span>
             </div>
           </a>
         
         
-          <a href="../how-implement-custom-device-strategies/" title="How to Implement Custom Device Strategies" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../percentage-fees/" title="Percentage fees" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                How to Implement Custom Device Strategies
+                Percentage fees
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

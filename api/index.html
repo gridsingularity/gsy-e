@@ -798,10 +798,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3-8" type="checkbox" id="nav-3-3-8">
+    
+    <label class="md-nav__link" for="nav-3-3-8">
       Grid Fees
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-3-3-8">
+        Grid Fees
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../constant-fees/" title="Constant fees" class="md-nav__link">
+      Constant fees
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../percentage-fees/" title="Percentage fees" class="md-nav__link">
+      Percentage fees
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1041,6 +1077,18 @@
   <li class="md-nav__item">
     <a href="../ios-installation-instructions/" title="Mac" class="md-nav__link">
       Mac
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions-vm/" title="Virtual Machine" class="md-nav__link">
+      Virtual Machine
     </a>
   </li>
 
@@ -1720,6 +1768,7 @@
                 <h1 id="api-documentation">API documentation<a class="headerlink" href="#api-documentation" title="Permanent link">&para;</a></h1>
 <p>The D3A API client allows you to create agents that follow custom trading strategies to buy and sell energy in the energy market. The agent can request and receive information through the API, feed that information into an algorithm, and post bids or offers on a live simulated exchange. This document covers installation and descriptions of the functions available.</p>
 <h3 id="api-client-installation">API Client Installation<a class="headerlink" href="#api-client-installation" title="Permanent link">&para;</a></h3>
+<p>Note, if you are running the d3a using a virtual machine and vagrant, the latest api-client is already installed on your machine and you can skip to the <code>Launch Simulation</code> section below. If you are running the d3a locally, please follow the following instructions.</p>
 <h4 id="install-redis-server-open-a-new-terminal-and-type">Install Redis server. Open a new terminal and type<a class="headerlink" href="#install-redis-server-open-a-new-terminal-and-type" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code>brew install redis
 </code></pre></div>
@@ -1745,7 +1794,7 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 
 
 <h4 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h4>
-<p>First navigate to the d3a folder in a new terminal, then activate the d3a environment with:</p>
+<p>This requires you to have the d3a simulation installed on your machine. If you have yet to do this, see the installation instructions. First navigate to the d3a folder in a new terminal, then activate the d3a environment with:</p>
 <div class="codehilite"><pre><span></span><code>workon d3a
 </code></pre></div>
 

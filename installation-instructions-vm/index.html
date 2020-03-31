@@ -13,7 +13,7 @@
         <meta name="description" content="Wiki for the D3A by Grid Singularity">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/infinite-bus-strategy/">
+        <link rel="canonical" href="https://gridsingularity.github.io/d3a/d3a-documentation/installation-instructions-vm/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Infinite Bus Strategy - D3A Wiki</title>
+        <title>Virtual Machine - D3A Wiki</title>
       
     
     
@@ -110,6 +110,10 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
+      <a href="#how-to-install-d3a-using-a-virtual-machine-useful-especially-on-windows" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -131,7 +135,7 @@
               D3A Wiki
             </span>
             <span class="md-header-nav__topic">
-              Infinite Bus Strategy
+              Virtual Machine
             </span>
           
         </div>
@@ -536,12 +540,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
     
     <label class="md-nav__link" for="nav-3-2">
       Strategies
@@ -641,18 +643,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Infinite Bus Strategy" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../infinite-bus-strategy/" title="Infinite Bus Strategy" class="md-nav__link">
       Infinite Bus Strategy
     </a>
-    
   </li>
 
         
@@ -1049,10 +1044,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-12" type="checkbox" id="nav-3-12" checked>
     
     <label class="md-nav__link" for="nav-3-12">
       Installation Instructions
@@ -1092,11 +1089,85 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../installation-instructions-vm/" title="Virtual Machine" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Virtual Machine
+      </label>
+    
+    <a href="./" title="Virtual Machine" class="md-nav__link md-nav__link--active">
       Virtual Machine
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-install-d3a-using-a-virtual-machine-useful-especially-on-windows" title="How to Install D3A using a Virtual Machine (useful especially on Windows)" class="md-nav__link">
+    How to Install D3A using a Virtual Machine (useful especially on Windows)
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#preparations" title="Preparations" class="md-nav__link">
+    Preparations
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-vagrant-by-navigating-to-httpsvagrantupcom" title="Install Vagrant by navigating to https://vagrantup.com" class="md-nav__link">
+    Install Vagrant by navigating to https://vagrantup.com
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#login-to-vagrant-virtual-machine" title="Login to vagrant Virtual Machine" class="md-nav__link">
+    Login to vagrant Virtual Machine
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-up-the-api-client-for-custom-trading-strategies-optional" title="Setting Up the API Client for Custom Trading Strategies (Optional)" class="md-nav__link">
+    Setting Up the API Client for Custom Trading Strategies (Optional)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -1165,28 +1236,113 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-install-d3a-using-a-virtual-machine-useful-especially-on-windows" title="How to Install D3A using a Virtual Machine (useful especially on Windows)" class="md-nav__link">
+    How to Install D3A using a Virtual Machine (useful especially on Windows)
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#preparations" title="Preparations" class="md-nav__link">
+    Preparations
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-vagrant-by-navigating-to-httpsvagrantupcom" title="Install Vagrant by navigating to https://vagrantup.com" class="md-nav__link">
+    Install Vagrant by navigating to https://vagrantup.com
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#login-to-vagrant-virtual-machine" title="Login to vagrant Virtual Machine" class="md-nav__link">
+    Login to vagrant Virtual Machine
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-up-the-api-client-for-custom-trading-strategies-optional" title="Setting Up the API Client for Custom Trading Strategies (Optional)" class="md-nav__link">
+    Setting Up the API Client for Custom Trading Strategies (Optional)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/infinite-bus-strategy.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/d3a/wiki/edit/master/docs/installation-instructions-vm.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Infinite Bus Strategy</h1>
+                  <h1>Virtual Machine</h1>
                 
-                <p>This device is the same as the commercial energy producer / infinite power plant in that it produces an infinite amount of energy at the <code>energy_sell_rate</code>. 
-However, the infinite bus can also buy an infinite amount of energy at a predefined price, the <code>energy_buy_rate.</code></p>
-<p>Configuration parameters:</p>
-<ul>
-<li><code>energy_buy_rate</code>: energy rate for selling in cents/kWh (can be a profile in JSON or dict format as well as a filename) </li>
-<li><code>energy_sell_rate</code>: energy rate for buying in cents/kWh (can be a profile in JSON or dict format as well as a filename) </li>
-</ul>
-<p>Corresponding code: <code>src/3a/models/strategy/infinite_bus.py</code></p>
-<p>How to add a infinite power plant to the setup-file:</p>
-<div class="codehilite"><pre><span></span><code>Area(&#39;Infinite Bus&#39;, strategy=InfiniteBusStrategy(energy_buy_rate=24, energy_sell_rate=25),
-                             appliance=SimpleAppliance()),
+                <h2 id="how-to-install-d3a-using-a-virtual-machine-useful-especially-on-windows">How to Install D3A using a Virtual Machine (useful especially on Windows)<a class="headerlink" href="#how-to-install-d3a-using-a-virtual-machine-useful-especially-on-windows" title="Permanent link">&para;</a></h2>
+<h3 id="preparations">Preparations<a class="headerlink" href="#preparations" title="Permanent link">&para;</a></h3>
+<h5 id="install-vagrant-by-navigating-to-httpsvagrantupcom">Install Vagrant by navigating to https://vagrantup.com<a class="headerlink" href="#install-vagrant-by-navigating-to-httpsvagrantupcom" title="Permanent link">&para;</a></h5>
+<p>This is a software wrapper around virtualbox and other supervisors, that allows easy creation, download, and installation of virtual machines.</p>
+<p>After vagrant is installed, run the following commands to download the VM image and install it on your local machine</p>
+<div class="codehilite"><pre><span></span><code>vagrant init spyrostz/d3a --box-version 1
+vagrant up
 </code></pre></div>
+
+
+<h5 id="login-to-vagrant-virtual-machine">Login to vagrant Virtual Machine<a class="headerlink" href="#login-to-vagrant-virtual-machine" title="Permanent link">&para;</a></h5>
+<div class="codehilite"><pre><span></span><code>vagrant up
+</code></pre></div>
+
+
+<p>Activate the d3a environment used to run simulations in one terminal:</p>
+<div class="codehilite"><pre><span></span><code>source d3a/bin/activate
+</code></pre></div>
+
+
+<p>Now, if you run <code>d3a run –help</code> , the help of d3a should be shown.</p>
+<h3 id="setting-up-the-api-client-for-custom-trading-strategies-optional">Setting Up the API Client for Custom Trading Strategies (Optional)<a class="headerlink" href="#setting-up-the-api-client-for-custom-trading-strategies-optional" title="Permanent link">&para;</a></h3>
+<p>Open a second terminal and activate the api client if you'd like to experiment with custom trading or grid fee strategies:</p>
+<div class="codehilite"><pre><span></span><code>source api-client/bin/activate
+</code></pre></div>
+
+
+<p>You may now follow the instructions on the <a href="../api/">API documentation</a> file to get started with custom trading strategies</p>
                 
                   
                 
@@ -1207,7 +1363,7 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../custom-pv-strategy/" title="Custom PV Strategy" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../ios-installation-instructions/" title="Mac" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1216,19 +1372,19 @@ However, the infinite bus can also buy an infinite amount of energy at a predefi
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Custom PV Strategy
+                Mac
               </span>
             </div>
           </a>
         
         
-          <a href="../how-implement-custom-device-strategies/" title="How to Implement Custom Device Strategies" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../kpis/" title="Key Performance Indicators (KPIs)" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                How to Implement Custom Device Strategies
+                Key Performance Indicators (KPIs)
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

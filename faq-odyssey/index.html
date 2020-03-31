@@ -798,10 +798,46 @@
           
 
 
-  <li class="md-nav__item">
-    <a href="../grid-fees/" title="Grid Fees" class="md-nav__link">
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-3-8" type="checkbox" id="nav-3-3-8">
+    
+    <label class="md-nav__link" for="nav-3-3-8">
       Grid Fees
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-3-3-8">
+        Grid Fees
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../constant-fees/" title="Constant fees" class="md-nav__link">
+      Constant fees
     </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../percentage-fees/" title="Percentage fees" class="md-nav__link">
+      Percentage fees
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
   </li>
 
         
@@ -1041,6 +1077,18 @@
   <li class="md-nav__item">
     <a href="../ios-installation-instructions/" title="Mac" class="md-nav__link">
       Mac
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../installation-instructions-vm/" title="Virtual Machine" class="md-nav__link">
+      Virtual Machine
     </a>
   </li>
 
@@ -1603,7 +1651,7 @@
 <p>For example if a load is required to buy 1 kWh but only buys 0.8 kWh, the remaining 0.2 kWh will be penalised at the market maker rate + 10%. The same is true if a PV generates 1 kWh but only sells 0.8 kWh. </p>
 <p>This is to penalise unaccounted for power flow that could be detrimental to the physical grid.</p>
 <h3 id="what-is-a-grid-fee">What is a Grid Fee ?<a class="headerlink" href="#what-is-a-grid-fee" title="Permanent link">&para;</a></h3>
-<p>A grid fee is a percentage of trade price or a fixed value that is paid to the market for using the electrical grid. Please visit this <a href="../grid-fees/">page</a> to understand how they are determined in the Pay-as-Bid.</p>
+<p>A grid fee is a <a href="../percentage-fees/">percentage</a> of trade price or a <a href="../constant-fees/">constant value</a> that is paid to the market for using the electrical grid.</p>
 <h2 id="simulation-and-api-setup">Simulation and API Setup<a class="headerlink" href="#simulation-and-api-setup" title="Permanent link">&para;</a></h2>
 <h3 id="how-do-i-create-a-simulation-and-train-and-test-my-trading-bot">How do I create a simulation and train and test my trading bot ?<a class="headerlink" href="#how-do-i-create-a-simulation-and-train-and-test-my-trading-bot" title="Permanent link">&para;</a></h3>
 <p>You will train your agent locally on the backend code, and will interact with the frontend at <a href="http://d3a.io/">d3a.io</a> during the hackathon.</p>
