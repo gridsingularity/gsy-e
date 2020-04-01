@@ -119,8 +119,6 @@ class Market:
             else:
                 self.fee_class = GridFees(
                     transfer_fees.grid_fee_percentage / 100
-                    if transfer_fees.grid_fee_percentage is not None
-                    else 0
                 )
 
     @property
