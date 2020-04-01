@@ -46,8 +46,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
 
         forwarded_bid = self.markets.target.bid(
-            price=self.markets.source.fee_class.update_forwarded_bid_with_fee(
-                bid.price, bid.original_bid_price),
+            price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                bid.price / bid.energy, bid.original_bid_price / bid.energy)) * bid.energy,
             energy=bid.energy,
             buyer=self.owner.name,
             seller=self.markets.target.name,

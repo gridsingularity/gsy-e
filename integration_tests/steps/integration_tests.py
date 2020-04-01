@@ -928,6 +928,7 @@ def _filter_markets_by_market_name(context, market_name):
 def assert_trade_rates(context, market_name, trade_rate, grid_fee_rate=0):
     markets = _filter_markets_by_market_name(context, market_name)
 
+    assert any(len(market.trades) > 0 for market in markets)
     for market in markets:
         for t in market.trades:
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))

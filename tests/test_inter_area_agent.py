@@ -236,8 +236,9 @@ class FakeMarket:
 
 @pytest.fixture
 def iaa():
-    lower_market = FakeMarket([Offer('id', 1, 1, 'other')])
-    higher_market = FakeMarket([Offer('id2', 3, 3, 'owner'), Offer('id3', 0.5, 1, 'owner')])
+    lower_market = FakeMarket([Offer('id', 1, 1, 'other', 1)])
+    higher_market = FakeMarket([Offer('id2', 3, 3, 'owner', 3),
+                                Offer('id3', 0.5, 1, 'owner', 0.5)])
     owner = FakeArea('owner')
     iaa = OneSidedAgent(owner=owner,
                         higher_market=higher_market,
@@ -250,10 +251,11 @@ def iaa():
 
 @pytest.fixture
 def iaa_grid_fee():
-    lower_market = FakeMarket([Offer('id', 1, 1, 'other')],
+    lower_market = FakeMarket([Offer('id', 1, 1, 'other', 1)],
                               transfer_fees=TransferFees(grid_fee_percentage=0.1,
                                                          transfer_fee_const=2))
-    higher_market = FakeMarket([Offer('id2', 3, 3, 'owner'), Offer('id3', 0.5, 1, 'owner')],
+    higher_market = FakeMarket([Offer('id2', 3, 3, 'owner', 3),
+                                Offer('id3', 0.5, 1, 'owner', 0.5)],
                                transfer_fees=TransferFees(grid_fee_percentage=0.1,
                                                           transfer_fee_const=2))
     owner = FakeArea('owner')

@@ -52,7 +52,7 @@ class BaseClassGridFees(ABC):
         pass
 
     @abstractmethod
-    def propagate_original_offer_info_on_bid_trade(self, trade_original_info):
+    def propagate_original_offer_info_on_bid_trade(self, trade_original_info, ignore_fees=False):
         pass
 
     @abstractmethod

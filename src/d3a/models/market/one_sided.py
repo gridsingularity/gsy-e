@@ -35,8 +35,10 @@ log = getLogger(__name__)
 class OneSidedMarket(Market):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None,
-                 readonly=False, transfer_fees=None, name=None, in_sim_duration=True):
-        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
+                 readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 transfer_fees=None, name=None, in_sim_duration=True):
+        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
+                         transfer_fees, name)
         self.bc_interface = MarketBlockchainInterface(bc) \
             if bc is not None \
             else NonBlockchainInterface()
