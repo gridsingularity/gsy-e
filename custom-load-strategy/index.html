@@ -1180,8 +1180,8 @@
 <li><code>user_profile_load_csv.py</code></li>
 </ul>
 <p>In this setup file, the csv file is connected to the configuration via a pathway :</p>
-<div class="codehilite"><pre><span></span><code>user_profile_path = os.path.join(d3a_path,&quot;resources/LOAD_DATA_1.csv&quot;)
-</code></pre></div>
+<div class="codehilite"><pre><span></span>user_profile_path = os.path.join(d3a_path,&quot;resources/LOAD_DATA_1.csv&quot;)
+</pre></div>
 
 
 <p>Comma or semicolon separated values are allowed. The timestamp can be provided in two formats: <code>HH:mm</code>, <code>YYYY-MM-DDTHH:mm</code>. For more information on what format is accepted by the D3A, see "<a href="../upload-file-formats/">Upload File Formats</a>".</p>
@@ -1189,7 +1189,7 @@
 <li><code>user_profile_load_dict.py</code></li>
 </ul>
 <p>In this setup file, the user profile is inserted directly into the configuration:</p>
-<div class="codehilite"><pre><span></span><code>user_profile = {
+<div class="codehilite"><pre><span></span>user_profile = {
       8: 100,
       9: 200,
       10: 50,
@@ -1201,12 +1201,12 @@
       16: 45,
       17: 100
 }
-</code></pre></div>
+</pre></div>
 
 
 <p>Corresponding code: <code>/src/3a/models/strategy/predefined_load.py</code></p>
 <p>How to add a load device with custom profile to the setup-file:</p>
-<div class="codehilite"><pre><span></span><code>user_profile = {
+<div class="codehilite"><pre><span></span>user_profile = {
         8: 100,
         9: 200,
         10: 50,
@@ -1221,7 +1221,7 @@
 Area(&#39;DefinedLoad&#39;, strategy=DefinedLoadStrategy(daily_load_profile=user_profile,
                                                  max_energy_rate=35),
                     appliance=SwitchableAppliance()),
-</code></pre></div>
+</pre></div>
                 
                   
                 

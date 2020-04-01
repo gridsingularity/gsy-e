@@ -1177,11 +1177,11 @@
 In this setup-file, global and strategy related settings can be set.</p>
 <p>Examples can be found in: <code>d3a/src/d3a/setup/</code></p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<div class="codehilite"><pre><span></span><code>from d3a.models.area import Area
+<div class="codehilite"><pre><span></span>from d3a.models.area import Area
 def get_setup(config):
     area = Area(&#39;Grid&#39;, [])
     return area
-</code></pre></div>
+</pre></div>
 
 
 <p>Now the user can ad more sub areas recursively by adding more instances of area to the second parameter (list) of the Area class.
@@ -1205,7 +1205,7 @@ The following grid architecture is given:</p>
 </ul>
 <p>(<strong>Bold</strong> instances are areas, not devices. For each of these non-device areas, an inter-area-agent is created in the background that deals with offer/bid forwarding and matching.)</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<div class="codehilite"><pre><span></span><code>from d3a.models.appliance.switchable import SwitchableAppliance
+<div class="codehilite"><pre><span></span>from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
@@ -1259,7 +1259,7 @@ def get_setup(config):
         config=config
     )
     return area
-</code></pre></div>
+</pre></div>
                 
                   
                 

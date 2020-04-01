@@ -1304,75 +1304,75 @@
 <h3 id="one-sided-pay-as-offer">One Sided Pay as Offer<a class="headerlink" href="#one-sided-pay-as-offer" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/constant-fee-2.png" style="display: block;margin-left: auto;margin-right: auto;" /></p>
 <p>In the One Sided Pay as Offer market, there are no bids and only offers exist. The offers are propagated throughout the markets in the hierarchy. The grid fees are taken into account when an offer is forwarded to the higher market, by the higher market itself. Therefore the agent is not responsible for adapting the offer rate to include the grid fees. The grid fees' unit is a constant value per energy volume <strong>€/kWh</strong>, therefore the formula to calculate the new offer rate when placing an offer to a market is the following: </p>
-<div class="codehilite"><pre><span></span><code>offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
-</code></pre></div>
+<div class="codehilite"><pre><span></span>offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
+</pre></div>
 
 
 <p>If the offer is not purchased after one tick, it is moved into the next market. When entering a new market, the offer's rate is increased according that that market's grid fee. The PV offer of 0.10 €/kWh is first placed into the House 2 Market where it gains zero fees. Then it moves into the Neighborhood 2 Market, gaining a fee of 0.01 €/kWh to become 0.11 €/kWh. Then if not purchased it moves into the Grid Market, gaining a fee of 0.02 €/kWh to become 0.13 €/kWh. Continuing into the Neighborhood 1 Market, the offer gains a fee of 0.01 €/kWh to become 0.14 €/kWh. Continuing into the House 1 Market, the offer gains zero fees. The Load buys the offer in the House 1 Market at the Clearing Rate of 0.14 €/kWh.</p>
 <p>Using the initial offer rate, the trade price is calculated from the total fees and energy. The total fees are <code>(0.01+0.02+0.01) = 0.04 €/kWh</code> and are added to the original offer (0.10 €/kWh) and multiplied by 1 kWh to yield the Trade Price of € 0.14.</p>
 <p><strong>The Load pays the Trade Price of € 0.14, which includes € 0.10 revenue to the PV, € 0.01 fees to Neighborhood Market 1, € 0.02 fees to Grid Market, and € 0.01 fees to Neighborhood Market 2.</strong></p>
 <p>Since the market is pay-as-offer, the offer rate is used as the clearing rate. The grid fees are added to the offer rate to determine the trade rate and therefore the trade price in each market. The following formula is used: </p>
-<div class="codehilite"><pre><span></span><code>supply_side_tax (€/kWh) = forwarded_offer_rate (€/kWh) - original_offer_rate (€/kWh)
+<div class="codehilite"><pre><span></span>supply_side_tax (€/kWh) = forwarded_offer_rate (€/kWh) - original_offer_rate (€/kWh)
 trade_rate (€/kWh) = clearing rate (€/kWh)
 trade_price (€) = energy (kWh) * trade_rate (€/kWh)
-</code></pre></div>
+</pre></div>
 
 
 <p>For our example, the trade price for each market is:</p>
-<div class="codehilite"><pre><span></span><code>Market_trade_price (€) = (original_offer_rate (€/kWh) + supply_side_tax (€/kWh)) * energy (kWh)
+<div class="codehilite"><pre><span></span>Market_trade_price (€) = (original_offer_rate (€/kWh) + supply_side_tax (€/kWh)) * energy (kWh)
 
 Grid Market = (0.10 + 0.03)*1 = 0.13,
 Neighborhood 2 Market = (0.10 + 0.01)*1 = 0.11,
 Neighborhood 1 Market = (0.10 + 0.04)*1 = 0.14,
 House 1 Market = (0.10 + 0.04)*1 = 0.14,
 House 2 Market = (0.10 + 0)*1 = 0.10.
-</code></pre></div>
+</pre></div>
 
 
 <h3 id="two-sided-pay-as-bid">Two Sided Pay as Bid<a class="headerlink" href="#two-sided-pay-as-bid" title="Permanent link">&para;</a></h3>
 <p><img alt="img" src="../img/constant-fee-3.png" style="display: block;margin-left: auto;margin-right: auto;" /></p>
 <p>In the Two Sided Pay as Bid market, there are both bids and offers, which are both propagated throughout the markets in the hierarchy. If a bid or offer is not purchased after one tick, it is moved into the next market. In order to prevent the double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter that market (target market) and market fees are subtracted from bids when they leave that market and enter the another one (source market). The formula for propagating the offers is exactly the same as on the one-sided market :</p>
-<div class="codehilite"><pre><span></span><code>offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
-</code></pre></div>
+<div class="codehilite"><pre><span></span>offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
+</pre></div>
 
 
 <p>The bids are not adapted by the market itself, but the area/IAA is responsible to subtract the fees from the bid before propagating the bid to the higher market. As mentioned above, the difference in behavior compared to offers is to avoid double accounting of the grid fee on one market. The formula for an area to update the bid to include grid fees is the following:</p>
-<div class="codehilite"><pre><span></span><code>bid_rate_after_fees (€/kWh) = bid_rate (€/kWh) - grid_fee (€/kWh)
-</code></pre></div>
+<div class="codehilite"><pre><span></span>bid_rate_after_fees (€/kWh) = bid_rate (€/kWh) - grid_fee (€/kWh)
+</pre></div>
 
 
 <p>In the case of the Two Sided Pay as Bid market, the offer has moved into the Grid Market by the same mechanism as explained in the One Sided Pay as Offer market. The bid of 0.30 €/kWh follows a similar mechanism and is placed into the House 1 Market where there are zero fees. If the bid is not purchased after one tick, it is moved into the Neighborhood 1 Market. As explained above, only the fees from the source market are added, which are zero in this case. So the bid remains at 0.30 €/kWh. Next the bid moves into the Grid Market, where it its value is lowered according to the fees of its source market, the Neighborhood 1 Market at 0.01 €/kWh. With the Neighborhood 1 Market fee, the bid is lowered to 0.29 €/kWh as it enters the Grid Market.</p>
 <p>In the example above, the bid and offer are matched in the Grid Market. However, when the offer entered the Grid Market, its rate was immediately updated to account for the Grid Market's fees (<code>0.11 + 0.02</code>). The bid on the other hand did not add the 0.02 €/kWh fee. In the case that the bid was not matched in the Grid Market and moved into the Neighborhood 2 Market, the 0.02 €/kWh fee from the Grid Market would be added. In this case the bid would become (<code>0.29 - 0.02</code>) 0.27 €/kWh. The fees from the Neighborhood 2 Market would not be added to the bid unless it entered the House 2 Market (fees added according to the source market).</p>
 <p>In the Grid Market, the Load bid is listed as 0.29 €/kWh and the PV offer is listed as 0.13 €/kWh. As the bid is greater than the offer a trade can be scheduled. The trade clears at the bid rate, giving a Clearing Rate of 0.29 €/kWh.</p>
 <p>There is a separate algorithm that calculates the grid fee according to the clearing rate. This allows the markets to act more independently and in a decentralized manner, without having to share information regarding their fees with other markets. In order to calculate the fee correctly based on the original rate, the algorithm needs to be able to calculate the supply side and demand side tax. It is easy to calculate this, since the original bid/offer prices are available:</p>
-<div class="codehilite"><pre><span></span><code>demand_side_tax (€/kWh) = original_bid_rate (€/kWh) - forwarded_bid_rate (€/kWh)
+<div class="codehilite"><pre><span></span>demand_side_tax (€/kWh) = original_bid_rate (€/kWh) - forwarded_bid_rate (€/kWh)
 supply_side_tax (€/kWh) = forwarded_offer_rate (€/kWh) - original_offer_rate (€/kWh)
-</code></pre></div>
+</pre></div>
 
 
 <p>For the example, we have the following values: <code>supply_side_tax = 0.13 - 0.10 = 0.03</code>, <code>demand_side_tax = 0.30 - 0.29 = 0.01</code>.</p>
 <p>After calculating the supply and demand side tax, we can calculate the revenue of the trade. Note the original_trade_rate is the amount that the original buyer (in our case the Load) will need to pay, therefore for pay as bid this is the original bid price. The calculation is the following: </p>
-<div class="codehilite"><pre><span></span><code>total_tax (€/kWh) = supply_side_tax (€/kWh) + demand_side_tax (€/kWh)
+<div class="codehilite"><pre><span></span>total_tax (€/kWh) = supply_side_tax (€/kWh) + demand_side_tax (€/kWh)
 revenue_rate (€/kWh) = original_trade_rate (€/kWh) - total_tax (€/kWh)
-</code></pre></div>
+</pre></div>
 
 
 <p>For the example, the revenue will be: <code>revenue = 0.30 - 0.04 = 0.26</code></p>
 <p>Finally, the trade rate is adapted according to the supply side tax, in order to include the fees of the current market: </p>
-<div class="codehilite"><pre><span></span><code>trade_rate (€/kWh) = revenue_rate (€/kWh) + supply_side_tax (€/kWh)
+<div class="codehilite"><pre><span></span>trade_rate (€/kWh) = revenue_rate (€/kWh) + supply_side_tax (€/kWh)
 trade_price (€) = energy (kWh) * trade_rate (€/kWh)
-</code></pre></div>
+</pre></div>
 
 
 <p>For our example, the trade price for each market is:</p>
-<div class="codehilite"><pre><span></span><code>Market_trade_price (€) = (revenue_rate (€/kWh) + supply_side_tax (€/kWh)) * energy (kWh)
+<div class="codehilite"><pre><span></span>Market_trade_price (€) = (revenue_rate (€/kWh) + supply_side_tax (€/kWh)) * energy (kWh)
 
 Grid Market = (0.26 + 0.03)*1 = 0.29,
 Neighborhood 2 Market = (0.26 + 0.01)*1 = 0.27,
 Neighborhood 1 Market = (0.26 + 0.04)*1 = 0.30,
 House 1 Market = (0.26 + 0.04)*1 = 0.30,
 House 2 Market = (0.26 + 0)*1 = 0.26.
-</code></pre></div>
+</pre></div>
 
 
 <p><strong>The Load pays the Trade Price of € 0.30, which includes € 0.26 revenue to the PV, € 0.01 fees to Neighborhood Market 1, € 0.02 fees to Grid Market, and € 0.01 fees to Neighborhood Market 2.</strong></p>

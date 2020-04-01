@@ -1320,26 +1320,26 @@
 <h5 id="install-vagrant-by-navigating-to-httpsvagrantupcom">Install Vagrant by navigating to https://vagrantup.com<a class="headerlink" href="#install-vagrant-by-navigating-to-httpsvagrantupcom" title="Permanent link">&para;</a></h5>
 <p>This is a software wrapper around virtualbox and other supervisors, that allows easy creation, download, and installation of virtual machines.</p>
 <p>After vagrant is installed, run the following commands to download the VM image and install it on your local machine</p>
-<div class="codehilite"><pre><span></span><code>vagrant init spyrostz/d3a --box-version 1
+<div class="codehilite"><pre><span></span>vagrant init spyrostz/d3a --box-version 1
 vagrant up
-</code></pre></div>
+</pre></div>
 
 
 <h5 id="login-to-vagrant-virtual-machine">Login to vagrant Virtual Machine<a class="headerlink" href="#login-to-vagrant-virtual-machine" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span><code>vagrant up
-</code></pre></div>
+<div class="codehilite"><pre><span></span>vagrant up
+</pre></div>
 
 
 <p>Activate the d3a environment used to run simulations in one terminal:</p>
-<div class="codehilite"><pre><span></span><code>source d3a/bin/activate
-</code></pre></div>
+<div class="codehilite"><pre><span></span>source d3a/bin/activate
+</pre></div>
 
 
 <p>Now, if you run <code>d3a run –help</code> , the help of d3a should be shown.</p>
 <h3 id="setting-up-the-api-client-for-custom-trading-strategies-optional">Setting Up the API Client for Custom Trading Strategies (Optional)<a class="headerlink" href="#setting-up-the-api-client-for-custom-trading-strategies-optional" title="Permanent link">&para;</a></h3>
 <p>Open a second terminal and activate the api client if you'd like to experiment with custom trading or grid fee strategies:</p>
-<div class="codehilite"><pre><span></span><code>source api-client/bin/activate
-</code></pre></div>
+<div class="codehilite"><pre><span></span>source api-client/bin/activate
+</pre></div>
 
 
 <p>You may now follow the instructions on the <a href="../api/">API documentation</a> file to get started with custom trading strategies</p>

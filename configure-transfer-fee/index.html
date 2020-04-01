@@ -1180,7 +1180,7 @@
 </ul>
 <p>The formula for the increased trade price is: <code>offer/bid_price * (1 + transfer_fee_pct/100 ) + transfer_fee_const</code></p>
 <p>A percentage transfer fee (in %) and the constant transfer fee (in cents/kWh) can be configured for each area individually in the setup file with the keyword <code>transfer_fee_pct</code> and <code>transfer_fee_const</code>:</p>
-<div class="codehilite"><pre><span></span><code>Area(
+<div class="codehilite"><pre><span></span>Area(
     &#39;House 1&#39;,
     [
         Area(&#39;H1 General Load&#39;, strategy=LoadHoursStrategy(avg_power_W=200,
@@ -1192,7 +1192,7 @@
     ],
     transfer_fee_pct=1, transfer_fee_const=2,
 ),
-</code></pre></div>
+</pre></div>
 
 
 <p>If no <code>transfer_fee_pct</code> or <code>transfer_fee_const</code> is provided, the global values of <code>transfer_fee_pct</code> or <code>transfer_fee_const</code> is used (set via the <code>update_config_parameters</code> function, see <a href="../change-global-sim-settings/">Setting Global Configuration Parameters</a>)
