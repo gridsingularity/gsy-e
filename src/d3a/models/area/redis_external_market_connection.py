@@ -2,6 +2,7 @@ from redis import StrictRedis
 import json
 import d3a
 from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
+from d3a_interface.area_validator import validate_area
 
 
 class RedisMarketExternalConnection:
@@ -50,6 +51,8 @@ class RedisMarketExternalConnection:
     def set_grid_fees_callback(self, payload):
         grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
         payload_data = json.loads(payload["data"])
+        validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
+                      grid_fee_constant=payload_data.get("fee_const", None))
         if "fee_const" in payload_data and payload_data["fee_const"] is not None and \
                 self.area.config.grid_fee_type == 1:
             self.area.transfer_fee_const = payload_data["fee_const"]
@@ -60,7 +63,7 @@ class RedisMarketExternalConnection:
              )
         elif "fee_percent" in payload_data and payload_data["fee_percent"] is not None and \
                 self.area.config.grid_fee_type == 2:
-            self.area.grid_fee_percentage = payload_data["fee_const"]
+            self.area.grid_fee_percentage = payload_data["fee_percent"]
             self.publish_json(grid_fees_response_channel, {
                 "status": "ready", "command": "grid_fees",
                 "market_fee_percent": str(self.area.grid_fee_percentage),
