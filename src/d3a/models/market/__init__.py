@@ -113,11 +113,15 @@ class Market:
             else:
                 self.fee_class = ConstantGridFees(transfer_fees.transfer_fee_const)
         else:
-            self.fee_class = GridFees(
-                transfer_fees.grid_fee_percentage / 100
-                if transfer_fees.grid_fee_percentage is not None
-                else 0
-            )
+            if transfer_fees.grid_fee_percentage is None or \
+                    transfer_fees.grid_fee_percentage <= 0.0:
+                self.fee_class = GridFees(0.0)
+            else:
+                self.fee_class = GridFees(
+                    transfer_fees.grid_fee_percentage / 100
+                    if transfer_fees.grid_fee_percentage is not None
+                    else 0
+                )
 
     @property
     def _is_constant_fees(self):
