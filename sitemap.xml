@@ -261,6 +261,11 @@
      <changefreq>daily</changefreq>
     </url>
     <url>
+     <loc>https://gridsingularity.github.io/d3a/d3a-documentation/version-update/</loc>
+     <lastmod>2020-04-01</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
      <loc>https://gridsingularity.github.io/d3a/d3a-documentation/kpis/</loc>
      <lastmod>2020-04-01</lastmod>
      <changefreq>daily</changefreq>
