@@ -16,7 +16,7 @@ vagrant up
 ##### Login to vagrant Virtual Machine
 
 ```
-vagrant up
+vagrant ssh
 ```
 
 Activate the d3a environment used to run simulations in one terminal:
