@@ -204,10 +204,8 @@ class Simulation:
         For putting the last market into area.past_markets
         """
         area.deactivate()
-
         for child in area.children:
-            if child.children != []:
-                self.deactivate_areas(child)
+            self.deactivate_areas(child)
 
     def run(self, resume=False) -> (Period, duration):
         self.sim_status = "running"

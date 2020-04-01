@@ -62,4 +62,4 @@ git clone https://github.com/gridsingularity/d3a.git
 3. Install dependencies  
     `pip install -e . `
 
-Now, if you run `d3a run`–help` , the help of d3a should be shown.
+Now, if you run `d3a run -–help` , the help of d3a should be shown.
