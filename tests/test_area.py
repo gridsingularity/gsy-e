@@ -54,6 +54,7 @@ class TestAreaClass(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
+        self.config.grid_fee_type = 1
         self.config.end_date = self.config.start_date + self.config.sim_duration
         self.area = Area("test_area", None, None, self.strategy,
                          self.appliance, self.config, None, grid_fee_percentage=1)
@@ -68,9 +69,10 @@ class TestAreaClass(unittest.TestCase):
         ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
 
     def test_respective_area_grid_fee_is_applied(self):
-        ConstSettings.IAASettings.GRID_FEE_TYPE = 2
-        self.area = Area(name="Street", children=[Area(name="House")], grid_fee_percentage=5)
-        self.area.parent = Area(name="GRID")
+        self.config.grid_fee_type = 2
+        self.area = Area(name="Street", children=[Area(name="House")],
+                         grid_fee_percentage=5, config=self.config)
+        self.area.parent = Area(name="GRID", config=self.config)
         self.area.config.market_count = 1
         self.area.activate()
         assert self.area.next_market.fee_class.grid_fee_rate == 0.05
@@ -81,6 +83,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._bc = False
         for i in range(2, 97):
             self.config.market_count = i
+            self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
             self.area._cycle_markets(False, False)
             assert len(self.area.all_markets) == i
 

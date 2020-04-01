@@ -32,7 +32,7 @@ class SimulationConfig:
                  market_count: int, cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE),
-                 max_panel_power_W=None, grid_fee_type=1):
+                 max_panel_power_W=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE):
 
         self.sim_duration = sim_duration
         self.start_date = start_date

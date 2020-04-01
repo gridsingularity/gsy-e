@@ -104,9 +104,12 @@ class Area:
             if external_connection_available is True else None
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
-        if ConstSettings.IAASettings.GRID_FEE_TYPE == 1:
+        grid_fee_type = self.config.grid_fee_type \
+            if self.config is not None \
+            else ConstSettings.IAASettings.GRID_FEE_TYPE
+        if grid_fee_type == 1:
             grid_fee_percentage = None
-        elif ConstSettings.IAASettings.GRID_FEE_TYPE == 2:
+        elif grid_fee_type == 2:
             transfer_fee_const = None
         self.transfer_fee_const = transfer_fee_const
         self.grid_fee_percentage = grid_fee_percentage

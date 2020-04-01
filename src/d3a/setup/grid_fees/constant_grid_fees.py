@@ -23,6 +23,7 @@ from d3a.models.strategy.pv import PVStrategy
 
 
 def get_setup(config):
+    config.grid_fee_type = 1
     area = Area(
         'Grid',
         [
@@ -43,7 +44,7 @@ def get_setup(config):
                 Area(
                     'House 2',
                     [
-                        Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=10,
+                        Area('H2 PV', strategy=PVStrategy(panel_count=10, initial_selling_rate=10,
                                                           final_selling_rate=10),
                              appliance=PVAppliance()),
 

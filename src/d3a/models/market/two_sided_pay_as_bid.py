@@ -27,6 +27,7 @@ from d3a.models.market.market_structures import Bid, Trade, TradeBidInfo
 from d3a.events.event_structures import MarketEvent
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import short_offer_bid_log_str
+from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
 
@@ -34,9 +35,10 @@ log = getLogger(__name__)
 class TwoSidedPayAsBid(OneSidedMarket):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  transfer_fees=None, name=None, in_sim_duration=True):
-        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name,
-                         in_sim_duration=in_sim_duration)
+        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
+                         transfer_fees, name, in_sim_duration=in_sim_duration)
 
     def __repr__(self):  # pragma: no cover
         return "<TwoSidedPayAsBid{} bids: {} (E: {} kWh V:{}) " \

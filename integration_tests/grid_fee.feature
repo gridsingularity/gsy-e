@@ -4,17 +4,17 @@ Feature: GridFee integration tests
      And d3a is installed
      And d3a uses an one-sided market
      And the minimum offer age is <min_offer_age>
-     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, 60, 60, 1]
+     When we run the simulation with setup file grid_fees.non_compounded_grid_fees and parameters [24, <slot_length>, <tick_length>, 1]
      Then trades on the House 1 market clear with 12.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 11.5 cents/kWh and at grid_fee_rate with 0.5 cents/kWh
      Then trades on the Grid market clear with 10.5 cents/kWh and at grid_fee_rate with 1.0 cents/kWh
      Then trades on the Neighborhood 2 market clear with 10.0 cents/kWh and at grid_fee_rate with 0.5 cents/kWh
      Then trades on the House 2 market clear with 10.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
   Examples: Minimum Offer Age
-     | min_offer_age |
-     |       0       |
-     |       5       |
-     |       9       |
+     | min_offer_age | slot_length | tick_length |
+     |       0       |     60      |     60      |
+     |       5       |     60      |     15      |
+     |       9       |     60      |     5       |
 
   Scenario Outline: Grid fees are calculated based on the original bid rate
      Given we have a scenario named grid_fees/non_compounded_grid_fees
@@ -74,17 +74,17 @@ Feature: GridFee integration tests
      And d3a is installed
      And d3a uses an one-sided market
      And the minimum offer age is <min_offer_age>
-     When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, 60, 60, 1]
+     When we run the simulation with setup file grid_fees.constant_grid_fees and parameters [24, <slot_length>, <tick_length>, 1]
      Then trades on the House 1 market clear with 14.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
      Then trades on the Neighborhood 1 market clear with 13.0 cents/kWh and at grid_fee_rate with 1.0 cents/kWh
      Then trades on the Grid market clear with 11.0 cents/kWh and at grid_fee_rate with 2.0 cents/kWh
      Then trades on the Neighborhood 2 market clear with 10.0 cents/kWh and at grid_fee_rate with 1.0 cents/kWh
      Then trades on the House 2 market clear with 10.0 cents/kWh and at grid_fee_rate with 0.0 cents/kWh
   Examples: Minimum Offer Age
-     | min_offer_age |
-     |       0       |
-     |       5       |
-     |       9       |
+     | min_offer_age | slot_length | tick_length |
+     |       0       |     60      |     60      |
+     |       5       |     60      |     15      |
+     |       9       |     60      |     5       |
 
   Scenario Outline: Constant grid fees are calculated correctly on pay as bid market
      Given we have a scenario named grid_fees/constant_grid_fees

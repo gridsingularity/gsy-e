@@ -84,13 +84,13 @@ class ConstantGridFees(BaseClassGridFees):
         bid_rate = bid_rate - self.grid_fee_rate
         return [original_bid_rate, bid_rate, trade_rate_source]
 
-    def propagate_original_offer_info_on_bid_trade(self, trade_original_info):
+    def propagate_original_offer_info_on_bid_trade(self, trade_original_info, ignore_fees=False):
         _, _, original_offer_rate, offer_rate, trade_rate_source = trade_original_info
-        offer_rate = offer_rate + self.grid_fee_rate
+        offer_rate = offer_rate + self.grid_fee_rate if not ignore_fees else offer_rate
         return [original_offer_rate, offer_rate, trade_rate_source]
 
     def calculate_trade_price_and_fees(self, trade_bid_info):
         original_bid_rate, bid_rate, original_offer_rate, \
             offer_rate, trade_rate_source = trade_bid_info
 
-        return trade_rate_source - self.grid_fee_rate, self.grid_fee_rate, trade_rate_source
+        return bid_rate - self.grid_fee_rate, self.grid_fee_rate, bid_rate
