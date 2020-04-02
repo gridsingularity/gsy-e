@@ -28,6 +28,7 @@ ConstSettings.IAASettings.MARKET_TYPE = 2
 
 
 def get_setup(config):
+    print(f"external_redis_communicator: {config.external_redis_communicator}")
     area = Area(
         'Grid',
         [
@@ -51,13 +52,14 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    Area('load', strategy=LoadHoursExternalStrategy(avg_power_W=200,
-                                                                    hrs_per_day=24,
-                                                                    hrs_of_day=list(
-                                                                        range(0, 24)),
-                                                                    final_buying_rate=35),
+                    Area('load', strategy=LoadHoursExternalStrategy(
+                        avg_power_W=200, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                        final_buying_rate=35,
+                        external_redis_communicator=config.external_redis_communicator),
                          appliance=SwitchableAppliance()),
-                    Area('pv', strategy=PVExternalStrategy(panel_count=4),
+                    Area('pv', strategy=PVExternalStrategy(
+                        panel_count=4,
+                        external_redis_communicator=config.external_redis_communicator),
                          appliance=PVAppliance()),
 
                 ],

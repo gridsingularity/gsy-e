@@ -1,7 +1,7 @@
 import logging
 import json
 import d3a.constants
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
+# from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
 
@@ -21,6 +21,7 @@ def check_for_connected_and_reply(redis, channel_name, is_connected):
 
 def register_area(redis, channel_prefix, is_connected, transaction_id):
     register_response_channel = f'{channel_prefix}/response/register_participant'
+    print(f"register_response_channel: {register_response_channel}")
     try:
         redis.publish_json(
             register_response_channel,
@@ -59,10 +60,10 @@ def unregister_area(redis, channel_prefix, is_connected, transaction_id):
 
 
 class ExternalMixin:
-    def __init__(self, *args, **kwargs):
-        self.connected = False
+    def __init__(self, external_redis_communicator, *args, **kwargs):
         self._connected = False
-        self.redis = ResettableCommunicator()
+        self.connected = False
+        self.redis = external_redis_communicator
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
         self.pending_requests = []
@@ -90,6 +91,8 @@ class ExternalMixin:
             raise ValueError("transaction_id not in payload or None")
 
     def _register(self, payload):
+        print(f"payload: {payload}")
+        print(f"channel_prefix: {self.channel_prefix}")
         self._connected = register_area(self.redis, self.channel_prefix, self.connected,
                                         self._get_transaction_id(payload))
 

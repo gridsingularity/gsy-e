@@ -11,12 +11,15 @@ class LoadExternalMixin(ExternalMixin):
     Mixin for enabling an external api for the load strategies.
     Should always be inherited together with a superclass of LoadHoursStrategy.
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, external_redis_communicator, *args, **kwargs):
+        print(f"LOAD: {external_redis_communicator}")
+        super().__init__(external_redis_communicator, *args, **kwargs)
+        print(f"DICT: |{self.__dict__}")
 
     def event_activate(self):
         super().event_activate()
-        self.redis.sub_to_multiple_channels({
+        print(f"load_channel_prefix: {self.channel_prefix}")
+        list_sub = self.redis.sub_to_multiple_channels({
             f'{self.channel_prefix}/register_participant': self._register,
             f'{self.channel_prefix}/unregister_participant': self._unregister,
             f'{self.channel_prefix}/bid': self._bid,
@@ -24,6 +27,7 @@ class LoadExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/list_bids': self._list_bids,
             f'{self.channel_prefix}/device_info': self._device_info,
         })
+        print(f"list_sub: {list_sub}")
 
     def _list_bids(self, payload):
         self._get_transaction_id(payload)

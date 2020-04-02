@@ -11,12 +11,14 @@ class PVExternalMixin(ExternalMixin):
     Mixin for enabling an external api for the PV strategies.
     Should always be inherited together with a superclass of PVStrategy.
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, external_redis_communicator, *args, **kwargs):
+        print(f"PV: {external_redis_communicator}")
+        super().__init__(external_redis_communicator, *args, **kwargs)
 
     def event_activate(self):
         super().event_activate()
-        self.redis.sub_to_multiple_channels({
+        print(f"channel_prefix: {self.channel_prefix}")
+        list_sub = self.redis.sub_to_multiple_channels({
             f'{self.channel_prefix}/register_participant': self._register,
             f'{self.channel_prefix}/unregister_participant': self._unregister,
             f'{self.channel_prefix}/offer': self._offer,
@@ -24,6 +26,7 @@ class PVExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/list_offers': self._list_offers,
             f'{self.channel_prefix}/device_info': self._device_info,
         })
+        print(f"list_sub :{list_sub}")
 
     def _list_offers(self, payload):
         self._get_transaction_id(payload)

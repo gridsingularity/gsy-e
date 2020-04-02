@@ -26,6 +26,7 @@ ConstSettings.IAASettings.MARKET_TYPE = 2
 
 
 def get_setup(config):
+    print(f"external_redis_communicator: {config.external_redis_communicator}")
     area = Area(
         'Grid',
         [
@@ -36,7 +37,8 @@ def get_setup(config):
                         max_panel_power_W=2000, initial_selling_rate=30, final_selling_rate=30.0),
                          appliance=PVAppliance()),
                     Area('storage', strategy=StorageExternalStrategy(
-                        initial_soc=50, battery_capacity_kWh=20),
+                        initial_soc=50, battery_capacity_kWh=20,
+                        external_redis_communicator=config.external_redis_communicator),
                          appliance=SwitchableAppliance()),
                 ],
             ),

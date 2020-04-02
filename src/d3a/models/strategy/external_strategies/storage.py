@@ -10,8 +10,8 @@ class StorageExternalMixin(ExternalMixin):
     Mixin for enabling an external api for the storage strategies.
     Should always be inherited together with a superclass of StorageStrategy.
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, external_redis_communicator, *args, **kwargs):
+        super().__init__(external_redis_communicator, *args, **kwargs)
 
     def event_activate(self):
         super().event_activate()

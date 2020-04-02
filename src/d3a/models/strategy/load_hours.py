@@ -51,6 +51,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
                  use_market_maker_rate: bool = False):
+        print(f"LoadHoursStrategy")
         """
         Constructor of LoadHoursStrategy
         :param avg_power_W: Power rating of load device
@@ -69,6 +70,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         validate_load_device_energy(avg_power_W=avg_power_W, hrs_per_day=hrs_per_day,
                                     hrs_of_day=hrs_of_day)
         self.state = LoadState()
+        print(f"LOADSTATE: {self.state}")
         self.avg_power_W = avg_power_W
 
         # consolidated_cycle is KWh energy consumed for the entire year

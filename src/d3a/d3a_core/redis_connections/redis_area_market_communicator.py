@@ -30,15 +30,15 @@ class RedisCommunicator:
 
     def sub_to_response(self, channel, callback):
         self.pubsub_response.subscribe(**{channel: callback})
-        thread = self.pubsub_response.run_in_thread(daemon=True)
-        log.trace(f"Started thread for responses: {thread}")
-        return thread
+        # thread = self.pubsub_response.run_in_thread(daemon=True)
+        # log.trace(f"Started thread for responses: {thread}")
+        # return thread
 
     def sub_to_channel(self, channel, callback):
         self.pubsub.subscribe(**{channel: callback})
-        thread = self.pubsub.run_in_thread(daemon=True)
-        log.trace(f"Started thread for events: {thread}")
-        return thread
+        # thread = self.pubsub.run_in_thread(daemon=True)
+        # log.trace(f"Started thread for events: {thread}")
+        # return thread
 
 
 class ResettableCommunicator(RedisCommunicator):
@@ -56,20 +56,20 @@ class ResettableCommunicator(RedisCommunicator):
             logging.debug(f"Error when stopping all threads: {e}")
 
     def sub_to_multiple_channels(self, channel_callback_dict):
-        assert self.thread is None, \
-            f"There has to be only one thread per ResettableCommunicator object, " \
-            f" thread {self.thread} already exists."
+        # assert self.thread is None, \
+        #     f"There has to be only one thread per ResettableCommunicator object, " \
+        #     f" thread {self.thread} already exists."
         self.pubsub.subscribe(**channel_callback_dict)
-        thread = self.pubsub.run_in_thread(daemon=True)
-        log.trace(f"Started thread for multiple channels: {thread}")
-        self.thread = thread
+        thread = self.pubsub.run_in_thread(daemon=True)  # noqa
+        # log.trace(f"Started thread for multiple channels: {thread}")
+        # self.thread = thread
 
     def sub_to_response(self, channel, callback):
-        assert self.thread is None, \
-            f"There has to be only one thread per ResettableCommunicator object, " \
-            f" thread {self.thread} already exists."
-        thread = super().sub_to_response(channel, callback)
-        self.thread = thread
+        # assert self.thread is None, \
+        #     f"There has to be only one thread per ResettableCommunicator object, " \
+        #     f" thread {self.thread} already exists."
+        super().sub_to_response(channel, callback)
+        # self.thread = thread
 
     def publish_json(self, channel, data):
         self.publish(channel, json.dumps(data))
