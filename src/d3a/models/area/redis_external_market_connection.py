@@ -2,6 +2,7 @@ from redis import StrictRedis
 import json
 import d3a
 from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
+from d3a_interface.area_validator import validate_area
 
 
 class RedisMarketExternalConnection:
@@ -48,25 +49,45 @@ class RedisMarketExternalConnection:
         self.publish_json(market_stats_response_channel, ret_val)
 
     def set_grid_fees_callback(self, payload):
-        market_stats_response_channel = f"{self.channel_prefix}/response/grid_fees"
+        grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
         payload_data = json.loads(payload["data"])
-        self.area.transfer_fee_const = payload_data["fee"]
-        self.publish_json(market_stats_response_channel, {
-            "status": "ready", "command": "grid_fees",
-            "market_fee_const": str(self.area.transfer_fee_const),
-            "transaction_id": payload_data.get("transaction_id", None)}
-         )
+        validate_area(grid_fee_percentage=payload_data.get("fee_percent", None),
+                      grid_fee_constant=payload_data.get("fee_const", None))
+        if "fee_const" in payload_data and payload_data["fee_const"] is not None and \
+                self.area.config.grid_fee_type == 1:
+            self.area.transfer_fee_const = payload_data["fee_const"]
+            self.publish_json(grid_fees_response_channel, {
+                "status": "ready", "command": "grid_fees",
+                "market_fee_const": str(self.area.transfer_fee_const),
+                "transaction_id": payload_data.get("transaction_id", None)}
+             )
+        elif "fee_percent" in payload_data and payload_data["fee_percent"] is not None and \
+                self.area.config.grid_fee_type == 2:
+            self.area.grid_fee_percentage = payload_data["fee_percent"]
+            self.publish_json(grid_fees_response_channel, {
+                "status": "ready", "command": "grid_fees",
+                "market_fee_percent": str(self.area.grid_fee_percentage),
+                "transaction_id": payload_data.get("transaction_id", None)}
+             )
+        else:
+            self.publish_json(grid_fees_response_channel, {
+                "command": "grid_fees", "status": "error",
+                "error_message": "GridFee parameter conflicting with GlobalConfigFeeType",
+                "transaction_id": payload_data.get("transaction_id", None)}
+             )
 
     def dso_market_stats_callback(self, payload):
-        market_stats_response_channel = f"{self.channel_prefix}/response/dso_market_stats"
+        dso_market_stats_response_channel = f"{self.channel_prefix}/response/dso_market_stats"
         payload_data = json.loads(payload["data"])
         ret_val = {"status": "ready",
                    "command": "dso_market_stats",
                    "market_stats":
                        self.area.stats.get_market_stats(payload_data["market_slots"]),
+                   "fee_type": str(self.area.config.grid_fee_type),
                    "market_fee_const": str(self.area.transfer_fee_const),
+                   "market_fee_percent": str(self.area.grid_fee_percentage),
                    "transaction_id": payload_data.get("transaction_id", None)}
-        self.publish_json(market_stats_response_channel, ret_val)
+        self.publish_json(dso_market_stats_response_channel, ret_val)
 
     def event_market_cycle(self):
         if self.area.current_market is None:
