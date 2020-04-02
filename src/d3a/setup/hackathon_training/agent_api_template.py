@@ -306,6 +306,7 @@ class AutoDeviceStrategy(DeviceClient):
 
 def register_list(device_flag, asset_list, collaboration_id=None,
                   domain=None, websockets_domain=None):
+    device_key_name = "device_id" if device_flag else "area_id"
     if RUN_ON_D3A_WEB:
         asset_list = [
             get_area_uuid_from_area_name_and_collaboration_id(collaboration_id, n, domain_name)
@@ -319,7 +320,6 @@ def register_list(device_flag, asset_list, collaboration_id=None,
             "websockets_domain_name": websockets_domain
         } for a in asset_list]
     else:
-        device_key_name = "device_id" if device_flag else "area_id"
         kwargs_list = [{
             device_key_name: a
         } for a in asset_list]
