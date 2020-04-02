@@ -1187,11 +1187,11 @@
                 
                 <p>There are two fees that can be added to every trade in the grid:</p>
 <ul>
-<li>percentage transfer fee (in %) </li>
 <li>constant transfer fee (in cents/kWh)</li>
+<li>percentage transfer fee (in %) </li>
 </ul>
-<p>The formula for the increased trade price is: <code>offer/bid_price * (1 + transfer_fee_pct/100 ) + transfer_fee_const</code></p>
-<p>A percentage transfer fee (in %) and the constant transfer fee (in cents/kWh) can be configured for each area individually in the setup file with the keyword <code>transfer_fee_pct</code> and <code>transfer_fee_const</code>:</p>
+<p>In a configuration you can either set constant fees or percentage fees. By default D3A use constant fees. If you want to set percentage fees you just have to add <code>ConstSettings.IAASettings.GRID_FEE_TYPE = 2</code> at the top of your file.</p>
+<p>A percentage transfer fee (in %) or a constant transfer fee (in cents/kWh) can be configured for each area individually in the setup file with the keyword <code>grid_fee_percentage</code> and <code>transfer_fee_const</code>:</p>
 <div class="codehilite"><pre><span></span>Area(
     &#39;House 1&#39;,
     [
@@ -1202,12 +1202,12 @@
         Area(&#39;H1 Storage1&#39;, strategy=StorageStrategy(initial_capacity_kWh=0.6),
              appliance=SwitchableAppliance()),
     ],
-    transfer_fee_pct=1, transfer_fee_const=2,
+    grid_fee_percentage=0, transfer_fee_const=2,
 ),
 </pre></div>
 
 
-<p>If no <code>transfer_fee_pct</code> or <code>transfer_fee_const</code> is provided, the global values of <code>transfer_fee_pct</code> or <code>transfer_fee_const</code> is used (set via the <code>update_config_parameters</code> function, see <a href="../change-global-sim-settings/">Setting Global Configuration Parameters</a>)
+<p>If no <code>grid_fee_percentage</code> or <code>transfer_fee_const</code> is provided, the global values of <code>grid_fee_percentage</code> or <code>transfer_fee_const</code> is used (set via the <code>update_config_parameters</code> function, see <a href="../change-global-sim-settings/">Setting Global Configuration Parameters</a>)
 If none of these is set, the <code>const.IAASettings.FEE_PERCENTAGE</code> or <code>const.IAASettings.FEE_CONSTANT</code> values are applied to all areas.</p>
                 
                   
