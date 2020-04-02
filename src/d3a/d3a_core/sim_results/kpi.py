@@ -34,11 +34,10 @@ class KPIState:
         self.total_energy_produced_wh = 0
         self.total_self_consumption_wh = 0
         self.self_consumption_buffer_wh = 0
-        self.accounted_markets = []
+        self.accounted_markets = {}
 
         self._accumulate_devices(area)
 
-    # TODO: D3ASIM-1866 Requirements needed for external strategy classification for KPI
     def _accumulate_devices(self, area):
         for child in area.children:
             if type(child.strategy) in \
@@ -56,7 +55,6 @@ class KPIState:
                 self._accumulate_devices(child)
 
     def _accumulate_total_energy_demanded(self, area):
-        self.total_energy_demanded_wh = 0
         for child in area.children:
             if _is_load_node(child):
                 self.total_energy_demanded_wh += child.strategy.state.total_energy_demanded_wh
@@ -104,10 +102,12 @@ class KPIState:
 
     def _accumulate_energy_trace(self):
         for c_area in self.consumer_area_list:
+            if c_area not in self.accounted_markets:
+                self.accounted_markets[c_area] = []
             for market in c_area.past_markets:
-                if market.time_slot_str in self.accounted_markets:
+                if market.time_slot_str in self.accounted_markets[c_area]:
                     continue
-                self.accounted_markets.append(market.time_slot_str)
+                self.accounted_markets[c_area].append(market.time_slot_str)
                 for trade in market.trades:
                     self._accumulate_self_consumption(trade)
                     self._accumulate_self_production(trade)
@@ -117,6 +117,7 @@ class KPIState:
                     self._dissipate_infinite_consumption(trade)
 
     def update_area_kpi(self, area):
+        self.total_energy_demanded_wh = 0
         self._accumulate_total_energy_demanded(area)
         self._accumulate_energy_trace()
 
