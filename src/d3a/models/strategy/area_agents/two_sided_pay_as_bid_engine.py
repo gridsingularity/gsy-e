@@ -23,6 +23,7 @@ from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
 from d3a.models.market.market_structures import Bid
 from d3a.d3a_core.util import short_offer_bid_log_str
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
@@ -96,7 +97,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
 
             source_rate = bid_info.source_bid.energy_rate
             target_rate = bid_info.target_bid.energy_rate
-            assert source_rate >= target_rate, \
+            assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             trade_rate = (bid_trade.offer.price/bid_trade.offer.energy)
