@@ -279,13 +279,12 @@ def run_sim_console(context, scenario, hours):
 
 
 @when('we run the d3a simulation on console with {scenario} for {hours} hrs '
-      'with default tick/slot length')
-def run_sim_console_decreased_tick_slot_length(context, scenario, hours):
+      '({slot_length}, {tick_length})')
+def run_sim_console_decreased_tick_slot_length(context, scenario, hours, slot_length, tick_length):
     context.export_path = os.path.join(context.simdir, scenario)
     os.makedirs(context.export_path, exist_ok=True)
-    os.system("d3a -l FATAL run -d {hours}h -t 40s -s 40m --setup={scenario} "
-              "--export-path={export_path}"
-              .format(export_path=context.export_path, scenario=scenario, hours=hours))
+    os.system(f"d3a -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
+              f"--seed 0 --setup={scenario} --export-path={context.export_path}")
 
 
 @when('we run the d3a simulation with compare-alt-pricing flag with {scenario}')
