@@ -37,7 +37,7 @@ class KPIState:
 
     def _accumulate_devices(self, area):
         for child in area.children:
-            if _is_producer_node(child):
+            if _is_producer_node(child) and type(child.strategy) is not InfiniteBusStrategy:
                 self.producer_list.append(child.name)
                 self.areas_to_trace_list.append(child.parent)
             elif _is_load_node(child):
