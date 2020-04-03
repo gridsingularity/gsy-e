@@ -20,6 +20,7 @@ from statistics import mean, median
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
+from d3a.d3a_core.util import area_name_from_area_or_iaa_name, add_or_create_key
 
 
 class AreaStats:
@@ -30,6 +31,26 @@ class AreaStats:
         self.aggregated_stats = {}
         self.market_bills = {}
         self.rate_stats_market = {}
+        self.exported_energy = {}
+        self.imported_energy = {}
+
+    def aggregate_exported_imported_energy(self, area_name, is_root_area):
+        if self.current_market is None:
+            return
+        if is_root_area:
+            for trade in self.current_market.trades:
+                add_or_create_key(self.exported_energy, self.current_market.time_slot,
+                                  trade.offer.energy)
+                add_or_create_key(self.imported_energy, self.current_market.time_slot,
+                                  trade.offer.energy)
+        else:
+            for trade in self.current_market.trades:
+                if area_name_from_area_or_iaa_name(trade.seller) == area_name:
+                    add_or_create_key(self.exported_energy, self.current_market.time_slot,
+                                      trade.offer.energy)
+                if area_name_from_area_or_iaa_name(trade.buyer) == area_name:
+                    add_or_create_key(self.imported_energy, self.current_market.time_slot,
+                                      trade.offer.energy)
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats

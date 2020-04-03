@@ -133,6 +133,16 @@ class SimulationEndpointBuffer:
 
         self.update_area_aggregated_stats(area)
 
+        self.update_exported_imported_energy(area, is_root_area=True)
+
+    def update_exported_imported_energy(self, area, is_root_area=False):
+        area.stats.aggregate_exported_imported_energy(area, is_root_area)
+        for child in area.children:
+            self.update_exported_imported_energy(child)
+
+    def populate_peak_energy_percentage(self, area):
+        pass
+
     def _send_results_to_areas(self, area):
         stats = {
             "kpi": self.kpi.performance_indices_redis.get(area.uuid, None)
