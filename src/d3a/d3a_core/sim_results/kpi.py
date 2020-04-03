@@ -76,7 +76,7 @@ class KPIState:
             self.self_consumption_buffer_wh += trade.offer.energy * 1000
 
     def _dissipate_self_consumption_buffer(self, trade):
-        if trade.seller_origin in self.ess_list:
+        if trade.seller_origin in self.ess_list and trade.seller_origin == trade.seller:
             # self_consumption_buffer needs to be exhausted to total_self_consumption
             # if sold to internal consumer
             if trade.buyer_origin in self.consumer_list and self.self_consumption_buffer_wh > 0:
