@@ -8,11 +8,13 @@ from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy
+import d3a.constants
 
 current_dir = os.path.dirname(__file__)
 
 
 def get_setup(config):
+    d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP = False
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
     ConstSettings.IAASettings.MARKET_TYPE = 2
 
