@@ -52,3 +52,9 @@ Feature: KPI integration tests
      And device 'Non Penalty Load' does not report penalties
      And the penalties of the 'Penalty PV' is the sum of the residual available energy
      And the penalty cost of the 'Penalty PV' is respecting the penalty rate
+
+  Scenario: totals_with_penalties are correctly populated in the bills
+     Given we have a scenario named kpi.penalty_pv
+     And d3a is installed
+     When we run the simulation with setup file kpi.penalty_pv and parameters [24, 60, 60, 1]
+     Then totals_with_penalties are correctly populated for all areas in the bills
