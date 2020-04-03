@@ -33,13 +33,13 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
     expected_kpis = ast.literal_eval(expected_kpis)
     for area, value in expected_kpis.items():
         if kpi == "self_sufficiency":
-            assert kpi_data[area]['self_sufficiency'] == float(value)
+            assert isclose(kpi_data[area]['self_sufficiency'], float(value), rel_tol=1e-04)
         elif kpi == "self_consumption":
             if value is None:
                 assert kpi_data[area]['self_consumption'] is None
             else:
-                assert(isclose(kpi_data[area]['self_consumption'],
-                               float(value), rel_tol=1e-04))
+                assert isclose(kpi_data[area]['self_consumption'],
+                               float(value), rel_tol=1e-04)
 
 
 @then("device '{device_name}' reports penalties of {penalty_energy} kWh")

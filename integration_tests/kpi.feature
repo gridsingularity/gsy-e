@@ -18,7 +18,7 @@ Feature: KPI integration tests
      Given we have a scenario named kpi.house_partially_self_sufficient
      And d3a is installed
      When we run the d3a simulation on console with kpi.house_partially_self_sufficient for 24 hrs
-     Then self_sufficiency of {'Grid': 1.0, 'House 1': 0.34925} are correctly reported
+     Then self_sufficiency of {'Grid': 1.0, 'House 1': 0.3644} are correctly reported
      And self_consumption of {'Grid': 1.0, 'House 1': 1.0} are correctly reported
 
   Scenario: House fully self_sufficiency with storage
@@ -58,3 +58,18 @@ Feature: KPI integration tests
      And d3a is installed
      When we run the simulation with setup file kpi.penalty_pv and parameters [24, 60, 60, 1]
      Then totals_with_penalties are correctly populated for all areas in the bills
+
+  Scenario: D3ASIM-2103, self sufficiency reports correct values on levels higher than houses
+     Given we have a scenario named kpi.d3asim_2103
+     And d3a is installed
+     When we run the d3a simulation on console with kpi.d3asim_2103 for 24 hrs
+     Then self_sufficiency of {'Grid': 1.0, 'Community': 1.0, 'House 1': 1.0, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
+     And self_consumption of {'Grid': 1.0, 'Community': 0.8571, 'House 1': 1.0, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
+
+  Scenario: D3ASIM-2103, self sufficiency reports correct values on levels higher than houses with energy deficit
+     Given we have a scenario named kpi.d3asim_2103_nopv1
+     And d3a is installed
+     When we run the d3a simulation on console with kpi.d3asim_2103_nopv1 for 24 hrs
+     Then self_sufficiency of {'Grid': 1.0, 'Community': 0.8333, 'House 1': 0.0, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
+     And self_consumption of {'Grid': 1.0, 'Community': 1.0, 'House 1': None, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
+
