@@ -16,18 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
-from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node
-from d3a.models.strategy.pv import PVStrategy
-from d3a.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
-from d3a.models.strategy.commercial_producer import CommercialStrategy
-from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.d3a_core.sim_results.area_statistics import _is_load_node, _is_prosumer_node, \
+    _is_producer_node
 
 
 class KPIState:
     def __init__(self, area):
         self.producer_list = list()
         self.consumer_list = list()
-        self.consumer_area_list = list()
+        self.areas_to_trace_list = list()
         self.ess_list = list()
         self.buffer_list = list()
         self.total_energy_demanded_wh = 0
@@ -40,13 +37,12 @@ class KPIState:
 
     def _accumulate_devices(self, area):
         for child in area.children:
-            if type(child.strategy) in \
-                    [PVStrategy, PVUserProfileStrategy, PVPredefinedStrategy,
-                     CommercialStrategy, FinitePowerPlant]:
+            if _is_producer_node(child):
                 self.producer_list.append(child.name)
+                self.areas_to_trace_list.append(child.parent)
             elif _is_load_node(child):
                 self.consumer_list.append(child.name)
-                self.consumer_area_list.append(child.parent)
+                self.areas_to_trace_list.append(child.parent)
             elif _is_prosumer_node(child):
                 self.ess_list.append(child.name)
             elif isinstance(child.strategy, InfiniteBusStrategy):
@@ -62,11 +58,17 @@ class KPIState:
                 self._accumulate_total_energy_demanded(child)
 
     def _accumulate_self_production(self, trade):
-        if trade.seller_origin in self.producer_list:
+        # Trade seller origin should be equal to the trade seller in order to
+        # not double count trades in higher hierarchies
+        if trade.seller_origin in self.producer_list and trade.seller_origin == trade.seller:
             self.total_energy_produced_wh += trade.offer.energy * 1000
 
     def _accumulate_self_consumption(self, trade):
-        if trade.seller_origin in self.producer_list and trade.buyer_origin in self.consumer_list:
+        # Trade buyer origin should be equal to the trade buyer in order to
+        # not double count trades in higher hierarchies
+        if trade.seller_origin in self.producer_list and \
+                trade.buyer_origin in self.consumer_list and \
+                trade.buyer_origin == trade.buyer:
             self.total_self_consumption_wh += trade.offer.energy * 1000
 
     def _accumulate_self_consumption_buffer(self, trade):
@@ -101,7 +103,7 @@ class KPIState:
             self.total_self_consumption_wh += trade.offer.energy * 1000
 
     def _accumulate_energy_trace(self):
-        for c_area in self.consumer_area_list:
+        for c_area in self.areas_to_trace_list:
             if c_area not in self.accounted_markets:
                 self.accounted_markets[c_area] = []
             for market in c_area.past_markets:
