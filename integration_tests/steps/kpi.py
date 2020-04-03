@@ -35,9 +35,6 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
         if kpi == "self_sufficiency":
             assert isclose(kpi_data[area]['self_sufficiency'], float(value), rel_tol=1e-04)
         elif kpi == "self_consumption":
-            print(value)
-            print(kpi_data[area]['self_consumption'])
-            print(area)
             if value is None:
                 assert kpi_data[area]['self_consumption'] is None
             else:
