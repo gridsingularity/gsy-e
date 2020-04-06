@@ -592,3 +592,23 @@ class MarketPriceEnergyDay:
                 } for timeslot, trades in trade_rates.items()
             ]
             redis_output[node.uuid] = deepcopy(csv_output[node.name])
+
+
+class BaselinePeakEnergyStats:
+    def __init__(self):
+        self.baseline_peak_percentage_result = {}
+
+    def update_exported_imported_energy(self, area, is_root_area=False):
+        if area.power_restrictions is not None:
+            area.stats.aggregate_exported_imported_energy(area.name, is_root_area)
+            baseline_import = area.power_restrictions["baseline_peak_energy_import_kWh"]
+            baseline_export = area.power_restrictions["baseline_peak_energy_export_kWh"]
+            self.baseline_peak_percentage_result[area.name] = {
+                "import": {k: v/baseline_import if baseline_import > 0 else 0
+                           for k, v in area.stats.imported_energy.items()},
+                "export": {k: v/baseline_export if baseline_export > 0 else 0
+                           for k, v in area.stats.exported_energy.items()}
+            }
+        for child in area.children:
+            if child.strategy is None:
+                self.update_exported_imported_energy(child)

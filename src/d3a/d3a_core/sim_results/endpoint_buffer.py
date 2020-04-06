@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
     export_cumulative_grid_trades_redis, export_cumulative_loads, MarketPriceEnergyDay, \
-    generate_inter_area_trade_details
+    generate_inter_area_trade_details, BaselinePeakEnergyStats
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
@@ -53,6 +53,7 @@ class SimulationEndpointBuffer:
         self.device_statistics = DeviceStatistics()
         self.file_export_endpoints = FileExportEndpoints()
         self.kpi = KPI()
+        self.baseline_peak_stats = BaselinePeakEnergyStats()
 
         self.last_unmatched_loads = {}
 
@@ -66,7 +67,9 @@ class SimulationEndpointBuffer:
             "bills": self.market_bills.bills_redis_results,
             "status": self.status,
             "progress_info": self.simulation_progress,
-            "kpi": self.kpi.performance_indices_redis
+            "kpi": self.kpi.performance_indices_redis,
+            "baseline_peak_percentage":
+                self.baseline_peak_stats.baseline_peak_percentage_result
         }
 
         if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
@@ -99,7 +102,9 @@ class SimulationEndpointBuffer:
             "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
-            "kpi": self.kpi.performance_indices
+            "kpi": self.kpi.performance_indices,
+            "baseline_peak_percentage":
+                self.baseline_peak_stats.baseline_peak_percentage_result
         }
 
     def update_stats(self, area, simulation_status, progress_info):
@@ -133,15 +138,7 @@ class SimulationEndpointBuffer:
 
         self.update_area_aggregated_stats(area)
 
-        self.update_exported_imported_energy(area, is_root_area=True)
-
-    def update_exported_imported_energy(self, area, is_root_area=False):
-        area.stats.aggregate_exported_imported_energy(area, is_root_area)
-        for child in area.children:
-            self.update_exported_imported_energy(child)
-
-    def populate_peak_energy_percentage(self, area):
-        pass
+        self.baseline_peak_stats.update_exported_imported_energy(area, is_root_area=True)
 
     def _send_results_to_areas(self, area):
         stats = {

@@ -39,18 +39,23 @@ class AreaStats:
             return
         if is_root_area:
             for trade in self.current_market.trades:
-                add_or_create_key(self.exported_energy, self.current_market.time_slot,
+                add_or_create_key(self.exported_energy, self.current_market.time_slot_str,
                                   trade.offer.energy)
-                add_or_create_key(self.imported_energy, self.current_market.time_slot,
+                add_or_create_key(self.imported_energy, self.current_market.time_slot_str,
                                   trade.offer.energy)
         else:
             for trade in self.current_market.trades:
                 if area_name_from_area_or_iaa_name(trade.seller) == area_name:
-                    add_or_create_key(self.exported_energy, self.current_market.time_slot,
+                    add_or_create_key(self.exported_energy, self.current_market.time_slot_str,
                                       trade.offer.energy)
                 if area_name_from_area_or_iaa_name(trade.buyer) == area_name:
-                    add_or_create_key(self.imported_energy, self.current_market.time_slot,
+                    add_or_create_key(self.imported_energy, self.current_market.time_slot_str,
                                       trade.offer.energy)
+
+        if self.current_market.time_slot_str not in self.imported_energy:
+            self.imported_energy[self.current_market.time_slot_str] = 0.
+        if self.current_market.time_slot_str not in self.exported_energy:
+            self.exported_energy[self.current_market.time_slot_str] = 0.
 
     def update_aggregated_stats(self, area_stats):
         self.aggregated_stats = area_stats
