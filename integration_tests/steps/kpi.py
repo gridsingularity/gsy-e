@@ -85,3 +85,22 @@ def penalty_rate_respected(context, device_name):
     assert isclose(bills[str(device.uuid)]["penalty_cost"],
                    bills[str(device.uuid)]["penalty_energy"] * DEVICE_PENALTY_RATE / 100.0,
                    rel_tol=0.0003 * DEVICE_PENALTY_RATE)
+
+
+@then('totals_with_penalties are correctly populated for all areas in the bills')
+def totals_with_penalties_bills_test(context):
+    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    expected_grid_totals = sum(bills[house]["totals_with_penalties"]["costs"]
+                               for house in ["House 1", "House 2"])
+    assert isclose(bills["Grid"]["totals_with_penalties"]["costs"], expected_grid_totals)
+
+    for house_name in ["House 1", "House 2"]:
+        house_obj = \
+            list(filter(lambda x: x.name == house_name, context.simulation.area.children))[0]
+        expected_house_totals = \
+            sum(bills[child.name]["totals_with_penalties"] for child in house_obj.children)
+        assert isclose(bills[house_name]["totals_with_penalties"]["costs"], expected_house_totals)
+
+        for child in house_obj.children:
+            assert isclose(bills[child.name]["totals_with_penalties"],
+                           bills[child.name]["total_cost"] + bills[child.name]["penalty_cost"])

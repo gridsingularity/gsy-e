@@ -35,7 +35,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
     get_number_of_unmatched_loads
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
-ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades"]
+ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "totals_with_penalties"]
 
 
 @given('we have a scenario named {scenario}')
@@ -709,6 +709,7 @@ def test_accumulated_energy(context):
     for house_key in ["House 1", "House 2"]:
         house_net = bills[house_key]["Accumulated Trades"]["sold"] - \
                     bills[house_key]["Accumulated Trades"]["bought"]
+
         area_net_energy = \
             sum([v["sold"] - v["bought"] for k, v in bills[house_key].items()
                  if k not in ACCUMULATED_KEYS_LIST])
