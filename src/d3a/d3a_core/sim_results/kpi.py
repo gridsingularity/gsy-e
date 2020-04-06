@@ -76,7 +76,7 @@ class KPIState:
             self.self_consumption_buffer_wh += trade.offer.energy * 1000
 
     def _dissipate_self_consumption_buffer(self, trade):
-        if trade.seller_origin in self.ess_list:
+        if trade.seller_origin in self.ess_list and trade.seller_origin == trade.seller:
             # self_consumption_buffer needs to be exhausted to total_self_consumption
             # if sold to internal consumer
             if trade.buyer_origin in self.consumer_list and self.self_consumption_buffer_wh > 0:
@@ -159,10 +159,24 @@ class KPI:
                                self.state[area.name].total_energy_produced_wh
         return {"self_sufficiency": self_sufficiency, "self_consumption": self_consumption}
 
+    def _kpi_ratio_to_percentage(self, area_name):
+        if self.performance_indices[area_name]["self_sufficiency"] is not None:
+            self_sufficiency_percentage = \
+                self.performance_indices[area_name]["self_sufficiency"] * 100
+        else:
+            self_sufficiency_percentage = 0.0
+        if self.performance_indices[area_name]["self_consumption"] is not None:
+            self_consumption_percentage = \
+                self.performance_indices[area_name]["self_consumption"] * 100
+        else:
+            self_consumption_percentage = 0.0
+        return {"self_sufficiency": self_sufficiency_percentage,
+                "self_consumption": self_consumption_percentage}
+
     def update_kpis_from_area(self, area):
         self.performance_indices[area.name] = \
             self.area_performance_indices(area)
-        self.performance_indices_redis[area.uuid] = self.performance_indices[area.name]
+        self.performance_indices_redis[area.uuid] = self._kpi_ratio_to_percentage(area.name)
 
         for child in area.children:
             if len(child.children) > 0:
