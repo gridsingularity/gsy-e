@@ -68,8 +68,7 @@ class Area:
                  event_list=[],
                  grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
-                 external_connection_available=False,
-                 external_redis_communicator=None):
+                 external_connection_available=False):
         validate_area(grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
@@ -103,7 +102,6 @@ class Area:
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
-        self.external_redis_communicator = external_redis_communicator
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
@@ -150,6 +148,8 @@ class Area:
         self.log.debug('Activating area')
         self.active = True
         self.dispatcher.broadcast_activate()
+        if self.redis_ext_conn is not None:
+            self.redis_ext_conn.sub_to_area_event()
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)
