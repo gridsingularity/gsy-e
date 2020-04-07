@@ -85,6 +85,10 @@ def penalty_rate_respected(context, device_name):
     assert isclose(bills[str(device.uuid)]["penalty_cost"],
                    bills[str(device.uuid)]["penalty_energy"] * DEVICE_PENALTY_RATE / 100.0,
                    rel_tol=0.0003 * DEVICE_PENALTY_RATE)
+    assert isclose(bills[str(house1.uuid)]["Accumulated Trades"]["penalty_cost"],
+                   bills[str(device.uuid)]["penalty_cost"])
+    assert isclose(bills[str(house1.uuid)]["Accumulated Trades"]["penalty_energy"],
+                   bills[str(device.uuid)]["penalty_energy"])
 
 
 @then('totals_with_penalties are correctly populated for all areas in the bills')

@@ -232,6 +232,10 @@ class MarketEnergyBills:
             'sold': sum(v['sold'] for v in all_child_results),
             'spent': sum(v['spent'] for v in all_child_results),
             'earned': sum(v['earned'] for v in all_child_results),
+            'penalty_cost': sum(v['penalty_cost']
+                                for v in all_child_results if 'penalty_cost' in v.keys()),
+            'penalty_energy': sum(v['penalty_energy']
+                                  for v in all_child_results if 'penalty_energy' in v.keys()),
             'total_energy': sum(v['total_energy'] for v in all_child_results),
             'total_cost': sum(v['total_cost'] for v in all_child_results),
             'market_fee': self.market_fees[area.name]
