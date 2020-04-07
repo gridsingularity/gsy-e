@@ -67,7 +67,7 @@ class SimulationEndpointBuffer:
             "bills": self.market_bills.bills_redis_results,
             "status": self.status,
             "progress_info": self.simulation_progress,
-            "kpi": self.kpi.performance_indices_redis,
+            "kpi": self.kpi.performance_indices_redis
         }
 
         if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
@@ -106,7 +106,7 @@ class SimulationEndpointBuffer:
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
             "kpi": self.kpi.performance_indices,
             "baseline_peak_percentage":
-                self.baseline_peak_stats.baseline_peak_percentage_result_redis
+                self.baseline_peak_stats.baseline_peak_percentage_result
         }
 
     def update_stats(self, area, simulation_status, progress_info):
