@@ -68,8 +68,6 @@ class SimulationEndpointBuffer:
             "status": self.status,
             "progress_info": self.simulation_progress,
             "kpi": self.kpi.performance_indices_redis,
-            "baseline_peak_percentage":
-                self.baseline_peak_stats.baseline_peak_percentage_result
         }
 
         if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
@@ -78,13 +76,17 @@ class SimulationEndpointBuffer:
                 "price_energy_day": self.price_energy_day.redis_output,
                 "device_statistics": self.device_statistics.flat_stats_time_str,
                 "energy_trade_profile": self.file_export_endpoints.traded_energy_profile_redis,
+                "baseline_peak_percentage":
+                    self.baseline_peak_stats.baseline_peak_percentage_result_redis
             })
         else:
             redis_results.update({
                 "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
                 "last_energy_trade_profile": self.file_export_endpoints.traded_energy_current,
                 "last_price_energy_day": self.price_energy_day.redis_output,
-                "last_device_statistics": self.device_statistics.current_stats_time_str
+                "last_device_statistics": self.device_statistics.current_stats_time_str,
+                "baseline_peak_percentage":
+                    self.baseline_peak_stats.baseline_peak_percentage_result_redis
             })
 
         return redis_results
@@ -104,7 +106,7 @@ class SimulationEndpointBuffer:
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
             "kpi": self.kpi.performance_indices,
             "baseline_peak_percentage":
-                self.baseline_peak_stats.baseline_peak_percentage_result
+                self.baseline_peak_stats.baseline_peak_percentage_result_redis
         }
 
     def update_stats(self, area, simulation_status, progress_info):
@@ -132,13 +134,13 @@ class SimulationEndpointBuffer:
 
         self.price_energy_day.update(area)
 
-        self.generate_result_report()
-
         self.kpi.update_kpis_from_area(area)
 
-        self.update_area_aggregated_stats(area)
+        self.baseline_peak_stats.update(area)
 
-        self.baseline_peak_stats.update_exported_imported_energy(area, is_root_area=True)
+        self.generate_result_report()
+
+        self.update_area_aggregated_stats(area)
 
     def _send_results_to_areas(self, area):
         stats = {

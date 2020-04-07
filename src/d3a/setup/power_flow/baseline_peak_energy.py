@@ -19,47 +19,51 @@ from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
-from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 
 
 def get_setup(config):
     area = Area(
         'Grid',
-        [
-            Area(
-                'House 1',
-                [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=24,
-                                                                       hrs_of_day=list(
-                                                                           range(0, 24)),
-                                                                       final_buying_rate=35),
-                         appliance=SwitchableAppliance()),
-                ],
-                grid_fee_percentage=0, transfer_fee_const=0,
-                power_restrictions={"baseline_peak_energy_import_kWh": 2}
-            ),
-            Area(
-                'House 2',
-                [
-                    Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
-                                                      final_selling_rate=5),
-                         appliance=PVAppliance()),
+        [Area('Neighborhood 1',
+              [
+                Area(
+                    'House 1',
+                    [
+                        Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                                                                           hrs_per_day=24,
+                                                                           hrs_of_day=list(
+                                                                               range(0, 24)),
+                                                                           final_buying_rate=35),
+                             appliance=SwitchableAppliance()),
+                    ],
+                    grid_fee_percentage=0, transfer_fee_const=0,
+                    baseline_energy_settings={"baseline_peak_energy_import_kWh": 0.4}
+                ),
+                ], baseline_energy_settings={"baseline_peak_energy_import_kWh": 0.4}
+              ),
+            Area('Neighborhood 2',
+                 [
+                    Area(
+                        'House 2',
+                        [
+                            Area('H2 Diesel Generator',
+                                 strategy=FinitePowerPlant(max_available_power_kW=300,
+                                                           energy_rate=20),
+                                 appliance=PVAppliance()),
+                        ],
+                        grid_fee_percentage=0, transfer_fee_const=0,
+                        baseline_energy_settings={"baseline_peak_energy_export_kWh": 0.3}
 
-                ],
-                grid_fee_percentage=0, transfer_fee_const=0,
-                power_restrictions={"baseline_peak_energy_import_kWh": 2,
-                                    "baseline_peak_energy_export_kWh": 2}
-
-            ),
+                    ),
+                    ], baseline_energy_settings={"baseline_peak_energy_export_kWh": 0.3}
+                 ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,
                                                                    hrs_of_day=list(range(0, 24)),
                                                                    final_buying_rate=35),
                  appliance=SwitchableAppliance()),
-
-
-        ],
+         ],
         config=config
     )
     return area

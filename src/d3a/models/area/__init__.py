@@ -72,15 +72,15 @@ class Area:
                  grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
                  external_connection_available: bool = False,
-                 power_restrictions=None):
+                 baseline_energy_settings=None):
         validate_area(grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
-        self.power_restrictions = power_restrictions
-        self.validate_power_restrictions()
+        self.baseline_energy_settings = baseline_energy_settings
+        self.validate_baseline_energy_settings()
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
@@ -109,30 +109,22 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
 
-    def validate_power_restrictions(self):
-        # TODO: Please move this validation to the d3a-interface
-        if self.power_restrictions is None:
+    def validate_baseline_energy_settings(self):
+        if self.baseline_energy_settings is None:
             return
-        if not isinstance(self.power_restrictions, dict):
-            raise ValueError(f"power_restrictions parameter should be a dictionary ({self.name})")
-        if any(key not in BaselineSettingsDefault.keys() for key in self.power_restrictions):
-            raise ValueError(f"unsupported member in provided power_restrictions ({self.name})")
-        if any(v < 0 for v in self.power_restrictions.values()):
-            raise ValueError(f"power_restrictions members should have values >= 0 ({self.name})")
+        if not isinstance(self.baseline_energy_settings, dict):
+            raise ValueError(f"baseline_energy_settings parameter "
+                             f"should be a dictionary ({self.name})")
+        if any(key not in BaselineSettingsDefault.keys() for key in self.baseline_energy_settings):
+            raise ValueError(f"unsupported member in provided "
+                             f"baseline_energy_settings ({self.name})")
+        if any(v < 0 for v in self.baseline_energy_settings.values()):
+            raise ValueError(f"baseline_energy_settings "
+                             f"members should have values >= 0 ({self.name})")
 
-        self.power_restrictions = \
-            {k: v if k not in self.power_restrictions else self.power_restrictions[k]
+        self.baseline_energy_settings = \
+            {k: v if k not in self.baseline_energy_settings else self.baseline_energy_settings[k]
              for k, v in BaselineSettingsDefault.items()}
-
-        # if self.power_restrictions is {}:
-        #     raise ValueError(f"Please provide at least one of "
-        #                      f"{list(BaselineSettingsDefault.keys())} for area ({self.name})")
-        # if ("baseline_peak_energy_import_kWh" in self.power_restrictions and
-        #     "baseline_peak_energy_export_kWh" not in self.power_restrictions) or \
-        #         ("baseline_peak_energy_export_kWh" in self.power_restrictions and
-        #          "baseline_peak_energy_import_kWh" not in self.power_restrictions):
-        #     raise ValueError("Both baseline_peak_energy_import_kWh and "
-        #                      "baseline_peak_energy_import_kWh have to be provided")
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
