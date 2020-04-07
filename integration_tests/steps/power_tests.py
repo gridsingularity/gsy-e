@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import glob
 from behave import then
-from math import isclose
 
 
 @then('the export functionality of power flow result')
@@ -31,22 +30,16 @@ def test_export_of_power_flow_result(context):
 
 @then('BaselinePeakEnergyStats are correctly calculated')
 def test_baseline_peak_energy_stats(context):
-    baseline_peak_stats = \
-        context.simulation.endpoint_buffer.baseline_peak_stats.baseline_peak_percentage_result
-    assert set(baseline_peak_stats.keys()) == \
-        {"House 1", "House 2", "Neighborhood 1", "Neighborhood 2"}
-    assert set(baseline_peak_stats["House 1"].keys()) == {"import"}
-    assert set(baseline_peak_stats["Neighborhood 1"].keys()) == {"import"}
-    assert set(baseline_peak_stats["House 2"].keys()) == {"export"}
-    assert set(baseline_peak_stats["Neighborhood 2"].keys()) == {"export"}
+    area_throughput_stats = \
+        context.simulation.endpoint_buffer.area_throughput_stats.results
 
-    house1_branch_percentage = 0.5
-    house2_branch_percentage = 1
-    assert all(isclose(percentage, house1_branch_percentage)
-               for percentage in baseline_peak_stats["House 1"]["import"].values())
-    assert all(isclose(percentage, house1_branch_percentage)
-               for percentage in baseline_peak_stats["Neighborhood 1"]["import"].values())
-    assert all(isclose(percentage, house2_branch_percentage)
-               for percentage in baseline_peak_stats["House 2"]["export"].values())
-    assert all(isclose(percentage, house2_branch_percentage)
-               for percentage in baseline_peak_stats["Neighborhood 2"]["export"].values())
+    expected_results = {'Neighborhood 1': {'import': {'peak_energy_kWh': 0.4,
+                                                      'peak_percentage': 100.0}},
+                        'House 1': {'import': {'peak_energy_kWh': 0.4,
+                                               'peak_percentage': 100.0}},
+                        'Neighborhood 2': {'export': {'peak_energy_kWh': 0.6,
+                                                      'peak_percentage': 200.0}},
+                        'House 2': {'export': {'peak_energy_kWh': 0.6,
+                                               'peak_percentage': 200.0}}}
+
+    assert expected_results == area_throughput_stats

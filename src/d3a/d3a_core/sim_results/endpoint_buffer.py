@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
     export_cumulative_grid_trades_redis, export_cumulative_loads, MarketPriceEnergyDay, \
-    generate_inter_area_trade_details, BaselinePeakEnergyStats
+    generate_inter_area_trade_details, AreaThroughputStats
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
@@ -53,7 +53,7 @@ class SimulationEndpointBuffer:
         self.device_statistics = DeviceStatistics()
         self.file_export_endpoints = FileExportEndpoints()
         self.kpi = KPI()
-        self.baseline_peak_stats = BaselinePeakEnergyStats()
+        self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
 
@@ -77,7 +77,7 @@ class SimulationEndpointBuffer:
                 "device_statistics": self.device_statistics.flat_stats_time_str,
                 "energy_trade_profile": self.file_export_endpoints.traded_energy_profile_redis,
                 "baseline_peak_percentage":
-                    self.baseline_peak_stats.baseline_peak_percentage_result_redis
+                    self.area_throughput_stats.results_redis
             })
         else:
             redis_results.update({
@@ -86,7 +86,7 @@ class SimulationEndpointBuffer:
                 "last_price_energy_day": self.price_energy_day.redis_output,
                 "last_device_statistics": self.device_statistics.current_stats_time_str,
                 "baseline_peak_percentage":
-                    self.baseline_peak_stats.baseline_peak_percentage_result_redis
+                    self.area_throughput_stats.results_redis
             })
 
         return redis_results
@@ -106,7 +106,7 @@ class SimulationEndpointBuffer:
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
             "kpi": self.kpi.performance_indices,
             "baseline_peak_percentage":
-                self.baseline_peak_stats.baseline_peak_percentage_result
+                self.area_throughput_stats.results
         }
 
     def update_stats(self, area, simulation_status, progress_info):
@@ -136,7 +136,7 @@ class SimulationEndpointBuffer:
 
         self.kpi.update_kpis_from_area(area)
 
-        self.baseline_peak_stats.update(area)
+        self.area_throughput_stats.update(area)
 
         self.generate_result_report()
 

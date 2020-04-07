@@ -593,39 +593,56 @@ class MarketPriceEnergyDay:
             redis_output[node.uuid] = deepcopy(csv_output[node.name])
 
 
-class BaselinePeakEnergyStats:
+class AreaThroughputStats:
     def __init__(self):
-        self.baseline_peak_percentage_result = {}
-        self.baseline_peak_percentage_result_redis = {}
+        self.results = {}
+        self.results_redis = {}
+        self.exported_energy = {}
+        self.imported_energy = {}
 
     def update(self, area):
-        self.update_exported_imported_energy(area)
-        self.results_to_redis(area)
+        self.update_results(area)
 
-    def update_exported_imported_energy(self, area):
+    def _calc_results(self, area, baseline_value, energy_profile, direction_key):
+        if len(energy_profile.keys()) > 0:
+            # as this is mainly a frontend feature,
+            # the numbers are rounded for both local and redis results
+            out_dict = {direction_key: {
+                "peak_energy_kWh": round_floats_for_ui(max(energy_profile.values())),
+                "peak_percentage": round_floats_for_ui(max(energy_profile.values()) /
+                                                       baseline_value * 100)
+                                     }}
+            create_subdict_or_update(self.results, area.name, out_dict)
+            create_subdict_or_update(self.results_redis, area.uuid, out_dict)
+
+    def update_results(self, area):
         if area.baseline_energy_settings is not None:
-            area.stats.aggregate_exported_imported_energy(area)
+            self.aggregate_exported_imported_energy(area)
             baseline_import = area.baseline_energy_settings["baseline_peak_energy_import_kWh"]
             baseline_export = area.baseline_energy_settings["baseline_peak_energy_export_kWh"]
             if baseline_import > 0:
-                create_subdict_or_update(self.baseline_peak_percentage_result, area.name,
-                                         {"import": {k: v/baseline_import
-                                          for k, v in area.stats.imported_energy.items()}})
+                self._calc_results(area, baseline_import, self.imported_energy, "import")
             if baseline_export > 0:
-                create_subdict_or_update(self.baseline_peak_percentage_result, area.name,
-                                         {"export": {k: v/baseline_export
-                                          for k, v in area.stats.exported_energy.items()}})
+                self._calc_results(area, baseline_export, self.exported_energy, "export")
         for child in area.children:
             if child.strategy is None:
-                self.update_exported_imported_energy(child)
+                self.update_results(child)
 
-    def results_to_redis(self, area):
-        if area.name in self.baseline_peak_percentage_result:
-            rounded_result = {}
-            for key in self.baseline_peak_percentage_result[area.name].keys():
-                rounded_result[key] = \
-                    {k: round_floats_for_ui(v)
-                     for k, v in self.baseline_peak_percentage_result[area.name][key].items()}
-            self.baseline_peak_percentage_result_redis[area.uuid] = rounded_result
-        for child in area.children:
-            self.results_to_redis(child)
+    def aggregate_exported_imported_energy(self, area):
+        past_markets = list(area._markets.past_markets.values())
+        if len(past_markets) > 0:
+            current_market = past_markets[-1]
+        else:
+            return
+        child_names = [area_name_from_area_or_iaa_name(c.name) for c in area.children]
+        for trade in current_market.trades:
+            if child_buys_from_area(trade, area.name, child_names):
+                add_or_create_key(self.exported_energy, current_market.time_slot_str,
+                                  trade.offer.energy)
+            if area_sells_to_child(trade, area.name, child_names):
+                add_or_create_key(self.imported_energy, current_market.time_slot_str,
+                                  trade.offer.energy)
+        if current_market.time_slot_str not in self.imported_energy:
+            self.imported_energy[current_market.time_slot_str] = 0.
+        if current_market.time_slot_str not in self.exported_energy:
+            self.exported_energy[current_market.time_slot_str] = 0.

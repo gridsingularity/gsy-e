@@ -72,7 +72,7 @@ class Area:
                  grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
                  external_connection_available: bool = False,
-                 baseline_energy_settings=None):
+                 baseline_energy_settings: BaselineSettingsDefault = None):
         validate_area(grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
