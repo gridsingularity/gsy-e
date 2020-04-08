@@ -67,11 +67,12 @@ class MarketEnergyBills:
     @classmethod
     def _store_bought_trade(cls, result_dict, trade):
         # Division by 100 to convert cents to Euros
+        fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
         result_dict['bought'] += trade.offer.energy
-        result_dict['spent'] += trade.offer.price / 100.
+        result_dict['spent'] += trade.offer.price / 100. - fee_price
         result_dict['total_energy'] += trade.offer.energy
         result_dict['total_cost'] += trade.offer.price / 100.
-        result_dict['market_fee'] += trade.fee_price / 100. if trade.fee_price is not None else 0.
+        result_dict['market_fee'] += fee_price
 
     @classmethod
     def _store_sold_trade(cls, result_dict, trade):
@@ -245,14 +246,14 @@ class MarketEnergyBills:
             # External trades are the trades of the parent area
             external = flattened[area.name].copy()
             # Should not include market fee to the external trades
-            market_fee = external.pop("market_fee", None)
+            market_fee = external.pop("market_fee", 0.)
             # Should switch spent/earned and bought/sold, to match the perspective of the UI
-            spent = external.pop("spent")
+            spent = external.pop("spent") + market_fee
             earned = external.pop("earned")
             bought = external.pop("bought")
             sold = external.pop("sold")
             external.update(**{"spent": earned, "earned": spent, "bought": sold,
-                               "sold": bought, "market_fee": market_fee})
+                               "sold": bought, "market_fee": 0.})
             external["total_energy"] = external["bought"] - external["sold"]
             external["total_cost"] = external["spent"] - external["earned"]
             results[area.name].update({"External Trades": external})
