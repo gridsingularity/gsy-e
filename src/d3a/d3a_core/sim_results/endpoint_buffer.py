@@ -76,8 +76,7 @@ class SimulationEndpointBuffer:
                 "price_energy_day": self.price_energy_day.redis_output,
                 "device_statistics": self.device_statistics.flat_stats_time_str,
                 "energy_trade_profile": self.file_export_endpoints.traded_energy_profile_redis,
-                "baseline_peak_percentage":
-                    self.area_throughput_stats.results_redis
+                "baseline_peak_energy": self.area_throughput_stats.results_redis
             })
         else:
             redis_results.update({
@@ -85,8 +84,7 @@ class SimulationEndpointBuffer:
                 "last_energy_trade_profile": self.file_export_endpoints.traded_energy_current,
                 "last_price_energy_day": self.price_energy_day.redis_output,
                 "last_device_statistics": self.device_statistics.current_stats_time_str,
-                "baseline_peak_percentage":
-                    self.area_throughput_stats.results_redis
+                "baseline_peak_energy": self.area_throughput_stats.results_redis
             })
 
         return redis_results
@@ -105,8 +103,7 @@ class SimulationEndpointBuffer:
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
             "kpi": self.kpi.performance_indices,
-            "baseline_peak_percentage":
-                self.area_throughput_stats.results
+            "baseline_peak_energy": self.area_throughput_stats.results
         }
 
     def update_stats(self, area, simulation_status, progress_info):

@@ -55,9 +55,6 @@ DEFAULT_CONFIG = SimulationConfig(
     max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
 )
 
-BaselineSettingsDefault = {"baseline_peak_energy_import_kWh": 0,
-                           "baseline_peak_energy_export_kWh": 0}
-
 
 class Area:
 
@@ -72,15 +69,17 @@ class Area:
                  grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
                  external_connection_available: bool = False,
-                 baseline_energy_settings: BaselineSettingsDefault = None):
+                 baseline_peak_energy_import_kWh: float = None,
+                 baseline_peak_energy_export_kWh: float = None
+                 ):
         validate_area(grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
-        self.baseline_energy_settings = baseline_energy_settings
-        self.validate_baseline_energy_settings()
+        self.baseline_peak_energy_import_kWh = baseline_peak_energy_import_kWh
+        self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
@@ -108,23 +107,6 @@ class Area:
         log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
-
-    def validate_baseline_energy_settings(self):
-        if self.baseline_energy_settings is None:
-            return
-        if not isinstance(self.baseline_energy_settings, dict):
-            raise ValueError(f"baseline_energy_settings parameter "
-                             f"should be a dictionary ({self.name})")
-        if any(key not in BaselineSettingsDefault.keys() for key in self.baseline_energy_settings):
-            raise ValueError(f"unsupported member in provided "
-                             f"baseline_energy_settings ({self.name})")
-        if any(v < 0 for v in self.baseline_energy_settings.values()):
-            raise ValueError(f"baseline_energy_settings "
-                             f"members should have values >= 0 ({self.name})")
-
-        self.baseline_energy_settings = \
-            {k: v if k not in self.baseline_energy_settings else self.baseline_energy_settings[k]
-             for k, v in BaselineSettingsDefault.items()}
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \

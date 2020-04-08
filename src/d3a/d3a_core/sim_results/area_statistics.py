@@ -616,13 +616,14 @@ class AreaThroughputStats:
             create_subdict_or_update(self.results_redis, area.uuid, out_dict)
 
     def update_results(self, area):
-        if area.baseline_energy_settings is not None:
+        baseline_import = area.baseline_peak_energy_import_kWh
+        baseline_export = area.baseline_peak_energy_export_kWh
+        if (baseline_import is not None and baseline_import > 0) or \
+                (baseline_export is not None and baseline_export > 0):
             self.aggregate_exported_imported_energy(area)
-            baseline_import = area.baseline_energy_settings["baseline_peak_energy_import_kWh"]
-            baseline_export = area.baseline_energy_settings["baseline_peak_energy_export_kWh"]
-            if baseline_import > 0:
+            if baseline_import is not None and baseline_import > 0:
                 self._calc_results(area, baseline_import, self.imported_energy, "import")
-            if baseline_export > 0:
+            if baseline_export is not None and baseline_export > 0:
                 self._calc_results(area, baseline_export, self.exported_energy, "export")
         for child in area.children:
             if child.strategy is None:
