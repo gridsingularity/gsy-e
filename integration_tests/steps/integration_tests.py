@@ -35,7 +35,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
     get_number_of_unmatched_loads
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
-ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades"]
+ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "totals_with_penalties"]
 
 
 @given('we have a scenario named {scenario}')
@@ -276,6 +276,15 @@ def run_sim_console(context, scenario, hours):
     os.system("d3a -l FATAL run -d {hours}h -t 60s -s 60m --setup={scenario} "
               "--export-path={export_path}"
               .format(export_path=context.export_path, scenario=scenario, hours=hours))
+
+
+@when('we run the d3a simulation on console with {scenario} for {hours} hrs '
+      '({slot_length}, {tick_length})')
+def run_sim_console_decreased_tick_slot_length(context, scenario, hours, slot_length, tick_length):
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
+    os.system(f"d3a -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
+              f"--seed 0 --setup={scenario} --export-path={context.export_path}")
 
 
 @when('we run the d3a simulation with compare-alt-pricing flag with {scenario}')
@@ -700,6 +709,7 @@ def test_accumulated_energy(context):
     for house_key in ["House 1", "House 2"]:
         house_net = bills[house_key]["Accumulated Trades"]["sold"] - \
                     bills[house_key]["Accumulated Trades"]["bought"]
+
         area_net_energy = \
             sum([v["sold"] - v["bought"] for k, v in bills[house_key].items()
                  if k not in ACCUMULATED_KEYS_LIST])
