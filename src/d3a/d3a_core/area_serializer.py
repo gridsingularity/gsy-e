@@ -132,6 +132,8 @@ def area_from_dict(description, config=None):
         name = description['name']
         uuid = description.get('uuid', None)
         external_connection_available = description.get('allow_external_connection', False)
+        baseline_peak_energy_import_kWh = description.get('baseline_peak_energy_import_kWh', None)
+        baseline_peak_energy_export_kWh = description.get('baseline_peak_energy_export_kWh', None)
         if 'children' in description:
             children = [area_from_dict(child) for child in description['children']]
         else:
@@ -141,7 +143,9 @@ def area_from_dict(description, config=None):
         area = Area(name, children, uuid, optional('strategy'), optional('appliance'), config,
                     optional('budget_keeper'), grid_fee_percentage=grid_fee_percentage,
                     transfer_fee_const=grid_fee_constant,
-                    external_connection_available=external_connection_available)
+                    external_connection_available=external_connection_available,
+                    baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                    baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh)
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area

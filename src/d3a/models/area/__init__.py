@@ -68,13 +68,18 @@ class Area:
                  event_list=[],
                  grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
-                 external_connection_available=False):
+                 external_connection_available: bool = False,
+                 baseline_peak_energy_import_kWh: float = None,
+                 baseline_peak_energy_export_kWh: float = None
+                 ):
         validate_area(grid_fee_percentage=grid_fee_percentage)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
+        self.baseline_peak_energy_import_kWh = baseline_peak_energy_import_kWh
+        self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
