@@ -133,6 +133,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.energy_requirement_Wh[market.time_slot] = 0.0
                 self.state.desired_energy_Wh[market.time_slot] = 0.0
         self.event_market_cycle_prices()
+        if self.area.current_market:
+            self.state.total_energy_demanded_wh = sum(
+                e for t, e in self.state.desired_energy_Wh.items()
+                if t <= self.area.current_market.time_slot)
+        else:
+            self.state.total_energy_demanded_wh = 0.0
 
     def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None,
                                hrs_of_day=None, final_buying_rate=None):
@@ -310,8 +316,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                                                          self.owner.name)
 
     def event_activate_energy(self):
-        self.state.total_energy_demanded_wh = \
-            self._initial_hrs_per_day * self.avg_power_W * self.area.config.sim_duration.days
         self.hrs_per_day = {day: self._initial_hrs_per_day
                             for day in range(self.area.config.sim_duration.days + 1)}
         self._simulation_start_timestamp = self.area.now
