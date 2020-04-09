@@ -40,7 +40,7 @@ def get_setup(config):
                     grid_fee_percentage=0, transfer_fee_const=0,
                     baseline_peak_energy_import_kWh=0.4
                 ),
-                ], baseline_peak_energy_import_kWh=0.4
+                ], baseline_peak_energy_import_kWh=0.4, import_capacity_kVA=2.0
               ),
             Area('Neighborhood 2',
                  [
@@ -56,7 +56,7 @@ def get_setup(config):
                         baseline_peak_energy_export_kWh=0.3
 
                     ),
-                    ], baseline_peak_energy_export_kWh=0.3
+                    ], baseline_peak_energy_export_kWh=0.3, export_capacity_kVA=2.0
                  ),
             Area('Global Load', strategy=LoadHoursStrategy(avg_power_W=100,
                                                            hrs_per_day=24,
