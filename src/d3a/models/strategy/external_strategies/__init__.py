@@ -1,7 +1,23 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 import logging
 import json
 import d3a.constants
-from d3a.d3a_core.redis_connections.redis_area_market_communicator import ResettableCommunicator
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
 
@@ -60,9 +76,8 @@ def unregister_area(redis, channel_prefix, is_connected, transaction_id):
 
 class ExternalMixin:
     def __init__(self, *args, **kwargs):
-        self.connected = False
         self._connected = False
-        self.redis = ResettableCommunicator()
+        self.connected = False
         super().__init__(*args, **kwargs)
         self._last_dispatched_tick = 0
         self.pending_requests = []
@@ -136,6 +151,10 @@ class ExternalMixin:
     @property
     def device(self):
         return self.owner
+
+    @property
+    def redis(self):
+        return self.owner.config.external_redis_communicator
 
     @property
     def _device_info_dict(self):

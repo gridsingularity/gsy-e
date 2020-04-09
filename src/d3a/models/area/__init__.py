@@ -153,6 +153,8 @@ class Area:
         self.log.debug('Activating area')
         self.active = True
         self.dispatcher.broadcast_activate()
+        if self.redis_ext_conn is not None:
+            self.redis_ext_conn.sub_to_area_event()
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)
