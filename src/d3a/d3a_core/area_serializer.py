@@ -134,6 +134,8 @@ def area_from_dict(description, config=None):
         external_connection_available = description.get('allow_external_connection', False)
         baseline_peak_energy_import_kWh = description.get('baseline_peak_energy_import_kWh', None)
         baseline_peak_energy_export_kWh = description.get('baseline_peak_energy_export_kWh', None)
+        import_capacity_kVA = description.get('import_capacity_kVA', None)
+        export_capacity_kVA = description.get('export_capacity_kVA', None)
         if 'children' in description:
             children = [area_from_dict(child) for child in description['children']]
         else:
@@ -145,7 +147,9 @@ def area_from_dict(description, config=None):
                     transfer_fee_const=grid_fee_constant,
                     external_connection_available=external_connection_available,
                     baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                    baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh)
+                    baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                    import_capacity_kVA=import_capacity_kVA,
+                    export_capacity_kVA=export_capacity_kVA)
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area
