@@ -107,6 +107,8 @@ class CommonResettableCommunicator(ResettableCommunicator):
         super().sub_to_response(channel, callback)
 
     def start_communication(self):
+        if not self.pubsub.channels:
+            return
         thread = self.pubsub.run_in_thread(daemon=True)
         log.trace(f"Started thread for multiple channels: {thread}")
         self.thread = thread
