@@ -103,9 +103,6 @@ class CommonResettableCommunicator(ResettableCommunicator):
     def sub_to_multiple_channels(self, channel_callback_dict):
         self.pubsub.subscribe(**channel_callback_dict)
 
-    def sub_to_response(self, channel, callback):
-        super().sub_to_response(channel, callback)
-
     def start_communication(self):
         if not self.pubsub.channels:
             return
