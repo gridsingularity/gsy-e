@@ -257,6 +257,14 @@ class MarketEnergyBills:
             external["total_energy"] = external["bought"] - external["sold"]
             external["total_cost"] = external["spent"] - external["earned"]
             results[area.name].update({"External Trades": external})
+            results[area.name]["Accumulated Trades"]["bought"] += external["bought"]
+            results[area.name]["Accumulated Trades"]["sold"] += external["sold"]
+            results[area.name]["Accumulated Trades"]["spent"] += external["spent"]
+            results[area.name]["Accumulated Trades"]["earned"] += \
+                external["earned"] + results[area.name]["Accumulated Trades"]["market_fee"]
+            results[area.name]["Accumulated Trades"]["total_energy"] += external["total_energy"]
+            results[area.name]["Accumulated Trades"]["total_cost"] += \
+                external["total_cost"] - results[area.name]["Accumulated Trades"]["market_fee"]
         return results
 
     def _bills_for_redis(self, area, bills_results):
