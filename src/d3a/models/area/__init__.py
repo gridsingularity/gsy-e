@@ -74,7 +74,11 @@ class Area:
                  import_capacity_kVA: float = None,
                  export_capacity_kVA: float = None
                  ):
-        validate_area(grid_fee_percentage=grid_fee_percentage)
+        validate_area(grid_fee_percentage=grid_fee_percentage,
+                      baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                      baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                      import_capacity_kVA=import_capacity_kVA,
+                      export_capacity_kVA=export_capacity_kVA)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
