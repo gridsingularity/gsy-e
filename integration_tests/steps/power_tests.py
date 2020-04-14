@@ -35,19 +35,19 @@ def test_baseline_peak_energy_stats(context):
 
     expected_results = {'Neighborhood 1': {'import': {'peak_energy_kWh': 0.4,
                                                       'peak_percentage': 100.0,
-                                                      'capacity_kwh': 2.0,
+                                                      'capacity_kWh': 2.0,
                                                       'baseline_peak_energy_kWh': 0.4}},
                         'House 1': {'import': {'peak_energy_kWh': 0.4,
                                                'peak_percentage': 100.0,
-                                               'capacity_kwh': 0.0,
+                                               'capacity_kWh': 0.0,
                                                'baseline_peak_energy_kWh': 0.4}},
                         'Neighborhood 2': {'export': {'peak_energy_kWh': 0.6,
                                                       'peak_percentage': 200.0,
-                                                      'capacity_kwh': 2.0,
+                                                      'capacity_kWh': 2.0,
                                                       'baseline_peak_energy_kWh': 0.3}},
                         'House 2': {'export': {'peak_energy_kWh': 0.6,
                                                'peak_percentage': 200.0,
-                                               'capacity_kwh': 0.0,
+                                               'capacity_kWh': 0.0,
                                                'baseline_peak_energy_kWh': 0.3}}}
 
     assert expected_results == area_throughput_stats

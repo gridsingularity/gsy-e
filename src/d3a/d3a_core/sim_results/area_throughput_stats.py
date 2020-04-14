@@ -36,15 +36,15 @@ class AreaThroughputStats:
             round_floats_for_ui(max(energy_profile.values(), default=0.0) / baseline_value * 100)
         peak_energy_kWh = round_floats_for_ui(max(energy_profile.values(), default=0.0))
         if direction_key == "import":
-            capacity_kwh = round_floats_for_ui(area.import_capacity_kwh)
+            capacity_kWh = round_floats_for_ui(area.import_capacity_kWh)
             baseline_peak_energy_kWh = round_floats_for_ui(area.baseline_peak_energy_import_kWh)
         else:
-            capacity_kwh = round_floats_for_ui(area.export_capacity_kwh)
+            capacity_kWh = round_floats_for_ui(area.export_capacity_kWh)
             baseline_peak_energy_kWh = round_floats_for_ui(area.baseline_peak_energy_export_kWh)
         out_dict = {direction_key: {
             "peak_energy_kWh": peak_energy_kWh,
             "peak_percentage": peak_percentage,
-            "capacity_kwh": capacity_kwh,
+            "capacity_kWh": capacity_kWh,
             "baseline_peak_energy_kWh": baseline_peak_energy_kWh,
                                  }}
         create_subdict_or_update(self.results, area.name, out_dict)

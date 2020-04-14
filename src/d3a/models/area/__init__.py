@@ -127,10 +127,10 @@ class Area:
         self.grid_fee_percentage = grid_fee_percentage
 
     def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):
-        self.import_capacity_kwh = \
+        self.import_capacity_kWh = \
             import_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
             if import_capacity_kVA is not None else 0.
-        self.export_capacity_kwh = \
+        self.export_capacity_kWh = \
             export_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
             if export_capacity_kVA is not None else 0.
 
