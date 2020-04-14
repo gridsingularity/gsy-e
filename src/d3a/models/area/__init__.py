@@ -68,13 +68,24 @@ class Area:
                  event_list=[],
                  grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
-                 external_connection_available=False):
-        validate_area(grid_fee_percentage=grid_fee_percentage)
+                 external_connection_available: bool = False,
+                 baseline_peak_energy_import_kWh: float = None,
+                 baseline_peak_energy_export_kWh: float = None,
+                 import_capacity_kVA: float = None,
+                 export_capacity_kVA: float = None
+                 ):
+        validate_area(grid_fee_percentage=grid_fee_percentage,
+                      baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                      baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                      import_capacity_kVA=import_capacity_kVA,
+                      export_capacity_kVA=export_capacity_kVA)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
+        self.baseline_peak_energy_import_kWh = baseline_peak_energy_import_kWh
+        self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
@@ -95,6 +106,7 @@ class Area:
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
         self._set_grid_fees(transfer_fee_const, grid_fee_percentage)
+        self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.endpoint_stats = {}
@@ -113,6 +125,14 @@ class Area:
             transfer_fee_const = None
         self.transfer_fee_const = transfer_fee_const
         self.grid_fee_percentage = grid_fee_percentage
+
+    def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):
+        self.import_capacity_kWh = \
+            import_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
+            if import_capacity_kVA is not None else 0.
+        self.export_capacity_kWh = \
+            export_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
+            if export_capacity_kVA is not None else 0.
 
     def set_events(self, event_list):
         self.events = Events(event_list, self)
@@ -148,6 +168,8 @@ class Area:
         self.log.debug('Activating area')
         self.active = True
         self.dispatcher.broadcast_activate()
+        if self.redis_ext_conn is not None:
+            self.redis_ext_conn.sub_to_area_event()
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)

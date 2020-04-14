@@ -51,16 +51,14 @@ def get_setup(config):
             Area(
                 'House 2',
                 [
-                    Area('load', strategy=LoadHoursExternalStrategy(avg_power_W=200,
-                                                                    hrs_per_day=24,
-                                                                    hrs_of_day=list(
-                                                                        range(0, 24)),
-                                                                    final_buying_rate=35),
+                    Area('load', strategy=LoadHoursExternalStrategy(
+                        avg_power_W=200, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                        final_buying_rate=35),
                          appliance=SwitchableAppliance()),
                     Area('pv', strategy=PVExternalStrategy(panel_count=4),
                          appliance=PVAppliance()),
 
-                ],
+                ], external_connection_available=True,
             ),
             Area('Cell Tower', strategy=CellTowerLoadHoursStrategy(avg_power_W=100,
                                                                    hrs_per_day=24,

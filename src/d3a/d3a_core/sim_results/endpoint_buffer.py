@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
     export_cumulative_grid_trades_redis, export_cumulative_loads, MarketPriceEnergyDay, \
     generate_inter_area_trade_details
+from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
@@ -53,6 +54,7 @@ class SimulationEndpointBuffer:
         self.device_statistics = DeviceStatistics()
         self.file_export_endpoints = FileExportEndpoints()
         self.kpi = KPI()
+        self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
 
@@ -75,13 +77,15 @@ class SimulationEndpointBuffer:
                 "price_energy_day": self.price_energy_day.redis_output,
                 "device_statistics": self.device_statistics.flat_stats_time_str,
                 "energy_trade_profile": self.file_export_endpoints.traded_energy_profile_redis,
+                "area_throughput": self.area_throughput_stats.results_redis
             })
         else:
             redis_results.update({
                 "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
                 "last_energy_trade_profile": self.file_export_endpoints.traded_energy_current,
                 "last_price_energy_day": self.price_energy_day.redis_output,
-                "last_device_statistics": self.device_statistics.current_stats_time_str
+                "last_device_statistics": self.device_statistics.current_stats_time_str,
+                "area_throughput": self.area_throughput_stats.results_redis
             })
 
         return redis_results
@@ -99,7 +103,8 @@ class SimulationEndpointBuffer:
             "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
-            "kpi": self.kpi.performance_indices
+            "kpi": self.kpi.performance_indices,
+            "area_throughput": self.area_throughput_stats.results
         }
 
     def update_stats(self, area, simulation_status, progress_info):
@@ -127,9 +132,11 @@ class SimulationEndpointBuffer:
 
         self.price_energy_day.update(area)
 
-        self.generate_result_report()
-
         self.kpi.update_kpis_from_area(area)
+
+        self.area_throughput_stats.update(area)
+
+        self.generate_result_report()
 
         self.update_area_aggregated_stats(area)
 
