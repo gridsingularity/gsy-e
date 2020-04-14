@@ -18,13 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
     export_cumulative_grid_trades_redis, export_cumulative_loads, MarketPriceEnergyDay, \
     generate_inter_area_trade_details
+from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import MarketEnergyBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.kpi import KPI
-from pendulum import duration
 
 _NO_VALUE = {
     'min': None,
@@ -39,7 +39,11 @@ class SimulationEndpointBuffer:
         self.current_market = ""
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
         self.status = {}
-        self.eta = duration(seconds=0)
+        self.simulation_progress = {
+            "eta_seconds": 0,
+            "elapsed_time_seconds": 0,
+            "percentage_completed": 0
+        }
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
         self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
@@ -50,6 +54,7 @@ class SimulationEndpointBuffer:
         self.device_statistics = DeviceStatistics()
         self.file_export_endpoints = FileExportEndpoints()
         self.kpi = KPI()
+        self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
 
@@ -62,8 +67,8 @@ class SimulationEndpointBuffer:
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_redis_results,
             "status": self.status,
-            "eta_seconds": self.eta.seconds,
-            "kpi": self.kpi.performance_indices
+            "progress_info": self.simulation_progress,
+            "kpi": self.kpi.performance_indices_redis
         }
 
         if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
@@ -72,13 +77,15 @@ class SimulationEndpointBuffer:
                 "price_energy_day": self.price_energy_day.redis_output,
                 "device_statistics": self.device_statistics.flat_stats_time_str,
                 "energy_trade_profile": self.file_export_endpoints.traded_energy_profile_redis,
+                "area_throughput": self.area_throughput_stats.results_redis
             })
         else:
             redis_results.update({
                 "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
                 "last_energy_trade_profile": self.file_export_endpoints.traded_energy_current,
                 "last_price_energy_day": self.price_energy_day.redis_output,
-                "last_device_statistics": self.device_statistics.current_stats_time_str
+                "last_device_statistics": self.device_statistics.current_stats_time_str,
+                "area_throughput": self.area_throughput_stats.results_redis
             })
 
         return redis_results
@@ -93,22 +100,29 @@ class SimulationEndpointBuffer:
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_results,
             "status": self.status,
+            "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_time_str,
             "energy_trade_profile": self.file_export_endpoints.traded_energy_profile,
-            "kpi": self.kpi.performance_indices
+            "kpi": self.kpi.performance_indices,
+            "area_throughput": self.area_throughput_stats.results
         }
 
-    def update_stats(self, area, simulation_status, eta):
+    def update_stats(self, area, simulation_status, progress_info):
         self.status = simulation_status
         if area.current_market is not None:
             self.current_market = area.current_market.time_slot_str
-        self.eta = eta
+        self.simulation_progress = {
+            "eta_seconds": progress_info.eta.seconds,
+            "elapsed_time_seconds": progress_info.elapsed_time.seconds,
+            "percentage_completed": int(progress_info.percentage_completed)
+        }
         self.cumulative_loads = export_cumulative_loads(area)
 
         self.cumulative_grid_trades.update(area)
 
         self.market_bills.update(area)
-        self.balancing_bills.update(area)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self.balancing_bills.update(area)
 
         self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 
@@ -118,14 +132,23 @@ class SimulationEndpointBuffer:
 
         self.price_energy_day.update(area)
 
-        self.generate_result_report()
-
         self.kpi.update_kpis_from_area(area)
+
+        self.area_throughput_stats.update(area)
+
+        self.generate_result_report()
 
         self.update_area_aggregated_stats(area)
 
+    def _send_results_to_areas(self, area):
+        stats = {
+            "kpi": self.kpi.performance_indices_redis.get(area.uuid, None)
+        }
+        area.endpoint_stats.update(stats)
+
     def update_area_aggregated_stats(self, area):
         self._update_area_stats(area)
+        self._send_results_to_areas(area)
         for child in area.children:
             self.update_area_aggregated_stats(child)
 

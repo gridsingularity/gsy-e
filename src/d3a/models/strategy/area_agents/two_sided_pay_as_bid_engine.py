@@ -22,8 +22,8 @@ from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # N
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
 from d3a.models.market.market_structures import Bid
-from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.d3a_core.util import short_offer_bid_log_str
+from d3a.constants import FLOATING_POINT_TOLERANCE
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
@@ -47,8 +47,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
 
         forwarded_bid = self.markets.target.bid(
-            price=GridFees.update_forwarded_bid_with_fee(
-                bid.price, bid.original_bid_price, self.markets.source.transfer_fee_ratio),
+            price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                bid.price / bid.energy, bid.original_bid_price / bid.energy)) * bid.energy,
             energy=bid.energy,
             buyer=self.owner.name,
             seller=self.markets.target.name,
@@ -95,9 +95,9 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
 
-            source_rate = bid_info.source_bid.price / bid_info.source_bid.energy
-            target_rate = bid_info.target_bid.price / bid_info.target_bid.energy
-            assert source_rate >= target_rate, \
+            source_rate = bid_info.source_bid.energy_rate
+            target_rate = bid_info.target_bid.energy_rate
+            assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             trade_rate = (bid_trade.offer.price/bid_trade.offer.energy)
@@ -105,22 +105,25 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
                 # which was skipped when accepting the bid during the trade operation.
-                updated_trade_offer_info = GridFees.propagate_original_offer_info_on_bid_trade(
-                    [None, None, *bid_trade.offer_bid_trade_info],
-                    self.markets.source.transfer_fee_ratio
-                )
+                updated_trade_offer_info = \
+                    self.markets.source.fee_class.propagate_original_offer_info_on_bid_trade(
+                        [None, None, *bid_trade.offer_bid_trade_info]
+                    )
             else:
                 updated_trade_offer_info = bid_trade.offer_bid_trade_info
 
+            trade_offer_info = \
+                self.markets.source.fee_class.update_forwarded_bid_trade_original_info(
+                    updated_trade_offer_info, market_bid
+                )
             self.markets.source.accept_bid(
                 bid=market_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
-                trade_offer_info=GridFees.update_forwarded_bid_trade_original_info(
-                    updated_trade_offer_info, market_bid
-                ), seller_origin=bid_trade.seller_origin
+                trade_offer_info=trade_offer_info,
+                seller_origin=bid_trade.seller_origin
             )
             self.delete_forwarded_bids(bid_info)
 

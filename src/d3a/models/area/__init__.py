@@ -27,7 +27,7 @@ from d3a.models.appliance.base import BaseAppliance
 from d3a.models.config import SimulationConfig
 from d3a.events.event_structures import TriggerMixin
 from d3a.models.strategy import BaseStrategy
-from d3a.d3a_core.util import TaggedLogWrapper, is_market_in_simulation_duration
+from d3a.d3a_core.util import TaggedLogWrapper
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.constants import TIME_FORMAT
@@ -43,14 +43,14 @@ import d3a.constants
 log = getLogger(__name__)
 
 
+# TODO: As this is only used in the unittests, please remove it here and replace the usages
+#       of this class with d3a-interface.constants_limits.GlobalConfig class:
 DEFAULT_CONFIG = SimulationConfig(
     sim_duration=duration(hours=24),
     market_count=1,
     slot_length=duration(minutes=15),
     tick_length=duration(seconds=1),
     cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
-    iaa_fee=ConstSettings.IAASettings.FEE_PERCENTAGE,
-    iaa_fee_const=ConstSettings.IAASettings.FEE_CONSTANT,
     start_date=today(tz=TIME_ZONE),
     max_panel_power_W=ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W
 )
@@ -68,13 +68,24 @@ class Area:
                  event_list=[],
                  grid_fee_percentage: float = None,
                  transfer_fee_const: float = None,
-                 external_connection_available=False):
-        validate_area(grid_fee_percentage=grid_fee_percentage)
+                 external_connection_available: bool = False,
+                 baseline_peak_energy_import_kWh: float = None,
+                 baseline_peak_energy_export_kWh: float = None,
+                 import_capacity_kVA: float = None,
+                 export_capacity_kVA: float = None
+                 ):
+        validate_area(grid_fee_percentage=grid_fee_percentage,
+                      baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                      baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                      import_capacity_kVA=import_capacity_kVA,
+                      export_capacity_kVA=export_capacity_kVA)
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.current_tick = 0
         self.name = name
+        self.baseline_peak_energy_import_kWh = baseline_peak_energy_import_kWh
+        self.baseline_peak_energy_export_kWh = baseline_peak_energy_export_kWh
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
@@ -94,13 +105,34 @@ class Area:
         self._bc = None
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
-        self.grid_fee_percentage = grid_fee_percentage
-        self.transfer_fee_const = transfer_fee_const
+        self._set_grid_fees(transfer_fee_const, grid_fee_percentage)
+        self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
+        self.endpoint_stats = {}
         self.stats = AreaStats(self._markets)
+        log.debug(f"External connection {external_connection_available} for area {self.name}")
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
+
+    def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
+        grid_fee_type = self.config.grid_fee_type \
+            if self.config is not None \
+            else ConstSettings.IAASettings.GRID_FEE_TYPE
+        if grid_fee_type == 1:
+            grid_fee_percentage = None
+        elif grid_fee_type == 2:
+            transfer_fee_const = None
+        self.transfer_fee_const = transfer_fee_const
+        self.grid_fee_percentage = grid_fee_percentage
+
+    def _convert_area_throughput_kva_to_kwh(self, import_capacity_kVA, export_capacity_kVA):
+        self.import_capacity_kWh = \
+            import_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
+            if import_capacity_kVA is not None else 0.
+        self.export_capacity_kWh = \
+            export_capacity_kVA * self.config.slot_length.total_minutes() / 60.0 \
+            if export_capacity_kVA is not None else 0.
 
     def set_events(self, event_list):
         self.events = Events(event_list, self)
@@ -127,10 +159,6 @@ class Area:
                 self.budget_keeper.activate()
         if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
             self.grid_fee_percentage = 0
-        elif self.grid_fee_percentage is None:
-            self.grid_fee_percentage = self.config.iaa_fee
-        if self.transfer_fee_const is None:
-            self.transfer_fee_const = self.config.iaa_fee_const
 
         # Cycle markets without triggering it's own event chain.
         self._cycle_markets(_trigger_event=False)
@@ -140,9 +168,15 @@ class Area:
         self.log.debug('Activating area')
         self.active = True
         self.dispatcher.broadcast_activate()
+        if self.redis_ext_conn is not None:
+            self.redis_ext_conn.sub_to_area_event()
 
     def deactivate(self):
         self._cycle_markets(deactivate=True)
+        if self.redis_ext_conn is not None:
+            self.redis_ext_conn.deactivate()
+        if self.strategy:
+            self.strategy.deactivate()
 
     def _cycle_markets(self, _trigger_event=True, _market_cycle=False, deactivate=False):
         """
@@ -166,6 +200,8 @@ class Area:
 
         self.log.debug("Cycling markets")
         self._markets.rotate_markets(self.now, self.stats, self.dispatcher)
+        self.dispatcher._delete_past_agents(self.dispatcher._inter_area_agents)
+
         if deactivate:
             return
 
@@ -192,6 +228,9 @@ class Area:
         if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
                 and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.dispatcher.broadcast_balancing_market_cycle()
+
+        if self.redis_ext_conn is not None:
+            self.redis_ext_conn.event_market_cycle()
 
     def tick(self):
         if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
@@ -272,8 +311,7 @@ class Area:
 
     @property
     def all_markets(self):
-        return [m for m in self._markets.markets.values()
-                if is_market_in_simulation_duration(self.config, m)]
+        return [m for m in self._markets.markets.values() if m.in_sim_duration]
 
     @property
     def past_markets(self):
@@ -301,7 +339,7 @@ class Area:
         # In case of a tie, max returns the first market occurrence in order to
         # satisfy the most recent market slot
         return max(self.all_markets,
-                   key=lambda m: m.sorted_offers[0].price / m.sorted_offers[0].energy)
+                   key=lambda m: m.sorted_offers[0].energy_rate)
 
     @property
     def next_market(self):
@@ -329,10 +367,7 @@ class Area:
             return None
 
     def get_future_market_from_id(self, _id):
-        try:
-            return [m for m in self._markets.markets.values() if m.id == _id][0]
-        except IndexError:
-            return None
+        return self._markets.indexed_future_markets.get(_id, None)
 
     @property
     def last_past_market(self):

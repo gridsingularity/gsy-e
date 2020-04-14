@@ -33,6 +33,8 @@ from d3a.d3a_core.util import add_or_create_key, subtract_or_create_key
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.models.market.market_redis_connection import MarketRedisEventSubscriber, \
     MarketRedisEventPublisher, TwoSidedMarketRedisEventSubscriber
+from d3a.models.market.grid_fees.base_model import GridFees
+from d3a.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 
 log = getLogger(__name__)
 
@@ -58,6 +60,7 @@ def lock_market_action(function):
 class Market:
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+                 grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
                  transfer_fees: TransferFees = None, name=None):
         self.name = name
         self.bc = bc
@@ -74,10 +77,8 @@ class Market:
         self.bids = {}  # type: Dict[str, Bid]
         self.bid_history = []  # type: List[Bid]
         self.trades = []  # type: List[Trade]
-        self.transfer_fee_ratio = transfer_fees.grid_fee_percentage / 100 \
-            if transfer_fees is not None else 0
-        self.transfer_fee_const = transfer_fees.transfer_fee_const \
-            if transfer_fees is not None else 0
+
+        self._create_fee_handler(grid_fee_type, transfer_fees)
         self.market_fee = 0
         # Store trades temporarily until bc event has fired
         self.traded_energy = {}
@@ -102,6 +103,28 @@ class Market:
                 else TwoSidedMarketRedisEventSubscriber(self)
         setattr(self, RLOCK_MEMBER_NAME, RLock())
 
+    def _create_fee_handler(self, grid_fee_type, transfer_fees):
+        if not transfer_fees:
+            transfer_fees = TransferFees(grid_fee_percentage=0.0, transfer_fee_const=0.0)
+        if grid_fee_type == 1:
+            if transfer_fees.transfer_fee_const is None or \
+                    transfer_fees.transfer_fee_const <= 0.0:
+                self.fee_class = ConstantGridFees(0.0)
+            else:
+                self.fee_class = ConstantGridFees(transfer_fees.transfer_fee_const)
+        else:
+            if transfer_fees.grid_fee_percentage is None or \
+                    transfer_fees.grid_fee_percentage <= 0.0:
+                self.fee_class = GridFees(0.0)
+            else:
+                self.fee_class = GridFees(
+                    transfer_fees.grid_fee_percentage / 100
+                )
+
+    @property
+    def _is_constant_fees(self):
+        return isinstance(self.fee_class, ConstantGridFees)
+
     def add_listener(self, listener):
         self.notification_listeners.append(listener)
 
@@ -123,7 +146,7 @@ class Market:
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(self.traded_energy, offer.seller, offer.energy)
         self.traded_energy = subtract_or_create_key(self.traded_energy, buyer, offer.energy)
-        self._update_min_max_avg_trade_prices(offer.price / offer.energy)
+        self._update_min_max_avg_trade_prices(offer.energy_rate)
         # Recalculate offer min/max price since offer was removed
         self._update_min_max_avg_offer_prices()
 
@@ -133,7 +156,7 @@ class Market:
 
     def _update_min_max_avg_offer_prices(self):
         self._avg_offer_price = None
-        offer_prices = [o.price / o.energy for o in self.offers.values()]
+        offer_prices = [o.energy_rate for o in self.offers.values()]
         if offer_prices:
             self.min_offer_price = round(min(offer_prices), 4)
             self.max_offer_price = round(max(offer_prices), 4)
@@ -161,13 +184,13 @@ class Market:
             # Sorted bids in descending order
             return list(reversed(sorted(
                 obj.values(),
-                key=lambda b: b.price / b.energy)))
+                key=lambda b: b.energy_rate)))
 
         else:
             # Sorted bids in ascending order
             return list(sorted(
                 obj.values(),
-                key=lambda b: b.price / b.energy))
+                key=lambda b: b.energy_rate))
 
     @property
     def avg_offer_price(self):
@@ -192,9 +215,9 @@ class Market:
     @property
     def most_affordable_offers(self):
         cheapest_offer = self.sorted_offers[0]
-        rate = cheapest_offer.price / cheapest_offer.energy
+        rate = cheapest_offer.energy_rate
         return [o for o in self.sorted_offers if
-                abs(o.price / o.energy - rate) < FLOATING_POINT_TOLERANCE]
+                abs(o.energy_rate - rate) < FLOATING_POINT_TOLERANCE]
 
     def update_clock(self, current_tick):
         self.current_tick = current_tick

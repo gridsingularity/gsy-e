@@ -42,6 +42,7 @@ class FakeBalancingMarket:
     def __init__(self, sorted_offers):
         self.id = 123
         self.sorted_offers = sorted_offers
+        self.offers = {o.id: o for o in sorted_offers}
         self.forwarded_offer_id = 'fwd'
         self.area = FakeArea("fake_area")
         self.unmatched_energy_upward = 0

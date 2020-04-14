@@ -44,7 +44,6 @@ def generate_settings_events(settings_events):
             else event.get("market_maker_rate", None)
         params = {'cloud_coverage': event.get("cloud_coverage", None),
                   'pv_user_profile': event.get("pv_user_profile", None),
-                  'grid_fee_percentage': event.get("iaa_fee", None),
                   'market_maker_rate': market_maker_rate}
         config_events_list.append(ConfigEvents(event_time, params))
     return config_events_list

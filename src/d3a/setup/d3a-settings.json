@@ -5,8 +5,7 @@
     "tick_length": "15s",
     "market_count": 1,
     "cloud_coverage": 0,
-    "iaa_fee": 0,
-    "start_date": "2019-11-19"
+    "start_date": "2020-03-09"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -37,7 +36,14 @@
       "MIN_NUM_TICKS": 10,
       "MIN_SLOT_LENGTH_M": 2,
       "MAX_SLOT_LENGTH_M": 60,
-      "MIN_TICK_LENGTH_S": 1
+      "MIN_TICK_LENGTH_S": 1,
+      "REDIS_PUBLISH_FULL_RESULTS": false
+    },
+    "AreaSettings": {
+      "GRID_FEE_PERCENTAGE_LIMIT": [
+        0,
+        100
+      ]
     },
     "CommercialProducerSettings": {
       "ENERGY_RATE_LIMIT": [

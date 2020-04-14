@@ -15,15 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import pendulum
 import select
 import sys
 import termios
 import tty
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 import json
+from functools import lru_cache
 
 from click.types import ParamType
-from pendulum import duration, from_format
+from pendulum import duration, from_format, DateTime
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
@@ -32,7 +34,7 @@ from functools import wraps
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config
@@ -220,9 +222,8 @@ def area_name_from_area_or_iaa_name(name):
     return name[4:] if name[:4] == 'IAA ' else name
 
 
-def is_market_in_simulation_duration(config, market):
-    return config.start_date <= market.time_slot < \
-           (config.start_date + config.sim_duration)
+def is_timeslot_in_simulation_duration(config, time_slot):
+    return config.start_date <= time_slot < config.end_date
 
 
 def format_interval(interval, show_day=True):
@@ -296,10 +297,7 @@ def read_settings_from_file(settings_file):
                 settings["basic_settings"].get('tick_length', timedelta(seconds=15))),
             "market_count": settings["basic_settings"].get('market_count', 1),
             "cloud_coverage": settings["basic_settings"].get(
-                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
-            "iaa_fee": settings["basic_settings"].get(
-                'INTER_AREA_AGENT_FEE_PERCENTAGE',
-                advanced_settings["IAASettings"]["FEE_PERCENTAGE"])
+                'cloud_coverage', advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"])
         }
         return simulation_settings, advanced_settings
     else:
@@ -336,9 +334,34 @@ def generate_market_slot_list(area=None):
     Returns a list of all slot times
     """
     config = GlobalConfig if area is None else area.config
-    return generate_market_slot_list_from_config(
-        config.sim_duration, config.start_date, config.market_count, config.slot_length
-    )
+    if not hasattr(config, 'market_slot_list') or len(config.market_slot_list) == 0:
+        config.market_slot_list = generate_market_slot_list_from_config(
+            config.sim_duration, config.start_date, config.market_count, config.slot_length
+        )
+    return config.market_slot_list
+
+
+@lru_cache(maxsize=100, typed=False)
+def format_datetime(datetime, ui_format=False):
+    return datetime.format(DATE_TIME_FORMAT) \
+        if not ui_format \
+        else datetime.format(DATE_TIME_UI_FORMAT)
+
+
+def convert_datetime_to_str_keys_cached(indict, outdict, ui_format=False):
+    """
+    Converts all Datetime keys in a dict into strings in DATE_TIME_FORMAT
+    """
+
+    for key, value in indict.items():
+        if isinstance(key, DateTime):
+            outdict[format_datetime(key, ui_format)] = indict[key]
+        else:
+            if isinstance(indict[key], dict):
+                outdict[key] = {}
+                convert_datetime_to_str_keys_cached(indict[key], outdict[key])
+
+    return outdict
 
 
 def constsettings_to_dict():
@@ -482,3 +505,28 @@ def convert_percent_to_ratio(unit_percent):
 
 def short_offer_bid_log_str(offer_or_bid):
     return f"({{{offer_or_bid.id!s:.6s}}}: {offer_or_bid.energy} kWh)"
+
+
+def export_default_settings_to_json_file():
+    base_settings = {
+            "sim_duration": f"{GlobalConfig.DURATION_D*24}h",
+            "slot_length": f"{GlobalConfig.SLOT_LENGTH_M}m",
+            "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
+            "market_count": GlobalConfig.MARKET_COUNT,
+            "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
+            "start_date": pendulum.instance(GlobalConfig.start_date).format(DATE_FORMAT),
+    }
+    all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
+    settings_filename = os.path.join(d3a_path, "setup", "d3a-settings.json")
+    with open(settings_filename, "w") as settings_file:
+        settings_file.write(json.dumps(all_settings, indent=2))
+
+
+def area_sells_to_child(trade, area_name, child_names):
+    return area_name_from_area_or_iaa_name(trade.seller) == \
+            area_name and area_name_from_area_or_iaa_name(trade.buyer) in child_names
+
+
+def child_buys_from_area(trade, area_name, child_names):
+    return area_name_from_area_or_iaa_name(trade.buyer) == \
+        area_name and area_name_from_area_or_iaa_name(trade.seller) in child_names

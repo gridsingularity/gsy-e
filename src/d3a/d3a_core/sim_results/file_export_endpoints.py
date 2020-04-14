@@ -21,7 +21,7 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHours
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.pv import PVStrategy
-from d3a_interface.utils import convert_datetime_to_str_keys
+from d3a.d3a_core.util import convert_datetime_to_str_keys_cached as convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import generate_market_slot_list, round_floats_for_ui
 from d3a_interface.constants_limits import ConstSettings
@@ -148,7 +148,8 @@ class FileExportEndpoints:
 
     def update_plot_stats(self, area):
         self._get_stats_from_market_data(self.plot_stats, area, False)
-        self._get_stats_from_market_data(self.plot_balancing_stats, area, True)
+        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+            self._get_stats_from_market_data(self.plot_balancing_stats, area, True)
         self._populate_plots_stats_for_supply_demand_curve(area)
 
     def _calculate_devices_sold_bought_energy(self, res_dict, market):
@@ -252,7 +253,7 @@ class FileExportEndpoints:
                     self.seller_trades[seller_slug] = dict((key, []) for key in labels)
                 else:
                     values = (market.time_slot,) + \
-                             (round(trade.offer.price / trade.offer.energy, 4),
+                             (round(trade.offer.energy_rate, 4),
                               (trade.offer.energy * -1),) + \
                              (slugify(trade.seller, to_lower=True),)
                     for ii, ri in enumerate(labels):
