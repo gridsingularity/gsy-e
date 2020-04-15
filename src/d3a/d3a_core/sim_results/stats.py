@@ -67,11 +67,12 @@ class MarketEnergyBills:
     @classmethod
     def _store_bought_trade(cls, result_dict, trade):
         # Division by 100 to convert cents to Euros
+        fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
         result_dict['bought'] += trade.offer.energy
-        result_dict['spent'] += trade.offer.price / 100.
+        result_dict['spent'] += trade.offer.price / 100. - fee_price
         result_dict['total_energy'] += trade.offer.energy
         result_dict['total_cost'] += trade.offer.price / 100.
-        result_dict['market_fee'] += trade.fee_price / 100. if trade.fee_price is not None else 0.
+        result_dict['market_fee'] += fee_price
 
     @classmethod
     def _store_sold_trade(cls, result_dict, trade):
@@ -226,36 +227,40 @@ class MarketEnergyBills:
         results[area.name]["totals_with_penalties"] = {"costs": totals_with_penalties}
 
     def _generate_external_and_total_bills(self, area, results, flattened):
+        if area.name in flattened:
+            # External trades are the trades of the parent area
+            external = flattened[area.name].copy()
+            # Should not include market fee to the external trades
+            market_fee = external.pop("market_fee", 0.)
+            # Should switch spent/earned and bought/sold, to match the perspective of the UI
+            spent = external.pop("spent") + market_fee
+            earned = external.pop("earned")
+            bought = external.pop("bought")
+            sold = external.pop("sold")
+            external.update(**{
+                "spent": earned, "earned": spent, "bought": sold,
+                "sold": bought, "market_fee": 0})
+            external["total_energy"] = external["bought"] - external["sold"]
+            external["total_cost"] = external["spent"] - external["earned"]
+            results[area.name].update({"External Trades": external})
+
         all_child_results = [v for v in results[area.name].values()]
         results[area.name].update({"Accumulated Trades": {
             'bought': sum(v['bought'] for v in all_child_results),
             'sold': sum(v['sold'] for v in all_child_results),
             'spent': sum(v['spent'] for v in all_child_results),
-            'earned': sum(v['earned'] for v in all_child_results),
+            'earned': sum(v['earned'] for v in all_child_results) + self.market_fees[area.name],
             'penalty_cost': sum(v['penalty_cost']
                                 for v in all_child_results if 'penalty_cost' in v.keys()),
             'penalty_energy': sum(v['penalty_energy']
                                   for v in all_child_results if 'penalty_energy' in v.keys()),
             'total_energy': sum(v['total_energy'] for v in all_child_results),
-            'total_cost': sum(v['total_cost'] for v in all_child_results),
-            'market_fee': self.market_fees[area.name]
+            'total_cost': sum(v['total_cost']
+                              for v in all_child_results) - self.market_fees[area.name],
+            'market_fee': sum(v['market_fee']
+                              for v in all_child_results)
         }})
 
-        if area.name in flattened:
-            # External trades are the trades of the parent area
-            external = flattened[area.name].copy()
-            # Should not include market fee to the external trades
-            market_fee = external.pop("market_fee", None)
-            # Should switch spent/earned and bought/sold, to match the perspective of the UI
-            spent = external.pop("spent")
-            earned = external.pop("earned")
-            bought = external.pop("bought")
-            sold = external.pop("sold")
-            external.update(**{"spent": earned, "earned": spent, "bought": sold,
-                               "sold": bought, "market_fee": market_fee})
-            external["total_energy"] = external["bought"] - external["sold"]
-            external["total_cost"] = external["spent"] - external["earned"]
-            results[area.name].update({"External Trades": external})
         return results
 
     def _bills_for_redis(self, area, bills_results):
