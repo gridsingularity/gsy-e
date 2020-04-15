@@ -227,21 +227,6 @@ class MarketEnergyBills:
         results[area.name]["totals_with_penalties"] = {"costs": totals_with_penalties}
 
     def _generate_external_and_total_bills(self, area, results, flattened):
-        all_child_results = [v for v in results[area.name].values()]
-        results[area.name].update({"Accumulated Trades": {
-            'bought': sum(v['bought'] for v in all_child_results),
-            'sold': sum(v['sold'] for v in all_child_results),
-            'spent': sum(v['spent'] for v in all_child_results),
-            'earned': sum(v['earned'] for v in all_child_results),
-            'penalty_cost': sum(v['penalty_cost']
-                                for v in all_child_results if 'penalty_cost' in v.keys()),
-            'penalty_energy': sum(v['penalty_energy']
-                                  for v in all_child_results if 'penalty_energy' in v.keys()),
-            'total_energy': sum(v['total_energy'] for v in all_child_results),
-            'total_cost': sum(v['total_cost'] for v in all_child_results),
-            'market_fee': self.market_fees[area.name]
-        }})
-
         if area.name in flattened:
             # External trades are the trades of the parent area
             external = flattened[area.name].copy()
@@ -252,19 +237,29 @@ class MarketEnergyBills:
             earned = external.pop("earned")
             bought = external.pop("bought")
             sold = external.pop("sold")
-            external.update(**{"spent": earned, "earned": spent, "bought": sold,
-                               "sold": bought, "market_fee": 0.})
+            external.update(**{
+                "spent": earned, "earned": spent, "bought": sold,
+                "sold": bought, "market_fee": 0})
             external["total_energy"] = external["bought"] - external["sold"]
             external["total_cost"] = external["spent"] - external["earned"]
             results[area.name].update({"External Trades": external})
-            results[area.name]["Accumulated Trades"]["bought"] += external["bought"]
-            results[area.name]["Accumulated Trades"]["sold"] += external["sold"]
-            results[area.name]["Accumulated Trades"]["spent"] += external["spent"]
-            results[area.name]["Accumulated Trades"]["earned"] += \
-                external["earned"] + results[area.name]["Accumulated Trades"]["market_fee"]
-            results[area.name]["Accumulated Trades"]["total_energy"] += external["total_energy"]
-            results[area.name]["Accumulated Trades"]["total_cost"] += \
-                external["total_cost"] - results[area.name]["Accumulated Trades"]["market_fee"]
+
+        all_child_results = [v for v in results[area.name].values()]
+        results[area.name].update({"Accumulated Trades": {
+            'bought': sum(v['bought'] for v in all_child_results),
+            'sold': sum(v['sold'] for v in all_child_results),
+            'spent': sum(v['spent'] for v in all_child_results),
+            'earned': sum(v['earned'] for v in all_child_results) + self.market_fees[area.name],
+            'penalty_cost': sum(v['penalty_cost']
+                                for v in all_child_results if 'penalty_cost' in v.keys()),
+            'penalty_energy': sum(v['penalty_energy']
+                                  for v in all_child_results if 'penalty_energy' in v.keys()),
+            'total_energy': sum(v['total_energy'] for v in all_child_results),
+            'total_cost': sum(v['total_cost']
+                              for v in all_child_results) - self.market_fees[area.name],
+            'market_fee': self.market_fees[area.name]
+        }})
+
         return results
 
     def _bills_for_redis(self, area, bills_results):
