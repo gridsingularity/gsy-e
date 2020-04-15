@@ -23,6 +23,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import make_iaa_name
 from d3a import limit_float_precision
 from d3a.constants import DEFAULT_PRECISION
+from d3a.models.market.market_structures import Offer, Bid
 
 
 @then('the load has no unmatched loads')
@@ -203,9 +204,48 @@ def energy_origin(context, producer, consumer):
 
 @then('trades are matched only on the Grid market')
 def trades_matched_on_grid(context):
-    from d3a.models.market.market_structures import Offer, Bid
     # Assert that all grid trades contain Offer objects, bid trades are not tracked
     assert all(type(trade.offer) == Offer
+               for market in context.simulation.area.past_markets
+               for trade in market.trades)
+
+    # Assert that all House 1 trades contain Bid objects
+    house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
+    assert all(type(trade.offer) == Bid
+               for market in house1.past_markets
+               for trade in market.trades)
+
+    # Assert that all House 2 trades contain Offer objects
+    house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
+    assert all(type(trade.offer) == Offer
+               for market in house2.past_markets
+               for trade in market.trades)
+
+
+@then('trades are matched only on the House 1 market')
+def trades_matched_on_house1(context):
+    # Assert that all grid trades contain Offer objects, bid trades are not tracked
+    assert all(type(trade.offer) == Offer
+               for market in context.simulation.area.past_markets
+               for trade in market.trades)
+
+    # Assert that all House 1 trades contain Bid objects
+    house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
+    assert all(type(trade.offer) == Offer
+               for market in house1.past_markets
+               for trade in market.trades)
+
+    # Assert that all House 2 trades contain Offer objects
+    house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
+    assert all(type(trade.offer) == Offer
+               for market in house2.past_markets
+               for trade in market.trades)
+
+
+@then('trades are matched only on the House 2 market')
+def trades_matched_on_house2(context):
+    # Assert that all grid trades contain Offer objects, bid trades are not tracked
+    assert all(type(trade.offer) == Bid
                for market in context.simulation.area.past_markets
                for trade in market.trades)
 

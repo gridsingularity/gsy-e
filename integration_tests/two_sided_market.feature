@@ -72,3 +72,31 @@ Feature: Two sided market tests
      |      2      |
      |      5      |
      |      9      |
+
+  Scenario Outline: Trades will always clear in the demand side if min offer age < min bid age
+     Given we have a scenario named two_sided_market/one_cep_one_load_immediate_match
+     And d3a is installed
+     And the min offer age is set to 0 tick
+     And the min bid age is set to <min_bid_age> ticks
+     When we run the simulation with setup file two_sided_market.one_cep_one_load_immediate_match and parameters [24, 60, 60, 1]
+     Then the load has no unmatched loads
+     And trades are matched only on the House 1 market
+  Examples: Min Bid Age
+     | min_bid_age |
+     |      2      |
+     |      5      |
+     |      9      |
+
+  Scenario Outline: Trades will always clear in the supply side if min offer age > min bid age
+     Given we have a scenario named two_sided_market/one_cep_one_load_immediate_match
+     And d3a is installed
+     And the min offer age is set to 10 tick
+     And the min bid age is set to <min_bid_age> ticks
+     When we run the simulation with setup file two_sided_market.one_cep_one_load_immediate_match and parameters [24, 60, 60, 1]
+     Then the load has no unmatched loads
+     And trades are matched only on the House 2 market
+  Examples: Min Bid Age
+     | min_bid_age |
+     |      0      |
+     |      1      |
+     |      4      |
