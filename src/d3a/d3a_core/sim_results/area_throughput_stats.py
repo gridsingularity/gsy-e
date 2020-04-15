@@ -30,16 +30,25 @@ class AreaThroughputStats:
         self.update_results(area)
 
     def _calc_results(self, area, baseline_value, energy_profile, direction_key):
-        if len(energy_profile.keys()) > 0:
-            # as this is mainly a frontend feature,
-            # the numbers are rounded for both local and redis results
-            out_dict = {direction_key: {
-                "peak_energy_kWh": round_floats_for_ui(max(energy_profile.values())),
-                "peak_percentage": round_floats_for_ui(max(energy_profile.values()) /
-                                                       baseline_value * 100)
-                                     }}
-            create_subdict_or_update(self.results, area.name, out_dict)
-            create_subdict_or_update(self.results_redis, area.uuid, out_dict)
+        # as this is mainly a frontend feature,
+        # the numbers are rounded for both local and redis results
+        peak_percentage = \
+            round_floats_for_ui(max(energy_profile.values(), default=0.0) / baseline_value * 100)
+        peak_energy_kWh = round_floats_for_ui(max(energy_profile.values(), default=0.0))
+        if direction_key == "import":
+            capacity_kWh = round_floats_for_ui(area.import_capacity_kWh)
+            baseline_peak_energy_kWh = round_floats_for_ui(area.baseline_peak_energy_import_kWh)
+        else:
+            capacity_kWh = round_floats_for_ui(area.export_capacity_kWh)
+            baseline_peak_energy_kWh = round_floats_for_ui(area.baseline_peak_energy_export_kWh)
+        out_dict = {direction_key: {
+            "peak_energy_kWh": peak_energy_kWh,
+            "peak_percentage": peak_percentage,
+            "capacity_kWh": capacity_kWh,
+            "baseline_peak_energy_kWh": baseline_peak_energy_kWh,
+                                 }}
+        create_subdict_or_update(self.results, area.name, out_dict)
+        create_subdict_or_update(self.results_redis, area.uuid, out_dict)
 
     def update_results(self, area):
         baseline_import = area.baseline_peak_energy_import_kWh
