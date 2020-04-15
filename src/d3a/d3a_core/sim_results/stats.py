@@ -257,7 +257,8 @@ class MarketEnergyBills:
             'total_energy': sum(v['total_energy'] for v in all_child_results),
             'total_cost': sum(v['total_cost']
                               for v in all_child_results) - self.market_fees[area.name],
-            'market_fee': self.market_fees[area.name]
+            'market_fee': sum(v['market_fee']
+                              for v in all_child_results)
         }})
 
         return results
