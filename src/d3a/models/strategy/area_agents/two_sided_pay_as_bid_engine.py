@@ -81,10 +81,10 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         if self.owner.name == bid.buyer:
             return False
 
-        if current_tick - self.bid_age[bid.id] >= self.min_bid_age:
-            return True
+        if current_tick - self.bid_age[bid.id] < self.min_bid_age:
+            return False
 
-        return False
+        return True
 
     def tick(self, *, area):
         super().tick(area=area)

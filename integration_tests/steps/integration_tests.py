@@ -565,6 +565,11 @@ def min_offer_age_nr_ticks(context, min_offer_age):
     ConstSettings.IAASettings.MIN_OFFER_AGE = int(min_offer_age)
 
 
+@given('the min bid age is set to {min_bid_age} ticks')
+def min_bid_age_nr_ticks(context, min_bid_age):
+    ConstSettings.IAASettings.MIN_BID_AGE = int(min_bid_age)
+
+
 @when('we run a multi-day d3a simulation with {scenario} [{start_date}, {total_duration}, '
       '{slot_length}, {tick_length}]')
 def run_sim_multiday(context, scenario, start_date, total_duration, slot_length, tick_length):
