@@ -187,7 +187,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, bid, bid.buyer, already_tracked)
-            log.info(f"[TRADE][BID] [{self.time_slot_str}] {trade}")
+            log.info(f"[TRADE][BID] [{self.name}] [{self.time_slot_str}] {trade}")
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
         return trade
