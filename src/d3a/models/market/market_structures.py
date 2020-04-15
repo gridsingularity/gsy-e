@@ -67,11 +67,11 @@ class Offer:
 
     @classmethod
     def _csv_fields(cls):
-        return 'id', 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'seller'
+        return 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'seller'
 
     def _to_csv(self):
         rate = round(self.energy_rate, 4)
-        return self.id, rate, self.energy, self.price, self.seller
+        return rate, self.energy, self.price, self.seller
 
 
 def copy_offer(offer):
@@ -114,11 +114,11 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
 
     @classmethod
     def _csv_fields(cls):
-        return 'id', 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'buyer'
+        return 'rate [ct./kWh]', 'energy [kWh]', 'price [ct.]', 'buyer'
 
     def _to_csv(self):
         rate = round(self.energy_rate, 4)
-        return self.id, rate, self.energy, self.price, self.buyer
+        return rate, self.energy, self.price, self.buyer
 
     def to_JSON_string(self):
         bid_dict = self._asdict()
@@ -179,12 +179,12 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
 
     @classmethod
     def _csv_fields(cls):
-        return (cls._fields[:2] + ('rate [ct./kWh]', 'energy [kWh]') +
+        return (cls._fields[1:2] + ('rate [ct./kWh]', 'energy [kWh]') +
                 cls._fields[3:5])
 
     def _to_csv(self):
         rate = round(self.offer.energy_rate, 4)
-        return self[:2] + (rate, self.offer.energy) + self[3:5]
+        return self[1:2] + (rate, self.offer.energy) + self[3:5]
 
     def to_JSON_string(self):
         trade_dict = self._asdict()
@@ -237,12 +237,12 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
 
     @classmethod
     def _csv_fields(cls):
-        return (cls._fields[:2] + ('rate [ct./kWh]', 'energy [kWh]') +
+        return (cls._fields[1:2] + ('rate [ct./kWh]', 'energy [kWh]') +
                 cls._fields[3:5])
 
     def _to_csv(self):
         rate = round(self.offer.energy_rate, 4)
-        return self[:2] + (rate, self.offer.energy) + self[3:5]
+        return self[1:2] + (rate, self.offer.energy) + self[3:5]
 
 
 class MarketClearingState:

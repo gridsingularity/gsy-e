@@ -520,3 +520,13 @@ def export_default_settings_to_json_file():
     settings_filename = os.path.join(d3a_path, "setup", "d3a-settings.json")
     with open(settings_filename, "w") as settings_file:
         settings_file.write(json.dumps(all_settings, indent=2))
+
+
+def area_sells_to_child(trade, area_name, child_names):
+    return area_name_from_area_or_iaa_name(trade.seller) == \
+            area_name and area_name_from_area_or_iaa_name(trade.buyer) in child_names
+
+
+def child_buys_from_area(trade, area_name, child_names):
+    return area_name_from_area_or_iaa_name(trade.buyer) == \
+        area_name and area_name_from_area_or_iaa_name(trade.seller) in child_names

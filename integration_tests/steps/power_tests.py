@@ -26,3 +26,28 @@ def test_export_of_power_flow_result(context):
     sim_data_csv = glob.glob(os.path.join(context.export_path, "*", "plot", "power_flow.html"))
     if len(sim_data_csv) != 1:
         raise FileExistsError("Not found in {path}".format(path=context.export_path))
+
+
+@then('BaselinePeakEnergyStats are correctly calculated')
+def test_baseline_peak_energy_stats(context):
+    area_throughput_stats = \
+        context.simulation.endpoint_buffer.area_throughput_stats.results
+
+    expected_results = {'Neighborhood 1': {'import': {'peak_energy_kWh': 0.4,
+                                                      'peak_percentage': 100.0,
+                                                      'capacity_kWh': 2.0,
+                                                      'baseline_peak_energy_kWh': 0.4}},
+                        'House 1': {'import': {'peak_energy_kWh': 0.4,
+                                               'peak_percentage': 100.0,
+                                               'capacity_kWh': 0.0,
+                                               'baseline_peak_energy_kWh': 0.4}},
+                        'Neighborhood 2': {'export': {'peak_energy_kWh': 0.6,
+                                                      'peak_percentage': 200.0,
+                                                      'capacity_kWh': 2.0,
+                                                      'baseline_peak_energy_kWh': 0.3}},
+                        'House 2': {'export': {'peak_energy_kWh': 0.6,
+                                               'peak_percentage': 200.0,
+                                               'capacity_kWh': 0.0,
+                                               'baseline_peak_energy_kWh': 0.3}}}
+
+    assert expected_results == area_throughput_stats
