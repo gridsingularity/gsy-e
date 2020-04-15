@@ -25,15 +25,18 @@ from d3a.models.market.market_structures import Bid
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.constants import FLOATING_POINT_TOLERANCE
 
+
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
 
 class TwoSidedPayAsBidEngine(IAAEngine):
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int, min_bid_age: int,
                  owner: "InterAreaAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
         self.bid_trade_residual = {}  # type: Dict[str, Bid]
+        self.min_bid_age = min_bid_age
+        self.bid_age = {}
 
     def __repr__(self):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
@@ -67,13 +70,30 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         self.forwarded_bids.pop(bid_info.target_bid.id, None)
         self.forwarded_bids.pop(bid_info.source_bid.id, None)
 
+    def should_forward_bid(self, bid, current_tick):
+
+        if bid.id in self.forwarded_bids:
+            return False
+
+        if not self.owner.usable_bid(bid):
+            return False
+
+        if self.owner.name == bid.buyer:
+            return False
+
+        if current_tick - self.bid_age[bid.id] >= self.min_bid_age:
+            return True
+
+        return False
+
     def tick(self, *, area):
         super().tick(area=area)
 
         for bid_id, bid in self.markets.source.get_bids().items():
-            if bid_id not in self.forwarded_bids and \
-                    self.owner.usable_bid(bid) and \
-                    self.owner.name != bid.buyer:
+            if bid.id not in self.bid_age:
+                self.bid_age[bid.id] = area.current_tick
+
+            if self.should_forward_bid(bid, area.current_tick):
                 self._forward_bid(bid)
 
     def delete_forwarded_bids(self, bid_info):
@@ -126,10 +146,12 @@ class TwoSidedPayAsBidEngine(IAAEngine):
                 seller_origin=bid_trade.seller_origin
             )
             self.delete_forwarded_bids(bid_info)
+            self.bid_age.pop(bid_info.source_bid.id, None)
 
         elif bid_trade.offer.id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
             self.delete_forwarded_bids(bid_info)
+            self.bid_age.pop(bid_info.source_bid.id, None)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
@@ -150,6 +172,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent bid")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
+        self.bid_age.pop(bid_info.source_bid.id, None)
 
     def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
         market = self.owner._get_market_from_market_id(market_id)
@@ -171,6 +194,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             self._add_to_forward_bids(local_residual_bid, residual_bid)
             self._add_to_forward_bids(local_split_bid, accepted_bid)
 
+            self.bid_age[local_residual_bid.id] = self.bid_age.pop(local_bid.id)
+
         elif market == self.markets.source and accepted_bid.id in self.forwarded_bids:
             # bid in the source market was split, also split the corresponding forwarded bid
             # in the target market
@@ -189,6 +214,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             #  add the new bids to forwarded_bids
             self._add_to_forward_bids(residual_bid, local_residual_bid)
             self._add_to_forward_bids(accepted_bid, local_split_bid)
+
+            self.bid_age[residual_bid.id] = self.bid_age.pop(original_bid.id)
 
         else:
             return

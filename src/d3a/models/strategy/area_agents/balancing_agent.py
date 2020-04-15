@@ -27,9 +27,13 @@ class BalancingAgent(OneSidedAgent):
     def __init__(self, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
+        self.engines = [
+            BalancingEngine('High -> Low', higher_market, lower_market, min_offer_age, self),
+            BalancingEngine('Low -> High', lower_market, higher_market, min_offer_age, self),
+        ]
         super().__init__(owner=owner, higher_market=higher_market,
                          lower_market=lower_market,
-                         min_offer_age=min_offer_age, engine_type=BalancingEngine)
+                         min_offer_age=min_offer_age, do_create_engine=False)
         self.name = make_ba_name(self.owner)
 
     def event_tick(self):
