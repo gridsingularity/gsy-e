@@ -24,6 +24,7 @@ from d3a_interface.constants_limits import ConstSettings
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
+    # ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
     area = Area(
         'Grid',
         [
