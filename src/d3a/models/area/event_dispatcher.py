@@ -126,19 +126,46 @@ class AreaDispatcher:
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod
-    def select_agent_class(is_spot_market):
+    def create_agent_object(owner, higher_market, lower_market, is_spot_market):
         if is_spot_market:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-                    return OneSidedAlternativePricingAgent
+                    return OneSidedAlternativePricingAgent(
+                        owner=owner,
+                        higher_market=higher_market,
+                        lower_market=lower_market,
+                        min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
+                    )
                 else:
-                    return OneSidedAgent
+                    return OneSidedAgent(
+                        owner=owner,
+                        higher_market=higher_market,
+                        lower_market=lower_market,
+                        min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
+                    )
             elif ConstSettings.IAASettings.MARKET_TYPE == 2:
-                return TwoSidedPayAsBidAgent
+                return TwoSidedPayAsBidAgent(
+                        owner=owner,
+                        higher_market=higher_market,
+                        lower_market=lower_market,
+                        min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
+                        min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
+                    )
             elif ConstSettings.IAASettings.MARKET_TYPE == 3:
-                return TwoSidedPayAsClearAgent
+                return TwoSidedPayAsClearAgent(
+                        owner=owner,
+                        higher_market=higher_market,
+                        lower_market=lower_market,
+                        min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
+                        min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
+                    )
         else:
-            return BalancingAgent
+            return BalancingAgent(
+                owner=owner,
+                higher_market=higher_market,
+                lower_market=lower_market,
+                min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
+            )
 
     def create_area_agents(self, is_spot_market, market):
         if not self.area.parent:
@@ -148,18 +175,16 @@ class AreaDispatcher:
         if not self.area.parent.events.is_connected:
             return
 
-        agent_class = self.select_agent_class(is_spot_market)
-
         if is_spot_market:
             if market.time_slot in self.interarea_agents or \
                     market.time_slot not in self.area.parent._markets.markets:
                 return
 
-            iaa = agent_class(
+            iaa = self.create_agent_object(
                 owner=self.area,
                 higher_market=self.area.parent._markets.markets[market.time_slot],
                 lower_market=market,
-                min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
+                is_spot_market=True
             )
 
             # Attach agent to own IAA list
@@ -175,10 +200,11 @@ class AreaDispatcher:
             if market.time_slot in self.balancing_agents or \
                     market.time_slot not in self.area.parent._markets.balancing_markets:
                 return
-            ba = agent_class(
+            ba = self.create_agent_object(
                 owner=self.area,
                 higher_market=self.area.parent._markets.balancing_markets[market.time_slot],
-                lower_market=market
+                lower_market=market,
+                is_spot_market=False
             )
 
             self._balancing_agents = create_subdict_or_update(self._balancing_agents,
