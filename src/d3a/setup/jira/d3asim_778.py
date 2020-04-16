@@ -24,7 +24,7 @@ from d3a_interface.constants_limits import ConstSettings
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    # ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
+    ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
     area = Area(
         'Grid',
         [
@@ -40,7 +40,7 @@ def get_setup(config):
                 ]
             ),
             Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_rate=30),
+                 strategy=CommercialStrategy(energy_rate=29.99),
                  appliance=SimpleAppliance()
                  ),
 
