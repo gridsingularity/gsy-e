@@ -127,45 +127,30 @@ class AreaDispatcher:
 
     @staticmethod
     def create_agent_object(owner, higher_market, lower_market, is_spot_market):
+        agent_constructor_arguments = {
+            "owner": owner,
+            "higher_market": higher_market,
+            "lower_market": lower_market,
+            "min_offer_age": ConstSettings.IAASettings.MIN_OFFER_AGE
+        }
         if is_spot_market:
             if ConstSettings.IAASettings.MARKET_TYPE == 1:
                 if ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME != 0:
-                    return OneSidedAlternativePricingAgent(
-                        owner=owner,
-                        higher_market=higher_market,
-                        lower_market=lower_market,
-                        min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
-                    )
+                    return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
                 else:
-                    return OneSidedAgent(
-                        owner=owner,
-                        higher_market=higher_market,
-                        lower_market=lower_market,
-                        min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
-                    )
+                    return OneSidedAgent(**agent_constructor_arguments)
             elif ConstSettings.IAASettings.MARKET_TYPE == 2:
                 return TwoSidedPayAsBidAgent(
-                        owner=owner,
-                        higher_market=higher_market,
-                        lower_market=lower_market,
-                        min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                        min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
-                    )
+                    **agent_constructor_arguments,
+                    min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
+                )
             elif ConstSettings.IAASettings.MARKET_TYPE == 3:
                 return TwoSidedPayAsClearAgent(
-                        owner=owner,
-                        higher_market=higher_market,
-                        lower_market=lower_market,
-                        min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                        min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
-                    )
+                    **agent_constructor_arguments,
+                    min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE
+                )
         else:
-            return BalancingAgent(
-                owner=owner,
-                higher_market=higher_market,
-                lower_market=lower_market,
-                min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE
-            )
+            return BalancingAgent(**agent_constructor_arguments)
 
     def create_area_agents(self, is_spot_market, market):
         if not self.area.parent:

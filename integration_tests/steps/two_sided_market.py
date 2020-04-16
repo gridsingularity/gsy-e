@@ -205,19 +205,19 @@ def energy_origin(context, producer, consumer):
 @then('trades are matched only on the Grid market')
 def trades_matched_on_grid(context):
     # Assert that all grid trades contain Offer objects, bid trades are not tracked
-    assert all(type(trade.offer) == Offer
+    assert all(isinstance(trade.offer, Offer)
                for market in context.simulation.area.past_markets
                for trade in market.trades)
 
     # Assert that all House 1 trades contain Bid objects
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
-    assert all(type(trade.offer) == Bid
+    assert all(isinstance(trade.offer, Bid)
                for market in house1.past_markets
                for trade in market.trades)
 
     # Assert that all House 2 trades contain Offer objects
     house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
-    assert all(type(trade.offer) == Offer
+    assert all(isinstance(trade.offer, Offer)
                for market in house2.past_markets
                for trade in market.trades)
 
@@ -225,38 +225,38 @@ def trades_matched_on_grid(context):
 @then('trades are matched only on the House 1 market')
 def trades_matched_on_house1(context):
     # Assert that all grid trades contain Offer objects, bid trades are not tracked
-    assert all(type(trade.offer) == Offer
+    assert all(isinstance(trade.offer, Offer)
                for market in context.simulation.area.past_markets
                for trade in market.trades)
 
-    # Assert that all House 1 trades contain Bid objects
+    # Assert that all House 1 trades contain Offer objects
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
-    assert all(type(trade.offer) == Offer
+    assert all(isinstance(trade.offer, Offer)
                for market in house1.past_markets
                for trade in market.trades)
 
     # Assert that all House 2 trades contain Offer objects
     house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
-    assert all(type(trade.offer) == Offer
+    assert all(isinstance(trade.offer, Offer)
                for market in house2.past_markets
                for trade in market.trades)
 
 
 @then('trades are matched only on the House 2 market')
 def trades_matched_on_house2(context):
-    # Assert that all grid trades contain Offer objects, bid trades are not tracked
-    assert all(type(trade.offer) == Bid
+    # Assert that all grid trades contain Bid objects
+    assert all(isinstance(trade.offer, Bid)
                for market in context.simulation.area.past_markets
                for trade in market.trades)
 
     # Assert that all House 1 trades contain Bid objects
     house1 = next(c for c in context.simulation.area.children if c.name == "House 1")
-    assert all(type(trade.offer) == Bid
+    assert all(isinstance(trade.offer, Bid)
                for market in house1.past_markets
                for trade in market.trades)
 
     # Assert that all House 2 trades contain Offer objects
     house2 = next(c for c in context.simulation.area.children if c.name == "House 2")
-    assert all(type(trade.offer) == Offer
+    assert all(isinstance(trade.offer, Offer)
                for market in house2.past_markets
                for trade in market.trades)
