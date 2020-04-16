@@ -16,18 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.strategy.area_agents.two_sided_pay_as_bid_agent import TwoSidedPayAsBidAgent
-from d3a.models.strategy.area_agents.two_sided_pay_as_clear_engine import TwoSidedPayAsClearEngine
 from d3a_interface.constants_limits import ConstSettings
 
 
 class TwoSidedPayAsClearAgent(TwoSidedPayAsBidAgent):
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
+                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
+                 min_bid_age=ConstSettings.IAASettings.MIN_BID_AGE):
         super().__init__(owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
-                         min_offer_age=min_offer_age,
-                         engine_type=TwoSidedPayAsClearEngine)
+                         min_offer_age=min_offer_age, min_bid_age=min_bid_age)
 
     @property
     def current_tick(self):

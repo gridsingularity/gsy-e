@@ -24,7 +24,7 @@ from d3a_interface.constants_limits import ConstSettings
 class InterAreaAgent(BaseStrategy):
     parameters = ('owner', 'higher_market', 'lower_market', 'min_offer_age')
 
-    def __init__(self, *, engine_type, owner, higher_market, lower_market,
+    def __init__(self, *, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
         """
         :param min_offer_age: Minimum age of offer before transferring
@@ -32,12 +32,6 @@ class InterAreaAgent(BaseStrategy):
         super().__init__()
         self.owner = owner
         self._validate_constructor_arguments(min_offer_age)
-        self.engines = [
-            engine_type('High -> Low', higher_market, lower_market, min_offer_age,
-                        self),
-            engine_type('Low -> High', lower_market, higher_market, min_offer_age,
-                        self),
-        ]
 
         self.time_slot = higher_market.time_slot.format(TIME_FORMAT)
 
