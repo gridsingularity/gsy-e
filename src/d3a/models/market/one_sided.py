@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union  # noqa
 from logging import getLogger
 from pendulum import DateTime
-from copy import deepcopy
 
 from d3a.events.event_structures import MarketEvent
 from d3a.models.market.market_structures import Offer, Trade
@@ -26,9 +25,8 @@ from d3a.models.market import Market, lock_market_action
 from d3a.d3a_core.exceptions import InvalidOffer, MarketReadOnlyException, \
     OfferNotFoundException, InvalidTrade
 from d3a.d3a_core.util import short_offer_bid_log_str
-from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.models.market.blockchain_interface import MarketBlockchainInterface
-from d3a.models.market.grid_fees.base_model import GridFees
+from d3a.models.market.blockchain_interface import MarketBlockchainInterface, \
+    NonBlockchainInterface
 from d3a_interface.constants_limits import ConstSettings
 
 log = getLogger(__name__)
@@ -37,9 +35,14 @@ log = getLogger(__name__)
 class OneSidedMarket(Market):
 
     def __init__(self, time_slot=None, bc=None, notification_listener=None,
-                 readonly=False, transfer_fees=None, name=None):
-        super().__init__(time_slot, bc, notification_listener, readonly, transfer_fees, name)
-        self.bc_interface = MarketBlockchainInterface(bc)
+                 readonly=False, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 transfer_fees=None, name=None, in_sim_duration=True):
+        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
+                         transfer_fees, name)
+        self.bc_interface = MarketBlockchainInterface(bc) \
+            if bc is not None \
+            else NonBlockchainInterface()
+        self.in_sim_duration = in_sim_duration
 
     def __repr__(self):  # pragma: no cover
         return "<OneSidedMarket{} offers: {} (E: {} kWh V: {}) trades: {} (E: {} kWh, V: {})>"\
@@ -56,9 +59,17 @@ class OneSidedMarket(Market):
         assert False
 
     def _update_new_offer_price_with_fee(self, offer_price, original_offer_price, energy):
-        return offer_price \
-            + self.transfer_fee_ratio * original_offer_price \
-            + self.transfer_fee_const * energy
+        """
+        Override one sided market private method to abstract away the grid fee calculation
+        when placing an offer to a market.
+        :param offer_price: Price of the offer coming from the source market, in cents
+        :param original_offer_price: Price of the original offer from the device
+        :param energy: Energy of the offer
+        :return: Updated price for the forwarded offer on this market, in cents
+        """
+        return self.fee_class.update_incoming_offer_with_fee(
+            offer_price / energy, original_offer_price / energy
+        ) * energy
 
     @lock_market_action
     def get_offers(self):
@@ -83,7 +94,7 @@ class OneSidedMarket(Market):
         offer = Offer(offer_id, price, energy, seller, original_offer_price,
                       seller_origin=seller_origin)
 
-        self.offers[offer.id] = deepcopy(offer)
+        self.offers[offer.id] = offer
         self.offer_history.append(offer)
         log.debug(f"[OFFER][NEW][{self.name}][{self.time_slot_str}] {offer}")
         self._update_min_max_avg_offer_prices()
@@ -112,8 +123,10 @@ class OneSidedMarket(Market):
 
     def _update_offer_fee_and_calculate_final_price(self, energy, trade_rate,
                                                     energy_portion, original_price):
-        fees = self.transfer_fee_ratio * original_price * energy_portion \
-            + self.transfer_fee_const * energy
+        if self._is_constant_fees:
+            fees = self.fee_class.grid_fee_rate * energy
+        else:
+            fees = self.fee_class.grid_fee_rate * original_price * energy_portion
         return fees, energy * trade_rate - fees
 
     @classmethod
@@ -166,20 +179,18 @@ class OneSidedMarket(Market):
         return accepted_offer, residual_offer
 
     def determine_offer_price(self, energy_portion, energy, trade_rate,
-                              trade_bid_info, orig_offer_price, original_offer, offer):
+                              trade_bid_info, orig_offer_price):
         if ConstSettings.IAASettings.MARKET_TYPE == 1:
             return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
             )
         else:
             revenue, grid_fee_rate, trade_rate_incl_fees = \
-                GridFees.calculate_trade_price_and_fees(
-                    trade_bid_info, self.transfer_fee_ratio
+                self.fee_class.calculate_trade_price_and_fees(
+                    trade_bid_info
                 )
             grid_fee_price = grid_fee_rate * energy
-            return grid_fee_price, energy * (trade_rate_incl_fees - grid_fee_rate) \
-                if original_offer.seller_origin == offer.seller else \
-                energy * trade_rate_incl_fees
+            return grid_fee_price, energy * trade_rate_incl_fees
 
     @lock_market_action
     def accept_offer(self, offer_or_id: Union[str, Offer], buyer: str, *, energy: int = None,
@@ -202,7 +213,7 @@ class OneSidedMarket(Market):
         residual_offer = None
 
         if trade_rate is None:
-            trade_rate = offer.price / offer.energy
+            trade_rate = offer.energy_rate
 
         orig_offer_price = self._calculate_original_prices(offer)
 
@@ -214,26 +225,24 @@ class OneSidedMarket(Market):
                 raise InvalidTrade("Energy can not be zero.")
             elif energy < offer.energy:
                 # partial energy is requested
-                assert trade_rate + FLOATING_POINT_TOLERANCE >= (offer.price / offer.energy)
 
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
                 fee_price, trade_price = self.determine_offer_price(
                     energy_portion=energy / accepted_offer.energy, energy=energy,
                     trade_rate=trade_rate, trade_bid_info=trade_bid_info,
-                    orig_offer_price=orig_offer_price, original_offer=original_offer,
-                    offer=accepted_offer)
+                    orig_offer_price=orig_offer_price)
 
                 offer = accepted_offer
-                offer.price = trade_price
+                offer.update_price(trade_price)
 
             elif energy > offer.energy:
                 raise InvalidTrade("Energy can't be greater than offered energy")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
-                fee_price, offer.price = self.determine_offer_price(
-                    1, energy, trade_rate, trade_bid_info, orig_offer_price,
-                    original_offer, offer)
+                fee_price, trade_price = self.determine_offer_price(
+                    1, energy, trade_rate, trade_bid_info, orig_offer_price)
+                offer.update_price(trade_price)
         except Exception:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
@@ -246,8 +255,8 @@ class OneSidedMarket(Market):
 
         # Delete the accepted offer from self.offers:
         self.offers.pop(offer.id, None)
-        offer_bid_trade_info = GridFees.propagate_original_bid_info_on_offer_trade(
-            trade_original_info=trade_bid_info, tax_ratio=self.transfer_fee_ratio)
+        offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
+            trade_original_info=trade_bid_info)
         trade = Trade(trade_id, time, offer, offer.seller, buyer, residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
@@ -257,7 +266,7 @@ class OneSidedMarket(Market):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer, buyer)
-            log.info(f"[TRADE] [{self.time_slot_str}] {trade}")
+            log.info(f"[TRADE] [{self.name}] [{self.time_slot_str}] {trade}")
 
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.

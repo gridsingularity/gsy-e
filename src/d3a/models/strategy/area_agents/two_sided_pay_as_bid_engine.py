@@ -22,18 +22,21 @@ from d3a.models.strategy.area_agents.inter_area_agent import InterAreaAgent  # N
 from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import BidNotFound, MarketException
 from d3a.models.market.market_structures import Bid
-from d3a.models.market.grid_fees.base_model import GridFees
 from d3a.d3a_core.util import short_offer_bid_log_str
+from d3a.constants import FLOATING_POINT_TOLERANCE
+
 
 BidInfo = namedtuple('BidInfo', ('source_bid', 'target_bid'))
 
 
 class TwoSidedPayAsBidEngine(IAAEngine):
-    def __init__(self, name: str, market_1, market_2, min_offer_age: int,
+    def __init__(self, name: str, market_1, market_2, min_offer_age: int, min_bid_age: int,
                  owner: "InterAreaAgent"):
         super().__init__(name, market_1, market_2, min_offer_age, owner)
         self.forwarded_bids = {}  # type: Dict[str, BidInfo]
         self.bid_trade_residual = {}  # type: Dict[str, Bid]
+        self.min_bid_age = min_bid_age
+        self.bid_age = {}
 
     def __repr__(self):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
@@ -47,8 +50,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             return
 
         forwarded_bid = self.markets.target.bid(
-            price=GridFees.update_forwarded_bid_with_fee(
-                bid.price, bid.original_bid_price, self.markets.source.transfer_fee_ratio),
+            price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                bid.price / bid.energy, bid.original_bid_price / bid.energy)) * bid.energy,
             energy=bid.energy,
             buyer=self.owner.name,
             seller=self.markets.target.name,
@@ -67,13 +70,30 @@ class TwoSidedPayAsBidEngine(IAAEngine):
         self.forwarded_bids.pop(bid_info.target_bid.id, None)
         self.forwarded_bids.pop(bid_info.source_bid.id, None)
 
+    def should_forward_bid(self, bid, current_tick):
+
+        if bid.id in self.forwarded_bids:
+            return False
+
+        if not self.owner.usable_bid(bid):
+            return False
+
+        if self.owner.name == bid.buyer:
+            return False
+
+        if current_tick - self.bid_age[bid.id] < self.min_bid_age:
+            return False
+
+        return True
+
     def tick(self, *, area):
         super().tick(area=area)
 
-        for bid_id, bid in self.markets.source.bids.items():
-            if bid_id not in self.forwarded_bids and \
-                    self.owner.usable_bid(bid) and \
-                    self.owner.name != bid.buyer:
+        for bid_id, bid in self.markets.source.get_bids().items():
+            if bid.id not in self.bid_age:
+                self.bid_age[bid.id] = area.current_tick
+
+            if self.should_forward_bid(bid, area.current_tick):
                 self._forward_bid(bid)
 
     def delete_forwarded_bids(self, bid_info):
@@ -95,9 +115,9 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             assert bid_trade.offer.energy <= market_bid.energy, \
                 f"Traded bid on target market has more energy than the market bid."
 
-            source_rate = bid_info.source_bid.price / bid_info.source_bid.energy
-            target_rate = bid_info.target_bid.price / bid_info.target_bid.energy
-            assert source_rate >= target_rate, \
+            source_rate = bid_info.source_bid.energy_rate
+            target_rate = bid_info.target_bid.energy_rate
+            assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             trade_rate = (bid_trade.offer.price/bid_trade.offer.energy)
@@ -105,28 +125,33 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
                 # which was skipped when accepting the bid during the trade operation.
-                updated_trade_offer_info = GridFees.propagate_original_offer_info_on_bid_trade(
-                    [None, None, *bid_trade.offer_bid_trade_info],
-                    self.markets.source.transfer_fee_ratio
-                )
+                updated_trade_offer_info = \
+                    self.markets.source.fee_class.propagate_original_offer_info_on_bid_trade(
+                        [None, None, *bid_trade.offer_bid_trade_info]
+                    )
             else:
                 updated_trade_offer_info = bid_trade.offer_bid_trade_info
 
+            trade_offer_info = \
+                self.markets.source.fee_class.update_forwarded_bid_trade_original_info(
+                    updated_trade_offer_info, market_bid
+                )
             self.markets.source.accept_bid(
                 bid=market_bid,
                 energy=bid_trade.offer.energy,
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_rate=trade_rate,
-                trade_offer_info=GridFees.update_forwarded_bid_trade_original_info(
-                    updated_trade_offer_info, market_bid
-                ), seller_origin=bid_trade.seller_origin
+                trade_offer_info=trade_offer_info,
+                seller_origin=bid_trade.seller_origin
             )
             self.delete_forwarded_bids(bid_info)
+            self.bid_age.pop(bid_info.source_bid.id, None)
 
         elif bid_trade.offer.id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
             self.delete_forwarded_bids(bid_info)
+            self.bid_age.pop(bid_info.source_bid.id, None)
         else:
             raise Exception(f"Invalid bid state for IAA {self.owner.name}: "
                             f"traded bid {bid_trade} was not in offered bids tuple {bid_info}")
@@ -147,6 +172,7 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             except MarketException:
                 self.owner.log.exception("Error deleting InterAreaAgent bid")
         self._delete_forwarded_bid_entries(bid_info.source_bid)
+        self.bid_age.pop(bid_info.source_bid.id, None)
 
     def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
         market = self.owner._get_market_from_market_id(market_id)
@@ -168,6 +194,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             self._add_to_forward_bids(local_residual_bid, residual_bid)
             self._add_to_forward_bids(local_split_bid, accepted_bid)
 
+            self.bid_age[local_residual_bid.id] = self.bid_age.pop(local_bid.id)
+
         elif market == self.markets.source and accepted_bid.id in self.forwarded_bids:
             # bid in the source market was split, also split the corresponding forwarded bid
             # in the target market
@@ -186,6 +214,8 @@ class TwoSidedPayAsBidEngine(IAAEngine):
             #  add the new bids to forwarded_bids
             self._add_to_forward_bids(residual_bid, local_residual_bid)
             self._add_to_forward_bids(accepted_bid, local_split_bid)
+
+            self.bid_age[residual_bid.id] = self.bid_age.pop(original_bid.id)
 
         else:
             return

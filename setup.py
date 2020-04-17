@@ -7,12 +7,12 @@ if "BRANCH" in os.environ:
     d3a_interface_branch = os.environ["BRANCH"]
 
 try:
-    with open('requirements/base.txt') as req:
+    with open('requirements/dev.txt') as req:
         REQUIREMENTS = [r.partition('#')[0] for r in req if not r.startswith('-e')]
         # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
         REQUIREMENTS.extend(
             ['d3a-interface @ '
-             f'git+https://github.com/gridsingularity/d3a-interface.git@{d3a_interface_branch}',
+             f'git+https://github.com/gridsingularity/d3a-interface.git',
              'py-solc @ git+https://github.com/Jonasmpi/py-solc.git'
              ])
 except OSError:
@@ -23,7 +23,7 @@ with open("README.rst", "r") as readme:
     README = readme.read()
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = '1.0.0a0'
+VERSION = '0.4.0'
 
 setup(
     name="d3a",

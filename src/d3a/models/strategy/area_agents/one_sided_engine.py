@@ -17,12 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict, Set  # noqa
-from copy import deepcopy
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import short_offer_bid_log_str
 from d3a.d3a_core.exceptions import MarketException, OfferNotFoundException
-from d3a.models.market.grid_fees.base_model import GridFees
+from d3a.models.market.market_structures import copy_offer
+
 
 OfferInfo = namedtuple('OfferInfo', ('source_offer', 'target_offer'))
 Markets = namedtuple('Markets', ('source', 'target'))
@@ -49,11 +49,11 @@ class IAAEngine:
         )
 
     def _offer_in_market(self, offer):
+        updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
+            offer.energy_rate, offer.original_offer_price / offer.energy) * offer.energy
 
         kwargs = {
-            "price": GridFees.update_forwarded_offer_with_fee(
-                        offer.price, offer.original_offer_price,
-                        self.markets.target.transfer_fee_ratio),
+            "price": updated_price,
             "energy": offer.energy,
             "seller": self.owner.name,
             "original_offer_price": offer.original_offer_price,
@@ -78,7 +78,7 @@ class IAAEngine:
         self.owner.log.trace(f"Forwarding offer {offer} to {forwarded_offer}")
         # TODO: Ugly solution, required in order to decouple offer placement from
         # new offer event triggering
-        self.markets.target.dispatch_market_offer_event(offer)
+        self.markets.target.dispatch_market_offer_event(forwarded_offer)
         return forwarded_offer
 
     def _delete_forwarded_offer_entries(self, offer):
@@ -93,7 +93,7 @@ class IAAEngine:
 
     def propagate_offer(self, current_tick):
         # Store age of offer
-        for offer in self.markets.source.sorted_offers:
+        for offer in self.markets.source.offers.values():
             if offer.id not in self.offer_age:
                 self.offer_age[offer.id] = current_tick
 
@@ -114,12 +114,14 @@ class IAAEngine:
                 continue
             if not self.owner.usable_offer(offer):
                 # Forbidden offer (i.e. our counterpart's)
+                self.offer_age.pop(offer_id, None)
                 continue
 
             # Should never reach this point.
             # This means that the IAA is forwarding offers with the same seller and buyer name.
             # If we ever again reach a situation like this, we should never forward the offer.
             if self.owner.name == offer.seller:
+                self.offer_age.pop(offer_id, None)
                 continue
 
             forwarded_offer = self._forward_offer(offer)
@@ -135,15 +137,17 @@ class IAAEngine:
 
         if trade.offer.id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
-            source_rate = offer_info.source_offer.price / offer_info.source_offer.energy
-            target_rate = offer_info.target_offer.price / offer_info.target_offer.energy
+            source_rate = offer_info.source_offer.energy_rate
+            target_rate = offer_info.target_offer.energy_rate
             assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             try:
-                trade_offer_rate = trade.offer.price / trade.offer.energy
-                updated_trade_bid_info = GridFees.update_forwarded_offer_trade_original_info(
-                    trade.offer_bid_trade_info, offer_info.source_offer)
+                trade_offer_rate = trade.offer.energy_rate
+                updated_trade_bid_info = \
+                    self.markets.source.fee_class.update_forwarded_offer_trade_original_info(
+                        trade.offer_bid_trade_info, offer_info.source_offer)
+
                 trade_source = self.owner.accept_offer(
                     market_or_id=self.markets.source,
                     offer=offer_info.source_offer,
@@ -250,7 +254,7 @@ class IAAEngine:
                              f"{short_offer_bid_log_str(local_residual_offer)}")
 
     def _add_to_forward_offers(self, source_offer, target_offer):
-        offer_info = OfferInfo(deepcopy(source_offer), deepcopy(target_offer))
+        offer_info = OfferInfo(copy_offer(source_offer), copy_offer(target_offer))
         self.forwarded_offers[source_offer.id] = offer_info
         self.forwarded_offers[target_offer.id] = offer_info
 

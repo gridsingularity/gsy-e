@@ -38,7 +38,7 @@ class TestExternalStrategy(unittest.TestCase):
                 "parent-area/test-area/delete_bid": self.external_strategy2.redis._delete_bid,
                 "parent-area/test-area/bid": self.external_strategy2.redis._bid,
                 "parent-area/test-area/bids": self.external_strategy2.redis._list_bids,
-                "parent-area/test-area/offers": self.external_strategy2.redis._offer_lists,
+                "parent-area/test-area/offers": self.external_strategy2.redis._offer_lists
             }
         )
 
@@ -48,7 +48,7 @@ class TestExternalStrategy(unittest.TestCase):
                 "parent-area/test-area/offer": self.external_redis._offer,
                 "parent-area/test-area/delete_offer": self.external_redis._delete_offer,
                 "parent-area/test-area/accept_offer": self.external_redis._accept_offer,
-                "parent-area/test-area/offers": self.external_redis._offer_lists,
+                "parent-area/test-area/offers": self.external_redis._offer_lists
             }
         )
 

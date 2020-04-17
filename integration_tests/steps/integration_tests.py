@@ -35,7 +35,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
     get_number_of_unmatched_loads
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
-ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades"]
+ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "totals_with_penalties"]
 
 
 @given('we have a scenario named {scenario}')
@@ -149,8 +149,7 @@ def pv_profile_scenario(context):
                                          sim_duration=duration(hours=23),
                                          market_count=4,
                                          cloud_coverage=0,
-                                         market_maker_rate=30,
-                                         iaa_fee=5)
+                                         market_maker_rate=30)
     context._settings.area = predefined_pv_scenario
 
 
@@ -196,8 +195,7 @@ def load_profile_scenario(context):
                                          sim_duration=duration(hours=24),
                                          market_count=4,
                                          cloud_coverage=0,
-                                         market_maker_rate=30,
-                                         iaa_fee=5)
+                                         market_maker_rate=30)
     context._settings.area = predefined_load_scenario
 
 
@@ -280,6 +278,15 @@ def run_sim_console(context, scenario, hours):
               .format(export_path=context.export_path, scenario=scenario, hours=hours))
 
 
+@when('we run the d3a simulation on console with {scenario} for {hours} hrs '
+      '({slot_length}, {tick_length})')
+def run_sim_console_decreased_tick_slot_length(context, scenario, hours, slot_length, tick_length):
+    context.export_path = os.path.join(context.simdir, scenario)
+    os.makedirs(context.export_path, exist_ok=True)
+    os.system(f"d3a -l FATAL run -d {hours}h -t {tick_length}s -s {slot_length}m "
+              f"--seed 0 --setup={scenario} --export-path={context.export_path}")
+
+
 @when('we run the d3a simulation with compare-alt-pricing flag with {scenario}')
 def run_sim_console_alt_price(context, scenario):
     context.export_path = os.path.join(context.simdir, scenario)
@@ -288,10 +295,8 @@ def run_sim_console_alt_price(context, scenario):
               "--compare-alt-pricing".format(export_path=context.export_path, scenario=scenario))
 
 
-@when('we run the d3a simulation with config parameters'
-      ' [{cloud_coverage}, {iaa_fee}] and {scenario}')
-def run_sim_with_config_setting(context, cloud_coverage,
-                                iaa_fee, scenario):
+@when('we run the d3a simulation with cloud_coverage [{cloud_coverage}] and {scenario}')
+def run_sim_with_config_setting(context, cloud_coverage, scenario):
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.CRITICAL)
@@ -300,8 +305,7 @@ def run_sim_with_config_setting(context, cloud_coverage,
                                          duration(minutes=int(60)),
                                          duration(seconds=int(60)),
                                          market_count=4,
-                                         cloud_coverage=int(cloud_coverage),
-                                         iaa_fee=int(iaa_fee))
+                                         cloud_coverage=int(cloud_coverage))
 
     slowdown = 0
     seed = 0
@@ -454,16 +458,14 @@ def test_aggregated_result_files(context):
                  os.path.join(base_path, 'random_seed.json'),
                  os.path.join(base_path, 'status.json'),
                  os.path.join(base_path, 'trade-detail.json'),
-                 os.path.join(base_path, 'tree_summary.json'),
                  os.path.join(base_path, 'unmatched_loads.json')]
 
     assert all(len(glob.glob(f)) == 1 for f in file_list)
     assert all(len(open(glob.glob(f)[0]).readlines()) > 0 for f in file_list)
 
 
-@then('we test that config parameters are correctly parsed for {scenario}'
-      ' [{cloud_coverage}, {iaa_fee}]')
-def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee):
+@then('we test that cloud coverage [{cloud_coverage}] and market_maker_rate are parsed correctly')
+def test_simulation_config_parameters(context, cloud_coverage):
     from d3a.models.read_user_profile import default_profile_dict
     assert context.simulation.simulation_config.cloud_coverage == int(cloud_coverage)
     assert len(context.simulation.simulation_config.market_maker_rate) == \
@@ -479,7 +481,6 @@ def test_simulation_config_parameters(context, scenario, cloud_coverage, iaa_fee
     assert context.simulation.simulation_config.market_maker_rate[from_format(
         f"{TODAY_STR}T23:00", DATE_TIME_FORMAT)] == context._market_maker_rate[
         from_format(f"{TODAY_STR}T22:00", DATE_TIME_FORMAT)]
-    assert context.simulation.simulation_config.iaa_fee == int(iaa_fee)
 
 
 @when('a simulation is created for scenario {scenario}')
@@ -490,7 +491,6 @@ def create_sim_object(context, scenario):
                                          market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
-                                         iaa_fee=5,
                                          start_date=today(tz=TIME_ZONE))
 
     context.simulation = Simulation(
@@ -565,6 +565,11 @@ def min_offer_age_nr_ticks(context, min_offer_age):
     ConstSettings.IAASettings.MIN_OFFER_AGE = int(min_offer_age)
 
 
+@given('the min bid age is set to {min_bid_age} ticks')
+def min_bid_age_nr_ticks(context, min_bid_age):
+    ConstSettings.IAASettings.MIN_BID_AGE = int(min_bid_age)
+
+
 @when('we run a multi-day d3a simulation with {scenario} [{start_date}, {total_duration}, '
       '{slot_length}, {tick_length}]')
 def run_sim_multiday(context, scenario, start_date, total_duration, slot_length, tick_length):
@@ -582,7 +587,6 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
                                          market_count=1,
                                          cloud_coverage=0,
                                          market_maker_rate=30,
-                                         iaa_fee=1,
                                          start_date=start_date)
 
     slowdown = 0
@@ -609,29 +613,20 @@ def run_sim_multiday(context, scenario, start_date, total_duration, slot_length,
     context.simulation.run()
 
 
-@when('we run the d3a simulation with {scenario} [{total_duration}, {slot_length}, {tick_length}]')
-def run_sim_without_iaa_fee(context, scenario, total_duration, slot_length, tick_length):
-    run_sim(context, scenario, total_duration, slot_length, tick_length,
-            ConstSettings.IAASettings.FEE_PERCENTAGE, market_count=1)
-
-
 @when("we run the simulation with setup file {scenario} with two different market_counts")
 def run_sim_market_count(context, scenario):
-    run_sim(context, scenario, 24, 60, 60, ConstSettings.IAASettings.FEE_PERCENTAGE,
-            market_count=1)
+    run_sim(context, scenario, 24, 60, 60, market_count=1)
     context.simulation_1 = context.simulation
 
-    run_sim(context, scenario, 24, 60, 60, ConstSettings.IAASettings.FEE_PERCENTAGE,
-            market_count=4)
+    run_sim(context, scenario, 24, 60, 60, market_count=4)
     context.simulation_4 = context.simulation
 
 
 @when('we run the simulation with setup file {scenario} and parameters '
-      '[{total_duration}, {slot_length}, {tick_length}, {iaa_fee}, {market_count}]')
+      '[{total_duration}, {slot_length}, {tick_length}, {market_count}]')
 @then('we run the simulation with setup file {scenario} and parameters '
-      '[{total_duration}, {slot_length}, {tick_length}, {iaa_fee}, {market_count}]')
-def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee,
-            market_count):
+      '[{total_duration}, {slot_length}, {tick_length}, {market_count}]')
+def run_sim(context, scenario, total_duration, slot_length, tick_length, market_count):
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.CRITICAL)
@@ -641,8 +636,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, iaa_fee
                                          duration(seconds=int(tick_length)),
                                          market_count=int(market_count),
                                          cloud_coverage=0,
-                                         market_maker_rate=30,
-                                         iaa_fee=int(iaa_fee))
+                                         market_maker_rate=30)
 
     slowdown = 0
     seed = 0
@@ -700,8 +694,12 @@ def test_accumulated_energy_price(context):
         extern_trades = bills[house_key]["External Trades"]
         assert extern_trades["total_energy"] == extern_trades["bought"] - extern_trades["sold"]
         assert extern_trades["total_cost"] == extern_trades["spent"] - extern_trades["earned"]
-        house_bill = bills[house_key]["Accumulated Trades"]["earned"] - \
+        house_bill = \
+            bills[house_key]["External Trades"]["spent"] - \
+            bills[house_key]["External Trades"]["earned"] + \
+            bills[house_key]["Accumulated Trades"]["earned"] - \
             bills[house_key]["Accumulated Trades"]["spent"]
+
         area_net_traded_energy_price = \
             sum([v["earned"] - v["spent"] for k, v in bills[house_key].items()
                 if k not in ACCUMULATED_KEYS_LIST])
@@ -719,7 +717,10 @@ def test_accumulated_energy(context):
     net_energy = cell_tower_net
     for house_key in ["House 1", "House 2"]:
         house_net = bills[house_key]["Accumulated Trades"]["sold"] - \
-                    bills[house_key]["Accumulated Trades"]["bought"]
+                    bills[house_key]["Accumulated Trades"]["bought"] + \
+                    bills[house_key]["External Trades"]["bought"] - \
+                    bills[house_key]["External Trades"]["sold"]
+
         area_net_energy = \
             sum([v["sold"] - v["bought"] for k, v in bills[house_key].items()
                  if k not in ACCUMULATED_KEYS_LIST])
@@ -925,10 +926,8 @@ def test_sim_market_count(context):
 @then("we test the config parameters")
 def test_config_parameters(context):
     grid = context.simulation.area
-    assert grid.config.iaa_fee == 5
-    assert grid.config.iaa_fee_const == 1
-    assert all([rate == 35
-                for rate in grid.config.market_maker_rate.values()])
+    assert all([rate == 35 for rate in grid.config.market_maker_rate.values()])
+    assert grid.config.cloud_coverage == 1
 
 
 def _filter_markets_by_market_name(context, market_name):
@@ -950,6 +949,7 @@ def _filter_markets_by_market_name(context, market_name):
 def assert_trade_rates(context, market_name, trade_rate, grid_fee_rate=0):
     markets = _filter_markets_by_market_name(context, market_name)
 
+    assert any(len(market.trades) > 0 for market in markets)
     for market in markets:
         for t in market.trades:
             assert isclose(t.offer.price / t.offer.energy, float(trade_rate))

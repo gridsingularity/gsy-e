@@ -20,15 +20,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a_interface.constants_limits import TIME_FORMAT, DATE_FORMAT # NOQA
 from d3a_interface.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT  # NOQA
 
-# *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = "1.0.0a0"
-
 TIME_ZONE = "UTC"
 
 DEFAULT_PRECISION = 8
-FLOATING_POINT_TOLERANCE = 0.000001
+FLOATING_POINT_TOLERANCE = 0.00001
 
 REDIS_PUBLISH_RESPONSE_TIMEOUT = 1
 MAX_WORKER_THREADS = 10
 
 DISPATCH_EVENTS_BOTTOM_TO_TOP = True
+# Controls how often will event tick be dispatched to external connections. Defaults to
+# 20% of the slot length
+DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 10
+
+COLLABORATION_ID = ""
+# Controls whether the external connection is for use with the redis api client
+# or with the d3a-web. Default is to connect via Redis.
+EXTERNAL_CONNECTION_WEB = False
+
+DEVICE_PENALTY_RATE = 40.0

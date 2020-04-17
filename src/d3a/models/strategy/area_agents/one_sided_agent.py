@@ -25,11 +25,16 @@ from numpy.random import random
 class OneSidedAgent(InterAreaAgent):
     def __init__(self, *, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 engine_type=IAAEngine):
-        super().__init__(engine_type=engine_type, owner=owner,
+                 do_create_engine=True):
+        super().__init__(owner=owner,
                          higher_market=higher_market,
                          lower_market=lower_market,
                          min_offer_age=min_offer_age)
+        if do_create_engine:
+            self.engines = [
+                IAAEngine('High -> Low', higher_market, lower_market, min_offer_age, self),
+                IAAEngine('Low -> High', lower_market, higher_market, min_offer_age, self),
+            ]
         self.name = make_iaa_name(owner)
 
     def usable_offer(self, offer):

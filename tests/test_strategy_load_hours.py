@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import unittest
+from copy import deepcopy
 from unittest.mock import MagicMock, Mock
 from pendulum import DateTime, duration, today
 from parameterized import parameterized
@@ -51,8 +52,9 @@ class FakeArea:
         self.name = 'FakeArea'
 
         self._next_market = FakeMarket(0)
+        self.current_market = FakeMarket(0)
         self._bids = {}
-        self.markets = {TIME: FakeMarket(0),
+        self.markets = {TIME: self.current_market,
                         TIME + self.config.slot_length: FakeMarket(0),
                         TIME + 2 * self.config.slot_length: FakeMarket(0)}
         self.test_balancing_market = FakeMarket(1)
@@ -101,6 +103,10 @@ class FakeMarket:
         self.most_affordable_energy = 0.1551
         self.created_balancing_offers = []
         self.bids = {}
+        self.in_sim_duration = True
+
+    def get_bids(self):
+        return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str,
             seller: str, original_bid_price=None,
@@ -110,6 +116,12 @@ class FakeMarket:
                   buyer_origin=buyer_origin)
         self.bids[bid.id] = bid
         return bid
+
+    @property
+    def offers(self):
+        return {
+            o.id: o for o in self.sorted_offers
+        }
 
     @property
     def sorted_offers(self):
@@ -337,8 +349,8 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == repr(bid.id)
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == \
         repr(trade_market.id)
 
 
@@ -359,8 +371,8 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == repr(bid.id)
-    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == \
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][1] == repr(bid.id)
+    assert load_hours_strategy_test5.remove_bid_from_pending.calls[0][0][0] == \
         repr(trade_market.id)
 
 
@@ -386,6 +398,7 @@ def test_balancing_offers_are_not_created_if_device_not_in_registry(
 
 def test_balancing_offers_are_created_if_device_in_registry(
         balancing_fixture, area_test2):
+    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
     balancing_fixture.event_activate()
     balancing_fixture.event_market_cycle()
@@ -402,6 +415,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
 
     assert actual_balancing_demand_price == expected_balancing_demand_energy * 30
     selected_offer = area_test2.current_market.sorted_offers[0]
+    balancing_fixture.energy_requirement_Wh[area_test2.current_market.time_slot] = \
+        selected_offer.energy * 1000.0
     balancing_fixture.event_trade(market_id=area_test2.current_market.id,
                                   trade=Trade(id='id',
                                               time=area_test2.now,
@@ -485,3 +500,22 @@ def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false():
     load.area = FakeArea()
     load.event_activate()
     assert all([rate == -10 for rate in load.bid_update.energy_rate_change_per_update.values()])
+
+
+@pytest.fixture
+def load_hours_strategy_test3(area_test1):
+    load = LoadHoursStrategy(avg_power_W=100)
+    load.area = area_test1
+    load.owner = area_test1
+    return load
+
+
+def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3):
+    market_id = 0
+    load_hours_strategy_test3._bids[market_id] = \
+        [Bid("bid_id", 30, 1, buyer="FakeArea", seller="producer")]
+    expensive_bid = Bid("bid_id", 31, 1, buyer="FakeArea", seller="producer")
+    trade = Trade("trade_id", "time", expensive_bid, load_hours_strategy_test3, "buyer")
+
+    with pytest.raises(AssertionError):
+        load_hours_strategy_test3.event_trade(market_id=market_id, trade=trade)

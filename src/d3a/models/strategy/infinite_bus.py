@@ -47,7 +47,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
-            if (offer.price / offer.energy) <= self.energy_buy_rate[market.time_slot]:
+            if offer.energy_rate <= self.energy_buy_rate[market.time_slot]:
                 try:
                     self.accept_offer(market, offer, buyer_origin=self.owner.name)
                 except MarketException:

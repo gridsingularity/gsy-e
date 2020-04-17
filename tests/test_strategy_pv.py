@@ -105,6 +105,7 @@ class FakeMarket:
 class FakeTrade:
     def __init__(self, offer):
         self.offer = offer
+        self.seller = "FakeSeller"
 
     @property
     def buyer(self):
@@ -328,6 +329,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     pv_test6.event_market_cycle()
     assert market_test3.created_offers[0].energy == pv_test6.energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
+    fake_trade.seller = pv_test6.owner.name
     pv_test6.event_trade(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
     assert not market_test3.created_offers
@@ -457,3 +459,24 @@ def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
     pv.area = FakeArea()
     pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
+
+
+"""Test 11"""
+
+
+@pytest.fixture()
+def pv_test11(area_test3):
+    p = PVStrategy()
+    p.area = area_test3
+    p.owner = area_test3
+    return p
+
+
+def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
+    market_id = "market_id"
+    pv_test11.offers.sold[market_id] = [Offer("offer_id", 30, 1, "FakeArea")]
+    to_cheap_offer = Offer("offer_id", 29, 1, "FakeArea")
+    trade = Trade("trade_id", "time", to_cheap_offer, pv_test11, "buyer")
+
+    with pytest.raises(AssertionError):
+        pv_test11.event_trade(market_id=market_id, trade=trade)

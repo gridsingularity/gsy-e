@@ -21,10 +21,13 @@ import pytest
 from d3a.d3a_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.area import Area
-from d3a.models.leaves import PV
+from d3a.models.leaves import PV, LoadHours, Storage
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.budget_keeper import BudgetKeeper
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.external_strategies.pv import PVExternalStrategy
+from d3a.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from d3a.models.strategy.external_strategies.storage import StorageExternalStrategy
 
 
 def test_area_with_children_roundtrip():
@@ -109,6 +112,36 @@ def test_leaf_deserialization():
     assert isinstance(pv2, PV)
     assert pv2.strategy.panel_count == 1
     assert pv2.display_type == "PV"
+
+
+def test_leaf_external_connection_deserialization():
+    recovered = area_from_string(
+        '''{
+             "name": "house",
+             "children":[
+                 {"name": "pv1", "type": "PV", "panel_count": 4, "display_type": "PV",
+                 "allow_external_connection": true},
+                 {"name": "load1", "type": "LoadHours", "avg_power_W": 200, "display_type": "Load",
+                 "allow_external_connection": true},
+                 {"name": "storage1", "type": "Storage", "display_type": "Storage",
+                 "allow_external_connection": true}
+             ]
+           }
+        '''
+    )
+
+    pv1, load1, storage1 = recovered.children
+    assert isinstance(pv1, PV)
+    assert isinstance(pv1.strategy, PVExternalStrategy)
+    assert pv1.strategy.panel_count == 4
+    assert pv1.display_type == "PV"
+    assert isinstance(load1, LoadHours)
+    assert isinstance(load1.strategy, LoadHoursExternalStrategy)
+    assert load1.strategy.avg_power_W == 200
+    assert load1.display_type == "Load"
+    assert isinstance(storage1, Storage)
+    assert isinstance(storage1.strategy, StorageExternalStrategy)
+    assert storage1.display_type == "Storage"
 
 
 @pytest.fixture

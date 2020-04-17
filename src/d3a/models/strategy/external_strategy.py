@@ -15,14 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import json
 from d3a.models.strategy import BaseStrategy
 from d3a_interface.constants_limits import ConstSettings
-import json
 from d3a.models.market.market_redis_connection import TwoSidedMarketRedisEventSubscriber
 
 
-class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
+class RedisExternalStrategyConnection(TwoSidedMarketRedisEventSubscriber):
     def __init__(self, area):
         self.area = area
         super().__init__(None)
@@ -115,7 +114,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
                 self._bid_channel: self._bid,
                 self._delete_bid_channel: self._delete_bid,
                 self._list_bids_channel: self._list_bids,
-                self._list_offers_channel: self._offer_lists
+                self._list_offers_channel: self._offer_lists,
             }
 
     def sub_to_external_requests(self):
@@ -236,7 +235,7 @@ class RedisMarketExternalConnection(TwoSidedMarketRedisEventSubscriber):
 class ExternalStrategy(BaseStrategy):
     def __init__(self, area):
         super().__init__()
-        self.redis = RedisMarketExternalConnection(area)
+        self.redis = RedisExternalStrategyConnection(area)
 
     def shutdown(self):
         self.redis.shutdown()

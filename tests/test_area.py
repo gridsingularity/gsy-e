@@ -54,6 +54,8 @@ class TestAreaClass(unittest.TestCase):
         self.config.tick_length = duration(seconds=15)
         self.config.start_date = today(tz=TIME_ZONE)
         self.config.sim_duration = duration(days=1)
+        self.config.grid_fee_type = 1
+        self.config.end_date = self.config.start_date + self.config.sim_duration
         self.area = Area("test_area", None, None, self.strategy,
                          self.appliance, self.config, None, grid_fee_percentage=1)
         self.area.parent = self.area
@@ -67,12 +69,13 @@ class TestAreaClass(unittest.TestCase):
         ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = False
 
     def test_respective_area_grid_fee_is_applied(self):
+        self.config.grid_fee_type = 2
         self.area = Area(name="Street", children=[Area(name="House")],
-                         config=GlobalConfig, grid_fee_percentage=5)
-        self.area.parent = Area(name="GRID")
+                         grid_fee_percentage=5, config=self.config)
+        self.area.parent = Area(name="GRID", config=self.config)
         self.area.config.market_count = 1
         self.area.activate()
-        assert self.area.next_market.transfer_fee_ratio == 0.05
+        assert self.area.next_market.fee_class.grid_fee_rate == 0.05
         self.area.next_market.offer(1, 1, "test", "test")
         assert list(self.area.next_market.offers.values())[0].price == 1.05
 
@@ -80,6 +83,7 @@ class TestAreaClass(unittest.TestCase):
         self.area._bc = False
         for i in range(2, 97):
             self.config.market_count = i
+            self.config.grid_fee_type = ConstSettings.IAASettings.GRID_FEE_TYPE
             self.area._cycle_markets(False, False)
             assert len(self.area.all_markets) == i
 
@@ -125,17 +129,23 @@ class TestAreaClass(unittest.TestCase):
 
     def test_market_with_most_expensive_offer(self):
         m1 = MagicMock(spec=Market)
+        m1.in_sim_duration = True
         o1 = MagicMock(spec=Offer)
         o1.price = 12
         o1.energy = 1
+        o1.energy_rate = 12
         m2 = MagicMock(spec=Market)
+        m2.in_sim_duration = True
         o2 = MagicMock(spec=Offer)
         o2.price = 12
         o2.energy = 1
+        o2.energy_rate = 12
         m3 = MagicMock(spec=Market)
+        m3.in_sim_duration = True
         o3 = MagicMock(spec=Offer)
         o3.price = 12
         o3.energy = 1
+        o3.energy_rate = 12
         markets = OrderedDict()
         td = today(tz=TIME_ZONE)
         td1 = td + self.config.slot_length
@@ -153,16 +163,17 @@ class TestAreaClass(unittest.TestCase):
         m2.sorted_offers = [o2, o2]
         m3.sorted_offers = [o3, o3]
         assert self.area.market_with_most_expensive_offer is m1
-        o1.price = 19
-        o2.price = 20
-        o3.price = 18
+        o1.energy_rate = 19
+        o2.energy_rate = 20
+        o3.energy_rate = 18
         assert self.area.market_with_most_expensive_offer is m2
-        o1.price = 18
-        o2.price = 19
-        o3.price = 20
+        o1.energy_rate = 18
+        o2.energy_rate = 19
+        o3.energy_rate = 20
         assert self.area.market_with_most_expensive_offer is m3
 
     def test_cycle_markets(self):
+        GlobalConfig.end_date = GlobalConfig.start_date + GlobalConfig.sim_duration
         self.area = Area(name="Street", children=[Area(name="House")],
                          config=GlobalConfig, grid_fee_percentage=1)
         self.area.parent = Area(name="GRID")

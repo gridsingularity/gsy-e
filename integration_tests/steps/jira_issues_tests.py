@@ -286,30 +286,35 @@ def json_setup_file(context, setup_json):
     os.environ["D3A_SETUP_PATH"] = os.path.join(d3a_path, 'setup', setup_json)
 
 
-@then('the DSO should only pay 30 cents')
-def dso_pays_certain_price(context):
-    # The DSO pays 30 cts/kWh
-    grid_trades = 0
-    for market in context.simulation.area.past_markets:
-        for trade in market.trades:
-            grid_trades += 1
-            assert trade.offer.price == 30
-    assert grid_trades == 4
-    # The H1 General Load pays 45 cts/kWh
-    house_trades = 0
-    house1 = [child for child in context.simulation.area.children if child.name == "House 1"][0]
-    for market in house1.past_markets:
-        for trade in market.trades:
-            house_trades += 1
-            assert trade.offer.price == 45
-    assert house_trades == 4
+@then('the DSO doesnt pay the grid fee of the Grid, but {child_market}')
+def dso_pays_certain_price(context, child_market):
+    bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    child_market_spent = bills["Grid"][child_market]["spent"]
+    dso_earned_on_grid = bills["Grid"]["DSO"]["earned"]
+    grid_fees = bills["Grid"]["Accumulated Trades"]["market_fee"]
+    assert isclose(child_market_spent-dso_earned_on_grid, grid_fees)
+    assert bills["DSO"]["earned"] == dso_earned_on_grid
+    assert bills["Grid"]["Accumulated Trades"]["spent"] == child_market_spent
+    assert bills["Grid"]["Accumulated Trades"]["earned"] == dso_earned_on_grid
+    assert isclose(bills["Grid"]["Accumulated Trades"]["total_cost"],
+                   bills["Grid"]["Accumulated Trades"]["spent"] -
+                   bills["Grid"]["Accumulated Trades"]["earned"])
 
 
 @then('the storage decreases bid rate until final buying rate')
 def storage_decreases_bid_rate(context):
-    # print(context.simulation.area.past_markets)
     for market in context.simulation.area.past_markets:
         assert len(market.trades) == 1
         trade = market.trades[0]
         trade_rate = trade.offer.price / trade.offer.energy
         assert isclose(trade_rate, 15)
+
+
+@then('cumulative grid trades correctly reports the external trade')
+def area_external_trade(context):
+    cumulative_trade = context.simulation.endpoint_buffer.cumulative_grid_trades.\
+        current_trades_redis
+    house1 = list(filter(lambda x: x.name == "House 1", context.simulation.area.children))[0]
+    ext_trade = list(filter(lambda x: x['areaName'] == "External Trades",
+                            cumulative_trade[house1.uuid]))[0]['bars'][0]['energy']
+    assert isclose(ext_trade, -1 * 0.666, rel_tol=1e-05)

@@ -105,12 +105,16 @@ class UpdateFrequencyMixin:
         return current_tick_number * strategy.area.config.tick_length.seconds
 
     def increment_update_counter_all_markets(self, strategy):
-        for market in strategy.area.all_markets:
+        should_update = [
             self.increment_update_counter(strategy, market.time_slot)
+            for market in strategy.area.all_markets]
+        return any(should_update)
 
     def increment_update_counter(self, strategy, time_slot):
         if self.time_for_price_update(strategy, time_slot):
             self.update_counter[time_slot] += 1
+            return True
+        return False
 
     def time_for_price_update(self, strategy, time_slot):
         return self.elapsed_seconds(strategy) >= \
@@ -162,7 +166,7 @@ class UpdateFrequencyMixin:
                 bid = market.bids[bid.id]
             market.delete_bid(bid.id)
 
-            strategy.remove_bid_from_pending(bid.id, market.id)
+            strategy.remove_bid_from_pending(market.id, bid.id)
             strategy.post_bid(market, bid.energy * self.get_updated_rate(market.time_slot),
                               bid.energy, buyer_origin=bid.buyer_origin)
 
