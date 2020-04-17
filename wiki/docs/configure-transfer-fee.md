@@ -3,7 +3,7 @@ There are two fees that can be added to every trade in the grid:
 - constant transfer fee (in cents/kWh)
 - percentage transfer fee (in %) 
 
-In a configuration you can either set constant fees or percentage fees. By default D3A use constant fees. If you want to set percentage fees you just have to add `ConstSettings.IAASettings.GRID_FEE_TYPE = 2` at the top of your file.
+In a configuration you can either set constant fees or percentage fees. By default D3A use constant fees. If you want to set percentage fees you just have to add `config.grid_fee_type = 2` at the top of your file.
 
 A percentage transfer fee (in %) or a constant transfer fee (in cents/kWh) can be configured for each area individually in the setup file with the keyword `grid_fee_percentage` and `transfer_fee_const`:
 
