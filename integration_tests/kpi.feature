@@ -81,3 +81,9 @@ Feature: KPI integration tests
     | kpi.d3asim_2103_nopv1             |
     | kpi.d3asim_2103_nopv1_2_sided_pab |
 
+  Scenario: D3ASIM-2262, self sufficiency reports correct values on community that includes storage
+     Given we have a scenario named kpi/d3asim_2262
+     And d3a is installed
+     When we run the d3a simulation on console with kpi.d3asim_2262 for 24 hrs (30, 30)
+     Then self_sufficiency of {'Grid': 1.0, 'Community': 1.0, 'House 1': 0.66666, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
+     And self_consumption of {'Grid': 1.0, 'Community': 1.0, 'House 1': 1.0, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
