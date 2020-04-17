@@ -1269,11 +1269,11 @@
 <li><code>house1_storage</code> → <code>house1_load</code> = 2kWh</li>
 <li><code>house1_storage</code> → <code>house2_load</code> = 3kWh</li>
 <li><code>house1_self_consumer_energy</code> = (<code>house1_pv</code> → <code>house1_load</code>) + (<code>house1_pv</code> → <code>house1_storage</code> → <code>house1_load</code>) = 1 + 2 = 3kWh</li>
-<li><code>house1_total_energy_demanded</code> (only includes the demanded energy from house1’s load device) = 4kWh</li>
+<li><code>house1_total_energy_demanded</code> (only includes the demanded energy from house1’s load device) = 3kWh</li>
 </ul>
 <p>Then, self-sufficiency of the house 1 is <code>self_sufficiency(house1) = house1_self_consumer_energy / house1_total_energy_demanded</code></p>
 <ul>
-<li><code>self_sufficiency(house1)</code> = 3 / 4 = 0.75 → 75% </li>
+<li><code>self_sufficiency(house1)</code> = 3 / 3 = 0.75 → 100% </li>
 </ul>
 <p>Then, self-consumption of the house 1 is <code>self_consumption(house1) = house1_self_consumer_energy / house1_total_energy_produced</code></p>
 <ul>
@@ -1282,10 +1282,10 @@
 <p>From the reference point of <strong>GRID</strong> where all others areas are its children: </p>
 <ul>
 <li>
-<p><strong>self_sufficiency</strong> would always be 100% unless there is an <strong>unmatched load</strong> from any of the load devices</p>
+<p><strong>self_sufficiency</strong> = 10 / 10 = 1 → 100%</p>
 </li>
 <li>
-<p><strong>self_consumption</strong> would always be 100% unless there is an <strong>unmatched PV’s offer</strong> from any of the PV devices. </p>
+<p><strong>self_consumption</strong> = 10 / 10 = 1 → 100%</p>
 </li>
 </ul>
 <p><img alt="img" src="../img/kpis-1.png" /></p>
@@ -1364,7 +1364,7 @@
     
       <a href="https://www.linkedin.com/company/grid-singularity" class="md-footer-social__link fa fa-lg fa-linkedin"></a>
     
-      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q" class="md-footer-social__link fa fa-lg fa-slack"></a>
+      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg" class="md-footer-social__link fa fa-lg fa-slack"></a>
     
   </div>
 

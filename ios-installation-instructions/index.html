@@ -1496,60 +1496,60 @@
                 <h2 id="how-to-install-d3a-on-macos">How to Install D3A on macOS<a class="headerlink" href="#how-to-install-d3a-on-macos" title="Permanent link">&para;</a></h2>
 <h3 id="preparations">Preparations<a class="headerlink" href="#preparations" title="Permanent link">&para;</a></h3>
 <h5 id="make-sure-the-command-line-compiler-tools-are-installed">Make sure the command line compiler tools are installed:<a class="headerlink" href="#make-sure-the-command-line-compiler-tools-are-installed" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>xcode-select --install
-</pre></div>
+<div class="codehilite"><pre><span></span><code>xcode-select --install
+</code></pre></div>
 
 
 <p>(Select 'Install' in the window that opens)</p>
 <h5 id="install-homebrew">Install Homebrew<a class="headerlink" href="#install-homebrew" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>/usr/bin/ruby -e &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&quot;
-</pre></div>
+<div class="codehilite"><pre><span></span><code>/usr/bin/ruby -e &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&quot;
+</code></pre></div>
 
 
 <h5 id="install-some-libraries-we-need-later">Install some libraries we need later:<a class="headerlink" href="#install-some-libraries-we-need-later" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>brew install automake libtool pkg-config libffi gmp openssl readline xz
-</pre></div>
+<div class="codehilite"><pre><span></span><code>brew install automake libtool pkg-config libffi gmp openssl readline xz
+</code></pre></div>
 
 
 <h5 id="install-pyenv">Install pyenv:<a class="headerlink" href="#install-pyenv" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>brew install pyenv
+<div class="codehilite"><pre><span></span><code>brew install pyenv
 echo -e &#39;if command -v pyenv 1&gt;/dev/null 2&gt;&amp;1; then\n eval &quot;$(pyenv init -)&quot;\nfi&#39; &gt;&gt; ~/.bash_profile
-</pre></div>
+</code></pre></div>
 
 
 <h5 id="close-and-re-open-the-terminal">Close and re-open the terminal<a class="headerlink" href="#close-and-re-open-the-terminal" title="Permanent link">&para;</a></h5>
 <h5 id="install-python-36-and-set-as-default">Install Python 3.6 and set as default:<a class="headerlink" href="#install-python-36-and-set-as-default" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>pyenv install 3.6.3
+<div class="codehilite"><pre><span></span><code>pyenv install 3.6.3
 pyenv global 3.6.3
-</pre></div>
+</code></pre></div>
 
 
 <h5 id="install-virtualenvwrapper">Install virtualenvwrapper:<a class="headerlink" href="#install-virtualenvwrapper" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>pip install virtualenvwrapper
+<div class="codehilite"><pre><span></span><code>pip install virtualenvwrapper
 echo -e &#39;export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.6.3/bin/virtualenvwrapper.sh&#39; &gt;&gt; ~/.bash_profile
-</pre></div>
+</code></pre></div>
 
 
 <h5 id="setup-paths-for-compiling-python-libraries">Setup paths for compiling python libraries:<a class="headerlink" href="#setup-paths-for-compiling-python-libraries" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>echo -e &#39;BREW_PREFIX=&quot;$(brew --prefix openssl)&quot;\nexport CFLAGS=&quot;-I${BREW_PREFIX}/include&quot;\nexport LDFLAGS=&quot;-L${BREW_PREFIX}/lib&quot;&#39; &gt;&gt; ~/.bash_profile
-</pre></div>
+<div class="codehilite"><pre><span></span><code>echo -e &#39;BREW_PREFIX=&quot;$(brew --prefix openssl)&quot;\nexport CFLAGS=&quot;-I${BREW_PREFIX}/include&quot;\nexport LDFLAGS=&quot;-L${BREW_PREFIX}/lib&quot;&#39; &gt;&gt; ~/.bash_profile
+</code></pre></div>
 
 
 <h3 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h3>
 <h5 id="close-and-re-open-the-terminal_1">Close and re-open the terminal<a class="headerlink" href="#close-and-re-open-the-terminal_1" title="Permanent link">&para;</a></h5>
 <h5 id="clone-d3a-repository-do-this-inside-the-directory-where-you-want-the-project-to-be">Clone d3a repository (do this inside the directory where you want the project to be):<a class="headerlink" href="#clone-d3a-repository-do-this-inside-the-directory-where-you-want-the-project-to-be" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>git clone &quot;https://github.com/gridsingularity/d3a.git&quot;
+<div class="codehilite"><pre><span></span><code>git clone &quot;https://github.com/gridsingularity/d3a.git&quot;
 cd d3a
-</pre></div>
+</code></pre></div>
 
 
 <h5 id="create-and-initialize-d3a-virtualenv">Create and initialize d3a virtualenv<a class="headerlink" href="#create-and-initialize-d3a-virtualenv" title="Permanent link">&para;</a></h5>
-<div class="codehilite"><pre><span></span>brew install npm 
+<div class="codehilite"><pre><span></span><code>brew install npm 
 npm install --global ganache-cli
 mkvirtualenv d3a
 pip install pendulum pip-tools
 pip install -e . 
-</pre></div>
+</code></pre></div>
 
 
 <h5 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h5>
@@ -1630,7 +1630,7 @@ pip install -e .
     
       <a href="https://www.linkedin.com/company/grid-singularity" class="md-footer-social__link fa fa-lg fa-linkedin"></a>
     
-      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q" class="md-footer-social__link fa fa-lg fa-slack"></a>
+      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg" class="md-footer-social__link fa fa-lg fa-slack"></a>
     
   </div>
 

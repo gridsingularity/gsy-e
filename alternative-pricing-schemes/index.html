@@ -1272,14 +1272,14 @@
 This will run separate <code>d3a-simulation</code>s with all 4 alternative pricing schemes in parallel for the selected setup file. 
 The results of each simulation are stored in separate subfolders in the <code>export-path</code>.</p>
 <p>If you want to run a simulation only for one specific pricing scheme, set it via a <code>ConstSetting</code> in the setup file in which you are configuring your grid, e.g. by adding the following line:</p>
-<div class="codehilite"><pre><span></span>ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1
-</pre></div>
+<div class="codehilite"><pre><span></span><code>ConstSettings.IAASettings.AlternativePricing.PRICING_SCHEME = 1
+</code></pre></div>
 
 
 <p>(You should not set this parameter and use the <code>--compare-alt-pricing</code> cli parameter combined)</p>
 <p>The feed-in-tariff (FIT) is a percentage that is set in the <code>ConstSetting</code>s as well, the default is 50%. Set this parameter yourself via a <code>ConstSetting</code> in the setup file in which you are configuring your grid, by adding the following line (e.g. FIT = 60% of <code>market_maker_rate</code>):</p>
-<div class="codehilite"><pre><span></span>ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE = 60
-</pre></div>
+<div class="codehilite"><pre><span></span><code>ConstSettings.IAASettings.AlternativePricing.FEED_IN_TARIFF_PERCENTAGE = 60
+</code></pre></div>
 
 
 <p>For more information we refer to Alternative Pricing Mechanisms.</p>
@@ -1371,7 +1371,7 @@ The results of each simulation are stored in separate subfolders in the <code>ex
     
       <a href="https://www.linkedin.com/company/grid-singularity" class="md-footer-social__link fa fa-lg fa-linkedin"></a>
     
-      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q" class="md-footer-social__link fa fa-lg fa-slack"></a>
+      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg" class="md-footer-social__link fa fa-lg fa-slack"></a>
     
   </div>
 

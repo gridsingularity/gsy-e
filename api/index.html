@@ -1782,43 +1782,43 @@
 <h3 id="api-client-installation">API Client Installation<a class="headerlink" href="#api-client-installation" title="Permanent link">&para;</a></h3>
 <p>Note, if you are running the d3a using a virtual machine and vagrant, the latest api-client is already installed on your machine and you can skip to the <code>Launch Simulation</code> section below. If you are running the d3a locally, please follow the following instructions.</p>
 <h4 id="install-redis-server-open-a-new-terminal-and-type">Install Redis server. Open a new terminal and type<a class="headerlink" href="#install-redis-server-open-a-new-terminal-and-type" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>brew install redis
-</pre></div>
+<div class="codehilite"><pre><span></span><code>brew install redis
+</code></pre></div>
 
 
 <h4 id="install-d3a-client">Install d3a-client<a class="headerlink" href="#install-d3a-client" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>mkvirtualenv d3a-api-env
+<div class="codehilite"><pre><span></span><code>mkvirtualenv d3a-api-env
 pip install git+https://github.com/gridsingularity/d3a-api-client.git
-</pre></div>
+</code></pre></div>
 
 
 <h4 id="update-d3a-client-as-needed-when-an-update-is-deployed">Update d3a-client (as needed when an update is deployed)<a class="headerlink" href="#update-d3a-client-as-needed-when-an-update-is-deployed" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>pip uninstall d3a-api-client
+<div class="codehilite"><pre><span></span><code>pip uninstall d3a-api-client
 pip install git+https://github.com/gridsingularity/d3a-api-client.git
-</pre></div>
+</code></pre></div>
 
 
 <h3 id="using-the-api-client-with-a-running-simulation">Using the API Client with a Running Simulation<a class="headerlink" href="#using-the-api-client-with-a-running-simulation" title="Permanent link">&para;</a></h3>
 <h4 id="start-redis-server">Start Redis server<a class="headerlink" href="#start-redis-server" title="Permanent link">&para;</a></h4>
 <p>To use the API locally, your script connects to the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command : </p>
-<div class="codehilite"><pre><span></span>redis-server /usr/local/etc/redis.conf
-</pre></div>
+<div class="codehilite"><pre><span></span><code>redis-server /usr/local/etc/redis.conf
+</code></pre></div>
 
 
 <h4 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h4>
 <p>This requires you to have the d3a simulation installed on your machine. If you have yet to do this, see the installation instructions. First navigate to the d3a folder in a new terminal, then activate the d3a environment with:</p>
-<div class="codehilite"><pre><span></span>workon d3a
-</pre></div>
+<div class="codehilite"><pre><span></span><code>workon d3a
+</code></pre></div>
 
 
 <p>Then run:</p>
-<div class="codehilite"><pre><span></span>d3a -l INFO run -t 15s -s 15m --setup hackathon_training.HackTrain_01_simple --start-date 2016-10-06
-</pre></div>
+<div class="codehilite"><pre><span></span><code>d3a -l INFO run -t 15s -s 15m --setup hackathon_training.HackTrain_01_simple --start-date 2016-10-06
+</code></pre></div>
 
 
 <p>Note that this uses the simpler version of the full hack file, and runs more quickly. To run the full community, run:</p>
-<div class="codehilite"><pre><span></span>d3a -l INFO run -t 15s -s 15m --setup hackathon_training.HackTrain_01 --start-date 2016-10-06
-</pre></div>
+<div class="codehilite"><pre><span></span><code>d3a -l INFO run -t 15s -s 15m --setup hackathon_training.HackTrain_01 --start-date 2016-10-06
+</code></pre></div>
 
 
 <p>After a few seconds, trading should begin, and should look something like the below.
@@ -1827,8 +1827,8 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <p>Open a new terminal to run your trading strategy script (python file). In this python file you can code the trading strategy for the assets you manage. A template python script is provided. You are also able to print some information that you will get with your API calls.</p>
 <p>You can run your script in the terminal. First navigate to the folder <code>d3a/src/d3a/setup/hackathon_training/</code></p>
 <p>Then run</p>
-<div class="codehilite"><pre><span></span>python agent_api_template.py
-</pre></div>
+<div class="codehilite"><pre><span></span><code>python agent_api_template.py
+</code></pre></div>
 
 
 <h3 id="simulation-speed">Simulation speed<a class="headerlink" href="#simulation-speed" title="Permanent link">&para;</a></h3>
@@ -1839,29 +1839,29 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <p><strong>Third, your python interpreter:</strong></p>
 <p>To significantly increase the simulation speed you can also change your interpreter. Instead of using the default interpreter “Cpython”, you can use “pypy” which is much faster for repetitive tasks. Here are the steps to use pypy with the d3a:</p>
 <h4 id="1-install-pypy3">1. Install pypy3<a class="headerlink" href="#1-install-pypy3" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>Brew install pypy3
-</pre></div>
+<div class="codehilite"><pre><span></span><code>Brew install pypy3
+</code></pre></div>
 
 
 <h4 id="2-create-a-virtual-environment-using-pypy3">2. Create a virtual environment using pypy3<a class="headerlink" href="#2-create-a-virtual-environment-using-pypy3" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>mkvirtualenv -p [path_to_pypy3] env_name
-</pre></div>
+<div class="codehilite"><pre><span></span><code>mkvirtualenv -p [path_to_pypy3] env_name
+</code></pre></div>
 
 
 <h4 id="3-work-in-your-new-virtual-environment">3. Work in your new virtual environment<a class="headerlink" href="#3-work-in-your-new-virtual-environment" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>workon env_name
-</pre></div>
+<div class="codehilite"><pre><span></span><code>workon env_name
+</code></pre></div>
 
 
 <h4 id="4-install-fabric3">4. Install fabric3<a class="headerlink" href="#4-install-fabric3" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>pip install fabric3
-</pre></div>
+<div class="codehilite"><pre><span></span><code>pip install fabric3
+</code></pre></div>
 
 
 <p>Go to d3a folder <code>cd d3a</code></p>
 <h4 id="5-install-all-dependencies">5. Install all dependencies<a class="headerlink" href="#5-install-all-dependencies" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span>pip install -e .
-</pre></div>
+<div class="codehilite"><pre><span></span><code>pip install -e .
+</code></pre></div>
 
 
 <p>You’re all set to launch simulations from this virtual environment. </p>
@@ -1869,7 +1869,7 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <p>Backend simulations require modifications to the setup files to allow API connections. When you connect to the web application, the grid operator will make the necessary changes instead. This section is only relevant if you’re modifying your own setup files.</p>
 <h4 id="open-device-for-external-connection">Open Device for external connection<a class="headerlink" href="#open-device-for-external-connection" title="Permanent link">&para;</a></h4>
 <p>In the setup file, a device must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant device: </p>
-<div class="codehilite"><pre><span></span><span class="n">Area</span><span class="p">(</span> <span class="s1">&#39;house-1-s&#39;</span><span class="p">,</span>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span> <span class="s1">&#39;house-1-s&#39;</span><span class="p">,</span>
               <span class="p">[</span>
                      <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;h1-load-s&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileExternalStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">load1</span><span class="p">,</span>
                                                                              <span class="n">initial_buying_rate</span><span class="o">=</span><span class="n">Houses_initial_buying_rate</span><span class="p">,</span>
@@ -1886,18 +1886,18 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 
                <span class="p">],</span> <span class="n">grid_fee_percentage</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">transfer_fee_const</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">external_connection_available</span><span class="o">=</span><span class="kc">True</span>
            <span class="p">),</span>
-</pre></div>
+</code></pre></div>
 
 
 <p>By default, template strategies do not allow connections. Please also ensure that the appropriate libraries are imported (as in the template setup file provided).</p>
 <h4 id="open-area-for-external-connection">Open Area for external connection<a class="headerlink" href="#open-area-for-external-connection" title="Permanent link">&para;</a></h4>
 <p>The API supports multiple areas exposing their market statistics (e.g. min, max, avg, median price and volume of energy) to external devices. Access is controlled when setting up the simulation, using the Area class boolean argument called external_connection_available: </p>
-<div class="codehilite"><pre><span></span><span class="n">Area</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span>
          <span class="s1">&#39;House 2&#39;</span><span class="p">,</span>
          <span class="p">[</span> <span class="o">...</span> <span class="p">],</span> <span class="c1"># Children of the area</span>
          <span class="n">external_connection_available</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">),</span>
-</pre></div>
+</code></pre></div>
 
 
 <p>If set to true, the area allows all of its ‘child’ devices to request its market statistics. By default, this external_connection_available is set to False.</p>
@@ -1909,7 +1909,7 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <p>When a new market slot is available the client will get notified via an event. It is possible to capture this event and perform operations after it by overriding the on_market_cycle method.</p>
 <p>Ex: <code>def on_market_cycle(self, market_info):</code></p>
 <p>In the variable market_info you will get a dictionary with information on the market and your devices. The return values are the following : </p>
-<div class="codehilite"><pre><span></span><span class="p">{</span>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
   <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;house2&quot;</span><span class="p">,</span> 
   <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;13023c7d-205d-4b3a-a434-02375eb277ca&quot;</span><span class="p">,</span> 
   <span class="nt">&quot;start_time&quot;</span><span class="p">:</span> <span class="err">start-time</span> <span class="err">of</span> <span class="err">the</span> <span class="err">market</span> <span class="err">slot</span><span class="p">,</span> 
@@ -1936,7 +1936,7 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
     <span class="nt">&quot;total_traded_energy_kWh&quot;</span><span class="p">:</span> <span class="err">total</span> <span class="err">energy</span> <span class="err">traded</span> <span class="err">in</span> <span class="err">kWh</span>
     <span class="p">}</span>
 <span class="p">}</span>
-</pre></div>
+</code></pre></div>
 
 
 <h5 id="on-of-market-slot-completion-on_tickself-tick_info">On % of Market Slot Completion (on_tick(self, tick_info))<a class="headerlink" href="#on-of-market-slot-completion-on_tickself-tick_info" title="Permanent link">&para;</a></h5>
@@ -1948,7 +1948,7 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
 <h3 id="device-commands">Device Commands<a class="headerlink" href="#device-commands" title="Permanent link">&para;</a></h3>
 <h4 id="register-backend">Register - Backend<a class="headerlink" href="#register-backend" title="Permanent link">&para;</a></h4>
 <p>Each team will have to register to devices in order to implement their strategies.  Let’s take this area excerpt from the setup file as an example:</p>
-<div class="codehilite"><pre><span></span><span class="n">Area</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span>
                 <span class="s1">&#39;house2&#39;</span><span class="p">,</span>
                 <span class="p">[</span>
                     <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;load2&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursExternalStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
@@ -1960,28 +1960,28 @@ pip install git+https://github.com/gridsingularity/d3a-api-client.git
                                    <span class="p">],</span>
                 <span class="n">grid_fee_percentage</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">transfer_fee_const</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">external_connection_available</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">),</span>
-</pre></div>
+</code></pre></div>
 
 
 <p>Here we will take control of the area “load2”. There are 2 ways to register for this device: </p>
 <ol>
 <li>The constructor of the API class can connect and register automatically to a running simulation:</li>
 </ol>
-<div class="codehilite"><pre><span></span>r = RedisDeviceClient(&#39;load2&#39;, autoregister=True)
-</pre></div>
+<div class="codehilite"><pre><span></span><code>r = RedisDeviceClient(&#39;load2&#39;, autoregister=True)
+</code></pre></div>
 
 
 <ol>
 <li>You can also do it manually :</li>
 </ol>
-<div class="codehilite"><pre><span></span>r = RedisDeviceClient(&#39;load2&#39;, autoregister=False)
+<div class="codehilite"><pre><span></span><code>r = RedisDeviceClient(&#39;load2&#39;, autoregister=False)
 r.register()
-</pre></div>
+</code></pre></div>
 
 
 <p>To disconnect/unregister from a simulation, the following command is available:</p>
-<div class="codehilite"><pre><span></span>r.unregister()
-</pre></div>
+<div class="codehilite"><pre><span></span><code>r.unregister()
+</code></pre></div>
 
 
 <h4 id="register-frontend">Register - Frontend<a class="headerlink" href="#register-frontend" title="Permanent link">&para;</a></h4>
@@ -2078,7 +2078,7 @@ r.register()
     
       <a href="https://www.linkedin.com/company/grid-singularity" class="md-footer-social__link fa fa-lg fa-linkedin"></a>
     
-      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q" class="md-footer-social__link fa fa-lg fa-slack"></a>
+      <a href="https://join.slack.com/t/gsycommunity/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg" class="md-footer-social__link fa fa-lg fa-slack"></a>
     
   </div>
 
