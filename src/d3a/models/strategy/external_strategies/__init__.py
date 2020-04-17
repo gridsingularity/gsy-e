@@ -20,7 +20,8 @@ import json
 import d3a.constants
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
-from d3a.models.market.market_structures import Bid
+from d3a.models.market.market_structures import Offer, Bid
+from d3a_interface.constants_limits import ConstSettings
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -180,6 +181,15 @@ class ExternalMixin:
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
         if self.connected:
+            if ConstSettings.IAASettings.MARKET_TYPE != 1 and \
+                    trade.buyer == self.device.name and \
+                    isinstance(trade.offer, Offer):
+                # Do not track a 2-sided market trade that is originating from an Offer to a
+                # consumer (which should have posted a bid). This occurs when the clearing
+                # took place on the area market of the device, thus causing 2 trades, one for
+                # the bid clearing and one for the offer clearing.
+                return
+
             event_response_dict = {
                 "device_info": self._device_info_dict,
                 "event": "trade",
