@@ -181,6 +181,10 @@ class ExternalMixin:
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
         if self.connected:
+            if trade.seller != self.device.name and \
+                    trade.buyer != self.device.name:
+                # Trade does not concern this device, skip it.
+                return
             if ConstSettings.IAASettings.MARKET_TYPE != 1 and \
                     trade.buyer == self.device.name and \
                     isinstance(trade.offer, Offer):
