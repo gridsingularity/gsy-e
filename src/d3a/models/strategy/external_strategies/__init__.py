@@ -184,7 +184,7 @@ class ExternalMixin:
                 "device_info": self._device_info_dict,
                 "event": "trade",
                 "trade_id": trade.id,
-                "time": trade.time,
+                "time": trade.time.isoformat(),
                 "price": trade.offer.price,
                 "energy": trade.offer.energy,
                 "fee_price": trade.fee_price
