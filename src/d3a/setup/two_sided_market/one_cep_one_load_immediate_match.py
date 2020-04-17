@@ -15,35 +15,44 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from d3a.models.appliance.simple import SimpleAppliance
+from pendulum import duration
+from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
+    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
+
     area = Area(
         'Grid',
         [
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=24,
-                                                                       hrs_of_day=list(
-                                                                           range(0, 24)),
-                                                                       initial_buying_rate=0,
-                                                                       final_buying_rate=30))
+                    Area('H1 General Load', strategy=LoadHoursStrategy(
+                        avg_power_W=200,
+                        hrs_per_day=24,
+                        hrs_of_day=list(range(24)),
+                        initial_buying_rate=35,
+                        final_buying_rate=35,
+                        update_interval=duration(minutes=14)
+                    ), appliance=SwitchableAppliance()),
                 ]
             ),
-            Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_rate=30),
-                 appliance=SimpleAppliance()
-                 ),
-
+            Area(
+                'House 2',
+                [
+                    Area('Commercial Energy Producer',
+                         strategy=CommercialStrategy(energy_rate=35),
+                         appliance=SimpleAppliance()
+                         ),
+                ]
+            ),
         ],
         config=config
     )

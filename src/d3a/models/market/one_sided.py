@@ -266,7 +266,7 @@ class OneSidedMarket(Market):
 
         if already_tracked is False:
             self._update_stats_after_trade(trade, offer, buyer)
-            log.info(f"[TRADE] [{self.time_slot_str}] {trade}")
+            log.info(f"[TRADE] [{self.name}] [{self.time_slot_str}] {trade}")
 
         # TODO: Use non-blockchain non-event-driven version for now for both blockchain and
         # normal runs.
