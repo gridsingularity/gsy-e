@@ -286,12 +286,11 @@ class StorageExternalMixin(ExternalMixin):
 
     @property
     def _device_info_dict(self):
-        energy_to_sell = self.state.energy_to_sell_dict[self.market.time_slot] + \
+        energy_to_sell = self.state.energy_to_sell_dict[self.market.time_slot] - \
                          self.state.offered_sell_kWh[self.market.time_slot]
         energy_to_buy = \
-            self.state.energy_to_buy_dict[self.market.time_slot] + \
+            self.state.energy_to_buy_dict[self.market.time_slot] - \
             self.state.offered_buy_kWh[self.market.time_slot]
-
         return {
             "energy_to_sell": energy_to_sell,
             "energy_to_buy": energy_to_buy,
