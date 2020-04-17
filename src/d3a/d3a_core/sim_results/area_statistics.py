@@ -234,8 +234,7 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
                     accumulated_trades[area.name]["produced"] -= trade.offer.energy
         for market in area_markets:
             for trade in market.trades:
-                if area_name_from_area_or_iaa_name(trade.seller) == \
-                        area.name and area_name_from_area_or_iaa_name(trade.buyer) in child_names:
+                if area_sells_to_child(trade, area.name, child_names):
                     accumulated_trades[area.name]["consumedFromExternal"] = \
                         subtract_or_create_key(accumulated_trades[area.name]
                                                ["consumedFromExternal"],
