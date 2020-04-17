@@ -111,12 +111,12 @@ class Offers:
         return sold_offer_ids
 
     def open_in_market(self, market_id):
-        open_offer = []
+        open_offers = []
         sold_offer_ids = self.get_sold_offer_ids_in_market(market_id)
         for offer, _market in self.posted.items():
             if offer.id not in sold_offer_ids and market_id == _market:
-                open_offer.append(offer)
-        return open_offer
+                open_offers.append(offer)
+        return open_offers
 
     def open_offer_energy(self, market_id):
         return sum(o.energy for o in self.open_in_market(market_id))
