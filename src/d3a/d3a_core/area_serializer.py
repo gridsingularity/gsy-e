@@ -38,6 +38,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 from d3a.models.leaves import Leaf # NOQA
 from d3a.models.leaves import *  # NOQA
 from d3a.d3a_core.util import convert_datetime_to_str_keys_cached as convert_datetime_to_str_keys
+from d3a_interface.utils import key_in_dict_and_not_none
 
 
 class AreaEncoder(json.JSONEncoder):
@@ -136,7 +137,7 @@ def area_from_dict(description, config=None):
         baseline_peak_energy_export_kWh = description.get('baseline_peak_energy_export_kWh', None)
         import_capacity_kVA = description.get('import_capacity_kVA', None)
         export_capacity_kVA = description.get('export_capacity_kVA', None)
-        if 'children' in description:
+        if key_in_dict_and_not_none(description, 'children'):
             children = [area_from_dict(child) for child in description['children']]
         else:
             children = None

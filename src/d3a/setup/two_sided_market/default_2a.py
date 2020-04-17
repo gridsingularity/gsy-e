@@ -29,12 +29,6 @@ from d3a_interface.constants_limits import ConstSettings
 def get_setup(config):
 
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 35
-    ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.StorageSettings.INITIAL_BUYING_RATE = 24.99
-    ConstSettings.StorageSettings.FINAL_BUYING_RATE = 25
-    ConstSettings.StorageSettings.INITIAL_SELLING_RATE = 30
-    ConstSettings.StorageSettings.FINAL_SELLING_RATE = 25.01
 
     area = Area(
         'Grid',
