@@ -20,6 +20,7 @@ import json
 import d3a.constants
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
+from d3a.models.market.market_structures import Bid
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -179,15 +180,27 @@ class ExternalMixin:
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
         if self.connected:
-            trade_dict = json.loads(trade.to_JSON_string())
-            trade_dict.pop('already_tracked', None)
-            trade_dict.pop('offer_bid_trade_info', None)
-            trade_dict.pop('seller_origin', None)
-            trade_dict.pop('buyer_origin', None)
-            trade_dict["device_info"] = self._device_info_dict
-            trade_dict["event"] = "trade"
+            event_response_dict = {
+                "device_info": self._device_info_dict,
+                "event": "trade",
+                "trade_id": trade.id,
+                "time": trade.time,
+                "price": trade.offer.price,
+                "energy": trade.offer.energy,
+                "fee_price": trade.fee_price
+            }
+            event_response_dict["seller"] = trade.seller \
+                if trade.seller == self.device.name else "anonymous"
+            event_response_dict["buyer"] = trade.buyer \
+                if trade.buyer == self.device.name else "anonymous"
+            event_response_dict["residual_id"] = trade.residual.id \
+                if trade.residual is not None else "None"
+            bid_offer_key = 'bid_id' if isinstance(trade.offer, Bid) else 'offer_id'
+            event_response_dict["event_type"] = "buy" \
+                if trade.buyer == self.device.name else "sell"
+            event_response_dict[bid_offer_key] = trade.offer.id
             trade_event_channel = f"{self.channel_prefix}/events/trade"
-            self.redis.publish_json(trade_event_channel, trade_dict)
+            self.redis.publish_json(trade_event_channel, event_response_dict)
 
     def deactivate(self):
         super().deactivate()
