@@ -26,7 +26,7 @@ Feature: Run integration tests
   Examples: Settings
      | scenario               | duration | slot_length | tick_length |
      |         default_2      |    24    |      60     |      60     |
-     |        default_2b      |    24    |      55     |      60     |
+     |        default_2b      |    24    |      60     |      60     |
      |        default_3       |    24    |      60     |      60     |
      |        default_3a      |    24    |      60     |      60     |
      |        default_3b      |    24    |      60     |      60     |
