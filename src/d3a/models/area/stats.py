@@ -140,8 +140,11 @@ class AreaStats:
         return past_markets[-1] if len(past_markets) > 0 else None
 
     def get_market_stats(self, market_slot_list):
-        if self.current_market is None:
-            return {"INFO": "No market stats available yet"}
+        default_stats_dict = {"min_trade_rate": None,
+                              "max_trade_rate": None,
+                              "avg_trade_rate": None,
+                              "median_trade_rate": None,
+                              "total_traded_energy_kWh": None}
         out_dict = {}
         for time_slot_str in market_slot_list:
             try:
@@ -149,10 +152,6 @@ class AreaStats:
             except ValueError:
                 return {"ERROR": f"Time string '{time_slot_str}' is not following "
                                  f"the format '{DATE_TIME_FORMAT}'"}
-            if time_slot > self.current_market.time_slot:
-                out_dict[time_slot_str] = {"ERROR": "This market is not in the past."}
-            else:
-                if time_slot in self.rate_stats_market:
-                    out_dict[time_slot_str] = self.rate_stats_market[time_slot]
-                    out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
+            out_dict[time_slot_str] = self.rate_stats_market.get(time_slot, default_stats_dict)
+            out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
         return out_dict
