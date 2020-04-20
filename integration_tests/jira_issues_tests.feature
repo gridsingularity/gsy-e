@@ -139,3 +139,9 @@ Scenario: D3ASIM-2034: DSO doesnt pay the grid fee of the Grid
     And d3a is installed
     When we run the simulation with setup file jira.d3asim_1896 and parameters [6, 60, 60, 1]
     Then the storage decreases bid rate until final buying rate
+
+  Scenario: D3ASIM-2244: Cumulative Trading Graph correctly reports the External Trades
+    Given we have a scenario named jira/d3asim_2244
+    And d3a is installed
+    When we run the simulation with setup file jira.d3asim_2244 and parameters [24, 15, 15, 1]
+    Then cumulative grid trades correctly reports the external trade
