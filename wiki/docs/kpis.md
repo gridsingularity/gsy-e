@@ -25,11 +25,11 @@ If you have a look at the hierarchical energy grid as shown in figure below, the
 - `house1_storage` → `house1_load` = 2kWh
 - `house1_storage` → `house2_load` = 3kWh
 - `house1_self_consumer_energy` = (`house1_pv` → `house1_load`) + (`house1_pv` → `house1_storage` → `house1_load`) = 1 + 2 = 3kWh
-- `house1_total_energy_demanded` (only includes the demanded energy from house1’s load device) = 4kWh
+- `house1_total_energy_demanded` (only includes the demanded energy from house1’s load device) = 3kWh
 
 Then, self-sufficiency of the house 1 is `self_sufficiency(house1) = house1_self_consumer_energy / house1_total_energy_demanded`
 
-- `self_sufficiency(house1)` = 3 / 4 = 0.75 → 75% 
+- `self_sufficiency(house1)` = 3 / 3 = 0.75 → 100% 
 
 Then, self-consumption of the house 1 is `self_consumption(house1) = house1_self_consumer_energy / house1_total_energy_produced`
 
@@ -37,9 +37,11 @@ Then, self-consumption of the house 1 is `self_consumption(house1) = house1_self
 
 From the reference point of **GRID** where all others areas are its children: 
 
-- **self_sufficiency** would always be 100% unless there is an **unmatched load** from any of the load devices
+- **self_sufficiency** = 10 / 10 = 1 → 100%
 
-- **self_consumption** would always be 100% unless there is an **unmatched PV’s offer** from any of the PV devices. 
+- **self_consumption** = 10 / 10 = 1 → 100%
+
+
 
 ![img](img/kpis-1.png)
 
