@@ -20,6 +20,14 @@ from statistics import mean, median
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
+from copy import deepcopy
+
+default_trade_stats_dict = {
+    "min_trade_rate": None,
+    "max_trade_rate": None,
+    "avg_trade_rate": None,
+    "median_trade_rate": None,
+    "total_traded_energy_kWh": None}
 
 
 class AreaStats:
@@ -118,11 +126,7 @@ class AreaStats:
                 if self.current_market.time_slot in self.rate_stats_market else None
 
     def min_max_avg_median_rate_current_market(self):
-        out_dict = {"min_trade_rate": None,
-                    "max_trade_rate": None,
-                    "avg_trade_rate": None,
-                    "median_trade_rate": None,
-                    "total_traded_energy_kWh": None}
+        out_dict = deepcopy(default_trade_stats_dict)
         trade_volumes = [trade.offer.energy for trade in self.current_market.trades]
         trade_rates = [trade.offer.price/trade.offer.energy
                        for trade in self.current_market.trades]
@@ -140,8 +144,6 @@ class AreaStats:
         return past_markets[-1] if len(past_markets) > 0 else None
 
     def get_market_stats(self, market_slot_list):
-        if self.current_market is None:
-            return {"INFO": "No market stats available yet"}
         out_dict = {}
         for time_slot_str in market_slot_list:
             try:
@@ -149,10 +151,7 @@ class AreaStats:
             except ValueError:
                 return {"ERROR": f"Time string '{time_slot_str}' is not following "
                                  f"the format '{DATE_TIME_FORMAT}'"}
-            if time_slot > self.current_market.time_slot:
-                out_dict[time_slot_str] = {"ERROR": "This market is not in the past."}
-            else:
-                if time_slot in self.rate_stats_market:
-                    out_dict[time_slot_str] = self.rate_stats_market[time_slot]
-                    out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
+            out_dict[time_slot_str] = self.rate_stats_market.get(
+                time_slot, default_trade_stats_dict)
+            out_dict[time_slot_str]["market_bill"] = self._get_market_bills(time_slot)
         return out_dict
