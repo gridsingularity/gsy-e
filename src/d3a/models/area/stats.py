@@ -20,7 +20,7 @@ from statistics import mean, median
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
 from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
-from copy import deepcopy
+from copy import copy
 
 default_trade_stats_dict = {
     "min_trade_rate": None,
@@ -126,7 +126,7 @@ class AreaStats:
                 if self.current_market.time_slot in self.rate_stats_market else None
 
     def min_max_avg_median_rate_current_market(self):
-        out_dict = deepcopy(default_trade_stats_dict)
+        out_dict = copy(default_trade_stats_dict)
         trade_volumes = [trade.offer.energy for trade in self.current_market.trades]
         trade_rates = [trade.offer.price/trade.offer.energy
                        for trade in self.current_market.trades]
