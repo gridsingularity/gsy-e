@@ -48,6 +48,10 @@ class AreaMarkets:
     def all_spot_markets(self):
         return list(self.markets.values()) + list(self.past_markets.values())
 
+    @property
+    def all_future_spot_markets(self):
+        return list(self.markets.values())
+
     def rotate_markets(self, current_time, stats, dispatcher):
         # Move old and current markets & balancing_markets to
         # `past_markets` & past_balancing_markets. We use `list()` here to get a copy since we
@@ -61,7 +65,7 @@ class AreaMarkets:
                                   area_agent=dispatcher.balancing_agents)
         stats.update_accumulated()
         self._indexed_future_markets = {
-            m.id: m for m in self.all_spot_markets
+            m.id: m for m in self.all_future_spot_markets
         }
 
     def _market_rotation(self, current_time, markets, past_markets, area_agent):
@@ -136,6 +140,6 @@ class AreaMarkets:
                     else "%H:%M:%S"
                 ))
         self._indexed_future_markets = {
-            m.id: m for m in self.all_spot_markets
+            m.id: m for m in self.all_future_spot_markets
         }
         return changed
