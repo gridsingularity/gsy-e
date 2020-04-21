@@ -74,17 +74,17 @@ class AutoDeviceStrategy(DeviceClient):
         self.storages = self._handle_list_sentinel_value(storages_list)
 
     def bid_energy_print(self, energy, price_per_kWh):
-        bid = self.bid_energy(energy, energy * price_per_kWh)
+        bid = self.bid_energy(energy, price_per_kWh/100)
         bid = json.loads(bid['bid'])
         print(f"{self.device_id} bid {round(bid['energy'], 4)} kWh "
-              f"at {round(bid['price'] / bid['energy'], 2)}/kWh")
+              f"at {round(bid['price'], 2)}/kWh")
 
     def offer_energy_print(self, energy, price_per_kWh):
-        offer = self.offer_energy(energy, energy * price_per_kWh)
+        offer = self.offer_energy(energy, price_per_kWh/100)
         offer = json.loads(offer['offer'])
         print(
             f"{self.device_id} offer {round(offer['energy'], 4)} kWh "
-            f"at {round(offer['price'] / offer['energy'], 2)}/kWh")
+            f"at {round(offer['price'], 2)}/kWh")
 
     def on_market_cycle(self, market_info):
         """
@@ -234,6 +234,7 @@ class AutoDeviceStrategy(DeviceClient):
 
     def handle_storage_device_tick(self, tick_info):
         # battery strategy
+        print(tick_info)
         if 'energy_to_buy' in tick_info['device_info']:
             self.energy_to_buy = tick_info['device_info']['energy_to_buy']
             if self.energy_to_buy > 0.:
@@ -263,7 +264,6 @@ class AutoDeviceStrategy(DeviceClient):
         :param trade_info: Incoming message about the trade
         :return: None
         """
-
         ################################################
         # TRADE EVENT HANDLING
         ################################################
