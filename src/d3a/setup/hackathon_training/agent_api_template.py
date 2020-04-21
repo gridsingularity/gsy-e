@@ -234,7 +234,6 @@ class AutoDeviceStrategy(DeviceClient):
 
     def handle_storage_device_tick(self, tick_info):
         # battery strategy
-        print(tick_info)
         if 'energy_to_buy' in tick_info['device_info']:
             self.energy_to_buy = tick_info['device_info']['energy_to_buy']
             if self.energy_to_buy > 0.:
