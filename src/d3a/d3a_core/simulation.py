@@ -45,6 +45,9 @@ from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCo
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
+import os
+import psutil
+import gc
 
 if platform.python_implementation() != "PyPy" and \
         ConstSettings.BlockchainSettings.BC_INSTALLED is True:
@@ -293,6 +296,11 @@ class Simulation:
                 break
 
             self.area._cycle_markets()
+
+            gc.collect()
+            process = psutil.Process(os.getpid())
+            mbs_used = process.memory_info().rss / 1000000.0
+            log.warning(f"Used {mbs_used} MBs.")
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 # reset tick_resume after possible resume

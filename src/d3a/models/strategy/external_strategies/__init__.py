@@ -20,6 +20,8 @@ import json
 import d3a.constants
 from d3a.constants import DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
 from collections import namedtuple
+from d3a.models.market.market_structures import Offer
+from d3a_interface.constants_limits import ConstSettings
 
 
 IncomingRequest = namedtuple('IncomingRequest', ('request_type', 'arguments', 'response_channel'))
@@ -176,18 +178,53 @@ class ExternalMixin:
             self._last_dispatched_tick = current_tick
             self.redis.publish_json(tick_event_channel, current_tick_info)
 
+    def _publish_trade_event(self, trade, is_bid_trade):
+
+        if trade.seller != self.device.name and \
+                trade.buyer != self.device.name:
+            # Trade does not concern this device, skip it.
+            return
+
+        if ConstSettings.IAASettings.MARKET_TYPE != 1 and \
+                trade.buyer == self.device.name and \
+                isinstance(trade.offer, Offer):
+            # Do not track a 2-sided market trade that is originating from an Offer to a
+            # consumer (which should have posted a bid). This occurs when the clearing
+            # took place on the area market of the device, thus causing 2 trades, one for
+            # the bid clearing and one for the offer clearing.
+            return
+
+        event_response_dict = {
+            "device_info": self._device_info_dict,
+            "event": "trade",
+            "trade_id": trade.id,
+            "time": trade.time.isoformat(),
+            "price": trade.offer.price,
+            "energy": trade.offer.energy,
+            "fee_price": trade.fee_price
+        }
+        event_response_dict["seller"] = trade.seller \
+            if trade.seller == self.device.name else "anonymous"
+        event_response_dict["buyer"] = trade.buyer \
+            if trade.buyer == self.device.name else "anonymous"
+        event_response_dict["residual_id"] = trade.residual.id \
+            if trade.residual is not None else "None"
+        bid_offer_key = 'bid_id' if is_bid_trade else 'offer_id'
+        event_response_dict["event_type"] = "buy" \
+            if trade.buyer == self.device.name else "sell"
+        event_response_dict[bid_offer_key] = trade.offer.id
+        trade_event_channel = f"{self.channel_prefix}/events/trade"
+        self.redis.publish_json(trade_event_channel, event_response_dict)
+
+    def event_bid_traded(self, market_id, bid_trade):
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
+        if self.connected:
+            self._publish_trade_event(bid_trade, True)
+
     def event_trade(self, market_id, trade):
         super().event_trade(market_id=market_id, trade=trade)
         if self.connected:
-            trade_dict = json.loads(trade.to_JSON_string())
-            trade_dict.pop('already_tracked', None)
-            trade_dict.pop('offer_bid_trade_info', None)
-            trade_dict.pop('seller_origin', None)
-            trade_dict.pop('buyer_origin', None)
-            trade_dict["device_info"] = self._device_info_dict
-            trade_dict["event"] = "trade"
-            trade_event_channel = f"{self.channel_prefix}/events/trade"
-            self.redis.publish_json(trade_event_channel, trade_dict)
+            self._publish_trade_event(trade, False)
 
     def deactivate(self):
         super().deactivate()
