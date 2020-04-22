@@ -77,7 +77,7 @@ class PlotlyGraph:
     @staticmethod
     def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list):
         return go.Layout(
-            autosize=True,
+            autosize=False,
             width=1200,
             height=700,
             barmode=barmode,
@@ -140,6 +140,7 @@ class PlotlyGraph:
                 time_range, data = cls.modify_time_axis(data, title)
             except ValueError:
                 return
+
         layout = cls.common_layout(barmode, title, ytitle, xtitle, time_range)
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from pendulum import from_format
 from statistics import mean, median
-from d3a_interface.constants_limits import DATE_TIME_FORMAT
+from d3a_interface.constants_limits import DATE_TIME_FORMAT, ConstSettings
 from d3a.constants import TIME_ZONE
 from d3a import limit_float_precision
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
@@ -52,9 +52,11 @@ class AreaStats:
                 if "bills" in self.aggregated_stats else None
             self.rate_stats_market[self.current_market.time_slot] = \
                 self.min_max_avg_median_rate_current_market()
-            # TODO: only perform his step, if plot_energy_trade_profile_hr=True
-            self.market_trades[self.current_market.time_slot.timestamp()] = \
-                self.aggregate_market_trades()
+            # TODO: This accumulation of trade data could potentially also used for the
+            #  LR energy trade profile (in the frame of D3ASIM-2212) and replace the old way
+            if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
+                self.market_trades[self.current_market.time_slot.timestamp()] = \
+                    self.aggregate_market_trades()
 
     def aggregate_market_trades(self):
         """
