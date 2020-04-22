@@ -48,6 +48,6 @@ class CustomPvStrategy(PVStrategy):
 
         decrease_rate_per_tick = 0.1
         # example for determining the current tick number:
-        current_tick_number = self.area.current_tick_in_slot % self.area.config.ticks_per_slot
+        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
         if current_tick_number >= 0:
             self._decrease_offer_price(self.area.next_market, decrease_rate_per_tick)

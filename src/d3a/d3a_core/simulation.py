@@ -184,11 +184,11 @@ class Simulation:
 
     @property
     def finished(self):
-        return self.area.current_tick_in_slot >= self.area.config.total_ticks
+        return self.area.current_tick >= self.area.config.total_ticks
 
     @property
     def time_since_start(self):
-        return self.area.current_tick_in_slot * self.simulation_config.tick_length
+        return self.area.current_tick * self.simulation_config.tick_length
 
     def reset(self):
         """
@@ -221,7 +221,7 @@ class Simulation:
                 # FIXME: Fix resume time calculation
                 if self.run_start is None or self.paused_time is None:
                     raise RuntimeError("Can't resume without saved state")
-                slot_resume, tick_resume = divmod(self.area.current_tick_in_slot,
+                slot_resume, tick_resume = divmod(self.area.current_tick,
                                                   self.simulation_config.ticks_per_slot)
             else:
                 self.run_start = DateTime.now(tz=TIME_ZONE)
@@ -438,8 +438,8 @@ class Simulation:
 
     def _info(self):
         info = self.simulation_config.as_dict()
-        slot, tick = divmod(self.area.current_tick_in_slot, self.simulation_config.ticks_per_slot)
-        percent = self.area.current_tick_in_slot / self.simulation_config.total_ticks * 100
+        slot, tick = divmod(self.area.current_tick, self.simulation_config.ticks_per_slot)
+        percent = self.area.current_tick / self.simulation_config.total_ticks * 100
         slot_count = self.simulation_config.sim_duration // self.simulation_config.slot_length
         info.update(slot=slot + 1, tick=tick + 1, slot_count=slot_count, percent=percent)
         log.critical(

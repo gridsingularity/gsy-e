@@ -27,9 +27,10 @@ from slugify import slugify
 from sortedcontainers import SortedDict
 from pendulum import from_timestamp
 from copy import deepcopy
+from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
-from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT, TIME_ZONE
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy

@@ -47,7 +47,6 @@ class FakeArea:
         self.name = 'FakeArea'
         self.count = count
         self.test_market = FakeMarket(0)
-        self.current_tick_in_slot = 0
 
     def get_future_market_from_id(self, id):
         return self.test_market
@@ -169,7 +168,7 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
     old_offer = list(pv_test3.offers.posted.keys())[0]
-    area_test3.current_tick_in_slot += 310
+    area_test3.current_tick += 310
     # in order to mimic at least one past price update:
     pv_test3.offer_update.increment_update_counter_all_markets(pv_test3)
     pv_test3.event_tick()

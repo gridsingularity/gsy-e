@@ -245,7 +245,7 @@ def iaa():
                         higher_market=higher_market,
                         lower_market=lower_market)
     iaa.event_tick()
-    iaa.owner.current_tick_in_slot = 14
+    iaa.owner.current_tick = 14
     iaa.event_tick()
     return iaa
 
@@ -264,7 +264,7 @@ def iaa_grid_fee():
                         higher_market=higher_market,
                         lower_market=lower_market)
     iaa.event_tick()
-    iaa.owner.current_tick_in_slot = 14
+    iaa.owner.current_tick = 14
     iaa.event_tick()
     return iaa
 
@@ -305,7 +305,7 @@ def iaa_bid():
                                 higher_market=higher_market,
                                 lower_market=lower_market)
     iaa.event_tick()
-    iaa.owner.current_tick_in_slot = 14
+    iaa.owner.current_tick = 14
     iaa.event_tick()
     yield iaa
 
@@ -350,7 +350,7 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
                                 higher_market=higher_market,
                                 lower_market=lower_market)
     iaa.event_tick()
-    iaa.owner.current_tick_in_slot = 14
+    iaa.owner.current_tic = 14
     iaa.event_tick()
 
     assert iaa.higher_market.bid_call_count == 1
@@ -372,7 +372,7 @@ def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
                                 higher_market=higher_market,
                                 lower_market=lower_market)
     iaa.event_tick()
-    iaa.owner.current_tick_in_slot = 14
+    iaa.owner.current_tick = 14
     iaa.event_tick()
 
     assert iaa.higher_market.bid_call_count == 1
@@ -466,7 +466,7 @@ def iaa2():
     owner.future_market = lower_market
     iaa = OneSidedAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
     iaa.event_tick()
-    iaa.owner.current_tick_in_slot += 2
+    iaa.owner.current_tick += 2
     iaa.event_tick()
     return iaa
 
@@ -485,7 +485,7 @@ def iaa_double_sided():
     iaa = TwoSidedPayAsBidAgent(owner=owner, lower_market=lower_market,
                                 higher_market=higher_market)
     iaa.event_tick()
-    iaa.owner.current_tick_in_slot += 2
+    iaa.owner.current_tick += 2
     iaa.event_tick()
     yield iaa
 
