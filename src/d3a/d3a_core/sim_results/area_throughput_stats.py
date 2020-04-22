@@ -36,30 +36,48 @@ class AreaThroughputStats:
             round_floats_for_ui(max(energy_profile.values(), default=0.0) / baseline_value * 100)
         peak_energy_kWh = round_floats_for_ui(max(energy_profile.values(), default=0.0))
         if direction_key == "import":
-            capacity_kWh = round_floats_for_ui(area.import_capacity_kWh)
             baseline_peak_energy_kWh = round_floats_for_ui(area.baseline_peak_energy_import_kWh)
         else:
-            capacity_kWh = round_floats_for_ui(area.export_capacity_kWh)
             baseline_peak_energy_kWh = round_floats_for_ui(area.baseline_peak_energy_export_kWh)
-        out_dict = {direction_key: {
+        return {
             "peak_energy_kWh": peak_energy_kWh,
             "peak_percentage": peak_percentage,
-            "capacity_kWh": capacity_kWh,
             "baseline_peak_energy_kWh": baseline_peak_energy_kWh,
-                                 }}
-        create_subdict_or_update(self.results, area.name, out_dict)
-        create_subdict_or_update(self.results_redis, area.uuid, out_dict)
+         }
+
+    def _calc_transformer_results(self, area, direction_key):
+        if direction_key == "import":
+            capacity_kWh = round_floats_for_ui(area.import_capacity_kWh)
+        else:
+            capacity_kWh = round_floats_for_ui(area.export_capacity_kWh)
+        return {"capacity_kWh": capacity_kWh}
 
     def update_results(self, area):
         baseline_import = area.baseline_peak_energy_import_kWh
         baseline_export = area.baseline_peak_energy_export_kWh
+        area_results = {"import": {}, "export": {}}
         if (baseline_import is not None and baseline_import > 0) or \
                 (baseline_export is not None and baseline_export > 0):
             self.aggregate_exported_imported_energy(area)
             if baseline_import is not None and baseline_import > 0:
-                self._calc_results(area, baseline_import, self.imported_energy, "import")
+                area_results["import"].update(
+                    self._calc_results(area, baseline_import, self.imported_energy, "import")
+                )
             if baseline_export is not None and baseline_export > 0:
-                self._calc_results(area, baseline_export, self.exported_energy, "export")
+                area_results["export"].update(
+                    self._calc_results(area, baseline_export, self.exported_energy, "export")
+                )
+
+        import_capacity = area.import_capacity_kWh
+        export_capacity = area.export_capacity_kWh
+        if import_capacity is not None and import_capacity > 0:
+            area_results["import"].update(self._calc_transformer_results(area, "import"))
+        if export_capacity is not None and export_capacity > 0:
+            area_results["export"].update(self._calc_transformer_results(area, "export"))
+
+        create_subdict_or_update(self.results, area.name, area_results)
+        create_subdict_or_update(self.results_redis, area.uuid, area_results)
+
         for child in area.children:
             if child.strategy is None:
                 self.update_results(child)
