@@ -44,6 +44,19 @@ class StorageExternalMixin(ExternalMixin):
             f'{self.channel_prefix}/device_info': self._device_info,
         })
 
+    def _is_ess_buy_limit_surpassed(self, energy):
+        return energy > self.state.energy_to_buy_dict[self.market.time_slot]
+
+    def _is_ess_sell_limit_surpassed(self, energy):
+        return energy > self.state.energy_to_sell_dict[self.market.time_slot]
+
+    def _publish_error_message_to_response_channel(self, response_channel, transaction_id):
+        self.redis.publish_json(
+            response_channel,
+            {"command": "bid",
+             "error": "ESS energy limit for this market_slot has been surpassed.",
+             "transaction_id": transaction_id})
+
     def _list_offers(self, payload):
         self._get_transaction_id(payload)
         list_offers_response_channel = f'{self.channel_prefix}/response/list_offers'
@@ -129,13 +142,9 @@ class StorageExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
-            if arguments['energy'] > self.state.energy_to_sell_dict[self.market.time_slot]:
-                "ESS energy limit for this market_slot has been surpassed."
-                self.redis.publish_json(
-                    offer_response_channel,
-                    {"command": "offer",
-                     "error": "ESS energy limit for this market_slot has been surpassed.",
-                     "transaction_id": transaction_id})
+            if self._is_ess_sell_limit_surpassed(arguments['energy']):
+                self._publish_error_message_to_response_channel(offer_response_channel,
+                                                                transaction_id)
                 return
 
         except Exception as e:
@@ -151,6 +160,12 @@ class StorageExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
+            transaction_id = arguments.get("transaction_id", None)
+            if self._is_ess_sell_limit_surpassed(arguments['energy']):
+                self._publish_error_message_to_response_channel(response_channel,
+                                                                transaction_id)
+                return
+
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
             offer = self.market.offer(**offer_arguments)
             self.offers.post(offer, self.market.id)
@@ -160,7 +175,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "ready", "offer": offer.to_JSON_string(),
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": transaction_id})
         except Exception as e:
             logging.error(f"Error when handling offer create on area {self.device.name}: "
                           f"Exception: {str(e)}, Offer Arguments: {arguments}")
@@ -253,12 +268,9 @@ class StorageExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
             arguments['buyer'] = self.device.name
             arguments['buyer_origin'] = self.device.name
-            if arguments["energy"] > self.state.energy_to_buy_dict[self.market.time_slot]:
-                self.redis.publish_json(
-                    bid_response_channel,
-                    {"command": "bid",
-                     "error": "ESS energy limit for this market_slot has been surpassed.",
-                     "transaction_id": transaction_id})
+            if self._is_ess_buy_limit_surpassed(arguments["energy"]):
+                self._publish_error_message_to_response_channel(
+                    bid_response_channel, transaction_id)
                 return
 
         except Exception:
@@ -273,6 +285,11 @@ class StorageExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            transaction_id = arguments.get("transaction_id", None)
+            if self._is_ess_buy_limit_surpassed(arguments["energy"]):
+                self._publish_error_message_to_response_channel(
+                    bid_response_channel, transaction_id)
+                return
             bid = self.post_bid(
                 self.market,
                 arguments["price"],
@@ -285,7 +302,7 @@ class StorageExternalMixin(ExternalMixin):
             self.redis.publish_json(
                 bid_response_channel,
                 {"command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
-                 "transaction_id": arguments.get("transaction_id", None)})
+                 "transaction_id": transaction_id})
         except Exception as e:
             logging.error(f"Error when handling bid create on area {self.device.name}: "
                           f"Exception: {str(e)}, Bid Arguments: {arguments}")
