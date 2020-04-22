@@ -54,7 +54,7 @@ class CustomStorageStrategy(StorageStrategy):
 
         reduced_rate = 5
         # example for determining the current tick number:
-        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
+        current_tick_number = self.area.current_tick_in_slot % self.area.config.ticks_per_slot
         if current_tick_number >= 0:
             if reduced_rate < self.offer_update.final_rate[market.time_slot]:
                 reduced_rate = self.offer_update.final_rate[market.time_slot]
@@ -73,7 +73,7 @@ class CustomStorageStrategy(StorageStrategy):
         Because this functionality is already tests in the StorageStrategy
         """
         # Decrease the selling price over the ticks in a slot
-        current_tick_number = self.area.current_tick % self.area.config.ticks_per_slot
+        current_tick_number = self.area.current_tick_in_slot % self.area.config.ticks_per_slot
         elapsed_seconds = current_tick_number * self.area.config.tick_length.seconds
         if elapsed_seconds > self._increase_rate_timepoint_s:
             self._increase_rate_timepoint_s += self._increase_frequency_s

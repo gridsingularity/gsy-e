@@ -89,7 +89,7 @@ class IAAEngine:
         self.forwarded_offers.pop(offer_info.source_offer.id, None)
 
     def tick(self, *, area):
-        self.propagate_offer(area.current_tick)
+        self.propagate_offer(area.current_tick_in_slot)
 
     def propagate_offer(self, current_tick):
         # Store age of offer

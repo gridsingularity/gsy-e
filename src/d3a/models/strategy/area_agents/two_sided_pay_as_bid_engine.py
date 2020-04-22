@@ -91,9 +91,9 @@ class TwoSidedPayAsBidEngine(IAAEngine):
 
         for bid_id, bid in self.markets.source.get_bids().items():
             if bid.id not in self.bid_age:
-                self.bid_age[bid.id] = area.current_tick
+                self.bid_age[bid.id] = area.current_tick_in_slot
 
-            if self.should_forward_bid(bid, area.current_tick):
+            if self.should_forward_bid(bid, area.current_tick_in_slot):
                 self._forward_bid(bid)
 
     def delete_forwarded_bids(self, bid_info):

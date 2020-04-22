@@ -64,6 +64,10 @@ class FakeArea:
         return self._next_market
 
     @property
+    def current_tick_in_slot(self):
+        return self.current_tick % self.config.ticks_per_slot
+
+    @property
     def all_markets(self):
         return list(self.markets.values())
 

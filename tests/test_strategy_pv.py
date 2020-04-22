@@ -44,6 +44,7 @@ class FakeArea:
         self.appliance = None
         self.name = 'FakeArea'
         self.test_market = FakeMarket(0)
+        self.current_tick_in_slot = 0
 
     def get_future_market_from_id(self, id):
         return self.test_market
@@ -170,7 +171,7 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     assert pv_test2.energy_production_forecast_kWh[
                pendulum.today(tz=TIME_ZONE).at(hour=0, minute=0, second=2)
            ] == 0
-    area_test2.current_tick = DEFAULT_CONFIG.ticks_per_slot - 2
+    area_test2.current_tick_in_slot = DEFAULT_CONFIG.ticks_per_slot - 2
     pv_test2.event_tick()
     offer_id2 = list(pv_test2.offers.posted.keys())[0]
     offer2 = market_test2.offers[offer_id2]
@@ -207,7 +208,7 @@ def testing_decrease_offer_price(area_test3, pv_test3):
     pv_test3.event_market_cycle()
     pv_test3.event_tick()
     for i in range(2):
-        area_test3.current_tick += 310
+        area_test3.current_tick_in_slot += 310
         old_offer = list(pv_test3.offers.posted.keys())[0]
         pv_test3.event_tick()
         new_offer = list(pv_test3.offers.posted.keys())[0]
@@ -218,7 +219,7 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
     for _ in range(100):
-        area_test3.current_tick += 10
+        area_test3.current_tick_in_slot += 10
         pv_test3.event_tick()
     new_offer = list(pv_test3.offers.posted.keys())[-1]
     assert new_offer.price / new_offer.energy >= ConstSettings.PVSettings.SELLING_RATE_RANGE.final

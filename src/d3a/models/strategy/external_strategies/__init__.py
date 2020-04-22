@@ -164,7 +164,7 @@ class ExternalMixin:
         self._last_dispatched_tick = 0
 
     def _dispatch_event_tick_to_external_agent(self):
-        current_tick = self.device.current_tick % self.device.config.ticks_per_slot
+        current_tick = self.device.current_tick_in_slot % self.device.config.ticks_per_slot
         if current_tick - self._last_dispatched_tick >= self._dispatch_tick_frequency:
             tick_event_channel = f"{self.channel_prefix}/events/tick"
             current_tick_info = {

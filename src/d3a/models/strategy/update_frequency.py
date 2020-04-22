@@ -101,7 +101,8 @@ class UpdateFrequencyMixin:
 
     @staticmethod
     def elapsed_seconds(strategy):
-        current_tick_number = strategy.area.current_tick % strategy.area.config.ticks_per_slot
+        current_tick_number = \
+            strategy.area.current_tick_in_slot % strategy.area.config.ticks_per_slot
         return current_tick_number * strategy.area.config.tick_length.seconds
 
     def increment_update_counter_all_markets(self, strategy):

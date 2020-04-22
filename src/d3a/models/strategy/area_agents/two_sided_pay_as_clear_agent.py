@@ -30,7 +30,7 @@ class TwoSidedPayAsClearAgent(TwoSidedPayAsBidAgent):
 
     @property
     def current_tick(self):
-        return self.owner.current_tick % self.owner.config.ticks_per_slot
+        return self.owner.current_tick_in_slot % self.owner.config.ticks_per_slot
 
     def __repr__(self):
         return "<TwoSidedPayAsClearAgent {s.name} {s.time_slot}>".format(s=self)

@@ -54,6 +54,7 @@ class FakeArea:
         self._markets_return = {"Fake Market": FakeMarket(self.count)}
         self.next_market = self.all_markets[0]
         self.test_balancing_market = FakeMarket(1)
+        self.current_tick_in_slot = 0
 
     log = getLogger(__name__)
 
@@ -196,7 +197,7 @@ def test_if_storage_buys_cheap_energy(storage_strategy_test1, area_test1):
     storage_strategy_test1.event_activate()
     storage_strategy_test1.event_tick()
     for i in range(5):
-        area_test1.current_tick += 310
+        area_test1.current_tick_in_slot += 310
         storage_strategy_test1.event_tick()
     assert storage_strategy_test1.accept_offer.calls[0][0][1] == repr(
         FakeMarket(0).sorted_offers[0])
@@ -624,7 +625,7 @@ def test_storage_buys_partial_offer_and_respecting_battery_power(storage_strateg
     buy_market = area_test11.all_markets[0]
     storage_strategy_test11.event_tick()
     for i in range(2):
-        area_test11.current_tick += 310
+        area_test11.current_tick_in_slot += 310
         storage_strategy_test11.event_tick()
     # storage should not be able to buy energy after this tick because
     # self.state._battery_energy_per_slot is exceeded

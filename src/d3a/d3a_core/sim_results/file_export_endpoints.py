@@ -23,7 +23,8 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.d3a_core.util import convert_datetime_to_str_keys_cached as convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
-from d3a.d3a_core.util import generate_market_slot_list, round_floats_for_ui
+from d3a.d3a_core.util import generate_market_slot_list, round_floats_for_ui, \
+    area_name_from_area_or_iaa_name
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.sim_results.aggregate_results import merge_energy_trade_profile_to_global
 
@@ -204,10 +205,8 @@ class FileExportEndpoints:
         out_dict = {"sold_energy": {}, "bought_energy": {}}
         for market in past_markets:
             for trade in market.trades:
-                trade_seller = trade.seller[4:] if trade.seller.startswith("IAA ") \
-                    else trade.seller
-                trade_buyer = trade.buyer[4:] if trade.buyer.startswith("IAA ") \
-                    else trade.buyer
+                trade_seller = area_name_from_area_or_iaa_name(trade.seller)
+                trade_buyer = area_name_from_area_or_iaa_name(trade.buyer)
 
                 if trade_seller not in out_dict["sold_energy"]:
                     out_dict["sold_energy"][trade_seller] = {}
