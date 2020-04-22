@@ -59,13 +59,10 @@ class FakeArea:
                         TIME + 2 * self.config.slot_length: FakeMarket(0)}
         self.test_balancing_market = FakeMarket(1)
         self.test_balancing_market_2 = FakeMarket(2)
+        self.current_tick_in_slot = 5
 
     def get_future_market_from_id(self, id):
         return self._next_market
-
-    @property
-    def current_tick_in_slot(self):
-        return self.current_tick % self.config.ticks_per_slot
 
     @property
     def all_markets(self):
