@@ -227,23 +227,6 @@ class MarketEnergyBills:
         results[area.name]["totals_with_penalties"] = {"costs": totals_with_penalties}
 
     def _generate_external_and_total_bills(self, area, results, flattened):
-        if area.name in flattened:
-            # External trades are the trades of the parent area
-            external = flattened[area.name].copy()
-            # Should not include market fee to the external trades
-            market_fee = external.pop("market_fee", 0.)
-            # Should switch spent/earned and bought/sold, to match the perspective of the UI
-            spent = external.pop("spent") + market_fee
-            earned = external.pop("earned")
-            bought = external.pop("bought")
-            sold = external.pop("sold")
-            external.update(**{
-                "spent": earned, "earned": spent, "bought": sold,
-                "sold": bought, "market_fee": 0})
-            external["total_energy"] = external["bought"] - external["sold"]
-            external["total_cost"] = external["spent"] - external["earned"]
-            results[area.name].update({"External Trades": external})
-
         all_child_results = [v for v in results[area.name].values()]
         results[area.name].update({"Accumulated Trades": {
             'bought': sum(v['bought'] for v in all_child_results),
@@ -261,6 +244,22 @@ class MarketEnergyBills:
                               for v in all_child_results)
         }})
 
+        if area.name in flattened:
+            # External trades are the trades of the parent area
+            external = flattened[area.name].copy()
+            # Should not include market fee to the external trades
+            market_fee = external.pop("market_fee", 0.)
+            # Should switch spent/earned and bought/sold, to match the perspective of the UI
+            spent = external.pop("spent") + market_fee
+            earned = external.pop("earned")
+            bought = external.pop("bought")
+            sold = external.pop("sold")
+            external.update(**{
+                "spent": earned, "earned": spent, "bought": sold,
+                "sold": bought, "market_fee": 0})
+            external["total_energy"] = external["bought"] - external["sold"]
+            external["total_cost"] = external["spent"] - external["earned"]
+            results[area.name].update({"External Trades": external})
         return results
 
     def _bills_for_redis(self, area, bills_results):
