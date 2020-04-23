@@ -73,14 +73,14 @@ class AutoDeviceStrategy(DeviceClient):
         self.pvs = self._handle_list_sentinel_value(pvs_list)
         self.storages = self._handle_list_sentinel_value(storages_list)
 
-    def bid_energy_print(self, energy, price_per_kWh):
-        bid = self.bid_energy(energy, price_per_kWh/100)
+    def bid_energy_print(self, energy, cents_per_kWh):
+        bid = self.bid_energy_rate(energy, cents_per_kWh)
         bid = json.loads(bid['bid'])
         print(f"{self.device_id} bid {round(bid['energy'], 4)} kWh "
               f"at {round(bid['price'], 2)}/kWh")
 
-    def offer_energy_print(self, energy, price_per_kWh):
-        offer = self.offer_energy(energy, price_per_kWh/100)
+    def offer_energy_print(self, energy, cents_per_kWh):
+        offer = self.offer_energy_rate(energy, cents_per_kWh)
         offer = json.loads(offer['offer'])
         print(
             f"{self.device_id} offer {round(offer['energy'], 4)} kWh "
