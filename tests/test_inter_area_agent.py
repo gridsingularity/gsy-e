@@ -350,7 +350,7 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
                                 higher_market=higher_market,
                                 lower_market=lower_market)
     iaa.event_tick()
-    iaa.owner.current_tic = 14
+    iaa.owner.current_tick = 14
     iaa.event_tick()
 
     assert iaa.higher_market.bid_call_count == 1

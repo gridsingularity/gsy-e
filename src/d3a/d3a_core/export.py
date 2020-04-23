@@ -139,7 +139,7 @@ class ExportAndPlot:
             if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
                 self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
             if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
-                    ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
+                    ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
                 self.plot_supply_demand_curve(self.area, self.plot_dir)
             self.move_root_plot_folder()
         self.export_json_data(self.directory, self.area)
@@ -684,7 +684,7 @@ class ExportAndPlot:
         xtitle = 'Time'
         ytitle = 'Energy [kWh]'
         market_name = area.name
-        title = f'HR Energy Trade Profile of {market_name}'
+        title = f'High Resolution Energy Trade Profile of {market_name}'
         plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
         mkdir_from_str(plot_dir)
         for market_slot_unix, data in area.stats.market_trades.items():
@@ -722,6 +722,7 @@ class ExportAndPlot:
             buyer_dict[data["buyer"]]["energy"].append(data["energy"] * ENERGY_BUYER_SIGN_PLOTS)
 
         # 2. Create bar plot objects and collect them in a list
+        # The widths of bars in a plotly.Bar is set in milliseconds when axis is in datetime format
         for agent, data in seller_dict.items():
             data_obj = go.Bar(x=data["timestamp"],
                               y=data["energy"],
