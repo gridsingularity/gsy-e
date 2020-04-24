@@ -720,6 +720,7 @@ def test_accumulated_energy_price(context):
                            bills[house_key]["Market Fees"][key],
                            bills[house_key]["Totals"][key], abs_tol=1e-10)
 
+        assert isclose(bills[house_key]["Totals"]["total_cost"], 0, abs_tol=1e-10)
     assert isclose(net_traded_energy_price, 0, abs_tol=1e-10)
 
 
