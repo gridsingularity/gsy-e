@@ -279,6 +279,7 @@ class Simulation:
         self.simulation_config.external_redis_communicator.start_communication()
         self._update_and_send_results()
         for slot_no in range(slot_resume, slot_count):
+
             self._update_progress_info(slot_no, slot_count)
 
             log.info(
@@ -300,7 +301,7 @@ class Simulation:
             gc.collect()
             process = psutil.Process(os.getpid())
             mbs_used = process.memory_info().rss / 1000000.0
-            log.warning(f"Used {mbs_used} MBs.")
+            log.debug(f"Used {mbs_used} MBs.")
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 # reset tick_resume after possible resume

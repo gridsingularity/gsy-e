@@ -154,17 +154,7 @@ class SimulationEndpointBuffer:
 
     def _update_area_stats(self, area):
         area.stats.update_aggregated_stats({
-            "simulation_id": self.job_id,
-            "status": self.status,
             "bills": self.market_bills.bills_redis_results[area.uuid],
-            "cumulative_grid_trades":
-                self.cumulative_grid_trades.accumulated_trades_redis.get(area.uuid, None),
-            "unmatched_loads": self.market_unmatched_loads.unmatched_loads.get(area.name, None),
-            "price_energy_day": self.price_energy_day.csv_output.get(area.name, None),
-            "device_statistics": self.device_statistics.device_stats_time_str.get(area.uuid, None),
-            "energy_trade_profile":
-                self.file_export_endpoints.traded_energy_profile.get(area.slug, None),
-            "kpi": self.kpi.performance_indices.get(area.name, None)
         })
 
 

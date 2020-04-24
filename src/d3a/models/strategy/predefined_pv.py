@@ -160,6 +160,8 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
-        return read_arbitrary_profile(
+        converted_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self._power_profile_W)
+        del self._power_profile_W
+        return converted_profile

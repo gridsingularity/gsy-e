@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from numpy import random
-from pendulum import duration
-from typing import Union
+from pendulum import duration, DateTime
+from typing import Union, Dict
 from collections import namedtuple
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.d3a_core.exceptions import MarketException
@@ -75,7 +75,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.daily_energy_required = None
         # Energy consumed during the day ideally should not exceed daily_energy_required
         self.energy_per_slot_Wh = None
-        self.energy_requirement_Wh = {}  # type: Dict[Time, float]
+        self.energy_requirement_Wh = {}  # type: Dict[DateTime, float]
         self.hrs_per_day = {}  # type: Dict[int, int]
 
         self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
@@ -139,6 +139,19 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 if t <= self.area.current_market.time_slot)
         else:
             self.state.total_energy_demanded_wh = 0.0
+        self._delete_past_state()
+
+    def _delete_past_state(self):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True or \
+                self.area.current_market is None:
+            return
+        to_delete = []
+        for k in self.energy_requirement_Wh.keys():
+            if k < self.area.current_market.time_slot:
+                to_delete.append(k)
+        for k in to_delete:
+            del self.energy_requirement_Wh[k]
+            del self.state.desired_energy_Wh[k]
 
     def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None,
                                hrs_of_day=None, final_buying_rate=None):
