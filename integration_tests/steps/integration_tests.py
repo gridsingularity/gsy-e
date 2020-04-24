@@ -707,6 +707,20 @@ def test_accumulated_energy_price(context):
             f"area: {area_net_traded_energy_price} house {house_bill}"
         net_traded_energy_price += area_net_traded_energy_price
 
+        for accumulated_section in ["Accumulated Trades", "External Trades",
+                                    "Market Fees", "Totals"]:
+            assert isclose(bills[house_key][accumulated_section]["spent"]
+                           + bills[house_key][accumulated_section]["market_fee"]
+                           - bills[house_key][accumulated_section]["earned"],
+                           bills[house_key][accumulated_section]["total_cost"],  abs_tol=1e-10)
+
+        for key in ["spent", "earned", "total_cost", "sold", "bought", "total_energy"]:
+            assert isclose(bills[house_key]["Accumulated Trades"][key] +
+                           bills[house_key]["External Trades"][key] +
+                           bills[house_key]["Market Fees"][key],
+                           bills[house_key]["Totals"][key], abs_tol=1e-10)
+
+        assert isclose(bills[house_key]["Totals"]["total_cost"], 0, abs_tol=1e-10)
     assert isclose(net_traded_energy_price, 0, abs_tol=1e-10)
 
 
