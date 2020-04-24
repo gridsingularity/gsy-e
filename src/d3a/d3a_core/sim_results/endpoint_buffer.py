@@ -34,7 +34,7 @@ _NO_VALUE = {
 
 
 class SimulationEndpointBuffer:
-    def __init__(self, job_id, initial_params, area):
+    def __init__(self, job_id, initial_params, area, export_plots=True):
         self.job_id = job_id
         self.current_market = ""
         self.random_seed = initial_params["seed"] if initial_params["seed"] is not None else ''
@@ -52,14 +52,14 @@ class SimulationEndpointBuffer:
         self.cumulative_grid_trades = CumulativeGridTrades()
         self.trade_details = {}
         self.device_statistics = DeviceStatistics()
-        self.file_export_endpoints = FileExportEndpoints()
+        self.file_export_endpoints = FileExportEndpoints(export_plots)
         self.kpi = KPI()
         self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
 
     def generate_result_report(self):
-        redis_results = {
+        return {
             "job_id": self.job_id,
             "current_market": self.current_market,
             "random_seed": self.random_seed,
@@ -68,27 +68,13 @@ class SimulationEndpointBuffer:
             "bills": self.market_bills.bills_redis_results,
             "status": self.status,
             "progress_info": self.simulation_progress,
-            "kpi": self.kpi.performance_indices_redis
+            "kpi": self.kpi.performance_indices_redis,
+            "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
+            "last_energy_trade_profile": self.file_export_endpoints.traded_energy_current,
+            "last_price_energy_day": self.price_energy_day.redis_output,
+            "last_device_statistics": self.device_statistics.current_stats_time_str,
+            "area_throughput": self.area_throughput_stats.results_redis
         }
-
-        if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
-            redis_results.update({
-                "unmatched_loads": self.market_unmatched_loads.unmatched_loads_uuid,
-                "price_energy_day": self.price_energy_day.redis_output,
-                "device_statistics": self.device_statistics.flat_stats_time_str,
-                "energy_trade_profile": self.file_export_endpoints.traded_energy_profile_redis,
-                "area_throughput": self.area_throughput_stats.results_redis
-            })
-        else:
-            redis_results.update({
-                "last_unmatched_loads": self.market_unmatched_loads.last_unmatched_loads,
-                "last_energy_trade_profile": self.file_export_endpoints.traded_energy_current,
-                "last_price_energy_day": self.price_energy_day.redis_output,
-                "last_device_statistics": self.device_statistics.current_stats_time_str,
-                "area_throughput": self.area_throughput_stats.results_redis
-            })
-
-        return redis_results
 
     def generate_json_report(self):
         return {
