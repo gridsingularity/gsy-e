@@ -219,7 +219,8 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
             area_markets = [area_markets]
         for market in area_markets:
             for trade in market.trades:
-                if area_sells_to_child(trade, area.name, child_names):
+                if area_name_from_area_or_iaa_name(trade.seller) in child_names and \
+                        area_name_from_area_or_iaa_name(trade.buyer) in child_names:
                     # House self-consumption trade
                     accumulated_trades[area.name]["produced"] -= trade.offer.energy
                     accumulated_trades[area.name]["earned"] += trade.offer.price

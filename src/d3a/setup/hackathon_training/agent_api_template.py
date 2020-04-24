@@ -73,18 +73,18 @@ class AutoDeviceStrategy(DeviceClient):
         self.pvs = self._handle_list_sentinel_value(pvs_list)
         self.storages = self._handle_list_sentinel_value(storages_list)
 
-    def bid_energy_print(self, energy, price_per_kWh):
-        bid = self.bid_energy(energy, energy * price_per_kWh)
+    def bid_energy_print(self, energy, cents_per_kWh):
+        bid = self.bid_energy_rate(energy, cents_per_kWh)
         bid = json.loads(bid['bid'])
         print(f"{self.device_id} bid {round(bid['energy'], 4)} kWh "
-              f"at {round(bid['price'] / bid['energy'], 2)}/kWh")
+              f"at {round(bid['price'], 2)}/kWh")
 
-    def offer_energy_print(self, energy, price_per_kWh):
-        offer = self.offer_energy(energy, energy * price_per_kWh)
+    def offer_energy_print(self, energy, cents_per_kWh):
+        offer = self.offer_energy_rate(energy, cents_per_kWh)
         offer = json.loads(offer['offer'])
         print(
             f"{self.device_id} offer {round(offer['energy'], 4)} kWh "
-            f"at {round(offer['price'] / offer['energy'], 2)}/kWh")
+            f"at {round(offer['price'], 2)}/kWh")
 
     def on_market_cycle(self, market_info):
         """
@@ -235,25 +235,29 @@ class AutoDeviceStrategy(DeviceClient):
     def handle_storage_device_tick(self, tick_info):
         # battery strategy
         if 'energy_to_buy' in tick_info['device_info']:
-            self.energy_to_buy = tick_info['device_info']['energy_to_buy']
+            self.energy_to_buy = tick_info['device_info']
+            self.energy_to_buy = max(self.energy_to_buy['energy_to_buy'], self.energy_to_buy['offered_buy_kWh'])
             if self.energy_to_buy > 0.:
                 self.delete_bid()
                 price_per_kWh = \
                     self.buy_start_ramp_price_per_kWh + (
                         self.buy_end_ramp_price_per_kWh - self.buy_start_ramp_price_per_kWh) * (
                         float(tick_info['slot_completion'][:-1]) - 10) / 80
-                energy = self.device_info()['device_info']['energy_to_buy']
+                energy = self.device_info()['device_info']
+                energy = max(energy['energy_to_buy'], energy['offered_buy_kWh'])
                 if energy > 0.:
                     self.bid_energy_print(energy, price_per_kWh)
         if 'energy_to_sell' in tick_info['device_info']:
-            self.energy_to_sell = tick_info['device_info']['energy_to_sell']
+            self.energy_to_sell = tick_info['device_info']
+            self.energy_to_sell = max(self.energy_to_sell['energy_to_sell'], self.energy_to_sell['offered_sell_kWh'])
             if self.energy_to_sell > 0.:
                 self.delete_offer()
                 price_per_kWh = \
                     self.sell_start_ramp_price_per_kWh - (
                         self.sell_start_ramp_price_per_kWh - self.sell_end_ramp_price_per_kWh) * (
                                         float(tick_info['slot_completion'][:-1]) - 10) / 80
-                energy = self.device_info()['device_info']['energy_to_sell']
+                energy = self.device_info()['device_info']
+                energy = max(energy['energy_to_sell'], energy['offered_sell_kWh'])
                 if energy > 0.:
                     self.offer_energy_print(energy, price_per_kWh)
 
@@ -263,29 +267,22 @@ class AutoDeviceStrategy(DeviceClient):
         :param trade_info: Incoming message about the trade
         :return: None
         """
-
         ################################################
         # TRADE EVENT HANDLING
         ################################################
 
         # TODO Note that more info is currently passed than you should have.
         # TODO You will only have a trade confirmation and price / energy amount at the hack.
-
+        trade_price = trade_info['price']
+        trade_energy = trade_info['energy']
         # buyer
         if trade_info['buyer'] == self.device_id:
-            offer = json.loads(trade_info['offer'])
-            trade_price = offer['price']
-            trade_energy = offer['energy']
             trade_price_per_kWh = trade_price / trade_energy
             print(f'<-- {self.device_id} BOUGHT {round(trade_energy, 4)} kWh '
                   f'at {round(trade_price_per_kWh,2)}/kWh')
 
         # seller
         if trade_info['seller'] == self.device_id:
-            offer = json.loads(trade_info['offer'])
-            trade_price = offer['price']
-            trade_energy = offer['energy']
-            self.energy_to_sell -= trade_energy
             trade_price_per_kWh = trade_price / trade_energy
             print(f'--> {self.device_id} SOLD {round(trade_energy, 4)} kWh '
                   f'at {round(trade_price_per_kWh,2)}/kWh')

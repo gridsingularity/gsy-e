@@ -226,7 +226,28 @@ class MarketEnergyBills:
                     totals_with_penalties += results[child.name]["totals_with_penalties"]
         results[area.name]["totals_with_penalties"] = {"costs": totals_with_penalties}
 
+    def _write_acculumated_stats(self, area, results, all_child_results, key_name):
+        results[area.name].update({key_name: {
+            'bought': sum(v['bought'] for v in all_child_results),
+            'sold': sum(v['sold'] for v in all_child_results),
+            'spent': sum(v['spent'] for v in all_child_results),
+            'earned': sum(v['earned'] for v in all_child_results) + self.market_fees[area.name],
+            'penalty_cost': sum(v['penalty_cost']
+                                for v in all_child_results if 'penalty_cost' in v.keys()),
+            'penalty_energy': sum(v['penalty_energy']
+                                  for v in all_child_results if 'penalty_energy' in v.keys()),
+            'total_energy': sum(v['total_energy'] for v in all_child_results),
+            'total_cost': sum(v['total_cost']
+                              for v in all_child_results) - self.market_fees[area.name],
+            'market_fee': sum(v['market_fee']
+                              for v in all_child_results)
+        }})
+
     def _generate_external_and_total_bills(self, area, results, flattened):
+
+        all_child_results = [v for v in results[area.name].values()]
+        self._write_acculumated_stats(area, results, all_child_results, "Accumulated Trades")
+
         if area.name in flattened:
             # External trades are the trades of the parent area
             external = flattened[area.name].copy()
@@ -244,22 +265,13 @@ class MarketEnergyBills:
             external["total_cost"] = external["spent"] - external["earned"]
             results[area.name].update({"External Trades": external})
 
-        all_child_results = [v for v in results[area.name].values()]
-        results[area.name].update({"Accumulated Trades": {
-            'bought': sum(v['bought'] for v in all_child_results),
-            'sold': sum(v['sold'] for v in all_child_results),
-            'spent': sum(v['spent'] for v in all_child_results),
-            'earned': sum(v['earned'] for v in all_child_results) + self.market_fees[area.name],
-            'penalty_cost': sum(v['penalty_cost']
-                                for v in all_child_results if 'penalty_cost' in v.keys()),
-            'penalty_energy': sum(v['penalty_energy']
-                                  for v in all_child_results if 'penalty_energy' in v.keys()),
-            'total_energy': sum(v['total_energy'] for v in all_child_results),
-            'total_cost': sum(v['total_cost']
-                              for v in all_child_results) - self.market_fees[area.name],
-            'market_fee': sum(v['market_fee']
-                              for v in all_child_results)
-        }})
+            totals_child_list = [results[area.name]["Accumulated Trades"],
+                                 results[area.name]["External Trades"]]
+        else:
+            # If root area, Accumulated Trades == Totals
+            totals_child_list = [results[area.name]["Accumulated Trades"]]
+
+        self._write_acculumated_stats(area, results, totals_child_list, "Totals")
 
         return results
 

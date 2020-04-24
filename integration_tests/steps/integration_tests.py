@@ -691,8 +691,8 @@ def test_accumulated_energy_price(context):
         assert extern_trades["total_energy"] == extern_trades["bought"] - extern_trades["sold"]
         assert extern_trades["total_cost"] == extern_trades["spent"] - extern_trades["earned"]
         house_bill = \
-            bills[house_key]["External Trades"]["spent"] - \
-            bills[house_key]["External Trades"]["earned"] + \
+            bills[house_key]["Totals"]["spent"] - \
+            bills[house_key]["Totals"]["earned"] + \
             bills[house_key]["Accumulated Trades"]["earned"] - \
             bills[house_key]["Accumulated Trades"]["spent"]
 
@@ -714,8 +714,8 @@ def test_accumulated_energy(context):
     for house_key in ["House 1", "House 2"]:
         house_net = bills[house_key]["Accumulated Trades"]["sold"] - \
                     bills[house_key]["Accumulated Trades"]["bought"] + \
-                    bills[house_key]["External Trades"]["bought"] - \
-                    bills[house_key]["External Trades"]["sold"]
+                    bills[house_key]["Totals"]["bought"] - \
+                    bills[house_key]["Totals"]["sold"]
 
         area_net_energy = \
             sum([v["sold"] - v["bought"] for k, v in bills[house_key].items()

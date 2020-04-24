@@ -124,24 +124,6 @@ class PVExternalMixin(ExternalMixin):
             assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
             arguments['seller'] = self.device.name
             arguments['seller_origin'] = self.device.name
-
-            pending_offer_energy = sum(
-                req.arguments["energy"]
-                for req in self.pending_requests
-                if req.request_type == "offer"
-            )
-
-            if not self.can_offer_be_posted(
-                    arguments["energy"] + pending_offer_energy,
-                    self.state.available_energy_kWh.get(self.market.time_slot, 0.0),
-                    self.market):
-                self.redis.publish_json(
-                    offer_response_channel,
-                    {"command": "offer",
-                     "error": "Offer cannot be posted. Available energy has been reached with "
-                              "existing offers.",
-                     "transaction_id": transaction_id})
-                return
         except Exception as e:
             logging.error(f"Incorrect offer request. Payload {payload}. Exception {str(e)}.")
             self.redis.publish_json(
@@ -155,6 +137,10 @@ class PVExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments, response_channel):
         try:
+            assert self.can_offer_be_posted(
+                arguments["energy"],
+                self.state.available_energy_kWh.get(self.market.time_slot, 0.0),
+                self.market)
             offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
             offer = self.market.offer(**offer_arguments)
             self.offers.post(offer, self.market.id)
