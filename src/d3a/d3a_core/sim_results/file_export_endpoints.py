@@ -85,12 +85,20 @@ class FileExportEndpoints:
                     self.traded_energy_current, area.uuid)
                 self.time_slots = generate_market_slot_list(area)
 
-                traded_energy_current_name = {area.name: self.traded_energy_current[area.uuid]}
                 # Merges traded energy for the CSV file
                 # TODO: Adapt to not store the full results on D3A.
-                self.traded_energy_profile = merge_energy_trade_profile_to_global(
-                    traded_energy_current_name, self.traded_energy_profile,
-                    generate_market_slot_list(area))
+                if area.slug not in self.traded_energy_profile:
+                    self.traded_energy_profile[area.slug] = \
+                        {"sold_energy": {}, "bought_energy": {}}
+                    self._calculate_devices_sold_bought_energy(
+                        self.traded_energy_profile[area.slug], area.current_market)
+                    self.traded_energy_profile[area.slug] = self._serialize_traded_energy_lists(
+                        self.traded_energy_profile, area.slug)
+                else:
+                    traded_energy_current_name = {area.slug: self.traded_energy_current[area.uuid]}
+                    self.traded_energy_profile = merge_energy_trade_profile_to_global(
+                        traded_energy_current_name, self.traded_energy_profile,
+                        generate_market_slot_list(area))
 
             if self._should_export_plots:
                 # Traded energy for plot

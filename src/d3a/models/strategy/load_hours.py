@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from numpy import random
-from pendulum import duration, DateTime
-from typing import Union, Dict
+from pendulum import duration, DateTime  # NOQA
+from typing import Union, Dict  # NOQA
 from collections import namedtuple
 from d3a.d3a_core.util import generate_market_slot_list
 from d3a.d3a_core.exceptions import MarketException
@@ -134,9 +134,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.state.desired_energy_Wh[market.time_slot] = 0.0
         self.event_market_cycle_prices()
         if self.area.current_market:
-            self.state.total_energy_demanded_wh = sum(
-                e for t, e in self.state.desired_energy_Wh.items()
-                if t <= self.area.current_market.time_slot)
+            self.state.total_energy_demanded_wh += \
+                self.state.desired_energy_Wh[self.area.current_market.time_slot]
         else:
             self.state.total_energy_demanded_wh = 0.0
         self._delete_past_state()
