@@ -231,17 +231,29 @@ class MarketEnergyBills:
             'bought': sum(v['bought'] for v in all_child_results),
             'sold': sum(v['sold'] for v in all_child_results),
             'spent': sum(v['spent'] for v in all_child_results),
-            'earned': sum(v['earned'] for v in all_child_results) + self.market_fees[area.name],
+            'earned': sum(v['earned'] for v in all_child_results),
             'penalty_cost': sum(v['penalty_cost']
                                 for v in all_child_results if 'penalty_cost' in v.keys()),
             'penalty_energy': sum(v['penalty_energy']
                                   for v in all_child_results if 'penalty_energy' in v.keys()),
             'total_energy': sum(v['total_energy'] for v in all_child_results),
             'total_cost': sum(v['total_cost']
-                              for v in all_child_results) - self.market_fees[area.name],
+                              for v in all_child_results),
             'market_fee': sum(v['market_fee']
                               for v in all_child_results)
         }})
+
+    @staticmethod
+    def _market_fee_section(market_fee):
+        return {"Market Fees": {
+                    "bought": 0,
+                    "sold": 0,
+                    "spent": 0,
+                    "earned": market_fee,
+                    "market_fee": 0,
+                    "total_energy": 0,
+                    "total_cost": -1 * market_fee
+                    }}
 
     def _generate_external_and_total_bills(self, area, results, flattened):
 
@@ -272,7 +284,11 @@ class MarketEnergyBills:
             totals_child_list = [results[area.name]["Accumulated Trades"]]
 
         self._write_acculumated_stats(area, results, totals_child_list, "Totals")
+        total_market_fee = results[area.name]["Totals"]["market_fee"]
+        results[area.name]["Totals"]["earned"] += total_market_fee
+        results[area.name]["Totals"]["total_cost"] -= total_market_fee
 
+        results[area.name].update(self._market_fee_section(total_market_fee))
         return results
 
     def _bills_for_redis(self, area, bills_results):
