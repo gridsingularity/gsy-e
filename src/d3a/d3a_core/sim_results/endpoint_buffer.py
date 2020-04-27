@@ -25,6 +25,7 @@ from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.kpi import KPI
+from d3a.d3a_core.sim_results.area_market_stock_stats import StockStats
 
 _NO_VALUE = {
     'min': None,
@@ -57,6 +58,7 @@ class SimulationEndpointBuffer:
         self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
+        self.area_market_stocks_stats = StockStats()
 
     def generate_result_report(self):
         redis_results = {
@@ -139,6 +141,8 @@ class SimulationEndpointBuffer:
         self.generate_result_report()
 
         self.update_area_aggregated_stats(area)
+
+        self.area_market_stocks_stats.update(area)
 
     def _send_results_to_areas(self, area):
         stats = {

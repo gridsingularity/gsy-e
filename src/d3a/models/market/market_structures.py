@@ -21,6 +21,7 @@ from copy import deepcopy
 import json
 import pendulum
 from d3a.events import MarketEvent
+from datetime import datetime
 
 Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
@@ -35,6 +36,7 @@ class Offer:
         self.seller = seller
         self.seller_origin = seller_origin
         self.energy_rate = price / energy
+        self.time = datetime.now()
 
     def update_price(self, price):
         self.price = price
@@ -91,14 +93,16 @@ def offer_from_JSON_string(offer_string):
 
 
 class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
-                             'original_bid_price', 'buyer_origin', 'energy_rate'))):
+                             'original_bid_price', 'buyer_origin', 'energy_rate', 'time'))):
     def __new__(cls, id, price, energy, buyer, seller, original_bid_price=None,
-                buyer_origin=None, energy_rate=None):
+                buyer_origin=None, energy_rate=None, time=None):
         if energy_rate is None:
             energy_rate = price / energy
+        if time is None:
+            time = datetime.now()
         # overridden to give the residual field a default value
         return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller,
-                                       original_bid_price, buyer_origin, energy_rate)
+                                       original_bid_price, buyer_origin, energy_rate, time)
 
     def __repr__(self):
         return (
