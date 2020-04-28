@@ -15,27 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# from d3a.d3a_core.util import area_name_from_area_or_iaa_name,  round_floats_for_ui, \
-#     add_or_create_key, create_subdict_or_update, area_sells_to_child, child_buys_from_area
-from d3a.models.market.market_structures import Offer, Bid, Trade
-import sys
-default_market_stocks_area_dict = {
-
-}
 
 
 class StockStats:
     def __init__(self):
         self.state = {}
-        print(f"INIT: {sys.getsizeof(self.state)}")
-
-    def _default_area_market_stock_dict(self, object, area):
-        if isinstance(object, Offer):
-            return dict(seller=None, energy=0.0, rate=0.0)
-        elif isinstance(object, Bid):
-            return dict(buyer=None, energy=0.0, rate=0.0)
-        elif isinstance(object, Trade):
-            return dict(seller=None, buyer=0.0, energy=0.0, rate=0.0)
 
     def update(self, area):
         if area.name not in self.state:
@@ -67,7 +51,6 @@ class StockStats:
                 {"rate": offer.energy_rate, "tool_tip": tool_tip}
 
         for child in area.children:
+            if not child.children:
+                continue
             self.update(child)
-
-        print(f"INIT: {sys.getsizeof(self.state)}")
-        print(f"STATE: {self.state}")

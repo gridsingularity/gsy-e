@@ -76,7 +76,8 @@ class PlotlyGraph:
         self.trade_history = dict()
 
     @staticmethod
-    def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list):
+    def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list,
+                      showlegend=True):
         return go.Layout(
             autosize=False,
             width=1200,
@@ -93,7 +94,8 @@ class PlotlyGraph:
             font=dict(
                 size=16
             ),
-            showlegend=True
+            showlegend=showlegend,
+            hovermode="x"
         )
 
     def graph_value(self, scale_value=1):
@@ -134,13 +136,14 @@ class PlotlyGraph:
         return [start_time, end_time], data
 
     @classmethod
-    def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str):
+    def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str,
+                       showlegend=True):
         try:
             time_range, data = cls.modify_time_axis(data, title)
         except ValueError:
             return
 
-        layout = cls.common_layout(barmode, title, ytitle, xtitle, time_range)
+        layout = cls.common_layout(barmode, title, ytitle, xtitle, time_range, showlegend)
 
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
