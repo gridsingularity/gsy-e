@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import OrderedDict
 from copy import deepcopy
+from itertools import chain
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a_interface.constants_limits import ConstSettings
@@ -63,6 +64,7 @@ class MarketEnergyBills:
         self.bills_results = {}
         self.bills_redis_results = {}
         self.market_fees = {}
+        self.cumulative_bills_results = {}
 
     @classmethod
     def _store_bought_trade(cls, result_dict, trade):
@@ -82,6 +84,7 @@ class MarketEnergyBills:
         result_dict['earned'] += (trade.offer.price - fee_price) / 100.
         result_dict['total_energy'] -= trade.offer.energy
         result_dict['total_cost'] -= (trade.offer.price - fee_price) / 100.
+        result_dict['market_fee'] += fee_price / 100.0
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
@@ -112,18 +115,26 @@ class MarketEnergyBills:
                         for child in area.children}
             return self.bills_results[area.name]
 
-    def _store_area_penalties(self, results_dict, area):
+    def _calculate_device_penalties(self, area):
         if len(area.children) > 0:
             return
+
         if isinstance(area.strategy, LoadHoursStrategy):
-            penalty_energy = sum(
+            return sum(
                 area.strategy.energy_requirement_Wh.get(market.time_slot, 0) / 1000.0
                 for market in self._get_past_markets_from_area(area.parent, "past_markets"))
         elif isinstance(area.strategy, PVStrategy):
-            penalty_energy = sum(
+            return sum(
                 area.strategy.state.available_energy_kWh.get(market.time_slot, 0)
                 for market in self._get_past_markets_from_area(area.parent, "past_markets"))
         else:
+            return None
+
+    def _store_area_penalties(self, results_dict, area):
+        if len(area.children) > 0:
+            return
+        penalty_energy = self._calculate_device_penalties(area)
+        if penalty_energy is None:
             results_dict["totals_with_penalties"] = results_dict["total_cost"]
             return
         if "penalty_energy" not in results_dict:
@@ -135,6 +146,65 @@ class MarketEnergyBills:
         results_dict["penalty_cost"] += penalty_energy * DEVICE_PENALTY_RATE / 100.0
         results_dict["totals_with_penalties"] = \
             results_dict["total_cost"] + results_dict["penalty_cost"]
+
+    @property
+    def cumulative_bills(self):
+        return {
+            uuid: {
+                "name": results["name"],
+                "spent_total": round_floats_for_ui(results['spent_total']),
+                "earned": round_floats_for_ui(results['earned']),
+                "penalties": round_floats_for_ui(results['penalties']),
+                "total": round_floats_for_ui(results['total'])
+            }
+            for uuid, results in self.cumulative_bills_results.items()
+        }
+
+    def update_cumulative_bills(self, area):
+        for child in area.children:
+            self.update_cumulative_bills(child)
+
+        if area.uuid not in self.cumulative_bills_results or \
+                ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
+            self.cumulative_bills_results[area.uuid] = {
+                "name": area.name,
+                "spent_total": 0.0,
+                "earned": 0.0,
+                "penalties": 0.0,
+                "total": 0.0,
+            }
+
+        if area.strategy is None:
+            all_child_results = [self.cumulative_bills_results[c.uuid]
+                                 for c in area.children]
+            self.cumulative_bills_results[area.uuid] = {
+                "name": area.name,
+                "spent_total": sum(c["spent_total"] for c in all_child_results),
+                "earned": sum(c["earned"] for c in all_child_results),
+                "penalties": sum(c["penalties"] for c in all_child_results
+                                 if c["penalties"] is not None),
+                "total": sum(c["total"] for c in all_child_results),
+            }
+        else:
+            trades = [m.trades
+                      for m in self._get_past_markets_from_area(area.parent, "past_markets")]
+            trades = list(chain(*trades))
+
+            spent_total = sum(trade.offer.price
+                              for trade in trades
+                              if trade.buyer == area.name) / 100.0
+            earned = sum(trade.offer.price - trade.fee_price
+                         for trade in trades
+                         if trade.seller == area.name) / 100.0
+            penalty_energy = self._calculate_device_penalties(area)
+            if penalty_energy is None:
+                penalty_energy = 0.0
+            penalties = penalty_energy * DEVICE_PENALTY_RATE / 100.0
+            total = spent_total - earned + penalties
+            self.cumulative_bills_results[area.uuid]["spent_total"] += spent_total
+            self.cumulative_bills_results[area.uuid]["earned"] += earned
+            self.cumulative_bills_results[area.uuid]["penalties"] += penalties
+            self.cumulative_bills_results[area.uuid]["total"] += total
 
     def _energy_bills(self, area, past_market_types):
         """

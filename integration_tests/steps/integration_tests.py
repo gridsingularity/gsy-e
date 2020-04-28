@@ -365,12 +365,16 @@ def step_impl(context):
     )
 
 
-@when('the reported energy bills are saved')
-def save_reported_bills(context):
-    context.energy_bills = deepcopy(
-        context.simulation.endpoint_buffer.market_bills.bills_results)
-    context.energy_bills_redis = \
-        deepcopy(context.simulation.endpoint_buffer.market_bills.bills_redis_results)
+@when('the reported {bill_type} bills are saved')
+def save_reported_bills(context, bill_type):
+    if bill_type == "energy":
+        context.energy_bills = deepcopy(
+            context.simulation.endpoint_buffer.market_bills.bills_results)
+        context.energy_bills_redis = \
+            deepcopy(context.simulation.endpoint_buffer.market_bills.bills_redis_results)
+    elif bill_type == "cumulative":
+        context.energy_bills = deepcopy(
+            context.simulation.endpoint_buffer.market_bills.cumulative_bills)
 
 
 @when('the past markets are not kept in memory')
@@ -662,6 +666,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
         )
         context.simulation.run()
     except Exception as er:
+        root_logger.critical(f"Error reported when running the simulation: {er}")
         context.sim_error = er
 
 
@@ -771,6 +776,36 @@ def test_external_trade_energy_price(context):
 
         assert isclose(-external_trade_sold, house_sold, abs_tol=1e-3)
         assert isclose(external_trade_bought, house_bought, abs_tol=1e-3)
+
+
+@then('the cumulative energy bills for each area are the sum of its children')
+def cumulative_bills_sum(context):
+    cumulative_bills = context.simulation.endpoint_buffer.market_bills.cumulative_bills_results
+    bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
+
+    def assert_area_cumulative_bills(area):
+        area_bills = cumulative_bills[area.uuid]
+        if len(area.children) == 0:
+            estimated_total = area_bills["spent_total"] - area_bills["earned"] + \
+                              area_bills["penalties"]
+            assert isclose(area_bills["total"], estimated_total, rel_tol=1e-2)
+            assert isclose(bills[area.uuid]["spent"],
+                           cumulative_bills[area.uuid]["spent_total"], rel_tol=1e-2)
+            return
+        child_uuids = [child.uuid for child in area.children]
+        assert isclose(area_bills["spent_total"],
+                       sum(cumulative_bills[uuid]["spent_total"] for uuid in child_uuids))
+        assert isclose(area_bills["earned"],
+                       sum(cumulative_bills[uuid]["earned"] for uuid in child_uuids))
+        assert isclose(area_bills["penalties"],
+                       sum(cumulative_bills[uuid]["penalties"] for uuid in child_uuids))
+        assert isclose(area_bills["total"],
+                       sum(cumulative_bills[uuid]["total"] for uuid in child_uuids))
+
+        for child in area.children:
+            assert_area_cumulative_bills(child)
+
+    assert_area_cumulative_bills(context.simulation.area)
 
 
 def generate_area_uuid_map(sim_area, results):
@@ -1046,6 +1081,15 @@ def identical_energy_bills(context):
     for _, v in energy_bills_redis.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0
                    for _, old_area_results in context.energy_bills_redis.items())
+
+
+@then('the cumulative bills are identical no matter if the past markets are kept')
+def identical_cumulative_bills(context):
+    energy_bills = context.simulation.endpoint_buffer.market_bills.cumulative_bills
+
+    for _, v in energy_bills.items():
+        assert any(len(DeepDiff(v, old_area_results)) == 0
+                   for _, old_area_results in context.energy_bills.items())
 
 
 @then("the load profile should be identical on each day")
