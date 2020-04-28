@@ -81,7 +81,7 @@ class MarketEnergyBills:
         result_dict['sold'] += trade.offer.energy
         result_dict['earned'] += (trade.offer.price - fee_price) / 100.
         result_dict['total_energy'] -= trade.offer.energy
-        result_dict['total_cost'] -= (trade.offer.price - fee_price) / 100.
+        result_dict['total_cost'] -= trade.offer.price / 100.
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
@@ -166,7 +166,7 @@ class MarketEnergyBills:
             self.market_fees[area.name] = 0.0
         for market in self._get_past_markets_from_area(area, past_market_types):
             # Converting cents to Euros
-            self.market_fees[market.name] += market.market_fee / 100.0
+            self.market_fees[area.name] += market.market_fee / 100.0
         for child in area.children:
             self._accumulate_market_fees(child, past_market_types)
 
@@ -263,16 +263,16 @@ class MarketEnergyBills:
         if area.name in flattened:
             # External trades are the trades of the parent area
             external = flattened[area.name].copy()
-            # Should not include market fee to the external trades
-            market_fee = external.pop("market_fee", 0.)
+            total_internal_fee = results[area.name]["Accumulated Trades"]["market_fee"]
+            total_external_fee = self.market_fees[area.name] - total_internal_fee
             # Should switch spent/earned and bought/sold, to match the perspective of the UI
-            spent = external.pop("spent") + market_fee
+            spent = external.pop("spent") + total_external_fee
             earned = external.pop("earned")
             bought = external.pop("bought")
             sold = external.pop("sold")
             external.update(**{
                 "spent": earned, "earned": spent, "bought": sold,
-                "sold": bought, "market_fee": 0})
+                "sold": bought, "market_fee": total_external_fee})
             external["total_energy"] = external["bought"] - external["sold"]
             external["total_cost"] = external["spent"] - external["earned"]
             results[area.name].update({"External Trades": external})
@@ -285,8 +285,8 @@ class MarketEnergyBills:
 
         self._write_acculumated_stats(area, results, totals_child_list, "Totals")
         total_market_fee = results[area.name]["Totals"]["market_fee"]
-        results[area.name]["Totals"]["earned"] += total_market_fee
-        results[area.name]["Totals"]["total_cost"] -= total_market_fee
+        # results[area.name]["Totals"]["earned"] += total_market_fee
+        # results[area.name]["Totals"]["total_cost"] -= total_market_fee
 
         results[area.name].update(self._market_fee_section(total_market_fee))
         return results
