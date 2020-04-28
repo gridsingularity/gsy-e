@@ -55,6 +55,7 @@ class Offer:
         offer_dict = deepcopy(self.__dict__)
         offer_dict["type"] = "Offer"
         offer_dict.pop('energy_rate', None)
+        offer_dict.pop('time', None)
         return json.dumps(offer_dict)
 
     def __hash__(self):
@@ -127,6 +128,7 @@ class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
     def to_JSON_string(self):
         bid_dict = self._asdict()
         bid_dict["type"] = "Bid"
+        bid_dict.pop('time', None)
         return json.dumps(bid_dict)
 
 
