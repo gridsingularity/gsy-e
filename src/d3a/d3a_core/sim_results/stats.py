@@ -84,7 +84,6 @@ class MarketEnergyBills:
         result_dict['earned'] += (trade.offer.price - fee_price) / 100.
         result_dict['total_energy'] -= trade.offer.energy
         result_dict['total_cost'] -= (trade.offer.price - fee_price) / 100.
-        result_dict['market_fee'] += fee_price / 100.0
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
@@ -129,23 +128,6 @@ class MarketEnergyBills:
                 for market in self._get_past_markets_from_area(area.parent, "past_markets"))
         else:
             return None
-
-    def _store_area_penalties(self, results_dict, area):
-        if len(area.children) > 0:
-            return
-        penalty_energy = self._calculate_device_penalties(area)
-        if penalty_energy is None:
-            results_dict["totals_with_penalties"] = results_dict["total_cost"]
-            return
-        if "penalty_energy" not in results_dict:
-            results_dict["penalty_energy"] = 0.0
-            results_dict["penalty_cost"] = 0.0
-
-        results_dict["penalty_energy"] += penalty_energy
-        # Penalty cost unit should be Euro
-        results_dict["penalty_cost"] += penalty_energy * DEVICE_PENALTY_RATE / 100.0
-        results_dict["totals_with_penalties"] = \
-            results_dict["total_cost"] + results_dict["penalty_cost"]
 
     @property
     def cumulative_bills(self):
@@ -199,11 +181,11 @@ class MarketEnergyBills:
             penalty_energy = self._calculate_device_penalties(area)
             if penalty_energy is None:
                 penalty_energy = 0.0
-            penalties = penalty_energy * DEVICE_PENALTY_RATE / 100.0
-            total = spent_total - earned + penalties
+            penalty_cost = penalty_energy * DEVICE_PENALTY_RATE / 100.0
+            total = spent_total - earned + penalty_cost
             self.cumulative_bills_results[area.uuid]["spent_total"] += spent_total
             self.cumulative_bills_results[area.uuid]["earned"] += earned
-            self.cumulative_bills_results[area.uuid]["penalties"] += penalties
+            self.cumulative_bills_results[area.uuid]["penalties"] += penalty_cost
             self.cumulative_bills_results[area.uuid]["total"] += total
 
     def _energy_bills(self, area, past_market_types):
@@ -224,7 +206,6 @@ class MarketEnergyBills:
                 if seller in result:
                     self._store_sold_trade(result[seller], trade)
         for child in area.children:
-            self._store_area_penalties(result[child.name], child)
             child_result = self._energy_bills(child, past_market_types)
             if child_result is not None:
                 result[child.name]['children'] = child_result

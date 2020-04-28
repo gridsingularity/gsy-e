@@ -60,6 +60,7 @@ Feature: Run integration tests
       |               default_2a               |
       |      two_sided_market.default_2a       |
       |    two_sided_pay_as_clear.default_2a   |
+      |          grid_fees.default_2a          |
 
   Scenario Outline: Simulation subscribes on the appropriate channels
      Given d3a is installed

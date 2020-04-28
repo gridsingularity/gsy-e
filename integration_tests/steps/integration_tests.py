@@ -789,7 +789,7 @@ def cumulative_bills_sum(context):
             estimated_total = area_bills["spent_total"] - area_bills["earned"] + \
                               area_bills["penalties"]
             assert isclose(area_bills["total"], estimated_total, rel_tol=1e-2)
-            assert isclose(bills[area.uuid]["spent"],
+            assert isclose(bills[area.uuid]["spent"] + bills[area.uuid]["market_fee"],
                            cumulative_bills[area.uuid]["spent_total"], rel_tol=1e-2)
             return
         child_uuids = [child.uuid for child in area.children]
