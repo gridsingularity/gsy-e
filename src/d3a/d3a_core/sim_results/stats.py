@@ -327,7 +327,7 @@ class MarketEnergyBills:
         results[area.name]["Totals"]["market_fee"] = 0.
         results[area.name]["Totals"]["total_cost"] -= \
             results[area.name]["Accumulated Trades"]["market_fee"]
-        # results[area.name]["Totals"]["total_cost"] -= total_external_fee
+
         results[area.name].update(self._market_fee_section(total_market_fee))
         return results
 
