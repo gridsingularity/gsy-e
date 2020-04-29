@@ -20,7 +20,7 @@ from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trad
     generate_inter_area_trade_details
 from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
-from d3a.d3a_core.sim_results.stats import MarketEnergyBills
+from d3a.d3a_core.sim_results.stats import MarketEnergyBills, CumulativeBills
 from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
@@ -48,6 +48,7 @@ class SimulationEndpointBuffer:
         self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
         self.market_bills = MarketEnergyBills()
+        self.cumulative_bills = CumulativeBills()
         self.balancing_bills = MarketEnergyBills(is_spot_market=False)
         self.cumulative_grid_trades = CumulativeGridTrades()
         self.trade_details = {}
@@ -66,7 +67,7 @@ class SimulationEndpointBuffer:
             "cumulative_loads": self.cumulative_loads,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_redis_results,
-            "cumulative_bills": self.market_bills.cumulative_bills,
+            "cumulative_bills": self.cumulative_bills.cumulative_bills,
             "status": self.status,
             "progress_info": self.simulation_progress,
             "kpi": self.kpi.performance_indices_redis
@@ -100,7 +101,7 @@ class SimulationEndpointBuffer:
             "price_energy_day": self.price_energy_day.csv_output,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_results,
-            "cumulative_bills": self.market_bills.cumulative_bills,
+            "cumulative_bills": self.cumulative_bills.cumulative_bills,
             "status": self.status,
             "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_time_str,
@@ -126,7 +127,7 @@ class SimulationEndpointBuffer:
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.balancing_bills.update(area)
 
-        self.market_bills.update_cumulative_bills(area)
+        self.cumulative_bills.update_cumulative_bills(area)
 
         self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 

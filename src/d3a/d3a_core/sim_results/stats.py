@@ -58,61 +58,20 @@ def total_avg_trade_price(markets):
     )
 
 
-class MarketEnergyBills:
-    def __init__(self, is_spot_market=True):
-        self.is_spot_market = is_spot_market
-        self.bills_results = {}
-        self.bills_redis_results = {}
-        self.market_fees = {}
-        self.cumulative_bills_results = {}
-
-    @classmethod
-    def _store_bought_trade(cls, result_dict, trade):
-        # Division by 100 to convert cents to Euros
-        fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
-        result_dict['bought'] += trade.offer.energy
-        result_dict['spent'] += trade.offer.price / 100. - fee_price
-        result_dict['total_energy'] += trade.offer.energy
-        result_dict['total_cost'] += trade.offer.price / 100.
-        result_dict['market_fee'] += fee_price
-
-    @classmethod
-    def _store_sold_trade(cls, result_dict, trade):
-        # Division by 100 to convert cents to Euros
-        fee_price = trade.fee_price if trade.fee_price is not None else 0.
-        result_dict['sold'] += trade.offer.energy
-        result_dict['earned'] += (trade.offer.price - fee_price) / 100.
-        result_dict['total_energy'] -= trade.offer.energy
-        result_dict['total_cost'] -= (trade.offer.price - fee_price) / 100.
-
-    @classmethod
-    def _get_past_markets_from_area(cls, area, past_market_types):
-        if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
+def _get_past_markets_from_area(area, past_market_types):
+    if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
+        return []
+    if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+        return getattr(area, past_market_types)
+    else:
+        if len(getattr(area, past_market_types)) < 1:
             return []
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            return getattr(area, past_market_types)
-        else:
-            if len(getattr(area, past_market_types)) < 1:
-                return []
-            return [getattr(area, past_market_types)[-1]]
+        return [getattr(area, past_market_types)[-1]]
 
-    def _default_area_dict(self, area):
-        return dict(bought=0.0, sold=0.0,
-                    spent=0.0, earned=0.0,
-                    total_energy=0.0, total_cost=0.0,
-                    market_fee=0.0,
-                    type=area.display_type)
 
-    def _get_child_data(self, area):
-        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-            return {child.name: self._default_area_dict(child)
-                    for child in area.children}
-        else:
-            if area.name not in self.bills_results:
-                self.bills_results[area.name] =  \
-                    {child.name: self._default_area_dict(child)
-                        for child in area.children}
-            return self.bills_results[area.name]
+class CumulativeBills:
+    def __init__(self):
+        self.cumulative_bills_results = {}
 
     def _calculate_device_penalties(self, area):
         if len(area.children) > 0:
@@ -121,11 +80,11 @@ class MarketEnergyBills:
         if isinstance(area.strategy, LoadHoursStrategy):
             return sum(
                 area.strategy.energy_requirement_Wh.get(market.time_slot, 0) / 1000.0
-                for market in self._get_past_markets_from_area(area.parent, "past_markets"))
+                for market in _get_past_markets_from_area(area.parent, "past_markets"))
         elif isinstance(area.strategy, PVStrategy):
             return sum(
                 area.strategy.state.available_energy_kWh.get(market.time_slot, 0)
-                for market in self._get_past_markets_from_area(area.parent, "past_markets"))
+                for market in _get_past_markets_from_area(area.parent, "past_markets"))
         else:
             return None
 
@@ -169,7 +128,7 @@ class MarketEnergyBills:
             }
         else:
             trades = [m.trades
-                      for m in self._get_past_markets_from_area(area.parent, "past_markets")]
+                      for m in _get_past_markets_from_area(area.parent, "past_markets")]
             trades = list(chain(*trades))
 
             spent_total = sum(trade.offer.price
@@ -188,6 +147,51 @@ class MarketEnergyBills:
             self.cumulative_bills_results[area.uuid]["penalties"] += penalty_cost
             self.cumulative_bills_results[area.uuid]["total"] += total
 
+
+class MarketEnergyBills:
+    def __init__(self, is_spot_market=True):
+        self.is_spot_market = is_spot_market
+        self.bills_results = {}
+        self.bills_redis_results = {}
+        self.market_fees = {}
+
+    @classmethod
+    def _store_bought_trade(cls, result_dict, trade):
+        # Division by 100 to convert cents to Euros
+        fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
+        result_dict['bought'] += trade.offer.energy
+        result_dict['spent'] += trade.offer.price / 100. - fee_price
+        result_dict['total_energy'] += trade.offer.energy
+        result_dict['total_cost'] += trade.offer.price / 100.
+        result_dict['market_fee'] += fee_price
+
+    @classmethod
+    def _store_sold_trade(cls, result_dict, trade):
+        # Division by 100 to convert cents to Euros
+        fee_price = trade.fee_price if trade.fee_price is not None else 0.
+        result_dict['sold'] += trade.offer.energy
+        result_dict['earned'] += (trade.offer.price - fee_price) / 100.
+        result_dict['total_energy'] -= trade.offer.energy
+        result_dict['total_cost'] -= (trade.offer.price - fee_price) / 100.
+
+    def _default_area_dict(self, area):
+        return dict(bought=0.0, sold=0.0,
+                    spent=0.0, earned=0.0,
+                    total_energy=0.0, total_cost=0.0,
+                    market_fee=0.0,
+                    type=area.display_type)
+
+    def _get_child_data(self, area):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+            return {child.name: self._default_area_dict(child)
+                    for child in area.children}
+        else:
+            if area.name not in self.bills_results:
+                self.bills_results[area.name] =  \
+                    {child.name: self._default_area_dict(child)
+                        for child in area.children}
+            return self.bills_results[area.name]
+
     def _energy_bills(self, area, past_market_types):
         """
         Return a bill for each of area's children with total energy bought
@@ -197,7 +201,7 @@ class MarketEnergyBills:
         if not area.children:
             return None
         result = self._get_child_data(area)
-        for market in self._get_past_markets_from_area(area, past_market_types):
+        for market in _get_past_markets_from_area(area, past_market_types):
             for trade in market.trades:
                 buyer = area_name_from_area_or_iaa_name(trade.buyer)
                 seller = area_name_from_area_or_iaa_name(trade.seller)
@@ -215,7 +219,7 @@ class MarketEnergyBills:
     def _accumulate_market_fees(self, area, past_market_types):
         if area.name not in self.market_fees:
             self.market_fees[area.name] = 0.0
-        for market in self._get_past_markets_from_area(area, past_market_types):
+        for market in _get_past_markets_from_area(area, past_market_types):
             # Converting cents to Euros
             self.market_fees[market.name] += market.market_fee / 100.0
         for child in area.children:
