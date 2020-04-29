@@ -16,13 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
-
+from datetime import datetime
 from d3a.models.market.market_structures import Offer, BalancingOffer
 
 
 @pytest.mark.parametrize("offer", [Offer, BalancingOffer])
 def test_offer_id_stringified(offer):
-    offer = offer(object(), 10, 20, 'A')
+    offer = offer(object(), datetime.now(), 10, 20, 'A')
 
     assert isinstance(offer.id, str)
     assert "<object object at" in offer.id

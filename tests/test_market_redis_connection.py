@@ -1,3 +1,4 @@
+from datetime import datetime
 import unittest
 from concurrent.futures import Future
 from unittest.mock import MagicMock
@@ -35,10 +36,10 @@ class TestMarketRedisEventPublisher(unittest.TestCase):
         assert "my_uuid" in self.publisher.event_response_uuids
 
     def test_publish_event_subscribes_to_response_and_publishes(self):
-        offer = Offer("1", 2, 3, "A")
-        trade = Trade("2", now(), Offer("accepted", 7, 8, "Z"), "B", "C")
-        new_offer = Offer("3", 4, 5, "D")
-        existing_offer = Offer("4", 5, 6, "E")
+        offer = Offer("1", now(), 2, 3, "A")
+        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C")
+        new_offer = Offer("3", now(), 4, 5, "D")
+        existing_offer = Offer("4", now(), 5, 6, "E")
         kwargs = {"offer": offer,
                   "trade": trade,
                   "new_offer": new_offer,
@@ -104,7 +105,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
             "offer": json.dumps({"id": "offer_id", "real_id": "real_id", "type": "Offer",
                                  "price": 654, "energy": 765, "seller": "offer_seller"}),
         }
-        output_data = self.subscriber.sanitize_parameters(input_data)
+        output_data = self.subscriber.sanitize_parameters(input_data, datetime.now())
         assert isinstance(output_data["offer"], Offer)
         assert isinstance(output_data["offer_or_id"], Offer)
         assert isinstance(output_data["trade_bid_info"], dict)
@@ -126,7 +127,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         assert output_data["offer_or_id"].seller == "offer_seller2"
 
     def test_accept_offer_calls_market_method_and_publishes_response(self):
-        offer = Offer("o_id", 12, 13, "o_seller")
+        offer = Offer("o_id", now(), 12, 13, "o_seller")
         payload = {"data": json.dumps({
                 "buyer": "mykonos",
                 "energy": 12,
@@ -156,7 +157,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        offer = Offer("o_id", 32, 12, "o_seller")
+        offer = Offer("o_id", now(), 32, 12, "o_seller")
         self.market.offer = MagicMock(return_value=offer)
         self.subscriber._offer(payload)
         self.subscriber.market.offer.assert_called_once_with(
@@ -169,7 +170,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_delete_offer_calls_market_method_and_publishes_response(self):
-        offer = Offer("o_id", 32, 12, "o_seller")
+        offer = Offer("o_id", now(), 32, 12, "o_seller")
         payload = {"data": json.dumps({
                 "offer_or_id": offer.to_JSON_string(),
                 "transaction_uuid": "trans_id"
@@ -212,7 +213,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_accept_bid_calls_market_method_and_publishes_response(self):
-        bid = Bid("b_id", 12, 13, "b_buyer", "b_seller")
+        bid = Bid("b_id", datetime.now(), 12, 13, "b_buyer", "b_seller")
         payload = {"data": json.dumps({
                 "seller": "mykonos",
                 "energy": 12,
@@ -241,7 +242,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        bid = Bid("b_id", 32, 12, "b_buyer", "b_seller")
+        bid = Bid("b_id", datetime.now(), 32, 12, "b_buyer", "b_seller")
         self.market.bid = MagicMock(return_value=bid)
         self.subscriber._bid(payload)
         self.subscriber.market.bid.assert_called_once_with(
@@ -254,7 +255,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_delete_bid_calls_market_method_and_publishes_response(self):
-        bid = Bid("b_id", 32, 12, "b_buyer", "b_seller")
+        bid = Bid("b_id", datetime.now(), 32, 12, "b_buyer", "b_seller")
         payload = {"data": json.dumps({
                 "bid": bid.to_JSON_string(),
                 "transaction_uuid": "trans_id"

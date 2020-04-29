@@ -21,13 +21,13 @@ from copy import deepcopy
 import json
 import pendulum
 from d3a.events import MarketEvent
-from datetime import datetime
 
 Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
 
 class Offer:
-    def __init__(self, id, price, energy, seller, original_offer_price=None, seller_origin=None):
+    def __init__(self, id, time, price, energy, seller,
+                 original_offer_price=None, seller_origin=None):
         self.id = str(id)
         self.real_id = id
         self.price = price
@@ -36,7 +36,7 @@ class Offer:
         self.seller = seller
         self.seller_origin = seller_origin
         self.energy_rate = price / energy
-        self.time = datetime.now()
+        self.time = time
 
     def update_price(self, price):
         self.price = price
@@ -78,32 +78,31 @@ class Offer:
 
 
 def copy_offer(offer):
-    return Offer(offer.id, offer.price, offer.energy, offer.seller,
+    return Offer(offer.id, offer.time, offer.price, offer.energy, offer.seller,
                  offer.original_offer_price, offer.seller_origin)
 
 
-def offer_from_JSON_string(offer_string):
+def offer_from_JSON_string(offer_string, current_time):
     offer_dict = json.loads(offer_string)
     object_type = offer_dict.pop("type")
     assert object_type == "Offer"
     real_id = offer_dict.pop('real_id')
     offer_dict.pop('energy_rate', None)
+    offer_dict['time'] = current_time
     offer = Offer(**offer_dict)
     offer.real_id = real_id
     return offer
 
 
-class Bid(namedtuple('Bid', ('id', 'price', 'energy', 'buyer', 'seller',
-                             'original_bid_price', 'buyer_origin', 'energy_rate', 'time'))):
-    def __new__(cls, id, price, energy, buyer, seller, original_bid_price=None,
-                buyer_origin=None, energy_rate=None, time=None):
+class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer', 'seller',
+                             'original_bid_price', 'buyer_origin', 'energy_rate'))):
+    def __new__(cls, id, time, price, energy, buyer, seller, original_bid_price=None,
+                buyer_origin=None, energy_rate=None):
         if energy_rate is None:
             energy_rate = price / energy
-        if time is None:
-            time = datetime.now()
         # overridden to give the residual field a default value
-        return super(Bid, cls).__new__(cls, str(id), price, energy, buyer, seller,
-                                       original_bid_price, buyer_origin, energy_rate, time)
+        return super(Bid, cls).__new__(cls, str(id), time, price, energy, buyer, seller,
+                                       original_bid_price, buyer_origin, energy_rate)
 
     def __repr__(self):
         return (
@@ -139,9 +138,10 @@ def bid_from_JSON_string(bid_string):
     return Bid(**bid_dict)
 
 
-def offer_or_bid_from_JSON_string(offer_or_bid):
+def offer_or_bid_from_JSON_string(offer_or_bid, current_time):
     offer_bid_dict = json.loads(offer_or_bid)
     object_type = offer_bid_dict.pop("type")
+    offer_bid_dict['time'] = offer_bid_dict
     if object_type == "Offer":
         real_id = offer_bid_dict.pop('real_id')
         offer = Offer(**offer_bid_dict)
@@ -201,11 +201,12 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
         return json.dumps(trade_dict)
 
 
-def trade_from_JSON_string(trade_string):
+def trade_from_JSON_string(trade_string, current_time):
     trade_dict = json.loads(trade_string)
-    trade_dict['offer'] = offer_or_bid_from_JSON_string(trade_dict['offer'])
+    trade_dict['offer'] = offer_or_bid_from_JSON_string(trade_dict['offer'], current_time)
     if 'residual' in trade_dict and trade_dict['residual'] is not None:
-        trade_dict['residual'] = offer_or_bid_from_JSON_string(trade_dict['residual'])
+        trade_dict['residual'] = offer_or_bid_from_JSON_string(trade_dict['residual'],
+                                                               current_time)
     trade_dict['time'] = pendulum.parse(trade_dict['time'])
     # if 'offer_bid_trade_info' in trade_dict:
     #     trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])

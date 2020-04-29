@@ -481,7 +481,7 @@ class ExportAndPlot:
                 data.append(
                     go.Scatter(x=[tick_slot],
                                y=[info_dict['rate']],
-                               hovertemplate=info_dict['tool_tip'])
+                               name=info_dict['tool_tip'])
                 )
             output_file = os.path.join(
                 stats_plot_dir, f"offer_bid_trade_history_{str(market_slot_date)}.html"
@@ -489,9 +489,10 @@ class ExportAndPlot:
             barmode = "relative"
             title = f"OFFER BID TRADE AREA: {area.name} | MARKET: {str(market_slot_date)})"
             xtitle = 'Time'
-            ytitle = 'Rate [€ / kWh]'
+            ytitle = 'Rate [€ cents / kWh]'
             PlotlyGraph.plot_bar_graph(
-                barmode, title, xtitle, ytitle, data, output_file, showlegend=False
+                barmode, title, xtitle, ytitle, data, output_file,
+                showlegend=False, hovermode='x'
             )
 
     def plot_stock_info_per_area_per_market_slot(self, area, plot_dir):

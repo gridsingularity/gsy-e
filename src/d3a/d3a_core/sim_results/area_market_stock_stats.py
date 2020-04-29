@@ -38,15 +38,27 @@ class StockStats:
             self.state[area.name][last_past_market.time_slot][trade.time] = \
                 {"rate": trade.offer.energy_rate, "tool_tip": tool_tip}
 
+        for bid in last_past_market.bid_history:
+            tool_tip = f"{bid.buyer_origin} " \
+                       f"Bid ({bid.energy} kWh @ {bid.energy_rate} € cents / kWh)"
+            self.state[area.name][last_past_market.time_slot][bid.time] = \
+                {"rate": bid.energy_rate, "tool_tip": tool_tip}
+
         for id, bid in last_past_market.bids.items():
             tool_tip = f"{bid.buyer_origin} " \
-                       f"Bid ({bid.energy} kWh @ {bid.energy_rate} € / kWh)"
+                       f"Bid ({bid.energy} kWh @ {bid.energy_rate} € cents / kWh)"
             self.state[area.name][last_past_market.time_slot][bid.time] = \
                 {"rate": bid.energy_rate, "tool_tip": tool_tip}
 
         for id, offer in last_past_market.offers.items():
             tool_tip = f"{offer.seller_origin} " \
-                       f"Offer({offer.energy} kWh @ {offer.energy_rate} € / kWh)"
+                       f"Offer({offer.energy} kWh @ {offer.energy_rate} € cents / kWh)"
+            self.state[area.name][last_past_market.time_slot][offer.time] = \
+                {"rate": offer.energy_rate, "tool_tip": tool_tip}
+
+        for offer in last_past_market.offer_history:
+            tool_tip = f"{offer.seller_origin} " \
+                       f"Offer({offer.energy} kWh @ {offer.energy_rate} € cents / kWh)"
             self.state[area.name][last_past_market.time_slot][offer.time] = \
                 {"rate": offer.energy_rate, "tool_tip": tool_tip}
 

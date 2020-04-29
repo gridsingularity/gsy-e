@@ -77,7 +77,7 @@ class PlotlyGraph:
 
     @staticmethod
     def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list,
-                      showlegend=True):
+                      showlegend=True, hovermode="x"):
         return go.Layout(
             autosize=False,
             width=1200,
@@ -95,7 +95,7 @@ class PlotlyGraph:
                 size=16
             ),
             showlegend=showlegend,
-            hovermode="x"
+            hovermode=hovermode
         )
 
     def graph_value(self, scale_value=1):
@@ -122,28 +122,35 @@ class PlotlyGraph:
         for di in range(len(data)):
             time_list = data[di]["x"]
             for ti in time_list:
-                day_set.add(pendulum.datetime(ti.year, ti.month, ti.day, tz=TIME_ZONE))
+                day_set.add(
+                    pendulum.datetime(ti.year, ti.month, ti.day, ti.hour, ti.minute, tz=TIME_ZONE)
+                )
 
         day_list = sorted(list(day_set))
         if len(day_list) == 0:
             raise ValueError("There is no time information in plot {}".format(title))
 
-        start_time = pendulum.datetime(day_list[0].year, day_list[0].month, day_list[0].day,
-                                       0, 0, 0, tz=TIME_ZONE)
-        end_time = pendulum.datetime(day_list[-1].year, day_list[-1].month, day_list[-1].day,
-                                     23, 59, 59, tz=TIME_ZONE)
+        start_time = pendulum.datetime(
+            day_list[0].year, day_list[0].month, day_list[0].day,
+            day_list[0].hour, day_list[0].minute, day_list[0].second, tz=TIME_ZONE
+        )
+        end_time = pendulum.datetime(
+            day_list[-1].year, day_list[-1].month, day_list[-1].day,
+            day_list[-1].hour, day_list[-1].minute, day_list[-1].second, tz=TIME_ZONE)
 
         return [start_time, end_time], data
 
     @classmethod
     def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str,
-                       showlegend=True):
+                       showlegend=True, hovermode="x"):
         try:
             time_range, data = cls.modify_time_axis(data, title)
         except ValueError:
             return
 
-        layout = cls.common_layout(barmode, title, ytitle, xtitle, time_range, showlegend)
+        layout = cls.common_layout(
+            barmode, title, ytitle, xtitle, time_range, showlegend, hovermode=hovermode
+        )
 
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)

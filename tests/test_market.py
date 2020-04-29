@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from datetime import datetime
 import string
 from math import isclose
 from copy import deepcopy
@@ -104,11 +105,11 @@ class FakeTwoSidedPayAsBid(TwoSidedPayAsBid):
         market_bid = [b for b in self.bids.values() if b.id == bid.id][0]
         if energy < market_bid.energy:
             residual_energy = bid.energy - energy
-            residual = Bid('res', bid.price, residual_energy, bid.buyer, seller)
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
+            residual = Bid('res', bid.time, bid.price, residual_energy, bid.buyer, seller)
+            traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer, seller)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer, residual)
         else:
-            traded = Bid(bid.id, (trade_rate * energy), energy, bid.buyer, seller)
+            traded = Bid(bid.id, bid.time, (trade_rate * energy), energy, bid.buyer, seller)
             return Trade('trade_id', time, traded, traded.seller, bid.buyer)
 
 
@@ -122,12 +123,12 @@ def market():
 
 
 def test_double_sided_performs_pay_as_bid_matching(market):
-    market.offers = {"offer1": Offer('id', 2, 2, 'other', 2)}
+    market.offers = {"offer1": Offer('id', datetime.now(), 2, 2, 'other', 2)}
 
-    market.bids = {"bid1": Bid('bid_id', 9, 10, 'B', 'S')}
+    market.bids = {"bid1": Bid('bid_id', datetime.now(), 9, 10, 'B', 'S')}
     matched = list(market._perform_pay_as_bid_matching())
     assert len(matched) == 0
-    market.bids = {"bid1": Bid('bid_id', 10, 10, 'B', 'S')}
+    market.bids = {"bid1": Bid('bid_id', datetime.now(), 10, 10, 'B', 'S')}
     matched = list(market._perform_pay_as_bid_matching())
     assert len(matched) == 1
 
@@ -135,9 +136,9 @@ def test_double_sided_performs_pay_as_bid_matching(market):
     assert bid == list(market.bids.values())[0]
     assert offer == list(market.offers.values())[0]
 
-    market.bids = {"bid1": Bid('bid_id1', 11, 10, 'B', 'S'),
-                   "bid2": Bid('bid_id2', 9, 10, 'B', 'S'),
-                   "bid3": Bid('bid_id3', 12, 10, 'B', 'S')}
+    market.bids = {"bid1": Bid('bid_id1', datetime.now(), 11, 10, 'B', 'S'),
+                   "bid2": Bid('bid_id2', datetime.now(), 9, 10, 'B', 'S'),
+                   "bid3": Bid('bid_id3', datetime.now(), 12, 10, 'B', 'S')}
     matched = list(market._perform_pay_as_bid_matching())
     assert len(matched) == 1
     bid, offer = matched[0]
@@ -679,21 +680,21 @@ def pac_market():
 def test_double_sided_market_performs_pay_as_clear_matching(pac_market, offer, bid, mcp_rate,
                                                             mcp_energy, algorithm):
     ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = algorithm
-    pac_market.offers = {"offer1": Offer('id1', offer[0], 1, 'other'),
-                         "offer2": Offer('id2', offer[1], 1, 'other'),
-                         "offer3": Offer('id3', offer[2], 1, 'other'),
-                         "offer4": Offer('id4', offer[3], 1, 'other'),
-                         "offer5": Offer('id5', offer[4], 1, 'other'),
-                         "offer6": Offer('id6', offer[5], 1, 'other'),
-                         "offer7": Offer('id7', offer[6], 1, 'other')}
+    pac_market.offers = {"offer1": Offer('id1', datetime.now(), offer[0], 1, 'other'),
+                         "offer2": Offer('id2', datetime.now(), offer[1], 1, 'other'),
+                         "offer3": Offer('id3', datetime.now(), offer[2], 1, 'other'),
+                         "offer4": Offer('id4', datetime.now(), offer[3], 1, 'other'),
+                         "offer5": Offer('id5', datetime.now(), offer[4], 1, 'other'),
+                         "offer6": Offer('id6', datetime.now(), offer[5], 1, 'other'),
+                         "offer7": Offer('id7', datetime.now(), offer[6], 1, 'other')}
 
-    pac_market.bids = {"bid1": Bid('bid_id1', bid[0], 1, 'B', 'S'),
-                       "bid2": Bid('bid_id2', bid[1], 1, 'B', 'S'),
-                       "bid3": Bid('bid_id3', bid[2], 1, 'B', 'S'),
-                       "bid4": Bid('bid_id4', bid[3], 1, 'B', 'S'),
-                       "bid5": Bid('bid_id5', bid[4], 1, 'B', 'S'),
-                       "bid6": Bid('bid_id6', bid[5], 1, 'B', 'S'),
-                       "bid7": Bid('bid_id7', bid[6], 1, 'B', 'S')}
+    pac_market.bids = {"bid1": Bid('bid_id1', datetime.now(), bid[0], 1, 'B', 'S'),
+                       "bid2": Bid('bid_id2', datetime.now(), bid[1], 1, 'B', 'S'),
+                       "bid3": Bid('bid_id3', datetime.now(), bid[2], 1, 'B', 'S'),
+                       "bid4": Bid('bid_id4', datetime.now(), bid[3], 1, 'B', 'S'),
+                       "bid5": Bid('bid_id5', datetime.now(), bid[4], 1, 'B', 'S'),
+                       "bid6": Bid('bid_id6', datetime.now(), bid[5], 1, 'B', 'S'),
+                       "bid7": Bid('bid_id7', datetime.now(), bid[6], 1, 'B', 'S')}
 
     matched_rate, matched_energy = pac_market._perform_pay_as_clear_matching()
     assert matched_rate == mcp_rate
@@ -702,14 +703,14 @@ def test_double_sided_market_performs_pay_as_clear_matching(pac_market, offer, b
 
 def test_double_sided_pay_as_clear_market_works_with_floats(pac_market):
     ConstSettings.IAASettings.PAY_AS_CLEAR_AGGREGATION_ALGORITHM = 1
-    pac_market.offers = {"offer1": Offer('id1', 1.1, 1, 'other'),
-                         "offer2": Offer('id2', 2.2, 1, 'other'),
-                         "offer3": Offer('id3', 3.3, 1, 'other')}
+    pac_market.offers = {"offer1": Offer('id1', datetime.now(), 1.1, 1, 'other'),
+                         "offer2": Offer('id2', datetime.now(), 2.2, 1, 'other'),
+                         "offer3": Offer('id3', datetime.now(), 3.3, 1, 'other')}
 
     pac_market.bids = {
-                    "bid1": Bid('bid_id1', 3.3, 1, 'B', 'S'),
-                    "bid2": Bid('bid_id2', 2.2, 1, 'B', 'S'),
-                    "bid3": Bid('bid_id3', 1.1, 1, 'B', 'S')}
+                    "bid1": Bid('bid_id1', datetime.now(), 3.3, 1, 'B', 'S'),
+                    "bid2": Bid('bid_id2', datetime.now(), 2.2, 1, 'B', 'S'),
+                    "bid3": Bid('bid_id3', datetime.now(), 1.1, 1, 'B', 'S')}
 
     matched = pac_market._perform_pay_as_clear_matching()[0]
     assert matched == 2.2
@@ -723,13 +724,13 @@ def pab_market():
 def test_double_sided_pay_as_bid_market_match_offer_bids(pab_market):
     pab_market.calls_offers = []
     pab_market.calls_bids = []
-    offer = Offer('offer1', 2, 2, 'other', 2)
+    offer = Offer('offer1', datetime.now(), 2, 2, 'other', 2)
     pab_market.offers = {"offer1": offer}
 
-    source_bid = Bid('bid_id3', 12, 10, 'B', 'S', original_bid_price=12)
-    pab_market.bids = {"bid_id": Bid('bid_id', 10, 10, 'B', 'S'),
-                       "bid_id1": Bid('bid_id1', 11, 10, 'B', 'S'),
-                       "bid_id2": Bid('bid_id2', 9, 10, 'B', 'S'),
+    source_bid = Bid('bid_id3', datetime.now(), 12, 10, 'B', 'S', original_bid_price=12)
+    pab_market.bids = {"bid_id": Bid('bid_id', datetime.now(), 10, 10, 'B', 'S'),
+                       "bid_id1": Bid('bid_id1', datetime.now(), 11, 10, 'B', 'S'),
+                       "bid_id2": Bid('bid_id2', datetime.now(), 9, 10, 'B', 'S'),
                        "bid_id3": source_bid}
 
     pab_market.match_offers_bids()
