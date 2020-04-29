@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import OrderedDict
 from copy import deepcopy
+from itertools import chain
 from d3a.d3a_core.util import round_floats_for_ui
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name
 from d3a_interface.constants_limits import ConstSettings
@@ -64,6 +65,7 @@ class MarketEnergyBills:
         self.bills_redis_results = {}
         self.market_fees = {}
         self.external_trade_fees = {}
+        self.cumulative_bills_results = {}
 
     def _store_bought_trade(self, result_dict, trade):
         # Division by 100 to convert cents to Euros
@@ -113,29 +115,79 @@ class MarketEnergyBills:
                         for child in area.children}
             return self.bills_results[area.name]
 
-    def _store_area_penalties(self, results_dict, area):
+    def _calculate_device_penalties(self, area):
         if len(area.children) > 0:
             return
+
         if isinstance(area.strategy, LoadHoursStrategy):
-            penalty_energy = sum(
+            return sum(
                 area.strategy.energy_requirement_Wh.get(market.time_slot, 0) / 1000.0
                 for market in self._get_past_markets_from_area(area.parent, "past_markets"))
         elif isinstance(area.strategy, PVStrategy):
-            penalty_energy = sum(
+            return sum(
                 area.strategy.state.available_energy_kWh.get(market.time_slot, 0)
                 for market in self._get_past_markets_from_area(area.parent, "past_markets"))
         else:
-            results_dict["totals_with_penalties"] = results_dict["total_cost"]
-            return
-        if "penalty_energy" not in results_dict:
-            results_dict["penalty_energy"] = 0.0
-            results_dict["penalty_cost"] = 0.0
+            return None
 
-        results_dict["penalty_energy"] += penalty_energy
-        # Penalty cost unit should be Euro
-        results_dict["penalty_cost"] += penalty_energy * DEVICE_PENALTY_RATE / 100.0
-        results_dict["totals_with_penalties"] = \
-            results_dict["total_cost"] + results_dict["penalty_cost"]
+    @property
+    def cumulative_bills(self):
+        return {
+            uuid: {
+                "name": results["name"],
+                "spent_total": round_floats_for_ui(results['spent_total']),
+                "earned": round_floats_for_ui(results['earned']),
+                "penalties": round_floats_for_ui(results['penalties']),
+                "total": round_floats_for_ui(results['total'])
+            }
+            for uuid, results in self.cumulative_bills_results.items()
+        }
+
+    def update_cumulative_bills(self, area):
+        for child in area.children:
+            self.update_cumulative_bills(child)
+
+        if area.uuid not in self.cumulative_bills_results or \
+                ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
+            self.cumulative_bills_results[area.uuid] = {
+                "name": area.name,
+                "spent_total": 0.0,
+                "earned": 0.0,
+                "penalties": 0.0,
+                "total": 0.0,
+            }
+
+        if area.strategy is None:
+            all_child_results = [self.cumulative_bills_results[c.uuid]
+                                 for c in area.children]
+            self.cumulative_bills_results[area.uuid] = {
+                "name": area.name,
+                "spent_total": sum(c["spent_total"] for c in all_child_results),
+                "earned": sum(c["earned"] for c in all_child_results),
+                "penalties": sum(c["penalties"] for c in all_child_results
+                                 if c["penalties"] is not None),
+                "total": sum(c["total"] for c in all_child_results),
+            }
+        else:
+            trades = [m.trades
+                      for m in self._get_past_markets_from_area(area.parent, "past_markets")]
+            trades = list(chain(*trades))
+
+            spent_total = sum(trade.offer.price
+                              for trade in trades
+                              if trade.buyer == area.name) / 100.0
+            earned = sum(trade.offer.price - trade.fee_price
+                         for trade in trades
+                         if trade.seller == area.name) / 100.0
+            penalty_energy = self._calculate_device_penalties(area)
+            if penalty_energy is None:
+                penalty_energy = 0.0
+            penalty_cost = penalty_energy * DEVICE_PENALTY_RATE / 100.0
+            total = spent_total - earned + penalty_cost
+            self.cumulative_bills_results[area.uuid]["spent_total"] += spent_total
+            self.cumulative_bills_results[area.uuid]["earned"] += earned
+            self.cumulative_bills_results[area.uuid]["penalties"] += penalty_cost
+            self.cumulative_bills_results[area.uuid]["total"] += total
 
     def _energy_bills(self, area, past_market_types):
         """
@@ -160,7 +212,6 @@ class MarketEnergyBills:
                         result[seller], trade,
                         buyer != area_name_from_area_or_iaa_name(area.name), area)
         for child in area.children:
-            self._store_area_penalties(result[child.name], child)
             child_result = self._energy_bills(child, past_market_types)
             if child_result is not None:
                 result[child.name]['children'] = child_result
@@ -188,7 +239,6 @@ class MarketEnergyBills:
         bills = self._energy_bills(area, market_type)
         flattened = self._flatten_energy_bills(OrderedDict(sorted(bills.items())), {})
         self.bills_results = self._accumulate_by_children(area, flattened, {})
-        self._aggregate_totals_with_penalties(area, self.bills_results)
         self._bills_for_redis(area, deepcopy(self.bills_results))
 
     @classmethod
@@ -219,29 +269,12 @@ class MarketEnergyBills:
                 )
         return results
 
-    def _aggregate_totals_with_penalties(self, area, results):
-        if not area.children:
-            return
-        totals_with_penalties = 0
-        for child in area.children:
-            self._aggregate_totals_with_penalties(child, results)
-            if "totals_with_penalties" in results[child.name]:
-                if isinstance(results[child.name]["totals_with_penalties"], dict):
-                    totals_with_penalties += results[child.name]["totals_with_penalties"]["costs"]
-                else:
-                    totals_with_penalties += results[child.name]["totals_with_penalties"]
-        results[area.name]["totals_with_penalties"] = {"costs": totals_with_penalties}
-
     def _write_acculumated_stats(self, area, results, all_child_results, key_name):
         results[area.name].update({key_name: {
             'bought': sum(v['bought'] for v in all_child_results),
             'sold': sum(v['sold'] for v in all_child_results),
             'spent': sum(v['spent'] for v in all_child_results),
             'earned': sum(v['earned'] for v in all_child_results),
-            'penalty_cost': sum(v['penalty_cost']
-                                for v in all_child_results if 'penalty_cost' in v.keys()),
-            'penalty_energy': sum(v['penalty_energy']
-                                  for v in all_child_results if 'penalty_energy' in v.keys()),
             'total_energy': sum(v['total_energy'] for v in all_child_results),
             'total_cost': sum(v['total_cost']
                               for v in all_child_results),
@@ -318,20 +351,10 @@ class MarketEnergyBills:
         results['total_cost'] = round_floats_for_ui(results['total_cost'])
         if "market_fee" in results:
             results["market_fee"] = round_floats_for_ui(results['market_fee'])
-        if "penalty_energy" in results:
-            results["penalty_energy"] = round_floats_for_ui(results['penalty_energy'])
-        if "penalty_cost" in results:
-            results["penalty_cost"] = round_floats_for_ui(results['penalty_cost'])
-        if "totals_with_penalties" in results:
-            results["totals_with_penalties"] = \
-                round_floats_for_ui(results["totals_with_penalties"])
         return results
 
     @classmethod
     def _round_area_bill_result_redis(cls, results):
         for k in results.keys():
-            if k == "totals_with_penalties" and isinstance(results[k], dict):
-                results[k]["costs"] = round_floats_for_ui(results[k]["costs"])
-            else:
-                results[k] = cls._round_child_bill_results(results[k])
+            results[k] = cls._round_child_bill_results(results[k])
         return results
