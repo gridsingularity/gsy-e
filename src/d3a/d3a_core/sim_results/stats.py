@@ -198,7 +198,8 @@ class MarketEnergyBills:
         if not area.children:
             return None
 
-        if area.name not in self.external_trade_fees:
+        if area.name not in self.external_trade_fees or \
+                ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
             self.external_trade_fees[area.name] = 0.
         result = self._get_child_data(area)
         for market in self._get_past_markets_from_area(area, past_market_types):
