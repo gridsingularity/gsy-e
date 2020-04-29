@@ -323,12 +323,12 @@ class MarketEnergyBills:
             totals_child_list = [results[area.name]["Accumulated Trades"]]
 
         self._write_acculumated_stats(area, results, totals_child_list, "Totals")
-        # total_market_fee = results[area.name]["Totals"]["market_fee"] + total_external_fee
+        total_market_fee = results[area.name]["Totals"]["market_fee"] + total_external_fee
         results[area.name]["Totals"]["market_fee"] = 0.
         results[area.name]["Totals"]["total_cost"] -= \
             results[area.name]["Accumulated Trades"]["market_fee"]
         # results[area.name]["Totals"]["total_cost"] -= total_external_fee
-        # results[area.name].update(self._market_fee_section(total_market_fee))
+        results[area.name].update(self._market_fee_section(total_market_fee))
         return results
 
     def _bills_for_redis(self, area, bills_results):
