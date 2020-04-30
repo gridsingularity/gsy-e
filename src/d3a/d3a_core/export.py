@@ -127,17 +127,17 @@ class ExportAndPlot:
             if not os.path.exists(self.plot_dir):
                 os.makedirs(self.plot_dir)
 
-            # self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
-            # self.plot_energy_profile(self.area, self.plot_dir)
-            # self.plot_all_unmatched_loads()
-            # self.plot_avg_trade_price(self.area, self.plot_dir)
-            # self.plot_ess_soc_history(self.area, self.plot_dir)
-            # self.plot_ess_energy_trace(self.area, self.plot_dir)
-            # if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
-            #     self.plot_device_stats(self.area, [])
-            # if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
-            #         ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
-            #     self.plot_supply_demand_curve(self.area, self.plot_dir)
+            self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
+            self.plot_energy_profile(self.area, self.plot_dir)
+            self.plot_all_unmatched_loads()
+            self.plot_avg_trade_price(self.area, self.plot_dir)
+            self.plot_ess_soc_history(self.area, self.plot_dir)
+            self.plot_ess_energy_trace(self.area, self.plot_dir)
+            if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
+                self.plot_device_stats(self.area, [])
+            if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
+                    ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
+                self.plot_supply_demand_curve(self.area, self.plot_dir)
             self.move_root_plot_folder()
         self.export_json_data(self.directory, self.area)
 

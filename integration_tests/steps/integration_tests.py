@@ -704,7 +704,7 @@ def test_accumulated_energy_price(context):
                 if k not in ACCUMULATED_KEYS_LIST])
         assert isclose(area_net_traded_energy_price, house_bill, rel_tol=1e-02), \
             f"{bills_key} area: {area_net_traded_energy_price} house {house_bill}"
-        # Checks id spent+market_fee-earned=total_cost is true for all accumulated members
+        # Checks if spent+market_fee-earned=total_cost is true for all accumulated members
         for accumulated_section in ACCUMULATED_KEYS_LIST:
             assert isclose(bills[bills_key][accumulated_section]["spent"]
                            + bills[bills_key][accumulated_section]["market_fee"]
