@@ -219,7 +219,8 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
             area_markets = [area_markets]
         for market in area_markets:
             for trade in market.trades:
-                if area_sells_to_child(trade, area.name, child_names):
+                if area_name_from_area_or_iaa_name(trade.seller) in child_names and \
+                        area_name_from_area_or_iaa_name(trade.buyer) in child_names:
                     # House self-consumption trade
                     accumulated_trades[area.name]["produced"] -= trade.offer.energy
                     accumulated_trades[area.name]["earned"] += trade.offer.price
@@ -234,7 +235,7 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
                     accumulated_trades[area.name]["produced"] -= trade.offer.energy
         for market in area_markets:
             for trade in market.trades:
-                if child_buys_from_area(trade, area.name, child_names):
+                if area_sells_to_child(trade, area.name, child_names):
                     accumulated_trades[area.name]["consumedFromExternal"] = \
                         subtract_or_create_key(accumulated_trades[area.name]
                                                ["consumedFromExternal"],
@@ -244,8 +245,7 @@ def _accumulate_area_trades(area, parent, accumulated_trades, past_market_types)
                         add_or_create_key(accumulated_trades[area.name]["spentToExternal"],
                                           area_name_from_area_or_iaa_name(trade.buyer),
                                           trade.offer.price)
-                elif area_name_from_area_or_iaa_name(trade.buyer) == \
-                        area.name and area_name_from_area_or_iaa_name(trade.seller) in child_names:
+                elif child_buys_from_area(trade, area.name, child_names):
                     accumulated_trades[area.name]["producedForExternal"] = \
                         add_or_create_key(accumulated_trades[area.name]["producedForExternal"],
                                           area_name_from_area_or_iaa_name(trade.seller),

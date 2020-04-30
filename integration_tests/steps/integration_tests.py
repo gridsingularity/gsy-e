@@ -35,7 +35,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import ExportUnmatchedLoads
     get_number_of_unmatched_loads
 
 TODAY_STR = today(tz=TIME_ZONE).format(DATE_FORMAT)
-ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "totals_with_penalties"]
+ACCUMULATED_KEYS_LIST = ["Accumulated Trades", "External Trades", "Totals", "Market Fees"]
 
 
 @given('we have a scenario named {scenario}')
@@ -365,12 +365,16 @@ def step_impl(context):
     )
 
 
-@when('the reported energy bills are saved')
-def save_reported_bills(context):
-    context.energy_bills = deepcopy(
-        context.simulation.endpoint_buffer.market_bills.bills_results)
-    context.energy_bills_redis = \
-        deepcopy(context.simulation.endpoint_buffer.market_bills.bills_redis_results)
+@when('the reported {bill_type} bills are saved')
+def save_reported_bills(context, bill_type):
+    if bill_type == "energy":
+        context.energy_bills = deepcopy(
+            context.simulation.endpoint_buffer.market_bills.bills_results)
+        context.energy_bills_redis = \
+            deepcopy(context.simulation.endpoint_buffer.market_bills.bills_redis_results)
+    elif bill_type == "cumulative":
+        context.energy_bills = deepcopy(
+            context.simulation.endpoint_buffer.market_bills.cumulative_bills)
 
 
 @when('the past markets are not kept in memory')
@@ -565,6 +569,11 @@ def min_offer_age_nr_ticks(context, min_offer_age):
     ConstSettings.IAASettings.MIN_OFFER_AGE = int(min_offer_age)
 
 
+@given('the min bid age is set to {min_bid_age} ticks')
+def min_bid_age_nr_ticks(context, min_bid_age):
+    ConstSettings.IAASettings.MIN_BID_AGE = int(min_bid_age)
+
+
 @when('we run a multi-day d3a simulation with {scenario} [{start_date}, {total_duration}, '
       '{slot_length}, {tick_length}]')
 def run_sim_multiday(context, scenario, start_date, total_duration, slot_length, tick_length):
@@ -657,6 +666,7 @@ def run_sim(context, scenario, total_duration, slot_length, tick_length, market_
         )
         context.simulation.run()
     except Exception as er:
+        root_logger.critical(f"Error reported when running the simulation: {er}")
         context.sim_error = er
 
 
@@ -683,32 +693,44 @@ def test_output(context, scenario, sim_duration, slot_length, tick_length):
 @then('the energy bills report the correct accumulated traded energy price')
 def test_accumulated_energy_price(context):
     bills = context.simulation.endpoint_buffer.market_bills.bills_results
-    cell_tower_bill = bills["Cell Tower"]["earned"] - bills["Cell Tower"]["spent"]
-    net_traded_energy_price = cell_tower_bill
-    for house_key in ["House 1", "House 2"]:
-        extern_trades = bills[house_key]["External Trades"]
+    for bills_key in [c for c in bills.keys() if "Accumulated Trades" in c]:
+        extern_trades = bills[bills_key]["External Trades"]
         assert extern_trades["total_energy"] == extern_trades["bought"] - extern_trades["sold"]
-        assert extern_trades["total_cost"] == extern_trades["spent"] - extern_trades["earned"]
-        house_bill = bills[house_key]["Accumulated Trades"]["earned"] - \
-            bills[house_key]["Accumulated Trades"]["spent"]
+        # Checks if "Accumulated Trades" got accumulated correctly:
+        house_bill = bills[bills_key]["Accumulated Trades"]["earned"] - \
+            bills[bills_key]["Accumulated Trades"]["spent"]
         area_net_traded_energy_price = \
-            sum([v["earned"] - v["spent"] for k, v in bills[house_key].items()
+            sum([v["earned"] - v["spent"] for k, v in bills[bills_key].items()
                 if k not in ACCUMULATED_KEYS_LIST])
         assert isclose(area_net_traded_energy_price, house_bill, rel_tol=1e-02), \
-            f"area: {area_net_traded_energy_price} house {house_bill}"
-        net_traded_energy_price += area_net_traded_energy_price
-
-    assert isclose(net_traded_energy_price, 0, abs_tol=1e-10)
+            f"{bills_key} area: {area_net_traded_energy_price} house {house_bill}"
+        # Checks if spent+market_fee-earned=total_cost is true for all accumulated members
+        for accumulated_section in ACCUMULATED_KEYS_LIST:
+            assert isclose(bills[bills_key][accumulated_section]["spent"]
+                           + bills[bills_key][accumulated_section]["market_fee"]
+                           - bills[bills_key][accumulated_section]["earned"],
+                           bills[bills_key][accumulated_section]["total_cost"],  abs_tol=1e-10)
+        #
+        for key in ["spent", "earned", "total_cost", "sold", "bought", "total_energy"]:
+            assert isclose(bills[bills_key]["Accumulated Trades"][key] +
+                           bills[bills_key]["External Trades"][key] +
+                           bills[bills_key]["Market Fees"][key],
+                           bills[bills_key]["Totals"][key], abs_tol=1e-10)
+        assert isclose(bills[bills_key]["Totals"]["total_cost"], 0, abs_tol=1e-10)
 
 
 @then('the traded energy report the correct accumulated traded energy')
 def test_accumulated_energy(context):
     bills = context.simulation.endpoint_buffer.market_bills.bills_results
+    if "Cell Tower" not in bills:
+        return
     cell_tower_net = bills["Cell Tower"]["sold"] - bills["Cell Tower"]["bought"]
     net_energy = cell_tower_net
     for house_key in ["House 1", "House 2"]:
         house_net = bills[house_key]["Accumulated Trades"]["sold"] - \
-                    bills[house_key]["Accumulated Trades"]["bought"]
+                    bills[house_key]["Accumulated Trades"]["bought"] + \
+                    bills[house_key]["Totals"]["bought"] - \
+                    bills[house_key]["Totals"]["sold"]
 
         area_net_energy = \
             sum([v["sold"] - v["bought"] for k, v in bills[house_key].items()
@@ -746,6 +768,36 @@ def test_external_trade_energy_price(context):
 
         assert isclose(-external_trade_sold, house_sold, abs_tol=1e-3)
         assert isclose(external_trade_bought, house_bought, abs_tol=1e-3)
+
+
+@then('the cumulative energy bills for each area are the sum of its children')
+def cumulative_bills_sum(context):
+    cumulative_bills = context.simulation.endpoint_buffer.market_bills.cumulative_bills_results
+    bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
+
+    def assert_area_cumulative_bills(area):
+        area_bills = cumulative_bills[area.uuid]
+        if len(area.children) == 0:
+            estimated_total = area_bills["spent_total"] - area_bills["earned"] + \
+                              area_bills["penalties"]
+            assert isclose(area_bills["total"], estimated_total, rel_tol=1e-2)
+            assert isclose(bills[area.uuid]["spent"] + bills[area.uuid]["market_fee"],
+                           cumulative_bills[area.uuid]["spent_total"], rel_tol=1e-2)
+            return
+        child_uuids = [child.uuid for child in area.children]
+        assert isclose(area_bills["spent_total"],
+                       sum(cumulative_bills[uuid]["spent_total"] for uuid in child_uuids))
+        assert isclose(area_bills["earned"],
+                       sum(cumulative_bills[uuid]["earned"] for uuid in child_uuids))
+        assert isclose(area_bills["penalties"],
+                       sum(cumulative_bills[uuid]["penalties"] for uuid in child_uuids))
+        assert isclose(area_bills["total"],
+                       sum(cumulative_bills[uuid]["total"] for uuid in child_uuids))
+
+        for child in area.children:
+            assert_area_cumulative_bills(child)
+
+    assert_area_cumulative_bills(context.simulation.area)
 
 
 def generate_area_uuid_map(sim_area, results):
@@ -1021,6 +1073,15 @@ def identical_energy_bills(context):
     for _, v in energy_bills_redis.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0
                    for _, old_area_results in context.energy_bills_redis.items())
+
+
+@then('the cumulative bills are identical no matter if the past markets are kept')
+def identical_cumulative_bills(context):
+    energy_bills = context.simulation.endpoint_buffer.market_bills.cumulative_bills
+
+    for _, v in energy_bills.items():
+        assert any(len(DeepDiff(v, old_area_results)) == 0
+                   for _, old_area_results in context.energy_bills.items())
 
 
 @then("the load profile should be identical on each day")

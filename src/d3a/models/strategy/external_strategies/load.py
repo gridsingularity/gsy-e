@@ -121,22 +121,6 @@ class LoadExternalMixin(ExternalMixin):
             arguments = json.loads(payload["data"])
             assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
             arguments['buyer_origin'] = self.device.name
-            pending_bid_energy = sum(
-                req.arguments["energy"]
-                for req in self.pending_requests
-                if req.request_type == "bid"
-            )
-            if not self.can_bid_be_posted(
-                    arguments["energy"] + pending_bid_energy,
-                    self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0,
-                    self.market):
-                self.redis.publish_json(
-                    bid_response_channel,
-                    {"command": "bid",
-                     "error": "Bid cannot be posted. Required energy has been reached with "
-                              "existing bids.",
-                     "transaction_id": transaction_id})
-                return
         except Exception:
             self.redis.publish_json(
                 bid_response_channel,
@@ -150,6 +134,10 @@ class LoadExternalMixin(ExternalMixin):
 
     def _bid_impl(self, arguments, bid_response_channel):
         try:
+            assert self.can_bid_be_posted(
+                arguments["energy"],
+                self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0,
+                self.market)
             bid = self.post_bid(
                 self.market,
                 arguments["price"],

@@ -16,34 +16,38 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.models.appliance.simple import SimpleAppliance
+from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
-from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
+from d3a.models.appliance.pv import PVAppliance
+from d3a.models.strategy.predefined_pv import PVPredefinedStrategy
 from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
     area = Area(
         'Grid',
         [
+            Area('Market Maker', strategy=MarketMakerStrategy(energy_rate=30,
+                                                              grid_connected=True),
+                 appliance=SimpleAppliance()),
             Area(
                 'House 1',
                 [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=24,
+                    Area('H1 PV', strategy=PVPredefinedStrategy(cloud_coverage=0,
+                                                                use_market_maker_rate=True),
+                         appliance=PVAppliance()),
+                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=100,
+                                                                       hrs_per_day=9,
                                                                        hrs_of_day=list(
-                                                                           range(0, 24)),
-                                                                       initial_buying_rate=0,
-                                                                       final_buying_rate=30))
+                                                                           range(15, 24)),
+                                                                       final_buying_rate=0,
+                                                                       use_market_maker_rate=True),
+                         appliance=SwitchableAppliance()),
                 ]
             ),
-            Area('Commercial Energy Producer',
-                 strategy=CommercialStrategy(energy_rate=30),
-                 appliance=SimpleAppliance()
-                 ),
-
         ],
         config=config
     )
