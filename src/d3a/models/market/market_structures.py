@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from datetime import datetime
 from collections import namedtuple
 from typing import Dict # noqa
 from copy import deepcopy
@@ -23,6 +24,11 @@ import pendulum
 from d3a.events import MarketEvent
 
 Clearing = namedtuple('Clearing', ('rate', 'energy'))
+
+
+def my_converter(o):
+    if isinstance(o, datetime):
+        return o.__str__()
 
 
 class Offer:
@@ -55,8 +61,7 @@ class Offer:
         offer_dict = deepcopy(self.__dict__)
         offer_dict["type"] = "Offer"
         offer_dict.pop('energy_rate', None)
-        offer_dict.pop('time', None)
-        return json.dumps(offer_dict)
+        return json.dumps(offer_dict, default=my_converter)
 
     def __hash__(self):
         return hash(self.id)
@@ -127,8 +132,7 @@ class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer', 'seller',
     def to_JSON_string(self):
         bid_dict = self._asdict()
         bid_dict["type"] = "Bid"
-        bid_dict.pop('time', None)
-        return json.dumps(bid_dict)
+        return json.dumps(bid_dict, default=my_converter)
 
 
 def bid_from_JSON_string(bid_string):
@@ -141,7 +145,7 @@ def bid_from_JSON_string(bid_string):
 def offer_or_bid_from_JSON_string(offer_or_bid, current_time):
     offer_bid_dict = json.loads(offer_or_bid)
     object_type = offer_bid_dict.pop("type")
-    offer_bid_dict['time'] = offer_bid_dict
+    offer_bid_dict['time'] = current_time
     if object_type == "Offer":
         real_id = offer_bid_dict.pop('real_id')
         offer = Offer(**offer_bid_dict)
@@ -156,7 +160,7 @@ class TradeBidInfo(namedtuple('TradeBidInfo',
                                'original_offer_rate', 'propagated_offer_rate',
                                'trade_rate'))):
     def to_JSON_string(self):
-        return json.dumps(self._asdict())
+        return json.dumps(self._asdict(), default=my_converter)
 
 
 def trade_bid_info_from_JSON_string(info_string):

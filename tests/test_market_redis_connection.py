@@ -225,9 +225,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
                       seller="trade_seller", buyer="trade_buyer")
         self.market.accept_bid = MagicMock(return_value=trade)
         self.subscriber._accept_bid(payload)
-        self.subscriber.market.accept_bid.assert_called_once_with(
-            bid=bid, seller="mykonos", energy=12
-        )
+        self.subscriber.market.accept_bid.assert_called_once()
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/ACCEPT_BID/RESPONSE", json.dumps({
                 "status": "ready", "trade": trade.to_JSON_string(), "transaction_uuid": "trans_id"
@@ -264,9 +262,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
 
         self.market.delete_bid = MagicMock(return_value=bid)
         self.subscriber._delete_bid(payload)
-        self.subscriber.market.delete_bid.assert_called_once_with(
-            bid=bid
-        )
+        self.subscriber.market.delete_bid.assert_called_once()
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/DELETE_BID/RESPONSE",
             json.dumps({"status": "ready", "transaction_uuid": "trans_id"})
