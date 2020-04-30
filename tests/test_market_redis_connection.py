@@ -3,6 +3,7 @@ import unittest
 from concurrent.futures import Future
 from unittest.mock import MagicMock
 import json
+from time import sleep
 from pendulum import now
 from deepdiff import DeepDiff
 from d3a.events import MarketEvent
@@ -139,6 +140,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
                       seller="trade_seller", buyer="trade_buyer")
         self.market.accept_offer = MagicMock(return_value=trade)
         self.subscriber._accept_offer(payload)
+        sleep(0.01)
         self.subscriber.market.accept_offer.assert_called_once_with(
             offer_or_id=offer, buyer="mykonos", energy=12
         )
@@ -160,6 +162,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         offer = Offer("o_id", now(), 32, 12, "o_seller")
         self.market.offer = MagicMock(return_value=offer)
         self.subscriber._offer(payload)
+        sleep(0.01)
         self.subscriber.market.offer.assert_called_once_with(
             seller="mykonos", energy=12, price=32
         )
