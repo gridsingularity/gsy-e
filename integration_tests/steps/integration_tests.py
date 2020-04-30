@@ -712,10 +712,16 @@ def test_accumulated_energy_price(context):
                            bills[bills_key][accumulated_section]["total_cost"],  abs_tol=1e-10)
         #
         for key in ["spent", "earned", "total_cost", "sold", "bought", "total_energy"]:
-            assert isclose(bills[bills_key]["Accumulated Trades"][key] +
-                           bills[bills_key]["External Trades"][key] +
-                           bills[bills_key]["Market Fees"][key],
-                           bills[bills_key]["Totals"][key], abs_tol=1e-10)
+            if "External Trades" in bills[bills_key]:
+                assert isclose(bills[bills_key]["Accumulated Trades"][key] +
+                               bills[bills_key]["External Trades"][key] +
+                               bills[bills_key]["Market Fees"][key],
+                               bills[bills_key]["Totals"][key], abs_tol=1e-10)
+            else:
+                # case for the grid bills, that dont have "External Trades"
+                assert isclose(bills[bills_key]["Accumulated Trades"][key] +
+                               bills[bills_key]["Market Fees"][key],
+                               bills[bills_key]["Totals"][key], abs_tol=1e-10)
         assert isclose(bills[bills_key]["Totals"]["total_cost"], 0, abs_tol=1e-10)
 
 

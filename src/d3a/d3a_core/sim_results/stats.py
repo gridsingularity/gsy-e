@@ -350,7 +350,7 @@ class MarketEnergyBills:
         all_child_results = [v for v in results[area.name].values()]
         self._write_acculumated_stats(area, results, all_child_results, "Accumulated Trades")
         total_market_fee = results[area.name]["Accumulated Trades"]["market_fee"]
-        if area.name in self.external_trades:
+        if area.name in self.external_trades and area.parent is not None:
             # External trades are the trades of the parent area
             external = self.external_trades[area.name].copy()
             # Should switch spent/earned and bought/sold, to match the perspective of the UI
