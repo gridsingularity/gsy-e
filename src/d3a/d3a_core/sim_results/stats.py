@@ -71,18 +71,26 @@ class MarketEnergyBills:
         # Division by 100 to convert cents to Euros
         fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
         result_dict['bought'] += trade.offer.energy
-        result_dict['spent'] += trade.offer.price / 100.
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            result_dict['spent'] += trade.offer.price / 100.
+            result_dict['total_cost'] += trade.offer.price / 100. + fee_price
+        else:
+            result_dict['spent'] += trade.offer.price / 100. - fee_price
+            result_dict['total_cost'] += trade.offer.price / 100.
         result_dict['total_energy'] += trade.offer.energy
         result_dict['market_fee'] += fee_price
-        result_dict['total_cost'] += trade.offer.price / 100. + fee_price
 
     def _store_sold_trade(self, result_dict, trade, is_internal_trade, area):
         # Division by 100 to convert cents to Euros
         fee_price = trade.fee_price if trade.fee_price is not None else 0.
         result_dict['sold'] += trade.offer.energy
-        result_dict['earned'] += trade.offer.price / 100.
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            result_dict['earned'] += trade.offer.price / 100.
+            result_dict['total_cost'] -= trade.offer.price / 100.
+        else:
+            result_dict['earned'] += (trade.offer.price - fee_price) / 100.
+            result_dict['total_cost'] -= (trade.offer.price - fee_price) / 100.
         result_dict['total_energy'] -= trade.offer.energy
-        result_dict['total_cost'] -= trade.offer.price / 100.
         if not is_internal_trade:
             self.external_trade_fees[area.name] += fee_price / 100.
 
