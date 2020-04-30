@@ -65,7 +65,6 @@ class MarketEnergyBills:
         self.bills_redis_results = {}
         self.market_fees = {}
         self.external_trades = {}
-        self.external_trade_fees = {}
         self.cumulative_bills_results = {}
 
     def _store_bought_trade(self, result_dict, trade):
@@ -85,13 +84,42 @@ class MarketEnergyBills:
         # Division by 100 to convert cents to Euros
         fee_price = trade.fee_price if trade.fee_price is not None else 0.
         result_dict['sold'] += trade.offer.energy
-        if ConstSettings.IAASettings.MARKET_TYPE == 1:
-            result_dict['earned'] += trade.offer.price / 100.
-            result_dict['total_cost'] -= trade.offer.price / 100.
-        else:
-            result_dict['earned'] += (trade.offer.price - fee_price) / 100.
-            result_dict['total_cost'] -= (trade.offer.price - fee_price) / 100.
         result_dict['total_energy'] -= trade.offer.energy
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            trade_price = trade.offer.price
+        else:
+            trade_price = trade.offer.price - fee_price
+        result_dict['earned'] += trade_price / 100.
+        result_dict['total_cost'] -= trade_price / 100.
+
+    def _store_outgoing_external_trade(self, trade, area):
+        fee_price = trade.fee_price if trade.fee_price is not None else 0.
+        self.external_trades[area.name]['sold'] += trade.offer.energy
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            self.external_trades[area.name]['earned'] += trade.offer.price / 100.
+            self.external_trades[area.name]['total_cost'] -= trade.offer.price / 100.
+        else:
+            self.external_trades[area.name]['earned'] += \
+                (trade.offer.price - fee_price) / 100.
+            self.external_trades[area.name]['total_cost'] -= \
+                (trade.offer.price - fee_price) / 100.
+        self.external_trades[area.name]['total_energy'] -= trade.offer.energy
+        self.external_trades[area.name]['market_fee'] += fee_price / 100.
+
+    def _store_incoming_external_trade(self, trade, area):
+        fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
+        self.external_trades[area.name]['bought'] += trade.offer.energy
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            self.external_trades[area.name]['spent'] += \
+                trade.offer.price / 100.
+            self.external_trades[area.name]['total_cost'] += \
+                trade.offer.price / 100. + fee_price
+        else:
+            self.external_trades[area.name]['spent'] += \
+                trade.offer.price / 100. - fee_price
+            self.external_trades[area.name]['total_cost'] += \
+                trade.offer.price / 100.
+        self.external_trades[area.name]['total_energy'] += trade.offer.energy
 
     @classmethod
     def _get_past_markets_from_area(cls, area, past_market_types):
@@ -213,10 +241,6 @@ class MarketEnergyBills:
         if not area.children:
             return None
 
-        if area.name not in self.external_trade_fees or \
-                ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
-            self.external_trade_fees[area.name] = 0.
-
         if area.name not in self.external_trades or \
                 ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True:
             self.external_trades[area.name] = dict(
@@ -234,33 +258,10 @@ class MarketEnergyBills:
                     self._store_sold_trade(result[seller], trade)
                 # Outgoing external trades
                 if buyer == area_name_from_area_or_iaa_name(area.name) and seller in result:
-                    fee_price = trade.fee_price if trade.fee_price is not None else 0.
-                    self.external_trades[area.name]['sold'] += trade.offer.energy
-                    if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                        self.external_trades[area.name]['earned'] += trade.offer.price / 100.
-                        self.external_trades[area.name]['total_cost'] -= trade.offer.price / 100.
-                    else:
-                        self.external_trades[area.name]['earned'] += \
-                            (trade.offer.price - fee_price) / 100.
-                        self.external_trades[area.name]['total_cost'] -= \
-                            (trade.offer.price - fee_price) / 100.
-                    self.external_trades[area.name]['total_energy'] -= trade.offer.energy
-                    self.external_trade_fees[area.name] += fee_price / 100.
+                    self._store_outgoing_external_trade(trade, area)
                 # Incoming external trades
                 if seller == area_name_from_area_or_iaa_name(area.name) and buyer in result:
-                    fee_price = trade.fee_price / 100. if trade.fee_price is not None else 0.
-                    self.external_trades[area.name]['bought'] += trade.offer.energy
-                    if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                        self.external_trades[area.name]['spent'] += \
-                            trade.offer.price / 100.
-                        self.external_trades[area.name]['total_cost'] += \
-                            trade.offer.price / 100. + fee_price
-                    else:
-                        self.external_trades[area.name]['spent'] += \
-                            trade.offer.price / 100. - fee_price
-                        self.external_trades[area.name]['total_cost'] += \
-                            trade.offer.price / 100.
-                    self.external_trades[area.name]['total_energy'] += trade.offer.energy
+                    self._store_incoming_external_trade(trade, area)
         for child in area.children:
             child_result = self._energy_bills(child, past_market_types)
             if child_result is not None:
@@ -348,8 +349,7 @@ class MarketEnergyBills:
 
         all_child_results = [v for v in results[area.name].values()]
         self._write_acculumated_stats(area, results, all_child_results, "Accumulated Trades")
-
-        total_external_fee = self.external_trade_fees[area.name]
+        total_market_fee = results[area.name]["Accumulated Trades"]["market_fee"]
         if area.name in self.external_trades:
             # External trades are the trades of the parent area
             external = self.external_trades[area.name].copy()
@@ -358,6 +358,7 @@ class MarketEnergyBills:
             earned = external.pop("earned")
             bought = external.pop("bought")
             sold = external.pop("sold")
+            total_external_fee = external.pop("market_fee")
             external.update(**{
                 "spent": earned, "earned": spent, "bought": sold,
                 "sold": bought, "market_fee": total_external_fee})
@@ -365,15 +366,13 @@ class MarketEnergyBills:
             external["total_cost"] = external["spent"] - external["earned"] + total_external_fee
             results[area.name].update({"External Trades": external})
 
-            total_market_fee = results[area.name]["Accumulated Trades"]["market_fee"] + \
-                total_external_fee
+            total_market_fee += total_external_fee
             results[area.name].update(self._market_fee_section(total_market_fee))
             totals_child_list = [results[area.name]["Accumulated Trades"],
                                  results[area.name]["External Trades"],
                                  results[area.name]["Market Fees"]]
         else:
             # If root area, Accumulated Trades == Totals
-            total_market_fee = results[area.name]["Accumulated Trades"]["market_fee"]
             results[area.name].update(self._market_fee_section(total_market_fee))
             totals_child_list = [results[area.name]["Accumulated Trades"],
                                  results[area.name]["Market Fees"]]
