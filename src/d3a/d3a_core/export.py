@@ -25,6 +25,7 @@ import json
 import operator
 from slugify import slugify
 from sortedcontainers import SortedDict
+from collections import namedtuple
 
 from d3a.constants import DATE_TIME_FORMAT
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
@@ -53,6 +54,8 @@ alternative_pricing_subdirs = {
 
 EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
                            "soc_history_%", "load_profile_kWh"]
+
+SlotDataRange = namedtuple('SlotDataRange', ('start', 'end'))
 
 
 def get_from_dict(data_dict, map_list):
@@ -474,26 +477,24 @@ class ExportAndPlot:
         area_stats = self.endpoint_buffer.area_market_stocks_stats.state[area.name]
         stats_plot_dir = os.path.join(plot_dir, "offer_bid_trade")
         mkdir_from_str(stats_plot_dir)
+        self.market_slot_data_mapping = {}
+        fig = go.Figure()
 
-        for market_slot_date, markets in area_stats.items():
-            data = list()
+        for index, (market_slot_date, markets) in enumerate(area_stats.items()):
+            start = len(fig.data) + 1
             for tick_slot, info_dict in markets.items():
-                data.append(
+                fig.add_trace(
                     go.Scatter(x=[tick_slot],
                                y=[info_dict['rate']],
-                               name=info_dict['tool_tip'])
+                               text=info_dict['tool_tip'],
+                               mode='lines+markers',
+                               hoverinfo='text',
+                               visible=False)
                 )
-            output_file = os.path.join(
-                stats_plot_dir, f"offer_bid_trade_history_{str(market_slot_date)}.html"
-            )
-            barmode = "relative"
-            title = f"OFFER BID TRADE AREA: {area.name} | MARKET: {str(market_slot_date)})"
-            xtitle = 'Time'
-            ytitle = 'Rate [€ cents / kWh]'
-            PlotlyGraph.plot_bar_graph(
-                barmode, title, xtitle, ytitle, data, output_file,
-                showlegend=False, hovermode='x'
-            )
+            self.market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
+        PlotlyGraph.plot_slider_graph(
+            fig, stats_plot_dir, area.name, self.market_slot_data_mapping
+        )
 
     def plot_stock_info_per_area_per_market_slot(self, area, plot_dir):
         """

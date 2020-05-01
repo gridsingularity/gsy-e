@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import plotly as py
 import plotly.graph_objs as go
 import pendulum
+import os
 
 from d3a.constants import TIME_ZONE
 from d3a.models.strategy.storage import StorageStrategy
@@ -139,6 +140,37 @@ class PlotlyGraph:
             day_list[-1].hour, day_list[-1].minute, day_list[-1].second, tz=TIME_ZONE)
 
         return [start_time, end_time], data
+
+    @classmethod
+    def plot_slider_graph(cls, fig, stats_plot_dir, area_name, market_slot_data_mapping):
+        steps = []
+        for i in range(len(market_slot_data_mapping)):
+            step = dict(
+                method="update",
+                args=[{"visible": [False] * len(fig.data)},
+                      {"title": "Slider switched to slot: " + str(i)}],  # layout attribute
+            )
+            for k in range(market_slot_data_mapping[i].start,
+                           market_slot_data_mapping[i].end):
+                step["args"][0]["visible"][k] = True  # Toggle i'th trace to "visible"
+            steps.append(step)
+        sliders = [dict(
+            active=0,
+            currentvalue={"prefix": "MarketSlot: "},
+            pad={"t": len(market_slot_data_mapping)},
+            steps=steps
+        )]
+        output_file = os.path.join(stats_plot_dir, f"offer_bid_trade_history.html")
+        barmode = "group"
+        title = f"OFFER BID TRADE AREA: {area_name}"
+        xtitle = 'Time'
+        ytitle = 'Rate [€ cents / kWh]'
+
+        fig.update_layout(autosize=True, barmode=barmode, width=1200, height=700, title=title,
+                          yaxis=dict(title=ytitle), xaxis=dict(title=xtitle),
+                          font=dict(size=16), showlegend=False, sliders=sliders)
+
+        py.offline.plot(fig, filename=output_file, auto_open=False)
 
     @classmethod
     def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str,

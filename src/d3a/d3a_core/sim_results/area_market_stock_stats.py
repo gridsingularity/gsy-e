@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from d3a.d3a_core.util import round_floats_for_ui
+
 
 class StockStats:
     def __init__(self):
@@ -34,31 +36,36 @@ class StockStats:
 
         for trade in last_past_market.trades:
             tool_tip = f"Trade: {trade.seller_origin} --> {trade.buyer_origin} " \
-                       f"({trade.offer.energy} kWh @ {trade.offer.energy_rate} € / kWh)"
+                       f"({trade.offer.energy} kWh @ " \
+                       f"{round_floats_for_ui(trade.offer.energy_rate)} € / kWh)"
             self.state[area.name][last_past_market.time_slot][trade.time] = \
                 {"rate": trade.offer.energy_rate, "tool_tip": tool_tip}
 
         for bid in last_past_market.bid_history:
             tool_tip = f"{bid.buyer_origin} " \
-                       f"Bid ({bid.energy} kWh @ {bid.energy_rate} € cents / kWh)"
+                       f"Bid ({bid.energy} kWh @ " \
+                       f"{round_floats_for_ui(bid.energy_rate)} € cents / kWh)"
             self.state[area.name][last_past_market.time_slot][bid.time] = \
                 {"rate": bid.energy_rate, "tool_tip": tool_tip}
 
         for id, bid in last_past_market.bids.items():
             tool_tip = f"{bid.buyer_origin} " \
-                       f"Bid ({bid.energy} kWh @ {bid.energy_rate} € cents / kWh)"
+                       f"Bid ({bid.energy} kWh @ " \
+                       f"{round_floats_for_ui(bid.energy_rate)} € cents / kWh)"
             self.state[area.name][last_past_market.time_slot][bid.time] = \
                 {"rate": bid.energy_rate, "tool_tip": tool_tip}
 
         for id, offer in last_past_market.offers.items():
             tool_tip = f"{offer.seller_origin} " \
-                       f"Offer({offer.energy} kWh @ {offer.energy_rate} € cents / kWh)"
+                       f"Offer({offer.energy} kWh @ " \
+                       f"{round_floats_for_ui(offer.energy_rate)} € cents / kWh)"
             self.state[area.name][last_past_market.time_slot][offer.time] = \
                 {"rate": offer.energy_rate, "tool_tip": tool_tip}
 
         for offer in last_past_market.offer_history:
             tool_tip = f"{offer.seller_origin} " \
-                       f"Offer({offer.energy} kWh @ {offer.energy_rate} € cents / kWh)"
+                       f"Offer({offer.energy} kWh @ " \
+                       f"{round_floats_for_ui(offer.energy_rate)} € cents / kWh)"
             self.state[area.name][last_past_market.time_slot][offer.time] = \
                 {"rate": offer.energy_rate, "tool_tip": tool_tip}
 
