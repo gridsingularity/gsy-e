@@ -302,7 +302,7 @@ class Simulation:
             gc.collect()
             process = psutil.Process(os.getpid())
             mbs_used = process.memory_info().rss / 1000000.0
-            log.warning(f"Used {mbs_used} MBs.")
+            log.debug(f"Used {mbs_used} MBs.")
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 # reset tick_resume after possible resume

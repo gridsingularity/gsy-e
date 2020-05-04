@@ -66,6 +66,7 @@ class SimulationEndpointBuffer:
             "cumulative_loads": self.cumulative_loads,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_redis_results,
+            "cumulative_bills": self.market_bills.cumulative_bills,
             "status": self.status,
             "progress_info": self.simulation_progress,
             "kpi": self.kpi.performance_indices_redis,
@@ -85,6 +86,7 @@ class SimulationEndpointBuffer:
             "price_energy_day": self.price_energy_day.csv_output,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_results,
+            "cumulative_bills": self.market_bills.cumulative_bills,
             "status": self.status,
             "progress_info": self.simulation_progress,
             "device_statistics": self.device_statistics.device_stats_time_str,
@@ -109,6 +111,8 @@ class SimulationEndpointBuffer:
         self.market_bills.update(area)
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             self.balancing_bills.update(area)
+
+        self.market_bills.update_cumulative_bills(area)
 
         self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 

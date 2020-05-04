@@ -45,10 +45,23 @@ Feature: Run integration tests
 
   Examples: Settings
       |                scenario                |
-      |               default_2a               |
+      |         grid_fees.default_2a           |
+      |           jira.d3asim_2303             |
+      |              default_2a                |
       |      two_sided_market.default_2a       |
       |    two_sided_pay_as_clear.default_2a   |
 
+  Scenario Outline: Test Cumulative Bills
+    Given we have a scenario named <scenario>
+    And d3a is installed
+    When we run the simulation with setup file <scenario> and parameters [24, 60, 60, 1]
+    Then the cumulative energy bills for each area are the sum of its children
+  Examples: Settings
+      |                scenario                |
+      |               default_2a               |
+      |      two_sided_market.default_2a       |
+      |    two_sided_pay_as_clear.default_2a   |
+      |          grid_fees.default_2a          |
 
   Scenario Outline: Simulation subscribes on the appropriate channels
      Given d3a is installed
@@ -136,6 +149,16 @@ Feature: Run integration tests
      And the past markets are not kept in memory
      And we run the simulation with setup file default_2a and parameters [24, 60, 60, 1]
      Then the energy bills are identical no matter if the past markets are kept
+
+  Scenario: Cumulative bills are the same with and without keeping the past markets
+     Given we have a scenario named default_2a
+     And d3a is installed
+     And the past markets are kept in memory
+     When we run the simulation with setup file default_2a and parameters [24, 60, 60, 1]
+     And the reported cumulative bills are saved
+     And the past markets are not kept in memory
+     And we run the simulation with setup file default_2a and parameters [24, 60, 60, 1]
+     Then the cumulative bills are identical no matter if the past markets are kept
 
   Scenario Outline: Price energy day results are the same with and without keeping the past markets
      Given we have a scenario named <scenario>
