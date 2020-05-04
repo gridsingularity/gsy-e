@@ -4,9 +4,9 @@ The following features were implemented :
 * [Constant based Grid Fees](constant-fees.md)
 * [Self Sufficiency, Self Consumption, and Energy Peak Percentage KPIs](kpis.md)
 * Simulation runtime status indicator
-* [Increased node limit to 1000 nodes](grid-setup.md)
+* Increased node limit to [1000 nodes](grid-setup.md)
 * Collaborations Scoreboard
-* [Select visible charts on Results page](results.md)
+* Select visible charts on [Results page](results.md)
 * Colors for Energy Bills Bought and Sold
 
 
