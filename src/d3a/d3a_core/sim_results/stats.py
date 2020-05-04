@@ -33,6 +33,17 @@ def recursive_current_markets(area):
             yield from recursive_current_markets(child)
 
 
+def _get_past_markets_from_area(area, past_market_types):
+    if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
+        return []
+    if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
+        return getattr(area, past_market_types)
+    else:
+        if len(getattr(area, past_market_types)) < 1:
+            return []
+        return [getattr(area, past_market_types)[-1]]
+
+
 def primary_trades(markets):
     """
     We want to avoid counting trades between different areas multiple times
@@ -56,17 +67,6 @@ def total_avg_trade_price(markets):
         sum(trade.offer.price for trade in primary_trades(markets)) /
         sum(trade.offer.energy for trade in primary_trades(markets))
     )
-
-
-def _get_past_markets_from_area(area, past_market_types):
-    if not hasattr(area, past_market_types) or getattr(area, past_market_types) is None:
-        return []
-    if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
-        return getattr(area, past_market_types)
-    else:
-        if len(getattr(area, past_market_types)) < 1:
-            return []
-        return [getattr(area, past_market_types)[-1]]
 
 
 class CumulativeBills:
@@ -163,7 +163,6 @@ class MarketEnergyBills:
         self.bills_redis_results = {}
         self.market_fees = {}
         self.external_trades = {}
-        self.cumulative_bills_results = {}
 
     def _store_bought_trade(self, result_dict, trade):
         # Division by 100 to convert cents to Euros
