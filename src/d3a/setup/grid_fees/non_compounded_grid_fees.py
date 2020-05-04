@@ -20,9 +20,13 @@ from d3a.models.area import Area
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.appliance.pv import PVAppliance
 from d3a.models.strategy.pv import PVStrategy
+from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 
 
 def get_setup(config):
+    config.grid_fee_type = 2
+    GlobalConfig.grid_fee_type = 2
+    ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
     area = Area(
         'Grid',
         [
@@ -43,7 +47,7 @@ def get_setup(config):
                 Area(
                     'House 2',
                     [
-                        Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=10,
+                        Area('H2 PV', strategy=PVStrategy(panel_count=10, initial_selling_rate=10,
                                                           final_selling_rate=10),
                              appliance=PVAppliance()),
 

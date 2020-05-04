@@ -10,7 +10,7 @@ Let’s now see more precisely the only trade of the day and the propagation of 
 
 ![img](img/bills-2.png){:style="display: block;margin-left: auto;margin-right: auto;height:400px;width:750px"}
 
-The bid and the offer is forwarded to the upper market (for more information on this process, please read the [grid fees documentation](grid-fees.md)) and are matched in the Grid market with a clearing price (and trade price) of 0.45 €.
+The bid and the offer is forwarded to the upper market (for more information on this process, please read the [grid fees documentation](percentage-fees.md)) and are matched in the Grid market with a clearing price (and trade price) of 0.45 €.
 
 In the bills.json file, bills will be reported multiple times according to the different market point of view.For each bill we will have the following structure : 
 

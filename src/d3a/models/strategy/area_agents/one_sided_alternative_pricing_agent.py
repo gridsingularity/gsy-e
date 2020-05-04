@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import sys
 
 from d3a.models.strategy.area_agents.one_sided_agent import OneSidedAgent
-from d3a.models.strategy.area_agents.one_sided_engine import IAAEngine
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.sim_results.area_statistics import _is_house_node
 from d3a.models.strategy.pv import PVStrategy
@@ -31,9 +30,8 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
     MIN_SLOT_AGE = 2
 
     def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE,
-                 engine_type=IAAEngine):
-        super().__init__(engine_type=engine_type, owner=owner,
+                 min_offer_age=ConstSettings.IAASettings.MIN_OFFER_AGE):
+        super().__init__(owner=owner,
                          higher_market=higher_market, lower_market=lower_market,
                          min_offer_age=min_offer_age)
 
@@ -61,7 +59,7 @@ class OneSidedAlternativePricingAgent(OneSidedAgent):
                         sell_rate = area.config.market_maker_rate[self.lower_market.time_slot]
                     else:
                         raise MarketException
-                    offer.price = offer.energy * sell_rate
+                    offer.update_price(offer.energy * sell_rate)
                     self.accept_offer(self.lower_market, offer)
 
         except MarketException:

@@ -55,6 +55,7 @@ class FakeOffer:
         self.price = price
         self.energy = energy
         self.seller = seller
+        self.energy_rate = price / energy
 
 
 def _trade(price, buyer, energy=1, seller=None, fee_price=None):
@@ -241,7 +242,5 @@ def test_energy_bills_report_correctly_market_fees(grid_fees):
     assert result["street"]["house1"]["market_fee"] == 0.04
     assert result["street"]["house2"]["market_fee"] == 0.01
     assert result["street"]['Accumulated Trades']["market_fee"] == 0.05
-    assert result["house1"]['External Trades']["market_fee"] == \
-        result["street"]["house1"]["market_fee"]
-    assert result["house2"]['External Trades']["market_fee"] == \
-        result["street"]["house2"]["market_fee"]
+    assert result["house1"]['External Trades']["market_fee"] == 0.0
+    assert result["house2"]['External Trades']["market_fee"] == 0.0

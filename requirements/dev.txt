@@ -58,6 +58,7 @@ pluggy==0.13.1            # via tox
 pre-commit==1.21.0
 prompt-toolkit==2.0.10    # via ptpython
 protobuf==3.11.2
+psutil==5.7.0
 ptpython==2.0.6
 py==1.8.1                 # via tox
 pycparser==2.19           # via cffi

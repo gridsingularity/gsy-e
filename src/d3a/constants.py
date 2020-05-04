@@ -20,9 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from d3a_interface.constants_limits import TIME_FORMAT, DATE_FORMAT # NOQA
 from d3a_interface.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT  # NOQA
 
-# *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = "1.0.0a0"
-
 TIME_ZONE = "UTC"
 
 DEFAULT_PRECISION = 8

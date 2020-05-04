@@ -21,6 +21,7 @@ from enum import Enum
 from pendulum import duration
 
 from d3a import limit_float_precision
+from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, generate_market_slot_list
 from d3a.models.state import StorageState, ESSEnergyOrigin, EnergyOrigin
@@ -59,6 +60,8 @@ class StorageStrategy(BidEnabledStrategy):
                  StorageSettings.BUYING_RATE_RANGE.initial,
                  final_buying_rate: Union[float, dict] =
                  StorageSettings.BUYING_RATE_RANGE.final,
+                 loss_per_hour=StorageSettings.LOSS_PER_HOUR,
+                 loss_function=StorageSettings.LOSS_FUNCTION,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  energy_rate_decrease_per_update=None,
                  update_interval=None,
@@ -77,6 +80,8 @@ class StorageStrategy(BidEnabledStrategy):
         validate_storage_device(initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
                                 battery_capacity_kWh=battery_capacity_kWh,
                                 max_abs_battery_power_kW=max_abs_battery_power_kW,
+                                loss_per_hour=loss_per_hour,
+                                loss_function=loss_function,
                                 fit_to_limit=fit_to_limit,
                                 energy_rate_increase_per_update=energy_rate_increase_per_update,
                                 energy_rate_decrease_per_update=energy_rate_decrease_per_update)
@@ -114,7 +119,8 @@ class StorageStrategy(BidEnabledStrategy):
                          initial_energy_origin=initial_energy_origin,
                          capacity=battery_capacity_kWh,
                          max_abs_battery_power_kW=max_abs_battery_power_kW,
-                         loss_per_hour=0.0,
+                         loss_per_hour=loss_per_hour,
+                         loss_function=loss_function,
                          min_allowed_soc=min_allowed_soc)
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
@@ -267,10 +273,9 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_tick(self):
         self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+
         for market in self.area.all_markets:
-            if ConstSettings.IAASettings.MARKET_TYPE == 1:
-                self.buy_energy(market)
-            elif ConstSettings.IAASettings.MARKET_TYPE == 2 or \
+            if ConstSettings.IAASettings.MARKET_TYPE == 2 or \
                     ConstSettings.IAASettings.MARKET_TYPE == 3:
                 self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
                 if self.are_bids_posted(market.id):
@@ -283,11 +288,13 @@ class StorageStrategy(BidEnabledStrategy):
                             self.state.offered_buy_kWh[market.time_slot] += first_bid.energy
 
             self.state.tick(self.area, market.time_slot)
-            if self.cap_price_strategy is False:
-                self.offer_update.update_offer(self)
+        if self.cap_price_strategy is False:
+            self.offer_update.update_offer(self)
 
         self.bid_update.increment_update_counter_all_markets(self)
-        self.offer_update.increment_update_counter_all_markets(self)
+        if self.offer_update.increment_update_counter_all_markets(self):
+            for market in self.area.all_markets:
+                self.buy_energy(market)
 
     def event_trade(self, *, market_id, trade):
         market = self.area.get_future_market_from_id(market_id)
@@ -387,38 +394,50 @@ class StorageStrategy(BidEnabledStrategy):
                                                                               discharge_energy,
                                                                               self.owner.name)
 
-    def buy_energy(self, market):
+    def _try_to_buy_offer(self, offer, market, max_affordable_offer_rate):
+        if offer.seller == self.owner.name:
+            # Don't buy our own offer
+            return
+        # Check if the price is cheap enough
+        if offer.energy_rate > max_affordable_offer_rate:
+            # Can early return here, because the offers are sorted according to energy rate
+            # therefore the following offers will be more expensive
+            return True
+        alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
+        if offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME \
+                and alt_pricing_settings.PRICING_SCHEME != 0:
+            # don't buy from IAA if alternative pricing scheme is activated
+            return
+
+        try:
+            self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
+            max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
+            if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
+                self.state.pledged_buy_kWh[market.time_slot] += max_energy
+                self.accept_offer(market, offer, energy=max_energy,
+                                  buyer_origin=self.owner.name)
+            return
+        except MarketException:
+            # Offer already gone etc., try next one.
+            return
+
+    def buy_energy(self, market, offer=None):
+        if not market:
+            return
+        if self.state.has_battery_reached_max_power(-FLOATING_POINT_TOLERANCE, market.time_slot):
+            return
         max_affordable_offer_rate = min(self.bid_update.get_updated_rate(market.time_slot),
                                         self.bid_update.final_rate[market.time_slot])
         # Check if storage has free capacity
         if self.state.free_storage(market.time_slot) <= 0.0:
             return
 
-        for offer in market.sorted_offers:
-            if offer.seller == self.owner.name:
-                # Don't buy our own offer
-                continue
-            # Check if the price is cheap enough
-            if (offer.price / offer.energy) > max_affordable_offer_rate:
-                continue
-            alt_pricing_settings = ConstSettings.IAASettings.AlternativePricing
-            if offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME \
-                    and alt_pricing_settings.PRICING_SCHEME != 0:
-                # don't buy from IAA if alternative pricing scheme is activated
-                continue
-
-            try:
-                self.state.clamp_energy_to_buy_kWh([ma.time_slot for ma in self.area.all_markets])
-                max_energy = min(offer.energy, self.state.energy_to_buy_dict[market.time_slot])
-                if not self.state.has_battery_reached_max_power(-max_energy, market.time_slot):
-                    self.accept_offer(market, offer, energy=max_energy,
-                                      buyer_origin=self.owner.name)
-                    self.state.pledged_buy_kWh[market.time_slot] += max_energy
-                    continue
-
-            except MarketException:
-                # Offer already gone etc., try next one.
-                continue
+        if offer:
+            self._try_to_buy_offer(offer, market, max_affordable_offer_rate)
+        else:
+            for offer in market.sorted_offers:
+                if self._try_to_buy_offer(offer, market, max_affordable_offer_rate) is False:
+                    return
 
     def sell_energy(self):
         markets_to_sell = self.select_market_to_sell()
@@ -447,7 +466,7 @@ class StorageStrategy(BidEnabledStrategy):
                 most_expensive_market = self.area.all_markets[0]
                 for market in self.area.all_markets:
                     if len(market.sorted_offers) > 0 and \
-                       market.sorted_offers[0].price / market.sorted_offers[0].energy > max_rate:
+                       market.sorted_offers[0].energy_rate > max_rate:
                         max_rate = market.sorted_offers[0].price / market.sorted_offers[0].energy
                         most_expensive_market = market
             except IndexError:
@@ -466,7 +485,7 @@ class StorageStrategy(BidEnabledStrategy):
             return self.offer_update.initial_rate[market.time_slot]
 
     def capacity_dependant_sell_rate(self, market):
-        if self.state.charge_history[market.time_slot] is '-':
+        if self.state.charge_history[market.time_slot] == "-":
             soc = self.state.used_storage / self.state.capacity
         else:
             soc = self.state.charge_history[market.time_slot] / 100.0
@@ -476,3 +495,12 @@ class StorageStrategy(BidEnabledStrategy):
             return min_selling_rate
         else:
             return max_selling_rate - (max_selling_rate - min_selling_rate) * soc
+
+    def event_offer(self, *, market_id, offer):
+        super().event_offer(market_id=market_id, offer=offer)
+        if ConstSettings.IAASettings.MARKET_TYPE == 1:
+            market = self.area.get_future_market_from_id(market_id)
+            if offer.id in market.offers and \
+                    offer.seller != self.owner.name and \
+                    offer.seller != self.area.name:
+                self.buy_energy(market, offer)

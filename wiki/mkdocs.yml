@@ -4,65 +4,73 @@ site_author: 'Grid Singularity'
 site_url: 'https://gridsingularity.github.io/d3a/d3a-documentation/'
 
 nav:
-- 'Overview': 'd3a-documentation.md' 
-- 'User Interface (d3a.io)': 
-    - 'UI Overview': 'user-interface-d3a.md' 
+- 'Overview': 'd3a-documentation.md'
+- 'User Interface (d3a.io)':
+    - 'UI Overview': 'user-interface-d3a.md'
     - 'Releases': 'ui-releases.md'
     - 'Projects (Home Page)': 'projects-home-page.md'
-    - 'Simulation Configuration': 
-        - 'Simulation Configuration Overview': 'simulation-configuration.md' 
-        - 'General Settings': 'general-settings.md' 
-        - 'Grid Setup': 
-            - 'Initial Grid Setup': 'grid-setup.md' 
-            - 'PV': 'pv.md' 
-            - 'Storage': 'storage.md' 
-            - 'Load': 'load.md' 
+    - 'Simulation Configuration':
+        - 'Simulation Configuration Overview': 'simulation-configuration.md'
+        - 'General Settings': 'general-settings.md'
+        - 'Grid Setup':
+            - 'Initial Grid Setup': 'grid-setup.md'
+            - 'PV': 'pv.md'
+            - 'Storage': 'storage.md'
+            - 'Load': 'load.md'
             - 'Market Maker': 'market-maker.md'
-            - 'Power Plant': 'power-plant.md' 
-            - 'Areas': 'areas.md' 
-        - 'Libraries': 'libraries.md' 
-        - 'Upload File Formats': 'upload-file-formats.md' 
-    - 'Results': 'results.md' 
-- 'Backend Codebase': 
-    - 'Backend Codebase Overview': 'backend-codebase.md'  
-    - 'Strategies': 
-        - 'Load Strategy': 'load-strategy.md' 
-        - 'Energy Storage System (ESS) Strategy': 'ess-strategy.md' 
-        - 'PV Strategy': 'pv-strategy.md' 
-        - 'Infinite Power Plant Strategy': 'infinite-power-plant-strategy.md' 
-        - 'Custom Load Strategy': 'custom-load-strategy.md' 
-        - 'Finite Power Plant Strategy': 'finite-power-plant-strategy.md' 
-        - 'Custom PV Strategy': 'custom-pv-strategy.md' 
-        - 'Infinite Bus Strategy': 'infinite-bus-strategy.md' 
-        - 'How to Implement Custom Device Strategies': 'how-implement-custom-device-strategies.md' 
-        - 'Market Maker Strategy': 'market-maker-strategy.md' 
-        - 'How Strategies Adjust the Prices of Offers and Bids': 'how-strategies-adjust-prices.md' 
-    - 'Markets': 
+            - 'Power Plant': 'power-plant.md'
+            - 'Areas': 'areas.md'
+        - 'Libraries': 'libraries.md'
+        - 'Upload File Formats': 'upload-file-formats.md'
+    - 'Results': 'results.md'
+- 'Backend Codebase':
+    - 'Backend Codebase Overview': 'backend-codebase.md'
+    - 'Strategies':
+        - 'Load Strategy': 'load-strategy.md'
+        - 'Energy Storage System (ESS) Strategy': 'ess-strategy.md'
+        - 'PV Strategy': 'pv-strategy.md'
+        - 'Infinite Power Plant Strategy': 'infinite-power-plant-strategy.md'
+        - 'Custom Load Strategy': 'custom-load-strategy.md'
+        - 'Finite Power Plant Strategy': 'finite-power-plant-strategy.md'
+        - 'Custom PV Strategy': 'custom-pv-strategy.md'
+        - 'Infinite Bus Strategy': 'infinite-bus-strategy.md'
+        - 'How to Implement Custom Device Strategies': 'how-implement-custom-device-strategies.md'
+        - 'Market Maker Strategy': 'market-maker-strategy.md'
+        - 'How Strategies Adjust the Prices of Offers and Bids': 'how-strategies-adjust-prices.md'
+    - 'Markets':
         - 'Markets Overview': 'markets.md'
-        - 'One Sided Pay-As-Offer': 'one-sided-pay-as-offer.md' 
+        - 'One Sided Pay-As-Offer': 'one-sided-pay-as-offer.md'
         - 'Two Sided Pay-As-Bid': 'two-sided-pay-as-bid.md'
         - 'Two Sided Pay-As-Clear': 'two-sided-pay-as-clear.md'
         - 'Balancing Market': 'balancing-market.md'
-        - 'Inter-Area Agent': 'inter-area-agent.md'  
+        - 'Inter-Area Agent': 'inter-area-agent.md'
         - 'Market Slots and Ticks': 'market-slots-and-ticks.md'
-        - 'Grid Fees': 'grid-fees.md'
-    - 'D3A Blockchain Support': 
-        - 'D3A Blockchain Overview': 'd3a-blockchain-support.md' 
-        - 'ClearingToken Smart Contract': 'clearingtoken-smart-contract.md' 
-        - 'Market Smart Contract': 'market-smart-contract.md' 
-        - 'Steps to Run D3A on Tobalaba': 'run-d3a-on-tobalaba.md' 
+        - 'Grid Fees':
+          - 'Constant fees': 'constant-fees.md'
+          - 'Percentage fees': 'percentage-fees.md'
+    - 'D3A Blockchain Support':
+        - 'D3A Blockchain Overview': 'd3a-blockchain-support.md'
+        - 'ClearingToken Smart Contract': 'clearingtoken-smart-contract.md'
+        - 'Market Smart Contract': 'market-smart-contract.md'
+        - 'Steps to Run D3A on Tobalaba': 'run-d3a-on-tobalaba.md'
     - 'Simulation Results':
         - 'Simulation Results Overview': 'simulation-results.md'
         - 'Bills': 'bills.md'
-    - 'Alternative Pricing Schemes': 'alternative-pricing-schemes.md' 
+    - 'Alternative Pricing Schemes': 'alternative-pricing-schemes.md'
     - 'How to Configure Grid Transfer Fee': 'configure-transfer-fee.md'
-    - 'Simulation Events': 'simulation-events.md' 
-    - 'How to Create a setup-file': 'create-setup-file.md' 
-    - 'How to Change Global Simulation Settings': 'change-global-sim-settings.md' 
-    - 'How to launch Simulation via Command Line Interface (CLI)': 'launch-sim-via-cli.md' 
-    - 'Installation Instructions': 'installation-instructions.md' 
-    - 'Key Performance Indicators (KPIs)': 'kpis.md'                 
-- FAQ: 'faq.md' 
+    - 'Simulation Events': 'simulation-events.md'
+    - 'How to Create a setup-file': 'create-setup-file.md'
+    - 'How to Change Global Simulation Settings': 'change-global-sim-settings.md'
+    - 'How to launch Simulation via Command Line Interface (CLI)': 'launch-sim-via-cli.md'
+    - 'Installation Instructions':
+        - 'Linux': 'installation-instructions.md'
+        - 'Mac': 'ios-installation-instructions.md'
+        - 'Virtual Machine': 'installation-instructions-vm.md'
+        - 'Version Updates': 'version-update.md'
+    - 'Key Performance Indicators (KPIs)': 'kpis.md'
+- API: 'api.md'
+- FAQ: 'faq.md'
+- FAQ Odyssey hackathon: 'faq-odyssey.md'
 
 # Configuration for the Material theme
 theme:
@@ -105,7 +113,9 @@ extra:
     - type: 'linkedin'
       size: 'lg'
       link: 'https://www.linkedin.com/company/grid-singularity'
-
+    - type: 'slack'
+      size: 'lg'
+      link: 'https://join.slack.com/t/gsycommunity/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg'
 footer:
   logo: 'img/d3a-logo.png'
 

@@ -1,4 +1,5 @@
-This list of frequently asked questions (faq) is updated gradually, by adding the questions that come up on our [gitter community chat](https://gitter.im/D3A-community/welcome)
+
+This list of frequently asked questions (faq) is updated gradually, by adding the questions that come up on our [Slack](https://join.slack.com/t/gsycommunity/shared_invite/zt-dpfxe2gk-hKFccsrr68g982odCJlrIg) community chat (gsycommunity.slack.com). Our [gitter](https://gitter.im/D3A-community/welcome) has been replaced with our Slack community.
 
 # D3A Functionality 
 
@@ -29,7 +30,7 @@ The backend code offers the full functionality of the active version of the D3A.
 
 ### How do I setup a simulation in the frontend ? 
 
-1. To start using the D3A you need to register your account. The D3A team will approve accounts in one business day. You will then be asked to confirm your email to enable login.
+1. To start using the D3A you need to register your account. You will then receive an email with a link to confirm your account. Once done you will be able to connect to [d3a.io](https://d3a.io) with your account.
 2. You can design your own project by clicking on “new project” and then create a new simulation in it.
 3. The first step in setting up a simulation is to define the simulation settings. You can set the simulation duration, the solar profile type, the market type, and other relevant parameters. In the D3A you can choose one of the 3 market types available : single-sided pay as offer, two-sided pay as bid and two-sided pay as clear (for more information on the simulation settings please follow this [link](change-global-sim-settings.md)). 
 4. The next step is to design your grid. Once you arrive in the grid setup, the first thing that you will have to do is to define the market maker. Its goal is to represent a static or fluctuating base market price which will serve as a reference point for the selected device strategies. After creating this market maker, you can start building the digital twin of your grid. The D3A works by creating area markets. In each of these areas you can put devices or other grid areas. The devices can be loads, PV, storage, etc. The setup is intended to represent the physical architecture of the real energy market (country, region, neighbourhood, house, etc.). Importantly, each area contains a spot market where trades can occur. Each device places a bid/offer in their home market. When bids/offers are not matched in their own area, they are forwarded to the upper market in the upper area and so on. 
@@ -125,7 +126,7 @@ Grid Singularity, an energy technology startup, and the Rocky Mountain Institute
 
 ### What are the future development plans ?
 
-We have partnered with innovative energy companies to facilitate further D3A development in the framework of the [Odyssey 2020](https://www.odyssey.org/odyssey-hackathon-2020/) Energy Singularity Track led by Grid Singularity. We will also work on some specific market simulation studies with partners to demonstrate the value of local energy markets. Following Odyssey Hackathon in April, we plan to deploy the D3A engine on real smart-meters to allow trades in a neighbourhood by the end of 2020 as part of a pilot project.
+We have partnered with innovative energy companies to facilitate further D3A development in the framework of the [Odyssey 2020](https://www.odyssey.org/odyssey-hackathon-2020/) Energy Singularity Track led by Grid Singularity. We will also work on some specific market simulation studies with partners to demonstrate the value of local energy markets. Following Odyssey Hackathon in June, we plan to deploy the D3A engine on a Testnet by the end of 2020.
 
 ![img](img/faq-1.png)
 
@@ -133,4 +134,4 @@ We have partnered with innovative energy companies to facilitate further D3A dev
 
 ### If I have questions regarding the D3A use, how can I contact you ?
 
-Please first review our [wiki page](d3a-documentation.md) documentation on the UI and the backend code. The best way to engage with us is via the D3A community/ecosystem channel on [Gitter](https://gitter.im/D3A-community/welcome). For any additional comments/feedback you can also send us an email at [d3a@gridsingularity.com](mailto:d3a@gridsingularity.com). 
+Please first review our [wiki page](d3a-documentation.md) documentation on the UI and the backend code. The best way to engage with us is via the D3A community/ecosystem channel on [Slack](https://join.slack.com/t/gsycommunity/shared_invite/zt-cksg629e-ClRPNV7TkW_cTOxDdlaz1Q). For any additional comments/feedback you can also send us an email at [d3a@gridsingularity.com](mailto:d3a@gridsingularity.com). 

@@ -39,7 +39,7 @@ class CustomLoadStrategy(LoadHoursStrategy):
                 if bid.id in market.bids.keys():
                     bid = market.bids[bid.id]
                 market.delete_bid(bid.id)
-                self.remove_bid_from_pending(bid.id, market)
+                self.remove_bid_from_pending(market, bid.id)
                 self.post_bid(market,
                               bid.energy * self._get_current_energy_rate(current_tick_number,
                                                                          market),
