@@ -585,9 +585,9 @@ class MarketPriceEnergyDay:
             csv_output[node.name]["price-energy-day"] = [
                 {
                     "time": timeslot,
-                    "av_price": round(mean(trades) if len(trades) > 0 else 0, 2),
-                    "min_price": round(min(trades) if len(trades) > 0 else 0, 2),
-                    "max_price": round(max(trades) if len(trades) > 0 else 0, 2),
+                    "av_price": round(mean(trades) if len(trades) > 0 else 0, 3),
+                    "min_price": round(min(trades) if len(trades) > 0 else 0, 3),
+                    "max_price": round(max(trades) if len(trades) > 0 else 0, 3),
                 } for timeslot, trades in trade_rates.items()
             ]
             redis_output[node.uuid] = deepcopy(csv_output[node.name])
