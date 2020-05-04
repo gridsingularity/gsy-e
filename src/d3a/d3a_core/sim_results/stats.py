@@ -218,7 +218,8 @@ class MarketEnergyBills:
                 trade.offer.price / 100.
         self.external_trades[area.name]['total_energy'] += trade.offer.energy
 
-    def _default_area_dict(self, area):
+    @classmethod
+    def _default_area_dict(cls, area):
         return dict(bought=0.0, sold=0.0,
                     spent=0.0, earned=0.0,
                     total_energy=0.0, total_cost=0.0,
