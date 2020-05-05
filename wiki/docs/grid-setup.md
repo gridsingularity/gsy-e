@@ -1,4 +1,4 @@
-On this page the user can set up the architecture of the grid by adding Areas and Devices. You can define up to 250 nodes. Each area or device is considered as 1 node.
+On this page the user can set up the architecture of the grid by adding Areas and Devices. You can define up to 1000 nodes. Each area or device is considered as 1 node.
 
 ![img](img/grid-setup-1.png)
 
