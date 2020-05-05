@@ -77,7 +77,6 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
         self.daily_load_profile = daily_load_profile
-        self.load_profile = {}
 
     def event_activate_energy(self):
         """
@@ -85,12 +84,13 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         for each slot.
         :return: None
         """
-        self.load_profile = read_arbitrary_profile(
+        load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
             self.daily_load_profile)
-        self._update_energy_requirement()
+        self._update_energy_requirement(load_profile)
+        del self.daily_load_profile
 
-    def _update_energy_requirement(self):
+    def _update_energy_requirement(self, load_profile):
         """
         Update required energy values for each market slot.
         :return: None
@@ -100,9 +100,9 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                             for day in range(self.area.config.sim_duration.days + 1)}
         for slot_time in generate_market_slot_list(area=self.area):
             if self._allowed_operating_hours(slot_time.hour):
-                self.energy_requirement_Wh[slot_time] = self.load_profile[slot_time] * 1000
-                self.state.desired_energy_Wh[slot_time] = self.load_profile[slot_time] * 1000
-                self.state.total_energy_demanded_wh += self.load_profile[slot_time] * 1000
+                self.energy_requirement_Wh[slot_time] = load_profile[slot_time] * 1000
+                self.state.desired_energy_Wh[slot_time] = load_profile[slot_time] * 1000
+                self.state.total_energy_demanded_wh += load_profile[slot_time] * 1000
 
     def _operating_hours(self, energy):
         """
