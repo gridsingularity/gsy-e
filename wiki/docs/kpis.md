@@ -41,8 +41,19 @@ From the reference point of **GRID** where all others areas are its children:
 
 - **self_consumption** = 10 / 10 = 1 → 100%
 
-
-
 ![img](img/kpis-1.png)
 
- 
+
+### Peak percentage
+
+![img](img/kpis-2.png)
+
+An energy peak imports/exports is the maximum of the aggregate imports/exports of every nodes inside an area.
+The user has the possibility to set a *baseline peak imports* and a *baseline peak exports* that he may have gotten from another simulation.
+
+The peak percentage can be calculated as follow : 
+
+* Energy_percentage_peak_imports = Current_peak_imports / Baseline_peak_imports * 100
+* Energy_percentage_peak_exports = Current_peak_exports / Baseline_peak_exports * 100
+
+
