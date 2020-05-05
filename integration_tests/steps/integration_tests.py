@@ -374,7 +374,7 @@ def save_reported_bills(context, bill_type):
             deepcopy(context.simulation.endpoint_buffer.market_bills.bills_redis_results)
     elif bill_type == "cumulative":
         context.energy_bills = deepcopy(
-            context.simulation.endpoint_buffer.market_bills.cumulative_bills)
+            context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills)
 
 
 @when('the past markets are not kept in memory')
@@ -772,7 +772,7 @@ def test_external_trade_energy_price(context):
 
 @then('the cumulative energy bills for each area are the sum of its children')
 def cumulative_bills_sum(context):
-    cumulative_bills = context.simulation.endpoint_buffer.market_bills.cumulative_bills_results
+    cumulative_bills = context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills_results
     bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
 
     def assert_area_cumulative_bills(area):
@@ -1077,7 +1077,7 @@ def identical_energy_bills(context):
 
 @then('the cumulative bills are identical no matter if the past markets are kept')
 def identical_cumulative_bills(context):
-    energy_bills = context.simulation.endpoint_buffer.market_bills.cumulative_bills
+    energy_bills = context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills
 
     for _, v in energy_bills.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0
