@@ -30,18 +30,20 @@ In the bills.json file, bills will be reported multiple times according to the d
 Now we will look at the results of our previous example. The first point of view is the highest market and in our case the Grid market : 
 
 
-![img](img/bills-3.png){:style="display: block;margin-left: auto;margin-right: auto;height:600px;width:280px"}
+![img](img/bills-3.png){:style="display: block;margin-left: auto;margin-right: auto;height:620px;width:300px"}
+![img](img/bills-4.png){:style="display: block;margin-left: auto;margin-right: auto;height:310px;width:300px"}
 
-From the point of view of the Grid, the House 1 area has bought 1 kWh from the DSO and spent 0.375€ in this trade. House 1 also pays the market fee that the Grid is charging : 0.075€. 
+From the point of view of the Grid, the House 1 area has bought 1 kWh from the DSO and spent 0.375€ in this trade. House 1 also pays the market fee that the Grid is charging : 0.075€. The total cost is then 0.375 + 0.075 = 0.45€
 
 After that we go down in the hierarchy  and look from the House 1 market :
 
-![img](img/bills-4.png){:style="display: block;margin-left: auto;margin-right: auto;height:580px;width:260px"}
+![img](img/bills-5.png){:style="display: block;margin-left: auto;margin-right: auto;height:500px;width:300px"}
+![img](img/bills-6.png){:style="display: block;margin-left: auto;margin-right: auto;height:310px;width:300px"}
 
 The House 1 market has no information on the other markets and this why from its point of view the Load has spent 0.45€ (0.0375+0.075) for 1 kWh and no fees are added up because this market has no fee.
 
 At the very end of the results we have the bills of each device (from their point of view):
 
-![img](img/bills-5.png){:style="display: block;margin-left: auto;margin-right: auto;height:400px;width:255px"}
+![img](img/bills-7.png){:style="display: block;margin-left: auto;margin-right: auto;height:360px;width:300px"}
 
 With this we see that the Load, from his point of view has bought 1 kWh for 0.45€. From the point of view of the DSO, this latter only received 0.375€ for 1 kWh.
