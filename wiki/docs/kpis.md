@@ -48,12 +48,13 @@ From the reference point of **GRID** where all others areas are its children:
 
 ![img](img/kpis-2.png)
 
-An energy peak imports/exports is the maximum of the aggregate imports/exports of every nodes inside an area.
-The user has the possibility to set a *baseline peak imports* and a *baseline peak exports* that he may have gotten from another simulation.
+The energy peak imports/exports is the maximum of the aggregate imports/exports of every node inside an area. The user has the possibility to set a *baseline_peak_energy_import_kWh* and a *baseline_peak_energy_export_kWh* that he may have gotten from another simulation in order to calculate the energy peak percentage, a measure of how much the peak imports or exports have changed between a baseline and the current simulation.
 
-The peak percentage can be calculated as follow : 
+The user may be interested in the Energy Peak Percentage KPI in order to determine the impact that adding grid fees or energy storage has on the peak imports and exports of an area. 
 
-* Energy_percentage_peak_imports = Current_peak_imports / Baseline_peak_imports * 100
-* Energy_percentage_peak_exports = Current_peak_exports / Baseline_peak_exports * 100
+The Energy Peak Percentage can be calculated as follows :
 
+* Import_peak_percentage = import_peak_energy_kWh / import_baseline_peak_energy_kWh * 100
+
+* Export_peak_percentage = export_peak_energy_kWh / export_baseline_peak_energy_kWh * 100
 
