@@ -48,6 +48,7 @@ class FakeArea:
         self.future_market = None
         self.now = pendulum.DateTime.now()
         self.transfer_fee_ratio = 0
+        self.current_tick_in_slot = 0
 
     @property
     def config(self):

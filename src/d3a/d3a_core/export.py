@@ -25,11 +25,12 @@ import json
 import operator
 from slugify import slugify
 from sortedcontainers import SortedDict
-
-from d3a.constants import DATE_TIME_FORMAT
+from pendulum import from_timestamp
+from copy import deepcopy
+from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
-from d3a_interface.constants_limits import ConstSettings
+from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
@@ -134,8 +135,10 @@ class ExportAndPlot:
             self.plot_ess_energy_trace(self.area, self.plot_dir)
             if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
                 self.plot_device_stats(self.area, [])
+            if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
+                self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
             if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
-                    ConstSettings.GeneralSettings.SUPPLY_DEMAND_PLOTS:
+                    ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
                 self.plot_supply_demand_curve(self.area, self.plot_dir)
             self.move_root_plot_folder()
         self.export_json_data(self.directory, self.area)
@@ -523,15 +526,15 @@ class ExportAndPlot:
                                           y=[clearing_point[0], clearing_point[0]],
                                           mode='lines+markers',
                                           line=dict(width=5),
-                                          name=time_slot.format(DATE_TIME_FORMAT +
-                                                                ' Clearing-Rate'))
+                                          name=time_slot.format(DATE_TIME_FORMAT)
+                                               + ' Clearing-Rate')
                     data.append(data_obj)
                     data_obj = go.Scatter(x=[clearing_point[1], clearing_point[1]],
                                           y=[0, clearing_point[0]],
                                           mode='lines+markers',
                                           line=dict(width=5),
-                                          name=time_slot.format(DATE_TIME_FORMAT +
-                                                                ' Clearing-Energy'))
+                                          name=time_slot.format(DATE_TIME_FORMAT)
+                                               + ' Clearing-Energy')
                     data.append(data_obj)
                     xmax = max(xmax, clearing_point[1]) * 3
 
@@ -639,3 +642,75 @@ class ExportAndPlot:
                               y=list(graph_obj.umHours.values()),
                               name=label.lower())
         return data_obj
+
+    def plot_energy_trade_profile_hr(self, area: Area, subdir: str):
+        """
+        Wrapper for _plot_energy_profile_hr
+        """
+        new_subdir = os.path.join(subdir, area.slug)
+        self._plot_energy_profile_hr(area, new_subdir)
+        for child in area.children:
+            if child.children:
+                self.plot_energy_trade_profile_hr(child, new_subdir)
+
+    def _plot_energy_profile_hr(self, area: Area, subdir: str):
+        """
+        Plots history of energy trades plotted for each market_slot
+        """
+        barmode = "relative"
+        xtitle = 'Time'
+        ytitle = 'Energy [kWh]'
+        market_name = area.name
+        title = f'High Resolution Energy Trade Profile of {market_name}'
+        plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
+        mkdir_from_str(plot_dir)
+        for market_slot_unix, data in area.stats.market_trades.items():
+            market_slot = from_timestamp(market_slot_unix)
+            plot_data = self.add_plotly_graph_dataset(data, market_slot)
+            if len(plot_data) > 0:
+                market_slot_str = market_slot.format(DATE_TIME_FORMAT)
+                output_file = \
+                    os.path.join(plot_dir, f'energy_profile_hr_'
+                                           f'{market_name}_{market_slot_str}.html')
+                time_range = [market_slot - GlobalConfig.tick_length,
+                              market_slot + GlobalConfig.slot_length + GlobalConfig.tick_length]
+                PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, plot_data, output_file,
+                                           time_range=time_range)
+
+    @staticmethod
+    def add_plotly_graph_dataset(market_trades, market_slot):
+        plotly_dataset_list = []
+        seller_dict = {}
+        buyer_dict = {}
+        # 1. accumulate data by buyer and seller:
+        for timestamp, data in market_trades.items():
+            time = from_timestamp(timestamp, tz=TIME_ZONE)
+            # This zero point is needed to make plotly also plot the first data point:
+            zero_point_dict = {"timestamp": [market_slot - GlobalConfig.tick_length],
+                               "energy": [0.0]}
+            if data["seller"] not in seller_dict:
+                seller_dict[data["seller"]] = deepcopy(zero_point_dict)
+            if data["buyer"] not in buyer_dict:
+                buyer_dict[data["buyer"]] = deepcopy(zero_point_dict)
+
+            seller_dict[data["seller"]]["timestamp"].append(time)
+            seller_dict[data["seller"]]["energy"].append(data["energy"] * ENERGY_SELLER_SIGN_PLOTS)
+            buyer_dict[data["buyer"]]["timestamp"].append(time)
+            buyer_dict[data["buyer"]]["energy"].append(data["energy"] * ENERGY_BUYER_SIGN_PLOTS)
+
+        # 2. Create bar plot objects and collect them in a list
+        # The widths of bars in a plotly.Bar is set in milliseconds when axis is in datetime format
+        for agent, data in seller_dict.items():
+            data_obj = go.Bar(x=data["timestamp"],
+                              y=data["energy"],
+                              width=GlobalConfig.tick_length.seconds * 1000,
+                              name=agent + "-seller")
+            plotly_dataset_list.append(data_obj)
+
+        for agent, data in buyer_dict.items():
+            data_obj = go.Bar(x=data["timestamp"],
+                              y=data["energy"],
+                              width=GlobalConfig.tick_length.seconds * 1000,
+                              name=agent + "-buyer")
+            plotly_dataset_list.append(data_obj)
+        return plotly_dataset_list

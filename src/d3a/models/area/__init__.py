@@ -245,7 +245,7 @@ class Area:
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
-                market.update_clock(self.current_tick)
+                market.update_clock(self.current_tick_in_slot)
 
     def tick_and_dispatch(self):
         if d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP:
