@@ -143,7 +143,7 @@ class TwoSidedPayAsClear(TwoSidedPayAsBid):
         return max_rate
 
     def match_offers_bids(self):
-        if not (self.current_tick + 1) % int(self.mcp_update_point) == 0:
+        if not (self.current_tick_in_slot + 1) % int(self.mcp_update_point) == 0:
             return
 
         clearing = self._perform_pay_as_clear_matching()

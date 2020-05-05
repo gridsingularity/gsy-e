@@ -564,15 +564,9 @@ class MarketPriceEnergyDay:
             self.csv_output = price_energy_csv_output
             self.redis_output = price_energy_redis_output
         else:
-            if ConstSettings.GeneralSettings.REDIS_PUBLISH_FULL_RESULTS:
-
-                self.csv_output = merge_price_energy_day_results_to_global(
-                    price_energy_csv_output, self.csv_output)
-                self.redis_output = merge_price_energy_day_results_to_global(
-                    price_energy_redis_output, self.redis_output)
-            else:
-                self.csv_output = price_energy_csv_output
-                self.redis_output = price_energy_redis_output
+            self.csv_output = merge_price_energy_day_results_to_global(
+                price_energy_csv_output, self.csv_output)
+            self.redis_output = price_energy_redis_output
 
     def _convert_output_format(self, price_energy, csv_output, redis_output):
         for node, trade_rates in price_energy.items():
@@ -585,9 +579,9 @@ class MarketPriceEnergyDay:
             csv_output[node.name]["price-energy-day"] = [
                 {
                     "time": timeslot,
-                    "av_price": round(mean(trades) if len(trades) > 0 else 0, 2),
-                    "min_price": round(min(trades) if len(trades) > 0 else 0, 2),
-                    "max_price": round(max(trades) if len(trades) > 0 else 0, 2),
+                    "av_price": round_floats_for_ui(mean(trades) if len(trades) > 0 else 0),
+                    "min_price": round_floats_for_ui(min(trades) if len(trades) > 0 else 0),
+                    "max_price": round_floats_for_ui(max(trades) if len(trades) > 0 else 0),
                 } for timeslot, trades in trade_rates.items()
             ]
             redis_output[node.uuid] = deepcopy(csv_output[node.name])

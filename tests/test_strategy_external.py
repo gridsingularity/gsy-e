@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from parameterized import parameterized
 import json
+from pendulum import now
 from d3a_interface.constants_limits import ConstSettings
 from d3a.models.area import Area
 from d3a.models.market.two_sided_pay_as_bid import TwoSidedPayAsBid
@@ -18,7 +19,7 @@ class TestExternalStrategy(unittest.TestCase):
         ConstSettings.IAASettings.MARKET_TYPE = 1
         self.area = Area(name="test_area")
         self.parent_area = Area(name="parent_area")
-        self.test_market = TwoSidedPayAsBid(name="test_market")
+        self.test_market = TwoSidedPayAsBid(name="test_market", time_slot=now())
         self.parent_area._markets.markets = {1: self.test_market}
         self.area.parent = self.parent_area
         self.external_strategy = ExternalStrategy(self.area)

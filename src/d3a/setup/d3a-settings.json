@@ -5,19 +5,20 @@
     "tick_length": "15s",
     "market_count": 1,
     "cloud_coverage": 0,
-    "start_date": "2020-03-09"
+    "start_date": "2020-04-23"
   },
   "advanced_settings": {
     "GeneralSettings": {
       "DEFAULT_MARKET_MAKER_RATE": 30,
       "MAX_OFFER_TRAVERSAL_LENGTH": 6,
-      "DEFAULT_UPDATE_INTERVAL": 5,
+      "DEFAULT_UPDATE_INTERVAL": 1,
       "MIN_UPDATE_INTERVAL": 1,
       "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
-      "SUPPLY_DEMAND_PLOTS": true,
+      "EXPORT_SUPPLY_DEMAND_PLOTS": true,
       "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
       "SETUP_FILE_PATH": null,
       "EXPORT_DEVICE_PLOTS": true,
+      "EXPORT_ENERGY_TRADE_PROFILE_HR": false,
       "RUN_REAL_TIME": false,
       "KEEP_PAST_MARKETS": false,
       "EVENT_DISPATCHING_VIA_REDIS": false,
@@ -57,11 +58,11 @@
     },
     "StorageSettings": {
       "MIN_SOC_LIMIT": [
-        10,
+        0,
         99
       ],
       "INITIAL_CHARGE_LIMIT": [
-        10,
+        0,
         100
       ],
       "CAPACITY": 1.2,
@@ -99,7 +100,21 @@
         10000
       ],
       "MIN_ALLOWED_SOC": 10,
-      "SELL_ON_MOST_EXPENSIVE_MARKET": false
+      "SELL_ON_MOST_EXPENSIVE_MARKET": false,
+      "LOSS_FUNCTION": 1,
+      "LOSS_FUNCTION_LIMIT": [
+        1,
+        2
+      ],
+      "LOSS_PER_HOUR": 0,
+      "LOSS_PER_HOUR_ABSOLUTE_LIMIT": [
+        0,
+        10000
+      ],
+      "LOSS_PER_HOUR_RELATIVE_LIMIT": [
+        0,
+        1
+      ]
     },
     "LoadSettings": {
       "AVG_POWER_LIMIT": [
@@ -157,6 +172,11 @@
       "MAX_WIND_TURBINE_OUTPUT_W": 160
     },
     "IAASettings": {
+      "GRID_FEE_TYPE": 1,
+      "VALID_FEE_TYPES": [
+        1,
+        2
+      ],
       "FEE_PERCENTAGE": 0,
       "FEE_PERCENTAGE_LIMIT": [
         0,
@@ -174,6 +194,7 @@
       ],
       "PAY_AS_CLEAR_AGGREGATION_ALGORITHM": 1,
       "MIN_OFFER_AGE": 0,
+      "MIN_BID_AGE": 0,
       "AlternativePricing": {
         "COMPARE_PRICING_SCHEMES": false,
         "PRICING_SCHEME": 0,
