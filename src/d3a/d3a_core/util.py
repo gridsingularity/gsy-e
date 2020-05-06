@@ -344,7 +344,6 @@ def generate_market_slot_list(area=None):
 
 @lru_cache(maxsize=100, typed=False)
 def format_datetime(datetime, ui_format=False, unix_time=False):
-    assert ui_format and unix_time, "ui_format and unix_time can not be set together"
     if unix_time:
         return datetime.timestamp()
     elif ui_format:
