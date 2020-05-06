@@ -196,11 +196,11 @@ class ExportUnmatchedLoads:
                 outdict[node_name] = {}
                 for hour_time in self.hour_list:
                     if hour_time <= self.latest_time_slot:
-                        outdict[node_name][hour_time.format(DATE_HOUR_FORMAT)] = \
+                        outdict[node_name][hour_time] = \
                             self._get_hover_info(subdict, hour_time)
             else:
                 outdict[node_name] = {}
-                outdict[node_name][self.latest_time_slot.format(DATE_HOUR_FORMAT)] = \
+                outdict[node_name][self.latest_time_slot] = \
                     self._get_hover_info(subdict, self.latest_time_slot)
         return outdict
 
