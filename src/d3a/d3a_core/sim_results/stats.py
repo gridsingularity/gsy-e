@@ -112,6 +112,7 @@ class CumulativeBills:
                 "spent_total": 0.0,
                 "earned": 0.0,
                 "penalties": 0.0,
+                "penalty_energy": 0.0,
                 "total": 0.0,
             }
 
@@ -124,6 +125,8 @@ class CumulativeBills:
                 "earned": sum(c["earned"] for c in all_child_results),
                 "penalties": sum(c["penalties"] for c in all_child_results
                                  if c["penalties"] is not None),
+                "penalty_energy": sum(c["penalty_energy"] for c in all_child_results
+                                      if c["penalty_energy"] is not None),
                 "total": sum(c["total"] for c in all_child_results),
             }
         else:
@@ -153,6 +156,7 @@ class CumulativeBills:
             self.cumulative_bills_results[area.uuid]["spent_total"] += spent_total
             self.cumulative_bills_results[area.uuid]["earned"] += earned
             self.cumulative_bills_results[area.uuid]["penalties"] += penalty_cost
+            self.cumulative_bills_results[area.uuid]["penalty_energy"] += penalty_energy
             self.cumulative_bills_results[area.uuid]["total"] += total
 
 
