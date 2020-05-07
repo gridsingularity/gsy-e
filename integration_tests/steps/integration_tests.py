@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import uuid
+import json
 import os
 import importlib
 import logging
@@ -517,7 +519,15 @@ def configd_sim_run(context):
 
 @when('a message is sent on {channel}')
 def message_on_channel(context, channel):
-    context.simulation.redis_connection._sub_callback_dict[channel](None)
+    context.ctrl_publish_callback_call_count = 0
+    data = {"transaction_id": str(uuid.uuid4())}
+    payload = {"data": json.dumps(data)}
+
+    def mock_publish_json(*args):
+        context.ctrl_publish_callback_call_count += 1
+
+    context.simulation.redis_connection.publish_json = mock_publish_json
+    context.simulation.redis_connection._sub_callback_dict[channel](payload)
 
 
 @when('the simulation is able to transmit intermediate results')
@@ -558,6 +568,7 @@ def final_res_report(context):
 @then('{method} is called')
 def method_called(context, method):
     assert context.ctrl_callback_call_count == 1
+    assert context.ctrl_publish_callback_call_count == 1
 
 
 @given('the min offer age is set to {min_offer_age} tick')
