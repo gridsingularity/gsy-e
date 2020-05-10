@@ -307,6 +307,7 @@ class Simulation:
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 tick_start = time.monotonic()
                 while self.paused:
+                    sleep(0.5)
                     if time.monotonic() - tick_start > 600:
                         self.is_stopped = True
                         self.paused = False
