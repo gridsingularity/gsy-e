@@ -154,9 +154,12 @@ class SimulationEndpointBuffer:
             self.update_area_aggregated_stats(child)
 
     def _update_area_stats(self, area):
-        area.stats.update_aggregated_stats({
-            "bills": self.market_bills.bills_redis_results[area.uuid],
-        })
+        bills = self.market_bills.bills_redis_results[area.uuid]
+        bills.update({
+            "penalty_cost": self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
+            "penalty_energy":
+                self.cumulative_bills.cumulative_bills_results[area.uuid]["penalty_energy"]})
+        area.stats.update_aggregated_stats({"bills": bills})
 
 
 class CumulativeGridTrades:
