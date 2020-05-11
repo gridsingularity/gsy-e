@@ -163,8 +163,9 @@ class Simulation:
             log.info("Random seed: {}".format(random_seed))
 
         self.area = self.setup_module.get_setup(self.simulation_config)
-        self.endpoint_buffer = SimulationEndpointBuffer(redis_job_id, self.initial_params,
-                                                        self.area)
+        self.endpoint_buffer = SimulationEndpointBuffer(
+            redis_job_id, self.initial_params,
+            self.area, export_plots=self.should_export_plots)
 
         self._update_and_send_results()
 
@@ -279,9 +280,10 @@ class Simulation:
         self.simulation_config.external_redis_communicator.start_communication()
         self._update_and_send_results()
         for slot_no in range(slot_resume, slot_count):
+
             self._update_progress_info(slot_no, slot_count)
 
-            log.info(
+            log.warning(
                 "Slot %d of %d (%2.0f%%) - %s elapsed, ETA: %s",
                 slot_no + 1,
                 slot_count,
@@ -300,7 +302,7 @@ class Simulation:
             gc.collect()
             process = psutil.Process(os.getpid())
             mbs_used = process.memory_info().rss / 1000000.0
-            log.warning(f"Used {mbs_used} MBs.")
+            log.debug(f"Used {mbs_used} MBs.")
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 # reset tick_resume after possible resume
@@ -356,12 +358,17 @@ class Simulation:
         if self.export_on_finish:
             log.info("Exporting simulation data.")
             if GlobalConfig.POWER_FLOW:
-                self.export.export(power_flow=self.power_flow)
+                self.export.export(export_plots=self.should_export_plots,
+                                   power_flow=self.power_flow)
             else:
-                self.export.export()
+                self.export.export(self.should_export_plots)
 
         if self.use_repl:
             self._start_repl()
+
+    @property
+    def should_export_plots(self):
+        return not self.redis_connection.is_enabled()
 
     def toggle_pause(self):
         if self.finished:

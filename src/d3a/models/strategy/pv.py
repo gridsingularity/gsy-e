@@ -179,6 +179,20 @@ class PVStrategy(BaseStrategy):
     def event_market_cycle(self):
         super().event_market_cycle()
         self.event_market_cycle_price()
+        self._delete_past_state()
+
+    def _delete_past_state(self):
+        if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is True or \
+                self.area.current_market is None:
+            return
+
+        to_delete = []
+        for k in self.state.available_energy_kWh.keys():
+            if k < self.area.current_market.time_slot:
+                to_delete.append(k)
+        for k in to_delete:
+            del self.state.available_energy_kWh[k]
+            del self.energy_production_forecast_kWh[k]
 
     def event_market_cycle_price(self):
         self.offer_update.update_market_cycle_offers(self)

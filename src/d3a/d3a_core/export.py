@@ -128,7 +128,6 @@ class ExportAndPlot:
             if not os.path.exists(self.plot_dir):
                 os.makedirs(self.plot_dir)
 
-            self.plot_trade_partner_cell_tower(self.area, self.plot_dir)
             self.plot_energy_profile(self.area, self.plot_dir)
             self.plot_all_unmatched_loads()
             self.plot_avg_trade_price(self.area, self.plot_dir)
@@ -315,28 +314,6 @@ class ExportAndPlot:
         output_file = os.path.join(
             plot_dir, 'device_profile_{}.html'.format(device_name))
         PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
-
-    def plot_trade_partner_cell_tower(self, area: Area, subdir: str):
-        """
-        Wrapper for _plot_trade_partner_cell_tower
-        """
-        key = "cell-tower"
-        new_subdir = os.path.join(subdir, area.slug)
-        for child in area.children:
-            if child.slug == key:
-                self._plot_trade_partner_cell_tower(child.slug, subdir)
-            if child.children:
-                self.plot_trade_partner_cell_tower(child, new_subdir)
-
-    def _plot_trade_partner_cell_tower(self, load: str, plot_dir: str):
-        """
-        Plots trade partner pie graph for the sell tower.
-        """
-        higt = PlotlyGraph(self.export_data.buyer_trades, load)
-        higt.arrange_data()
-        mkdir_from_str(plot_dir)
-        higt.plot_pie_chart("Energy Trade Partners for {}".format(load),
-                            os.path.join(plot_dir, "energy_trade_partner_{}.html".format(load)))
 
     def plot_energy_profile(self, area: Area, subdir: str):
         """
