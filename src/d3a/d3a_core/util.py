@@ -359,12 +359,9 @@ def convert_pendulum_to_str_in_dict(indict, outdict, ui_format=False, unix_time=
         elif isinstance(value, DateTime):
             outdict[key] = format_datetime(value, ui_format, unix_time)
         elif isinstance(indict[key], list):
-            outdict[key] = []
-            for element in indict[key]:
-                outdict[key].append(
-                    convert_pendulum_to_str_in_dict(element, {}, ui_format, unix_time))
+            outdict[key] = [convert_pendulum_to_str_in_dict(element, {}, ui_format, unix_time)
+                            for element in indict[key]]
         elif isinstance(indict[key], dict):
-            outdict[key] = {}
             convert_pendulum_to_str_in_dict(indict[key], outdict[key], ui_format, unix_time)
         else:
             outdict[key] = copy(indict[key])
