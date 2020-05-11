@@ -705,21 +705,25 @@ class ExportAndPlot:
         plotly_dataset_list = []
         seller_dict = {}
         buyer_dict = {}
+        # This zero point is needed to make plotly also plot the first data point:
+        zero_point_dict = {"timestamp": [market_slot - GlobalConfig.tick_length],
+                           "energy": [0.0]}
         # 1. accumulate data by buyer and seller:
         for timestamp, data in market_trades.items():
-            time = from_timestamp(timestamp, tz=TIME_ZONE)
-            # This zero point is needed to make plotly also plot the first data point:
-            zero_point_dict = {"timestamp": [market_slot - GlobalConfig.tick_length],
-                               "energy": [0.0]}
-            if data["seller"] not in seller_dict:
-                seller_dict[data["seller"]] = deepcopy(zero_point_dict)
-            if data["buyer"] not in buyer_dict:
-                buyer_dict[data["buyer"]] = deepcopy(zero_point_dict)
-
-            seller_dict[data["seller"]]["timestamp"].append(time)
-            seller_dict[data["seller"]]["energy"].append(data["energy"] * ENERGY_SELLER_SIGN_PLOTS)
-            buyer_dict[data["buyer"]]["timestamp"].append(time)
-            buyer_dict[data["buyer"]]["energy"].append(data["energy"] * ENERGY_BUYER_SIGN_PLOTS)
+            trade_time = from_timestamp(timestamp, tz=TIME_ZONE)
+            # loop over trades happened in the same tick
+            for ii in range(len(data["seller"])):
+                seller = data["seller"][ii]
+                buyer = data["buyer"][ii]
+                energy = data["energy"][ii]
+                if seller not in seller_dict:
+                    seller_dict[seller] = deepcopy(zero_point_dict)
+                if buyer not in buyer_dict:
+                    buyer_dict[buyer] = deepcopy(zero_point_dict)
+                seller_dict[seller]["timestamp"].append(trade_time)
+                seller_dict[seller]["energy"].append(energy * ENERGY_SELLER_SIGN_PLOTS)
+                buyer_dict[buyer]["timestamp"].append(trade_time)
+                buyer_dict[buyer]["energy"].append(energy * ENERGY_BUYER_SIGN_PLOTS)
 
         # 2. Create bar plot objects and collect them in a list
         # The widths of bars in a plotly.Bar is set in milliseconds when axis is in datetime format
