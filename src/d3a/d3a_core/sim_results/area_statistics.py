@@ -540,14 +540,14 @@ class MarketPriceEnergyDay:
     def gather_rates_one_market(cls, area, market, price_lists):
         if area not in price_lists:
             price_lists[area] = OrderedDict()
-        if market.time_slot_str not in price_lists.keys():
-            price_lists[area][market.time_slot_str] = []
+        if market.time_slot not in price_lists.keys():
+            price_lists[area][market.time_slot] = []
         trade_rates = [
             # Convert from cents to euro
             t.offer.price / 100.0 / t.offer.energy
             for t in market.trades
         ]
-        price_lists[area][market.time_slot_str].extend(trade_rates)
+        price_lists[area][market.time_slot].extend(trade_rates)
 
     def update(self, area):
         current_price_lists = self.gather_trade_rates(
