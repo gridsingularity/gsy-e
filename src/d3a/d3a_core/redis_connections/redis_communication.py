@@ -65,9 +65,9 @@ class RedisSimulationCommunication:
         self.pubsub.subscribe(**self._sub_callback_dict)
         self.pubsub.run_in_thread(sleep_time=0.5, daemon=True)
 
-    def _generate_redis_response(self, response, simulation_id, flag, command_type):
+    def _generate_redis_response(self, response, simulation_id, is_successful, command_type):
         stop_response_channel = f'{simulation_id}/response/stop'
-        if flag:
+        if is_successful:
             self.publish_json(
                 stop_response_channel,
                 {
