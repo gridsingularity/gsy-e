@@ -127,7 +127,9 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _update_rate_parameters(self, initial_selling_rate, final_selling_rate,
                                 initial_buying_rate, final_buying_rate,
-                                energy_rate_change_per_update):
+                                energy_rate_increase_per_update,
+                                energy_rate_decrease_per_update,
+                                fit_to_limit, update_interval):
         if initial_selling_rate is not None:
             self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                     initial_selling_rate)
@@ -140,30 +142,42 @@ class StorageStrategy(BidEnabledStrategy):
         if final_buying_rate is not None:
             self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                 final_buying_rate)
-        if energy_rate_change_per_update is not None:
+        if energy_rate_decrease_per_update is not None:
             self.offer_update.energy_rate_change_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       energy_rate_change_per_update)
+                read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_decrease_per_update)
+        if energy_rate_increase_per_update is not None:
             self.bid_update.energy_rate_change_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       energy_rate_change_per_update)
+                read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_increase_per_update)
+        if fit_to_limit is not None:
+            self.bid_update.fit_to_limit = fit_to_limit
+            self.offer_update.fit_to_limit = fit_to_limit
+        if update_interval is not None:
+            if isinstance(update_interval, int):
+                update_interval = duration(minutes=update_interval)
+            self.bid_update.update_interval = update_interval
+            self.offer_update.update_interval = update_interval
 
-    def area_reconfigure_event(self, cap_price_strategy=None,
+    def area_reconfigure_event(self,
                                initial_selling_rate=None, final_selling_rate=None,
                                initial_buying_rate=None, final_buying_rate=None,
                                fit_to_limit=None, update_interval=None,
-                               energy_rate_change_per_update=None):
+                               energy_rate_increase_per_update=None,
+                               energy_rate_decrease_per_update=None):
 
         validate_storage_device(initial_selling_rate=initial_selling_rate,
                                 final_selling_rate=final_selling_rate,
                                 initial_buying_rate=initial_buying_rate,
                                 final_buying_rate=final_buying_rate,
-                                energy_rate_change_per_update=energy_rate_change_per_update)
-        if cap_price_strategy is not None:
-            self.cap_price_strategy = cap_price_strategy
+                                energy_rate_increase_per_update=energy_rate_increase_per_update,
+                                energy_rate_decrease_per_update=energy_rate_decrease_per_update,
+                                fit_to_limit=fit_to_limit,
+                                update_interval=update_interval)
+
         self._update_rate_parameters(initial_selling_rate, final_selling_rate,
                                      initial_buying_rate, final_buying_rate,
-                                     energy_rate_change_per_update)
+                                     energy_rate_increase_per_update,
+                                     energy_rate_decrease_per_update,
+                                     fit_to_limit, update_interval)
         self.offer_update.update_on_activate()
         self.bid_update.update_on_activate()
 

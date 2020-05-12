@@ -66,7 +66,8 @@ Feature: Area Events Tests
     And d3a is installed
     When we run the simulation with setup file area_events.storage_event and parameters [24, 60, 60, 1]
     Then load consumes 0.01 kWh with 31 ct/kWh between 0:00 and 12:00
-    And load consumes 0.01 kWh with 33 ct/kWh between 13:00 and 24:00
+    And load consumes 0.01 kWh with 33 ct/kWh between 13:00 and 15:00
+    And load consumes 0.01 kWh with 35 ct/kWh between 16:00 and 24:00
 
   Scenario: Cloud coverage event changes config value
     Given we have a scenario named area_events/cloud_coverage_event
