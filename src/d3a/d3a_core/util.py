@@ -20,9 +20,10 @@ import select
 import sys
 import termios
 import tty
-from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 import json
-from functools import lru_cache
+import d3a
+import inspect
+import os
 
 from click.types import ParamType
 from pendulum import duration, from_format, DateTime
@@ -30,6 +31,9 @@ from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
 from functools import wraps
+from copy import copy
+from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
+from functools import lru_cache
 
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
@@ -39,9 +43,6 @@ from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import RangeLimit
 from d3a_interface.utils import generate_market_slot_list_from_config
 
-import d3a
-import inspect
-import os
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
 
@@ -342,25 +343,29 @@ def generate_market_slot_list(area=None):
 
 
 @lru_cache(maxsize=100, typed=False)
-def format_datetime(datetime, ui_format=False):
-    return datetime.format(DATE_TIME_FORMAT) \
-        if not ui_format \
-        else datetime.format(DATE_TIME_UI_FORMAT)
+def format_datetime(datetime, ui_format=False, unix_time=False):
+    if unix_time:
+        return datetime.timestamp()
+    elif ui_format:
+        return datetime.format(DATE_TIME_UI_FORMAT)
+    else:
+        return datetime.format(DATE_TIME_FORMAT)
 
 
-def convert_datetime_to_str_keys_cached(indict, outdict, ui_format=False):
-    """
-    Converts all Datetime keys in a dict into strings in DATE_TIME_FORMAT
-    """
-
+def convert_pendulum_to_str_in_dict(indict, outdict, ui_format=False, unix_time=False):
     for key, value in indict.items():
         if isinstance(key, DateTime):
-            outdict[format_datetime(key, ui_format)] = indict[key]
+            outdict[format_datetime(key, ui_format, unix_time)] = indict[key]
+        elif isinstance(value, DateTime):
+            outdict[key] = format_datetime(value, ui_format, unix_time)
+        elif isinstance(indict[key], list):
+            outdict[key] = [convert_pendulum_to_str_in_dict(element, {}, ui_format, unix_time)
+                            for element in indict[key]]
+        elif isinstance(indict[key], dict):
+            outdict[key] = {}
+            convert_pendulum_to_str_in_dict(indict[key], outdict[key], ui_format, unix_time)
         else:
-            if isinstance(indict[key], dict):
-                outdict[key] = {}
-                convert_datetime_to_str_keys_cached(indict[key], outdict[key])
-
+            outdict[key] = copy(indict[key])
     return outdict
 
 

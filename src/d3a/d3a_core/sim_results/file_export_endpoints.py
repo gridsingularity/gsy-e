@@ -20,12 +20,12 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy, CellTowerLoadHours
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.pv import PVStrategy
-from d3a.d3a_core.util import convert_datetime_to_str_keys_cached as convert_datetime_to_str_keys
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.util import generate_market_slot_list, round_floats_for_ui, \
     area_name_from_area_or_iaa_name
 from d3a_interface.constants_limits import ConstSettings
 from d3a_interface.sim_results.aggregate_results import merge_energy_trade_profile_to_global
+from copy import copy
 
 
 class FileExportEndpoints:
@@ -127,9 +127,7 @@ class FileExportEndpoints:
             for seller, buyer_dict in traded_energy[area_uuid][direction].items():
                 outdict[direction][seller] = {}
                 for buyer, profile_dict in buyer_dict.items():
-                    outdict[direction][seller][buyer] = convert_datetime_to_str_keys(
-                        profile_dict, {}, ui_format=True
-                    )
+                    outdict[direction][seller][buyer] = copy(profile_dict)
         return outdict
 
     def _get_stats_from_market_data(self, out_dict, area, balancing):
