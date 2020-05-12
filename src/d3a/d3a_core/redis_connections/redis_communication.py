@@ -46,8 +46,7 @@ class RedisSimulationCommunication:
             return
         self._simulation_id = simulation_id
         self._simulation = simulation
-        self._sub_callback_dict = {self._simulation_id + "/reset": self._reset_callback,
-                                   self._simulation_id + "/stop": self._stop_callback,
+        self._sub_callback_dict = {self._simulation_id + "/stop": self._stop_callback,
                                    self._simulation_id + "/pause": self._pause_callback,
                                    self._simulation_id + "/resume": self._resume_callback,
                                    self._simulation_id + "/slowdown": self._slowdown_callback}
@@ -65,9 +64,6 @@ class RedisSimulationCommunication:
     def _subscribe_to_channels(self):
         self.pubsub.subscribe(**self._sub_callback_dict)
         self.pubsub.run_in_thread(sleep_time=0.5, daemon=True)
-
-    def _reset_callback(self, _):
-        self._simulation.reset()
 
     def _generate_redis_response(self, response, simulation_id, flag, command_type):
         stop_response_channel = f'{simulation_id}/response/stop'
