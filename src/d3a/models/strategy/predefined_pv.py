@@ -120,7 +120,7 @@ class PVPredefinedStrategy(PVStrategy):
             InputProfileTypes.POWER, str(profile_path))
 
     def area_reconfigure_event(self, validate=True, **kwargs):
-        super().area_reconfigure_event(validate=True, **kwargs)
+        super().area_reconfigure_event(validate=validate, **kwargs)
         if key_in_dict_and_not_none(kwargs, 'cloud_coverage'):
             self.cloud_coverage = kwargs['cloud_coverage']
         self.read_config_event()
@@ -172,7 +172,7 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
             self._power_profile_W)
 
     def area_reconfigure_event(self, validate=True, **kwargs):
-        super().area_reconfigure_event(validate=True, **kwargs)
+        super().area_reconfigure_event(validate=validate, **kwargs)
         if key_in_dict_and_not_none(kwargs, 'power_profile'):
             self._power_profile_W = kwargs['power_profile']
         self.read_config_event()
