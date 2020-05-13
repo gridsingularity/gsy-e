@@ -80,15 +80,21 @@ class DefinedLoadStrategy(LoadHoursStrategy):
 
     def event_activate_energy(self):
         """
-        Runs on activate event. Reads the power profile data and calculates the required energy
-        for each slot.
+        Runs on activate event.
         :return: None
+        """
+        self._event_activate_energy(self.daily_load_profile)
+        del self.daily_load_profile
+
+    def _event_activate_energy(self, daily_load_profile):
+        """
+        Reads the power profile data and calculates the required energy
+        for each slot.
         """
         load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
-            self.daily_load_profile)
+            daily_load_profile)
         self._update_energy_requirement(load_profile)
-        del self.daily_load_profile
 
     def _update_energy_requirement(self, load_profile):
         """
@@ -115,3 +121,15 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Disabled feature for this subclass
         """
         return True
+
+    def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None, hrs_of_day=None,
+                               final_buying_rate=None, initial_buying_rate=None,
+                               energy_rate_increase_per_update=None,
+                               fit_to_limit=None, update_interval=None,
+                               use_market_maker_rate=None, daily_load_profile=None):
+
+        self._area_reconfigure_prices(final_buying_rate, initial_buying_rate,
+                                      energy_rate_increase_per_update,
+                                      fit_to_limit, update_interval, use_market_maker_rate)
+        if daily_load_profile is not None:
+            self._event_activate_energy(daily_load_profile)

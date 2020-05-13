@@ -49,10 +49,18 @@ Feature: Area Events Tests
   Scenario: Load changes consumption and hours of/per day after strategy event
     Given we have a scenario named area_events/load_event
     And d3a is installed
-    When we run the simulation with setup file area_events.load_event and parameters [24, 30, 30, 1]
-    Then load consumes 0.1 kWh before 12:00
-    And load consumes 0.2 kWh between 12:00 and 22:00
-    And no trades occur after 22:00
+    When we run the simulation with setup file area_events.load_event and parameters [24, 60, 60, 1]
+    Then load consumes 0.2 kWh between 00:00 and 12:00
+    And load consumes 0.4 kWh between 12:00 and 15:00
+    And no trades occur after 15:00
+
+  Scenario: PredefinedLoad changes consumption and hours of/per day after strategy event
+    Given we have a scenario named area_events/predefined_load_event
+    And d3a is installed
+    When we run the simulation with setup file area_events.predefined_load_event and parameters [24, 60, 60, 1]
+    Then load consumes 0.2 kWh between 00:00 and 12:00
+    And load consumes 0.4 kWh between 12:00 and 15:00
+    And no trades occur after 15:00
 
   Scenario: PV changes production and panel count after strategy event
     Given we have a scenario named area_events/pv_event

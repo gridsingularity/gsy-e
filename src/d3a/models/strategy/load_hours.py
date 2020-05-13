@@ -117,7 +117,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             validate_load_device_price(
                 initial_buying_rate=self.bid_update.initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=self.bid_update.final_rate[time_slot])
+                final_buying_rate=self.bid_update.final_rate[time_slot],
+                fit_to_limit=self.bid_update.fit_to_limit,
+            )
 
     def event_activate(self):
         self._calculate_active_markets()
@@ -152,8 +154,35 @@ class LoadHoursStrategy(BidEnabledStrategy):
             del self.energy_requirement_Wh[k]
             del self.state.desired_energy_Wh[k]
 
-    def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None,
-                               hrs_of_day=None, final_buying_rate=None):
+    def _area_reconfigure_prices(self, final_buying_rate, initial_buying_rate,
+                                 energy_rate_increase_per_update, fit_to_limit, update_interval,
+                                 use_market_maker_rate):
+
+        if initial_buying_rate is not None:
+            self.bid_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                  initial_buying_rate)
+        if final_buying_rate is not None:
+            self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                                                final_buying_rate)
+        if energy_rate_increase_per_update is not None:
+            self.bid_update.energy_rate_change_per_update = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_increase_per_update)
+        if fit_to_limit is not None:
+            self.bid_update.fit_to_limit = fit_to_limit
+        if update_interval is not None:
+            if isinstance(update_interval, int):
+                update_interval = duration(minutes=update_interval)
+            self.bid_update.update_interval = update_interval
+        if use_market_maker_rate is not None:
+            self.use_market_maker_rate = use_market_maker_rate
+
+        self._validate_rates()
+
+    def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None, hrs_of_day=None,
+                               final_buying_rate=None, initial_buying_rate=None,
+                               energy_rate_increase_per_update=None,
+                               fit_to_limit=None, update_interval=None,
+                               use_market_maker_rate=None):
         if hrs_per_day is not None or hrs_of_day is not None:
             self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
             self.hrs_per_day = {day: self._initial_hrs_per_day
@@ -163,7 +192,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.avg_power_W = avg_power_W
             self.assign_energy_requirement(avg_power_W)
 
-        self._area_reconfigure_prices(final_buying_rate)
+        self._area_reconfigure_prices(final_buying_rate, initial_buying_rate,
+                                      energy_rate_increase_per_update,
+                                      fit_to_limit, update_interval, use_market_maker_rate)
 
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
@@ -172,12 +203,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._validate_rates()
         self.bid_update.update_on_activate()
         self._set_alternative_pricing_scheme()
-
-    def _area_reconfigure_prices(self, final_buying_rate):
-        if final_buying_rate is not None:
-            self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                final_buying_rate)
-        self._validate_rates()
 
     def _find_acceptable_offer(self, market):
         offers = market.most_affordable_offers

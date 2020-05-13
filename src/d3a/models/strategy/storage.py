@@ -125,11 +125,11 @@ class StorageStrategy(BidEnabledStrategy):
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
-    def _update_rate_parameters(self, initial_selling_rate, final_selling_rate,
-                                initial_buying_rate, final_buying_rate,
-                                energy_rate_increase_per_update,
-                                energy_rate_decrease_per_update,
-                                fit_to_limit, update_interval):
+    def _area_reconfigure_prices(self, initial_selling_rate, final_selling_rate,
+                                 initial_buying_rate, final_buying_rate,
+                                 energy_rate_increase_per_update,
+                                 energy_rate_decrease_per_update,
+                                 fit_to_limit, update_interval):
         if initial_selling_rate is not None:
             self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                     initial_selling_rate)
@@ -173,11 +173,11 @@ class StorageStrategy(BidEnabledStrategy):
                                 fit_to_limit=fit_to_limit,
                                 update_interval=update_interval)
 
-        self._update_rate_parameters(initial_selling_rate, final_selling_rate,
-                                     initial_buying_rate, final_buying_rate,
-                                     energy_rate_increase_per_update,
-                                     energy_rate_decrease_per_update,
-                                     fit_to_limit, update_interval)
+        self._area_reconfigure_prices(initial_selling_rate, final_selling_rate,
+                                      initial_buying_rate, final_buying_rate,
+                                      energy_rate_increase_per_update,
+                                      energy_rate_decrease_per_update,
+                                      fit_to_limit, update_interval)
         self.offer_update.update_on_activate()
         self.bid_update.update_on_activate()
 
