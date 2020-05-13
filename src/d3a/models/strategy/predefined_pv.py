@@ -24,6 +24,7 @@ from d3a_interface.constants_limits import ConstSettings
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.util import d3a_path
 from typing import Dict
+from d3a_interface.utils import key_in_dict_and_not_none
 
 """
 Creates a PV that uses a profile as input for its power values, either predefined or provided
@@ -118,6 +119,12 @@ class PVPredefinedStrategy(PVStrategy):
         return read_arbitrary_profile(
             InputProfileTypes.POWER, str(profile_path))
 
+    def area_reconfigure_event(self, validate=True, **kwargs):
+        super().area_reconfigure_event(validate=True, **kwargs)
+        if key_in_dict_and_not_none(kwargs, 'cloud_coverage'):
+            self.cloud_coverage = kwargs['cloud_coverage']
+        self.read_config_event()
+
 
 class PVUserProfileStrategy(PVPredefinedStrategy):
     """
@@ -163,3 +170,9 @@ class PVUserProfileStrategy(PVPredefinedStrategy):
         return read_arbitrary_profile(
             InputProfileTypes.POWER,
             self._power_profile_W)
+
+    def area_reconfigure_event(self, validate=True, **kwargs):
+        super().area_reconfigure_event(validate=True, **kwargs)
+        if key_in_dict_and_not_none(kwargs, 'power_profile'):
+            self._power_profile_W = kwargs['power_profile']
+        self.read_config_event()

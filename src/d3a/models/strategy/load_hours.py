@@ -31,6 +31,7 @@ from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
 from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.utils import key_in_dict_and_not_none
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
@@ -110,16 +111,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _validate_rates(self):
         for time_slot in generate_market_slot_list():
-            if self.fit_to_limit is False:
-                rate_change = self.bid_update.energy_rate_change_per_update[time_slot]
-            else:
-                rate_change = None
+            rate_change = None if self.fit_to_limit else \
+                self.bid_update.energy_rate_change_per_update[time_slot]
             validate_load_device_price(
                 initial_buying_rate=self.bid_update.initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
                 final_buying_rate=self.bid_update.final_rate[time_slot],
-                fit_to_limit=self.bid_update.fit_to_limit,
-            )
+                fit_to_limit=self.bid_update.fit_to_limit)
 
     def event_activate(self):
         self._calculate_active_markets()
@@ -154,47 +152,41 @@ class LoadHoursStrategy(BidEnabledStrategy):
             del self.energy_requirement_Wh[k]
             del self.state.desired_energy_Wh[k]
 
-    def _area_reconfigure_prices(self, final_buying_rate, initial_buying_rate,
-                                 energy_rate_increase_per_update, fit_to_limit, update_interval,
-                                 use_market_maker_rate):
-
-        if initial_buying_rate is not None:
+    def _area_reconfigure_prices(self, **kwargs):
+        if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
             self.bid_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                  initial_buying_rate)
-        if final_buying_rate is not None:
+                                                                  kwargs['initial_buying_rate'])
+        if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
             self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                final_buying_rate)
-        if energy_rate_increase_per_update is not None:
+                                                                kwargs['final_buying_rate'])
+        if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
             self.bid_update.energy_rate_change_per_update = \
-                read_arbitrary_profile(InputProfileTypes.IDENTITY, energy_rate_increase_per_update)
-        if fit_to_limit is not None:
-            self.bid_update.fit_to_limit = fit_to_limit
-        if update_interval is not None:
-            if isinstance(update_interval, int):
-                update_interval = duration(minutes=update_interval)
+                read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                       kwargs['energy_rate_increase_per_update'])
+        if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
+            self.bid_update.fit_to_limit = kwargs['fit_to_limit']
+        if key_in_dict_and_not_none(kwargs, 'update_interval'):
+            if isinstance(kwargs['update_interval'], int):
+                update_interval = duration(minutes=kwargs['update_interval'])
+            else:
+                update_interval = kwargs['update_interval']
             self.bid_update.update_interval = update_interval
-        if use_market_maker_rate is not None:
-            self.use_market_maker_rate = use_market_maker_rate
+        if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
+            self.use_market_maker_rate = ['use_market_maker_rate']
 
         self._validate_rates()
 
-    def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None, hrs_of_day=None,
-                               final_buying_rate=None, initial_buying_rate=None,
-                               energy_rate_increase_per_update=None,
-                               fit_to_limit=None, update_interval=None,
-                               use_market_maker_rate=None):
-        if hrs_per_day is not None or hrs_of_day is not None:
-            self.assign_hours_of_per_day(hrs_of_day, hrs_per_day)
+    def area_reconfigure_event(self, **kwargs):
+        if key_in_dict_and_not_none(kwargs, 'hrs_per_day') or \
+                key_in_dict_and_not_none(kwargs, 'hrs_of_day'):
+            self.assign_hours_of_per_day(kwargs['hrs_of_day'], kwargs['hrs_per_day'])
             self.hrs_per_day = {day: self._initial_hrs_per_day
                                 for day in range(self.area.config.sim_duration.days + 1)}
+        if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
+            self.avg_power_W = ['avg_power_W']
+            self.assign_energy_requirement(kwargs['avg_power_W'])
 
-        if avg_power_W is not None:
-            self.avg_power_W = avg_power_W
-            self.assign_energy_requirement(avg_power_W)
-
-        self._area_reconfigure_prices(final_buying_rate, initial_buying_rate,
-                                      energy_rate_increase_per_update,
-                                      fit_to_limit, update_interval, use_market_maker_rate)
+        self._area_reconfigure_prices(**kwargs)
 
     def event_activate_price(self):
         # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate

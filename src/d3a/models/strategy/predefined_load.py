@@ -23,7 +23,7 @@ from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
-
+from d3a_interface.utils import key_in_dict_and_not_none
 """
 Create a load that uses a profile as input for its power values
 """
@@ -122,14 +122,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """
         return True
 
-    def area_reconfigure_event(self, avg_power_W=None, hrs_per_day=None, hrs_of_day=None,
-                               final_buying_rate=None, initial_buying_rate=None,
-                               energy_rate_increase_per_update=None,
-                               fit_to_limit=None, update_interval=None,
-                               use_market_maker_rate=None, daily_load_profile=None):
-
-        self._area_reconfigure_prices(final_buying_rate, initial_buying_rate,
-                                      energy_rate_increase_per_update,
-                                      fit_to_limit, update_interval, use_market_maker_rate)
-        if daily_load_profile is not None:
-            self._event_activate_energy(daily_load_profile)
+    def area_reconfigure_event(self, **kwargs):
+        self._area_reconfigure_prices(**kwargs)
+        if key_in_dict_and_not_none(kwargs, 'daily_load_profile'):
+            self._event_activate_energy(kwargs['daily_load_profile'])

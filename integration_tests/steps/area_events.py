@@ -3,6 +3,39 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
 from d3a.d3a_core.util import d3a_path
 from math import isclose
 
+sunny_hourly_pv_profile = {
+    6: 0.0125,
+    7: 0.0375,
+    8: 0.075,
+    9: 0.125,
+    10: 0.15,
+    11: 0.1625,
+    12: 0.2,
+    13: 0.1875,
+    14: 0.175,
+    15: 0.125,
+    16: 0.1125,
+    17: 0.075,
+    18: 0.0125,
+    19: 0.0125
+}
+cloudy_hourly_pv_profile = {
+    6: 0.0125,
+    7: 0.0125,
+    8: 0.0375,
+    9: 0.0375,
+    10: 0.05,
+    11: 0.05,
+    12: 0.05,
+    13: 0.0625,
+    14: 0.05,
+    15: 0.05,
+    16: 0.0375,
+    17: 0.025,
+    18: 0.0125,
+    19: 0.0125
+}
+
 
 def one_or_none_trade_before_or_after(context, hour, is_before, nr_expected_trades):
     house1 = next(filter(lambda x: x.name == "House 1", context.simulation.area.children))
@@ -81,7 +114,29 @@ def battery_not_charge(context, start_hour, end_hour):
             market.trades[0].buyer == "H1 General Load"
 
 
-@then('load consumes less than {energy} kWh between {start_time}:00 and {end_time}:00')
+@then('load consumes energy following the {cloud_coverage} profile '
+      'between {start_time}:00 and {end_time}:00')
+def load_consumes_following_cloud_profile(context, cloud_coverage, start_time, end_time):
+    if cloud_coverage == "sunny":
+        profile = sunny_hourly_pv_profile
+    elif cloud_coverage == "cloudy":
+        profile = cloudy_hourly_pv_profile
+    else:
+        profile = {}
+    start_time = int(start_time)
+    end_time = int(end_time)
+
+    for market in context.simulation.area.past_markets:
+        if not start_time <= market.time_slot.hour < end_time:
+            continue
+        assert market.trades[0].seller == "IAA House 1" and \
+            market.trades[0].buyer == "Grid Load"
+        print(cloud_coverage, market.time_slot_str, market.trades[0].offer.energy)
+        print(market.trades[0].offer.energy, profile[int(market.time_slot.hour)])
+        assert market.trades[0].offer.energy == profile[int(market.time_slot.hour)]
+
+
+@then('Grid Load consumes less than {energy} kWh between {start_time}:00 and {end_time}:00')
 def load_consumes_less_than_between(context, energy, start_time, end_time):
     start_time = int(start_time)
     end_time = int(end_time)
@@ -107,6 +162,20 @@ def load_consumes_between(context, energy, start_time, end_time):
         assert len(market.trades) == 1
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "H1 General Load"
+        assert market.trades[0].offer.energy == energy
+
+
+@then('Grid Load consumes {energy} kWh between {start_time}:00 and {end_time}:00')
+def grid_load_consumes_between(context, energy, start_time, end_time):
+    start_time = int(start_time)
+    end_time = int(end_time)
+    energy = float(energy)
+
+    for market in context.simulation.area.past_markets:
+        if not start_time <= market.time_slot.hour < end_time:
+            continue
+        assert market.trades[0].seller == "IAA House 1" and \
+            market.trades[0].buyer == "Grid Load"
         assert market.trades[0].offer.energy == energy
 
 
