@@ -79,7 +79,8 @@ class Area:
                  import_capacity_kVA: float = None,
                  export_capacity_kVA: float = None
                  ):
-        validate_area(grid_fee_percentage=grid_fee_percentage,
+        validate_area(grid_fee_constant=transfer_fee_const,
+                      grid_fee_percentage=grid_fee_percentage,
                       baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
                       baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
                       import_capacity_kVA=import_capacity_kVA,
