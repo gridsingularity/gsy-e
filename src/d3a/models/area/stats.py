@@ -60,13 +60,15 @@ class AreaStats:
 
     def aggregate_market_trades(self):
         """
-        Adds entry for each trade with exact time of trade
+        Adds entry for each trade with exact time of trade.
+        As multiple trades can happen in the same tick, a list of dict is returned.
         """
-        return dict((trade.time.timestamp(), {
-            "energy": trade.offer.energy,
-            "seller": area_name_from_area_or_iaa_name(trade.seller),
-            "buyer": area_name_from_area_or_iaa_name(trade.buyer)})
-                    for trade in self.current_market.trades)
+
+        return [{"trade_time": trade.time.timestamp(),
+                 "energy": trade.offer.energy,
+                 "seller": area_name_from_area_or_iaa_name(trade.seller),
+                 "buyer": area_name_from_area_or_iaa_name(trade.buyer)}
+                for trade in self.current_market.trades]
 
     def update_accumulated(self):
         self._accumulated_past_price = sum(
