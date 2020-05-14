@@ -5,7 +5,7 @@
     "tick_length": "15s",
     "market_count": 1,
     "cloud_coverage": 0,
-    "start_date": "2020-04-23"
+    "start_date": "2020-05-13"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -41,9 +41,13 @@
       "REDIS_PUBLISH_FULL_RESULTS": false
     },
     "AreaSettings": {
-      "GRID_FEE_PERCENTAGE_LIMIT": [
+      "PERCENTAGE_FEE_LIMIT": [
         0,
         100
+      ],
+      "CONSTANT_FEE_LIMIT": [
+        0,
+        200
       ]
     },
     "CommercialProducerSettings": {

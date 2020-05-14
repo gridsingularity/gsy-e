@@ -123,7 +123,7 @@ class PVStrategy(BaseStrategy):
                 update_interval = kwargs['update_interval']
             self.offer_update.update_interval = update_interval
         if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
-            self.use_market_maker_rate = ['use_market_maker_rate']
+            self.use_market_maker_rate = kwargs['use_market_maker_rate']
 
         self._validate_rates()
         self.offer_update.update_offer(self)

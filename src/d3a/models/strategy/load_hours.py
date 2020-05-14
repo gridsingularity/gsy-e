@@ -173,7 +173,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 update_interval = kwargs['update_interval']
             self.bid_update.update_interval = update_interval
         if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
-            self.use_market_maker_rate = ['use_market_maker_rate']
+            self.use_market_maker_rate = kwargs['use_market_maker_rate']
 
         self._validate_rates()
 
@@ -184,7 +184,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self.hrs_per_day = {day: self._initial_hrs_per_day
                                 for day in range(self.area.config.sim_duration.days + 1)}
         if key_in_dict_and_not_none(kwargs, 'avg_power_W'):
-            self.avg_power_W = ['avg_power_W']
+            self.avg_power_W = kwargs['avg_power_W']
             self.assign_energy_requirement(kwargs['avg_power_W'])
 
         self._area_reconfigure_prices(**kwargs)
