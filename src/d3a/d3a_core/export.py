@@ -482,15 +482,17 @@ class ExportAndPlot:
 
         for index, (market_slot_date, markets) in enumerate(area_stats.items()):
             start = len(fig.data) + 1
-            for tick_slot, info_dict in markets.items():
-                fig.add_trace(
-                    go.Scatter(x=[tick_slot],
-                               y=[info_dict['rate']],
-                               text=info_dict['tool_tip'],
-                               mode='lines+markers',
-                               hoverinfo='text',
-                               visible=False)
-                )
+            for tick_slot, info_dicts in markets.items():
+                for info_dict in info_dicts:
+                    size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
+                    fig.add_trace(
+                        go.Scatter(x=[tick_slot],
+                                   y=[info_dict['rate']],
+                                   text=info_dict['tool_tip'],
+                                   hoverinfo='text',
+                                   marker=dict(size=size, color=info_dict['color']),
+                                   visible=False)
+                    )
             self.market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
         PlotlyGraph.plot_slider_graph(
             fig, stats_plot_dir, area.name, self.market_slot_data_mapping

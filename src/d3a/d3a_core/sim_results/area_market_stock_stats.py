@@ -15,13 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+from random import randint
 from d3a.d3a_core.util import round_floats_for_ui
 
 
 class StockStats:
     def __init__(self):
         self.state = {}
+        self.id_mapping = {}
 
     def update(self, area):
         if area.name not in self.state:
@@ -34,42 +35,46 @@ class StockStats:
         if last_past_market.time_slot not in self.state[area.name]:
             self.state[area.name][last_past_market.time_slot] = {}
 
-        for trade in last_past_market.trades:
-            tool_tip = f"Trade: {trade.seller_origin} --> {trade.buyer_origin} " \
-                       f"({trade.offer.energy} kWh @ " \
-                       f"{round_floats_for_ui(trade.offer.energy_rate)} € / kWh)"
-            self.state[area.name][last_past_market.time_slot][trade.time] = \
-                {"rate": trade.offer.energy_rate, "tool_tip": tool_tip}
-
         for bid in last_past_market.bid_history:
             tool_tip = f"{bid.buyer_origin} " \
                        f"Bid ({bid.energy} kWh @ " \
                        f"{round_floats_for_ui(bid.energy_rate)} € cents / kWh)"
-            self.state[area.name][last_past_market.time_slot][bid.time] = \
-                {"rate": bid.energy_rate, "tool_tip": tool_tip}
-
-        for id, bid in last_past_market.bids.items():
-            tool_tip = f"{bid.buyer_origin} " \
-                       f"Bid ({bid.energy} kWh @ " \
-                       f"{round_floats_for_ui(bid.energy_rate)} € cents / kWh)"
-            self.state[area.name][last_past_market.time_slot][bid.time] = \
-                {"rate": bid.energy_rate, "tool_tip": tool_tip}
-
-        for id, offer in last_past_market.offers.items():
-            tool_tip = f"{offer.seller_origin} " \
-                       f"Offer({offer.energy} kWh @ " \
-                       f"{round_floats_for_ui(offer.energy_rate)} € cents / kWh)"
-            self.state[area.name][last_past_market.time_slot][offer.time] = \
-                {"rate": offer.energy_rate, "tool_tip": tool_tip}
+            self.check_and_create_color_mapping(bid.buyer_origin)
+            self.check_and_create_list(area, last_past_market, bid)
+            info_dict = {"rate": bid.energy_rate, "tool_tip": tool_tip, "tag": "offer",
+                         "color": self.id_mapping[bid.buyer_origin]}
+            self.state[area.name][last_past_market.time_slot][bid.time].append(info_dict)
 
         for offer in last_past_market.offer_history:
             tool_tip = f"{offer.seller_origin} " \
                        f"Offer({offer.energy} kWh @ " \
                        f"{round_floats_for_ui(offer.energy_rate)} € cents / kWh)"
-            self.state[area.name][last_past_market.time_slot][offer.time] = \
-                {"rate": offer.energy_rate, "tool_tip": tool_tip}
+            self.check_and_create_color_mapping(offer.seller_origin)
+            self.check_and_create_list(area, last_past_market, offer)
+            self.state[area.name][last_past_market.time_slot][offer.time].append(
+                {"rate": offer.energy_rate, "tool_tip": tool_tip, "tag": "bid",
+                 "color": self.id_mapping[offer.seller_origin]})
+
+        for trade in last_past_market.trades:
+            tool_tip = f"Trade: {trade.seller_origin} --> {trade.buyer_origin} " \
+                       f"({trade.offer.energy} kWh @ " \
+                       f"{round_floats_for_ui(trade.offer.energy_rate)} € / kWh)"
+            self.check_and_create_color_mapping(trade.seller_origin)
+            self.check_and_create_list(area, last_past_market, trade)
+            info_dict = {"rate": trade.offer.energy_rate, "tool_tip": tool_tip, "tag": "trade",
+                         "color": self.id_mapping[trade.seller_origin]}
+            self.state[area.name][last_past_market.time_slot][trade.time].append(info_dict)
 
         for child in area.children:
             if not child.children:
                 continue
             self.update(child)
+
+    def check_and_create_color_mapping(self, origin):
+        if origin not in self.id_mapping.keys():
+            self.id_mapping[origin] = \
+                f"rgb({randint(0, 255)}, {randint(0, 255)}, {randint(0, 255)})"
+
+    def check_and_create_list(self, area, last_past_market, trade):
+        if trade.time not in self.state[area.name][last_past_market.time_slot].keys():
+            self.state[area.name][last_past_market.time_slot][trade.time] = []
