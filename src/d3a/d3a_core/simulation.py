@@ -305,12 +305,17 @@ class Simulation:
             log.debug(f"Used {mbs_used} MBs.")
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
+                tick_start = time.time()
+                while self.paused:
+                    sleep(0.5)
+                    if time.time() - tick_start > 600:
+                        self.is_stopped = True
+                        self.paused = False
                 # reset tick_resume after possible resume
                 tick_resume = 0
                 if console is not None:
                     self._handle_input(console)
                     self.paused_time += self._handle_paused(console)
-                tick_start = time.monotonic()
                 log.trace(
                     "Tick %d of %d in slot %d (%2.0f%%)",
                     tick_no + 1,
@@ -321,7 +326,7 @@ class Simulation:
 
                 self.area.tick_and_dispatch()
 
-                realtime_tick_length = time.monotonic() - tick_start
+                realtime_tick_length = time.time() - tick_start
                 if self.slowdown and realtime_tick_length < tick_lengths_s:
                     # Simulation runs faster than real time but a slowdown was
                     # requested
