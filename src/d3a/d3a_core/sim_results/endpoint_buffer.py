@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
-    export_cumulative_grid_trades_redis, export_cumulative_loads, MarketPriceEnergyDay, \
+    export_cumulative_grid_trades_redis, MarketPriceEnergyDay, \
     generate_inter_area_trade_details
 from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
@@ -46,7 +46,6 @@ class SimulationEndpointBuffer:
             "percentage_completed": 0
         }
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
-        self.cumulative_loads = {}
         self.price_energy_day = MarketPriceEnergyDay()
         self.market_bills = MarketEnergyBills()
         self.cumulative_bills = CumulativeBills()
@@ -66,7 +65,6 @@ class SimulationEndpointBuffer:
             "job_id": self.job_id,
             "current_market": self.current_market,
             "random_seed": self.random_seed,
-            "cumulative_loads": self.cumulative_loads,
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
             "bills": self.market_bills.bills_redis_results,
             "cumulative_bills": self.cumulative_bills.cumulative_bills,
@@ -90,7 +88,6 @@ class SimulationEndpointBuffer:
             "random_seed": self.random_seed,
             "unmatched_loads": convert_pendulum_to_str_in_dict(
                 self.market_unmatched_loads.unmatched_loads, {}),
-            "cumulative_loads": self.cumulative_loads,
             "price_energy_day": convert_pendulum_to_str_in_dict(
                 self.price_energy_day.csv_output, {}),
             "cumulative_grid_trades": self.cumulative_grid_trades.current_trades_redis,
@@ -115,7 +112,6 @@ class SimulationEndpointBuffer:
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
             "percentage_completed": int(progress_info.percentage_completed)
         }
-        self.cumulative_loads = export_cumulative_loads(area)
 
         self.cumulative_grid_trades.update(area)
 
