@@ -31,7 +31,7 @@ from d3a_interface.device_validator import validate_storage_device
 from d3a.models.strategy.update_frequency import UpdateFrequencyMixin
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a.d3a_core.device_registry import DeviceRegistry
-
+from d3a_interface.utils import key_in_dict_and_not_none
 
 BalancingRatio = namedtuple('BalancingRatio', ('demand', 'supply'))
 
@@ -125,47 +125,59 @@ class StorageStrategy(BidEnabledStrategy):
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
-    def _update_rate_parameters(self, initial_selling_rate, final_selling_rate,
-                                initial_buying_rate, final_buying_rate,
-                                energy_rate_change_per_update):
-        if initial_selling_rate is not None:
+    def _area_reconfigure_prices(self, **kwargs):
+        if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):
             self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                    initial_selling_rate)
-        if final_selling_rate is not None:
+                                                                    kwargs['initial_selling_rate'])
+        if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
             self.offer_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                  final_selling_rate)
-        if initial_buying_rate is not None:
+                                                                  kwargs['final_selling_rate'])
+        if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
             self.bid_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                  initial_buying_rate)
-        if final_buying_rate is not None:
+                                                                  kwargs['initial_buying_rate'])
+        if key_in_dict_and_not_none(kwargs, 'final_buying_rate'):
             self.bid_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                                final_buying_rate)
-        if energy_rate_change_per_update is not None:
+                                                                kwargs['final_buying_rate'])
+        if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
             self.offer_update.energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       energy_rate_change_per_update)
+                                       kwargs['energy_rate_decrease_per_update'])
+        if key_in_dict_and_not_none(kwargs, 'energy_rate_increase_per_update'):
             self.bid_update.energy_rate_change_per_update = \
                 read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                       energy_rate_change_per_update)
+                                       kwargs['energy_rate_increase_per_update'])
+        if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
+            self.bid_update.fit_to_limit = kwargs['fit_to_limit']
+            self.offer_update.fit_to_limit = kwargs['fit_to_limit']
+        if key_in_dict_and_not_none(kwargs, 'update_interval'):
+            if isinstance(kwargs['update_interval'], int):
+                update_interval = duration(minutes=kwargs['update_interval'])
+            else:
+                update_interval = kwargs['update_interval']
+            self.bid_update.update_interval = update_interval
+            self.offer_update.update_interval = update_interval
 
-    def area_reconfigure_event(self, cap_price_strategy=None,
-                               initial_selling_rate=None, final_selling_rate=None,
-                               initial_buying_rate=None, final_buying_rate=None,
-                               fit_to_limit=None, update_interval=None,
-                               energy_rate_change_per_update=None):
-
-        validate_storage_device(initial_selling_rate=initial_selling_rate,
-                                final_selling_rate=final_selling_rate,
-                                initial_buying_rate=initial_buying_rate,
-                                final_buying_rate=final_buying_rate,
-                                energy_rate_change_per_update=energy_rate_change_per_update)
-        if cap_price_strategy is not None:
-            self.cap_price_strategy = cap_price_strategy
-        self._update_rate_parameters(initial_selling_rate, final_selling_rate,
-                                     initial_buying_rate, final_buying_rate,
-                                     energy_rate_change_per_update)
+    def area_reconfigure_event(self, **kwargs):
+        assert all(k in self.parameters for k in kwargs.keys())
+        self._area_reconfigure_prices(**kwargs)
         self.offer_update.update_on_activate()
         self.bid_update.update_on_activate()
+        self._validate_rates()
+
+    def _validate_rates(self):
+        for time_slot in generate_market_slot_list():
+            bid_rate_change = None if self.bid_update.fit_to_limit else \
+                self.bid_update.energy_rate_change_per_update[time_slot]
+            offer_rate_change = None if self.offer_update.fit_to_limit else \
+                self.offer_update.energy_rate_change_per_update[time_slot]
+            validate_storage_device(initial_selling_rate=self.offer_update.initial_rate[time_slot],
+                                    final_selling_rate=self.offer_update.final_rate[time_slot],
+                                    initial_buying_rate=self.bid_update.initial_rate[time_slot],
+                                    final_buying_rate=self.bid_update.final_rate[time_slot],
+                                    energy_rate_increase_per_update=bid_rate_change,
+                                    energy_rate_decrease_per_update=offer_rate_change,
+                                    fit_to_limit=self.bid_update.fit_to_limit,
+                                    update_interval=self.bid_update.update_interval)
 
     def event_on_disabled_area(self):
         self.state.calculate_soc_for_time_slot(self.area.next_market.time_slot)

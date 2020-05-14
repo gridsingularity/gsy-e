@@ -30,6 +30,7 @@ from d3a.constants import FLOATING_POINT_TOLERANCE
 from d3a.d3a_core.exceptions import MarketException
 from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from d3a_interface.constants_limits import GlobalConfig
+from d3a_interface.utils import key_in_dict_and_not_none
 
 
 class PVStrategy(BaseStrategy):
@@ -92,20 +93,37 @@ class PVStrategy(BaseStrategy):
         self._area_reconfigure_prices(validate, **kwargs)
 
         validate_pv_device_energy(**kwargs)
+        if key_in_dict_and_not_none(kwargs, 'panel_count'):
+            self.panel_count = kwargs['panel_count']
+        if key_in_dict_and_not_none(kwargs, 'max_panel_power_W'):
+            self.max_panel_power_W = kwargs['max_panel_power_W']
+
         self.produced_energy_forecast_kWh()
-        for name, value in kwargs.items():
-            setattr(self, name, value)
 
     def _area_reconfigure_prices(self, validate=True, **kwargs):
         if validate:
             validate_pv_device_price(**kwargs)
 
-        if 'initial_selling_rate' in kwargs and kwargs['initial_selling_rate'] is not None:
+        if key_in_dict_and_not_none(kwargs, 'initial_selling_rate'):
             self.offer_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                     kwargs['initial_selling_rate'])
-        if 'final_selling_rate' in kwargs and kwargs['final_selling_rate'] is not None:
+        if key_in_dict_and_not_none(kwargs, 'final_selling_rate'):
             self.offer_update.final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                   kwargs['final_selling_rate'])
+        if key_in_dict_and_not_none(kwargs, 'energy_rate_decrease_per_update'):
+            self.offer_update.energy_rate_change_per_update = \
+                read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                       kwargs['energy_rate_decrease_per_update'])
+        if key_in_dict_and_not_none(kwargs, 'fit_to_limit'):
+            self.offer_update.fit_to_limit = kwargs['fit_to_limit']
+        if key_in_dict_and_not_none(kwargs, 'update_interval'):
+            if isinstance(kwargs['update_interval'], int):
+                update_interval = duration(minutes=kwargs['update_interval'])
+            else:
+                update_interval = kwargs['update_interval']
+            self.offer_update.update_interval = update_interval
+        if key_in_dict_and_not_none(kwargs, 'use_market_maker_rate'):
+            self.use_market_maker_rate = kwargs['use_market_maker_rate']
 
         self._validate_rates()
         self.offer_update.update_offer(self)

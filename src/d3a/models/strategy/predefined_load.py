@@ -23,7 +23,7 @@ from d3a.d3a_core.util import generate_market_slot_list
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.read_user_profile import read_arbitrary_profile
 from d3a.models.read_user_profile import InputProfileTypes
-
+from d3a_interface.utils import key_in_dict_and_not_none
 """
 Create a load that uses a profile as input for its power values
 """
@@ -80,15 +80,21 @@ class DefinedLoadStrategy(LoadHoursStrategy):
 
     def event_activate_energy(self):
         """
-        Runs on activate event. Reads the power profile data and calculates the required energy
-        for each slot.
+        Runs on activate event.
         :return: None
+        """
+        self._event_activate_energy(self.daily_load_profile)
+        del self.daily_load_profile
+
+    def _event_activate_energy(self, daily_load_profile):
+        """
+        Reads the power profile data and calculates the required energy
+        for each slot.
         """
         load_profile = read_arbitrary_profile(
             InputProfileTypes.POWER,
-            self.daily_load_profile)
+            daily_load_profile)
         self._update_energy_requirement(load_profile)
-        del self.daily_load_profile
 
     def _update_energy_requirement(self, load_profile):
         """
@@ -115,3 +121,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Disabled feature for this subclass
         """
         return True
+
+    def area_reconfigure_event(self, **kwargs):
+        self._area_reconfigure_prices(**kwargs)
+        if key_in_dict_and_not_none(kwargs, 'daily_load_profile'):
+            self._event_activate_energy(kwargs['daily_load_profile'])
