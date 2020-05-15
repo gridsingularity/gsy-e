@@ -150,6 +150,9 @@ class Area:
                           export_capacity_kVA=export_capacity_kVA)
             self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
 
+        if self.strategy is not None:
+            self.strategy.area_reconfigure_event(kwargs)
+
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
