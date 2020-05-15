@@ -122,6 +122,9 @@ class Area:
             if external_connection_available is True else None
 
     def area_reconfigure_event(self, **kwargs):
+        if self.strategy is not None:
+            self.strategy.area_reconfigure_event(**kwargs)
+            return
         assert all(k in self.reconfig_parameters for k in kwargs.keys())
         if key_in_dict_and_not_none(kwargs, 'transfer_fee_const') or \
                 key_in_dict_and_not_none(kwargs, 'grid_fee_percentage'):
@@ -149,9 +152,6 @@ class Area:
             validate_area(import_capacity_kVA=import_capacity_kVA,
                           export_capacity_kVA=export_capacity_kVA)
             self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
-
-        if self.strategy is not None:
-            self.strategy.area_reconfigure_event(kwargs)
 
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \

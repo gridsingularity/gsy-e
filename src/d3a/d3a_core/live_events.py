@@ -14,13 +14,13 @@ class CreateAreaEvent:
     def __init__(self, parent_uuid, area_params, config):
         self.parent_uuid = parent_uuid
         self.area_params = area_params
-        self.area = area_from_dict(area_params, config)
+        self.created_area = area_from_dict(area_params, config)
 
     def apply(self, area):
-        if area.uuid is not self.parent_uuid:
+        if area.uuid != self.parent_uuid:
             return False
 
-        area.children.append(area)
+        area.children.append(self.created_area)
         return True
 
     def __repr__(self):
