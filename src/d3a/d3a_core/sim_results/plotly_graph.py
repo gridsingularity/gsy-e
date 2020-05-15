@@ -26,7 +26,6 @@ from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a import limit_float_precision
 
-
 ENERGY_BUYER_SIGN_PLOTS = 1
 ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
 
@@ -174,16 +173,16 @@ class PlotlyGraph:
 
     @classmethod
     def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str,
-                       showlegend=True, hovermode="x"):
-        try:
-            time_range, data = cls.modify_time_axis(data, title)
-        except ValueError:
-            return
+                       time_range=None, showlegend=True, hovermode="x"):
+        if time_range is None:
+            try:
+                time_range, data = cls.modify_time_axis(data, title)
+            except ValueError:
+                return
 
         layout = cls.common_layout(
             barmode, title, ytitle, xtitle, time_range, showlegend, hovermode=hovermode
         )
-
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 

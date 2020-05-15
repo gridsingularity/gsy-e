@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import uuid
+import json
 import os
 import importlib
 import logging
@@ -345,8 +347,6 @@ def run_d3a_with_settings_file(context):
 def save_reported_unmatched_loads(context):
     unmatched_loads_object = context.simulation.endpoint_buffer.market_unmatched_loads
     context.unmatched_loads = deepcopy(unmatched_loads_object.unmatched_loads)
-    context.unmatched_loads_redis = \
-        deepcopy(unmatched_loads_object.unmatched_loads_uuid)
 
 
 @when('the reported energy trade profile are saved')
@@ -354,8 +354,6 @@ def save_reported_energy_trade_profile(context):
     file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
     context.energy_trade_profile = deepcopy(
         file_export_endpoints.traded_energy_profile)
-    context.energy_trade_profile_redis = \
-        deepcopy(file_export_endpoints.traded_energy_profile_redis)
 
 
 @when('the reported price energy day results are saved')
@@ -374,7 +372,7 @@ def save_reported_bills(context, bill_type):
             deepcopy(context.simulation.endpoint_buffer.market_bills.bills_redis_results)
     elif bill_type == "cumulative":
         context.energy_bills = deepcopy(
-            context.simulation.endpoint_buffer.market_bills.cumulative_bills)
+            context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills)
 
 
 @when('the past markets are not kept in memory')
@@ -521,7 +519,15 @@ def configd_sim_run(context):
 
 @when('a message is sent on {channel}')
 def message_on_channel(context, channel):
-    context.simulation.redis_connection._sub_callback_dict[channel](None)
+    context.ctrl_publish_callback_call_count = 0
+    data = {"transaction_id": str(uuid.uuid4())}
+    payload = {"data": json.dumps(data)}
+
+    def mock_publish_json(*args):
+        context.ctrl_publish_callback_call_count += 1
+
+    context.simulation.redis_connection.publish_json = mock_publish_json
+    context.simulation.redis_connection._sub_callback_dict[channel](payload)
 
 
 @when('the simulation is able to transmit intermediate results')
@@ -562,6 +568,7 @@ def final_res_report(context):
 @then('{method} is called')
 def method_called(context, method):
     assert context.ctrl_callback_call_count == 1
+    assert context.ctrl_publish_callback_call_count == 1
 
 
 @given('the min offer age is set to {min_offer_age} tick')
@@ -772,7 +779,7 @@ def test_external_trade_energy_price(context):
 
 @then('the cumulative energy bills for each area are the sum of its children')
 def cumulative_bills_sum(context):
-    cumulative_bills = context.simulation.endpoint_buffer.market_bills.cumulative_bills_results
+    cumulative_bills = context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills_results
     bills = context.simulation.endpoint_buffer.market_bills.bills_redis_results
 
     def assert_area_cumulative_bills(area):
@@ -805,16 +812,6 @@ def generate_area_uuid_map(sim_area, results):
     for child in sim_area.children:
         results = generate_area_uuid_map(child, results)
     return results
-
-
-@then('the traded energy profile is correctly generated')
-def traded_energy_profile_correctly_generated(context):
-    area_uuid_map = generate_area_uuid_map(context.simulation.area, {})
-    file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
-    assert len(file_export_endpoints.traded_energy_profile.keys()) == \
-        len(file_export_endpoints.traded_energy_profile_redis.keys())
-    for k, v in file_export_endpoints.traded_energy_profile.items():
-        assert file_export_endpoints.traded_energy_profile_redis[area_uuid_map[k]] == v
 
 
 @then('the predefined load follows the load profile')
@@ -1019,16 +1016,7 @@ def assert_multiple_trade_rates_any(context, market_name, trade_rate1, trade_rat
 @then('the unmatched loads are identical no matter if the past markets are kept')
 def identical_unmatched_loads(context):
     unmatched_loads = context.simulation.endpoint_buffer.market_unmatched_loads.unmatched_loads
-    unmatched_loads_redis = \
-        context.simulation.endpoint_buffer.market_unmatched_loads.unmatched_loads_uuid
-
     assert len(DeepDiff(unmatched_loads, context.unmatched_loads)) == 0
-
-    # The 2 simulation runs do not assign the same uuids to the same areas
-    # therefore we have to search whether there are elements with the same values
-    for _, v in unmatched_loads_redis.items():
-        assert any(len(DeepDiff(v, old_area_results)) == 0
-                   for _, old_area_results in context.unmatched_loads_redis.items())
 
 
 @then('the cumulative grid trades are identical no matter if the past markets are kept')
@@ -1047,15 +1035,8 @@ def identical_cumulative_grid_trades(context):
 def identical_energy_trade_profiles(context):
     file_export_endpoints = context.simulation.endpoint_buffer.file_export_endpoints
     energy_trade_profile = file_export_endpoints.traded_energy_profile
-    energy_trade_profile_redis = file_export_endpoints.traded_energy_profile_redis
 
     assert len(DeepDiff(energy_trade_profile, context.energy_trade_profile)) == 0
-
-    # The 2 simulation runs do not assign the same uuids to the same areas
-    # therefore we have to search whether there are elements with the same values
-    for _, v in energy_trade_profile_redis.items():
-        assert any(len(DeepDiff(v, old_area_results)) == 0
-                   for _, old_area_results in context.energy_trade_profile_redis.items())
 
 
 @then('the price energy day results are identical no matter if the past markets are kept')
@@ -1077,7 +1058,7 @@ def identical_energy_bills(context):
 
 @then('the cumulative bills are identical no matter if the past markets are kept')
 def identical_cumulative_bills(context):
-    energy_bills = context.simulation.endpoint_buffer.market_bills.cumulative_bills
+    energy_bills = context.simulation.endpoint_buffer.cumulative_bills.cumulative_bills
 
     for _, v in energy_bills.items():
         assert any(len(DeepDiff(v, old_area_results)) == 0

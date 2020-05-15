@@ -46,8 +46,7 @@ class RedisSimulationCommunication:
             return
         self._simulation_id = simulation_id
         self._simulation = simulation
-        self._sub_callback_dict = {self._simulation_id + "/reset": self._reset_callback,
-                                   self._simulation_id + "/stop": self._stop_callback,
+        self._sub_callback_dict = {self._simulation_id + "/stop": self._stop_callback,
                                    self._simulation_id + "/pause": self._pause_callback,
                                    self._simulation_id + "/resume": self._resume_callback,
                                    self._simulation_id + "/slowdown": self._slowdown_callback}
@@ -66,19 +65,49 @@ class RedisSimulationCommunication:
         self.pubsub.subscribe(**self._sub_callback_dict)
         self.pubsub.run_in_thread(sleep_time=0.5, daemon=True)
 
-    def _reset_callback(self, _):
-        self._simulation.reset()
+    def _generate_redis_response(self, response, simulation_id, is_successful, command_type):
+        stop_response_channel = f'{simulation_id}/response/stop'
+        if is_successful:
+            self.publish_json(
+                stop_response_channel,
+                {
+                    "command": str(command_type), "status": "success",
+                    "simulation_id": str(self._simulation_id),
+                    "transaction_id": response["transaction_id"]})
+        else:
+            self.publish_json(
+                stop_response_channel,
+                {
+                    "command": str(command_type), "status": "error",
+                    "simulation_id": str(self._simulation_id),
+                    "error_message": f"Error when handling simulation {command_type}.",
+                    "transaction_id": response["transaction_id"]})
 
-    def _stop_callback(self, _):
+    def _stop_callback(self, payload):
+        response = json.loads(payload["data"])
         self._simulation.stop()
+        self._generate_redis_response(
+            response, self._simulation_id, self._simulation.is_stopped, "stop"
+        )
 
-    def _pause_callback(self, _):
+    def _pause_callback(self, payload):
+        response = json.loads(payload["data"])
+
         if not self._simulation.paused:
             self._simulation.toggle_pause()
+        self._generate_redis_response(
+            response, self._simulation_id, self._simulation.paused, "pause"
+        )
+        log.info(f"Simulation with job_id: {self._simulation_id} is paused.")
 
-    def _resume_callback(self, _):
+    def _resume_callback(self, payload):
+        response = json.loads(payload["data"])
         if self._simulation.paused:
             self._simulation.toggle_pause()
+        self._generate_redis_response(
+            response, self._simulation_id, not self._simulation.paused, "resume"
+        )
+        log.info(f"Simulation with job_id: {self._simulation_id} is resumed.")
 
     def _slowdown_callback(self, message):
         data = json.loads(message["data"])
@@ -149,6 +178,9 @@ class RedisSimulationCommunication:
 
     def is_enabled(self):
         return hasattr(self, 'pubsub')
+
+    def publish_json(self, channel, data):
+        self.redis_db.publish(channel, json.dumps(data))
 
 
 def publish_job_error_output(job_id, traceback):

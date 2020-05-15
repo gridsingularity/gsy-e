@@ -42,7 +42,6 @@ Feature: Run integration tests
     Then the traded energy report the correct accumulated traded energy
     And the energy bills report the correct accumulated traded energy price
     And the energy bills report the correct external traded energy and price
-    And the traded energy profile is correctly generated
 
   Examples: Settings
       |                scenario                |
@@ -75,7 +74,6 @@ Feature: Run integration tests
      | scenario   | channel    | method       |
      | default_2a | 1234/stop  | stop         |
      | default_2a | 1234/pause | toggle_pause |
-     | default_2a | 1234/reset | reset        |
 
   Scenario: Simulation publishes intermediate and final results
      Given d3a is installed

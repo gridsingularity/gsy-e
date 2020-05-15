@@ -5,9 +5,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.area import Area
-from d3a.d3a_core.util import convert_datetime_to_str_keys_cached as convert_datetime_to_str_keys
 from d3a import limit_float_precision
-from d3a_interface.sim_results.aggregate_results import merge_device_statistics_results_to_global
 
 FILL_VALUE = None
 
@@ -22,8 +20,6 @@ class DeviceStatistics:
 
     def __init__(self):
         self.device_stats_dict = {}
-        self.device_stats_time_str = {}
-        self.flat_stats_time_str = {}
         self.current_stats_dict = {}
         self.current_stats_time_str = {}
 
@@ -123,13 +119,8 @@ class DeviceStatistics:
 
     def update(self, area):
         self.gather_device_statistics(area, self.device_stats_dict, {})
-        self.device_stats_time_str = convert_datetime_to_str_keys(self.device_stats_dict, {})
-
-        # Calculate last market stats
+        # TODO: only calculate this if redis is enabled:
         self.gather_device_statistics(area, {}, self.current_stats_dict)
-        self.current_stats_time_str = convert_datetime_to_str_keys(self.current_stats_dict, {})
-        merge_device_statistics_results_to_global(
-            self.current_stats_time_str, self.flat_stats_time_str)
 
     @classmethod
     def gather_device_statistics(cls, area: Area, subdict: Dict, flat_result_dict: Dict):

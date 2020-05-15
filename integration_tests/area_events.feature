@@ -49,24 +49,50 @@ Feature: Area Events Tests
   Scenario: Load changes consumption and hours of/per day after strategy event
     Given we have a scenario named area_events/load_event
     And d3a is installed
-    When we run the simulation with setup file area_events.load_event and parameters [24, 30, 30, 1]
-    Then load consumes 0.1 kWh before 12:00
-    And load consumes 0.2 kWh between 12:00 and 22:00
-    And no trades occur after 22:00
+    When we run the simulation with setup file area_events.load_event and parameters [24, 60, 60, 1]
+    Then load consumes 0.2 kWh between 00:00 and 12:00
+    And load consumes 0.4 kWh between 12:00 and 15:00
+    And no trades occur after 15:00
+
+  Scenario: PredefinedLoad changes consumption and hours of/per day after strategy event
+    Given we have a scenario named area_events/predefined_load_event
+    And d3a is installed
+    When we run the simulation with setup file area_events.predefined_load_event and parameters [24, 60, 60, 1]
+    Then load consumes 0.2 kWh between 00:00 and 12:00
+    And load consumes 0.4 kWh between 12:00 and 15:00
+    And no trades occur after 15:00
 
   Scenario: PV changes production and panel count after strategy event
     Given we have a scenario named area_events/pv_event
     And d3a is installed
     When we run the simulation with setup file area_events.pv_event and parameters [24, 60, 60, 1]
-    Then load consumes less than 0.15891 kWh between 8:00 and 12:00
-    And load consumes less than 1.5891 kWh between 12:00 and 16:00
+    Then Grid Load consumes less than 0.15891 kWh between 8:00 and 12:00
+    And Grid Load consumes less than 1.5891 kWh between 12:00 and 16:00
+
+  Scenario: PredefinedPV changes production when it gets cloudy
+    Given we have a scenario named area_events/predefined_pv_event
+    And d3a is installed
+    When we run the simulation with setup file area_events.predefined_pv_event and parameters [24, 60, 60, 1]
+    Then load consumes energy following the sunny profile between 6:00 and 14:00
+    And load consumes energy following the cloudy profile between 14:00 and 19:00
+    And no trades occur after 20:00
+
+  Scenario: UserProfilePV changes production when user changes profile
+    Given we have a scenario named area_events/userprofile_pv_event
+    And d3a is installed
+    When we run the simulation with setup file area_events.userprofile_pv_event and parameters [24, 60, 60, 1]
+    Then Grid Load consumes 0.2 kWh between 00:00 and 12:00
+    And Grid Load consumes 0.4 kWh between 12:00 and 14:00
+    And Grid Load consumes 0.6 kWh between 14:00 and 18:00
+    And no trades occur after 20:00
 
   Scenario: Storage changes initial_selling_rate after strategy event
     Given we have a scenario named area_events/storage_event
     And d3a is installed
     When we run the simulation with setup file area_events.storage_event and parameters [24, 60, 60, 1]
     Then load consumes 0.01 kWh with 31 ct/kWh between 0:00 and 12:00
-    And load consumes 0.01 kWh with 33 ct/kWh between 13:00 and 24:00
+    And load consumes 0.01 kWh with 33 ct/kWh between 13:00 and 15:00
+    And load consumes 0.01 kWh with 35 ct/kWh between 16:00 and 24:00
 
   Scenario: Cloud coverage event changes config value
     Given we have a scenario named area_events/cloud_coverage_event

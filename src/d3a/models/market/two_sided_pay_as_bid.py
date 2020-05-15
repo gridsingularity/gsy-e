@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 from typing import Union  # noqa
 from logging import getLogger
-from copy import deepcopy
 
 from d3a.models.market import lock_market_action
 from d3a.models.market.one_sided import OneSidedMarket
@@ -60,7 +59,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
 
     @lock_market_action
     def get_bids(self):
-        return deepcopy(self.bids)
+        return self.bids
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, seller: str, buyer_origin,
