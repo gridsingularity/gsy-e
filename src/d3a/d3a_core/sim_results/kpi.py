@@ -160,21 +160,30 @@ class KPI:
         else:
             self_consumption = self.state[area.name].total_self_consumption_wh / \
                                self.state[area.name].total_energy_produced_wh
-        return {"self_sufficiency": self_sufficiency, "self_consumption": self_consumption}
+        return {"self_sufficiency": self_sufficiency, "self_consumption": self_consumption,
+                "total_energy_demanded_wh": self.state[area.name].total_energy_demanded_wh,
+                "total_energy_produced_wh": self.state[area.name].total_energy_produced_wh,
+                "total_self_consumption_wh": self.state[area.name].total_self_consumption_wh}
 
     def _kpi_ratio_to_percentage(self, area_name):
-        if self.performance_indices[area_name]["self_sufficiency"] is not None:
+        area_kpis = self.performance_indices[area_name]
+        if area_kpis["self_sufficiency"] is not None:
             self_sufficiency_percentage = \
-                self.performance_indices[area_name]["self_sufficiency"] * 100
+                area_kpis["self_sufficiency"] * 100
         else:
             self_sufficiency_percentage = 0.0
-        if self.performance_indices[area_name]["self_consumption"] is not None:
+        if area_kpis["self_consumption"] is not None:
             self_consumption_percentage = \
-                self.performance_indices[area_name]["self_consumption"] * 100
+                area_kpis["self_consumption"] * 100
         else:
             self_consumption_percentage = 0.0
+
         return {"self_sufficiency": self_sufficiency_percentage,
-                "self_consumption": self_consumption_percentage}
+                "self_consumption": self_consumption_percentage,
+                "total_energy_demanded_wh": area_kpis["total_energy_demanded_wh"],
+                "total_energy_produced_wh": area_kpis["total_energy_produced_wh"],
+                "total_self_consumption_wh": area_kpis["total_self_consumption_wh"]
+                }
 
     def update_kpis_from_area(self, area):
         self.performance_indices[area.name] = \
