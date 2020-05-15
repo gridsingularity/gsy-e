@@ -19,7 +19,7 @@ from random import randint
 from d3a.d3a_core.util import round_floats_for_ui
 
 
-class StockStats:
+class OfferBidTradeGraphStats:
     def __init__(self):
         self.state = {}
         self.id_mapping = {}

@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from datetime import datetime
 import pytest
 import sys
 import pendulum
@@ -70,8 +69,8 @@ class FakeMarket:
         self.count = count
         self.created_offers = []
         self.created_balancing_offers = []
-        self.sorted_offers = [Offer('id', datetime.now(), 25., 1., 'other'),
-                              Offer('id', datetime.now(), 26., 1., 'other')]
+        self.sorted_offers = [Offer('id', pendulum.now(), 25., 1., 'other'),
+                              Offer('id', pendulum.now(), 26., 1., 'other')]
         self.traded_offers = []
         self._bids = {TIME: []}
 
@@ -81,13 +80,13 @@ class FakeMarket:
 
     def offer(self, price, energy, seller, original_offer_price=None,
               seller_origin=None):
-        offer = Offer('id', datetime.now(), price, energy, seller)
+        offer = Offer('id', pendulum.now(), price, energy, seller)
         self.created_offers.append(offer)
         offer.id = 'id'
         return offer
 
     def balancing_offer(self, price, energy, seller):
-        offer = BalancingOffer('id', datetime.now(), price, energy, seller)
+        offer = BalancingOffer('id', pendulum.now(), price, energy, seller)
         self.created_balancing_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -102,7 +101,7 @@ class FakeMarket:
 
     def bid(self, price, energy, buyer, seller, original_bid_price=None,
             buyer_origin=None):
-        bid = Bid("bid_id", datetime.now(), price, energy, buyer,
+        bid = Bid("bid_id", pendulum.now(), price, energy, buyer,
                   seller, buyer_origin=buyer_origin)
         return bid
 
@@ -198,7 +197,7 @@ def bus_test2(area_test2):
 def test_event_trade(area_test2, bus_test2):
     bus_test2.event_activate()
     bus_test2.event_market_cycle()
-    traded_offer = Offer(id='id', time=datetime.now(), price=20, energy=1, seller='FakeArea',)
+    traded_offer = Offer(id='id', time=pendulum.now(), price=20, energy=1, seller='FakeArea',)
     bus_test2.event_trade(market_id=area_test2.test_market.id, trade=Trade(id='id',
                                                                            time='time',
                                                                            offer=traded_offer,
@@ -212,9 +211,9 @@ def test_event_trade(area_test2, bus_test2):
 
 def test_on_offer_changed(area_test2, bus_test2):
     bus_test2.event_activate()
-    original_offer = Offer(id='id', time=datetime.now(), price=20, energy=1, seller='FakeArea')
-    accepted_offer = Offer(id='new', time=datetime.now(), price=15, energy=0.75, seller='FakeArea')
-    residual_offer = Offer(id='new_id', time=datetime.now(), price=5,
+    original_offer = Offer(id='id', time=pendulum.now(), price=20, energy=1, seller='FakeArea')
+    accepted_offer = Offer(id='new', time=pendulum.now(), price=15, energy=0.75, seller='FakeArea')
+    residual_offer = Offer(id='new_id', time=pendulum.now(), price=5,
                            energy=0.25, seller='FakeArea')
     bus_test2.event_offer_split(market_id=area_test2.test_market.id,
                                 original_offer=original_offer,
@@ -225,11 +224,11 @@ def test_on_offer_changed(area_test2, bus_test2):
 
 
 def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
-    original_offer = Offer(id='old_id', time=datetime.now(),
+    original_offer = Offer(id='old_id', time=pendulum.now(),
                            price=20, energy=1, seller='FakeArea')
-    accepted_offer = Offer(id='old_id', time=datetime.now(),
+    accepted_offer = Offer(id='old_id', time=pendulum.now(),
                            price=15, energy=0.75, seller='FakeArea')
-    residual_offer = Offer(id='res_id', time=datetime.now(),
+    residual_offer = Offer(id='res_id', time=pendulum.now(),
                            price=5, energy=0.25, seller='FakeArea')
     bus_test2.offers.post(original_offer, area_test2.test_market.id)
     bus_test2.event_offer_split(market_id=area_test2.test_market.id,

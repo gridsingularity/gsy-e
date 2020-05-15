@@ -1,4 +1,3 @@
-from datetime import datetime
 import unittest
 from concurrent.futures import Future
 from unittest.mock import MagicMock
@@ -70,7 +69,7 @@ class TestMarketRedisEventPublisher(unittest.TestCase):
 class TestMarketRedisEventSubscriber(unittest.TestCase):
 
     def setUp(self):
-        self.market = OneSidedMarket(name="test_market")
+        self.market = OneSidedMarket(name="test_market", time_slot=now())
         self.market.id = "id"
         self.subscriber = MarketRedisEventSubscriber(self.market)
 
@@ -106,7 +105,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
             "offer": json.dumps({"id": "offer_id", "real_id": "real_id", "type": "Offer",
                                  "price": 654, "energy": 765, "seller": "offer_seller"}),
         }
-        output_data = self.subscriber.sanitize_parameters(input_data, datetime.now())
+        output_data = self.subscriber.sanitize_parameters(input_data, now())
         assert isinstance(output_data["offer"], Offer)
         assert isinstance(output_data["offer_or_id"], Offer)
         assert isinstance(output_data["trade_bid_info"], dict)
@@ -195,7 +194,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
 
     def setUp(self):
         ConstSettings.IAASettings.MARKET_TYPE = 2
-        self.market = OneSidedMarket(name="test_market")
+        self.market = OneSidedMarket(name="test_market", time_slot=now())
         self.market.id = "id"
         self.subscriber = TwoSidedMarketRedisEventSubscriber(self.market)
 
@@ -216,7 +215,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_accept_bid_calls_market_method_and_publishes_response(self):
-        bid = Bid("b_id", datetime.now(), 12, 13, "b_buyer", "b_seller")
+        bid = Bid("b_id", now(), 12, 13, "b_buyer", "b_seller")
         payload = {"data": json.dumps({
                 "seller": "mykonos",
                 "energy": 12,
@@ -243,7 +242,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        bid = Bid("b_id", datetime.now(), 32, 12, "b_buyer", "b_seller")
+        bid = Bid("b_id", now(), 32, 12, "b_buyer", "b_seller")
         self.market.bid = MagicMock(return_value=bid)
         self.subscriber._bid(payload)
         self.subscriber.market.bid.assert_called_once_with(
@@ -256,7 +255,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_delete_bid_calls_market_method_and_publishes_response(self):
-        bid = Bid("b_id", datetime.now(), 32, 12, "b_buyer", "b_seller")
+        bid = Bid("b_id", now(), 32, 12, "b_buyer", "b_seller")
         payload = {"data": json.dumps({
                 "bid": bid.to_JSON_string(),
                 "transaction_uuid": "trans_id"

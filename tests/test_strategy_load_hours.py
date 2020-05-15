@@ -19,7 +19,7 @@ import pytest
 import unittest
 from copy import deepcopy
 from unittest.mock import MagicMock, Mock
-from pendulum import DateTime, duration, today
+from pendulum import DateTime, duration, today, now
 from parameterized import parameterized
 from math import isclose
 import os
@@ -33,7 +33,6 @@ from d3a_interface.exceptions import D3ADeviceException
 from d3a.constants import TIME_ZONE, TIME_FORMAT
 from d3a.d3a_core.device_registry import DeviceRegistry
 from d3a.d3a_core.util import d3a_path
-from datetime import datetime
 
 ConstSettings.GeneralSettings.MAX_OFFER_TRAVERSAL_LENGTH = 10
 
@@ -112,7 +111,7 @@ class FakeMarket:
     def bid(self, price: float, energy: float, buyer: str,
             seller: str, original_bid_price=None,
             buyer_origin=None) -> Bid:
-        bid = Bid(id='bid_id', time=datetime.now(), price=price, energy=energy, buyer=buyer,
+        bid = Bid(id='bid_id', time=now(), price=price, energy=energy, buyer=buyer,
                   seller=seller, original_bid_price=original_bid_price,
                   buyer_origin=buyer_origin)
         self.bids[bid.id] = bid
@@ -127,25 +126,25 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', datetime.now(), 1, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 1
-             Offer('id', datetime.now(), 2, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 2
-             Offer('id', datetime.now(), 3, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 3
-             Offer('id', datetime.now(), 4, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 4
+            [Offer('id', now(), 1, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 1
+             Offer('id', now(), 2, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 2
+             Offer('id', now(), 3, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 3
+             Offer('id', now(), 4, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 4
              ],
             [
-                Offer('id', datetime.now(), 1, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self),
-                Offer('id', datetime.now(), 2, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self)
+                Offer('id', now(), 1, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self),
+                Offer('id', now(), 2, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self)
             ],
             [
-                Offer('id', datetime.now(), 1, 5, 'A', self),
-                Offer('id2', datetime.now(), 2, (MIN_BUY_ENERGY / 1000), 'A', self)
+                Offer('id', now(), 1, 5, 'A', self),
+                Offer('id2', now(), 2, (MIN_BUY_ENERGY / 1000), 'A', self)
             ]
         ]
         return offers[self.count]
 
     @property
     def most_affordable_offers(self):
-        return [Offer('id_affordable', datetime.now(), 1, self.most_affordable_energy, 'A', self)]
+        return [Offer('id_affordable', now(), 1, self.most_affordable_energy, 'A', self)]
 
     @property
     def time_slot(self):
@@ -156,7 +155,7 @@ class FakeMarket:
         return self.time_slot.strftime(TIME_FORMAT)
 
     def balancing_offer(self, price, energy, seller, market=None):
-        offer = BalancingOffer('id', datetime.now(), price, energy, seller, market)
+        offer = BalancingOffer('id', now(), price, energy, seller, market)
         self.created_balancing_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -329,7 +328,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
         round(((0.1/0.155) * 0.25), 2)
 
 
-@pytest.mark.parametrize("partial", [None, Bid('test_id', datetime.now(), 123, 321, 'A', 'B')])
+@pytest.mark.parametrize("partial", [None, Bid('test_id', now(), 123, 321, 'A', 'B')])
 def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strategy_test5,
                                                                 called,
                                                                 partial):
@@ -513,8 +512,8 @@ def load_hours_strategy_test3(area_test1):
 def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3):
     market_id = 0
     load_hours_strategy_test3._bids[market_id] = \
-        [Bid("bid_id", datetime.now(), 30, 1, buyer="FakeArea", seller="producer")]
-    expensive_bid = Bid("bid_id", datetime.now(), 31, 1, buyer="FakeArea", seller="producer")
+        [Bid("bid_id", now(), 30, 1, buyer="FakeArea", seller="producer")]
+    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea", seller="producer")
     trade = Trade("trade_id", "time", expensive_bid, load_hours_strategy_test3, "buyer")
 
     with pytest.raises(AssertionError):

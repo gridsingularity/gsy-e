@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from datetime import datetime
 import pytest
 from unittest.mock import MagicMock
 import pendulum
@@ -97,7 +96,7 @@ class FakeMarket:
 
     def bid(self, price, energy, buyer, seller, original_bid_price=None,
             buyer_origin=None):
-        return Bid(123, datetime.now(), price, energy, buyer, seller, original_bid_price,
+        return Bid(123, pendulum.now(), price, energy, buyer, seller, original_bid_price,
                    buyer_origin=buyer_origin)
 
 
@@ -154,21 +153,21 @@ def test_offers_in_market(offers2):
 
 @pytest.fixture
 def offer1():
-    return Offer('id', datetime.now(), 1, 3, 'FakeOwner', 'market')
+    return Offer('id', pendulum.now(), 1, 3, 'FakeOwner', 'market')
 
 
 @pytest.fixture
 def offers3(offer1):
     fixture = Offers(FakeStrategy())
     fixture.post(offer1, 'market')
-    fixture.post(Offer('id2', datetime.now(), 1, 1, 'FakeOwner', 'market'), 'market')
-    fixture.post(Offer('id3', datetime.now(), 1, 1, 'FakeOwner', 'market2'), 'market2')
+    fixture.post(Offer('id2', pendulum.now(), 1, 1, 'FakeOwner', 'market'), 'market')
+    fixture.post(Offer('id3', pendulum.now(), 1, 1, 'FakeOwner', 'market2'), 'market2')
     return fixture
 
 
 def test_offers_partial_offer(offer1, offers3):
-    accepted_offer = Offer('id', datetime.now(), 1, 0.6, offer1.seller, 'market')
-    residual_offer = Offer('new_id', datetime.now(), 1, 1.2, offer1.seller, 'market')
+    accepted_offer = Offer('id', pendulum.now(), 1, 0.6, offer1.seller, 'market')
+    residual_offer = Offer('new_id', pendulum.now(), 1, 1.2, offer1.seller, 'market')
     offers3.on_offer_split(offer1, accepted_offer, residual_offer, 'market')
     trade = Trade('trade_id', pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, 'buyer')
     offers3.on_trade('market', trade)
@@ -178,7 +177,7 @@ def test_offers_partial_offer(offer1, offers3):
 
 @pytest.fixture
 def offer_to_accept():
-    return Offer('new', datetime.now(), 1.0, 0.5, 'someone')
+    return Offer('new', pendulum.now(), 1.0, 0.5, 'someone')
 
 
 @pytest.fixture
@@ -249,7 +248,7 @@ def test_add_bid_to_bought(base):
 
 def test_bid_events_fail_for_one_sided_market(base):
     ConstSettings.IAASettings.MARKET_TYPE = 1
-    test_bid = Bid("123", datetime.now(), 12, 23, 'A', 'B')
+    test_bid = Bid("123", pendulum.now(), 12, 23, 'A', 'B')
     with pytest.raises(AssertionError):
         base.event_bid_traded(market_id=123, bid_trade=test_bid)
     with pytest.raises(AssertionError):
@@ -261,7 +260,7 @@ def test_bid_events_fail_for_one_sided_market(base):
 
 def test_bid_deleted_removes_bid_from_posted(base):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", datetime.now(), 12, 23, base.owner.name, 'B')
+    test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, 'B')
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = [test_bid]
@@ -271,9 +270,9 @@ def test_bid_deleted_removes_bid_from_posted(base):
 
 def test_bid_split_adds_bid_to_posted(base):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", datetime.now(), 12, 12, base.owner.name, 'B')
-    accepted_bid = Bid("123", datetime.now(), 8, 8, base.owner.name, 'B')
-    residual_bid = Bid("456", datetime.now(), 4, 4, base.owner.name, 'B')
+    test_bid = Bid("123", pendulum.now(), 12, 12, base.owner.name, 'B')
+    accepted_bid = Bid("123", pendulum.now(), 8, 8, base.owner.name, 'B')
+    residual_bid = Bid("456", pendulum.now(), 4, 4, base.owner.name, 'B')
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = []
@@ -284,7 +283,7 @@ def test_bid_split_adds_bid_to_posted(base):
 
 def test_bid_traded_moves_bid_from_posted_to_traded(base):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", datetime.now(), 12, 23, base.owner.name, 'B')
+    test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, 'B')
     trade = MagicMock()
     trade.buyer = base.owner.name
     trade.offer = test_bid
@@ -302,9 +301,9 @@ def test_can_offer_be_posted(base):
     base.area = FakeArea()
     market = FakeMarket(raises=True)
     base.area._market = market
-    base.offers.post(Offer('id', datetime.now(), price=1, energy=12, seller='A'), market.id)
-    base.offers.post(Offer('id2', datetime.now(), price=1, energy=13, seller='A'), market.id)
-    base.offers.post(Offer('id3', datetime.now(), price=1, energy=20, seller='A'), market.id)
+    base.offers.post(Offer('id', pendulum.now(), price=1, energy=12, seller='A'), market.id)
+    base.offers.post(Offer('id2', pendulum.now(), price=1, energy=13, seller='A'), market.id)
+    base.offers.post(Offer('id3', pendulum.now(), price=1, energy=20, seller='A'), market.id)
     assert base.can_offer_be_posted(4.999, 50, market) is True
     assert base.can_offer_be_posted(5.0, 50, market) is True
     assert base.can_offer_be_posted(5.001, 50, market) is False

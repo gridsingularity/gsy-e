@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from datetime import datetime
 import pytest
 from copy import deepcopy
 import pendulum
@@ -156,7 +155,7 @@ class FakeMarket:
             offer_id = "uuid"
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_offer_price, energy)
-        offer = Offer(offer_id, datetime.now(), price, energy, seller, original_offer_price,
+        offer = Offer(offer_id, pendulum.now(), price, energy, seller, original_offer_price,
                       seller_origin=seller_origin)
         self.offers[offer.id] = deepcopy(offer)
         self.forwarded_offer = deepcopy(offer)
@@ -180,7 +179,7 @@ class FakeMarket:
         if adapt_price_with_fees:
             price = self._update_new_bid_price_with_fee(price, original_bid_price)
 
-        bid = Bid(bid_id, datetime.now(), price, energy, buyer, seller,
+        bid = Bid(bid_id, pendulum.now(), price, energy, buyer, seller,
                   original_bid_price=original_bid_price,
                   buyer_origin=buyer_origin)
         self._bids.append(bid)
@@ -239,9 +238,9 @@ class FakeMarket:
 
 @pytest.fixture
 def iaa():
-    lower_market = FakeMarket([Offer('id', datetime.now(), 1, 1, 'other', 1)])
-    higher_market = FakeMarket([Offer('id2', datetime.now(), 3, 3, 'owner', 3),
-                                Offer('id3', datetime.now(), 0.5, 1, 'owner', 0.5)])
+    lower_market = FakeMarket([Offer('id', pendulum.now(), 1, 1, 'other', 1)])
+    higher_market = FakeMarket([Offer('id2', pendulum.now(), 3, 3, 'owner', 3),
+                                Offer('id3', pendulum.now(), 0.5, 1, 'owner', 0.5)])
     owner = FakeArea('owner')
     iaa = OneSidedAgent(owner=owner,
                         higher_market=higher_market,
@@ -254,11 +253,11 @@ def iaa():
 
 @pytest.fixture
 def iaa_grid_fee():
-    lower_market = FakeMarket([Offer('id', datetime.now(), 1, 1, 'other', 1)],
+    lower_market = FakeMarket([Offer('id', pendulum.now(), 1, 1, 'other', 1)],
                               transfer_fees=TransferFees(grid_fee_percentage=0.1,
                                                          transfer_fee_const=2))
-    higher_market = FakeMarket([Offer('id2', datetime.now(), 3, 3, 'owner', 3),
-                                Offer('id3', datetime.now(), 0.5, 1, 'owner', 0.5)],
+    higher_market = FakeMarket([Offer('id2', pendulum.now(), 3, 3, 'owner', 3),
+                                Offer('id3', pendulum.now(), 0.5, 1, 'owner', 0.5)],
                                transfer_fees=TransferFees(grid_fee_percentage=0.1,
                                                           transfer_fee_const=2))
     owner = FakeArea('owner')
@@ -298,11 +297,11 @@ def test_iaa_event_trade_deletes_forwarded_offer_when_sold(iaa, called):
 @pytest.fixture
 def iaa_bid():
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', datetime.now(), 1, 1, 'this',
+    lower_market = FakeMarket([], [Bid('id', pendulum.now(), 1, 1, 'this',
                                        'other', 1, buyer_origin='id')])
-    higher_market = FakeMarket([], [Bid('id2', datetime.now(), 1, 1, 'child',
+    higher_market = FakeMarket([], [Bid('id2', pendulum.now(), 1, 1, 'child',
                                         'owner', 1, buyer_origin='id2'),
-                                    Bid('id3', datetime.now(), 0.5, 1, 'child',
+                                    Bid('id3', pendulum.now(), 0.5, 1, 'child',
                                         'owner', 1, buyer_origin='id3')])
     owner = FakeArea('owner')
 
@@ -326,7 +325,7 @@ def test_iaa_does_not_forward_bids_if_the_IAA_name_is_the_same_as_the_target_mar
     engine = next(filter(lambda e: e.name == 'Low -> High', iaa_bid.engines))
     engine.owner.name = "TARGET MARKET"
     iaa_bid.higher_market.name = "TARGET MARKET"
-    bid = Bid('id', datetime.now(), 1, 1, 'this', 'other')
+    bid = Bid('id', pendulum.now(), 1, 1, 'this', 'other')
     engine._forward_bid(bid)
     assert iaa_bid.lower_market.bid_call_count == 2
     assert iaa_bid.higher_market.bid_call_count == 1
@@ -343,11 +342,11 @@ def test_iaa_forwarded_bids_adhere_to_iaa_overhead(iaa_bid):
 @pytest.mark.parametrize("iaa_fee", [0.1, 0, 0.5, 0.75, 0.05, 0.02, 0.03])
 def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', datetime.now(), 1, 1, 'this', 'other', 1)],
+    lower_market = FakeMarket([], [Bid('id', pendulum.now(), 1, 1, 'this', 'other', 1)],
                               transfer_fees=TransferFees(grid_fee_percentage=iaa_fee,
                                                          transfer_fee_const=0),
                               name="FakeMarket")
-    higher_market = FakeMarket([], [Bid('id2', datetime.now(), 3, 3, 'child', 'owner', 3)],
+    higher_market = FakeMarket([], [Bid('id2', pendulum.now(), 3, 3, 'child', 'owner', 3)],
                                transfer_fees=TransferFees(grid_fee_percentage=iaa_fee,
                                                           transfer_fee_const=0),
                                name="FakeMarket")
@@ -367,10 +366,10 @@ def test_iaa_forwards_offers_according_to_percentage(iaa_fee):
 @pytest.mark.skip("need to define if we need a constant fee")
 def test_iaa_forwards_offers_according_to_constantfee(iaa_fee_const):
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid('id', datetime.now(), 15, 1, 'this', 'other', 15)],
+    lower_market = FakeMarket([], [Bid('id', pendulum.now(), 15, 1, 'this', 'other', 15)],
                               transfer_fees=TransferFees(grid_fee_percentage=0,
                                                          transfer_fee_const=iaa_fee_const))
-    higher_market = FakeMarket([], [Bid('id2', datetime.now(), 35, 3, 'child', 'owner', 35)],
+    higher_market = FakeMarket([], [Bid('id2', pendulum.now(), 35, 3, 'child', 'owner', 35)],
                                transfer_fees=TransferFees(grid_fee_percentage=0,
                                                           transfer_fee_const=iaa_fee_const))
     iaa = TwoSidedPayAsBidAgent(owner=FakeArea('owner'),
@@ -465,7 +464,7 @@ def test_iaa_event_bid_split_and_trade_correctly_populate_forwarded_bid_entries(
 
 @pytest.fixture
 def iaa2():
-    lower_market = FakeMarket([Offer('id', datetime.now(), 2, 2, 'other', 2)], m_id=123)
+    lower_market = FakeMarket([Offer('id', pendulum.now(), 2, 2, 'other', 2)], m_id=123)
     higher_market = FakeMarket([], m_id=234)
     owner = FakeArea('owner')
     owner.future_market = lower_market
@@ -480,8 +479,8 @@ def iaa2():
 def iaa_double_sided():
     from d3a_interface.constants_limits import ConstSettings
     ConstSettings.IAASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket(offers=[Offer('id', datetime.now(), 2, 2, 'other', 2)],
-                              bids=[Bid('bid_id', datetime.now(), 10, 10, 'B', 'S', 10)],
+    lower_market = FakeMarket(offers=[Offer('id', pendulum.now(), 2, 2, 'other', 2)],
+                              bids=[Bid('bid_id', pendulum.now(), 10, 10, 'B', 'S', 10)],
                               transfer_fees=TransferFees(grid_fee_percentage=0.01,
                                                          transfer_fee_const=0))
     higher_market = FakeMarket([], [], transfer_fees=TransferFees(grid_fee_percentage=0.01,
@@ -598,8 +597,8 @@ def test_iaa_event_offer_split_and_trade_correctly_populate_forwarded_offer_entr
     original_offer_id = 'id'
     original = iaa2.higher_market.forwarded_offer
     assert original.energy == 2
-    accepted = Offer(original.id, datetime.now(), 1, 1, original.seller)
-    residual = Offer(residual_offer_id, datetime.now(), 1, 1, original.seller)
+    accepted = Offer(original.id, pendulum.now(), 1, 1, original.seller)
+    residual = Offer(residual_offer_id, pendulum.now(), 1, 1, original.seller)
 
     iaa2.event_offer_split(market_id=iaa2.higher_market.id,
                            original_offer=original,

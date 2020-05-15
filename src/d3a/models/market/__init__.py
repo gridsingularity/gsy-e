@@ -224,7 +224,7 @@ class Market:
 
     @property
     def now(self) -> DateTime:
-        return GlobalConfig.start_date.add(
+        return self.time_slot.add(
             seconds=GlobalConfig.tick_length.seconds * self.current_tick_in_slot)
 
     def set_actual_energy(self, time, reporter, value):

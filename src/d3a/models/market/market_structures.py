@@ -28,7 +28,7 @@ Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
 def my_converter(o):
     if isinstance(o, datetime):
-        return o.__str__()
+        return o.isoformat()
 
 
 class Offer:
