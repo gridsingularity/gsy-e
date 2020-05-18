@@ -38,10 +38,10 @@ from functools import lru_cache
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_FORMAT
+from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.constants_limits import RangeLimit
-from d3a_interface.utils import generate_market_slot_list_from_config
+from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -342,6 +342,14 @@ def generate_market_slot_list(area=None):
     return config.market_slot_list
 
 
+def get_market_slot_time_str(slot_number, config):
+    return format_datetime(
+        config.start_date.add(
+            minutes=config.slot_length.minutes * slot_number
+        )
+    )
+
+
 @lru_cache(maxsize=100, typed=False)
 def format_datetime(datetime, ui_format=False, unix_time=False):
     if unix_time:
@@ -476,19 +484,8 @@ def create_subdict_or_update(indict, key, subdict):
     return indict
 
 
-def str_to_pendulum(input_str: str):
-    try:
-        pendulum_time = from_format(input_str, TIME_FORMAT)
-    except ValueError:
-        try:
-            pendulum_time = from_format(input_str, DATE_TIME_FORMAT)
-        except ValueError:
-            raise Exception(f"Format is not one of ('{TIME_FORMAT}', '{DATE_TIME_FORMAT}')")
-    return pendulum_time
-
-
-def convert_str_to_pauseafter_intervall(start_time, input_str):
-    pause_time = str_to_pendulum(input_str)
+def convert_str_to_pause_after_interval(start_time, input_str):
+    pause_time = str_to_pendulum_datetime(input_str)
     return pause_time - start_time
 
 
