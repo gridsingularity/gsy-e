@@ -72,7 +72,6 @@ class SimulationProgressInfo:
         self.eta = duration(seconds=0)
         self.elapsed_time = duration(seconds=0)
         self.percentage_completed = 0
-        self.current_slot_str = ""
         self.next_slot_str = ""
 
 
@@ -277,8 +276,6 @@ class Simulation:
         self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
         self.progress_info.elapsed_time = run_duration
         self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
-        self.progress_info.current_slot_str = get_market_slot_time_str(
-            slot_no, self.simulation_config)
         self.progress_info.next_slot_str = get_market_slot_time_str(
             slot_no + 1, self.simulation_config)
 
