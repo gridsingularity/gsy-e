@@ -60,7 +60,9 @@ class SimulationEndpointBuffer:
         self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
-        self.area_market_stocks_stats = OfferBidTradeGraphStats()
+        if export_plots:
+            self.export_plots = export_plots
+            self.area_market_stocks_stats = OfferBidTradeGraphStats()
 
     def generate_result_report(self):
         # TODO: In D3ASIM-2288, add unix_time=True to convert_pendulum_to_str_in_dict
@@ -143,7 +145,8 @@ class SimulationEndpointBuffer:
 
         self.update_area_aggregated_stats(area)
 
-        self.area_market_stocks_stats.update(area)
+        if self.export_plots:
+            self.area_market_stocks_stats.update(area)
 
     def _send_results_to_areas(self, area):
         stats = {

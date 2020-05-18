@@ -455,8 +455,6 @@ class ExportAndPlot:
         """
 
         area_stats = self.endpoint_buffer.area_market_stocks_stats.state[area.name]
-        stats_plot_dir = os.path.join(plot_dir, "offer_bid_trade")
-        mkdir_from_str(stats_plot_dir)
         self.market_slot_data_mapping = {}
         fig = go.Figure()
 
@@ -475,7 +473,7 @@ class ExportAndPlot:
                     )
             self.market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
         PlotlyGraph.plot_slider_graph(
-            fig, stats_plot_dir, area.name, self.market_slot_data_mapping
+            fig, plot_dir, area.name, self.market_slot_data_mapping
         )
 
     def plot_stock_info_per_area_per_market_slot(self, area, plot_dir):

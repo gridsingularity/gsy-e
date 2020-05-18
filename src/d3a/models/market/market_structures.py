@@ -15,19 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from datetime import datetime
+# from datetime import datetime
 from collections import namedtuple
 from typing import Dict # noqa
 from copy import deepcopy
 import json
-import pendulum
+from pendulum import DateTime, parse
 from d3a.events import MarketEvent
 
 Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
 
 def my_converter(o):
-    if isinstance(o, datetime):
+    if isinstance(o, DateTime):
         return o.isoformat()
 
 
@@ -211,7 +211,7 @@ def trade_from_JSON_string(trade_string, current_time):
     if 'residual' in trade_dict and trade_dict['residual'] is not None:
         trade_dict['residual'] = offer_or_bid_from_JSON_string(trade_dict['residual'],
                                                                current_time)
-    trade_dict['time'] = pendulum.parse(trade_dict['time'])
+    trade_dict['time'] = parse(trade_dict['time'])
     # if 'offer_bid_trade_info' in trade_dict:
     #     trade_dict['offer_bid_trade_info'] = TradeBidInfo(*trade_dict['offer_bid_trade_info'])
     return Trade(**trade_dict)

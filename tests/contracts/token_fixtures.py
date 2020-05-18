@@ -27,7 +27,7 @@ def ganachecli_command():
     if "GANACHE_BINARY" in os.environ:
         return os.environ["GANACHE_BINARY"], 5
     else:
-        return 'ganache-cli', 8
+        return 'ganache-cli', 2
 
 
 @pytest.fixture(scope='session')
