@@ -39,7 +39,8 @@ from d3a.models.config import SimulationConfig
 from d3a.models.power_flow.pandapower import PandaPowerFlow
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
-from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation
+from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation, \
+    get_market_slot_time_str
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
@@ -71,6 +72,7 @@ class SimulationProgressInfo:
         self.eta = duration(seconds=0)
         self.elapsed_time = duration(seconds=0)
         self.percentage_completed = 0
+        self.next_slot_str = ""
 
 
 class Simulation:
@@ -274,6 +276,8 @@ class Simulation:
         self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
         self.progress_info.elapsed_time = run_duration
         self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
+        self.progress_info.next_slot_str = get_market_slot_time_str(
+            slot_no + 1, self.simulation_config)
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
