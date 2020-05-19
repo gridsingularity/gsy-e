@@ -40,7 +40,7 @@ def decompress_and_decode_queued_strings(queued_string):
 
 @job('d3a')
 def start(scenario, settings, events):
-    logging.getLogger().setLevel(logging.ERROR)
+    logging.getLogger().setLevel(logging.INFO)
 
     scenario = decompress_and_decode_queued_strings(scenario)
 
@@ -99,6 +99,7 @@ def start(scenario, settings, events):
         else:
             scenario_name = 'json_arg'
             config.area = scenario
+            print(f"scenario: {scenario}")
 
         kwargs = {"no_export": True,
                   "pricing_scheme": 0,
