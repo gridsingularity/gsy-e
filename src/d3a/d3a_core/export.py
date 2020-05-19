@@ -25,6 +25,7 @@ import json
 import operator
 from slugify import slugify
 from sortedcontainers import SortedDict
+from collections import namedtuple
 from pendulum import from_timestamp
 from copy import deepcopy
 from d3a.constants import TIME_ZONE
@@ -54,6 +55,8 @@ alternative_pricing_subdirs = {
 
 EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
                            "soc_history_%", "load_profile_kWh"]
+
+SlotDataRange = namedtuple('SlotDataRange', ('start', 'end'))
 
 
 def get_from_dict(data_dict, map_list):
@@ -133,6 +136,7 @@ class ExportAndPlot:
             self.plot_avg_trade_price(self.area, self.plot_dir)
             self.plot_ess_soc_history(self.area, self.plot_dir)
             self.plot_ess_energy_trace(self.area, self.plot_dir)
+            self.plot_stock_info_per_area_per_market_slot(self.area, self.plot_dir)
             if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
                 self.plot_device_stats(self.area, [])
             if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
@@ -444,6 +448,46 @@ class ExportAndPlot:
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, 'ess_soc_history_{}.html'.format(root_name))
         PlotlyGraph.plot_bar_graph(barmode, title, xtitle, ytitle, data, output_file)
+
+    def _plot_stock_info_per_area_per_market_slot(self, area, plot_dir):
+        """
+        Plots stock stats for each knot in the hierarchy per market_slot
+        """
+
+        area_stats = self.endpoint_buffer.area_market_stocks_stats.state[area.name]
+        self.market_slot_data_mapping = {}
+        fig = go.Figure()
+
+        for index, (market_slot_date, markets) in enumerate(area_stats.items()):
+            start = len(fig.data) + 1
+            for tick_slot, info_dicts in markets.items():
+                for info_dict in info_dicts:
+                    size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
+                    fig.add_trace(
+                        go.Scatter(x=[tick_slot],
+                                   y=[info_dict['rate']],
+                                   text=info_dict['tool_tip'],
+                                   hoverinfo='text',
+                                   marker=dict(size=size, color=info_dict['color']),
+                                   visible=False)
+                    )
+            self.market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
+        PlotlyGraph.plot_slider_graph(
+            fig, plot_dir, area.name, self.market_slot_data_mapping
+        )
+
+    def plot_stock_info_per_area_per_market_slot(self, area, plot_dir):
+        """
+        Wrapper for _plot_stock_info_per_area_per_market_slot.
+        """
+        new_sub_dir = os.path.join(plot_dir, area.slug)
+        mkdir_from_str(new_sub_dir)
+        self._plot_stock_info_per_area_per_market_slot(area, new_sub_dir)
+
+        for child in area.children:
+            if not child.children:
+                continue
+            self.plot_stock_info_per_area_per_market_slot(child, new_sub_dir)
 
     def plot_ess_energy_trace(self, area, subdir):
         """

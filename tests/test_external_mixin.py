@@ -100,7 +100,7 @@ class TestExternalMixin(unittest.TestCase):
         strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
-        trade = Trade('id', current_time, Offer('offer_id', 20, 1.0, 'test_area'),
+        trade = Trade('id', current_time, Offer('offer_id', now(), 20, 1.0, 'test_area'),
                       'test_area', 'parent_area', fee_price=0.23)
         strategy.event_trade(market_id="test_market", trade=trade)
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pytest
 import logging
-from pendulum import Duration, DateTime
+from pendulum import Duration, DateTime, now
 from logging import getLogger
 from math import isclose
 from copy import deepcopy
@@ -122,24 +122,24 @@ class FakeMarket:
     def __init__(self, count):
         self.count = count
         self.id = str(count)
-        self.trade = Trade('id', 'time', Offer('id', 11.8, 0.5, 'FakeArea'),
+        self.trade = Trade('id', 'time', Offer('id', now(), 11.8, 0.5, 'FakeArea'),
                            'FakeArea', 'buyer'
                            )
         self.created_offers = []
-        self.offers = {'id': Offer('id', 11.8, 0.5, 'FakeArea'),
-                       'id2': Offer('id2', 20, 0.5, 'A'),
-                       'id3': Offer('id3', 20, 1, 'A'),
-                       'id4': Offer('id4', 19, 5.1, 'A')}
+        self.offers = {'id': Offer('id', now(), 11.8, 0.5, 'FakeArea'),
+                       'id2': Offer('id2', now(), 20, 0.5, 'A'),
+                       'id3': Offer('id3', now(), 20, 1, 'A'),
+                       'id4': Offer('id4', now(), 19, 5.1, 'A')}
         self.bids = {}
         self.created_balancing_offers = []
 
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', 11.8, 0.5, 'A')],
-            [Offer('id2', 20, 0.5, 'A')],
-            [Offer('id3', 20, 1, 'A')],
-            [Offer('id4', 19, 5.1, 'A')]
+            [Offer('id', now(), 11.8, 0.5, 'A')],
+            [Offer('id2', now(), 20, 0.5, 'A')],
+            [Offer('id3', now(), 20, 1, 'A')],
+            [Offer('id4', now(), 19, 5.1, 'A')]
         ]
         return offers[self.count]
 
@@ -155,13 +155,13 @@ class FakeMarket:
         return
 
     def offer(self, price, energy, seller, original_offer_price=None, seller_origin=None):
-        offer = Offer('id', price, energy, seller, original_offer_price,
+        offer = Offer('id', now(), price, energy, seller, original_offer_price,
                       seller_origin=seller_origin)
         self.created_offers.append(offer)
         return offer
 
     def balancing_offer(self, price, energy, seller):
-        offer = BalancingOffer('id', price, energy, seller)
+        offer = BalancingOffer('id', now(), price, energy, seller)
         self.created_balancing_offers.append(offer)
         offer.id = 'id'
         return offer
@@ -230,12 +230,12 @@ def test_if_storage_doesnt_buy_30ct(storage_strategy_test2, area_test2):
 def test_if_storage_doesnt_buy_above_break_even_point(storage_strategy_test2, area_test2):
     storage_strategy_test2.event_activate()
     storage_strategy_test2.break_even_buy = 10.0
-    area_test2.current_market.offers = {'id': Offer('id', 10.1, 1,
+    area_test2.current_market.offers = {'id': Offer('id', now(), 10.1, 1,
                                                     'FakeArea',
                                                     area_test2.current_market)}
     storage_strategy_test2.event_tick()
     assert len(storage_strategy_test2.accept_offer.calls) == 0
-    area_test2.current_market.offers = {'id': Offer('id', 9.9, 1,
+    area_test2.current_market.offers = {'id': Offer('id', now(), 9.9, 1,
                                                     'FakeArea',
                                                     area_test2.current_market)}
     storage_strategy_test2.event_tick()
@@ -332,9 +332,9 @@ def storage_strategy_test5(area_test5, called):
     s.area = area_test5
     s.sell_energy = called
     area_test5.past_market.offers = {
-        'id': Offer('id', 20, 1, 'A'),
-        'id2': Offer('id2', 20, 3, 'FakeArea'),
-        'id3': Offer('id3', 100, 1, 'FakeArea')
+        'id': Offer('id', now(), 20, 1, 'A'),
+        'id2': Offer('id2', now(), 20, 3, 'FakeArea'),
+        'id3': Offer('id3', now(), 100, 1, 'FakeArea')
     }
 
     s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market.id)
@@ -452,7 +452,8 @@ def storage_strategy_test7_3(area_test7):
                         initial_buying_rate=15, final_buying_rate=16)
     s.owner = area_test7
     s.area = area_test7
-    s.offers.posted = {Offer('id', 30, 1, 'FakeArea'): area_test7.current_market.id}
+    s.offers.posted = {Offer('id', now(),
+                             30, 1, 'FakeArea'): area_test7.current_market.id}
     s.market = area_test7.current_market
     return s
 
@@ -819,7 +820,8 @@ def test_energy_origin(storage_strategy_test15, market_test15):
     assert storage_strategy_test15.state.get_used_storage_share[0] == EnergyOrigin(
         ESSEnergyOrigin.EXTERNAL, 15)
     storage_strategy_test15.area.current_market.trade = \
-        Trade('id', 'time', Offer('id', 20, 1.0, 'ChildArea'), 'ChildArea', 'FakeArea')
+        Trade('id', 'time', Offer('id', now(), 20, 1.0, 'ChildArea'),
+              'ChildArea', 'FakeArea')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
     assert len(storage_strategy_test15.state.get_used_storage_share) == 2
@@ -827,7 +829,7 @@ def test_energy_origin(storage_strategy_test15, market_test15):
         ESSEnergyOrigin.EXTERNAL, 15), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
 
     storage_strategy_test15.area.current_market.trade = \
-        Trade('id', 'time', Offer('id', 20, 2.0, 'FakeArea'), 'FakeArea', 'A')
+        Trade('id', 'time', Offer('id', now(), 20, 2.0, 'FakeArea'), 'FakeArea', 'A')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
     assert len(storage_strategy_test15.state.get_used_storage_share) == 2
@@ -835,7 +837,8 @@ def test_energy_origin(storage_strategy_test15, market_test15):
         ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
 
     storage_strategy_test15.area.current_market.trade = \
-        Trade('id', 'time', Offer('id', 20, 1.0, 'ParentArea'), 'FakeArea', 'FakeArea')
+        Trade('id', 'time', Offer('id', now(), 20, 1.0, 'ParentArea'),
+              'FakeArea', 'FakeArea')
     storage_strategy_test15.event_trade(market_id=market_test15.id,
                                         trade=storage_strategy_test15.area.current_market.trade)
     assert len(storage_strategy_test15.state.get_used_storage_share) == 3
@@ -868,8 +871,8 @@ def storage_test11(area_test3):
 
 def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
     market_id = "market_id"
-    storage_test11.offers.sold[market_id] = [Offer("offer_id", 30, 1, "FakeArea")]
-    to_cheap_offer = Offer("offer_id", 29, 1, "FakeArea")
+    storage_test11.offers.sold[market_id] = [Offer("offer_id", now(), 30, 1, "FakeArea")]
+    to_cheap_offer = Offer("offer_id", now(), 29, 1, "FakeArea")
     trade = Trade("trade_id", "time", to_cheap_offer, storage_test11, "buyer")
 
     with pytest.raises(AssertionError):
@@ -879,8 +882,8 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
 def test_assert_if_trade_rate_is_higher_than_bid_rate(storage_test11):
     market_id = "2"
     storage_test11._bids[market_id] = \
-        [Bid("bid_id", 30, 1, buyer="FakeArea", seller="producer")]
-    expensive_bid = Bid("bid_id", 31, 1, buyer="FakeArea", seller="producer")
+        [Bid("bid_id", now(), 30, 1, buyer="FakeArea", seller="producer")]
+    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea", seller="producer")
     trade = Trade("trade_id", "time", expensive_bid, storage_test11, "buyer")
 
     with pytest.raises(AssertionError):
