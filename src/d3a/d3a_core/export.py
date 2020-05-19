@@ -459,7 +459,7 @@ class ExportAndPlot:
         fig = go.Figure()
 
         for index, (market_slot_date, markets) in enumerate(area_stats.items()):
-            start = len(fig.data) + 1
+            start = len(fig.data)
             for tick_slot, info_dicts in markets.items():
                 for info_dict in info_dicts:
                     size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
