@@ -41,9 +41,10 @@ def utf8len(s):
 
 
 class RedisSimulationCommunication:
-    def __init__(self, simulation, simulation_id):
+    def __init__(self, simulation, simulation_id, live_events):
         if simulation_id is None:
             return
+        self._live_events = live_events
         self._simulation_id = simulation_id
         self._simulation = simulation
         self._sub_callback_dict = {self._simulation_id + "/stop": self._stop_callback,

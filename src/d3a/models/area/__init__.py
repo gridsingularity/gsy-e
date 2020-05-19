@@ -122,6 +122,9 @@ class Area:
             if external_connection_available is True else None
 
     def area_reconfigure_event(self, **kwargs):
+        if self.strategy is not None:
+            self.strategy.area_reconfigure_event(**kwargs)
+            return
         assert all(k in self.reconfig_parameters for k in kwargs.keys())
         if key_in_dict_and_not_none(kwargs, 'transfer_fee_const') or \
                 key_in_dict_and_not_none(kwargs, 'grid_fee_percentage'):

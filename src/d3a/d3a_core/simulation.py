@@ -45,6 +45,7 @@ from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCo
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
+from d3a.d3a_core.live_events import LiveEvents
 import os
 import psutil
 import gc
@@ -101,7 +102,9 @@ class Simulation:
         self.setup_module_name = setup_module_name
         self.use_bc = enable_bc
         self.is_stopped = False
-        self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
+
+        self.live_events = LiveEvents(self.simulation_config)
+        self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._started_from_cli = redis_job_id is None
 
         self.run_start = None
@@ -296,6 +299,8 @@ class Simulation:
                 log.info("Received stop command.")
                 sleep(5)
                 break
+
+            self.live_events.handle_all_events(self.area)
 
             self.area._cycle_markets()
 
