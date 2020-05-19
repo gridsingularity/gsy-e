@@ -153,8 +153,7 @@ class PlotlyGraph:
                            market_slot_data_mapping[i].end):
                 step["args"][0]["visible"][k] = True  # Toggle i'th trace to "visible"
             if market_slot_data_mapping[i].start == market_slot_data_mapping[i].end and \
-                    market_slot_data_mapping[i].start > 0 and \
-                    market_slot_data_mapping[i].end < len(fig.data):
+                    0 < market_slot_data_mapping[i].end < len(fig.data):
                 step["args"][0]["visible"][market_slot_data_mapping[i].start] = True
             steps.append(step)
         sliders = [dict(
