@@ -60,8 +60,8 @@ class SimulationEndpointBuffer:
         self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
+        self.export_plots = export_plots
         if export_plots:
-            self.export_plots = export_plots
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
 
     def generate_result_report(self):
