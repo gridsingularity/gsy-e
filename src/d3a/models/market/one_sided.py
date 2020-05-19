@@ -91,7 +91,7 @@ class OneSidedMarket(Market):
 
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
-        offer = Offer(offer_id, price, energy, seller, original_offer_price,
+        offer = Offer(offer_id, self.now, price, energy, seller, original_offer_price,
                       seller_origin=seller_origin)
 
         self.offers[offer.id] = offer
