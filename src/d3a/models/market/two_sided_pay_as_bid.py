@@ -74,7 +74,7 @@ class TwoSidedPayAsBid(OneSidedMarket):
             price = self._update_new_bid_price_with_fee(price, original_bid_price)
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  price, energy, buyer, seller, original_bid_price, buyer_origin)
+                  self.now, price, energy, buyer, seller, original_bid_price, buyer_origin)
         self.bids[bid.id] = bid
         self.bid_history.append(bid)
         log.debug(f"[BID][NEW][{self.time_slot_str}] {bid}")
