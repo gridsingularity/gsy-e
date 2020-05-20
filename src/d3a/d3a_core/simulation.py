@@ -73,6 +73,7 @@ class SimulationProgressInfo:
         self.elapsed_time = duration(seconds=0)
         self.percentage_completed = 0
         self.next_slot_str = ""
+        self.runtime_speed = 1
 
 
 class Simulation:
@@ -278,6 +279,7 @@ class Simulation:
         self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
         self.progress_info.next_slot_str = get_market_slot_time_str(
             slot_no + 1, self.simulation_config)
+        self.progress_info.runtime_speed = abs(1 - self.slowdown / SLOWDOWN_FACTOR)
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config

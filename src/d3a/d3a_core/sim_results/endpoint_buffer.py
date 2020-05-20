@@ -44,7 +44,8 @@ class SimulationEndpointBuffer:
         self.simulation_progress = {
             "eta_seconds": 0,
             "elapsed_time_seconds": 0,
-            "percentage_completed": 0
+            "percentage_completed": 0,
+            "runtime_speed": 1
         }
         self.market_unmatched_loads = MarketUnmatchedLoads(area)
         self.cumulative_loads = {}
@@ -117,7 +118,8 @@ class SimulationEndpointBuffer:
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
-            "percentage_completed": int(progress_info.percentage_completed)
+            "percentage_completed": int(progress_info.percentage_completed),
+            "runtime_speed": int(progress_info.runtime_speed)
         }
         self.cumulative_loads = export_cumulative_loads(area)
 
