@@ -1,5 +1,4 @@
 from threading import Lock
-import json
 import logging
 import traceback
 from d3a.d3a_core.area_serializer import area_from_dict
@@ -64,9 +63,9 @@ class LiveEvents:
         self.lock = Lock()
         self.config = config
 
-    def add_event(self, event_string):
+    def add_event(self, event_dict):
         with self.lock:
-            event_dict = json.loads(event_string)
+            logging.debug(f"Received live event {event_dict}.")
             if event_dict["eventType"] == "create_area":
                 event_object = CreateAreaEvent(
                     event_dict["parent_uuid"], event_dict["area_representation"], self.config)

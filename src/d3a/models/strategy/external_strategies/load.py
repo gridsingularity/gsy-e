@@ -194,7 +194,7 @@ class LoadExternalMixin(ExternalMixin):
 
     def _area_reconfigure_prices(self, final_buying_rate):
         if not self.connected:
-            super()._area_reconfigure_prices(final_buying_rate)
+            super()._area_reconfigure_prices(final_buying_rate=final_buying_rate)
 
     def event_tick(self):
         if not self.connected:
