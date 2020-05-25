@@ -94,6 +94,7 @@ class Simulation:
         self.export_path = export_path
 
         self.sim_status = "initializing"
+        self.is_time_out = False
 
         if export_subdir is None:
             self.export_subdir = \
@@ -317,7 +318,8 @@ class Simulation:
                 tick_start = time.time()
                 while self.paused:
                     sleep(0.5)
-                    if time.time() - tick_start > 600:
+                    if time.time() - tick_start > 5:
+                        self.is_time_out = True
                         self.is_stopped = True
                         self.paused = False
                 # reset tick_resume after possible resume
@@ -498,7 +500,9 @@ class Simulation:
 
     @property
     def status(self):
-        if self.is_stopped:
+        if self.is_time_out:
+            return "timeout"
+        elif self.is_stopped:
             return "stopped"
         elif self.paused:
             return "paused"
