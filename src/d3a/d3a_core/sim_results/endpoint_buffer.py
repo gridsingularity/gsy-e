@@ -110,8 +110,8 @@ class SimulationEndpointBuffer:
             "area_throughput": self.area_throughput_stats.results
         }
 
-    def update_stats(self, area, simulation_status, progress_info):
-        self.status = simulation_status
+    def update_stats(self, area, simulation_status, progress_info, is_time_out=False):
+        self.status = simulation_status if is_time_out is False else "timeout"
         if area.current_market is not None:
             self.current_market = area.current_market.time_slot_str
         self.simulation_progress = {

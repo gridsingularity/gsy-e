@@ -249,8 +249,9 @@ class Simulation:
         with NonBlockingConsole() as console:
             self._execute_simulation(slot_resume, tick_resume, console)
 
-    def _update_and_send_results(self, is_final=False):
-        self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
+    def _update_and_send_results(self, is_final=False, is_time_out=False):
+        self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info,
+                                          is_time_out=is_time_out)
         if not self.redis_connection.is_enabled():
             return
         if is_final:
@@ -318,6 +319,7 @@ class Simulation:
                 while self.paused:
                     sleep(0.5)
                     if time.time() - tick_start > 600:
+                        self.is_time_out = True
                         self.is_stopped = True
                         self.paused = False
                 # reset tick_resume after possible resume
@@ -368,7 +370,7 @@ class Simulation:
                 config.sim_duration / (self.progress_info.elapsed_time - paused_duration)
             )
 
-        self._update_and_send_results(is_final=True)
+        self._update_and_send_results(is_final=True, is_time_out=self.is_time_out)
         if self.export_on_finish:
             log.info("Exporting simulation data.")
             if GlobalConfig.POWER_FLOW:
