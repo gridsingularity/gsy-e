@@ -32,7 +32,7 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.d3a_core.area_serializer import are_all_areas_unique
-from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
+from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
@@ -94,7 +94,7 @@ class Simulation:
         self.export_path = export_path
 
         self.sim_status = "initializing"
-        self.is_time_out = False
+        self.is_timed_out = False
 
         if export_subdir is None:
             self.export_subdir = \
@@ -318,8 +318,8 @@ class Simulation:
                 tick_start = time.time()
                 while self.paused:
                     sleep(0.5)
-                    if time.time() - tick_start > 5:
-                        self.is_time_out = True
+                    if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
+                        self.is_timed_out = True
                         self.is_stopped = True
                         self.paused = False
                 # reset tick_resume after possible resume
@@ -500,7 +500,7 @@ class Simulation:
 
     @property
     def status(self):
-        if self.is_time_out:
+        if self.is_timed_out:
             return "timeout"
         elif self.is_stopped:
             return "stopped"
