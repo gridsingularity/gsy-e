@@ -501,7 +501,7 @@ class Simulation:
     @property
     def status(self):
         if self.is_timed_out:
-            return "timeout"
+            return "timed-out"
         elif self.is_stopped:
             return "stopped"
         elif self.paused:
