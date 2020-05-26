@@ -153,8 +153,9 @@ class DeviceStatistics:
 
         elif isinstance(area.strategy, FinitePowerPlant):
             market = list(area.parent.past_markets)[-1]
-            _create_or_append_dict(subdict, "production_kWh",
+            _create_or_append_dict(subdict, "energy_buffer_kWh",
                                    {market.time_slot: area.strategy.energy_per_slot_kWh})
+            cls._calc_min_max_from_sim_dict(subdict, "energy_buffer_kWh")
 
         elif isinstance(area.strategy, CommercialStrategy):
             market = list(area.parent.past_markets)[-1]
