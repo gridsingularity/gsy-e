@@ -54,7 +54,7 @@ class AreaStats:
                 self.min_max_avg_median_rate_current_market()
             # TODO: This accumulation of trade data could potentially also used for the
             #  LR energy trade profile (in the frame of D3ASIM-2212) and replace the old way
-            if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
+            if ConstSettings.GeneralSettings.HIGH_RESOLUTION_PLOTS:
                 self.market_trades[self.current_market.time_slot.timestamp()] = \
                     self.aggregate_market_trades()
 
