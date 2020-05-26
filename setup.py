@@ -12,7 +12,7 @@ try:
         # TODO: Workaround for https://github.com/ethereum/py-solc/issues/64
         REQUIREMENTS.extend(
             ['d3a-interface @ '
-             f'git+https://github.com/gridsingularity/d3a-interface.git',
+             f'git+https://github.com/gridsingularity/d3a-interface.git@feature/D3ASIM-2348',
              'py-solc @ git+https://github.com/Jonasmpi/py-solc.git'
              ])
 except OSError:
