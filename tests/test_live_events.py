@@ -1,6 +1,5 @@
 import unittest
 from pendulum import duration
-import json
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
@@ -51,14 +50,14 @@ class TestLiveEvents(unittest.TestCase):
                               config=self.config)
 
     def test_create_area_event_is_creating_a_new_area(self):
-        event_string = json.dumps({
+        event_dict = {
             "eventType": "create_area",
             "parent_uuid": self.area_house1.uuid,
             "area_representation": {
                 "type": "LoadHours", "name": "new_load", "avg_power_W": 234}
-        })
+        }
 
-        self.live_events.add_event(event_string)
+        self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
 
         new_load = [c for c in self.area_house1.children if c.name == "new_load"][0]
@@ -66,19 +65,19 @@ class TestLiveEvents(unittest.TestCase):
         assert new_load.strategy.avg_power_W == 234
 
     def test_delete_area_event_is_deleting_an_area(self):
-        event_string = json.dumps({
+        event_dict = {
             "eventType": "delete_area",
             "area_uuid": self.area1.uuid
-        })
+        }
 
-        self.live_events.add_event(event_string)
+        self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
 
         assert len(self.area_house1.children) == 1
         assert all(c.uuid != self.area1.uuid for c in self.area_house1.children)
 
     def test_update_area_event_is_updating_the_parameters_of_a_load(self):
-        event_string = json.dumps({
+        event_dict = {
             "eventType": "update_area",
             "area_uuid": self.area1.uuid,
             "area_representation": {
@@ -86,11 +85,11 @@ class TestLiveEvents(unittest.TestCase):
                 "energy_rate_increase_per_update": 3, "update_interval": 9,
                 "initial_buying_rate": 12
             }
-        })
+        }
 
         self.area_grid.activate()
 
-        self.live_events.add_event(event_string)
+        self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
         assert self.area1.strategy.avg_power_W == 234
         assert self.area1.strategy.hrs_per_day[0] == 6
@@ -100,18 +99,18 @@ class TestLiveEvents(unittest.TestCase):
         assert set(self.area1.strategy.bid_update.initial_rate.values()) == {12}
 
     def test_update_area_event_is_updating_the_parameters_of_a_pv(self):
-        event_string = json.dumps({
+        event_dict = {
             "eventType": "update_area",
             "area_uuid": self.area2.uuid,
             "area_representation": {
                 "panel_count": 12, "initial_selling_rate": 68, "final_selling_rate": 42,
                 "fit_to_limit": True, "update_interval": 12, "max_panel_power_W": 999
             }
-        })
+        }
 
         self.area_grid.activate()
 
-        self.live_events.add_event(event_string)
+        self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
         assert self.area2.strategy.panel_count == 12
         assert set(self.area2.strategy.offer_update.initial_rate.values()) == {68}
@@ -121,7 +120,7 @@ class TestLiveEvents(unittest.TestCase):
         assert self.area2.strategy.max_panel_power_W == 999
 
     def test_update_area_event_is_updating_the_parameters_of_a_storage(self):
-        event_string = json.dumps({
+        event_dict = {
             "eventType": "update_area",
             "area_uuid": self.area3.uuid,
             "area_representation": {
@@ -130,11 +129,11 @@ class TestLiveEvents(unittest.TestCase):
                 "energy_rate_increase_per_update": 4, "energy_rate_decrease_per_update": 13,
                 "update_interval": 14
             }
-        })
+        }
 
         self.area_grid.activate()
 
-        self.live_events.add_event(event_string)
+        self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
         assert self.area3.strategy.cap_price_strategy is False
         assert set(self.area3.strategy.offer_update.initial_rate.values()) == {123}
@@ -147,7 +146,7 @@ class TestLiveEvents(unittest.TestCase):
         assert self.area3.strategy.bid_update.update_interval.minutes == 14
 
     def test_update_area_event_is_updating_the_parameters_of_an_area(self):
-        event_string = json.dumps({
+        event_dict = {
             "eventType": "update_area",
             "area_uuid": self.area_house1.uuid,
             "area_representation": {
@@ -155,11 +154,11 @@ class TestLiveEvents(unittest.TestCase):
                 'baseline_peak_energy_export_kWh': 456, 'import_capacity_kVA': 987,
                 'export_capacity_kVA': 765
             }
-        })
+        }
 
         self.area_grid.activate()
 
-        self.live_events.add_event(event_string)
+        self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
         assert self.area_house1.transfer_fee_const == 12
         assert self.area_house1.baseline_peak_energy_import_kWh == 123
