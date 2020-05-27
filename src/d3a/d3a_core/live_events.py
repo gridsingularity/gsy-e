@@ -10,20 +10,25 @@ class LiveEventException(D3AException):
 
 
 class CreateAreaEvent:
-    def __init__(self, parent_uuid, area_params, config):
+    def __init__(self, parent_uuid, area_represenation, config):
+        self.config = config
         self.parent_uuid = parent_uuid
-        self.area_params = area_params
-        self.created_area = area_from_dict(area_params, config)
+        self.area_representation = area_represenation
+        self.created_area = area_from_dict(self.area_representation, self.config)
 
     def apply(self, area):
         if area.uuid != self.parent_uuid:
             return False
-
+        # The order of the following activation calls matters:
+        self.created_area.parent = area
         area.children.append(self.created_area)
+        self.created_area.activate()
+        self.created_area.strategy.event_activate()
         return True
 
     def __repr__(self):
-        return f"<CreateAreaEvent - parent UUID({self.parent_uuid} - params({self.area_params}))>"
+        return f"<CreateAreaEvent - parent UUID({self.parent_uuid} - " \
+               f"params({self.area_representation}))>"
 
 
 class UpdateAreaEvent:

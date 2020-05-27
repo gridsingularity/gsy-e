@@ -131,8 +131,6 @@ def load_consumes_following_cloud_profile(context, cloud_coverage, start_time, e
             continue
         assert market.trades[0].seller == "IAA House 1" and \
             market.trades[0].buyer == "Grid Load"
-        print(cloud_coverage, market.time_slot_str, market.trades[0].offer.energy)
-        print(market.trades[0].offer.energy, profile[int(market.time_slot.hour)])
         assert market.trades[0].offer.energy == profile[int(market.time_slot.hour)]
 
 

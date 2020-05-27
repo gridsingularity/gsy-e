@@ -72,10 +72,10 @@ class RedisSimulationCommunication:
                                  response_params=None):
         if response_params is None:
             response_params = {}
-        stop_response_channel = f'{simulation_id}/response/{command_type}'
+        response_channel = f'{simulation_id}/response/{command_type}'
         if is_successful:
             self.publish_json(
-                stop_response_channel,
+                response_channel,
                 {
                     "command": str(command_type), "status": "success",
                     "simulation_id": str(self._simulation_id),
@@ -84,7 +84,7 @@ class RedisSimulationCommunication:
                 })
         else:
             self.publish_json(
-                stop_response_channel,
+                response_channel,
                 {
                     "command": str(command_type), "status": "error",
                     "simulation_id": str(self._simulation_id),
