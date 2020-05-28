@@ -159,6 +159,8 @@ class AreaDispatcher:
             return
         if not self.area.parent.events.is_connected:
             return
+        if not self.area.children:
+            return
 
         if is_spot_market:
             if market.time_slot in self.interarea_agents or \

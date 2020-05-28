@@ -38,6 +38,9 @@ class InterAreaAppliance(SimpleAppliance):
                 return
         if not self.area_market:
             self.area_market = self.area.current_market
+            if not self.area_market:
+                # no area_market yet
+                return
         self.owner.stats.report_accounting(
             self.own_market,
             self.own_name,
@@ -52,6 +55,8 @@ class InterAreaAppliance(SimpleAppliance):
         )
 
     def slot_energy(self, market):
+        if not hasattr(market, "trades"):
+            return 0
         energy = sum(
             t.offer.energy * (1 if t.seller == self.own_name else -1)
             for t in market.trades
