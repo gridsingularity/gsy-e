@@ -5,7 +5,7 @@
     "tick_length": "15s",
     "market_count": 1,
     "cloud_coverage": 0,
-    "start_date": "2020-05-26"
+    "start_date": "2020-05-28"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -18,7 +18,8 @@
       "ENERGY_RATE_DECREASE_PER_UPDATE": 1,
       "SETUP_FILE_PATH": null,
       "EXPORT_DEVICE_PLOTS": true,
-      "HIGH_RESOLUTION_PLOTS": false,
+      "EXPORT_ENERGY_TRADE_PROFILE_HR": false,
+      "EXPORT_OFFER_BID_TRADE_HR": false,
       "RUN_REAL_TIME": false,
       "KEEP_PAST_MARKETS": false,
       "EVENT_DISPATCHING_VIA_REDIS": false,

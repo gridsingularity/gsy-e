@@ -136,10 +136,11 @@ class ExportAndPlot:
             self.plot_avg_trade_price(self.area, self.plot_dir)
             self.plot_ess_soc_history(self.area, self.plot_dir)
             self.plot_ess_energy_trace(self.area, self.plot_dir)
+            if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
+                self.plot_stock_info_per_area_per_market_slot(self.area, self.plot_dir)
             if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
                 self.plot_device_stats(self.area, [])
-            if ConstSettings.GeneralSettings.HIGH_RESOLUTION_PLOTS:
-                self.plot_stock_info_per_area_per_market_slot(self.area, self.plot_dir)
+            if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
                 self.plot_energy_trade_profile_hr(self.area, self.plot_dir)
             if ConstSettings.IAASettings.MARKET_TYPE == 3 and \
                     ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:

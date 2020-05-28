@@ -25,6 +25,7 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a import limit_float_precision
 
 ENERGY_BUYER_SIGN_PLOTS = 1
@@ -37,8 +38,9 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
-EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "energy_buffer_kWh",
-                           "trade_price_eur", "soc_history_%", "load_profile_kWh"]
+EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "production_kWh",
+                           "energy_buffer_kWh", "trade_price_eur", "soc_history_%",
+                           "load_profile_kWh"]
 
 green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
@@ -47,6 +49,7 @@ blue = 'rgba(0,0,200,alpha)'
 DEVICE_PLOT_COLORS = {"trade_energy_kWh": purple,
                       "pv_production_kWh": green,
                       "energy_buffer_kWh": green,
+                      "production_kWh": green,
                       "load_profile_kWh": green,
                       "soc_history_%": green,
                       "trade_price_eur": blue}
@@ -54,6 +57,7 @@ DEVICE_PLOT_COLORS = {"trade_energy_kWh": purple,
 DEVICE_YAXIS = {"trade_energy_kWh": 'Demand/Traded [kWh]',
                 "pv_production_kWh": 'PV Production [kWh]',
                 "energy_buffer_kWh": 'Energy Buffer [kWh]',
+                "production_kWh": 'Power Production [kWh]',
                 "load_profile_kWh": 'Load Profile [kWh]',
                 "soc_history_%": 'State of Charge [%]',
                 "trade_price_eur": 'Energy Rate [EUR/kWh]'}
@@ -525,6 +529,12 @@ class PlotlyGraph:
                                                               trade_energy_var_name, invert_y=True)
             y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
             y2axis_caption = "Supply/Traded [kWh]"
+        elif isinstance(device_strategy, FinitePowerPlant):
+            y1axis_key = "production_kWh"
+            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
+                                                              trade_energy_var_name, invert_y=True)
+            y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
+            y2axis_caption = "Traded [kWh]"
         elif isinstance(device_strategy, CommercialStrategy):
             y1axis_key = "energy_buffer_kWh"
             data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
