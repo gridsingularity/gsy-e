@@ -4,6 +4,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.area import Area
 from d3a import limit_float_precision
 
@@ -59,7 +60,7 @@ class DeviceStatistics:
         trade_price_list = []
         for t in market.trades:
             if t.seller == area.name or t.buyer == area.name:
-                trade_price_list.append(t.offer.price / 100.0 / t.offer.energy)
+                trade_price_list.append(t.offer.energy_rate / 100.0)
 
         if trade_price_list != []:
             _create_or_append_dict(subdict, key_name, {market.time_slot: trade_price_list})
@@ -150,9 +151,16 @@ class DeviceStatistics:
         elif isinstance(area.strategy, LoadHoursStrategy):
             cls._load_profile_stats(area, subdict)
 
-        elif isinstance(area.strategy, FinitePowerPlant):
+        elif type(area.strategy) == FinitePowerPlant:
             market = list(area.parent.past_markets)[-1]
             _create_or_append_dict(subdict, "production_kWh",
                                    {market.time_slot: area.strategy.energy_per_slot_kWh})
+            cls._calc_min_max_from_sim_dict(subdict, "production_kWh")
+
+        elif isinstance(area.strategy, CommercialStrategy):
+            market = list(area.parent.past_markets)[-1]
+            _create_or_append_dict(subdict, "energy_buffer_kWh",
+                                   {market.time_slot: area.strategy.energy_per_slot_kWh})
+            cls._calc_min_max_from_sim_dict(subdict, "energy_buffer_kWh")
 
         flat_result_dict[area.uuid] = subdict.copy()
