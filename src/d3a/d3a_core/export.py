@@ -464,10 +464,13 @@ class ExportAndPlot:
             for tick_slot, info_dicts in markets.items():
                 for info_dict in info_dicts:
                     size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
+                    all_info_dicts = set([
+                        info_dict['tool_tip'],
+                        *[i['tool_tip'] for i in info_dicts if i['rate'] == info_dict['rate']]])
                     fig.add_trace(
                         go.Scatter(x=[tick_slot],
                                    y=[info_dict['rate']],
-                                   text=info_dict['tool_tip'],
+                                   text="<br />".join(all_info_dicts),
                                    hoverinfo='text',
                                    marker=dict(size=size, color=info_dict['color']),
                                    visible=False)
