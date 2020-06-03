@@ -131,11 +131,18 @@ class RedisSimulationCommunication:
         if not self.is_enabled():
             return
 
+        message_size_kb = os.stat(zip_results).st_size / 1000.0
+        if message_size_kb > 30000:
+            log.error(f"Do not publish simulation results bigger than 30 MB, current message "
+                      f"size {message_size_kb / 1000.0} MB.")
+            return
+
         fp = open(zip_results, 'rb')
         zip_data = fp.read()
         fp.close()
 
         zip_results_key = ZIP_RESULTS_KEY + str(self._simulation_id)
+
         # Write results to a separate Redis key
         self.redis_db.set(zip_results_key, zip_data)
         # Inform d3a-web that a new zip file is available on this key
