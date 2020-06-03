@@ -4,6 +4,7 @@ language: python
 branches:
   only:
   - master
+  - production
 
 jobs:
  include:
