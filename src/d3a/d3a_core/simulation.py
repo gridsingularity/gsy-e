@@ -391,7 +391,7 @@ class Simulation:
         start = 0
         if sleep > 0:
             timeout = sleep / 100
-            start = time.monotonic()
+            start = time.time()
         while True:
             cmd = console.get_char(timeout)
             if cmd:
@@ -435,7 +435,7 @@ class Simulation:
                     if self.slowdown >= SLOWDOWN_STEP:
                         self.slowdown -= SLOWDOWN_STEP
                         log.critical("Simulation slowdown changed to %d", self.slowdown)
-            if sleep == 0 or time.monotonic() - start >= sleep:
+            if sleep == 0 or time.time() - start >= sleep:
                 break
 
     def _handle_paused(self, console, tick_start):
@@ -445,15 +445,15 @@ class Simulation:
                 self.paused = True
                 self.pause_after = None
 
-        paused = False
+        paused_flag = False
         if self.paused:
             if console:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
                 self._update_and_send_results()
-            start = time.monotonic()
+            start = time.time()
         while self.paused:
-            paused = True
+            paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
             if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
@@ -462,9 +462,9 @@ class Simulation:
                 self.paused = False
             sleep(0.5)
 
-        if console and paused:
+        if console and paused_flag:
             log.critical("Simulation resumed")
-            self.paused_time += time.monotonic() - start
+            self.paused_time += time.time() - start
 
     def _info(self):
         info = self.simulation_config.as_dict()
