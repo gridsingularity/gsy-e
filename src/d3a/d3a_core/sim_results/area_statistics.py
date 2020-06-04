@@ -57,24 +57,6 @@ def gather_area_loads_and_trade_prices(area, load_price_lists):
     return load_price_lists
 
 
-def export_cumulative_loads(area):
-    # TODO: Figure out whether this export is needed or can be removed
-    load_price_lists = gather_area_loads_and_trade_prices(area, {})
-    cumulative_loads = [
-        {
-            "time": hour,
-            "load": round(sum(load_price.load), 3) if len(load_price.load) > 0 else 0,
-            "price": round(mean(load_price.price), 2) if len(load_price.price) > 0 else 0
-        } for hour, load_price in load_price_lists.items()
-    ]
-
-    return {
-        "price-currency": "Euros",
-        "load-unit": "kWh",
-        "cumulative-load-price": cumulative_loads
-    }
-
-
 def _is_house_node(area):
     return all(child.children == [] for child in area.children)
 
