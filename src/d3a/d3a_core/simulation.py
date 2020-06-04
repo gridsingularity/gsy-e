@@ -109,6 +109,7 @@ class Simulation:
         self.live_events = LiveEvents(self.simulation_config)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._started_from_cli = redis_job_id is None
+        print(self._started_from_cli)
 
         self.run_start = None
         self.paused_time = None
@@ -316,22 +317,11 @@ class Simulation:
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 tick_start = time.time()
-                started_pause = True
-                while self.paused:
-                    # run _update_and_send_results once again in order to send the correct status
-                    if started_pause:
-                        self._update_and_send_results()
-                        started_pause = False
-                    sleep(0.5)
-                    if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
-                        self.is_timed_out = True
-                        self.is_stopped = True
-                        self.paused = False
+
+                self._handle_paused(console, tick_start)
+
                 # reset tick_resume after possible resume
                 tick_resume = 0
-                if console is not None:
-                    self._handle_input(console)
-                    self.paused_time += self._handle_paused(console)
                 log.trace(
                     "Tick %d of %d in slot %d (%2.0f%%)",
                     tick_no + 1,
@@ -449,20 +439,36 @@ class Simulation:
             if sleep == 0 or time.monotonic() - start >= sleep:
                 break
 
-    def _handle_paused(self, console):
-        if self.pause_after and self.time_since_start >= self.pause_after:
-            self.paused = True
-            self.pause_after = None
-        if self.paused:
-            start = time.monotonic()
-            log.critical("Simulation paused. Press 'p' to resume or resume from API.")
-            self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
-            self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
-            while self.paused:
+    def _handle_paused(self, console, tick_start):
+        if console is not None:
+            self._handle_input(console)
+            if self.pause_after and self.time_since_start >= self.pause_after:
+                self.paused = True
+                self.pause_after = None
+
+        started_pause = True
+        start = time.monotonic()
+        while self.paused:
+            # handle input when cli is enabled:
+            if console:
+                if started_pause:
+                    log.critical("Simulation paused. Press 'p' to resume or resume from API.")
+                    started_pause = False
                 self._handle_input(console, 0.1)
+            # send results via redis one more time when redis is enabled:
+            if self.redis_connection.is_enabled() and started_pause:
+                self._update_and_send_results()
+                started_pause = False
+            # stop while loop when SIMULATION_PAUSE_TIMEOUT is reached
+            if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
+                self.is_timed_out = True
+                self.is_stopped = True
+                self.paused = False
+            sleep(0.5)
+
+        if console and started_pause is False:
             log.critical("Simulation resumed")
-            return time.monotonic() - start
-        return 0
+            self.paused_time += time.monotonic() - start
 
     def _info(self):
         info = self.simulation_config.as_dict()
