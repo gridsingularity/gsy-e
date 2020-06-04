@@ -32,19 +32,21 @@ from pickle import HIGHEST_PROTOCOL
 from ptpython.repl import embed
 
 from d3a.d3a_core.area_serializer import are_all_areas_unique
-from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT
+from d3a.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from d3a.d3a_core.exceptions import SimulationException
 from d3a.d3a_core.export import ExportAndPlot
 from d3a.models.config import SimulationConfig
 from d3a.models.power_flow.pandapower import PandaPowerFlow
 # noinspection PyUnresolvedReferences
 from d3a import setup as d3a_setup  # noqa
-from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation
+from d3a.d3a_core.util import NonBlockingConsole, validate_const_settings_for_simulation, \
+    get_market_slot_time_str
 from d3a.d3a_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from d3a.d3a_core.redis_connections.redis_communication import RedisSimulationCommunication
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
+from d3a.d3a_core.live_events import LiveEvents
 import os
 import psutil
 import gc
@@ -70,6 +72,7 @@ class SimulationProgressInfo:
         self.eta = duration(seconds=0)
         self.elapsed_time = duration(seconds=0)
         self.percentage_completed = 0
+        self.next_slot_str = ""
 
 
 class Simulation:
@@ -91,6 +94,7 @@ class Simulation:
         self.export_path = export_path
 
         self.sim_status = "initializing"
+        self.is_timed_out = False
 
         if export_subdir is None:
             self.export_subdir = \
@@ -101,7 +105,9 @@ class Simulation:
         self.setup_module_name = setup_module_name
         self.use_bc = enable_bc
         self.is_stopped = False
-        self.redis_connection = RedisSimulationCommunication(self, redis_job_id)
+
+        self.live_events = LiveEvents(self.simulation_config)
+        self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._started_from_cli = redis_job_id is None
 
         self.run_start = None
@@ -271,6 +277,8 @@ class Simulation:
         self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
         self.progress_info.elapsed_time = run_duration
         self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
+        self.progress_info.next_slot_str = get_market_slot_time_str(
+            slot_no + 1, self.simulation_config)
 
     def _execute_simulation(self, slot_resume, tick_resume, console=None):
         config = self.simulation_config
@@ -297,6 +305,8 @@ class Simulation:
                 sleep(5)
                 break
 
+            self.live_events.handle_all_events(self.area)
+
             self.area._cycle_markets()
 
             gc.collect()
@@ -308,7 +318,8 @@ class Simulation:
                 tick_start = time.time()
                 while self.paused:
                     sleep(0.5)
-                    if time.time() - tick_start > 600:
+                    if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
+                        self.is_timed_out = True
                         self.is_stopped = True
                         self.paused = False
                 # reset tick_resume after possible resume
@@ -489,7 +500,9 @@ class Simulation:
 
     @property
     def status(self):
-        if self.is_stopped:
+        if self.is_timed_out:
+            return "timed-out"
+        elif self.is_stopped:
             return "stopped"
         elif self.paused:
             return "paused"

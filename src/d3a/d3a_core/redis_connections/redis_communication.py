@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
 import json
+import traceback
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
@@ -41,15 +42,17 @@ def utf8len(s):
 
 
 class RedisSimulationCommunication:
-    def __init__(self, simulation, simulation_id):
+    def __init__(self, simulation, simulation_id, live_events):
         if simulation_id is None:
             return
+        self._live_events = live_events
         self._simulation_id = simulation_id
         self._simulation = simulation
         self._sub_callback_dict = {self._simulation_id + "/stop": self._stop_callback,
                                    self._simulation_id + "/pause": self._pause_callback,
                                    self._simulation_id + "/resume": self._resume_callback,
-                                   self._simulation_id + "/slowdown": self._slowdown_callback}
+                                   self._simulation_id + "/slowdown": self._slowdown_callback,
+                                   self._simulation_id + "/live-event": self._live_event_callback}
         self.result_channel = RESULTS_CHANNEL
 
         try:
@@ -65,18 +68,23 @@ class RedisSimulationCommunication:
         self.pubsub.subscribe(**self._sub_callback_dict)
         self.pubsub.run_in_thread(sleep_time=0.5, daemon=True)
 
-    def _generate_redis_response(self, response, simulation_id, is_successful, command_type):
-        stop_response_channel = f'{simulation_id}/response/stop'
+    def _generate_redis_response(self, response, simulation_id, is_successful, command_type,
+                                 response_params=None):
+        if response_params is None:
+            response_params = {}
+        response_channel = f'{simulation_id}/response/{command_type}'
         if is_successful:
             self.publish_json(
-                stop_response_channel,
+                response_channel,
                 {
                     "command": str(command_type), "status": "success",
                     "simulation_id": str(self._simulation_id),
-                    "transaction_id": response["transaction_id"]})
+                    "transaction_id": response["transaction_id"],
+                    **response_params
+                })
         else:
             self.publish_json(
-                stop_response_channel,
+                response_channel,
                 {
                     "command": str(command_type), "status": "error",
                     "simulation_id": str(self._simulation_id),
@@ -124,6 +132,21 @@ class RedisSimulationCommunication:
             log.warning("'slowdown' must be in range 0 - 100")
             return
         self._simulation.slowdown = slowdown
+
+    def _live_event_callback(self, message):
+        data = json.loads(message["data"])
+        try:
+            self._live_events.add_event(data)
+            is_successful = True
+        except Exception as e:
+            log.error(f"Live event {data} failed. Exception: {e}. "
+                      f"Traceback: {traceback.format_exc()}")
+            is_successful = False
+
+        self._generate_redis_response(
+            data, self._simulation_id, is_successful, 'live-event',
+            {"activation_time": self._simulation.progress_info.next_slot_str}
+        )
 
     def _handle_redis_job_metadata(self):
         should_exit = True

@@ -108,7 +108,7 @@ class TestExternalStrategy(unittest.TestCase):
 
     def test_delete_offer(self):
         offer1 = self.test_market.offer(1, 2, "A", "A")
-        payload = {"data": json.dumps({"offer": offer1.id})}
+        payload = {"data": json.dumps({"offer": offer1.to_JSON_string()})}
         self.external_redis._delete_offer(payload)
         assert len(self.test_market.offers) == 0
         self.external_redis.redis_db.publish.assert_called_once()
@@ -117,7 +117,7 @@ class TestExternalStrategy(unittest.TestCase):
 
     def test_accept_offer(self):
         offer1 = self.test_market.offer(1, 2, "A", "A")
-        payload = {"data": json.dumps({"offer": offer1.id})}
+        payload = {"data": json.dumps({"offer": offer1.to_JSON_string()})}
         self.external_redis._accept_offer(payload)
         assert len(self.test_market.trades) == 1
         trade = self.test_market.trades[0]

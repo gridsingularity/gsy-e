@@ -18,11 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import plotly as py
 import plotly.graph_objs as go
 import pendulum
+import os
 
 from d3a.constants import TIME_ZONE
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a import limit_float_precision
 
 ENERGY_BUYER_SIGN_PLOTS = 1
@@ -35,8 +38,9 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
-EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
-                           "soc_history_%", "load_profile_kWh"]
+EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "production_kWh",
+                           "energy_buffer_kWh", "trade_price_eur", "soc_history_%",
+                           "load_profile_kWh"]
 
 green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
@@ -44,12 +48,16 @@ blue = 'rgba(0,0,200,alpha)'
 
 DEVICE_PLOT_COLORS = {"trade_energy_kWh": purple,
                       "pv_production_kWh": green,
+                      "energy_buffer_kWh": green,
+                      "production_kWh": green,
                       "load_profile_kWh": green,
                       "soc_history_%": green,
                       "trade_price_eur": blue}
 
 DEVICE_YAXIS = {"trade_energy_kWh": 'Demand/Traded [kWh]',
                 "pv_production_kWh": 'PV Production [kWh]',
+                "energy_buffer_kWh": 'Energy Buffer [kWh]',
+                "production_kWh": 'Power Production [kWh]',
                 "load_profile_kWh": 'Load Profile [kWh]',
                 "soc_history_%": 'State of Charge [%]',
                 "trade_price_eur": 'Energy Rate [EUR/kWh]'}
@@ -75,7 +83,8 @@ class PlotlyGraph:
         self.trade_history = dict()
 
     @staticmethod
-    def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list):
+    def common_layout(barmode: str, title: str, ytitle: str, xtitle: str, xrange: list,
+                      showlegend=True, hovermode="x"):
         return go.Layout(
             autosize=False,
             width=1200,
@@ -92,7 +101,8 @@ class PlotlyGraph:
             font=dict(
                 size=16
             ),
-            showlegend=True
+            showlegend=showlegend,
+            hovermode=hovermode
         )
 
     def graph_value(self, scale_value=1):
@@ -119,29 +129,67 @@ class PlotlyGraph:
         for di in range(len(data)):
             time_list = data[di]["x"]
             for ti in time_list:
-                day_set.add(pendulum.datetime(ti.year, ti.month, ti.day, tz=TIME_ZONE))
+                day_set.add(
+                    pendulum.datetime(ti.year, ti.month, ti.day, ti.hour, ti.minute, tz=TIME_ZONE)
+                )
 
         day_list = sorted(list(day_set))
         if len(day_list) == 0:
             raise ValueError("There is no time information in plot {}".format(title))
 
-        start_time = pendulum.datetime(day_list[0].year, day_list[0].month, day_list[0].day,
-                                       0, 0, 0, tz=TIME_ZONE)
-        end_time = pendulum.datetime(day_list[-1].year, day_list[-1].month, day_list[-1].day,
-                                     23, 59, 59, tz=TIME_ZONE)
+        start_time = pendulum.datetime(
+            day_list[0].year, day_list[0].month, day_list[0].day,
+            day_list[0].hour, day_list[0].minute, day_list[0].second, tz=TIME_ZONE
+        )
+        end_time = pendulum.datetime(
+            day_list[-1].year, day_list[-1].month, day_list[-1].day,
+            day_list[-1].hour, day_list[-1].minute, day_list[-1].second, tz=TIME_ZONE)
 
         return [start_time, end_time], data
 
     @classmethod
+    def plot_slider_graph(cls, fig, stats_plot_dir, area_name, market_slot_data_mapping):
+        steps = []
+        for i in range(len(market_slot_data_mapping)):
+            step = dict(
+                method="update",
+                args=[{"visible": [False] * len(fig.data)},
+                      {"title": "Slider switched to slot: " + str(i)}],  # layout attribute
+            )
+            for k in range(market_slot_data_mapping[i].start,
+                           market_slot_data_mapping[i].end):
+                step["args"][0]["visible"][k] = True  # Toggle i'th trace to "visible"
+            steps.append(step)
+        sliders = [dict(
+            active=0,
+            currentvalue={"prefix": "MarketSlot: "},
+            pad={"t": len(market_slot_data_mapping)},
+            steps=steps
+        )]
+        output_file = os.path.join(stats_plot_dir, f"offer_bid_trade_history.html")
+        barmode = "group"
+        title = f"OFFER BID TRADE AREA: {area_name}"
+        xtitle = 'Time'
+        ytitle = 'Rate [€ cents / kWh]'
+
+        fig.update_layout(autosize=True, barmode=barmode, width=1200, height=700, title=title,
+                          yaxis=dict(title=ytitle), xaxis=dict(title=xtitle),
+                          font=dict(size=16), showlegend=False, sliders=sliders)
+
+        py.offline.plot(fig, filename=output_file, auto_open=False)
+
+    @classmethod
     def plot_bar_graph(cls, barmode: str, title: str, xtitle: str, ytitle: str, data, iname: str,
-                       time_range=None):
+                       time_range=None, showlegend=True, hovermode="x"):
         if time_range is None:
             try:
                 time_range, data = cls.modify_time_axis(data, title)
             except ValueError:
                 return
 
-        layout = cls.common_layout(barmode, title, ytitle, xtitle, time_range)
+        layout = cls.common_layout(
+            barmode, title, ytitle, xtitle, time_range, showlegend, hovermode=hovermode
+        )
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
@@ -481,6 +529,19 @@ class PlotlyGraph:
                                                               trade_energy_var_name, invert_y=True)
             y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
             y2axis_caption = "Supply/Traded [kWh]"
+        elif isinstance(device_strategy, FinitePowerPlant):
+            y1axis_key = "production_kWh"
+            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
+                                                              trade_energy_var_name, invert_y=True)
+            y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
+            y2axis_caption = "Traded [kWh]"
+        elif isinstance(device_strategy, CommercialStrategy):
+            y1axis_key = "energy_buffer_kWh"
+            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
+                                                              trade_energy_var_name, invert_y=True)
+            y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
+            y2axis_caption = "Traded [kWh]"
+
         else:
             return
         # SOC, load_curve, pv production graph (y1):

@@ -25,6 +25,7 @@ from d3a.d3a_core.sim_results.device_statistics import DeviceStatistics
 from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.kpi import KPI
+from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphStats
 from d3a.d3a_core.util import convert_pendulum_to_str_in_dict
 
 _NO_VALUE = {
@@ -58,6 +59,9 @@ class SimulationEndpointBuffer:
         self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
+        self.export_plots = export_plots
+        if export_plots:
+            self.area_market_stocks_stats = OfferBidTradeGraphStats()
 
     def generate_result_report(self):
         # TODO: In D3ASIM-2288, add unix_time=True to convert_pendulum_to_str_in_dict
@@ -136,6 +140,9 @@ class SimulationEndpointBuffer:
         self.generate_result_report()
 
         self.update_area_aggregated_stats(area)
+
+        if self.export_plots:
+            self.area_market_stocks_stats.update(area)
 
     def _send_results_to_areas(self, area):
         stats = {
