@@ -316,7 +316,7 @@ class Simulation:
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 tick_start = time.time()
-                started_pause = False
+                started_pause = True
                 while self.paused:
                     # run _update_and_send_results once again in order to send the correct status
                     if started_pause:
