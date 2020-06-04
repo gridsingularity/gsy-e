@@ -109,7 +109,6 @@ class Simulation:
         self.live_events = LiveEvents(self.simulation_config)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
         self._started_from_cli = redis_job_id is None
-        print(self._started_from_cli)
 
         self.run_start = None
         self.paused_time = None
