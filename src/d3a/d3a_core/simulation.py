@@ -445,27 +445,24 @@ class Simulation:
                 self.paused = True
                 self.pause_after = None
 
-        started_pause = True
-        start = time.monotonic()
-        while self.paused:
-            # handle input when cli is enabled:
+        paused = False
+        if self.paused:
             if console:
-                if started_pause:
-                    log.critical("Simulation paused. Press 'p' to resume or resume from API.")
-                    started_pause = False
-                self._handle_input(console, 0.1)
-            # send results via redis one more time when redis is enabled:
-            if self.redis_connection.is_enabled() and started_pause:
+                log.critical("Simulation paused. Press 'p' to resume or resume from API.")
+            else:
                 self._update_and_send_results()
-                started_pause = False
-            # stop while loop when SIMULATION_PAUSE_TIMEOUT is reached
+            start = time.monotonic()
+        while self.paused:
+            paused = True
+            if console:
+                self._handle_input(console, 0.1)
             if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
                 self.is_timed_out = True
                 self.is_stopped = True
                 self.paused = False
             sleep(0.5)
 
-        if console and started_pause is False:
+        if console and paused:
             log.critical("Simulation resumed")
             self.paused_time += time.monotonic() - start
 
