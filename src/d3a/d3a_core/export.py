@@ -712,8 +712,7 @@ class ExportAndPlot:
         title = f'High Resolution Energy Trade Profile of {market_name}'
         plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
         mkdir_from_str(plot_dir)
-        for market_slot_unix, data in area.stats.market_trades.items():
-            market_slot = from_timestamp(market_slot_unix)
+        for market_slot, data in area.stats.market_trades.items():
             plot_data = self.add_plotly_graph_dataset(data, market_slot)
             if len(plot_data) > 0:
                 market_slot_str = market_slot.format(DATE_TIME_FORMAT)
