@@ -83,7 +83,9 @@ class SimulationEndpointBuffer:
                 self.price_energy_day.redis_output, {}),
             "last_device_statistics": convert_pendulum_to_str_in_dict(
                 self.device_statistics.current_stats_dict, {}),
-            "area_throughput": self.area_throughput_stats.results_redis
+            "area_throughput": self.area_throughput_stats.results_redis,
+            "last_energy_trades_high_resolution": convert_pendulum_to_str_in_dict(
+                self.file_export_endpoints.last_energy_trades_high_resolution, {})
         }
 
     def generate_json_report(self):
