@@ -46,7 +46,8 @@ green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
 blue = 'rgba(0,0,200,alpha)'
 
-DEVICE_PLOT_COLORS = {"trade_energy_kWh": purple,
+DEVICE_PLOT_COLORS = {"sold_trade_energy_kWh": purple,
+                      "bought_trade_energy_kWh": purple,
                       "pv_production_kWh": green,
                       "energy_buffer_kWh": green,
                       "production_kWh": green,
@@ -55,7 +56,8 @@ DEVICE_PLOT_COLORS = {"trade_energy_kWh": purple,
                       "sold_trade_price_eur": blue,
                       "bought_trade_price_eur": blue}
 
-DEVICE_YAXIS = {"trade_energy_kWh": 'Demand/Traded [kWh]',
+DEVICE_YAXIS = {"sold_trade_energy_kWh": 'Supply/Traded [kWh]',
+                "bought_trade_energy_kWh": 'Demand/Traded [kWh]',
                 "pv_production_kWh": 'PV Production [kWh]',
                 "energy_buffer_kWh": 'Energy Buffer [kWh]',
                 "production_kWh": 'Power Production [kWh]',
@@ -311,12 +313,12 @@ class PlotlyGraph:
         return [longterm_min_hover, shade, time_series, longterm_max_hover, hoverinfo_time]
 
     @classmethod
-    def _plot_bar_time_series_storage(cls, device_dict, var_name):
+    def _plot_bar_time_series_storage(cls, device_dict, var_name, yaxis):
         color = _get_color(var_name, OPAQUE_ALPHA)
         fill_color = _get_color(var_name, TRANSPARENT_ALPHA)
         time, traded_energy, longterm_min_traded_energy, longterm_max_traded_energy = \
             cls.prepare_input(device_dict, var_name)
-        yaxis = "y2"
+        yaxis = yaxis
         time_series = go.Bar(
             x=time,
             y=traded_energy,
@@ -338,14 +340,13 @@ class PlotlyGraph:
             cls._hoverinfo(time, longterm_min_traded_energy, longterm_max_traded_energy, yaxis)
 
     @classmethod
-    def _plot_bar_time_series_traded_expected(cls, device_dict, expected_varname, traded_varname,
-                                              invert_y=False):
+    def _plot_bar_time_series_traded(cls, device_dict, traded_varname, yaxis, invert_y=False):
         color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
         fill_color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
         time_traded, energy_traded, min_energy_traded, max_energy_traded = \
             cls.prepare_input(device_dict, traded_varname, invert_y)
 
-        yaxis = "y2"
+        yaxis = yaxis
         time_series_traded = go.Bar(
             x=time_traded,
             y=energy_traded,
@@ -488,46 +489,68 @@ class PlotlyGraph:
 
     @classmethod
     def plot_device_profile(cls, device_dict, device_name, output_file, device_strategy):
-        trade_energy_var_name = "trade_energy_kWh"
+        sold_trade_energy_var_name = "sold_trade_energy_kWh"
+        bought_trade_energy_var_name = "bought_trade_energy_kWh"
         data = []
         # Trade price graph (y3):
         data_intermediate = cls._plot_candlestick_time_series_price(
-            device_dict, "sold_trade_price_eur", "y3"
+            device_dict, "sold_trade_price_eur", "y4"
         )
         data += data_intermediate
         data_intermediate = cls._plot_candlestick_time_series_price(
-            device_dict, "bought_trade_price_eur", "y4"
+            device_dict, "bought_trade_price_eur", "y5"
         )
         data += data_intermediate
         # Traded energy graph (y2):
         if isinstance(device_strategy, StorageStrategy):
             y1axis_key = "soc_history_%"
-            data += cls._plot_bar_time_series_storage(device_dict, trade_energy_var_name)
-            y2axis_range = cls._get_y2_range(device_dict, trade_energy_var_name,
+            data += cls._plot_bar_time_series_storage(
+                device_dict, sold_trade_energy_var_name, "y2"
+            )
+            data += cls._plot_bar_time_series_storage(
+                device_dict, bought_trade_energy_var_name, "y3"
+            )
+            y2axis_range = cls._get_y2_range(device_dict, sold_trade_energy_var_name,
                                              start_at_zero=False)
             y2axis_caption = "Bought/Sold [kWh]"
         elif isinstance(device_strategy, LoadHoursStrategy):
             y1axis_key = "load_profile_kWh"
-            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
-                                                              trade_energy_var_name)
+            data += cls._plot_bar_time_series_traded(
+                device_dict, sold_trade_energy_var_name, "y2"
+            )
+            data += cls._plot_bar_time_series_traded(
+                device_dict, bought_trade_energy_var_name, "y3"
+            )
             y2axis_caption = "Demand/Traded [kWh]"
             y2axis_range = cls._get_y2_range(device_dict, "load_profile_kWh")
         elif isinstance(device_strategy, PVStrategy):
             y1axis_key = "pv_production_kWh"
-            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
-                                                              trade_energy_var_name, invert_y=True)
+            data += cls._plot_bar_time_series_traded(
+                device_dict, sold_trade_energy_var_name, "y2"
+            )
+            data += cls._plot_bar_time_series_traded(
+                device_dict, bought_trade_energy_var_name, "y3"
+            )
             y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
             y2axis_caption = "Supply/Traded [kWh]"
         elif isinstance(device_strategy, FinitePowerPlant):
             y1axis_key = "production_kWh"
-            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
-                                                              trade_energy_var_name, invert_y=True)
+            data += cls._plot_bar_time_series_traded(
+                device_dict, sold_trade_energy_var_name, "y2"
+            )
+            data += cls._plot_bar_time_series_traded(
+                device_dict, bought_trade_energy_var_name, "y3"
+            )
             y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
             y2axis_caption = "Traded [kWh]"
         elif isinstance(device_strategy, CommercialStrategy):
             y1axis_key = "energy_buffer_kWh"
-            data += cls._plot_bar_time_series_traded_expected(device_dict, y1axis_key,
-                                                              trade_energy_var_name, invert_y=True)
+            data += cls._plot_bar_time_series_traded(
+                device_dict, sold_trade_energy_var_name, "y2", invert_y=True
+            )
+            data += cls._plot_bar_time_series_traded(
+                device_dict, bought_trade_energy_var_name, "y3", invert_y=True
+            )
             y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
             y2axis_caption = "Traded [kWh]"
 
@@ -548,13 +571,13 @@ class PlotlyGraph:
         return go.Layout(
             autosize=False,
             width=1200,
-            height=720,
+            height=1000,
             barmode=barmode,
             title=title,
             xaxis=dict(
                 title=xaxis_caption,
                 showgrid=True,
-                anchor="y4",
+                anchor="y5",
                 rangeslider=dict(visible=True,
                                  thickness=0.075,
                                  bgcolor='rgba(100,100,100,0.3)'
@@ -564,29 +587,37 @@ class PlotlyGraph:
                 title=yaxis_caption,
                 side='left',
                 showgrid=True,
-                domain=[0.75, 1],
+                domain=[0.8, 1],
                 rangemode='tozero',
                 autorange=True
             ),
             yaxis2=dict(
-                title=y2axis_caption,
+                title='Supply/Traded [kWh]',
                 side='right',
                 range=y2axis_range,
                 showgrid=True,
-                domain=[0.50, 0.75],
+                domain=[0.6, 0.8],
                 autorange=False
             ),
             yaxis3=dict(
-                title='Sold Energy rate [€/kWh]',
-                domain=[0.25, 0.50],
+                title='Demand/Traded [kWh]',
                 side='left',
+                # range=y2axis_range,
                 showgrid=True,
+                domain=[0.4, 0.6],
                 autorange=True
             ),
             yaxis4=dict(
-                title='Bought Energy rate [€/kWh]',
-                domain=[0.0, 0.25],
+                title='Sold Energy rate [€/kWh]',
+                domain=[0.2, 0.40],
                 side='right',
+                showgrid=True,
+                autorange=True
+            ),
+            yaxis5=dict(
+                title='Bought Energy rate [€/kWh]',
+                domain=[0.0, 0.2],
+                side='left',
                 showgrid=True,
                 autorange=True
             ),

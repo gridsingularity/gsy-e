@@ -84,19 +84,22 @@ class DeviceStatistics:
 
     @classmethod
     def _device_energy_stats(cls, area: Area, subdict: Dict):
-        key_name = "trade_energy_kWh"
+        sold_key_name = "sold_trade_energy_kWh"
+        bought_key_name = "bought_trade_energy_kWh"
         market = list(area.parent.past_markets)[-1]
-        traded_energy = 0
+        sold_traded_energy = 0
+        bought_traded_energy = 0
         for t in market.trades:
             if t.seller == area.name:
-                traded_energy -= t.offer.energy
+                sold_traded_energy += t.offer.energy
             if t.buyer == area.name:
-                traded_energy += t.offer.energy
+                bought_traded_energy += t.offer.energy
 
-        _create_or_append_dict(subdict, key_name,
-                               {market.time_slot: traded_energy})
+        _create_or_append_dict(subdict, sold_key_name, {market.time_slot: sold_traded_energy})
+        cls._calc_min_max_from_sim_dict(subdict, sold_key_name)
 
-        cls._calc_min_max_from_sim_dict(subdict, key_name)
+        _create_or_append_dict(subdict, bought_key_name, {market.time_slot: bought_traded_energy})
+        cls._calc_min_max_from_sim_dict(subdict, bought_key_name)
 
     @classmethod
     def _pv_production_stats(cls, area: Area, subdict: Dict):
