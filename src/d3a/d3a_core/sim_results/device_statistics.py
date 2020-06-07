@@ -55,19 +55,32 @@ class DeviceStatistics:
 
     @classmethod
     def _device_price_stats(cls, area: Area, subdict: Dict):
-        key_name = "trade_price_eur"
+        sold_key_name = "sold_trade_price_eur"
+        bought_key_name = "bought_trade_price_eur"
         market = list(area.parent.past_markets)[-1]
-        trade_price_list = []
+        sold_trade_price_list = []
+        bought_trade_price_list = []
         for t in market.trades:
-            if t.seller == area.name or t.buyer == area.name:
-                trade_price_list.append(t.offer.energy_rate / 100.0)
+            if t.seller == area.name:
+                sold_trade_price_list.append(t.offer.energy_rate / 100.0)
+            if t.buyer == area.name:
+                bought_trade_price_list.append(t.offer.energy_rate / 100.0)
 
-        if trade_price_list != []:
-            _create_or_append_dict(subdict, key_name, {market.time_slot: trade_price_list})
+        if sold_trade_price_list:
+            _create_or_append_dict(subdict, sold_key_name,
+                                   {market.time_slot: sold_trade_price_list})
         else:
-            _create_or_append_dict(subdict, key_name, {market.time_slot: FILL_VALUE})
+            _create_or_append_dict(subdict, sold_key_name, {market.time_slot: FILL_VALUE})
 
-        cls._calc_min_max_from_sim_dict(subdict, key_name)
+        cls._calc_min_max_from_sim_dict(subdict, sold_key_name)
+
+        if bought_trade_price_list:
+            _create_or_append_dict(subdict, bought_key_name,
+                                   {market.time_slot: bought_trade_price_list})
+        else:
+            _create_or_append_dict(subdict, bought_key_name, {market.time_slot: FILL_VALUE})
+
+        cls._calc_min_max_from_sim_dict(subdict, bought_key_name)
 
     @classmethod
     def _device_energy_stats(cls, area: Area, subdict: Dict):
