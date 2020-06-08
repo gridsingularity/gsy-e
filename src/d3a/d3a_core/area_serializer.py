@@ -37,8 +37,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
 from d3a.models.leaves import Leaf # NOQA
 from d3a.models.leaves import *  # NOQA
-from d3a.d3a_core.util import convert_pendulum_to_str_in_dict
-from d3a_interface.utils import key_in_dict_and_not_none
+from d3a_interface.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
 
 
 class AreaEncoder(json.JSONEncoder):
