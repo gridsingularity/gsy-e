@@ -313,33 +313,6 @@ class PlotlyGraph:
         return [longterm_min_hover, shade, time_series, longterm_max_hover, hoverinfo_time]
 
     @classmethod
-    def _plot_bar_time_series_storage(cls, device_dict, var_name, yaxis):
-        color = _get_color(var_name, OPAQUE_ALPHA)
-        fill_color = _get_color(var_name, TRANSPARENT_ALPHA)
-        time, traded_energy, longterm_min_traded_energy, longterm_max_traded_energy = \
-            cls.prepare_input(device_dict, var_name)
-        yaxis = yaxis
-        time_series = go.Bar(
-            x=time,
-            y=traded_energy,
-            marker=dict(
-                color=fill_color,
-                line=dict(
-                    color=color,
-                    width=1.,
-                )
-            ),
-            name=var_name,
-            showlegend=True,
-            hoverinfo='none',
-            xaxis="x",
-            yaxis=yaxis,
-        )
-
-        return [time_series] + \
-            cls._hoverinfo(time, longterm_min_traded_energy, longterm_max_traded_energy, yaxis)
-
-    @classmethod
     def _plot_bar_time_series_traded(cls, device_dict, traded_varname, yaxis, invert_y=False):
         color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
         fill_color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
@@ -504,70 +477,41 @@ class PlotlyGraph:
         # Traded energy graph (y2):
         if isinstance(device_strategy, StorageStrategy):
             y1axis_key = "soc_history_%"
-            data += cls._plot_bar_time_series_storage(
-                device_dict, sold_trade_energy_var_name, "y2"
-            )
-            data += cls._plot_bar_time_series_storage(
-                device_dict, bought_trade_energy_var_name, "y3"
-            )
             y2axis_range = cls._get_y2_range(device_dict, sold_trade_energy_var_name,
                                              start_at_zero=False)
-            y2axis_caption = "Bought/Sold [kWh]"
         elif isinstance(device_strategy, LoadHoursStrategy):
             y1axis_key = "load_profile_kWh"
-            data += cls._plot_bar_time_series_traded(
-                device_dict, sold_trade_energy_var_name, "y2"
-            )
-            data += cls._plot_bar_time_series_traded(
-                device_dict, bought_trade_energy_var_name, "y3"
-            )
-            y2axis_caption = "Demand/Traded [kWh]"
             y2axis_range = cls._get_y2_range(device_dict, "load_profile_kWh")
         elif isinstance(device_strategy, PVStrategy):
             y1axis_key = "pv_production_kWh"
-            data += cls._plot_bar_time_series_traded(
-                device_dict, sold_trade_energy_var_name, "y2"
-            )
-            data += cls._plot_bar_time_series_traded(
-                device_dict, bought_trade_energy_var_name, "y3"
-            )
             y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
-            y2axis_caption = "Supply/Traded [kWh]"
         elif isinstance(device_strategy, FinitePowerPlant):
             y1axis_key = "production_kWh"
-            data += cls._plot_bar_time_series_traded(
-                device_dict, sold_trade_energy_var_name, "y2"
-            )
-            data += cls._plot_bar_time_series_traded(
-                device_dict, bought_trade_energy_var_name, "y3"
-            )
             y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
-            y2axis_caption = "Traded [kWh]"
         elif isinstance(device_strategy, CommercialStrategy):
             y1axis_key = "energy_buffer_kWh"
-            data += cls._plot_bar_time_series_traded(
-                device_dict, sold_trade_energy_var_name, "y2", invert_y=True
-            )
-            data += cls._plot_bar_time_series_traded(
-                device_dict, bought_trade_energy_var_name, "y3", invert_y=True
-            )
             y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
-            y2axis_caption = "Traded [kWh]"
 
         else:
             return
+        data += cls._plot_bar_time_series_traded(
+            device_dict, sold_trade_energy_var_name, "y2"
+        )
+        data += cls._plot_bar_time_series_traded(
+            device_dict, bought_trade_energy_var_name, "y3"
+        )
+
         # SOC, load_curve, pv production graph (y1):
         data += cls._plot_line_time_series(device_dict, y1axis_key)
         y1axis_caption = DEVICE_YAXIS[y1axis_key]
 
-        layout = cls._device_plot_layout("overlay", f"{device_name}", 'Time',
-                                         y1axis_caption, y2axis_caption, y2axis_range)
+        layout = cls._device_plot_layout("overlay", f"{device_name}", 'Time', y1axis_caption,
+                                         y2axis_range)
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=output_file, auto_open=False)
 
     @staticmethod
-    def _device_plot_layout(barmode, title, xaxis_caption, yaxis_caption, y2axis_caption,
-                            y2axis_range):
+    def _device_plot_layout(barmode, title, xaxis_caption, yaxis_caption, y2axis_range):
         return go.Layout(
             autosize=False,
             width=1200,

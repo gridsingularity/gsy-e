@@ -22,9 +22,11 @@ from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.appliance.simple import SimpleAppliance
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.appliance.pv import PVAppliance
+from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     area = Area(
         'Grid',
         [
