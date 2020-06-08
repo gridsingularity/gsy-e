@@ -25,6 +25,8 @@ from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a import limit_float_precision
 
@@ -46,25 +48,25 @@ green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
 blue = 'rgba(0,0,200,alpha)'
 
-DEVICE_PLOT_COLORS = {"sold_trade_energy_kWh": purple,
+DEVICE_PLOT_COLORS = {"trade_energy_kWh": purple,
+                      "sold_trade_energy_kWh": purple,
                       "bought_trade_energy_kWh": purple,
                       "pv_production_kWh": green,
                       "energy_buffer_kWh": green,
                       "production_kWh": green,
                       "load_profile_kWh": green,
                       "soc_history_%": green,
-                      "sold_trade_price_eur": blue,
-                      "bought_trade_price_eur": blue}
+                      "trade_price_eur": blue}
 
-DEVICE_YAXIS = {"sold_trade_energy_kWh": 'Supply/Traded [kWh]',
+DEVICE_YAXIS = {"trade_energy_kWh": 'Traded [kWh]',
+                "sold_trade_energy_kWh": 'Supply/Traded [kWh]',
                 "bought_trade_energy_kWh": 'Demand/Traded [kWh]',
                 "pv_production_kWh": 'PV Production [kWh]',
                 "energy_buffer_kWh": 'Energy Buffer [kWh]',
                 "production_kWh": 'Power Production [kWh]',
                 "load_profile_kWh": 'Load Profile [kWh]',
                 "soc_history_%": 'State of Charge [%]',
-                "sold_trade_price_eur": 'Sold Energy Rate [EUR/kWh]',
-                "bought_trade_price_eur": 'Bought Energy Rate [EUR/kWh]'}
+                "trade_price_eur": 'Energy Rate [EUR/kWh]'}
 
 OPAQUE_ALPHA = 1
 TRANSPARENT_ALPHA = 0.4
@@ -237,12 +239,12 @@ class PlotlyGraph:
         py.offline.plot(fig, filename=filename, auto_open=False)
 
     @classmethod
-    def _plot_line_time_series(cls, device_dict, var_name):
+    def _plot_line_time_series(cls, device_dict, var_name, invert_y=False):
         color = _get_color(var_name, OPAQUE_ALPHA)
         fill_color = _get_color(var_name, TRANSPARENT_ALPHA)
         time, var_data, longterm_min_var_data, longterm_max_var_data = \
             cls.prepare_input(device_dict, var_name)
-        yaxis = "y"
+        yaxis = "y3"
         connectgaps = True
         line = dict(color=color,
                     width=0.8)
@@ -462,49 +464,113 @@ class PlotlyGraph:
 
     @classmethod
     def plot_device_profile(cls, device_dict, device_name, output_file, device_strategy):
+        trade_energy_var_name = "trade_energy_kWh"
         sold_trade_energy_var_name = "sold_trade_energy_kWh"
         bought_trade_energy_var_name = "bought_trade_energy_kWh"
         data = []
-        # Trade price graph (y3):
-        data_intermediate = cls._plot_candlestick_time_series_price(
-            device_dict, "sold_trade_price_eur", "y4"
-        )
-        data += data_intermediate
-        data_intermediate = cls._plot_candlestick_time_series_price(
-            device_dict, "bought_trade_price_eur", "y5"
-        )
-        data += data_intermediate
-        # Traded energy graph (y2):
         if isinstance(device_strategy, StorageStrategy):
-            y1axis_key = "soc_history_%"
+            y1axis_key = "trade_price_eur"
+            y2axis_key = trade_energy_var_name
+            y3axis_key = "soc_history_%"
+            yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key],
+                                  DEVICE_YAXIS[y3axis_key]]
+
+            data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
+            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2")
+            data += cls._plot_line_time_series(device_dict, y3axis_key)
+
+            layout = cls._device_plot_layout("overlay", f"{device_name}",
+                                             'Time', yaxis_caption_list)
+
         elif isinstance(device_strategy, LoadHoursStrategy):
-            y1axis_key = "load_profile_kWh"
+            y1axis_key = "trade_price_eur"
+            y2axis_key = trade_energy_var_name
+            y3axis_key = "load_profile_kWh"
+            yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key],
+                                  DEVICE_YAXIS[y3axis_key]]
+
+            data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
+            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2")
+            data += cls._plot_line_time_series(device_dict, y3axis_key)
+
+            layout = cls._device_plot_layout("overlay", f"{device_name}",
+                                             'Time', yaxis_caption_list)
+
         elif isinstance(device_strategy, PVStrategy):
-            y1axis_key = "pv_production_kWh"
-        elif isinstance(device_strategy, FinitePowerPlant):
-            y1axis_key = "production_kWh"
-        elif isinstance(device_strategy, CommercialStrategy):
-            y1axis_key = "energy_buffer_kWh"
+            y1axis_key = "trade_price_eur"
+            y2axis_key = trade_energy_var_name
+            y3axis_key = "pv_production_kWh"
+            yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key],
+                                  DEVICE_YAXIS[y3axis_key]]
+
+            data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
+            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2", invert_y=True)
+            data += cls._plot_line_time_series(device_dict, y3axis_key)
+
+            layout = cls._device_plot_layout("overlay", f"{device_name}",
+                                             'Time', yaxis_caption_list)
+
+        elif type(device_strategy) == FinitePowerPlant:
+            y1axis_key = "trade_price_eur"
+            y2axis_key = trade_energy_var_name
+            y3axis_key = "production_kWh"
+            yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key],
+                                  DEVICE_YAXIS[y3axis_key]]
+
+            data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
+            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2", invert_y=True)
+            data += cls._plot_line_time_series(device_dict, y3axis_key)
+
+            layout = cls._device_plot_layout("overlay", f"{device_name}",
+                                             'Time', yaxis_caption_list)
+
+        elif type(device_strategy) in [CommercialStrategy, MarketMakerStrategy]:
+            y1axis_key = "trade_price_eur"
+            y2axis_key = trade_energy_var_name
+            yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key]]
+
+            data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
+            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2", invert_y=True)
+
+            layout = cls._device_plot_layout("overlay", f"{device_name}",
+                                             'Time', yaxis_caption_list)
+
+        elif type(device_strategy) == InfiniteBusStrategy:
+            y1axis_key = "trade_price_eur"
+            y2axis_key = sold_trade_energy_var_name
+            y3axis_key = bought_trade_energy_var_name
+
+            yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key],
+                                  DEVICE_YAXIS[y3axis_key]]
+
+            data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
+            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2")
+            data += cls._plot_bar_time_series_traded(device_dict, y3axis_key, "y3")
+
+            layout = cls._device_plot_layout("overlay", f"{device_name}",
+                                             'Time', yaxis_caption_list)
 
         else:
             return
-        data += cls._plot_bar_time_series_traded(
-            device_dict, sold_trade_energy_var_name, "y2"
-        )
-        data += cls._plot_bar_time_series_traded(
-            device_dict, bought_trade_energy_var_name, "y3"
-        )
 
-        # SOC, load_curve, pv production graph (y1):
-        data += cls._plot_line_time_series(device_dict, y1axis_key)
-        y1axis_caption = DEVICE_YAXIS[y1axis_key]
-
-        layout = cls._device_plot_layout("overlay", f"{device_name}", 'Time', y1axis_caption)
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=output_file, auto_open=False)
 
     @staticmethod
-    def _device_plot_layout(barmode, title, xaxis_caption, yaxis_caption):
+    def _device_plot_layout(barmode, title, xaxis_caption, yaxis_caption_list):
+        yaxes = {}
+        d_domain_diff = 1 / len(yaxis_caption_list)
+        for i in range(len(yaxis_caption_list)):
+            pointer = i / len(yaxis_caption_list)
+            yaxes[f"yaxis{i+1}"] = dict(
+                title=yaxis_caption_list[i],
+                side='left' if i % 2 == 0 else 'right',
+                showgrid=True,
+                domain=[pointer, pointer + d_domain_diff],
+                rangemode='tozero',
+                autorange=True
+            )
+
         return go.Layout(
             autosize=False,
             width=1200,
@@ -514,51 +580,16 @@ class PlotlyGraph:
             xaxis=dict(
                 title=xaxis_caption,
                 showgrid=True,
-                anchor="y5",
+                anchor="y1",
                 rangeslider=dict(visible=True,
                                  thickness=0.075,
                                  bgcolor='rgba(100,100,100,0.3)'
                                  )
             ),
-            yaxis=dict(
-                title=yaxis_caption,
-                side='left',
-                showgrid=True,
-                domain=[0.8, 1],
-                rangemode='tozero',
-                autorange=True
-            ),
-            yaxis2=dict(
-                title='Supply/Traded [kWh]',
-                side='right',
-                showgrid=True,
-                domain=[0.6, 0.8],
-                autorange=True
-            ),
-            yaxis3=dict(
-                title='Demand/Traded [kWh]',
-                side='left',
-                showgrid=True,
-                domain=[0.4, 0.6],
-                autorange=True
-            ),
-            yaxis4=dict(
-                title='Sold Energy rate [€/kWh]',
-                domain=[0.2, 0.40],
-                side='right',
-                showgrid=True,
-                autorange=True
-            ),
-            yaxis5=dict(
-                title='Bought Energy rate [€/kWh]',
-                domain=[0.0, 0.2],
-                side='left',
-                showgrid=True,
-                autorange=True
-            ),
             font=dict(
                 size=12
             ),
             showlegend=True,
-            legend=dict(x=1.1, y=1)
+            legend=dict(x=1.1, y=1),
+            **yaxes
         )

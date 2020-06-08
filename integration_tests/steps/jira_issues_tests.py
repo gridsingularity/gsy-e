@@ -261,7 +261,7 @@ def device_statistics(context):
                     assert len(list(output_dict[house][device][stats_name])) == 48
                     assert len(list(output_dict[house][device]["min_" + stats_name])) == 48
                     assert len(list(output_dict[house][device]["max_" + stats_name])) == 48
-    assert counter == 20
+    assert counter == 12
 
 
 @then("an AreaException is raised")

@@ -53,9 +53,9 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
-EXPORT_DEVICE_VARIABLES = ["sold_trade_energy_kWh", "bought_trade_energy_kWh",
-                           "sold_trade_price_eur", "bought_trade_price_eur",
-                           "pv_production_kWh", "soc_history_%", "load_profile_kWh"]
+EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "sold_trade_energy_kWh", "bought_trade_energy_kWh",
+                           "trade_price_eur", "pv_production_kWh", "soc_history_%",
+                           "load_profile_kWh"]
 
 SlotDataRange = namedtuple('SlotDataRange', ('start', 'end'))
 
