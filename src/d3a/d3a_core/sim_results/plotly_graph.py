@@ -477,20 +477,14 @@ class PlotlyGraph:
         # Traded energy graph (y2):
         if isinstance(device_strategy, StorageStrategy):
             y1axis_key = "soc_history_%"
-            y2axis_range = cls._get_y2_range(device_dict, sold_trade_energy_var_name,
-                                             start_at_zero=False)
         elif isinstance(device_strategy, LoadHoursStrategy):
             y1axis_key = "load_profile_kWh"
-            y2axis_range = cls._get_y2_range(device_dict, "load_profile_kWh")
         elif isinstance(device_strategy, PVStrategy):
             y1axis_key = "pv_production_kWh"
-            y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
         elif isinstance(device_strategy, FinitePowerPlant):
             y1axis_key = "production_kWh"
-            y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
         elif isinstance(device_strategy, CommercialStrategy):
             y1axis_key = "energy_buffer_kWh"
-            y2axis_range = cls._get_y2_range(device_dict, y1axis_key)
 
         else:
             return
@@ -505,13 +499,12 @@ class PlotlyGraph:
         data += cls._plot_line_time_series(device_dict, y1axis_key)
         y1axis_caption = DEVICE_YAXIS[y1axis_key]
 
-        layout = cls._device_plot_layout("overlay", f"{device_name}", 'Time', y1axis_caption,
-                                         y2axis_range)
+        layout = cls._device_plot_layout("overlay", f"{device_name}", 'Time', y1axis_caption)
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=output_file, auto_open=False)
 
     @staticmethod
-    def _device_plot_layout(barmode, title, xaxis_caption, yaxis_caption, y2axis_range):
+    def _device_plot_layout(barmode, title, xaxis_caption, yaxis_caption):
         return go.Layout(
             autosize=False,
             width=1200,
@@ -538,15 +531,13 @@ class PlotlyGraph:
             yaxis2=dict(
                 title='Supply/Traded [kWh]',
                 side='right',
-                range=y2axis_range,
                 showgrid=True,
                 domain=[0.6, 0.8],
-                autorange=False
+                autorange=True
             ),
             yaxis3=dict(
                 title='Demand/Traded [kWh]',
                 side='left',
-                # range=y2axis_range,
                 showgrid=True,
                 domain=[0.4, 0.6],
                 autorange=True

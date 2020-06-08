@@ -255,11 +255,8 @@ def device_statistics(context):
     counter = 0
     for house in ["House 1", "House 2"]:
         for device in output_dict[house]:
-            print(f"device: {device}")
             for stats_name in EXPORT_DEVICE_VARIABLES:
-                print(f"stats_name: {stats_name}")
                 if stats_name in output_dict[house][device]:
-                    print(f"INCOUNTER")
                     counter += 1
                     assert len(list(output_dict[house][device][stats_name])) == 48
                     assert len(list(output_dict[house][device]["min_" + stats_name])) == 48
