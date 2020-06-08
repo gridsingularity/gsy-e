@@ -257,3 +257,10 @@ class Market:
             "start_time": self.time_slot_str,
             "duration_min": GlobalConfig.slot_length.minutes
         }
+
+    def get_bids_offers_trades(self):
+        return {
+            "bids": [b.serializable_dict() for b in self.bid_history],
+            "offers": [o.serializable_dict() for o in self.offer_history],
+            "trades": [t.serializable_dict() for t in self.trades]
+        }
