@@ -26,7 +26,7 @@ from d3a.d3a_core.sim_results.export_unmatched_loads import MarketUnmatchedLoads
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.sim_results.kpi import KPI
 from d3a.d3a_core.sim_results.area_market_stock_stats import OfferBidTradeGraphStats
-from d3a.d3a_core.util import convert_pendulum_to_str_in_dict
+from d3a_interface.utils import convert_pendulum_to_str_in_dict
 
 _NO_VALUE = {
     'min': None,
@@ -59,6 +59,7 @@ class SimulationEndpointBuffer:
         self.area_throughput_stats = AreaThroughputStats()
 
         self.last_unmatched_loads = {}
+        self.bids_offers_trades = {}
         self.export_plots = export_plots
         if export_plots:
             self.area_market_stocks_stats = OfferBidTradeGraphStats()
@@ -83,7 +84,8 @@ class SimulationEndpointBuffer:
                 self.price_energy_day.redis_output, {}),
             "last_device_statistics": convert_pendulum_to_str_in_dict(
                 self.device_statistics.current_stats_dict, {}),
-            "area_throughput": self.area_throughput_stats.results_redis
+            "area_throughput": self.area_throughput_stats.results_redis,
+            "bids_offers_trades": self.bids_offers_trades
         }
 
     def generate_json_report(self):
@@ -104,7 +106,7 @@ class SimulationEndpointBuffer:
             "energy_trade_profile": convert_pendulum_to_str_in_dict(
                 self.file_export_endpoints.traded_energy_profile, {}, ui_format=True),
             "kpi": self.kpi.performance_indices,
-            "area_throughput": self.area_throughput_stats.results
+            "area_throughput": self.area_throughput_stats.results,
         }
 
     def update_stats(self, area, simulation_status, progress_info):
@@ -139,6 +141,7 @@ class SimulationEndpointBuffer:
 
         self.generate_result_report()
 
+        self.bids_offers_trades.clear()
         self.update_area_aggregated_stats(area)
 
         if self.export_plots:
@@ -157,6 +160,8 @@ class SimulationEndpointBuffer:
             self.update_area_aggregated_stats(child)
 
     def _update_area_stats(self, area):
+        if area.current_market is not None:
+            self.bids_offers_trades[area.uuid] = area.current_market.get_bids_offers_trades()
         bills = self.market_bills.bills_redis_results[area.uuid]
         bills.update({
             "penalty_cost": self.cumulative_bills.cumulative_bills_results[area.uuid]["penalties"],
