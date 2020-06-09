@@ -85,6 +85,8 @@ class SimulationEndpointBuffer:
             "last_device_statistics": convert_pendulum_to_str_in_dict(
                 self.device_statistics.current_stats_dict, {}),
             "area_throughput": self.area_throughput_stats.results_redis,
+            "last_energy_trades_high_resolution": convert_pendulum_to_str_in_dict(
+                self.file_export_endpoints.last_energy_trades_high_resolution, {}),
             "bids_offers_trades": self.bids_offers_trades
         }
 

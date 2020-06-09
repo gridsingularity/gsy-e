@@ -41,6 +41,7 @@ class FileExportEndpoints:
         self.cumulative_offers = {}
         self.cumulative_bids = {}
         self.clearing = {}
+        self.last_energy_trades_high_resolution = {}
 
     def __call__(self, area):
         self.time_slots = generate_market_slot_list(area)
@@ -54,6 +55,7 @@ class FileExportEndpoints:
             for child in area.children:
                 self._populate_area_children_data(child)
 
+        self.last_energy_trades_high_resolution[area.uuid] = area.stats.market_trades
         if self._should_export_plots:
             self.update_plot_stats(area)
         if area.children:
