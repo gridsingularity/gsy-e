@@ -4,6 +4,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import Area
 from d3a import limit_float_precision
 
@@ -72,34 +73,42 @@ class DeviceStatistics:
     @classmethod
     def _device_energy_stats(cls, area: Area, subdict: Dict):
         market = list(area.parent.past_markets)[-1]
-        from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
         if type(area.strategy) == InfiniteBusStrategy:
-            sold_key_name = "sold_trade_energy_kWh"
-            bought_key_name = "bought_trade_energy_kWh"
-            sold_traded_energy = 0
-            bought_traded_energy = 0
-            for t in market.trades:
-                if t.seller == area.name:
-                    sold_traded_energy += t.offer.energy
-                if t.buyer == area.name:
-                    bought_traded_energy += t.offer.energy
-
-            _create_or_append_dict(subdict, sold_key_name, {market.time_slot: sold_traded_energy})
-            cls._calc_min_max_from_sim_dict(subdict, sold_key_name)
-            _create_or_append_dict(subdict, bought_key_name,
-                                   {market.time_slot: bought_traded_energy})
-            cls._calc_min_max_from_sim_dict(subdict, bought_key_name)
+            cls.calculate_stats_for_infinite_bus(area, market, subdict)
         else:
-            key_name = "trade_energy_kWh"
-            traded_energy = 0
-            for t in market.trades:
-                if t.seller == area.name:
-                    traded_energy -= t.offer.energy
-                if t.buyer == area.name:
-                    traded_energy += t.offer.energy
+            cls.calculate_stats_for_non_infinite_bus(area, market, subdict)
 
-            _create_or_append_dict(subdict, key_name, {market.time_slot: traded_energy})
-            cls._calc_min_max_from_sim_dict(subdict, key_name)
+    @classmethod
+    def calculate_stats_for_non_infinite_bus(cls, area, market, subdict):
+        key_name = "trade_energy_kWh"
+        traded_energy = 0
+        for t in market.trades:
+            if t.seller == area.name:
+                traded_energy -= t.offer.energy
+            if t.buyer == area.name:
+                traded_energy += t.offer.energy
+
+        _create_or_append_dict(subdict, key_name, {market.time_slot: traded_energy})
+        cls._calc_min_max_from_sim_dict(subdict, key_name)
+
+    @classmethod
+    def calculate_stats_for_infinite_bus(cls, area, market, subdict):
+        sold_key_name = "sold_trade_energy_kWh"
+        bought_key_name = "bought_trade_energy_kWh"
+        sold_traded_energy = 0
+        bought_traded_energy = 0
+
+        for t in market.trades:
+            if t.seller == area.name:
+                sold_traded_energy += t.offer.energy
+            if t.buyer == area.name:
+                bought_traded_energy += t.offer.energy
+
+        _create_or_append_dict(subdict, sold_key_name, {market.time_slot: sold_traded_energy})
+        cls._calc_min_max_from_sim_dict(subdict, sold_key_name)
+        _create_or_append_dict(subdict, bought_key_name,
+                               {market.time_slot: bought_traded_energy})
+        cls._calc_min_max_from_sim_dict(subdict, bought_key_name)
 
     @classmethod
     def _pv_production_stats(cls, area: Area, subdict: Dict):
