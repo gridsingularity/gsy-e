@@ -315,7 +315,8 @@ class PlotlyGraph:
         return [longterm_min_hover, shade, time_series, longterm_max_hover, hoverinfo_time]
 
     @classmethod
-    def _plot_bar_time_series_traded(cls, device_dict, traded_varname, yaxis, invert_y=False):
+    def _plot_bar_time_series_traded(cls, device_dict, traded_varname, yaxis,
+                                     expected_varname=None, invert_y=False):
         color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
         fill_color_traded = _get_color(traded_varname, OPAQUE_ALPHA)
         time_traded, energy_traded, min_energy_traded, max_energy_traded = \
@@ -339,9 +340,34 @@ class PlotlyGraph:
             yaxis=yaxis,
         )
 
-        return [time_series_traded] + \
-            cls._hoverinfo(time_traded, min_energy_traded, max_energy_traded, yaxis,
-                           only_time=True)
+        if expected_varname is not None:
+            color_expected = _get_color(expected_varname, OPAQUE_ALPHA)
+            fill_color_expected = _get_color(expected_varname, TRANSPARENT_ALPHA)
+            time_expected, energy_expected, min_energy_expected, max_energy_expected = \
+                cls.prepare_input(device_dict, expected_varname)
+            time_series_expected = go.Bar(
+                x=time_expected,
+                y=energy_expected,
+                marker=dict(
+                    color=fill_color_expected,
+                    line=dict(
+                        color=color_expected,
+                        width=1.,
+                    )
+                ),
+                name=expected_varname,
+                showlegend=True,
+                hoverinfo='y+name',
+                xaxis="x",
+                yaxis=yaxis,
+            )
+            return [time_series_expected, time_series_traded] + \
+                cls._hoverinfo(time_expected, min_energy_expected, max_energy_expected, yaxis,
+                               only_time=True)
+        else:
+            return [time_series_traded] + \
+                cls._hoverinfo(time_traded, min_energy_traded, max_energy_traded, yaxis,
+                               only_time=True)
 
     @classmethod
     def _hoverinfo(cls, time, longterm_min, longterm_max, yaxis, only_time=False):
@@ -490,7 +516,8 @@ class PlotlyGraph:
                                   DEVICE_YAXIS[y3axis_key]]
 
             data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
-            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2")
+            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2",
+                                                     expected_varname=y3axis_key)
             data += cls._plot_line_time_series(device_dict, y3axis_key)
 
             layout = cls._device_plot_layout("overlay", f"{device_name}",
@@ -504,7 +531,9 @@ class PlotlyGraph:
                                   DEVICE_YAXIS[y3axis_key]]
 
             data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
-            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2", invert_y=True)
+            data += cls._plot_bar_time_series_traded(
+                device_dict, y2axis_key, "y2", expected_varname=y3axis_key, invert_y=True
+            )
             data += cls._plot_line_time_series(device_dict, y3axis_key)
 
             layout = cls._device_plot_layout("overlay", f"{device_name}",
@@ -518,7 +547,8 @@ class PlotlyGraph:
                                   DEVICE_YAXIS[y3axis_key]]
 
             data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
-            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2", invert_y=True)
+            data += cls._plot_bar_time_series_traded(device_dict, y2axis_key, "y2",
+                                                     expected_varname=y3axis_key, invert_y=True)
             data += cls._plot_line_time_series(device_dict, y3axis_key)
 
             layout = cls._device_plot_layout("overlay", f"{device_name}",
