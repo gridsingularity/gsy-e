@@ -76,10 +76,10 @@ class DeviceStatistics:
         if type(area.strategy) == InfiniteBusStrategy:
             cls.calculate_stats_for_infinite_bus(area, market, subdict)
         else:
-            cls.calculate_stats_for_non_infinite_bus(area, market, subdict)
+            cls.calculate_stats_for_device(area, market, subdict)
 
     @classmethod
-    def calculate_stats_for_non_infinite_bus(cls, area, market, subdict):
+    def calculate_stats_for_device(cls, area, market, subdict):
         key_name = "trade_energy_kWh"
         traded_energy = 0
         for t in market.trades:
