@@ -97,6 +97,7 @@ class RedisSimulationCommunication:
         self._generate_redis_response(
             response, self._simulation_id, self._simulation.is_stopped, "stop"
         )
+        log.info(f"Simulation with job_id: {self._simulation_id} is stopped.")
 
     def _pause_callback(self, payload):
         response = json.loads(payload["data"])
