@@ -4,7 +4,7 @@ from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.finite_power_plant import FinitePowerPlant
-from d3a.models.strategy.commercial_producer import CommercialStrategy
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.area import Area
 from d3a import limit_float_precision
 
@@ -62,8 +62,9 @@ class DeviceStatistics:
             if t.seller == area.name or t.buyer == area.name:
                 trade_price_list.append(t.offer.energy_rate / 100.0)
 
-        if trade_price_list != []:
-            _create_or_append_dict(subdict, key_name, {market.time_slot: trade_price_list})
+        if trade_price_list:
+            _create_or_append_dict(subdict, key_name,
+                                   {market.time_slot: trade_price_list})
         else:
             _create_or_append_dict(subdict, key_name, {market.time_slot: FILL_VALUE})
 
@@ -71,8 +72,15 @@ class DeviceStatistics:
 
     @classmethod
     def _device_energy_stats(cls, area: Area, subdict: Dict):
-        key_name = "trade_energy_kWh"
         market = list(area.parent.past_markets)[-1]
+        if type(area.strategy) == InfiniteBusStrategy:
+            cls.calculate_stats_for_infinite_bus(area, market, subdict)
+        else:
+            cls.calculate_stats_for_device(area, market, subdict)
+
+    @classmethod
+    def calculate_stats_for_device(cls, area, market, subdict):
+        key_name = "trade_energy_kWh"
         traded_energy = 0
         for t in market.trades:
             if t.seller == area.name:
@@ -80,10 +88,27 @@ class DeviceStatistics:
             if t.buyer == area.name:
                 traded_energy += t.offer.energy
 
-        _create_or_append_dict(subdict, key_name,
-                               {market.time_slot: traded_energy})
-
+        _create_or_append_dict(subdict, key_name, {market.time_slot: traded_energy})
         cls._calc_min_max_from_sim_dict(subdict, key_name)
+
+    @classmethod
+    def calculate_stats_for_infinite_bus(cls, area, market, subdict):
+        sold_key_name = "sold_trade_energy_kWh"
+        bought_key_name = "bought_trade_energy_kWh"
+        sold_traded_energy = 0
+        bought_traded_energy = 0
+
+        for t in market.trades:
+            if t.seller == area.name:
+                sold_traded_energy += t.offer.energy
+            if t.buyer == area.name:
+                bought_traded_energy += t.offer.energy
+
+        _create_or_append_dict(subdict, sold_key_name, {market.time_slot: sold_traded_energy})
+        cls._calc_min_max_from_sim_dict(subdict, sold_key_name)
+        _create_or_append_dict(subdict, bought_key_name,
+                               {market.time_slot: bought_traded_energy})
+        cls._calc_min_max_from_sim_dict(subdict, bought_key_name)
 
     @classmethod
     def _pv_production_stats(cls, area: Area, subdict: Dict):
@@ -156,11 +181,5 @@ class DeviceStatistics:
             _create_or_append_dict(subdict, "production_kWh",
                                    {market.time_slot: area.strategy.energy_per_slot_kWh})
             cls._calc_min_max_from_sim_dict(subdict, "production_kWh")
-
-        elif isinstance(area.strategy, CommercialStrategy):
-            market = list(area.parent.past_markets)[-1]
-            _create_or_append_dict(subdict, "energy_buffer_kWh",
-                                   {market.time_slot: area.strategy.energy_per_slot_kWh})
-            cls._calc_min_max_from_sim_dict(subdict, "energy_buffer_kWh")
 
         flat_result_dict[area.uuid] = subdict.copy()

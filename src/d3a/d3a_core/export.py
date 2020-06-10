@@ -53,8 +53,9 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
-EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
-                           "soc_history_%", "load_profile_kWh"]
+EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "sold_trade_energy_kWh", "bought_trade_energy_kWh",
+                           "trade_price_eur", "pv_production_kWh", "soc_history_%",
+                           "load_profile_kWh"]
 
 SlotDataRange = namedtuple('SlotDataRange', ('start', 'end'))
 
@@ -712,8 +713,7 @@ class ExportAndPlot:
         title = f'High Resolution Energy Trade Profile of {market_name}'
         plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
         mkdir_from_str(plot_dir)
-        for market_slot_unix, data in area.stats.market_trades.items():
-            market_slot = from_timestamp(market_slot_unix)
+        for market_slot, data in area.stats.market_trades.items():
             plot_data = self.add_plotly_graph_dataset(data, market_slot)
             if len(plot_data) > 0:
                 market_slot_str = market_slot.format(DATE_TIME_FORMAT)
