@@ -32,6 +32,7 @@ from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
+from d3a_interface.utils import mkdir_from_str
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
@@ -64,12 +65,6 @@ def get_from_dict(data_dict, map_list):
     return reduce(operator.getitem, map_list, data_dict)
 
 
-def mkdir_from_str(directory: str, exist_ok=True, parents=True):
-    out_dir = pathlib.Path(directory)
-    out_dir.mkdir(exist_ok=exist_ok, parents=parents)
-    return out_dir
-
-
 class ExportAndPlot:
 
     def __init__(self, root_area: Area, path: str, subdir: str, endpoint_buffer):
@@ -97,10 +92,6 @@ class ExportAndPlot:
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        trade_file = os.path.join(json_dir, "trade-detail.json")
-        with open(trade_file, 'w') as outfile:
-            json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)
-
         for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key + ".json")
             with open(json_file, 'w') as outfile:

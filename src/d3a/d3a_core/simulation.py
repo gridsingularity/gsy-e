@@ -119,7 +119,7 @@ class Simulation:
         deserialize_events_to_areas(simulation_events, self.area)
 
         validate_const_settings_for_simulation()
-        if self.export_on_finish or self.redis_connection.is_enabled():
+        if self.export_on_finish and not self.redis_connection.is_enabled():
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.endpoint_buffer)
 
@@ -258,10 +258,6 @@ class Simulation:
             self.redis_connection.publish_results(
                 self.endpoint_buffer
             )
-            # Generate and send zip file results to d3a-web
-            filename = self.export.export_to_zip_file()
-            self.redis_connection.write_zip_results(filename)
-            self.export.delete_exported_files()
 
         else:
             self.redis_connection.publish_intermediate_results(
@@ -353,7 +349,7 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
-            if self.export_on_finish or self.redis_connection.is_enabled():
+            if self.export_on_finish and not self.redis_connection.is_enabled():
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
         self.sim_status = "finished"
@@ -371,7 +367,7 @@ class Simulation:
             )
 
         self._update_and_send_results(is_final=True)
-        if self.export_on_finish:
+        if self.export_on_finish and not self.redis_connection.is_enabled():
             log.info("Exporting simulation data.")
             if GlobalConfig.POWER_FLOW:
                 self.export.export(export_plots=self.should_export_plots,
