@@ -287,11 +287,7 @@ def _accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_ty
                 child, area, accumulated_trades,
                 past_market_types=past_market_types
             )
-        elif _is_prosumer_node(child):
-            accumulated_trades = \
-                _accumulate_storage_trade(child, area, accumulated_trades, past_market_types)
-
-        elif _is_buffer_node(child):
+        elif _is_prosumer_node(child) or _is_buffer_node(child):
             accumulated_trades = \
                 _accumulate_storage_trade(child, area, accumulated_trades, past_market_types)
 
