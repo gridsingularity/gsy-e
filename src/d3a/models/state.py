@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from pendulum import duration, DateTime
-from typing import Dict
+from pendulum import duration, DateTime  # NOQA
+from typing import Dict  # NOQA
 from collections import namedtuple
 from enum import Enum
 from math import isclose
