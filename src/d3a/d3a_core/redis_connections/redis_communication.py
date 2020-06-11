@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import json
 import traceback
+import time
+from threading import Timer
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
@@ -35,10 +37,19 @@ ERROR_CHANNEL = "d3a-errors"
 RESULTS_CHANNEL = "d3a-results"
 ZIP_RESULTS_CHANNEL = "d3a-zip-results"
 ZIP_RESULTS_KEY = "d3a-zip-results-key/"
+HEARTBEAT_CHANNEL = "d3a-heartbeat"
+PULSE_RATE = 5  # in secs
 
 
 def utf8len(s):
     return len(s.encode('utf-8')) / 1000.0
+
+
+class RepeatingTimer(Timer):
+    def run(self):
+        while not self.finished.is_set():
+            self.function(*self.args, **self.kwargs)
+            self.finished.wait(self.interval)
 
 
 class RedisSimulationCommunication:
@@ -63,6 +74,8 @@ class RedisSimulationCommunication:
             log.error("Redis is not operational, will not use it for communication.")
             del self.pubsub
             return
+        self.heartbeat = RepeatingTimer(PULSE_RATE, self.heartbeat_tick)
+        self.heartbeat.start()
 
     def _subscribe_to_channels(self):
         self.pubsub.subscribe(**self._sub_callback_dict)
@@ -205,6 +218,11 @@ class RedisSimulationCommunication:
 
     def publish_json(self, channel, data):
         self.redis_db.publish(channel, json.dumps(data))
+
+    def heartbeat_tick(self):
+        heartbeat_channel = f"{HEARTBEAT_CHANNEL}"
+        data = {"time": int(time.time()), "job_id": str(self._simulation_id)}
+        self.redis_db.publish(heartbeat_channel, json.dumps(data))
 
 
 def publish_job_error_output(job_id, traceback):

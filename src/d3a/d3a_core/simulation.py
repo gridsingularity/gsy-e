@@ -262,6 +262,7 @@ class Simulation:
             filename = self.export.export_to_zip_file()
             self.redis_connection.write_zip_results(filename)
             self.export.delete_exported_files()
+            self.redis_connection.heartbeat.cancel()
 
         else:
             self.redis_connection.publish_intermediate_results(
