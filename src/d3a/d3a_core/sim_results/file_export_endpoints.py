@@ -354,12 +354,13 @@ class ExportLeafData(ExportData):
                     s.charge_history[slot]]
         elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
                                              DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
-            desired = self.area.strategy.state.desired_energy_Wh[slot] / 1000
+            desired = self.area.strategy.state.desired_energy_Wh.get(slot, 0) / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
             produced = market.actual_energy_agg.get(self.area.name, 0)
             return [produced,
-                    round(produced - self.area.strategy.energy_production_forecast_kWh[slot], 4),
-                    self.area.strategy.energy_production_forecast_kWh[slot]
+                    round(produced -
+                          self.area.strategy.energy_production_forecast_kWh.get(slot, 0), 4),
+                    self.area.strategy.energy_production_forecast_kWh.get(slot, 0)
                     ]
         return []
