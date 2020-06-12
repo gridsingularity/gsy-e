@@ -209,8 +209,8 @@ class PVStrategy(BaseStrategy):
             if k < self.area.current_market.time_slot:
                 to_delete.append(k)
         for k in to_delete:
-            del self.state.available_energy_kWh[k]
-            del self.energy_production_forecast_kWh[k]
+            self.state.available_energy_kWh.pop(k, None)
+            self.energy_production_forecast_kWh.pop(k, None)
 
     def event_market_cycle_price(self):
         self.offer_update.update_market_cycle_offers(self)
