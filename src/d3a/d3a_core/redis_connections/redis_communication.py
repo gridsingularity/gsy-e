@@ -19,13 +19,14 @@ import os
 import json
 import traceback
 import time
-from threading import Timer
 from logging import getLogger
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
 from d3a_interface.results_validator import results_validator
+from d3a_interface.constants_limits import HEARTBEAT_CHANNEL, PULSE_RATE
+from d3a_interface.utils import RepeatingTimer
 from zlib import compress
 
 log = getLogger(__name__)
@@ -37,19 +38,10 @@ ERROR_CHANNEL = "d3a-errors"
 RESULTS_CHANNEL = "d3a-results"
 ZIP_RESULTS_CHANNEL = "d3a-zip-results"
 ZIP_RESULTS_KEY = "d3a-zip-results-key/"
-HEARTBEAT_CHANNEL = "d3a-heartbeat"
-PULSE_RATE = 1  # in secs
 
 
 def utf8len(s):
     return len(s.encode('utf-8')) / 1000.0
-
-
-class RepeatingTimer(Timer):
-    def run(self):
-        while not self.finished.is_set():
-            self.function(*self.args, **self.kwargs)
-            self.finished.wait(self.interval)
 
 
 class RedisSimulationCommunication:
