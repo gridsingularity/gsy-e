@@ -38,7 +38,7 @@ RESULTS_CHANNEL = "d3a-results"
 ZIP_RESULTS_CHANNEL = "d3a-zip-results"
 ZIP_RESULTS_KEY = "d3a-zip-results-key/"
 HEARTBEAT_CHANNEL = "d3a-heartbeat"
-PULSE_RATE = 5  # in secs
+PULSE_RATE = 1  # in secs
 
 
 def utf8len(s):
@@ -220,8 +220,8 @@ class RedisSimulationCommunication:
         self.redis_db.publish(channel, json.dumps(data))
 
     def heartbeat_tick(self):
-        heartbeat_channel = f"{HEARTBEAT_CHANNEL}"
-        data = {"time": int(time.time()), "job_id": str(self._simulation_id)}
+        heartbeat_channel = f"{self._simulation_id}/{HEARTBEAT_CHANNEL}"
+        data = {"time": int(time.time())}
         self.redis_db.publish(heartbeat_channel, json.dumps(data))
 
 
