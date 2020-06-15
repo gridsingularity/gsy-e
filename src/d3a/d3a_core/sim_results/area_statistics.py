@@ -19,6 +19,8 @@ from collections import namedtuple, OrderedDict
 from statistics import mean
 from copy import deepcopy
 from d3a.models.strategy.storage import StorageStrategy
+from d3a.models.strategy.finite_power_plant import FinitePowerPlant
+from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
@@ -70,17 +72,22 @@ def _is_load_node(area):
 
 
 def _is_producer_node(area):
-    return isinstance(area.strategy, (PVStrategy, CommercialStrategy))
+    return isinstance(area.strategy, PVStrategy) or \
+           type(area.strategy) in [CommercialStrategy, FinitePowerPlant]
 
 
 def _is_prosumer_node(area):
     return isinstance(area.strategy, StorageStrategy)
 
 
+def _is_buffer_node(area):
+    return type(area.strategy) == InfiniteBusStrategy
+
+
 def _accumulate_storage_trade(storage, area, accumulated_trades, past_market_types):
     if storage.name not in accumulated_trades:
         accumulated_trades[storage.name] = {
-            "type": "Storage",
+            "type": "Storage" if type(area.strategy) == StorageStrategy else "InfiniteBus",
             "produced": 0.0,
             "earned": 0.0,
             "consumedFrom": {},
@@ -280,7 +287,7 @@ def _accumulate_grid_trades_all_devices(area, accumulated_trades, past_market_ty
                 child, area, accumulated_trades,
                 past_market_types=past_market_types
             )
-        elif _is_prosumer_node(child):
+        elif _is_prosumer_node(child) or _is_buffer_node(child):
             accumulated_trades = \
                 _accumulate_storage_trade(child, area, accumulated_trades, past_market_types)
 

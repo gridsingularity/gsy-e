@@ -456,15 +456,22 @@ class ExportAndPlot:
             for tick_slot, info_dicts in markets.items():
                 for info_dict in info_dicts:
                     size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
-                    all_info_dicts = set([
-                        info_dict['tool_tip'],
-                        *[i['tool_tip'] for i in info_dicts if i['rate'] == info_dict['rate']]])
+                    all_info_dicts = list([
+                        info_dict,
+                        *[i for i in info_dicts if i['rate'] == info_dict['rate']]])
+                    # Removes duplicate dicts from a list of dicts
+                    all_info_dicts = [dict(t)
+                                      for t in {
+                                          tuple(sorted(d.items())) for d in all_info_dicts
+                                      }]
+                    all_info_dicts.sort(key=lambda e: e["tool_tip"])
+                    tooltip_text = "<br />".join(map(lambda e: e["tool_tip"], all_info_dicts))
                     fig.add_trace(
                         go.Scatter(x=[tick_slot],
                                    y=[info_dict['rate']],
-                                   text="<br />".join(all_info_dicts),
+                                   text=tooltip_text,
                                    hoverinfo='text',
-                                   marker=dict(size=size, color=info_dict['color']),
+                                   marker=dict(size=size, color=all_info_dicts[0]['color']),
                                    visible=False)
                     )
             self.market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
