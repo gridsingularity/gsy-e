@@ -377,19 +377,6 @@ def _generate_intraarea_consumption_entries(accumulated_trades):
     return consumption_rows
 
 
-def generate_inter_area_trade_details(area, past_market_types):
-    accumulated_trades = _accumulate_grid_trades_all_devices(area, {}, past_market_types)
-    trade_details = dict()
-    for area_name, area_data in accumulated_trades.items():
-        total_energy = 0
-        for name, energy in area_data["consumedFrom"].items():
-            total_energy += energy
-        for name, energy in area_data["consumedFrom"].items():
-            area_data["consumedFrom"][name] = str((energy / total_energy) * 100) + "%"
-        trade_details[area_name] = area_data
-    return trade_details
-
-
 def _external_trade_entries(child, accumulated_trades):
     results = {"areaName": "External Trades"}
     area_data = accumulated_trades[child.name]

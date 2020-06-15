@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from d3a.d3a_core.sim_results.area_statistics import export_cumulative_grid_trades, \
-    export_cumulative_grid_trades_redis, MarketPriceEnergyDay, \
-    generate_inter_area_trade_details
+    export_cumulative_grid_trades_redis, MarketPriceEnergyDay
 from d3a.d3a_core.sim_results.area_throughput_stats import AreaThroughputStats
 from d3a.d3a_core.sim_results.file_export_endpoints import FileExportEndpoints
 from d3a.d3a_core.sim_results.stats import MarketEnergyBills, CumulativeBills
@@ -52,7 +51,6 @@ class SimulationEndpointBuffer:
         self.cumulative_bills = CumulativeBills()
         self.balancing_bills = MarketEnergyBills(is_spot_market=False)
         self.cumulative_grid_trades = CumulativeGridTrades()
-        self.trade_details = {}
         self.device_statistics = DeviceStatistics()
         self.file_export_endpoints = FileExportEndpoints(export_plots)
         self.kpi = KPI()
@@ -128,8 +126,6 @@ class SimulationEndpointBuffer:
             self.balancing_bills.update(area)
 
         self.cumulative_bills.update_cumulative_bills(area)
-
-        self.trade_details = generate_inter_area_trade_details(area, "past_markets")
 
         self.file_export_endpoints(area)
         self.market_unmatched_loads.update_unmatched_loads(area)
