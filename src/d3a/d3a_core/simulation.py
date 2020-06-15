@@ -304,8 +304,6 @@ class Simulation:
                 sleep(5)
                 break
 
-            # self.live_events.handle_all_events(self.area)
-
             self.area._cycle_markets()
 
             gc.collect()
