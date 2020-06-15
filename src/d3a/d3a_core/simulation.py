@@ -349,10 +349,9 @@ class Simulation:
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
 
-        self._update_progress_info(slot_count - 1, slot_count)
-        paused_duration = duration(seconds=self.paused_time)
-
         if not self.is_stopped:
+            self._update_progress_info(slot_count - 1, slot_count)
+            paused_duration = duration(seconds=self.paused_time)
             log.info(
                 "Run finished in %s%s / %.2fx real time",
                 self.progress_info.elapsed_time,
