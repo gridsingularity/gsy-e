@@ -73,6 +73,7 @@ class SimulationProgressInfo:
         self.elapsed_time = duration(seconds=0)
         self.percentage_completed = 0
         self.next_slot_str = ""
+        self.current_slot_str = ""
 
 
 class Simulation:
@@ -273,6 +274,8 @@ class Simulation:
         self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
         self.progress_info.elapsed_time = run_duration
         self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
+        self.progress_info.current_slot_str = get_market_slot_time_str(
+            slot_no, self.simulation_config)
         self.progress_info.next_slot_str = get_market_slot_time_str(
             slot_no + 1, self.simulation_config)
 
@@ -301,7 +304,7 @@ class Simulation:
                 sleep(5)
                 break
 
-            self.live_events.handle_all_events(self.area)
+            # self.live_events.handle_all_events(self.area)
 
             self.area._cycle_markets()
 
@@ -345,6 +348,8 @@ class Simulation:
             self._update_and_send_results()
             if self.export_on_finish and not self.redis_connection.is_enabled():
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
+
+            self.live_events.handle_all_events(self.area)
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
