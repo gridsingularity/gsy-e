@@ -89,7 +89,6 @@ class PVStrategy(BaseStrategy):
                                                  update_interval)
 
     def area_reconfigure_event(self, validate=True, **kwargs):
-        assert all(k in self.parameters for k in kwargs.keys())
         self._area_reconfigure_prices(validate, **kwargs)
 
         validate_pv_device_energy(**kwargs)

@@ -158,7 +158,6 @@ class StorageStrategy(BidEnabledStrategy):
             self.offer_update.update_interval = update_interval
 
     def area_reconfigure_event(self, **kwargs):
-        assert all(k in self.parameters for k in kwargs.keys())
         self._area_reconfigure_prices(**kwargs)
         self.offer_update.update_on_activate()
         self.bid_update.update_on_activate()

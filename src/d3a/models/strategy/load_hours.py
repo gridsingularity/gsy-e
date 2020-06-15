@@ -153,7 +153,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
             del self.state.desired_energy_Wh[k]
 
     def _area_reconfigure_prices(self, **kwargs):
-        assert all(k in self.parameters for k in kwargs.keys())
         if key_in_dict_and_not_none(kwargs, 'initial_buying_rate'):
             self.bid_update.initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
                                                                   kwargs['initial_buying_rate'])
