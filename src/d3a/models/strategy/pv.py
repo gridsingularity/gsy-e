@@ -90,7 +90,6 @@ class PVStrategy(BaseStrategy):
 
     def area_reconfigure_event(self, validate=True, **kwargs):
         self._area_reconfigure_prices(validate, **kwargs)
-
         validate_pv_device_energy(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'panel_count'):
             self.panel_count = kwargs['panel_count']
