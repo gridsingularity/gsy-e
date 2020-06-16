@@ -212,7 +212,7 @@ class RedisSimulationCommunication:
         self.redis_db.publish(channel, json.dumps(data))
 
     def heartbeat_tick(self):
-        heartbeat_channel = f"{self._simulation_id}/{HEARTBEAT_CHANNEL}"
+        heartbeat_channel = f"{HEARTBEAT_CHANNEL}/{self._simulation_id}"
         data = {"time": int(time.time())}
         self.redis_db.publish(heartbeat_channel, json.dumps(data))
 
