@@ -259,10 +259,6 @@ class Simulation:
             self.redis_connection.publish_results(
                 self.endpoint_buffer
             )
-            # Generate and send zip file results to d3a-web
-            filename = self.export.export_to_zip_file()
-            self.redis_connection.write_zip_results(filename)
-            self.export.delete_exported_files()
             if hasattr(self.redis_connection, 'heartbeat'):
                 self.redis_connection.heartbeat.cancel()
 
