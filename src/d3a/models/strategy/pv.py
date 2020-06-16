@@ -89,9 +89,7 @@ class PVStrategy(BaseStrategy):
                                                  update_interval)
 
     def area_reconfigure_event(self, validate=True, **kwargs):
-        assert all(k in self.parameters for k in kwargs.keys())
         self._area_reconfigure_prices(validate, **kwargs)
-
         validate_pv_device_energy(**kwargs)
         if key_in_dict_and_not_none(kwargs, 'panel_count'):
             self.panel_count = kwargs['panel_count']
@@ -209,8 +207,8 @@ class PVStrategy(BaseStrategy):
             if k < self.area.current_market.time_slot:
                 to_delete.append(k)
         for k in to_delete:
-            del self.state.available_energy_kWh[k]
-            del self.energy_production_forecast_kWh[k]
+            self.state.available_energy_kWh.pop(k, None)
+            self.energy_production_forecast_kWh.pop(k, None)
 
     def event_market_cycle_price(self):
         self.offer_update.update_market_cycle_offers(self)

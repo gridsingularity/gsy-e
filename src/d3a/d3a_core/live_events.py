@@ -19,11 +19,16 @@ class CreateAreaEvent:
     def apply(self, area):
         if area.uuid != self.parent_uuid:
             return False
-        # The order of the following activation calls matters:
-        self.created_area.parent = area
-        area.children.append(self.created_area)
-        self.created_area.activate()
-        self.created_area.strategy.event_activate()
+        try:
+            # The order of the following activation calls matters:
+            self.created_area.parent = area
+            area.children.append(self.created_area)
+            self.created_area.activate()
+            self.created_area.strategy.event_activate()
+        except Exception as e:
+            if self.created_area in area.children:
+                area.children.remove(self.created_area)
+            raise e
         return True
 
     def __repr__(self):
@@ -88,8 +93,8 @@ class LiveEvents:
             if event.apply(area) is True:
                 return True
         except Exception as e:
-            logging.warning(f"Event {event} failed to apply on area {area.name}. "
-                            f"Exception: {e}. Traceback: {traceback.format_exc()}")
+            logging.error(f"Event {event} failed to apply on area {area.name}. "
+                          f"Exception: {e}. Traceback: {traceback.format_exc()}")
             return False
         if not area.children:
             return False

@@ -73,6 +73,7 @@ class SimulationProgressInfo:
         self.elapsed_time = duration(seconds=0)
         self.percentage_completed = 0
         self.next_slot_str = ""
+        self.current_slot_str = ""
 
 
 class Simulation:
@@ -119,7 +120,7 @@ class Simulation:
         deserialize_events_to_areas(simulation_events, self.area)
 
         validate_const_settings_for_simulation()
-        if self.export_on_finish or self.redis_connection.is_enabled():
+        if self.export_on_finish and not self.redis_connection.is_enabled():
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.endpoint_buffer)
 
@@ -279,6 +280,8 @@ class Simulation:
         self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
         self.progress_info.elapsed_time = run_duration
         self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
+        self.progress_info.current_slot_str = get_market_slot_time_str(
+            slot_no, self.simulation_config)
         self.progress_info.next_slot_str = get_market_slot_time_str(
             slot_no + 1, self.simulation_config)
 
@@ -349,7 +352,7 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
-            if self.export_on_finish or self.redis_connection.is_enabled():
+            if self.export_on_finish and not self.redis_connection.is_enabled():
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
         self.sim_status = "finished"
@@ -367,7 +370,7 @@ class Simulation:
             )
 
         self._update_and_send_results(is_final=True)
-        if self.export_on_finish:
+        if self.export_on_finish and not self.redis_connection.is_enabled():
             log.info("Exporting simulation data.")
             if GlobalConfig.POWER_FLOW:
                 self.export.export(export_plots=self.should_export_plots,

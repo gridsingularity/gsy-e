@@ -115,9 +115,10 @@ class DeviceStatistics:
         key_name = "pv_production_kWh"
         market = list(area.parent.past_markets)[-1]
 
-        _create_or_append_dict(subdict, key_name,
-                               {market.time_slot:
-                                area.strategy.energy_production_forecast_kWh[market.time_slot]})
+        _create_or_append_dict(
+            subdict, key_name,
+            {market.time_slot:
+                area.strategy.energy_production_forecast_kWh.get(market.time_slot, 0)})
 
         cls._calc_min_max_from_sim_dict(subdict, key_name)
 
@@ -137,7 +138,8 @@ class DeviceStatistics:
         market = list(area.parent.past_markets)[-1]
         if market.time_slot in area.strategy.state.desired_energy_Wh:
             _create_or_append_dict(subdict, key_name, {
-                market.time_slot: area.strategy.state.desired_energy_Wh[market.time_slot] / 1000.})
+                market.time_slot:
+                    area.strategy.state.desired_energy_Wh.get(market.time_slot, 0) / 1000.})
         else:
             _create_or_append_dict(subdict, key_name, {market.time_slot: 0})
 
