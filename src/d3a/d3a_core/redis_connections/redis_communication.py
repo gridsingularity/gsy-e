@@ -25,7 +25,7 @@ from redis.exceptions import ConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
 from d3a_interface.results_validator import results_validator
-from d3a_interface.constants_limits import HEARTBEAT_CHANNEL, PULSE_RATE
+from d3a_interface.constants_limits import HeartBeat
 from d3a_interface.utils import RepeatingTimer
 from zlib import compress
 
@@ -66,7 +66,7 @@ class RedisSimulationCommunication:
             log.error("Redis is not operational, will not use it for communication.")
             del self.pubsub
             return
-        self.heartbeat = RepeatingTimer(PULSE_RATE, self.heartbeat_tick)
+        self.heartbeat = RepeatingTimer(HeartBeat.RATE, self.heartbeat_tick)
         self.heartbeat.start()
 
     def _subscribe_to_channels(self):
@@ -212,7 +212,7 @@ class RedisSimulationCommunication:
         self.redis_db.publish(channel, json.dumps(data))
 
     def heartbeat_tick(self):
-        heartbeat_channel = f"{HEARTBEAT_CHANNEL}/{self._simulation_id}"
+        heartbeat_channel = f"{HeartBeat.CHANNEL_NAME}/{self._simulation_id}"
         data = {"time": int(time.time())}
         self.redis_db.publish(heartbeat_channel, json.dumps(data))
 
