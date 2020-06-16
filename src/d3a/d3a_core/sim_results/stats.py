@@ -239,13 +239,12 @@ class MarketEnergyBills:
                 self.bills_results[area.name] =  \
                     {child.name: self._default_area_dict(child)
                         for child in area.children}
+            else:
+                for child in area.children:
+                    self.bills_results[area.name][child.name] = self._default_area_dict(child) \
+                        if child.name not in self.bills_results[area.name] else \
+                        self.bills_results[area.name][child.name]
             return self.bills_results[area.name]
-
-    def _get_child_instance(self, name, area):
-        for child in area.children:
-            if name == child.name:
-                self.bills_results[area.name][name] = self._default_area_dict(child)
-                return True
 
     def _energy_bills(self, area, past_market_types):
         """
@@ -269,11 +268,7 @@ class MarketEnergyBills:
                 seller = area_name_from_area_or_iaa_name(trade.seller)
                 if buyer in result:
                     self._store_bought_trade(result[buyer], trade)
-                elif self._get_child_instance(buyer, area) and buyer in result:
-                    self._store_bought_trade(result[buyer], trade)
                 if seller in result:
-                    self._store_sold_trade(result[seller], trade)
-                elif self._get_child_instance(seller, area) and seller in result:
                     self._store_sold_trade(result[seller], trade)
                 # Outgoing external trades
                 if buyer == area_name_from_area_or_iaa_name(area.name) and seller in result:
