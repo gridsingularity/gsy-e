@@ -74,6 +74,7 @@ class LiveEvents:
         self.config = config
 
     def add_event(self, event_dict):
+        print("add_event", event_dict)
         with self.lock:
             logging.debug(f"Received live event {event_dict}.")
             if event_dict["eventType"] == "create_area":
