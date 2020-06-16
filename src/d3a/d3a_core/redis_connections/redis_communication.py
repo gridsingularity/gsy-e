@@ -155,7 +155,7 @@ class RedisSimulationCommunication:
         data = json.loads(message["data"])
         try:
             for event in data["bulk_event_list"]:
-                self._live_events.add_event(event)
+                self._live_events.add_event(event, bulk_event=True)
             is_successful = True
         except Exception as e:
             log.error(f"Live event {data} failed. Exception: {e}. "

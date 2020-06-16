@@ -73,21 +73,25 @@ class LiveEvents:
         self.lock = Lock()
         self.config = config
 
-    def add_event(self, event_dict):
-        print("add_event", event_dict)
+    def add_event(self, event_dict, bulk_event=False):
         with self.lock:
-            logging.debug(f"Received live event {event_dict}.")
-            if event_dict["eventType"] == "create_area":
-                event_object = CreateAreaEvent(
-                    event_dict["parent_uuid"], event_dict["area_representation"], self.config)
-            elif event_dict["eventType"] == "delete_area":
-                event_object = DeleteAreaEvent(event_dict["area_uuid"])
-            elif event_dict["eventType"] == "update_area":
-                event_object = UpdateAreaEvent(
-                    event_dict["area_uuid"], event_dict["area_representation"])
-            else:
-                raise LiveEventException(f"Incorrect event type ({event_dict})")
-            self.event_buffer.append(event_object)
+            try:
+                logging.debug(f"Received live event {event_dict}.")
+                if event_dict["eventType"] == "create_area":
+                    event_object = CreateAreaEvent(
+                        event_dict["parent_uuid"], event_dict["area_representation"], self.config)
+                elif event_dict["eventType"] == "delete_area":
+                    event_object = DeleteAreaEvent(event_dict["area_uuid"])
+                elif event_dict["eventType"] == "update_area":
+                    event_object = UpdateAreaEvent(
+                        event_dict["area_uuid"], event_dict["area_representation"])
+                else:
+                    raise LiveEventException(f"Incorrect event type ({event_dict})")
+                self.event_buffer.append(event_object)
+            except Exception as e:
+                if bulk_event:
+                    self.event_buffer = []
+                raise Exception(e)
 
     def _handle_event(self, area, event):
         try:
