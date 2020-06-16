@@ -304,6 +304,8 @@ class Simulation:
                 sleep(5)
                 break
 
+            self.live_events.handle_all_events(self.area)
+
             self.area._cycle_markets()
 
             gc.collect()
@@ -346,8 +348,6 @@ class Simulation:
             self._update_and_send_results()
             if self.export_on_finish and not self.redis_connection.is_enabled():
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
-
-            self.live_events.handle_all_events(self.area)
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
