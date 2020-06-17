@@ -239,6 +239,11 @@ class MarketEnergyBills:
                 self.bills_results[area.name] =  \
                     {child.name: self._default_area_dict(child)
                         for child in area.children}
+            else:
+                for child in area.children:
+                    self.bills_results[area.name][child.name] = self._default_area_dict(child) \
+                        if child.name not in self.bills_results[area.name] else \
+                        self.bills_results[area.name][child.name]
             return self.bills_results[area.name]
 
     def _energy_bills(self, area, past_market_types):
