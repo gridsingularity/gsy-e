@@ -78,7 +78,7 @@ class OneSidedMarket(Market):
     @lock_market_action
     def offer(self, price: float, energy: float, seller: str, seller_origin,
               offer_id=None, original_offer_price=None, dispatch_event=True,
-              adapt_price_with_fees=True) -> Offer:
+              adapt_price_with_fees=True, add_to_history=True) -> Offer:
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
@@ -95,9 +95,11 @@ class OneSidedMarket(Market):
                       seller_origin=seller_origin)
 
         self.offers[offer.id] = offer
-        self.offer_history.append(offer)
+        if add_to_history is True:
+            self.offer_history.append(offer)
+            self._update_min_max_avg_offer_prices()
+
         log.debug(f"[OFFER][NEW][{self.name}][{self.time_slot_str}] {offer}")
-        self._update_min_max_avg_offer_prices()
         if dispatch_event is True:
             self.dispatch_market_offer_event(offer)
         return offer
@@ -147,7 +149,8 @@ class OneSidedMarket(Market):
                                     original_offer_price=original_accepted_price,
                                     dispatch_event=False,
                                     seller_origin=original_offer.seller_origin,
-                                    adapt_price_with_fees=False)
+                                    adapt_price_with_fees=False,
+                                    add_to_history=False)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy

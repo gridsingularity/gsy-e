@@ -259,6 +259,8 @@ class Simulation:
             self.redis_connection.publish_results(
                 self.endpoint_buffer
             )
+            if hasattr(self.redis_connection, 'heartbeat'):
+                self.redis_connection.heartbeat.cancel()
 
         else:
             self.redis_connection.publish_intermediate_results(
