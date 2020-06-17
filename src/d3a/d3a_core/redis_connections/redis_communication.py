@@ -146,7 +146,7 @@ class RedisSimulationCommunication:
 
         self._generate_redis_response(
             data, self._simulation_id, is_successful, 'live-event',
-            {"activation_time": self._simulation.progress_info.next_slot_str}
+            {"activation_time": self._simulation.progress_info.current_slot_str}
         )
 
     def _handle_redis_job_metadata(self):
