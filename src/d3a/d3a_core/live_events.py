@@ -24,7 +24,8 @@ class CreateAreaEvent:
             self.created_area.parent = area
             area.children.append(self.created_area)
             self.created_area.activate()
-            self.created_area.strategy.event_activate()
+            if self.created_area.strategy:
+                self.created_area.strategy.event_activate()
         except Exception as e:
             if self.created_area in area.children:
                 area.children.remove(self.created_area)
