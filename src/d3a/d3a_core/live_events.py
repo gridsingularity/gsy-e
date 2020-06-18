@@ -23,7 +23,7 @@ class CreateAreaEvent:
             # The order of the following activation calls matters:
             self.created_area.parent = area
             area.children.append(self.created_area)
-            self.created_area.activate()
+            self.created_area.activate(current_tick=area.current_tick)
             if self.created_area.strategy:
                 self.created_area.strategy.event_activate()
         except Exception as e:

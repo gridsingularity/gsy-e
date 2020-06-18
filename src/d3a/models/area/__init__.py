@@ -125,7 +125,6 @@ class Area:
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
             return
-        assert all(k in self.reconfig_parameters for k in kwargs.keys())
         if key_in_dict_and_not_none(kwargs, 'transfer_fee_const') or \
                 key_in_dict_and_not_none(kwargs, 'grid_fee_percentage'):
             transfer_fee_const = kwargs["transfer_fee_const"] \
@@ -175,7 +174,9 @@ class Area:
     def set_events(self, event_list):
         self.events = Events(event_list, self)
 
-    def activate(self, bc=None):
+    def activate(self, bc=None, current_tick=None):
+        if current_tick is not None:
+            self.current_tick = current_tick
         if bc:
             self._bc = bc
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:

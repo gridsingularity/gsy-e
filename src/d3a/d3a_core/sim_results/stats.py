@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
 from d3a.d3a_core.util import round_floats_for_ui
@@ -240,6 +239,11 @@ class MarketEnergyBills:
                     {child.name: self._default_area_dict(child)
                         for child in area.children}
             else:
+                # TODO: find a better way to handle this.
+                # is only triggered once:
+                # when a chil is added to an area both triggered by a live event
+                if area.children and "bought" in self.bills_results[area.name]:
+                    self.bills_results[area.name] = {}
                 for child in area.children:
                     self.bills_results[area.name][child.name] = self._default_area_dict(child) \
                         if child.name not in self.bills_results[area.name] else \
@@ -302,21 +306,18 @@ class MarketEnergyBills:
         market_type = "past_markets" if self.is_spot_market else "past_balancing_markets"
         self._update_market_fees(area, market_type)
         bills = self._energy_bills(area, market_type)
-        flattened = self._flatten_energy_bills(OrderedDict(sorted(bills.items())), {})
+        flattened = {}
+        self._flatten_energy_bills(bills, flattened)
         self.bills_results = self._accumulate_by_children(area, flattened, {})
         self._bills_for_redis(area, deepcopy(self.bills_results))
 
     @classmethod
     def _flatten_energy_bills(cls, energy_bills, flat_results):
         for k, v in energy_bills.items():
-            if k == "market_fee":
-                flat_results["market_fee"] = v
-                continue
             if "children" in v:
                 cls._flatten_energy_bills(v["children"], flat_results)
             flat_results[k] = v
             flat_results[k].pop("children", None)
-        return flat_results
 
     def _accumulate_by_children(self, area, flattened, results):
         if not area.children:
@@ -326,7 +327,7 @@ class MarketEnergyBills:
             results[area.name] = {c.name: flattened[c.name] for c in area.children
                                   if c.name in flattened}
 
-            results.update(**self._generate_external_and_total_bills(area, results, flattened))
+            results.update(**self._generate_external_and_total_bills(area, results))
 
             for c in area.children:
                 results.update(
@@ -359,7 +360,7 @@ class MarketEnergyBills:
                     "total_cost": -1 * market_fee
                     }}
 
-    def _generate_external_and_total_bills(self, area, results, flattened):
+    def _generate_external_and_total_bills(self, area, results):
 
         all_child_results = [v for v in results[area.name].values()]
         self._write_acculumated_stats(area, results, all_child_results, "Accumulated Trades")
