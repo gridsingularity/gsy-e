@@ -7,11 +7,11 @@
 cycler==0.10.0            # via matplotlib
 decorator==4.4.1          # via networkx
 kiwisolver==1.1.0         # via matplotlib
-matplotlib==3.1.2
+matplotlib==3.1.2         # via -r requirements/pandapower.in
 networkx==2.4             # via pandapower
 numpy==1.18.1             # via matplotlib, pandapower, pandas, scipy
 packaging==20.0           # via pandapower
-pandapower==2.2.0
+pandapower==2.2.0         # via -r requirements/pandapower.in
 pandas==0.25.3            # via pandapower
 pyparsing==2.4.6          # via matplotlib, packaging
 python-dateutil==2.8.1    # via matplotlib, pandas
