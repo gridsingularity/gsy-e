@@ -59,7 +59,11 @@ class ExportUnmatchedLoads:
         if hasattr(self.area, "past_markets") and len(list(self.area.past_markets)) > 0:
             self.latest_time_slot = list(self.area.past_markets)[-1].time_slot
         else:
-            self.latest_time_slot = self.hour_list[0]
+            if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS is False:
+                self.latest_time_slot = self.hour_list[0].add(
+                    seconds=self.area.config.tick_length.seconds * self.area.current_tick)
+            else:
+                self.latest_time_slot = self.hour_list[0]
 
     def count_load_devices_in_setup(self, area):
         for child in area.children:
@@ -242,7 +246,7 @@ class MarketUnmatchedLoads:
         for child in area.children:
             self.write_none_to_unmatched_loads(child)
 
-    def merge_unmatched_loads(self, current_results, current_results_uuid):
+    def merge_unmatched_loads(self, current_results):
         """
         Merges unmatched loads for the last market to the global unmatched loads
         :param current_results: Output from ExportUnmatchedLoads.get_current_market_results()
@@ -265,4 +269,4 @@ class MarketUnmatchedLoads:
             if ConstSettings.GeneralSettings.KEEP_PAST_MARKETS:
                 self.unmatched_loads = current_results
             else:
-                self.merge_unmatched_loads(current_results, current_results_uuid)
+                self.merge_unmatched_loads(current_results)
