@@ -72,7 +72,9 @@ class TestExternalMixin(unittest.TestCase):
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_called_once()
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/tick"
-        assert strategy.redis.publish_json.call_args_list[0][0][1] == \
+        result = strategy.redis.publish_json.call_args_list[0][0][1]
+        result.pop('area_uuid')
+        assert result == \
             {'device_info': strategy._device_info_dict, 'event': 'tick', 'slot_completion': '20%'}
         strategy.redis.reset_mock()
         strategy.redis.publish_json.reset_mock()
@@ -83,7 +85,9 @@ class TestExternalMixin(unittest.TestCase):
         strategy._dispatch_event_tick_to_external_agent()
         strategy.redis.publish_json.assert_called_once()
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/tick"
-        assert strategy.redis.publish_json.call_args_list[0][0][1] == \
+        result = strategy.redis.publish_json.call_args_list[0][0][1]
+        result.pop('area_uuid')
+        assert result == \
             {'device_info': strategy._device_info_dict, 'event': 'tick', 'slot_completion': '40%'}
 
     @parameterized.expand([
