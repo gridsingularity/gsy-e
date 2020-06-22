@@ -23,6 +23,7 @@ from d3a.models.strategy.finite_power_plant import FinitePowerPlant
 from d3a.models.strategy.infinite_bus import InfiniteBusStrategy
 from d3a.models.strategy.area_agents.one_sided_agent import InterAreaAgent
 from d3a.models.strategy.pv import PVStrategy
+from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import CellTowerLoadHoursStrategy, LoadHoursStrategy
 from d3a.d3a_core.util import area_name_from_area_or_iaa_name, make_iaa_name, \
@@ -73,7 +74,7 @@ def _is_load_node(area):
 
 def _is_producer_node(area):
     return isinstance(area.strategy, PVStrategy) or \
-           type(area.strategy) in [CommercialStrategy, FinitePowerPlant]
+           type(area.strategy) in [CommercialStrategy, FinitePowerPlant, MarketMakerStrategy]
 
 
 def _is_prosumer_node(area):
