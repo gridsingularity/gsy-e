@@ -20,6 +20,7 @@ import logging
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.storage import StorageStrategy
 from d3a.models.strategy.external_strategies import ExternalMixin, check_for_connected_and_reply
+from d3a.d3a_core.singletons import aggregator
 
 
 class StorageExternalMixin(ExternalMixin):
@@ -295,7 +296,7 @@ class StorageExternalMixin(ExternalMixin):
     def event_market_cycle(self):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
-        if self.connected:
+        if self.connected or self.is_aggregator_controlled:
             self._reset_event_tick_counter()
             self.state.market_cycle(self.market_area.current_market.time_slot,
                                     self.market.time_slot)
@@ -306,9 +307,14 @@ class StorageExternalMixin(ExternalMixin):
             current_market_info['device_info'] = self._device_info_dict
             current_market_info["event"] = "market"
             current_market_info['device_bill'] = self.device.stats.aggregated_stats["bills"]
+            current_market_info["area_uuid"] = self.device.uuid
             current_market_info['last_market_stats'] = \
                 self.market_area.stats.get_price_stats_current_market()
-            self.redis.publish_json(market_event_channel, current_market_info)
+            if self.connected:
+                self.redis.publish_json(market_event_channel, current_market_info)
+
+            if self.is_aggregator_controlled:
+                aggregator.add_batch_event(self.device.uuid, current_market_info)
         else:
             super().event_market_cycle()
 
@@ -317,7 +323,11 @@ class StorageExternalMixin(ExternalMixin):
             super().area_reconfigure_event(*args, **kwargs)
 
     def event_tick(self):
-        if not self.connected:
+        if self.is_aggregator_controlled:
+            aggregator.consume_all_area_commands(self.device.uuid,
+                                                 self.trigger_aggregator_commands)
+
+        if not self.connected and not self.is_aggregator_controlled:
             super().event_tick()
         else:
             self.state.tick(self.market_area, self.market.time_slot)
@@ -343,6 +353,145 @@ class StorageExternalMixin(ExternalMixin):
                 else:
                     assert False, f"Incorrect incoming request name: {req}"
             self._dispatch_event_tick_to_external_agent()
+
+    def _delete_offer_aggregator(self, arguments):
+        if ("offer" in arguments and arguments["offer"] is not None) and \
+                not self.offers.is_offer_posted(self.market.id, arguments["offer"]):
+            raise Exception("Offer_id is not associated with any posted offer.")
+
+        try:
+            to_delete_offer_id = arguments["offer"] if "offer" in arguments else None
+            deleted_offers = \
+                self.offers.remove_offer_from_cache_and_market(self.market, to_delete_offer_id)
+            self.state.offered_sell_kWh[self.market.time_slot] = \
+                self.offers.open_offer_energy(self.market.id)
+            self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
+            return {
+                "command": "offer_delete", "status": "ready",
+                "deleted_offers": deleted_offers,
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id", None)
+            }
+        except Exception as e:
+            return {
+                "command": "offer_delete", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": f"Error when handling offer delete "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id", None)}
+
+    def _list_offers_aggregator(self, arguments):
+        try:
+            filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
+                               for _, v in self.market.get_offers().items()
+                               if v.seller == self.device.name]
+            return {
+                "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id", None)}
+        except Exception as e:
+            return {
+                "command": "list_offers", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": f"Error when listing offers on area {self.device.name}.",
+                "transaction_id": arguments.get("transaction_id", None)}
+
+    def _offer_aggregator(self, arguments):
+        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+        arguments['seller'] = self.device.name
+        arguments['seller_origin'] = self.device.name
+        try:
+            assert arguments['energy'] <= self.state.energy_to_sell_dict[self.market.time_slot]
+            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
+            offer = self.market.offer(**offer_arguments)
+            self.offers.post(offer, self.market.id)
+            self.state.offered_sell_kWh[self.market.time_slot] = \
+                self.offers.open_offer_energy(self.market.id)
+            self.state.clamp_energy_to_sell_kWh([self.market.time_slot])
+            return {
+                "command": "offer",
+                "area_uuid": self.device.uuid,
+                "status": "ready",
+                "offer": offer.to_JSON_string(),
+                "transaction_id": arguments.get("transaction_id", None),
+            }
+        except Exception as e:
+            return {
+                "command": "offer", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": f"Error when handling offer create "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id", None)}
+
+    def _bid_aggregator(self, arguments):
+        try:
+            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+            arguments['buyer_origin'] = self.device.name
+            assert arguments["energy"] <= self.state.energy_to_buy_dict[self.market.time_slot]
+            bid = self.post_bid(
+                self.market,
+                arguments["price"],
+                arguments["energy"],
+                buyer_origin=arguments["buyer_origin"]
+            )
+            self.state.offered_buy_kWh[self.market.time_slot] = \
+                self.posted_bid_energy(self.market.id)
+            self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
+            return {
+                "command": "bid", "status": "ready", "bid": bid.to_JSON_string(),
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id", None)}
+        except Exception as e:
+            return {
+                "command": "bid", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": f"Error when handling bid create "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id", None)}
+
+    def _delete_bid_aggregator(self, arguments):
+        if ("bid" in arguments and arguments["bid"] is not None) and \
+                not self.is_bid_posted(self.market, arguments["bid"]):
+            return {
+                "command": "bid_delete", "status": "error",
+                "error_message": "Bid_id is not associated with any posted bid.",
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id", None)}
+        try:
+            to_delete_bid_id = arguments["bid"] if "bid" in arguments else None
+            deleted_bids = self.remove_bid_from_pending(self.market.id, bid_id=to_delete_bid_id)
+            self.state.offered_buy_kWh[self.market.time_slot] = \
+                self.posted_bid_energy(self.market.id)
+            self.state.clamp_energy_to_buy_kWh([self.market.time_slot])
+            return {
+                "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id", None)}
+        except Exception as e:
+            return {
+                "command": "bid_delete", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": f"Error when handling bid delete "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id", None)}
+
+    def _list_bids_aggregator(self, arguments):
+        try:
+            filtered_bids = [{"id": v.id, "price": v.price, "energy": v.energy}
+                             for _, v in self.market.get_bids().items()
+                             if v.buyer == self.device.name]
+            return {
+                "command": "list_bids", "status": "ready", "bid_list": filtered_bids,
+                "area_uuid": self.device.uuid,
+                "transaction_id": arguments.get("transaction_id", None)}
+        except Exception as e:
+            logging.error(f"Error when handling list bids on area {self.device.name}: "
+                          f"Exception: {str(e)}")
+            return {
+                "command": "list_bids", "status": "error",
+                "area_uuid": self.device.uuid,
+                "error_message": f"Error when listing bids on area {self.device.name}.",
+                "transaction_id": arguments.get("transaction_id", None)}
 
 
 class StorageExternalStrategy(StorageExternalMixin, StorageStrategy):

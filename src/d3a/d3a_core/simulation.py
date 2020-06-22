@@ -47,6 +47,7 @@ from d3a_interface.constants_limits import ConstSettings, GlobalConfig
 from d3a.d3a_core.exceptions import D3AException
 from d3a.models.area.event_deserializer import deserialize_events_to_areas
 from d3a.d3a_core.live_events import LiveEvents
+from d3a.d3a_core.singletons import aggregator
 import os
 import psutil
 import gc
@@ -109,6 +110,7 @@ class Simulation:
 
         self.live_events = LiveEvents(self.simulation_config)
         self.redis_connection = RedisSimulationCommunication(self, redis_job_id, self.live_events)
+        self._simulation_id = redis_job_id
         self._started_from_cli = redis_job_id is None
 
         self.run_start = None
@@ -330,7 +332,13 @@ class Simulation:
                     (tick_no + 1) / config.ticks_per_slot * 100,
                 )
 
+                self.simulation_config.external_redis_communicator.\
+                    approve_aggregator_commands(aggregator)
+
                 self.area.tick_and_dispatch()
+
+                self.simulation_config.external_redis_communicator.\
+                    publish_aggregator_commands_responses_events(aggregator)
 
                 realtime_tick_length = time.time() - tick_start
                 if self.slowdown and realtime_tick_length < tick_lengths_s:

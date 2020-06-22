@@ -22,6 +22,7 @@ import json
 from time import time
 from d3a.d3a_core.redis_connections.redis_communication import REDIS_URL
 from d3a.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+import d3a.constants
 
 log = logging.getLogger(__name__)
 REDIS_THREAD_JOIN_TIMEOUT = 2
@@ -92,7 +93,7 @@ class ResettableCommunicator(RedisCommunicator):
         self.publish(channel, json.dumps(data))
 
 
-class CommonResettableCommunicator(ResettableCommunicator):
+class ExternalConnectionCommunicator(ResettableCommunicator):
     def __init__(self):
         super().__init__()
         self.channel_callback_dict = {}
@@ -109,6 +110,19 @@ class CommonResettableCommunicator(ResettableCommunicator):
         thread = self.pubsub.run_in_thread(daemon=True)
         log.trace(f"Started thread for multiple channels: {thread}")
         self.thread = thread
+
+    def sub_to_aggregator(self, aggregator):
+        self.pubsub.psubscribe(**{
+            f'external-aggregator/{d3a.constants.COLLABORATION_ID}/*/batch_commands':
+                aggregator.receive_batch_command_callback
+        })
+
+    def approve_aggregator_commands(self, aggregator):
+        aggregator.approve_batch_commands()
+
+    def publish_aggregator_commands_responses_events(self, aggregator):
+        aggregator.publish_all_commands_responses(self)
+        aggregator.publish_all_events(self)
 
 
 class BlockingCommunicator(RedisCommunicator):

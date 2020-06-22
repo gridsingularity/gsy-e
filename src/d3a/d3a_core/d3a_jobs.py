@@ -28,6 +28,7 @@ from rq.decorators import job
 from d3a.models.config import SimulationConfig
 from d3a.d3a_core.util import available_simulation_scenarios, update_advanced_settings
 from d3a.d3a_core.simulation import run_simulation
+from d3a.d3a_core.singletons import aggregator
 from d3a_interface.constants_limits import GlobalConfig, ConstSettings
 from d3a_interface.settings_validators import validate_global_settings
 from zlib import decompress
@@ -39,7 +40,7 @@ def decompress_and_decode_queued_strings(queued_string):
 
 
 @job('d3a')
-def start(scenario, settings, events):
+def start(scenario, settings, events, aggregator_device_mapping):
     logging.getLogger().setLevel(logging.ERROR)
 
     scenario = decompress_and_decode_queued_strings(scenario)
@@ -59,6 +60,10 @@ def start(scenario, settings, events):
 
         if events is not None:
             events = ast.literal_eval(events)
+
+        if aggregator_device_mapping is not None:
+            aggregator_device_mapping = ast.literal_eval(aggregator_device_mapping)
+            aggregator.set_aggregator_device_mapping(aggregator_device_mapping)
 
         config_settings = {
             "start_date":

@@ -26,7 +26,7 @@ from d3a.models.read_user_profile import read_arbitrary_profile, InputProfileTyp
     read_and_convert_identity_profile_to_float
 from d3a.d3a_core.util import change_global_config
 from d3a.d3a_core.redis_connections.redis_area_market_communicator import \
-    CommonResettableCommunicator
+    ExternalConnectionCommunicator
 
 
 class SimulationConfig:
@@ -66,7 +66,7 @@ class SimulationConfig:
         max_panel_power_W = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W \
             if max_panel_power_W is None else max_panel_power_W
         self.max_panel_power_W = max_panel_power_W
-        self.external_redis_communicator = CommonResettableCommunicator()
+        self.external_redis_communicator = ExternalConnectionCommunicator()
 
     def __repr__(self):
         return (
