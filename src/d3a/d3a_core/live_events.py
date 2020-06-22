@@ -19,11 +19,17 @@ class CreateAreaEvent:
     def apply(self, area):
         if area.uuid != self.parent_uuid:
             return False
-        # The order of the following activation calls matters:
-        self.created_area.parent = area
-        area.children.append(self.created_area)
-        self.created_area.activate()
-        self.created_area.strategy.event_activate()
+        try:
+            # The order of the following activation calls matters:
+            self.created_area.parent = area
+            area.children.append(self.created_area)
+            self.created_area.activate(current_tick=area.current_tick)
+            if self.created_area.strategy:
+                self.created_area.strategy.event_activate()
+        except Exception as e:
+            if self.created_area in area.children:
+                area.children.remove(self.created_area)
+            raise e
         return True
 
     def __repr__(self):
@@ -68,28 +74,33 @@ class LiveEvents:
         self.lock = Lock()
         self.config = config
 
-    def add_event(self, event_dict):
+    def add_event(self, event_dict, bulk_event=False):
         with self.lock:
-            logging.debug(f"Received live event {event_dict}.")
-            if event_dict["eventType"] == "create_area":
-                event_object = CreateAreaEvent(
-                    event_dict["parent_uuid"], event_dict["area_representation"], self.config)
-            elif event_dict["eventType"] == "delete_area":
-                event_object = DeleteAreaEvent(event_dict["area_uuid"])
-            elif event_dict["eventType"] == "update_area":
-                event_object = UpdateAreaEvent(
-                    event_dict["area_uuid"], event_dict["area_representation"])
-            else:
-                raise LiveEventException(f"Incorrect event type ({event_dict})")
-            self.event_buffer.append(event_object)
+            try:
+                logging.debug(f"Received live event {event_dict}.")
+                if event_dict["eventType"] == "create_area":
+                    event_object = CreateAreaEvent(
+                        event_dict["parent_uuid"], event_dict["area_representation"], self.config)
+                elif event_dict["eventType"] == "delete_area":
+                    event_object = DeleteAreaEvent(event_dict["area_uuid"])
+                elif event_dict["eventType"] == "update_area":
+                    event_object = UpdateAreaEvent(
+                        event_dict["area_uuid"], event_dict["area_representation"])
+                else:
+                    raise LiveEventException(f"Incorrect event type ({event_dict})")
+                self.event_buffer.append(event_object)
+            except Exception as e:
+                if bulk_event:
+                    self.event_buffer = []
+                raise Exception(e)
 
     def _handle_event(self, area, event):
         try:
             if event.apply(area) is True:
                 return True
         except Exception as e:
-            logging.warning(f"Event {event} failed to apply on area {area.name}. "
-                            f"Exception: {e}. Traceback: {traceback.format_exc()}")
+            logging.error(f"Event {event} failed to apply on area {area.name}. "
+                          f"Exception: {e}. Traceback: {traceback.format_exc()}")
             return False
         if not area.children:
             return False

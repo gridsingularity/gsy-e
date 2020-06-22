@@ -73,6 +73,7 @@ class SimulationProgressInfo:
         self.elapsed_time = duration(seconds=0)
         self.percentage_completed = 0
         self.next_slot_str = ""
+        self.current_slot_str = ""
 
 
 class Simulation:
@@ -119,7 +120,7 @@ class Simulation:
         deserialize_events_to_areas(simulation_events, self.area)
 
         validate_const_settings_for_simulation()
-        if self.export_on_finish or self.redis_connection.is_enabled():
+        if self.export_on_finish and not self.redis_connection.is_enabled():
             self.export = ExportAndPlot(self.area, self.export_path, self.export_subdir,
                                         self.endpoint_buffer)
 
@@ -258,10 +259,8 @@ class Simulation:
             self.redis_connection.publish_results(
                 self.endpoint_buffer
             )
-            # Generate and send zip file results to d3a-web
-            filename = self.export.export_to_zip_file()
-            self.redis_connection.write_zip_results(filename)
-            self.export.delete_exported_files()
+            if hasattr(self.redis_connection, 'heartbeat'):
+                self.redis_connection.heartbeat.cancel()
 
         else:
             self.redis_connection.publish_intermediate_results(
@@ -277,6 +276,8 @@ class Simulation:
         self.progress_info.eta = (run_duration / (slot_no + 1) * slot_count) - run_duration
         self.progress_info.elapsed_time = run_duration
         self.progress_info.percentage_completed = (slot_no + 1) / slot_count * 100
+        self.progress_info.current_slot_str = get_market_slot_time_str(
+            slot_no, self.simulation_config)
         self.progress_info.next_slot_str = get_market_slot_time_str(
             slot_no + 1, self.simulation_config)
 
@@ -316,17 +317,11 @@ class Simulation:
 
             for tick_no in range(tick_resume, config.ticks_per_slot):
                 tick_start = time.time()
-                while self.paused:
-                    sleep(0.5)
-                    if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
-                        self.is_timed_out = True
-                        self.is_stopped = True
-                        self.paused = False
+
+                self._handle_paused(console, tick_start)
+
                 # reset tick_resume after possible resume
                 tick_resume = 0
-                if console is not None:
-                    self._handle_input(console)
-                    self.paused_time += self._handle_paused(console)
                 log.trace(
                     "Tick %d of %d in slot %d (%2.0f%%)",
                     tick_no + 1,
@@ -353,16 +348,15 @@ class Simulation:
                     sleep(abs(tick_lengths_s - realtime_tick_length))
 
             self._update_and_send_results()
-            if self.export_on_finish or self.redis_connection.is_enabled():
+            if self.export_on_finish and not self.redis_connection.is_enabled():
                 self.export.data_to_csv(self.area, True if slot_no == 0 else False)
 
         self.sim_status = "finished"
         self.deactivate_areas(self.area)
 
-        self._update_progress_info(slot_count - 1, slot_count)
-        paused_duration = duration(seconds=self.paused_time)
-
         if not self.is_stopped:
+            self._update_progress_info(slot_count - 1, slot_count)
+            paused_duration = duration(seconds=self.paused_time)
             log.info(
                 "Run finished in %s%s / %.2fx real time",
                 self.progress_info.elapsed_time,
@@ -371,7 +365,7 @@ class Simulation:
             )
 
         self._update_and_send_results(is_final=True)
-        if self.export_on_finish:
+        if self.export_on_finish and not self.redis_connection.is_enabled():
             log.info("Exporting simulation data.")
             if GlobalConfig.POWER_FLOW:
                 self.export.export(export_plots=self.should_export_plots,
@@ -397,7 +391,7 @@ class Simulation:
         start = 0
         if sleep > 0:
             timeout = sleep / 100
-            start = time.monotonic()
+            start = time.time()
         while True:
             cmd = console.get_char(timeout)
             if cmd:
@@ -441,23 +435,36 @@ class Simulation:
                     if self.slowdown >= SLOWDOWN_STEP:
                         self.slowdown -= SLOWDOWN_STEP
                         log.critical("Simulation slowdown changed to %d", self.slowdown)
-            if sleep == 0 or time.monotonic() - start >= sleep:
+            if sleep == 0 or time.time() - start >= sleep:
                 break
 
-    def _handle_paused(self, console):
-        if self.pause_after and self.time_since_start >= self.pause_after:
-            self.paused = True
-            self.pause_after = None
+    def _handle_paused(self, console, tick_start):
+        if console is not None:
+            self._handle_input(console)
+            if self.pause_after and self.time_since_start >= self.pause_after:
+                self.paused = True
+                self.pause_after = None
+
+        paused_flag = False
         if self.paused:
-            start = time.monotonic()
-            log.critical("Simulation paused. Press 'p' to resume or resume from API.")
-            self.endpoint_buffer.update_stats(self.area, self.status, self.progress_info)
-            self.redis_connection.publish_intermediate_results(self.endpoint_buffer)
-            while self.paused:
+            if console:
+                log.critical("Simulation paused. Press 'p' to resume or resume from API.")
+            else:
+                self._update_and_send_results()
+            start = time.time()
+        while self.paused:
+            paused_flag = True
+            if console:
                 self._handle_input(console, 0.1)
+            if time.time() - tick_start > SIMULATION_PAUSE_TIMEOUT:
+                self.is_timed_out = True
+                self.is_stopped = True
+                self.paused = False
+            sleep(0.5)
+
+        if console and paused_flag:
             log.critical("Simulation resumed")
-            return time.monotonic() - start
-        return 0
+            self.paused_time += time.time() - start
 
     def _info(self):
         info = self.simulation_config.as_dict()

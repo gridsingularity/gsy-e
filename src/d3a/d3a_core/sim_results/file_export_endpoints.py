@@ -41,6 +41,7 @@ class FileExportEndpoints:
         self.cumulative_offers = {}
         self.cumulative_bids = {}
         self.clearing = {}
+        self.last_energy_trades_high_resolution = {}
 
     def __call__(self, area):
         self.time_slots = generate_market_slot_list(area)
@@ -54,6 +55,7 @@ class FileExportEndpoints:
             for child in area.children:
                 self._populate_area_children_data(child)
 
+        self.last_energy_trades_high_resolution[area.uuid] = area.stats.market_trades
         if self._should_export_plots:
             self.update_plot_stats(area)
         if area.children:
@@ -352,12 +354,13 @@ class ExportLeafData(ExportData):
                     s.charge_history[slot]]
         elif isinstance(self.area.strategy, (LoadHoursStrategy, DefinedLoadStrategy,
                                              DefinedLoadStrategy, CellTowerLoadHoursStrategy)):
-            desired = self.area.strategy.state.desired_energy_Wh[slot] / 1000
+            desired = self.area.strategy.state.desired_energy_Wh.get(slot, 0) / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
             produced = market.actual_energy_agg.get(self.area.name, 0)
             return [produced,
-                    round(produced - self.area.strategy.energy_production_forecast_kWh[slot], 4),
-                    self.area.strategy.energy_production_forecast_kWh[slot]
+                    round(produced -
+                          self.area.strategy.energy_production_forecast_kWh.get(slot, 0), 4),
+                    self.area.strategy.energy_production_forecast_kWh.get(slot, 0)
                     ]
         return []

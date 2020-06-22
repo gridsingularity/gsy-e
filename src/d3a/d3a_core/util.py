@@ -26,22 +26,20 @@ import inspect
 import os
 
 from click.types import ParamType
-from pendulum import duration, from_format, DateTime
+from pendulum import duration, from_format
 from rex import rex
 from pkgutil import walk_packages
 from datetime import timedelta
 from functools import wraps
-from copy import copy
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
-from functools import lru_cache
 
 from d3a import setup as d3a_setup
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.exceptions import D3AException
-from d3a.constants import DATE_FORMAT, DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
-from d3a_interface.constants_limits import GlobalConfig
-from d3a_interface.constants_limits import RangeLimit
-from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime
+from d3a.constants import DATE_FORMAT
+from d3a_interface.constants_limits import GlobalConfig, RangeLimit
+from d3a_interface.utils import generate_market_slot_list_from_config, str_to_pendulum_datetime,\
+    format_datetime
 
 d3a_path = os.path.dirname(inspect.getsourcefile(d3a))
 
@@ -348,33 +346,6 @@ def get_market_slot_time_str(slot_number, config):
             minutes=config.slot_length.minutes * slot_number
         )
     )
-
-
-@lru_cache(maxsize=100, typed=False)
-def format_datetime(datetime, ui_format=False, unix_time=False):
-    if unix_time:
-        return datetime.timestamp()
-    elif ui_format:
-        return datetime.format(DATE_TIME_UI_FORMAT)
-    else:
-        return datetime.format(DATE_TIME_FORMAT)
-
-
-def convert_pendulum_to_str_in_dict(indict, outdict, ui_format=False, unix_time=False):
-    for key, value in indict.items():
-        if isinstance(key, DateTime):
-            outdict[format_datetime(key, ui_format, unix_time)] = indict[key]
-        elif isinstance(value, DateTime):
-            outdict[key] = format_datetime(value, ui_format, unix_time)
-        elif isinstance(indict[key], list):
-            outdict[key] = [convert_pendulum_to_str_in_dict(element, {}, ui_format, unix_time)
-                            for element in indict[key]]
-        elif isinstance(indict[key], dict):
-            outdict[key] = {}
-            convert_pendulum_to_str_in_dict(indict[key], outdict[key], ui_format, unix_time)
-        else:
-            outdict[key] = copy(indict[key])
-    return outdict
 
 
 def constsettings_to_dict():

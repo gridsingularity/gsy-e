@@ -32,6 +32,7 @@ from d3a.constants import TIME_ZONE
 from d3a.models.market.market_structures import Trade, BalancingTrade, Bid, Offer, BalancingOffer
 from d3a.models.area import Area
 from d3a_interface.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
+from d3a_interface.utils import mkdir_from_str
 from d3a.d3a_core.util import constsettings_to_dict, generate_market_slot_list
 from d3a.models.market.market_structures import MarketClearingState
 from d3a.models.strategy.storage import StorageStrategy
@@ -53,20 +54,15 @@ alternative_pricing_subdirs = {
     3: "net_metering_pricing"
 }
 
-EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "pv_production_kWh", "trade_price_eur",
-                           "soc_history_%", "load_profile_kWh"]
+EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "sold_trade_energy_kWh", "bought_trade_energy_kWh",
+                           "trade_price_eur", "pv_production_kWh", "soc_history_%",
+                           "load_profile_kWh"]
 
 SlotDataRange = namedtuple('SlotDataRange', ('start', 'end'))
 
 
 def get_from_dict(data_dict, map_list):
     return reduce(operator.getitem, map_list, data_dict)
-
-
-def mkdir_from_str(directory: str, exist_ok=True, parents=True):
-    out_dir = pathlib.Path(directory)
-    out_dir.mkdir(exist_ok=exist_ok, parents=parents)
-    return out_dir
 
 
 class ExportAndPlot:
@@ -96,10 +92,6 @@ class ExportAndPlot:
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, 'w') as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        trade_file = os.path.join(json_dir, "trade-detail.json")
-        with open(trade_file, 'w') as outfile:
-            json.dump(self.endpoint_buffer.trade_details, outfile, indent=2)
-
         for key, value in self.endpoint_buffer.generate_json_report().items():
             json_file = os.path.join(json_dir, key + ".json")
             with open(json_file, 'w') as outfile:
@@ -464,12 +456,22 @@ class ExportAndPlot:
             for tick_slot, info_dicts in markets.items():
                 for info_dict in info_dicts:
                     size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
+                    all_info_dicts = list([
+                        info_dict,
+                        *[i for i in info_dicts if i['rate'] == info_dict['rate']]])
+                    # Removes duplicate dicts from a list of dicts
+                    all_info_dicts = [dict(t)
+                                      for t in {
+                                          tuple(sorted(d.items())) for d in all_info_dicts
+                                      }]
+                    all_info_dicts.sort(key=lambda e: e["tool_tip"])
+                    tooltip_text = "<br />".join(map(lambda e: e["tool_tip"], all_info_dicts))
                     fig.add_trace(
                         go.Scatter(x=[tick_slot],
                                    y=[info_dict['rate']],
-                                   text=info_dict['tool_tip'],
+                                   text=tooltip_text,
                                    hoverinfo='text',
-                                   marker=dict(size=size, color=info_dict['color']),
+                                   marker=dict(size=size, color=all_info_dicts[0]['color']),
                                    visible=False)
                     )
             self.market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
@@ -709,8 +711,7 @@ class ExportAndPlot:
         title = f'High Resolution Energy Trade Profile of {market_name}'
         plot_dir = os.path.join(self.plot_dir, subdir, "energy_profile_hr")
         mkdir_from_str(plot_dir)
-        for market_slot_unix, data in area.stats.market_trades.items():
-            market_slot = from_timestamp(market_slot_unix)
+        for market_slot, data in area.stats.market_trades.items():
             plot_data = self.add_plotly_graph_dataset(data, market_slot)
             if len(plot_data) > 0:
                 market_slot_str = market_slot.format(DATE_TIME_FORMAT)

@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
-from typing import Dict # noqa
+from typing import Dict  # noqa
 from copy import deepcopy
 import json
 from pendulum import DateTime, parse
 from d3a.events import MarketEvent
+from d3a_interface.utils import datetime_to_string_incl_seconds
 
 Clearing = namedtuple('Clearing', ('rate', 'energy'))
 
@@ -61,6 +62,18 @@ class Offer:
         offer_dict["type"] = "Offer"
         offer_dict.pop('energy_rate', None)
         return json.dumps(offer_dict, default=my_converter)
+
+    def serializable_dict(self):
+        return {
+            "type": "Offer",
+            "id": self.id,
+            "price": self.price,
+            "energy": self.energy,
+            "energy_rate": self.energy_rate,
+            "seller": self.seller,
+            "seller_origin": self.seller_origin,
+            "time": datetime_to_string_incl_seconds(self.time)
+        }
 
     def __hash__(self):
         return hash(self.id)
@@ -133,6 +146,18 @@ class Bid(namedtuple('Bid', ('id', 'time', 'price', 'energy', 'buyer', 'seller',
         bid_dict["type"] = "Bid"
         return json.dumps(bid_dict, default=my_converter)
 
+    def serializable_dict(self):
+        return {
+            "type": "Bid",
+            "id": self.id,
+            "price": self.price,
+            "energy": self.energy,
+            "energy_rate": self.energy_rate,
+            "buyer": self.buyer,
+            "buyer_origin": self.buyer_origin,
+            "time": datetime_to_string_incl_seconds(self.time)
+        }
+
 
 def bid_from_JSON_string(bid_string):
     bid_dict = json.loads(bid_string)
@@ -203,6 +228,23 @@ class Trade(namedtuple('Trade', ('id', 'time', 'offer', 'seller', 'buyer', 'resi
         trade_dict['time'] = trade_dict['time'].isoformat()
         return json.dumps(trade_dict)
 
+    def serializable_dict(self):
+        return {
+            "type": "Trade",
+            "id": self.id,
+            "offer_bid_id": self.offer.id,
+            "residual_id": self.residual.id if self.residual is not None else None,
+            "price": self.offer.price,
+            "energy": self.offer.energy,
+            "energy_rate": self.offer.energy_rate,
+            "buyer": self.buyer,
+            "buyer_origin": self.buyer_origin,
+            "seller": self.seller,
+            "seller_origin": self.seller_origin,
+            "fee_price": self.fee_price,
+            "time": datetime_to_string_incl_seconds(self.time)
+        }
+
 
 def trade_from_JSON_string(trade_string, current_time):
     trade_dict = json.loads(trade_string)
@@ -257,9 +299,9 @@ class BalancingTrade(namedtuple('BalancingTrade', ('id', 'time', 'offer', 'selle
 
 class MarketClearingState:
     def __init__(self):
-        self.cumulative_offers = dict()  # type Dict[Datetime, dict()]
-        self.cumulative_bids = dict()  # type Dict[Datetime, dict()]
-        self.clearing = {}  # type: Dict[Datetime, tuple()]
+        self.cumulative_offers = dict()  # type: Dict[DateTime, dict()]
+        self.cumulative_bids = dict()  # type: Dict[DateTime, dict()]
+        self.clearing = {}  # type: Dict[DateTime, tuple()]
 
     @classmethod
     def _csv_fields(cls):
