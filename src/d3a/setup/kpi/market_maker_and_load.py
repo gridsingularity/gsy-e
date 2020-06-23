@@ -20,12 +20,9 @@ from d3a.models.appliance.switchable import SwitchableAppliance
 from d3a.models.area import Area
 from d3a.models.strategy.market_maker_strategy import MarketMakerStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
-from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
-    # Left this for testing that the KPIs export also works with KEEP_PAST_MARKETS
-    ConstSettings.GeneralSettings.KEEP_PAST_MARKETS = True
     area = Area(
         'Grid',
         [
