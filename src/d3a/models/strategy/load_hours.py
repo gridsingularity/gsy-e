@@ -85,6 +85,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._init_price_update(fit_to_limit, energy_rate_increase_per_update, update_interval,
                                 use_market_maker_rate, initial_buying_rate, final_buying_rate)
         self._calculate_active_markets()
+        self._cycled_market = set()
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -134,6 +135,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self.state.desired_energy_Wh[market.time_slot] = 0.0
         self.event_market_cycle_prices()
         if self.area.current_market:
+            self._cycled_market.add(self.area.current_market.time_slot)
             self.state.total_energy_demanded_wh += \
                 self.state.desired_energy_Wh[self.area.current_market.time_slot]
         else:
@@ -257,6 +259,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
         market = self.area.get_future_market_from_id(market_id)
+        if market.time_slot not in self._cycled_market:
+            return
         if market.time_slot in self.energy_requirement_Wh and \
                 self._is_market_active(market) and \
                 self.energy_requirement_Wh[market.time_slot] > FLOATING_POINT_TOLERANCE and \

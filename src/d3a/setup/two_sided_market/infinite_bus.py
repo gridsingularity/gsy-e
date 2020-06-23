@@ -49,7 +49,6 @@ def get_setup(config):
                                                               energy_sell_rate=24),
                  appliance=SimpleAppliance()
                  ),
-
         ],
         config=config
     )
