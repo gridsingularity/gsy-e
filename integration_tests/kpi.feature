@@ -69,3 +69,13 @@ Feature: KPI integration tests
      When we run the d3a simulation on console with kpi.d3asim_2262 for 24 hrs (30, 30)
      Then self_sufficiency of {'Grid': 1.0, 'Community': 1.0, 'House 1': 0.66666, 'House 2': 0.5, 'House 3': 1.0} are correctly reported
      And self_consumption of {'Grid': 1.0, 'Community': 1.0, 'House 1': 1.0, 'House 2': 1.0, 'House 3': 0.5} are correctly reported
+
+  Scenario: self-sufficiency, self-consumption & total_energy_demanded are correctly reported
+     Given we have a scenario named kpi.market_maker_and_load
+     And d3a is installed
+     When we run the d3a simulation on console with kpi.market_maker_and_load for 24 hrs (60, 30)
+     Then self_sufficiency of {'Grid': 1.0} are correctly reported
+     And self_consumption of {'Grid': 1.0} are correctly reported
+     And total_energy_demanded_wh of {'Grid': 900} are correctly reported
+     And total_energy_produced_wh of {'Grid': 900} are correctly reported
+     And total_self_consumption_wh of {'Grid': 900} are correctly reported
