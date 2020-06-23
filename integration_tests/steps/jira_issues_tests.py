@@ -41,11 +41,13 @@ def average_trade_rate_constant(context):
     areas = get_areas_from_2_house_grid(context)
 
     for area in areas:
+        print(f"area: {area}")
         trade_rates = [
             trade.offer.price / trade.offer.energy
             for market in area.past_markets
             for trade in market.trades
         ]
+        print(f"trade_rates: {trade_rates}")
 
         assert all(isclose(t, trade_rates[0], abs_tol=0.01) for t in trade_rates[1:])
 

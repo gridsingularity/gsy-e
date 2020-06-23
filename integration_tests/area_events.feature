@@ -89,7 +89,7 @@ Feature: Area Events Tests
   Scenario: Storage changes initial_selling_rate after strategy event
     Given we have a scenario named area_events/storage_event
     And d3a is installed
-    When we run the simulation with setup file area_events.storage_event and parameters [24, 60, 60, 1]
+    When we run the simulation with setup file area_events.storage_event and parameters [24, 60, 30, 1]
     Then load consumes 0.01 kWh with 31 ct/kWh between 0:00 and 12:00
     And load consumes 0.01 kWh with 33 ct/kWh between 13:00 and 15:00
     And load consumes 0.01 kWh with 35 ct/kWh between 16:00 and 24:00
