@@ -33,11 +33,11 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
     expected_kpis = ast.literal_eval(expected_kpis)
     for area, value in expected_kpis.items():
         if kpi == "self_sufficiency":
-            assert isclose(kpi_data[area]['self_sufficiency'], float(value), rel_tol=1e-01)
+            assert isclose(kpi_data[area]['self_sufficiency'], float(value), abs_tol=1e-03)
 
             assert isclose(kpi_data[area]['self_sufficiency'],
                            min(kpi_data[area]['total_self_consumption_wh'] /
-                               kpi_data[area]['total_energy_demanded_wh'], 1.0), rel_tol=1e-04)
+                               kpi_data[area]['total_energy_demanded_wh'], 1.0), abs_tol=1e-03)
 
         elif kpi == "self_consumption":
             if value is None:
@@ -48,7 +48,7 @@ def test_export_of_kpi_result(context, kpi, expected_kpis):
 
                 assert isclose(kpi_data[area]['self_consumption'],
                                min(kpi_data[area]['total_self_consumption_wh'] /
-                                   kpi_data[area]['total_energy_produced_wh'], 1.0), rel_tol=1e-02)
+                                   kpi_data[area]['total_energy_produced_wh'], 1.0), abs_tol=1e-03)
 
 
 @then("device '{device_name}' reports penalties of {penalty_energy} kWh")
