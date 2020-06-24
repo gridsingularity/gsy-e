@@ -21,9 +21,11 @@ from d3a.models.area import Area
 from d3a.models.area.events import StrategyEvents
 from d3a.models.strategy.commercial_producer import CommercialStrategy
 from d3a.models.strategy.load_hours import LoadHoursStrategy
+from d3a_interface.constants_limits import ConstSettings
 
 
 def get_setup(config):
+    ConstSettings.IAASettings.MARKET_TYPE = 2
     area = Area(
         'Grid',
         children=[
@@ -34,11 +36,16 @@ def get_setup(config):
                                                                        hrs_per_day=24,
                                                                        hrs_of_day=list(
                                                                            range(0, 24)),
-                                                                       final_buying_rate=35),
+                                                                       initial_buying_rate=1,
+                                                                       final_buying_rate=37),
                          appliance=SwitchableAppliance(),
                          event_list=[StrategyEvents(12, {'avg_power_W': 400,
                                                          'hrs_per_day': 22,
-                                                         'hrs_of_day': range(0, 22)})]
+                                                         'hrs_of_day': range(0, 22)}),
+                                     StrategyEvents(15, {'initial_buying_rate': 29,
+                                                         'fit_to_limit': False,
+                                                         'update_interval': 10,
+                                                         'energy_rate_increase_per_update': 1})]
                          )
                 ]
             ),

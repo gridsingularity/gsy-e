@@ -31,7 +31,7 @@ from d3a.models.config import SimulationConfig
 
 from d3a_interface.constants_limits import ConstSettings
 from d3a.d3a_core.util import IntervalType, available_simulation_scenarios, \
-    read_settings_from_file, update_advanced_settings, convert_str_to_pauseafter_intervall, \
+    read_settings_from_file, update_advanced_settings, convert_str_to_pause_after_interval, \
     DateType
 
 from d3a.d3a_core.simulation import run_simulation
@@ -139,7 +139,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
 
         else:
             if pause_at is not None:
-                kwargs["pause_after"] = convert_str_to_pauseafter_intervall(start_date, pause_at)
+                kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)
             run_simulation(setup_module_name, simulation_config, None, slowdown, None,
                            kwargs)
 

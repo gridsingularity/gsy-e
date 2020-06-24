@@ -38,6 +38,7 @@ from d3a.models.area.events import Events
 from d3a_interface.constants_limits import GlobalConfig
 from d3a_interface.area_validator import validate_area
 from d3a.models.area.redis_external_market_connection import RedisMarketExternalConnection
+from d3a_interface.utils import key_in_dict_and_not_none
 import d3a.constants
 
 log = getLogger(__name__)
@@ -58,6 +59,10 @@ DEFAULT_CONFIG = SimulationConfig(
 
 class Area:
 
+    reconfig_parameters = ('grid_fee_percentage', 'transfer_fee_const',
+                           'baseline_peak_energy_import_kWh', 'baseline_peak_energy_export_kWh',
+                           'import_capacity_kVA', 'export_capacity_kVA')
+
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
                  strategy: BaseStrategy = None,
@@ -74,7 +79,8 @@ class Area:
                  import_capacity_kVA: float = None,
                  export_capacity_kVA: float = None
                  ):
-        validate_area(grid_fee_percentage=grid_fee_percentage,
+        validate_area(grid_fee_constant=transfer_fee_const,
+                      grid_fee_percentage=grid_fee_percentage,
                       baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
                       baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
                       import_capacity_kVA=import_capacity_kVA,
@@ -115,6 +121,37 @@ class Area:
         self.redis_ext_conn = RedisMarketExternalConnection(self) \
             if external_connection_available is True else None
 
+    def area_reconfigure_event(self, **kwargs):
+        if self.strategy is not None:
+            self.strategy.area_reconfigure_event(**kwargs)
+            return
+        if key_in_dict_and_not_none(kwargs, 'transfer_fee_const') or \
+                key_in_dict_and_not_none(kwargs, 'grid_fee_percentage'):
+            transfer_fee_const = kwargs["transfer_fee_const"] \
+                if key_in_dict_and_not_none(kwargs, 'transfer_fee_const') else None
+            grid_fee_percentage = kwargs["grid_fee_percentage"] \
+                if key_in_dict_and_not_none(kwargs, 'grid_fee_percentage') else None
+            validate_area(grid_fee_percentage=grid_fee_percentage,
+                          grid_fee_constant=transfer_fee_const)
+            self._set_grid_fees(transfer_fee_const, grid_fee_percentage)
+
+        if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_import_kWh'):
+            self.baseline_peak_energy_import_kWh = kwargs['baseline_peak_energy_import_kWh']
+            validate_area(baseline_peak_energy_import_kWh=self.baseline_peak_energy_import_kWh)
+        if key_in_dict_and_not_none(kwargs, 'baseline_peak_energy_export_kWh'):
+            self.baseline_peak_energy_export_kWh = kwargs['baseline_peak_energy_export_kWh']
+            validate_area(baseline_peak_energy_export_kWh=self.baseline_peak_energy_export_kWh)
+
+        if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA') or \
+                key_in_dict_and_not_none(kwargs, 'export_capacity_kVA'):
+            import_capacity_kVA = kwargs["import_capacity_kVA"] \
+                if key_in_dict_and_not_none(kwargs, 'import_capacity_kVA') else None
+            export_capacity_kVA = kwargs["export_capacity_kVA"] \
+                if key_in_dict_and_not_none(kwargs, 'export_capacity_kVA') else None
+            validate_area(import_capacity_kVA=import_capacity_kVA,
+                          export_capacity_kVA=export_capacity_kVA)
+            self._convert_area_throughput_kva_to_kwh(import_capacity_kVA, export_capacity_kVA)
+
     def _set_grid_fees(self, transfer_fee_const, grid_fee_percentage):
         grid_fee_type = self.config.grid_fee_type \
             if self.config is not None \
@@ -137,7 +174,9 @@ class Area:
     def set_events(self, event_list):
         self.events = Events(event_list, self)
 
-    def activate(self, bc=None):
+    def activate(self, bc=None, current_tick=None):
+        if current_tick is not None:
+            self.current_tick = current_tick
         if bc:
             self._bc = bc
         for attr, kind in [(self.strategy, 'Strategy'), (self.appliance, 'Appliance')]:
@@ -245,7 +284,7 @@ class Area:
         self.current_tick += 1
         if self._markets:
             for market in self._markets.markets.values():
-                market.update_clock(self.current_tick)
+                market.update_clock(self.current_tick_in_slot)
 
     def tick_and_dispatch(self):
         if d3a.constants.DISPATCH_EVENTS_BOTTOM_TO_TOP:
