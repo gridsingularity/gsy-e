@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
+import traceback
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.pv import PVStrategy
 from d3a.models.strategy.predefined_pv import PVUserProfileStrategy, PVPredefinedStrategy
@@ -182,7 +183,7 @@ class PVExternalMixin(ExternalMixin):
             self.redis.publish_json(market_event_channel, current_market_info)
 
         if self.is_aggregator_controlled:
-            aggregator.add_batch_event(self.device.uuid, current_market_info)
+            aggregator.add_batch_market_event(self.device.uuid, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -222,11 +223,11 @@ class PVExternalMixin(ExternalMixin):
         self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
-        if not self.connected:
+        if self.should_use_default_strategy:
             super().event_offer(market_id=market_id, offer=offer)
 
     def event_market_cycle_price(self):
-        if not self.connected:
+        if self.should_use_default_strategy:
             super().event_market_cycle_price()
 
     def _delete_offer_aggregator(self, arguments):
@@ -269,7 +270,7 @@ class PVExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
     def _offer_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
         arguments['seller'] = self.device.name
         arguments['seller_origin'] = self.device.name
         try:
@@ -277,7 +278,9 @@ class PVExternalMixin(ExternalMixin):
                 arguments["energy"],
                 self.state.available_energy_kWh.get(self.market.time_slot, 0.0),
                 self.market)
-            offer_arguments = {k: v for k, v in arguments.items() if not k == "transaction_id"}
+            offer_arguments = {k: v
+                               for k, v in arguments.items()
+                               if k not in ["transaction_id", "type"]}
             offer = self.market.offer(**offer_arguments)
             self.offers.post(offer, self.market.id)
             return {
@@ -288,6 +291,7 @@ class PVExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid
             }
         except Exception as e:
+            logging.error(f"Failed to post PV offer. Exception {str(e)}. {traceback.format_exc()}")
             return {
                 "command": "offer", "status": "error",
                 "error_message": f"Error when handling offer create "

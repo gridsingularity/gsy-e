@@ -113,8 +113,8 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
 
     def sub_to_aggregator(self, aggregator):
         self.pubsub.psubscribe(**{
-            f'external-aggregator/{d3a.constants.COLLABORATION_ID}/*/batch_commands':
-                aggregator.receive_batch_command_callback
+            f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
+                aggregator.receive_batch_commands_callback
         })
 
     def approve_aggregator_commands(self, aggregator):

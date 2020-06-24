@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
+import traceback
 from d3a.models.strategy.external_strategies import IncomingRequest
 from d3a.models.strategy.load_hours import LoadHoursStrategy
 from d3a.models.strategy.predefined_load import DefinedLoadStrategy
@@ -139,6 +140,7 @@ class LoadExternalMixin(ExternalMixin):
                 arguments["energy"],
                 self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0,
                 self.market)
+
             bid = self.post_bid(
                 self.market,
                 arguments["price"],
@@ -170,7 +172,7 @@ class LoadExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
         super().event_market_cycle()
-        if not self.connected:
+        if self.should_use_default_strategy:
             return
         self._reset_event_tick_counter()
         market_event_channel = f"{self.channel_prefix}/events/market"
@@ -185,7 +187,7 @@ class LoadExternalMixin(ExternalMixin):
             self.redis.publish_json(market_event_channel, current_market_info)
 
         if self.is_aggregator_controlled:
-            aggregator.add_batch_event(self.device.uuid, current_market_info)
+            aggregator.add_batch_market_event(self.device.uuid, current_market_info)
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            use_market_maker_rate, initial_buying_rate, final_buying_rate):
@@ -199,7 +201,7 @@ class LoadExternalMixin(ExternalMixin):
             super().event_activate_price()
 
     def _area_reconfigure_prices(self, final_buying_rate):
-        if not self.connected:
+        if self.should_use_default_strategy:
             super()._area_reconfigure_prices(final_buying_rate=final_buying_rate)
 
     def event_tick(self):
@@ -225,17 +227,18 @@ class LoadExternalMixin(ExternalMixin):
         self._dispatch_event_tick_to_external_agent()
 
     def event_offer(self, *, market_id, offer):
-        if not self.connected:
+        if self.should_use_default_strategy:
             super().event_offer(market_id=market_id, offer=offer)
 
     def event_market_cycle_prices(self):
-        if not self.connected:
+        if self.should_use_default_strategy:
             super().event_market_cycle_prices()
 
     def _bid_aggregator(self, arguments):
         try:
-            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+            assert set(arguments.keys()) == {'price', 'energy', 'type', 'transaction_id'}
             arguments['buyer_origin'] = self.device.name
+
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 self.energy_requirement_Wh.get(self.market.time_slot, 0.0) / 1000.0,
@@ -252,6 +255,8 @@ class LoadExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception as e:
+            logging.error(f"Error when handling bid on area {self.device.name}: "
+                          f"Exception: {str(e)}. Traceback {traceback.format_exc()}")
             return {
                 "command": "bid", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -268,6 +273,8 @@ class LoadExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id", None)}
         except Exception as e:
+            logging.error(f"Error when handling delete bid on area {self.device.name}: "
+                          f"Exception: {str(e)}")
             return {
                 "command": "bid_delete", "status": "error",
                 "area_uuid": self.device.uuid,

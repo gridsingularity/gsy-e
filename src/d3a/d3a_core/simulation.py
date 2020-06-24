@@ -288,6 +288,7 @@ class Simulation:
         tick_lengths_s = config.tick_length.total_seconds()
         slot_count = int(config.sim_duration / config.slot_length)
 
+        self.simulation_config.external_redis_communicator.sub_to_aggregator(aggregator)
         self.simulation_config.external_redis_communicator.start_communication()
         self._update_and_send_results()
         for slot_no in range(slot_resume, slot_count):

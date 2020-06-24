@@ -296,7 +296,7 @@ class StorageExternalMixin(ExternalMixin):
     def event_market_cycle(self):
         self._reject_all_pending_requests()
         self.register_on_market_cycle()
-        if self.connected or self.is_aggregator_controlled:
+        if not self.should_use_default_strategy:
             self._reset_event_tick_counter()
             self.state.market_cycle(self.market_area.current_market.time_slot,
                                     self.market.time_slot)
@@ -314,7 +314,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.redis.publish_json(market_event_channel, current_market_info)
 
             if self.is_aggregator_controlled:
-                aggregator.add_batch_event(self.device.uuid, current_market_info)
+                aggregator.add_batch_market_event(self.device.uuid, current_market_info)
         else:
             super().event_market_cycle()
 
@@ -397,7 +397,7 @@ class StorageExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id", None)}
 
     def _offer_aggregator(self, arguments):
-        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+        assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
         arguments['seller'] = self.device.name
         arguments['seller_origin'] = self.device.name
         try:
@@ -425,7 +425,7 @@ class StorageExternalMixin(ExternalMixin):
 
     def _bid_aggregator(self, arguments):
         try:
-            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id'}
+            assert set(arguments.keys()) == {'price', 'energy', 'transaction_id', 'type'}
             arguments['buyer_origin'] = self.device.name
             assert arguments["energy"] <= self.state.energy_to_buy_dict[self.market.time_slot]
             bid = self.post_bid(

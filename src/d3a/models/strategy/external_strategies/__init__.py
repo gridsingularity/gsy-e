@@ -103,6 +103,10 @@ class ExternalMixin:
         return aggregator.is_controlling_device(self.device.uuid)
 
     @property
+    def should_use_default_strategy(self):
+        return not self.connected and not self.is_aggregator_controlled
+
+    @property
     def _dispatch_tick_frequency(self):
         return int(
             self.device.config.ticks_per_slot *
@@ -211,7 +215,7 @@ class ExternalMixin:
                 self.redis.publish_json(tick_event_channel, current_tick_info)
 
             if self.is_aggregator_controlled:
-                aggregator.add_batch_event(self.device.uuid, current_tick_info)
+                aggregator.add_batch_tick_event(self.device.uuid, current_tick_info)
 
     def _publish_trade_event(self, trade, is_bid_trade):
 
@@ -254,7 +258,7 @@ class ExternalMixin:
             self.redis.publish_json(trade_event_channel, event_response_dict)
 
         if self.is_aggregator_controlled:
-            aggregator.add_batch_event(self.device.uuid, event_response_dict)
+            aggregator.add_batch_trade_event(self.device.uuid, event_response_dict)
 
     def event_bid_traded(self, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
@@ -278,7 +282,7 @@ class ExternalMixin:
                 self.redis.publish_json(deactivate_event_channel, deactivate_msg)
 
             if self.is_aggregator_controlled:
-                aggregator.add_batch_event(self.device.uuid, deactivate_msg)
+                aggregator.add_batch_finished_event(self.device.uuid, deactivate_msg)
 
     def _bid_aggregator(self, command):
         raise CommandTypeNotSupported(
