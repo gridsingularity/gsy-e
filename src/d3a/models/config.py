@@ -34,7 +34,8 @@ class SimulationConfig:
                  market_count: int, cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  pv_user_profile=None, start_date: DateTime=today(tz=TIME_ZONE),
-                 max_panel_power_W=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE):
+                 max_panel_power_W=None, grid_fee_type=ConstSettings.IAASettings.GRID_FEE_TYPE,
+                 external_connection_enabled=True):
 
         self.sim_duration = sim_duration
         self.start_date = start_date
@@ -66,7 +67,8 @@ class SimulationConfig:
         max_panel_power_W = ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W \
             if max_panel_power_W is None else max_panel_power_W
         self.max_panel_power_W = max_panel_power_W
-        self.external_redis_communicator = ExternalConnectionCommunicator()
+        self.external_redis_communicator = ExternalConnectionCommunicator(
+            external_connection_enabled)
 
     def __repr__(self):
         return (

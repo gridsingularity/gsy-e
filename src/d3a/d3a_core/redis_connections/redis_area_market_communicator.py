@@ -94,17 +94,25 @@ class ResettableCommunicator(RedisCommunicator):
 
 
 class ExternalConnectionCommunicator(ResettableCommunicator):
-    def __init__(self):
-        super().__init__()
-        self.channel_callback_dict = {}
+    def __init__(self, is_enabled):
+        self.is_enabled = is_enabled
+        if self.is_enabled:
+            super().__init__()
+            self.channel_callback_dict = {}
 
     def sub_to_channel(self, channel, callback):
+        if not self.is_enabled:
+            return
         self.pubsub.subscribe(**{channel: callback})
 
     def sub_to_multiple_channels(self, channel_callback_dict):
+        if not self.is_enabled:
+            return
         self.pubsub.subscribe(**channel_callback_dict)
 
     def start_communication(self):
+        if not self.is_enabled:
+            return
         if not self.pubsub.channels:
             return
         thread = self.pubsub.run_in_thread(daemon=True)
@@ -112,15 +120,21 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         self.thread = thread
 
     def sub_to_aggregator(self, aggregator):
+        if not self.is_enabled:
+            return
         self.pubsub.psubscribe(**{
             f'external/{d3a.constants.COLLABORATION_ID}/aggregator/*/batch_commands':
                 aggregator.receive_batch_commands_callback
         })
 
     def approve_aggregator_commands(self, aggregator):
+        if not self.is_enabled:
+            return
         aggregator.approve_batch_commands()
 
     def publish_aggregator_commands_responses_events(self, aggregator):
+        if not self.is_enabled:
+            return
         aggregator.publish_all_commands_responses(self)
         aggregator.publish_all_events(self)
 

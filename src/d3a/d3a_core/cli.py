@@ -109,6 +109,7 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
             update_advanced_settings(advanced_settings)
             validate_global_settings(simulation_settings)
+            simulation_settings["external_connection_enabled"] = False
             simulation_config = SimulationConfig(**simulation_settings)
         else:
             global_settings = {"sim_duration": duration,
@@ -119,7 +120,8 @@ def run(setup_module_name, settings_file, slowdown, duration, slot_length, tick_
             validate_global_settings(global_settings)
             simulation_config = \
                 SimulationConfig(duration, slot_length, tick_length, market_count,
-                                 cloud_coverage, start_date=start_date)
+                                 cloud_coverage, start_date=start_date,
+                                 external_connection_enabled=False)
 
         if compare_alt_pricing is True:
             ConstSettings.IAASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True

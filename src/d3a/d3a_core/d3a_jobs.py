@@ -87,7 +87,8 @@ def start(scenario, settings, events, aggregator_device_mapping):
             "pv_user_profile": settings.get('pv_user_profile', None),
             "max_panel_power_W": settings.get('max_panel_power_W',
                                               ConstSettings.PVSettings.MAX_PANEL_OUTPUT_W),
-            "grid_fee_type": settings.get('grid_fee_type', GlobalConfig.grid_fee_type)
+            "grid_fee_type": settings.get('grid_fee_type', GlobalConfig.grid_fee_type),
+            "external_connection_enabled": True
         }
 
         validate_global_settings(config_settings)
