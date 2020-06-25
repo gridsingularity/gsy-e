@@ -62,8 +62,8 @@ def start(scenario, settings, events, aggregator_device_mapping):
         if events is not None:
             events = ast.literal_eval(events)
 
+        aggregator_device_mapping = json.loads(aggregator_device_mapping)
         if aggregator_device_mapping is not None:
-            aggregator_device_mapping = json.loads(aggregator_device_mapping)
             aggregator.set_aggregator_device_mapping(aggregator_device_mapping)
 
         config_settings = {
