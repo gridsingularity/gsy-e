@@ -79,3 +79,13 @@ Feature: KPI integration tests
      And total_energy_demanded_wh of {'Grid': 900} are correctly reported
      And total_energy_produced_wh of {'Grid': 900} are correctly reported
      And total_self_consumption_wh of {'Grid': 900} are correctly reported
+
+  Scenario: D3ASIM-2417: KPI is correctly reported for InfiniteBus
+     Given we have a scenario named kpi.infinitebus_pv_load
+     And d3a is installed
+     When we run the d3a simulation on console with kpi.infinitebus_pv_load for 24 hrs (15, 15)
+     Then self_sufficiency of {'Grid': 1.0, 'House': 0.909375} are correctly reported
+     And self_consumption of {'Grid': 1.0, 'House': 0.616525} are correctly reported
+     And total_energy_demanded_wh of {'Grid': 1565.625, 'House': 1000} are correctly reported
+     And total_energy_produced_wh of {'Grid': 1565.625, 'House': 1475.000} are correctly reported
+     And total_self_consumption_wh of {'Grid': 1565.625, 'House': 909.375} are correctly reported
